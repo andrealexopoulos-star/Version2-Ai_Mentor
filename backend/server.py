@@ -153,8 +153,25 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
 
 # ==================== AI HELPER ====================
 
-def get_system_prompt(context_type: str) -> str:
-    base_prompt = """You are a Strategic Business Advisor and Optimization Expert specializing in helping small to medium businesses succeed. Your mission is to transform business owners into the most capable, strategic, and empowered versions of themselves.
+def get_system_prompt(context_type: str, user_data: dict = None) -> str:
+    # Build personalized context from user profile
+    user_context = ""
+    if user_data:
+        name = user_data.get("name", "")
+        business = user_data.get("business_name", "")
+        industry = user_data.get("industry", "")
+        
+        if name:
+            user_context += f"\n\nYou are speaking with {name}."
+        if business:
+            user_context += f" They run a business called '{business}'."
+        if industry:
+            user_context += f" Their industry is {industry}."
+        if user_context:
+            user_context += "\n\nUse this context to personalize your advice. Reference their business name and industry when relevant. Make recommendations specific to their sector."
+
+    base_prompt = f"""You are a Strategic Business Advisor from "The Strategy Squad" - an elite team specializing in helping small to medium businesses succeed. Your mission is to transform business owners into the most capable, strategic, and empowered versions of themselves.
+{user_context}
 
 You provide:
 - Deep analysis of business models, operations, and strategies
@@ -165,27 +182,29 @@ You provide:
 - Leadership and team optimization advice
 
 Always:
-1. Ask clarifying questions when needed
-2. Provide specific, actionable advice
-3. Explain the reasoning behind recommendations
+1. Ask clarifying questions when needed to give better advice
+2. Provide specific, actionable advice tailored to their business
+3. Explain the reasoning behind every recommendation
 4. Consider the SMB context (limited resources, need for efficiency)
-5. Format responses clearly with headers and bullet points"""
+5. Format responses clearly with headers and bullet points
+6. Be encouraging but realistic about challenges
+7. Reference their industry and business when making suggestions"""
 
     context_prompts = {
-        "business_analysis": base_prompt + "\n\nFocus on analyzing the business model, identifying strengths, weaknesses, opportunities, and threats. Provide specific optimization strategies.",
-        "sop_generator": base_prompt + "\n\nFocus on creating detailed Standard Operating Procedures, checklists, and operational systems. Be thorough and practical.",
-        "market_analysis": base_prompt + "\n\nFocus on market trends, competitive analysis, and positioning strategies. Provide data-driven insights.",
-        "financial": base_prompt + "\n\nFocus on financial literacy, budgeting, cash flow management, and revenue optimization strategies.",
+        "business_analysis": base_prompt + "\n\nFocus on analyzing the business model, identifying strengths, weaknesses, opportunities, and threats. Provide specific optimization strategies for their industry.",
+        "sop_generator": base_prompt + "\n\nFocus on creating detailed Standard Operating Procedures, checklists, and operational systems. Be thorough, practical, and industry-appropriate.",
+        "market_analysis": base_prompt + "\n\nFocus on market trends, competitive analysis, and positioning strategies. Provide data-driven insights relevant to their sector.",
+        "financial": base_prompt + "\n\nFocus on financial literacy, budgeting, cash flow management, and revenue optimization strategies suitable for their business size.",
         "general": base_prompt
     }
     return context_prompts.get(context_type, base_prompt)
 
-async def get_ai_response(message: str, context_type: str, session_id: str) -> str:
+async def get_ai_response(message: str, context_type: str, session_id: str, user_data: dict = None) -> str:
     try:
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=session_id,
-            system_message=get_system_prompt(context_type)
+            system_message=get_system_prompt(context_type, user_data)
         )
         chat.with_model("openai", "gpt-5.2")
         
@@ -282,10 +301,18 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 async def chat(request: ChatRequest, current_user: dict = Depends(get_current_user)):
     session_id = request.session_id or f"{current_user['id']}_{uuid.uuid4()}"
     
+    # Pass user data for personalization
+    user_data = {
+        "name": current_user.get("name"),
+        "business_name": current_user.get("business_name"),
+        "industry": current_user.get("industry")
+    }
+    
     response = await get_ai_response(
         request.message,
         request.context_type or "general",
-        session_id
+        session_id,
+        user_data
     )
     
     # Store chat history
