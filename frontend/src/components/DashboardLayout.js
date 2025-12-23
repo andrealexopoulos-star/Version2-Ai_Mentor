@@ -49,7 +49,7 @@ const DashboardLayout = ({ children }) => {
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <span className="font-serif text-lg">Strategic Advisor</span>
+          <span className="font-serif text-lg">The Strategy Squad</span>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -84,11 +84,11 @@ const DashboardLayout = ({ children }) => {
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#ccff00] rounded-sm flex items-center justify-center">
-              <span className="text-[#0f2f24] font-bold">SA</span>
+              <span className="text-[#0f2f24] font-bold">TS</span>
             </div>
             <div>
-              <p className="font-serif text-lg text-white">Strategic</p>
-              <p className="text-white/60 text-sm -mt-1">Advisor</p>
+              <p className="font-serif text-lg text-white">The Strategy</p>
+              <p className="text-white/60 text-sm -mt-1">Squad</p>
             </div>
           </div>
         </div>

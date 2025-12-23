@@ -45,9 +45,9 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#0f2f24] rounded-sm flex items-center justify-center">
-              <span className="text-[#ccff00] font-bold text-sm">SA</span>
+              <span className="text-[#ccff00] font-bold text-sm">TS</span>
             </div>
-            <span className="font-serif text-xl font-semibold text-[#0f2f24]">Strategic Advisor</span>
+            <span className="font-serif text-xl font-semibold text-[#0f2f24]">The Strategy Squad</span>
           </div>
           <div className="flex items-center gap-4">
             <Button 
@@ -76,8 +76,8 @@ const Landing = () => {
           <div className="md:col-span-7 space-y-8 animate-fade-in">
             <p className="overline text-[#0f2f24]/60">AI-Powered Business Intelligence</p>
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif text-[#0f2f24] leading-tight">
-              Your Strategic <br />
-              <em className="text-[#0f2f24]/70">Business Partner</em>
+              Your AI-Powered <br />
+              <em className="text-[#0f2f24]/70">Strategy Squad</em>
             </h1>
             <p className="text-lg text-[#0f2f24]/70 max-w-xl leading-relaxed">
               Transform your small or medium business with AI-driven insights, 
@@ -211,12 +211,12 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#ccff00] rounded-sm flex items-center justify-center">
-              <span className="text-[#0f2f24] font-bold text-sm">SA</span>
+              <span className="text-[#0f2f24] font-bold text-sm">TS</span>
             </div>
-            <span className="font-serif text-xl text-white">Strategic Advisor</span>
+            <span className="font-serif text-xl text-white">The Strategy Squad</span>
           </div>
           <p className="text-white/40 text-sm">
-            © 2024 Strategic Advisor. Built for SMB success.
+            © 2024 The Strategy Squad. Built for SMB success.
           </p>
         </div>
       </footer>
