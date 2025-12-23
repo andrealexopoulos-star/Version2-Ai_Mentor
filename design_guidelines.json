@@ -1,0 +1,161 @@
+{
+  "identity": {
+    "name": "E1: The Anti-AI Designer",
+    "mission": "Create a Business Mentor platform that feels like a high-end consultancy firm, not a generic SaaS template.",
+    "core_values": [
+      "Fusion over Imitation",
+      "Emotion First",
+      "Content is King",
+      "Zoom In",
+      "Negative Space",
+      "Contrast"
+    ]
+  },
+  "typography": {
+    "strategy": "The Old Money Tech",
+    "fonts": {
+      "heading": {
+        "family": "Cormorant Garamond, serif",
+        "weights": ["400", "600", "700"],
+        "usage": "All H1-H3 headings. Use italic variant for emphasis words."
+      },
+      "body": {
+        "family": "Inter, sans-serif",
+        "weights": ["300", "400", "500", "600"],
+        "usage": "All body text, UI elements, and data tables."
+      },
+      "mono": {
+        "family": "JetBrains Mono, monospace",
+        "weights": ["400"],
+        "usage": "Financial figures, codes, and AI reasoning steps."
+      }
+    },
+    "rules": [
+      "Headings > 32px must use tracking-tight (-0.02em).",
+      "Overlines must be uppercase, text-xs, tracking-widest (0.2em).",
+      "Line height: leading-none for headers, leading-relaxed for body."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "name": "Deep Forest",
+        "hex": "#0f2f24",
+        "tailwind": "bg-[#0f2f24] text-white"
+      },
+      "secondary": {
+        "name": "Paper Sand",
+        "hex": "#f5f5f0",
+        "tailwind": "bg-[#f5f5f0] text-[#0f2f24]"
+      },
+      "accent": {
+        "name": "Electric Lime",
+        "hex": "#ccff00",
+        "tailwind": "bg-[#ccff00] text-black"
+      },
+      "surface": {
+        "card": "#ffffff",
+        "background": "#fafafa",
+        "border": "#e5e5e5"
+      }
+    },
+    "usage_rules": [
+      "Never use pure black (#000000). Use #0f2f24 (Deep Forest) for text.",
+      "Use Electric Lime ONLY for primary actions (CTAs) and AI insights.",
+      "Backgrounds should be Paper Sand (#f5f5f0) or White (#ffffff).",
+      "Gradients are FORBIDDEN unless it's a subtle noise overlay."
+    ]
+  },
+  "layout": {
+    "spacing": {
+      "philosophy": "Generous. Use 2x standard spacing.",
+      "scale": ["p-4", "p-8", "p-12", "p-16", "p-24", "p-32"],
+      "rule": "Containers with borders must have p-8 internal padding."
+    },
+    "grids": {
+      "marketing": {
+        "type": "The Tetris Grid",
+        "cols": "grid-cols-1 md:grid-cols-12",
+        "gap": "gap-8",
+        "rules": "Asymmetry is mandatory. Never fill 100% of the grid perfectly."
+      },
+      "dashboard": {
+        "type": "The Control Room",
+        "cols": "grid-cols-1 md:grid-cols-4",
+        "gap": "gap-6",
+        "rules": "Dense. Every pixel utilized. Use h-full to stretch children."
+      }
+    }
+  },
+  "components": {
+    "strategy": "Hybrid",
+    "marketing_components": "Custom HTML + Tailwind. No pre-built cards.",
+    "app_components": "Shadcn UI + Customization.",
+    "customization_rules": [
+      "Buttons: Sharp edges (rounded-sm) or Pill (rounded-full). No default rounded-md.",
+      "Cards: Remove shadows. Use 1px borders (border-black/10).",
+      "Inputs: bg-white, border-b-2 (underline style) or solid 1px border.",
+      "Dropdowns: Must have solid backgrounds (white). No transparency."
+    ],
+    "libraries": {
+      "charts": "Recharts (via Shadcn Charts)",
+      "icons": "Lucide React (default), Phosphor Icons (for marketing)",
+      "toast": "Sonner",
+      "date": "Shadcn Calendar"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": {
+      "style": "Crystal Clarity",
+      "classes": "bg-white/80 backdrop-blur-xl border-b border-white/20"
+    },
+    "borders": {
+      "style": "Tracing Beam",
+      "description": "Active elements get a glowing border effect."
+    },
+    "texture": {
+      "style": "Noise Overlay",
+      "css": "background-image: url('data:image/svg+xml,...'); opacity: 0.03;"
+    }
+  },
+  "images": {
+    "hero_bg": {
+      "url": "https://images.unsplash.com/photo-1758409426632-e0a240c52038?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Modern strategic office meeting",
+      "usage": "Hero section background or main visual"
+    },
+    "feature_analysis": {
+      "url": "https://images.unsplash.com/photo-1759668358492-927c1a1062b0?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Focused work on laptop",
+      "usage": "Business Analysis feature section"
+    },
+    "feature_data": {
+      "url": "https://images.unsplash.com/photo-1765046255517-412341954c4c?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Abstract data visualization",
+      "usage": "Market Analysis or Financial Insights section"
+    },
+    "auth_bg": {
+      "url": "https://images.unsplash.com/photo-1758518731814-77fa04b3c67d?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Business professionals talking",
+      "usage": "Split screen background for Login/Register"
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. INSTALL FONTS: Add Cormorant Garamond and Inter via Google Fonts in index.html.",
+    "2. CONFIGURE TAILWIND: Update tailwind.config.js with the 'Deep Forest' and 'Paper Sand' palette.",
+    "3. BUILD LAYOUTS: Use the 'Tetris Grid' for the landing page. Do not use standard 3-column layouts.",
+    "4. DASHBOARD: Use the 'Control Room' grid. Keep it dense but readable.",
+    "5. DATA-TESTID: Add data-testid to ALL interactive elements (buttons, inputs, links).",
+    "6. NO GRADIENTS: Use solid colors and whitespace. Texture > Gradient.",
+    "7. USE SONNER: Replace default toasts with Sonner.",
+    "8. EXPORTS: Use named exports for components, default exports for pages."
+  ],
+  "universal_guidelines": [
+    "Avoid 'AI slop' (generic centered layouts, blue gradients).",
+    "Create depth with z-index and layered elements.",
+    "Micro-animations on hover are mandatory.",
+    "Never use 'transition: all'. Animate specific properties.",
+    "Do not center align the App container.",
+    "Use 2-3x more spacing than typical designs."
+  ]
+}
