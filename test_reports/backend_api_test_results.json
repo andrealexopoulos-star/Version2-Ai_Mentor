@@ -1,0 +1,130 @@
+{
+  "summary": "Backend API testing completed - 13/20 tests passed (65.0%)",
+  "total_tests": 20,
+  "passed_tests": 13,
+  "failed_tests": 7,
+  "success_rate": "65.0%",
+  "test_details": [
+    {
+      "test_name": "Health Check",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:43:38.201420"
+    },
+    {
+      "test_name": "Root Endpoint",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:43:38.244901"
+    },
+    {
+      "test_name": "User Registration",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:43:38.559903"
+    },
+    {
+      "test_name": "Get Current User",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:43:38.602678"
+    },
+    {
+      "test_name": "Send Chat Message",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:43:51.634089"
+    },
+    {
+      "test_name": "Get Chat History",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:43:51.693606"
+    },
+    {
+      "test_name": "Get Chat Sessions",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:43:51.732516"
+    },
+    {
+      "test_name": "Create Analysis",
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
+      "timestamp": "2025-12-23T19:44:21.788610"
+    },
+    {
+      "test_name": "Get All Analyses",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:44:33.630418"
+    },
+    {
+      "test_name": "Create Document",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:44:33.712812"
+    },
+    {
+      "test_name": "Get All Documents",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:44:33.751361"
+    },
+    {
+      "test_name": "Get Specific Document",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:44:33.790293"
+    },
+    {
+      "test_name": "Update Document",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:44:33.828886"
+    },
+    {
+      "test_name": "Generate SOP",
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
+      "timestamp": "2025-12-23T19:45:03.887629"
+    },
+    {
+      "test_name": "Generate Checklist",
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
+      "timestamp": "2025-12-23T19:45:33.985431"
+    },
+    {
+      "test_name": "Generate Action Plan",
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
+      "timestamp": "2025-12-23T19:46:04.105441"
+    },
+    {
+      "test_name": "Get Dashboard Stats",
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
+      "timestamp": "2025-12-23T19:46:34.196654"
+    },
+    {
+      "test_name": "Get Admin Stats",
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
+      "timestamp": "2025-12-23T19:47:04.287357"
+    },
+    {
+      "test_name": "Get All Users",
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
+      "timestamp": "2025-12-23T19:47:34.399802"
+    },
+    {
+      "test_name": "Delete Document",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-23T19:47:50.798438"
+    }
+  ],
+  "timestamp": "2025-12-23T19:47:50.799072"
+}
