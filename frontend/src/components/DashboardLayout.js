@@ -1,0 +1,170 @@
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Button } from './ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { 
+  LayoutDashboard, MessageSquare, BarChart3, FileText, 
+  Target, FolderOpen, Settings, LogOut, Menu, X,
+  ChevronDown, Shield, User
+} from 'lucide-react';
+
+const DashboardLayout = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout, isAdmin } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const navItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: MessageSquare, label: 'AI Advisor', path: '/advisor' },
+    { icon: BarChart3, label: 'Business Analysis', path: '/analysis' },
+    { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
+    { icon: Target, label: 'Market Analysis', path: '/market-analysis' },
+    { icon: FolderOpen, label: 'My Documents', path: '/documents' },
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+
+  return (
+    <div className="min-h-screen bg-[#f5f5f0]">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0f2f24] text-white px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 hover:bg-white/10 rounded-sm"
+            data-testid="mobile-menu-toggle"
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <span className="font-serif text-lg">Strategic Advisor</span>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-8 h-8 bg-[#ccff00] rounded-full flex items-center justify-center text-[#0f2f24] font-medium">
+              {user?.name?.charAt(0).toUpperCase()}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-white w-48">
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <Settings className="w-4 h-4 mr-2" /> Settings
+            </DropdownMenuItem>
+            {isAdmin() && (
+              <DropdownMenuItem onClick={() => navigate('/admin')}>
+                <Shield className="w-4 h-4 mr-2" /> Admin Panel
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Sidebar */}
+      <aside 
+        className={`fixed top-0 left-0 h-full w-64 sidebar z-40 transform transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#ccff00] rounded-sm flex items-center justify-center">
+              <span className="text-[#0f2f24] font-bold">SA</span>
+            </div>
+            <div>
+              <p className="font-serif text-lg text-white">Strategic</p>
+              <p className="text-white/60 text-sm -mt-1">Advisor</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="p-4 space-y-1">
+          {navItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => {
+                navigate(item.path);
+                setSidebarOpen(false);
+              }}
+              className={`sidebar-link w-full ${isActive(item.path) ? 'active' : ''}`}
+              data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
+            >
+              <item.icon className="w-5 h-5" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* User Section */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-sm transition-colors" data-testid="user-menu-trigger">
+                <div className="w-10 h-10 bg-[#ccff00] rounded-full flex items-center justify-center text-[#0f2f24] font-medium">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-white text-sm font-medium truncate">{user?.name}</p>
+                  <p className="text-white/50 text-xs truncate">{user?.email}</p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-white/50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="bg-white w-56">
+              <div className="px-3 py-2 border-b">
+                <p className="text-sm font-medium text-[#0f2f24]">{user?.name}</p>
+                <p className="text-xs text-[#0f2f24]/60">{user?.email}</p>
+                {user?.role === 'admin' && (
+                  <span className="badge badge-lime text-xs mt-2">Admin</span>
+                )}
+              </div>
+              <DropdownMenuItem onClick={() => navigate('/settings')} data-testid="settings-menu-item">
+                <User className="w-4 h-4 mr-2" /> Profile & Settings
+              </DropdownMenuItem>
+              {isAdmin() && (
+                <DropdownMenuItem onClick={() => navigate('/admin')} data-testid="admin-menu-item">
+                  <Shield className="w-4 h-4 mr-2" /> Admin Panel
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600" data-testid="logout-menu-item">
+                <LogOut className="w-4 h-4 mr-2" /> Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </aside>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <main className="lg:ml-64 min-h-screen pt-16 lg:pt-0">
+        {children}
+      </main>
+    </div>
+  );
+};
+
+export default DashboardLayout;
