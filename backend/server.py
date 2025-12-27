@@ -1213,15 +1213,30 @@ def calculate_profile_completeness(profile: dict) -> int:
     if not profile:
         return 0
     
-    fields = [
-        "business_name", "industry", "business_type", "year_founded",
-        "employee_count", "annual_revenue", "target_market",
-        "main_products_services", "competitive_advantages",
-        "main_challenges", "business_goals"
+    # Core fields (weighted higher)
+    core_fields = [
+        "business_name", "industry", "business_type", "target_market",
+        "main_products_services", "competitive_advantages", "main_challenges", 
+        "business_goals", "ideal_customer_profile"
     ]
     
-    filled = sum(1 for f in fields if profile.get(f))
-    return int((filled / len(fields)) * 100)
+    # Extended fields
+    extended_fields = [
+        "year_founded", "employee_count", "annual_revenue", "location",
+        "pricing_model", "business_model", "sales_cycle_length",
+        "mission_statement", "short_term_goals", "long_term_goals",
+        "founder_background", "key_team_members", "growth_strategy",
+        "communication_style", "risk_tolerance"
+    ]
+    
+    core_filled = sum(1 for f in core_fields if profile.get(f))
+    extended_filled = sum(1 for f in extended_fields if profile.get(f))
+    
+    # Core fields worth 60%, extended worth 40%
+    core_score = (core_filled / len(core_fields)) * 60
+    extended_score = (extended_filled / len(extended_fields)) * 40
+    
+    return int(core_score + extended_score)
 
 # ==================== ADMIN ROUTES ====================
 
