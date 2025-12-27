@@ -338,7 +338,8 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
         request.message,
         request.context_type or "general",
         session_id,
-        user_data
+        user_data,
+        use_advanced=False
     )
     
     # Store chat history
@@ -386,7 +387,13 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/analyses", response_model=AnalysisResponse)
 async def create_analysis(analysis: AnalysisCreate, current_user: dict = Depends(get_current_user)):
-    # Generate AI analysis
+    # Generate AI analysis using advanced model
+    user_data = {
+        "name": current_user.get("name"),
+        "business_name": current_user.get("business_name"),
+        "industry": current_user.get("industry")
+    }
+    
     prompt = f"""Analyze this business context and provide comprehensive insights:
 
 Title: {analysis.title}
@@ -394,14 +401,16 @@ Analysis Type: {analysis.analysis_type}
 Business Context: {analysis.business_context}
 
 Please provide:
-1. A detailed analysis
-2. Key recommendations (numbered list)
-3. Specific action items (numbered list)
+1. A detailed analysis (be thorough and specific)
+2. Key recommendations (numbered list with reasoning)
+3. Specific action items (numbered list with priority levels)
+4. Potential risks and how to mitigate them
+5. Quick wins that can be implemented immediately
 
 Format your response with clear sections using markdown headers."""
 
     session_id = f"analysis_{uuid.uuid4()}"
-    ai_response = await get_ai_response(prompt, analysis.analysis_type, session_id)
+    ai_response = await get_ai_response(prompt, analysis.analysis_type, session_id, user_data, use_advanced=True)
     
     # Parse recommendations and action items from response
     recommendations = []
@@ -546,23 +555,34 @@ async def generate_sop(request: dict, current_user: dict = Depends(get_current_u
     topic = request.get("topic", "")
     business_context = request.get("business_context", "")
     
+    user_data = {
+        "name": current_user.get("name"),
+        "business_name": current_user.get("business_name"),
+        "industry": current_user.get("industry")
+    }
+    
     prompt = f"""Create a comprehensive Standard Operating Procedure (SOP) for:
 
 Topic: {topic}
 Business Context: {business_context}
+Business: {user_data.get('business_name', 'N/A')}
+Industry: {user_data.get('industry', 'General')}
 
 Please provide a complete SOP including:
 1. Purpose and Scope
-2. Responsibilities
-3. Step-by-step Procedures (numbered)
-4. Quality Checks
+2. Responsibilities (who does what)
+3. Step-by-step Procedures (numbered with detailed sub-steps)
+4. Quality Checks and Verification Points
 5. Documentation Requirements
-6. Review and Update Schedule
+6. Troubleshooting Common Issues
+7. Review and Update Schedule
+8. Key Performance Indicators (KPIs) to track
 
+Make this specific to the industry and practical for immediate implementation.
 Format using markdown with clear headers and numbered steps."""
 
     session_id = f"sop_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "sop_generator", session_id)
+    response = await get_ai_response(prompt, "sop_generator", session_id, user_data, use_advanced=True)
     
     return {"sop_content": response, "topic": topic}
 
@@ -571,21 +591,32 @@ async def generate_checklist(request: dict, current_user: dict = Depends(get_cur
     topic = request.get("topic", "")
     context = request.get("context", "")
     
+    user_data = {
+        "name": current_user.get("name"),
+        "business_name": current_user.get("business_name"),
+        "industry": current_user.get("industry")
+    }
+    
     prompt = f"""Create a comprehensive checklist for:
 
 Topic: {topic}
 Context: {context}
+Business: {user_data.get('business_name', 'N/A')}
+Industry: {user_data.get('industry', 'General')}
 
 Please provide:
 1. A clear title
 2. Categorized checklist items with checkboxes (use [ ] format)
-3. Priority indicators (High/Medium/Low)
+3. Priority indicators (🔴 High / 🟡 Medium / 🟢 Low)
 4. Estimated time for each item if applicable
+5. Dependencies between items
+6. Success criteria for completion
 
+Make this industry-specific and actionable.
 Format as a practical, actionable checklist using markdown."""
 
     session_id = f"checklist_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "sop_generator", session_id)
+    response = await get_ai_response(prompt, "sop_generator", session_id, user_data, use_advanced=True)
     
     return {"checklist_content": response, "topic": topic}
 
@@ -595,27 +626,134 @@ async def generate_action_plan(request: dict, current_user: dict = Depends(get_c
     timeline = request.get("timeline", "3 months")
     resources = request.get("resources", "")
     
+    user_data = {
+        "name": current_user.get("name"),
+        "business_name": current_user.get("business_name"),
+        "industry": current_user.get("industry")
+    }
+    
     prompt = f"""Create a strategic action plan for:
 
 Goal: {goal}
 Timeline: {timeline}
 Available Resources: {resources}
+Business: {user_data.get('business_name', 'N/A')}
+Industry: {user_data.get('industry', 'General')}
 
 Please provide:
 1. Executive Summary
-2. Milestones with dates
-3. Key activities and tasks
-4. Resource allocation
-5. Risk mitigation strategies
-6. Success metrics and KPIs
-7. Review checkpoints
+2. SMART Goals breakdown
+3. Milestones with specific dates/weeks
+4. Key activities and tasks (with owners if applicable)
+5. Resource allocation and budget considerations
+6. Risk assessment and mitigation strategies
+7. Success metrics and KPIs
+8. Weekly/Monthly review checkpoints
+9. Contingency plans for common obstacles
+10. Quick wins to build momentum
 
+Make this specific to their industry and realistic for an SMB.
 Format with clear structure and actionable steps."""
 
     session_id = f"action_plan_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "business_analysis", session_id)
+    response = await get_ai_response(prompt, "business_analysis", session_id, user_data, use_advanced=True)
     
     return {"action_plan": response, "goal": goal, "timeline": timeline}
+
+
+# ==================== BUSINESS DIAGNOSIS (AGI-Ready) ====================
+
+@api_router.post("/diagnose")
+async def diagnose_business(request: dict, current_user: dict = Depends(get_current_user)):
+    """AGI-Ready comprehensive business diagnosis"""
+    symptoms = request.get("symptoms", "")
+    areas = request.get("areas", [])
+    urgency = request.get("urgency", "medium")
+    
+    user_data = {
+        "name": current_user.get("name"),
+        "business_name": current_user.get("business_name"),
+        "industry": current_user.get("industry")
+    }
+    
+    areas_text = ", ".join(areas) if areas else "all areas"
+    
+    prompt = f"""As an expert business diagnostician, analyze these business issues:
+
+Business: {user_data.get('business_name', 'N/A')}
+Industry: {user_data.get('industry', 'General')}
+Problem Areas: {areas_text}
+Urgency Level: {urgency}
+
+Symptoms/Issues Reported:
+{symptoms}
+
+Please provide a comprehensive diagnosis:
+
+## 1. Root Cause Analysis
+- Identify the underlying causes (not just symptoms)
+- Explain the chain of causation
+- Rate confidence level for each diagnosis
+
+## 2. Impact Assessment
+- Immediate impacts on operations
+- Financial implications
+- Customer/market impact
+- Team/culture effects
+
+## 3. Prioritized Solutions
+For each solution provide:
+- Implementation difficulty (Easy/Medium/Hard)
+- Time to implement
+- Expected ROI
+- Resources needed
+
+## 4. Emergency Actions (if urgency is high)
+- What to do in the next 24-48 hours
+- Quick stabilization measures
+
+## 5. Long-term Prevention
+- Systemic changes to prevent recurrence
+- Monitoring systems to implement
+- Early warning indicators
+
+## 6. Success Metrics
+- How to measure if the problem is truly solved
+- Leading vs lagging indicators
+
+Be specific, actionable, and consider SMB resource constraints."""
+
+    session_id = f"diagnosis_{uuid.uuid4()}"
+    response = await get_ai_response(prompt, "business_analysis", session_id, user_data, use_advanced=True)
+    
+    # Save diagnosis
+    diagnosis_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "symptoms": symptoms,
+        "areas": areas,
+        "urgency": urgency,
+        "diagnosis": response,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.diagnoses.insert_one(diagnosis_doc)
+    
+    return {
+        "diagnosis": response,
+        "diagnosis_id": diagnosis_doc["id"],
+        "areas": areas,
+        "urgency": urgency
+    }
+
+
+@api_router.get("/diagnoses")
+async def get_diagnoses(current_user: dict = Depends(get_current_user)):
+    """Get user's business diagnoses history"""
+    diagnoses = await db.diagnoses.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(20).to_list(20)
+    return diagnoses
 
 # ==================== ADMIN ROUTES ====================
 
