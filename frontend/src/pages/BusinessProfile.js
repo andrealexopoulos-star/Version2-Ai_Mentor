@@ -1,0 +1,736 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Progress } from '../components/ui/progress';
+import { Badge } from '../components/ui/badge';
+import axios from 'axios';
+import { 
+  Building2, Users, Target, Briefcase, TrendingUp, Settings2,
+  Loader2, Save, CheckCircle, AlertCircle, Lightbulb, DollarSign,
+  Globe, Heart, Rocket, Brain
+} from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
+import { toast } from 'sonner';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const industries = [
+  'Retail & E-commerce', 'Professional Services', 'Food & Hospitality',
+  'Healthcare', 'Technology', 'Manufacturing', 'Construction',
+  'Real Estate', 'Education', 'Finance', 'Marketing & Advertising',
+  'Transportation & Logistics', 'Entertainment & Media', 'Non-profit', 'Other'
+];
+
+const businessTypes = ['Sole Proprietorship', 'LLC', 'Corporation', 'Partnership', 'S-Corp', 'C-Corp', 'Non-profit', 'Cooperative'];
+const employeeCounts = ['Just me', '2-5', '6-10', '11-25', '26-50', '51-100', '101-250', '250+'];
+const revenueRanges = ['Pre-revenue', '< $50K', '$50K - $100K', '$100K - $250K', '$250K - $500K', '$500K - $1M', '$1M - $2.5M', '$2.5M - $5M', '$5M - $10M', '$10M+'];
+const fundingStages = ['Bootstrapped', 'Friends & Family', 'Angel', 'Seed', 'Series A', 'Series B+', 'Profitable'];
+const businessModels = ['B2B', 'B2C', 'B2B2C', 'Marketplace', 'SaaS', 'Subscription', 'Freemium', 'Agency/Services'];
+const pricingModels = ['Hourly', 'Project-based', 'Retainer', 'Subscription', 'One-time purchase', 'Freemium', 'Usage-based', 'Tiered'];
+const communicationStyles = ['Direct & Concise', 'Detailed & Thorough', 'Visual & Examples', 'Data-driven', 'Conversational'];
+const decisionStyles = ['Data-driven', 'Intuitive', 'Collaborative', 'Quick & Decisive', 'Careful & Deliberate'];
+const riskTolerances = ['Conservative', 'Moderate', 'Aggressive', 'Calculated Risk-taker'];
+const timeAvailabilities = ['< 2 hours/week', '2-5 hours/week', '5-10 hours/week', '10-20 hours/week', '20+ hours/week'];
+const adviceFormats = ['Action items & checklists', 'Detailed analysis', 'Strategic discussion', 'Quick tips', 'Step-by-step guides'];
+
+const acquisitionChannels = [
+  'Organic Search (SEO)', 'Paid Ads (Google/Meta)', 'Social Media', 'Content Marketing',
+  'Email Marketing', 'Referrals', 'Networking', 'Cold Outreach', 'Partnerships',
+  'Events & Trade Shows', 'PR & Media', 'Affiliate Marketing'
+];
+
+const crmSystems = ['None', 'HubSpot', 'Salesforce', 'Zoho CRM', 'Pipedrive', 'Monday.com', 'Notion', 'Airtable', 'Custom/Other'];
+const accountingSystems = ['None', 'QuickBooks', 'Xero', 'FreshBooks', 'Wave', 'Sage', 'NetSuite', 'Custom/Other'];
+const pmTools = ['None', 'Asana', 'Monday.com', 'Trello', 'ClickUp', 'Notion', 'Jira', 'Basecamp', 'Custom/Other'];
+
+const BusinessProfile = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState({});
+  const [completeness, setCompleteness] = useState(0);
+  const [activeTab, setActiveTab] = useState('basics');
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const [profileRes, statsRes] = await Promise.all([
+        axios.get(`${API}/business-profile`),
+        axios.get(`${API}/data-center/stats`)
+      ]);
+      setProfile(profileRes.data);
+      setCompleteness(statsRes.data.profile_completeness || 0);
+    } catch (error) {
+      toast.error('Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/business-profile`, profile);
+      toast.success('Profile saved successfully!');
+      fetchProfile();
+    } catch (error) {
+      toast.error('Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateProfile = (field, value) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleArrayItem = (field, item) => {
+    const current = profile[field] || [];
+    const updated = current.includes(item)
+      ? current.filter(i => i !== item)
+      : [...current, item];
+    updateProfile(field, updated);
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0f2f24]" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="p-8" data-testid="business-profile-page">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+            <div>
+              <p className="overline text-[#0f2f24]/60 mb-2">Your Business DNA</p>
+              <h1 className="text-3xl md:text-4xl font-serif text-[#0f2f24]">Business Profile</h1>
+              <p className="text-[#0f2f24]/60 mt-2">
+                The more we know, the better your AI advisor becomes
+              </p>
+            </div>
+            <Button onClick={handleSave} className="btn-lime" disabled={saving} data-testid="save-profile-btn">
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Profile
+            </Button>
+          </div>
+
+          {/* Progress Card */}
+          <Card className="card-clean mb-8 bg-gradient-to-r from-[#0f2f24] to-[#1a4a3a] text-white">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    {completeness >= 80 ? (
+                      <CheckCircle className="w-5 h-5 text-[#ccff00]" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-[#ccff00]" />
+                    )}
+                    <span className="font-medium">Profile Completeness</span>
+                  </div>
+                  <Progress value={completeness} className="h-3 bg-white/20" />
+                  <p className="text-sm text-white/70 mt-2">
+                    {completeness < 50 && "Complete your profile to unlock personalized AI insights"}
+                    {completeness >= 50 && completeness < 80 && "Good progress! Add more details for better recommendations"}
+                    {completeness >= 80 && "Excellent! Your AI advisor is fully personalized"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-4xl font-serif text-[#ccff00]">{completeness}%</p>
+                  <p className="text-sm text-white/60">Complete</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="bg-[#f5f5f0] p-1 mb-6 flex-wrap h-auto gap-1">
+              <TabsTrigger value="basics" className="data-[state=active]:bg-white">
+                <Building2 className="w-4 h-4 mr-2" /> Basics
+              </TabsTrigger>
+              <TabsTrigger value="market" className="data-[state=active]:bg-white">
+                <Target className="w-4 h-4 mr-2" /> Market
+              </TabsTrigger>
+              <TabsTrigger value="product" className="data-[state=active]:bg-white">
+                <Briefcase className="w-4 h-4 mr-2" /> Product
+              </TabsTrigger>
+              <TabsTrigger value="team" className="data-[state=active]:bg-white">
+                <Users className="w-4 h-4 mr-2" /> Team
+              </TabsTrigger>
+              <TabsTrigger value="strategy" className="data-[state=active]:bg-white">
+                <Rocket className="w-4 h-4 mr-2" /> Strategy
+              </TabsTrigger>
+              <TabsTrigger value="preferences" className="data-[state=active]:bg-white">
+                <Brain className="w-4 h-4 mr-2" /> Preferences
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="data-[state=active]:bg-white">
+                <Settings2 className="w-4 h-4 mr-2" /> Tools
+              </TabsTrigger>
+            </TabsList>
+
+            {/* BASICS TAB */}
+            <TabsContent value="basics">
+              <Card className="card-clean">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-[#ccff00]" />
+                    Business Basics
+                  </CardTitle>
+                  <CardDescription>Core information about your business</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Business Name *</Label>
+                      <Input
+                        value={profile.business_name || ''}
+                        onChange={(e) => updateProfile('business_name', e.target.value)}
+                        placeholder="Your Company LLC"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Industry *</Label>
+                      <Select value={profile.industry || ''} onValueChange={(v) => updateProfile('industry', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {industries.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Business Type</Label>
+                      <Select value={profile.business_type || ''} onValueChange={(v) => updateProfile('business_type', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {businessTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Year Founded</Label>
+                      <Input
+                        type="number"
+                        value={profile.year_founded || ''}
+                        onChange={(e) => updateProfile('year_founded', parseInt(e.target.value) || null)}
+                        placeholder="2020"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Location</Label>
+                      <Input
+                        value={profile.location || ''}
+                        onChange={(e) => updateProfile('location', e.target.value)}
+                        placeholder="City, State/Country"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Website</Label>
+                      <Input
+                        value={profile.website || ''}
+                        onChange={(e) => updateProfile('website', e.target.value)}
+                        placeholder="https://yourcompany.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h4 className="font-medium mb-4 flex items-center gap-2">
+                      <DollarSign className="w-4 h-4" /> Size & Financials
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label>Employee Count</Label>
+                        <Select value={profile.employee_count || ''} onValueChange={(v) => updateProfile('employee_count', v)}>
+                          <SelectTrigger><SelectValue placeholder="Select range" /></SelectTrigger>
+                          <SelectContent className="bg-white">
+                            {employeeCounts.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Annual Revenue</Label>
+                        <Select value={profile.annual_revenue || ''} onValueChange={(v) => updateProfile('annual_revenue', v)}>
+                          <SelectTrigger><SelectValue placeholder="Select range" /></SelectTrigger>
+                          <SelectContent className="bg-white">
+                            {revenueRanges.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Funding Stage</Label>
+                        <Select value={profile.funding_stage || ''} onValueChange={(v) => updateProfile('funding_stage', v)}>
+                          <SelectTrigger><SelectValue placeholder="Select stage" /></SelectTrigger>
+                          <SelectContent className="bg-white">
+                            {fundingStages.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* MARKET TAB */}
+            <TabsContent value="market">
+              <Card className="card-clean">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Target className="w-5 h-5 text-[#ccff00]" />
+                    Market & Customers
+                  </CardTitle>
+                  <CardDescription>Understanding your market helps us tailor recommendations</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>Target Market *</Label>
+                    <Textarea
+                      value={profile.target_market || ''}
+                      onChange={(e) => updateProfile('target_market', e.target.value)}
+                      placeholder="Describe your target market (demographics, psychographics, pain points)..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Ideal Customer Profile *</Label>
+                    <Textarea
+                      value={profile.ideal_customer_profile || ''}
+                      onChange={(e) => updateProfile('ideal_customer_profile', e.target.value)}
+                      placeholder="Describe your perfect customer - who are they, what do they need, why do they buy from you?"
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Geographic Focus</Label>
+                      <Input
+                        value={profile.geographic_focus || ''}
+                        onChange={(e) => updateProfile('geographic_focus', e.target.value)}
+                        placeholder="Local, Regional, National, Global..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Business Model</Label>
+                      <Select value={profile.business_model || ''} onValueChange={(v) => updateProfile('business_model', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {businessModels.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>Customer Acquisition Channels (select all that apply)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {acquisitionChannels.map(channel => (
+                        <Badge
+                          key={channel}
+                          variant={profile.customer_acquisition_channels?.includes(channel) ? 'default' : 'outline'}
+                          className={`cursor-pointer transition-colors ${
+                            profile.customer_acquisition_channels?.includes(channel)
+                              ? 'bg-[#ccff00] text-[#0f2f24] hover:bg-[#b8e600]'
+                              : 'hover:bg-[#0f2f24]/5'
+                          }`}
+                          onClick={() => toggleArrayItem('customer_acquisition_channels', channel)}
+                        >
+                          {channel}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Average Customer Lifetime Value</Label>
+                      <Input
+                        value={profile.average_customer_value || ''}
+                        onChange={(e) => updateProfile('average_customer_value', e.target.value)}
+                        placeholder="e.g., $5,000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Customer Retention Rate</Label>
+                      <Input
+                        value={profile.customer_retention_rate || ''}
+                        onChange={(e) => updateProfile('customer_retention_rate', e.target.value)}
+                        placeholder="e.g., 85%"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* PRODUCT TAB */}
+            <TabsContent value="product">
+              <Card className="card-clean">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-[#ccff00]" />
+                    Products & Services
+                  </CardTitle>
+                  <CardDescription>What you offer and why customers choose you</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>Main Products/Services *</Label>
+                    <Textarea
+                      value={profile.main_products_services || ''}
+                      onChange={(e) => updateProfile('main_products_services', e.target.value)}
+                      placeholder="List and describe your main products or services..."
+                      className="min-h-[120px]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Pricing Model</Label>
+                      <Select value={profile.pricing_model || ''} onValueChange={(v) => updateProfile('pricing_model', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {pricingModels.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sales Cycle Length</Label>
+                      <Input
+                        value={profile.sales_cycle_length || ''}
+                        onChange={(e) => updateProfile('sales_cycle_length', e.target.value)}
+                        placeholder="e.g., 2-4 weeks, 3 months"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Unique Value Proposition</Label>
+                    <Textarea
+                      value={profile.unique_value_proposition || ''}
+                      onChange={(e) => updateProfile('unique_value_proposition', e.target.value)}
+                      placeholder="What makes your offering unique? Why should customers choose you over alternatives?"
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Competitive Advantages *</Label>
+                    <Textarea
+                      value={profile.competitive_advantages || ''}
+                      onChange={(e) => updateProfile('competitive_advantages', e.target.value)}
+                      placeholder="What do you do better than your competitors? What's your moat?"
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* TEAM TAB */}
+            <TabsContent value="team">
+              <Card className="card-clean">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#ccff00]" />
+                    Team & Leadership
+                  </CardTitle>
+                  <CardDescription>Your team is your greatest asset</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>Founder/Owner Background</Label>
+                    <Textarea
+                      value={profile.founder_background || ''}
+                      onChange={(e) => updateProfile('founder_background', e.target.value)}
+                      placeholder="Your professional background, expertise, and why you started this business..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Key Team Members & Roles</Label>
+                    <Textarea
+                      value={profile.key_team_members || ''}
+                      onChange={(e) => updateProfile('key_team_members', e.target.value)}
+                      placeholder="List key team members and their roles/responsibilities..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Team Strengths</Label>
+                      <Textarea
+                        value={profile.team_strengths || ''}
+                        onChange={(e) => updateProfile('team_strengths', e.target.value)}
+                        placeholder="What does your team excel at?"
+                        className="min-h-[80px]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Team Gaps / Hiring Needs</Label>
+                      <Textarea
+                        value={profile.team_gaps || ''}
+                        onChange={(e) => updateProfile('team_gaps', e.target.value)}
+                        placeholder="What roles or skills are you missing?"
+                        className="min-h-[80px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Company Culture</Label>
+                    <Textarea
+                      value={profile.company_culture || ''}
+                      onChange={(e) => updateProfile('company_culture', e.target.value)}
+                      placeholder="How would you describe your company culture? What values drive your team?"
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* STRATEGY TAB */}
+            <TabsContent value="strategy">
+              <Card className="card-clean">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Rocket className="w-5 h-5 text-[#ccff00]" />
+                    Strategy & Vision
+                  </CardTitle>
+                  <CardDescription>Where you're going and how you'll get there</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Mission Statement</Label>
+                      <Textarea
+                        value={profile.mission_statement || ''}
+                        onChange={(e) => updateProfile('mission_statement', e.target.value)}
+                        placeholder="Why does your business exist? What problem do you solve?"
+                        className="min-h-[80px]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Vision Statement</Label>
+                      <Textarea
+                        value={profile.vision_statement || ''}
+                        onChange={(e) => updateProfile('vision_statement', e.target.value)}
+                        placeholder="What does success look like in 5-10 years?"
+                        className="min-h-[80px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Short-term Goals (6-12 months)</Label>
+                    <Textarea
+                      value={profile.short_term_goals || ''}
+                      onChange={(e) => updateProfile('short_term_goals', e.target.value)}
+                      placeholder="What do you want to achieve in the next year?"
+                      className="min-h-[80px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Long-term Goals (2-5 years)</Label>
+                    <Textarea
+                      value={profile.long_term_goals || ''}
+                      onChange={(e) => updateProfile('long_term_goals', e.target.value)}
+                      placeholder="Where do you see the business in 2-5 years?"
+                      className="min-h-[80px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Main Challenges *</Label>
+                    <Textarea
+                      value={profile.main_challenges || ''}
+                      onChange={(e) => updateProfile('main_challenges', e.target.value)}
+                      placeholder="What are your biggest obstacles or pain points right now?"
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Growth Strategy</Label>
+                    <Textarea
+                      value={profile.growth_strategy || ''}
+                      onChange={(e) => updateProfile('growth_strategy', e.target.value)}
+                      placeholder="How do you plan to grow? New markets, products, partnerships?"
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* PREFERENCES TAB */}
+            <TabsContent value="preferences">
+              <Card className="card-clean">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-[#ccff00]" />
+                    Advisory Preferences
+                  </CardTitle>
+                  <CardDescription>Help us communicate with you effectively</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="p-4 bg-[#ccff00]/10 rounded-sm mb-6">
+                    <div className="flex items-start gap-3">
+                      <Lightbulb className="w-5 h-5 text-[#0f2f24] flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-[#0f2f24]">
+                        These preferences help your AI advisor tailor its communication style, 
+                        recommendations, and advice format to match how you work best.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Communication Style</Label>
+                      <Select value={profile.communication_style || ''} onValueChange={(v) => updateProfile('communication_style', v)}>
+                        <SelectTrigger><SelectValue placeholder="How should we communicate?" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {communicationStyles.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Decision Making Style</Label>
+                      <Select value={profile.decision_making_style || ''} onValueChange={(v) => updateProfile('decision_making_style', v)}>
+                        <SelectTrigger><SelectValue placeholder="How do you make decisions?" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {decisionStyles.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Risk Tolerance</Label>
+                      <Select value={profile.risk_tolerance || ''} onValueChange={(v) => updateProfile('risk_tolerance', v)}>
+                        <SelectTrigger><SelectValue placeholder="Your risk appetite" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {riskTolerances.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Time for Strategy (weekly)</Label>
+                      <Select value={profile.time_availability || ''} onValueChange={(v) => updateProfile('time_availability', v)}>
+                        <SelectTrigger><SelectValue placeholder="How much time?" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {timeAvailabilities.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Preferred Advice Format</Label>
+                    <Select value={profile.preferred_advice_format || ''} onValueChange={(v) => updateProfile('preferred_advice_format', v)}>
+                      <SelectTrigger><SelectValue placeholder="How should advice be delivered?" /></SelectTrigger>
+                      <SelectContent className="bg-white">
+                        {adviceFormats.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* TOOLS TAB */}
+            <TabsContent value="tools">
+              <Card className="card-clean">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Settings2 className="w-5 h-5 text-[#ccff00]" />
+                    Tools & Integrations
+                  </CardTitle>
+                  <CardDescription>The software and systems you use</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label>CRM System</Label>
+                      <Select value={profile.crm_system || ''} onValueChange={(v) => updateProfile('crm_system', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select CRM" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {crmSystems.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Accounting System</Label>
+                      <Select value={profile.accounting_system || ''} onValueChange={(v) => updateProfile('accounting_system', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select system" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {accountingSystems.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Project Management</Label>
+                      <Select value={profile.project_management_tool || ''} onValueChange={(v) => updateProfile('project_management_tool', v)}>
+                        <SelectTrigger><SelectValue placeholder="Select tool" /></SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {pmTools.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tech Stack / Other Tools</Label>
+                    <Textarea
+                      value={profile.tech_stack || ''}
+                      onChange={(e) => updateProfile('tech_stack', e.target.value)}
+                      placeholder="List other tools, platforms, or technology you use (e.g., Shopify, WordPress, AWS, Zapier...)"
+                      className="min-h-[80px]"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-[#f5f5f0] rounded-sm">
+                    <h4 className="font-medium text-[#0f2f24] mb-2">Coming Soon: Direct Integrations</h4>
+                    <p className="text-sm text-[#0f2f24]/60">
+                      We're working on direct integrations with HubSpot, QuickBooks, and other platforms
+                      to automatically sync your business data for even smarter AI recommendations.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Floating Save Button */}
+          <div className="fixed bottom-8 right-8 z-50">
+            <Button onClick={handleSave} className="btn-forest shadow-lg" disabled={saving} size="lg">
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Profile
+            </Button>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default BusinessProfile;
