@@ -27,12 +27,16 @@ JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'default-secret-key')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
-# OpenAI Configuration - AGI Ready
+# OpenAI Configuration - AGI Ready (using Emergent key as fallback)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+EMERGENT_KEY = os.environ.get('EMERGENT_LLM_KEY')
+
+# Try user's key first, fallback to Emergent key
+active_key = OPENAI_API_KEY if OPENAI_API_KEY else EMERGENT_KEY
+openai_client = AsyncOpenAI(api_key=active_key)
 
 # AGI-Ready Model Configuration
-AI_MODEL = "gpt-4o"  # Latest model, can be upgraded to newer models as they release
+AI_MODEL = "gpt-4o"  # Latest model
 AI_MODEL_ADVANCED = "gpt-4o"  # For complex analysis tasks
 
 app = FastAPI(title="Strategic Advisor API")
