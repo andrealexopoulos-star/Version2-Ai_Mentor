@@ -373,35 +373,130 @@ def build_business_knowledge_context(business_context: dict) -> str:
         if user.get('industry'):
             context_parts.append(f"## Industry: {user.get('industry')}")
     
-    # Detailed business profile
+    # Comprehensive business profile
     if profile:
         context_parts.append("\n## DETAILED BUSINESS PROFILE:")
+        
+        # Basic Info
         if profile.get('business_type'):
             context_parts.append(f"- Business Type: {profile.get('business_type')}")
         if profile.get('year_founded'):
             context_parts.append(f"- Year Founded: {profile.get('year_founded')}")
+        if profile.get('location'):
+            context_parts.append(f"- Location: {profile.get('location')}")
+        if profile.get('website'):
+            context_parts.append(f"- Website: {profile.get('website')}")
+        
+        # Size & Financials
+        context_parts.append("\n### Size & Financials:")
         if profile.get('employee_count'):
             context_parts.append(f"- Employee Count: {profile.get('employee_count')}")
         if profile.get('annual_revenue'):
-            context_parts.append(f"- Annual Revenue Range: {profile.get('annual_revenue')}")
+            context_parts.append(f"- Annual Revenue: {profile.get('annual_revenue')}")
+        if profile.get('monthly_expenses'):
+            context_parts.append(f"- Monthly Expenses: {profile.get('monthly_expenses')}")
+        if profile.get('profit_margin'):
+            context_parts.append(f"- Profit Margin: {profile.get('profit_margin')}")
+        if profile.get('funding_stage'):
+            context_parts.append(f"- Funding Stage: {profile.get('funding_stage')}")
+        
+        # Market & Customers
+        context_parts.append("\n### Market & Customers:")
         if profile.get('target_market'):
             context_parts.append(f"- Target Market: {profile.get('target_market')}")
+        if profile.get('ideal_customer_profile'):
+            context_parts.append(f"- Ideal Customer: {profile.get('ideal_customer_profile')}")
+        if profile.get('customer_segments'):
+            context_parts.append(f"- Customer Segments: {', '.join(profile.get('customer_segments', []))}")
+        if profile.get('geographic_focus'):
+            context_parts.append(f"- Geographic Focus: {profile.get('geographic_focus')}")
+        if profile.get('customer_acquisition_channels'):
+            context_parts.append(f"- Acquisition Channels: {', '.join(profile.get('customer_acquisition_channels', []))}")
+        if profile.get('average_customer_value'):
+            context_parts.append(f"- Average Customer Value: {profile.get('average_customer_value')}")
+        if profile.get('customer_retention_rate'):
+            context_parts.append(f"- Retention Rate: {profile.get('customer_retention_rate')}")
+        
+        # Products & Services
+        context_parts.append("\n### Products & Services:")
         if profile.get('main_products_services'):
             context_parts.append(f"- Products/Services: {profile.get('main_products_services')}")
+        if profile.get('pricing_model'):
+            context_parts.append(f"- Pricing Model: {profile.get('pricing_model')}")
+        if profile.get('unique_value_proposition'):
+            context_parts.append(f"- Unique Value Proposition: {profile.get('unique_value_proposition')}")
         if profile.get('competitive_advantages'):
             context_parts.append(f"- Competitive Advantages: {profile.get('competitive_advantages')}")
+        
+        # Operations
+        context_parts.append("\n### Operations:")
+        if profile.get('business_model'):
+            context_parts.append(f"- Business Model: {profile.get('business_model')}")
+        if profile.get('sales_cycle_length'):
+            context_parts.append(f"- Sales Cycle: {profile.get('sales_cycle_length')}")
+        if profile.get('key_processes'):
+            context_parts.append(f"- Key Processes: {profile.get('key_processes')}")
+        if profile.get('bottlenecks'):
+            context_parts.append(f"- Known Bottlenecks: {profile.get('bottlenecks')}")
+        
+        # Team & Leadership
+        context_parts.append("\n### Team & Leadership:")
+        if profile.get('founder_background'):
+            context_parts.append(f"- Founder Background: {profile.get('founder_background')}")
+        if profile.get('key_team_members'):
+            context_parts.append(f"- Key Team: {profile.get('key_team_members')}")
+        if profile.get('team_strengths'):
+            context_parts.append(f"- Team Strengths: {profile.get('team_strengths')}")
+        if profile.get('team_gaps'):
+            context_parts.append(f"- Team Gaps: {profile.get('team_gaps')}")
+        if profile.get('company_culture'):
+            context_parts.append(f"- Company Culture: {profile.get('company_culture')}")
+        
+        # Strategy & Vision
+        context_parts.append("\n### Strategy & Vision:")
+        if profile.get('mission_statement'):
+            context_parts.append(f"- Mission: {profile.get('mission_statement')}")
+        if profile.get('vision_statement'):
+            context_parts.append(f"- Vision: {profile.get('vision_statement')}")
+        if profile.get('core_values'):
+            context_parts.append(f"- Core Values: {', '.join(profile.get('core_values', []))}")
+        if profile.get('short_term_goals'):
+            context_parts.append(f"- Short-term Goals (6-12mo): {profile.get('short_term_goals')}")
+        if profile.get('long_term_goals'):
+            context_parts.append(f"- Long-term Goals (2-5yr): {profile.get('long_term_goals')}")
         if profile.get('main_challenges'):
             context_parts.append(f"- Main Challenges: {profile.get('main_challenges')}")
-        if profile.get('business_goals'):
-            context_parts.append(f"- Business Goals: {profile.get('business_goals')}")
-        if profile.get('key_metrics'):
-            context_parts.append(f"- Key Metrics Tracked: {', '.join(profile.get('key_metrics', []))}")
-        if profile.get('tools_used'):
-            context_parts.append(f"- Tools/Software Used: {', '.join(profile.get('tools_used', []))}")
+        if profile.get('growth_strategy'):
+            context_parts.append(f"- Growth Strategy: {profile.get('growth_strategy')}")
+        
+        # Tools & Technology
+        if profile.get('tools_used') or profile.get('tech_stack'):
+            context_parts.append("\n### Tools & Technology:")
+            if profile.get('tools_used'):
+                context_parts.append(f"- Tools Used: {', '.join(profile.get('tools_used', []))}")
+            if profile.get('tech_stack'):
+                context_parts.append(f"- Tech Stack: {profile.get('tech_stack')}")
+            if profile.get('crm_system'):
+                context_parts.append(f"- CRM: {profile.get('crm_system')}")
+            if profile.get('accounting_system'):
+                context_parts.append(f"- Accounting: {profile.get('accounting_system')}")
+        
+        # Advisory Preferences (important for personalization)
+        context_parts.append("\n### Owner's Preferences (Use these to tailor your communication):")
+        if profile.get('communication_style'):
+            context_parts.append(f"- Communication Style: {profile.get('communication_style')}")
+        if profile.get('decision_making_style'):
+            context_parts.append(f"- Decision Making: {profile.get('decision_making_style')}")
+        if profile.get('risk_tolerance'):
+            context_parts.append(f"- Risk Tolerance: {profile.get('risk_tolerance')}")
+        if profile.get('time_availability'):
+            context_parts.append(f"- Time for Strategy: {profile.get('time_availability')}")
+        if profile.get('preferred_advice_format'):
+            context_parts.append(f"- Preferred Advice Format: {profile.get('preferred_advice_format')}")
     
     # Data files context
     if data_files:
-        context_parts.append("\n## BUSINESS DATA & DOCUMENTS:")
+        context_parts.append("\n## BUSINESS DOCUMENTS & DATA:")
         for file in data_files[:10]:  # Limit to 10 most recent
             context_parts.append(f"\n### Document: {file.get('filename')} ({file.get('category', 'General')})")
             if file.get('description'):
