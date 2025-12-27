@@ -964,6 +964,207 @@ async def get_diagnoses(current_user: dict = Depends(get_current_user)):
     ).sort("created_at", -1).limit(20).to_list(20)
     return diagnoses
 
+# ==================== BUSINESS PROFILE ROUTES ====================
+
+@api_router.get("/business-profile")
+async def get_business_profile(current_user: dict = Depends(get_current_user)):
+    """Get user's business profile"""
+    profile = await db.business_profiles.find_one(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    )
+    if not profile:
+        # Return default empty profile
+        return {
+            "user_id": current_user["id"],
+            "business_name": current_user.get("business_name"),
+            "industry": current_user.get("industry")
+        }
+    return profile
+
+@api_router.put("/business-profile")
+async def update_business_profile(profile: BusinessProfileUpdate, current_user: dict = Depends(get_current_user)):
+    """Update user's business profile"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    profile_data = {k: v for k, v in profile.model_dump().items() if v is not None}
+    profile_data["user_id"] = current_user["id"]
+    profile_data["updated_at"] = now
+    
+    # Also update user's basic info
+    user_updates = {}
+    if profile.business_name:
+        user_updates["business_name"] = profile.business_name
+    if profile.industry:
+        user_updates["industry"] = profile.industry
+    
+    if user_updates:
+        await db.users.update_one({"id": current_user["id"]}, {"$set": user_updates})
+    
+    await db.business_profiles.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": profile_data},
+        upsert=True
+    )
+    
+    return await get_business_profile(current_user)
+
+
+# ==================== DATA CENTER ROUTES ====================
+
+@api_router.post("/data-center/upload")
+async def upload_data_file(
+    file: UploadFile = File(...),
+    category: str = Form(...),
+    description: str = Form(""),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a file to the data center"""
+    # Validate file size
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large. Max 10MB allowed.")
+    
+    # Validate file type
+    allowed_extensions = ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'csv', 'txt', 'md', 'json']
+    ext = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
+    if ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail=f"File type not allowed. Allowed: {', '.join(allowed_extensions)}")
+    
+    # Extract text content
+    extracted_text = await extract_file_content(file.filename, content)
+    
+    now = datetime.now(timezone.utc).isoformat()
+    file_id = str(uuid.uuid4())
+    
+    file_doc = {
+        "id": file_id,
+        "user_id": current_user["id"],
+        "filename": file.filename,
+        "file_type": ext,
+        "category": category,
+        "description": description,
+        "extracted_text": extracted_text,
+        "file_content": base64.b64encode(content).decode('utf-8'),
+        "file_size": len(content),
+        "created_at": now
+    }
+    
+    await db.data_files.insert_one(file_doc)
+    
+    return {
+        "id": file_id,
+        "filename": file.filename,
+        "category": category,
+        "file_size": len(content),
+        "extracted_text_preview": extracted_text[:500] if extracted_text else None,
+        "message": "File uploaded successfully"
+    }
+
+@api_router.get("/data-center/files")
+async def get_data_files(category: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Get all files in user's data center"""
+    query = {"user_id": current_user["id"]}
+    if category:
+        query["category"] = category
+    
+    files = await db.data_files.find(
+        query,
+        {"_id": 0, "file_content": 0}  # Exclude file content for listing
+    ).sort("created_at", -1).to_list(100)
+    
+    return files
+
+@api_router.get("/data-center/files/{file_id}")
+async def get_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific file details"""
+    file = await db.data_files.find_one(
+        {"id": file_id, "user_id": current_user["id"]},
+        {"_id": 0, "file_content": 0}
+    )
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    return file
+
+@api_router.get("/data-center/files/{file_id}/download")
+async def download_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
+    """Download a file"""
+    file = await db.data_files.find_one(
+        {"id": file_id, "user_id": current_user["id"]}
+    )
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return {
+        "filename": file["filename"],
+        "content": file["file_content"],
+        "file_type": file["file_type"]
+    }
+
+@api_router.delete("/data-center/files/{file_id}")
+async def delete_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a file from data center"""
+    result = await db.data_files.delete_one(
+        {"id": file_id, "user_id": current_user["id"]}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"message": "File deleted successfully"}
+
+@api_router.get("/data-center/categories")
+async def get_data_categories(current_user: dict = Depends(get_current_user)):
+    """Get file categories with counts"""
+    pipeline = [
+        {"$match": {"user_id": current_user["id"]}},
+        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    categories = await db.data_files.aggregate(pipeline).to_list(20)
+    return [{"category": c["_id"], "count": c["count"]} for c in categories]
+
+@api_router.get("/data-center/stats")
+async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
+    """Get data center statistics"""
+    total_files = await db.data_files.count_documents({"user_id": current_user["id"]})
+    
+    # Total size
+    pipeline = [
+        {"$match": {"user_id": current_user["id"]}},
+        {"$group": {"_id": None, "total_size": {"$sum": "$file_size"}}}
+    ]
+    size_result = await db.data_files.aggregate(pipeline).to_list(1)
+    total_size = size_result[0]["total_size"] if size_result else 0
+    
+    # Categories
+    categories = await get_data_categories(current_user)
+    
+    # Has business profile
+    profile = await db.business_profiles.find_one({"user_id": current_user["id"]})
+    
+    return {
+        "total_files": total_files,
+        "total_size_bytes": total_size,
+        "total_size_mb": round(total_size / (1024 * 1024), 2),
+        "categories": categories,
+        "has_business_profile": profile is not None,
+        "profile_completeness": calculate_profile_completeness(profile) if profile else 0
+    }
+
+def calculate_profile_completeness(profile: dict) -> int:
+    """Calculate profile completeness percentage"""
+    if not profile:
+        return 0
+    
+    fields = [
+        "business_name", "industry", "business_type", "year_founded",
+        "employee_count", "annual_revenue", "target_market",
+        "main_products_services", "competitive_advantages",
+        "main_challenges", "business_goals"
+    ]
+    
+    filled = sum(1 for f in fields if profile.get(f))
+    return int((filled / len(fields)) * 100)
+
 # ==================== ADMIN ROUTES ====================
 
 @api_router.get("/admin/users")
