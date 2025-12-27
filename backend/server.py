@@ -596,7 +596,7 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/analyses", response_model=AnalysisResponse)
 async def create_analysis(analysis: AnalysisCreate, current_user: dict = Depends(get_current_user)):
-    # Generate AI analysis using advanced model
+    # Generate AI analysis using advanced model with full business context
     user_data = {
         "name": current_user.get("name"),
         "business_name": current_user.get("business_name"),
@@ -609,9 +609,9 @@ Title: {analysis.title}
 Analysis Type: {analysis.analysis_type}
 Business Context: {analysis.business_context}
 
-Please provide:
-1. A detailed analysis (be thorough and specific)
-2. Key recommendations (numbered list with reasoning)
+Using your knowledge of this specific business (from their profile and uploaded documents), please provide:
+1. A detailed analysis (be thorough and reference specific business details you know)
+2. Key recommendations (numbered list with reasoning, tailored to their situation)
 3. Specific action items (numbered list with priority levels)
 4. Potential risks and how to mitigate them
 5. Quick wins that can be implemented immediately
@@ -619,7 +619,7 @@ Please provide:
 Format your response with clear sections using markdown headers."""
 
     session_id = f"analysis_{uuid.uuid4()}"
-    ai_response = await get_ai_response(prompt, analysis.analysis_type, session_id, user_data, use_advanced=True)
+    ai_response = await get_ai_response(prompt, analysis.analysis_type, session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
     
     # Parse recommendations and action items from response
     recommendations = []
