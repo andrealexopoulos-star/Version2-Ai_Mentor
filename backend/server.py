@@ -791,7 +791,7 @@ Make this specific to the industry and practical for immediate implementation.
 Format using markdown with clear headers and numbered steps."""
 
     session_id = f"sop_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "sop_generator", session_id, user_data, use_advanced=True)
+    response = await get_ai_response(prompt, "sop_generator", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
     
     return {"sop_content": response, "topic": topic}
 
@@ -825,7 +825,7 @@ Make this industry-specific and actionable.
 Format as a practical, actionable checklist using markdown."""
 
     session_id = f"checklist_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "sop_generator", session_id, user_data, use_advanced=True)
+    response = await get_ai_response(prompt, "sop_generator", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
     
     return {"checklist_content": response, "topic": topic}
 
@@ -865,7 +865,7 @@ Make this specific to their industry and realistic for an SMB.
 Format with clear structure and actionable steps."""
 
     session_id = f"action_plan_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "business_analysis", session_id, user_data, use_advanced=True)
+    response = await get_ai_response(prompt, "business_analysis", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
     
     return {"action_plan": response, "goal": goal, "timeline": timeline}
 
@@ -933,7 +933,7 @@ For each solution provide:
 Be specific, actionable, and consider SMB resource constraints."""
 
     session_id = f"diagnosis_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "business_analysis", session_id, user_data, use_advanced=True)
+    response = await get_ai_response(prompt, "business_analysis", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
     
     # Save diagnosis
     diagnosis_doc = {
