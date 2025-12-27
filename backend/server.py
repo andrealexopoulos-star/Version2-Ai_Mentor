@@ -136,6 +136,113 @@ class AdminUserUpdate(BaseModel):
     role: Optional[str] = None
     is_active: Optional[bool] = None
 
+# ==================== BUSINESS PROFILE MODELS ====================
+
+class BusinessProfileUpdate(BaseModel):
+    business_name: Optional[str] = None
+    industry: Optional[str] = None
+    business_type: Optional[str] = None  # LLC, Corporation, Sole Prop, etc.
+    year_founded: Optional[int] = None
+    employee_count: Optional[str] = None  # 1-5, 6-20, 21-50, 51-200, 200+
+    annual_revenue: Optional[str] = None  # Range
+    target_market: Optional[str] = None
+    main_products_services: Optional[str] = None
+    competitive_advantages: Optional[str] = None
+    main_challenges: Optional[str] = None
+    business_goals: Optional[str] = None
+    key_metrics: Optional[List[str]] = None
+    tools_used: Optional[List[str]] = None  # CRMs, accounting software, etc.
+
+class DataFileResponse(BaseModel):
+    id: str
+    user_id: str
+    filename: str
+    file_type: str
+    category: str
+    description: Optional[str]
+    extracted_text: Optional[str]
+    file_size: int
+    created_at: str
+
+# ==================== FILE PARSING HELPERS ====================
+
+def extract_text_from_pdf(file_content: bytes) -> str:
+    """Extract text from PDF file"""
+    if not PyPDF2:
+        return "[PDF parsing not available]"
+    try:
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+        text = ""
+        for page in pdf_reader.pages[:20]:  # Limit to first 20 pages
+            text += page.extract_text() or ""
+        return text[:50000]  # Limit text length
+    except Exception as e:
+        logger.error(f"PDF extraction error: {e}")
+        return "[Could not extract PDF text]"
+
+def extract_text_from_docx(file_content: bytes) -> str:
+    """Extract text from Word document"""
+    if not DocxDocument:
+        return "[DOCX parsing not available]"
+    try:
+        doc = DocxDocument(io.BytesIO(file_content))
+        text = "\n".join([para.text for para in doc.paragraphs])
+        return text[:50000]
+    except Exception as e:
+        logger.error(f"DOCX extraction error: {e}")
+        return "[Could not extract DOCX text]"
+
+def extract_text_from_xlsx(file_content: bytes) -> str:
+    """Extract text from Excel file"""
+    if not openpyxl:
+        return "[XLSX parsing not available]"
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(file_content), data_only=True)
+        text = ""
+        for sheet in wb.worksheets[:5]:  # Limit to first 5 sheets
+            text += f"\n--- Sheet: {sheet.title} ---\n"
+            for row in sheet.iter_rows(max_row=100, values_only=True):  # Limit rows
+                row_text = " | ".join([str(cell) if cell else "" for cell in row])
+                if row_text.strip():
+                    text += row_text + "\n"
+        return text[:50000]
+    except Exception as e:
+        logger.error(f"XLSX extraction error: {e}")
+        return "[Could not extract XLSX text]"
+
+def extract_text_from_csv(file_content: bytes) -> str:
+    """Extract text from CSV file"""
+    try:
+        text = file_content.decode('utf-8', errors='ignore')
+        return text[:50000]
+    except Exception as e:
+        logger.error(f"CSV extraction error: {e}")
+        return "[Could not extract CSV text]"
+
+def extract_text_from_txt(file_content: bytes) -> str:
+    """Extract text from plain text file"""
+    try:
+        return file_content.decode('utf-8', errors='ignore')[:50000]
+    except Exception as e:
+        return "[Could not extract text]"
+
+async def extract_file_content(filename: str, file_content: bytes) -> str:
+    """Extract text content from various file types"""
+    ext = filename.lower().split('.')[-1] if '.' in filename else ''
+    
+    if ext == 'pdf':
+        return extract_text_from_pdf(file_content)
+    elif ext in ['docx', 'doc']:
+        return extract_text_from_docx(file_content)
+    elif ext in ['xlsx', 'xls']:
+        return extract_text_from_xlsx(file_content)
+    elif ext == 'csv':
+        return extract_text_from_csv(file_content)
+    elif ext in ['txt', 'md', 'json']:
+        return extract_text_from_txt(file_content)
+    else:
+        return "[Unsupported file type for text extraction]"
+
 # ==================== AUTH HELPERS ====================
 
 def hash_password(password: str) -> str:
