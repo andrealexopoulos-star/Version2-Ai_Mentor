@@ -16,6 +16,7 @@ import Documents from "./pages/Documents";
 import DocumentView from "./pages/DocumentView";
 import AdminDashboard from "./pages/AdminDashboard";
 import Settings from "./pages/Settings";
+import Diagnosis from "./pages/Diagnosis";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -74,6 +75,7 @@ function AppRoutes() {
       <Route path="/analysis/:id" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
       <Route path="/sop-generator" element={<ProtectedRoute><SOPGenerator /></ProtectedRoute>} />
       <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
+      <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
