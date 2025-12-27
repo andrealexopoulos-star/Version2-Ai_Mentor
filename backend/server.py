@@ -139,19 +139,77 @@ class AdminUserUpdate(BaseModel):
 # ==================== BUSINESS PROFILE MODELS ====================
 
 class BusinessProfileUpdate(BaseModel):
+    # Basic Info
     business_name: Optional[str] = None
     industry: Optional[str] = None
     business_type: Optional[str] = None  # LLC, Corporation, Sole Prop, etc.
     year_founded: Optional[int] = None
+    website: Optional[str] = None
+    location: Optional[str] = None
+    
+    # Size & Financials
     employee_count: Optional[str] = None  # 1-5, 6-20, 21-50, 51-200, 200+
     annual_revenue: Optional[str] = None  # Range
+    monthly_expenses: Optional[str] = None
+    profit_margin: Optional[str] = None
+    funding_stage: Optional[str] = None  # Bootstrapped, Seed, Series A, etc.
+    
+    # Market & Customers
     target_market: Optional[str] = None
+    ideal_customer_profile: Optional[str] = None
+    customer_segments: Optional[List[str]] = None
+    geographic_focus: Optional[str] = None
+    customer_acquisition_channels: Optional[List[str]] = None
+    average_customer_value: Optional[str] = None
+    customer_retention_rate: Optional[str] = None
+    
+    # Products & Services
     main_products_services: Optional[str] = None
+    pricing_model: Optional[str] = None  # Subscription, One-time, Hourly, etc.
+    unique_value_proposition: Optional[str] = None
     competitive_advantages: Optional[str] = None
+    
+    # Operations
+    business_model: Optional[str] = None  # B2B, B2C, B2B2C, Marketplace
+    sales_cycle_length: Optional[str] = None
+    key_processes: Optional[str] = None
+    bottlenecks: Optional[str] = None
+    
+    # Team & Leadership
+    founder_background: Optional[str] = None
+    key_team_members: Optional[str] = None
+    team_strengths: Optional[str] = None
+    team_gaps: Optional[str] = None
+    company_culture: Optional[str] = None
+    
+    # Strategy & Goals
+    mission_statement: Optional[str] = None
+    vision_statement: Optional[str] = None
+    core_values: Optional[List[str]] = None
+    short_term_goals: Optional[str] = None  # 6-12 months
+    long_term_goals: Optional[str] = None  # 2-5 years
     main_challenges: Optional[str] = None
     business_goals: Optional[str] = None
+    growth_strategy: Optional[str] = None
+    
+    # Tools & Technology
     key_metrics: Optional[List[str]] = None
     tools_used: Optional[List[str]] = None  # CRMs, accounting software, etc.
+    tech_stack: Optional[str] = None
+    automation_level: Optional[str] = None
+    
+    # Advisory Preferences
+    communication_style: Optional[str] = None  # Direct, Detailed, Visual, etc.
+    decision_making_style: Optional[str] = None  # Data-driven, Intuitive, Collaborative
+    risk_tolerance: Optional[str] = None  # Conservative, Moderate, Aggressive
+    time_availability: Optional[str] = None  # Hours per week for strategy
+    preferred_advice_format: Optional[str] = None  # Action items, Analysis, Discussion
+    
+    # Integrations
+    crm_system: Optional[str] = None
+    accounting_system: Optional[str] = None
+    project_management_tool: Optional[str] = None
+    communication_tools: Optional[List[str]] = None
 
 class DataFileResponse(BaseModel):
     id: str
