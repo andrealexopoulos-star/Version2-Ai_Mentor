@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
-from openai import AsyncOpenAI
+from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -27,12 +27,11 @@ JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'default-secret-key')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
-# OpenAI Configuration - AGI Ready
+# AI Configuration - AGI Ready
 EMERGENT_KEY = os.environ.get('EMERGENT_LLM_KEY')
-openai_client = AsyncOpenAI(api_key=EMERGENT_KEY)
 
 # AGI-Ready Model Configuration  
-AI_MODEL = "gpt-4o"  # Latest model
+AI_MODEL = "gpt-4o"  # Latest model for regular chat
 AI_MODEL_ADVANCED = "gpt-4o"  # For complex analysis tasks
 
 app = FastAPI(title="Strategic Advisor API")
@@ -205,38 +204,25 @@ Always:
     return context_prompts.get(context_type, base_prompt)
 
 async def get_ai_response(message: str, context_type: str, session_id: str, user_data: dict = None, use_advanced: bool = False) -> str:
-    """AGI-Ready AI response function using OpenAI's latest models"""
+    """AGI-Ready AI response function using latest models"""
     try:
         system_prompt = get_system_prompt(context_type, user_data)
         
-        # Retrieve conversation history for context continuity
-        history = await db.chat_history.find(
-            {"session_id": session_id}
-        ).sort("created_at", 1).limit(10).to_list(10)
-        
-        # Build messages array with history
-        messages = [{"role": "system", "content": system_prompt}]
-        
-        for h in history:
-            messages.append({"role": "user", "content": h.get("message", "")})
-            messages.append({"role": "assistant", "content": h.get("response", "")})
-        
-        messages.append({"role": "user", "content": message})
+        # Use emergentintegrations for reliable AI access
+        chat = LlmChat(
+            api_key=EMERGENT_KEY,
+            session_id=session_id,
+            system_message=system_prompt
+        )
         
         # Use advanced model for complex tasks
         model = AI_MODEL_ADVANCED if use_advanced else AI_MODEL
+        chat.with_model("openai", model)
         
-        response = await openai_client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=0.7,
-            max_tokens=4000,
-            top_p=0.9,
-            frequency_penalty=0.1,
-            presence_penalty=0.1
-        )
+        user_message = UserMessage(text=message)
+        response = await chat.send_message(user_message)
         
-        return response.choices[0].message.content
+        return response
     except Exception as e:
         logger.error(f"AI Error: {e}")
         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
