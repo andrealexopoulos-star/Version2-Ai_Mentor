@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -7,12 +7,24 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+import base64
+import io
+
+# Document parsing imports
+try:
+    import PyPDF2
+    from docx import Document as DocxDocument
+    import openpyxl
+except ImportError:
+    PyPDF2 = None
+    DocxDocument = None
+    openpyxl = None
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -33,6 +45,9 @@ EMERGENT_KEY = os.environ.get('EMERGENT_LLM_KEY')
 # AGI-Ready Model Configuration  
 AI_MODEL = "gpt-4o"  # Latest model for regular chat
 AI_MODEL_ADVANCED = "gpt-4o"  # For complex analysis tasks
+
+# File size limit (10MB)
+MAX_FILE_SIZE = 10 * 1024 * 1024
 
 app = FastAPI(title="Strategic Advisor API")
 api_router = APIRouter(prefix="/api")
