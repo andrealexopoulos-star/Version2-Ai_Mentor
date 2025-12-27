@@ -546,7 +546,8 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
         request.message,
         request.context_type or "general",
         session_id,
-        user_data,
+        user_id=current_user["id"],
+        user_data=user_data,
         use_advanced=False
     )
     
