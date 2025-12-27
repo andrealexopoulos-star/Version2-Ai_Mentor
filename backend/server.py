@@ -279,7 +279,83 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
 
 # ==================== AI HELPER ====================
 
-def get_system_prompt(context_type: str, user_data: dict = None) -> str:
+async def get_business_context(user_id: str) -> dict:
+    """Get comprehensive business context for AI personalization"""
+    # Get business profile
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Get recent data files (summaries)
+    data_files = await db.data_files.find(
+        {"user_id": user_id},
+        {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
+    ).sort("created_at", -1).limit(20).to_list(20)
+    
+    # Get user info
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    
+    return {
+        "user": user,
+        "profile": profile,
+        "data_files": data_files
+    }
+
+def build_business_knowledge_context(business_context: dict) -> str:
+    """Build a comprehensive knowledge context from business data"""
+    context_parts = []
+    
+    user = business_context.get("user", {})
+    profile = business_context.get("profile", {})
+    data_files = business_context.get("data_files", [])
+    
+    # User basic info
+    if user:
+        context_parts.append(f"## Business Owner: {user.get('name', 'Unknown')}")
+        if user.get('business_name'):
+            context_parts.append(f"## Business Name: {user.get('business_name')}")
+        if user.get('industry'):
+            context_parts.append(f"## Industry: {user.get('industry')}")
+    
+    # Detailed business profile
+    if profile:
+        context_parts.append("\n## DETAILED BUSINESS PROFILE:")
+        if profile.get('business_type'):
+            context_parts.append(f"- Business Type: {profile.get('business_type')}")
+        if profile.get('year_founded'):
+            context_parts.append(f"- Year Founded: {profile.get('year_founded')}")
+        if profile.get('employee_count'):
+            context_parts.append(f"- Employee Count: {profile.get('employee_count')}")
+        if profile.get('annual_revenue'):
+            context_parts.append(f"- Annual Revenue Range: {profile.get('annual_revenue')}")
+        if profile.get('target_market'):
+            context_parts.append(f"- Target Market: {profile.get('target_market')}")
+        if profile.get('main_products_services'):
+            context_parts.append(f"- Products/Services: {profile.get('main_products_services')}")
+        if profile.get('competitive_advantages'):
+            context_parts.append(f"- Competitive Advantages: {profile.get('competitive_advantages')}")
+        if profile.get('main_challenges'):
+            context_parts.append(f"- Main Challenges: {profile.get('main_challenges')}")
+        if profile.get('business_goals'):
+            context_parts.append(f"- Business Goals: {profile.get('business_goals')}")
+        if profile.get('key_metrics'):
+            context_parts.append(f"- Key Metrics Tracked: {', '.join(profile.get('key_metrics', []))}")
+        if profile.get('tools_used'):
+            context_parts.append(f"- Tools/Software Used: {', '.join(profile.get('tools_used', []))}")
+    
+    # Data files context
+    if data_files:
+        context_parts.append("\n## BUSINESS DATA & DOCUMENTS:")
+        for file in data_files[:10]:  # Limit to 10 most recent
+            context_parts.append(f"\n### Document: {file.get('filename')} ({file.get('category', 'General')})")
+            if file.get('description'):
+                context_parts.append(f"Description: {file.get('description')}")
+            if file.get('extracted_text'):
+                # Include excerpt of extracted text
+                excerpt = file.get('extracted_text', '')[:2000]
+                context_parts.append(f"Content Preview:\n{excerpt}")
+    
+    return "\n".join(context_parts)
+
+def get_system_prompt(context_type: str, user_data: dict = None, business_knowledge: str = None) -> str:
     # Build personalized context from user profile
     user_context = ""
     if user_data:
