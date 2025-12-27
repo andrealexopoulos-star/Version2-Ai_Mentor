@@ -419,10 +419,16 @@ Always:
     }
     return context_prompts.get(context_type, base_prompt)
 
-async def get_ai_response(message: str, context_type: str, session_id: str, user_data: dict = None, use_advanced: bool = False) -> str:
-    """AGI-Ready AI response function using latest models"""
+async def get_ai_response(message: str, context_type: str, session_id: str, user_id: str = None, user_data: dict = None, use_advanced: bool = False) -> str:
+    """AGI-Ready AI response function with full business context"""
     try:
-        system_prompt = get_system_prompt(context_type, user_data)
+        # Get comprehensive business context
+        business_knowledge = None
+        if user_id:
+            business_context = await get_business_context(user_id)
+            business_knowledge = build_business_knowledge_context(business_context)
+        
+        system_prompt = get_system_prompt(context_type, user_data, business_knowledge)
         
         # Use emergentintegrations for reliable AI access
         chat = LlmChat(
