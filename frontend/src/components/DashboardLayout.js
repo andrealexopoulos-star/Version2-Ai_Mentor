@@ -12,7 +12,7 @@ import {
 import { 
   LayoutDashboard, MessageSquare, BarChart3, FileText, 
   Target, FolderOpen, Settings, LogOut, Menu, X,
-  ChevronDown, Shield, User, Stethoscope, Database
+  ChevronDown, Shield, User, Stethoscope, Database, Building2
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
@@ -24,6 +24,7 @@ const DashboardLayout = ({ children }) => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: MessageSquare, label: 'AI Advisor', path: '/advisor' },
+    { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Database, label: 'Data Center', path: '/data-center' },
     { icon: Stethoscope, label: 'Business Diagnosis', path: '/diagnosis' },
     { icon: BarChart3, label: 'Business Analysis', path: '/analysis' },

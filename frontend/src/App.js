@@ -18,6 +18,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Settings from "./pages/Settings";
 import Diagnosis from "./pages/Diagnosis";
 import DataCenter from "./pages/DataCenter";
+import BusinessProfile from "./pages/BusinessProfile";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -78,6 +79,7 @@ function AppRoutes() {
       <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
       <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
       <Route path="/data-center" element={<ProtectedRoute><DataCenter /></ProtectedRoute>} />
+      <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
