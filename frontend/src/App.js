@@ -20,6 +20,7 @@ import Diagnosis from "./pages/Diagnosis";
 import DataCenter from "./pages/DataCenter";
 import BusinessProfile from "./pages/BusinessProfile";
 import Pricing from "./pages/Pricing";
+import Integrations from "./pages/Integrations";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
