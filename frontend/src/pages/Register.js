@@ -6,7 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Mail, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, ArrowRight, CheckCircle, XCircle, Check, Sparkles } from 'lucide-react';
 
 const industries = [
   'Retail & E-commerce',
@@ -70,14 +70,21 @@ const Register = () => {
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
+  const benefits = [
+    'Unlimited AI business advice',
+    'Personalized to your business',
+    'SOPs & action plans on demand',
+    'No credit card required'
+  ];
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
       {/* Form Side */}
-      <div className="flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12 bg-[#F3F3EE] overflow-y-auto">
+      <div className="flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12 bg-white overflow-y-auto">
         <div className="max-w-md w-full mx-auto">
           <Link 
             to="/" 
-            className="inline-flex items-center gap-2 text-[#051F1A]/60 hover:text-[#051F1A] mb-8 transition-colors font-medium"
+            className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-8 transition-colors font-medium text-sm"
             data-testid="back-to-home-link"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -85,17 +92,23 @@ const Register = () => {
           </Link>
 
           <div className="mb-8">
-            <p className="label-mono text-[#FF0099] mb-3">Join The Squad</p>
-            <h1 className="font-heading font-extrabold text-4xl md:text-5xl text-[#051F1A] tracking-tight uppercase">
-              Sign Up
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                <span className="font-heading font-bold text-white text-sm">TS</span>
+              </div>
+              <span className="font-heading font-bold text-lg text-slate-900">The Strategy Squad</span>
+            </div>
+            <h1 className="font-heading font-bold text-3xl text-slate-900 mb-2">
+              Create your free account
             </h1>
+            <p className="text-slate-500">Start growing your business with AI today</p>
           </div>
 
           {/* Social Login Buttons */}
           <div className="space-y-3 mb-6">
             <button
               onClick={handleGoogleLogin}
-              className="btn-google w-full"
+              className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium py-3 px-4 rounded-lg transition-all"
               data-testid="google-register-btn"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -108,97 +121,63 @@ const Register = () => {
             </button>
           </div>
 
-          <div className="divider-text mb-6">or create account with email</div>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-slate-200"></div>
+            <span className="text-sm text-slate-400">or</span>
+            <div className="flex-1 h-px bg-slate-200"></div>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="label-mono">Your Name *</Label>
-              <Input
-                id="name"
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="input-modern w-full bg-transparent"
-                placeholder="John Smith"
-                data-testid="register-name-input"
-              />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium text-slate-700">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full h-11 px-4 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="John Smith"
+                  data-testid="register-name-input"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="business" className="text-sm font-medium text-slate-700">Business Name</Label>
+                <Input
+                  id="business"
+                  type="text"
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  className="w-full h-11 px-4 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Acme Inc"
+                  data-testid="register-business-input"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="label-mono">Email *</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700">Work Email</Label>
               <Input
                 id="email"
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="input-modern w-full bg-transparent"
+                className="w-full h-11 px-4 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 placeholder="you@company.com"
                 data-testid="register-email-input"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="label-mono">Password *</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="input-modern w-full bg-transparent"
-                placeholder="Min. 6 characters"
-                data-testid="register-password-input"
-              />
-              {formData.password && (
-                <div className={`flex items-center gap-2 text-sm ${passwordValid ? 'text-green-600' : 'text-red-500'}`}>
-                  {passwordValid ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                  {passwordValid ? 'Password strength OK' : 'At least 6 characters required'}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="label-mono">Confirm Password *</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="input-modern w-full bg-transparent"
-                placeholder="Re-enter password"
-                data-testid="register-confirm-password-input"
-              />
-              {formData.confirmPassword && (
-                <div className={`flex items-center gap-2 text-sm ${passwordsMatch ? 'text-green-600' : 'text-red-500'}`}>
-                  {passwordsMatch ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                  {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="business" className="label-mono">Business Name</Label>
-              <Input
-                id="business"
-                type="text"
-                value={formData.business_name}
-                onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                className="input-modern w-full bg-transparent"
-                placeholder="Your Company LLC"
-                data-testid="register-business-input"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="label-mono">Industry</Label>
+              <Label className="text-sm font-medium text-slate-700">Industry</Label>
               <Select 
                 value={formData.industry} 
                 onValueChange={(value) => setFormData({ ...formData, industry: value })}
               >
-                <SelectTrigger className="w-full bg-white border-[#E5E5E0]" data-testid="register-industry-select">
+                <SelectTrigger className="w-full h-11 px-4 border border-slate-200 rounded-lg focus:border-blue-500 bg-white" data-testid="register-industry-select">
                   <SelectValue placeholder="Select your industry" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -209,9 +188,57 @@ const Register = () => {
               </Select>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full h-11 px-4 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Min. 6 characters"
+                  data-testid="register-password-input"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className="w-full h-11 px-4 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Re-enter password"
+                  data-testid="register-confirm-password-input"
+                />
+              </div>
+            </div>
+
+            {/* Password validation feedback */}
+            {(formData.password || formData.confirmPassword) && (
+              <div className="flex flex-wrap gap-4 text-sm">
+                {formData.password && (
+                  <div className={`flex items-center gap-1.5 ${passwordValid ? 'text-green-600' : 'text-slate-400'}`}>
+                    {passwordValid ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    6+ characters
+                  </div>
+                )}
+                {formData.confirmPassword && (
+                  <div className={`flex items-center gap-1.5 ${passwordsMatch ? 'text-green-600' : 'text-red-500'}`}>
+                    {passwordsMatch ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    Passwords match
+                  </div>
+                )}
+              </div>
+            )}
+
             <Button 
               type="submit" 
-              className="w-full btn-primary mt-6"
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/20 mt-2"
               disabled={loading || !passwordValid || !passwordsMatch}
               data-testid="register-submit-btn"
             >
@@ -222,18 +249,18 @@ const Register = () => {
                 </>
               ) : (
                 <>
-                  <Mail className="w-4 h-4 mr-2" />
-                  Create Account
+                  Create Free Account
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-[#051F1A]/60 text-sm">
+          <p className="mt-6 text-center text-slate-500 text-sm">
             Already have an account?{' '}
             <Link 
               to="/login" 
-              className="text-[#051F1A] font-bold hover:text-[#FF0099] transition-colors"
+              className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
               data-testid="login-link"
             >
               Sign in
@@ -242,24 +269,54 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Image Side */}
-      <div 
-        className="hidden lg:block relative"
-        style={{ 
-          backgroundImage: 'url(https://images.pexels.com/photos/20447503/pexels-photo-20447503.jpeg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#051F1A]/90 to-[#051F1A]/50" />
-        <div className="relative z-10 h-full flex flex-col justify-end p-12">
-          <h2 className="text-white text-3xl font-heading font-bold mb-4">
-            Join 500+ entrepreneurs
-          </h2>
-          <p className="text-white/70 max-w-md">
-            Get AI-powered insights, professional SOPs, and strategic action plans 
-            tailored to your business. No consultants. No waiting. Just results.
-          </p>
+      {/* Feature Side */}
+      <div className="hidden lg:block relative bg-gradient-to-br from-slate-900 to-slate-800">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"30\" height=\"30\" viewBox=\"0 0 30 30\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z\" fill=\"rgba(255,255,255,0.05)\"%3E%3C/path%3E%3C/svg%3E')] opacity-50" />
+        
+        <div className="relative z-10 h-full flex flex-col justify-center p-12">
+          <div className="max-w-md">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-full mb-8">
+              <Sparkles className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium text-blue-300">Free forever plan</span>
+            </div>
+            
+            <h2 className="font-heading font-bold text-3xl text-white mb-6">
+              Everything you need to grow your business
+            </h2>
+            
+            <ul className="space-y-4 mb-10">
+              {benefits.map((benefit, i) => (
+                <li key={i} className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Check className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <span className="text-slate-300">{benefit}</span>
+                </li>
+              ))}
+            </ul>
+            
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+              <div className="flex items-center gap-1 mb-3">
+                {[1,2,3,4,5].map(i => (
+                  <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                  </svg>
+                ))}
+              </div>
+              <p className="text-white/80 mb-4 leading-relaxed">
+                "The Strategy Squad helped me identify bottlenecks I didn't even know existed. Revenue up 40% in 3 months."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-semibold">SC</span>
+                </div>
+                <div>
+                  <p className="text-white font-medium text-sm">Sarah Chen</p>
+                  <p className="text-slate-400 text-sm">Founder, Bloom Digital</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
