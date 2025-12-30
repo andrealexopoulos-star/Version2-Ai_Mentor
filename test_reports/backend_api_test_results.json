@@ -1,130 +1,142 @@
 {
-  "summary": "Backend API testing completed - 13/20 tests passed (65.0%)",
-  "total_tests": 20,
-  "passed_tests": 13,
-  "failed_tests": 7,
-  "success_rate": "65.0%",
+  "summary": "Backend API testing completed - 22/22 tests passed (100.0%)",
+  "total_tests": 22,
+  "passed_tests": 22,
+  "failed_tests": 0,
+  "success_rate": "100.0%",
   "test_details": [
     {
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:43:38.201420"
+      "timestamp": "2025-12-30T11:30:59.355398"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:43:38.244901"
+      "timestamp": "2025-12-30T11:30:59.396043"
     },
     {
       "test_name": "User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:43:38.559903"
+      "timestamp": "2025-12-30T11:30:59.702618"
     },
     {
       "test_name": "Get Current User",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:43:38.602678"
+      "timestamp": "2025-12-30T11:30:59.745414"
     },
     {
       "test_name": "Send Chat Message",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:43:51.634089"
+      "timestamp": "2025-12-30T11:31:01.805062"
     },
     {
       "test_name": "Get Chat History",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:43:51.693606"
+      "timestamp": "2025-12-30T11:31:01.845829"
     },
     {
       "test_name": "Get Chat Sessions",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:43:51.732516"
+      "timestamp": "2025-12-30T11:31:01.884802"
     },
     {
       "test_name": "Create Analysis",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "timestamp": "2025-12-23T19:44:21.788610"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:11.198055"
     },
     {
       "test_name": "Get All Analyses",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:44:33.630418"
+      "timestamp": "2025-12-30T11:31:11.253710"
+    },
+    {
+      "test_name": "Get Specific Analysis",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:11.302079"
     },
     {
       "test_name": "Create Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:44:33.712812"
+      "timestamp": "2025-12-30T11:31:11.372512"
     },
     {
       "test_name": "Get All Documents",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:44:33.751361"
+      "timestamp": "2025-12-30T11:31:11.419053"
     },
     {
       "test_name": "Get Specific Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:44:33.790293"
+      "timestamp": "2025-12-30T11:31:11.498506"
     },
     {
       "test_name": "Update Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:44:33.828886"
+      "timestamp": "2025-12-30T11:31:11.536629"
     },
     {
       "test_name": "Generate SOP",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "timestamp": "2025-12-23T19:45:03.887629"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:24.397897"
     },
     {
       "test_name": "Generate Checklist",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "timestamp": "2025-12-23T19:45:33.985431"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:34.371262"
     },
     {
       "test_name": "Generate Action Plan",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "timestamp": "2025-12-23T19:46:04.105441"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:43.977298"
     },
     {
       "test_name": "Get Dashboard Stats",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "timestamp": "2025-12-23T19:46:34.196654"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:44.044215"
     },
     {
       "test_name": "Get Admin Stats",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "timestamp": "2025-12-23T19:47:04.287357"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:44.093754"
     },
     {
       "test_name": "Get All Users",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='strategic-advisor-6.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "timestamp": "2025-12-23T19:47:34.399802"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:44.134534"
+    },
+    {
+      "test_name": "Delete Analysis",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-12-30T11:31:44.173923"
     },
     {
       "test_name": "Delete Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-23T19:47:50.798438"
+      "timestamp": "2025-12-30T11:31:44.217354"
     }
   ],
-  "timestamp": "2025-12-23T19:47:50.799072"
+  "timestamp": "2025-12-30T11:31:44.218080"
 }
