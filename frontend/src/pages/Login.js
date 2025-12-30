@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, Mail, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -39,11 +39,11 @@ const Login = () => {
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
       {/* Form Side */}
-      <div className="flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12 bg-[#F3F3EE]">
+      <div className="flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12 bg-white">
         <div className="max-w-md w-full mx-auto">
           <Link 
             to="/" 
-            className="inline-flex items-center gap-2 text-[#051F1A]/60 hover:text-[#051F1A] mb-12 transition-colors font-medium"
+            className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-12 transition-colors font-medium text-sm"
             data-testid="back-to-home-link"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -51,17 +51,23 @@ const Login = () => {
           </Link>
 
           <div className="mb-10">
-            <p className="label-mono text-[#FF0099] mb-3">Welcome Back</p>
-            <h1 className="font-heading font-extrabold text-4xl md:text-5xl text-[#051F1A] tracking-tight uppercase">
-              Log In
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                <span className="font-heading font-bold text-white text-sm">TS</span>
+              </div>
+              <span className="font-heading font-bold text-lg text-slate-900">The Strategy Squad</span>
+            </div>
+            <h1 className="font-heading font-bold text-3xl text-slate-900 mb-2">
+              Welcome back
             </h1>
+            <p className="text-slate-500">Sign in to continue to your dashboard</p>
           </div>
 
           {/* Social Login Buttons */}
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3 mb-6">
             <button
               onClick={handleGoogleLogin}
-              className="btn-google w-full"
+              className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium py-3 px-4 rounded-lg transition-all"
               data-testid="google-login-btn"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -74,32 +80,41 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="divider-text mb-8">or continue with email</div>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-slate-200"></div>
+            <span className="text-sm text-slate-400">or</span>
+            <div className="flex-1 h-px bg-slate-200"></div>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="label-mono">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
               <Input
                 id="email"
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="input-modern w-full bg-transparent"
+                className="w-full h-12 px-4 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 placeholder="you@company.com"
                 data-testid="login-email-input"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="label-mono">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700">Password</Label>
+                <button type="button" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  Forgot password?
+                </button>
+              </div>
               <Input
                 id="password"
                 type="password"
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="input-modern w-full bg-transparent"
+                className="w-full h-12 px-4 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 placeholder="••••••••"
                 data-testid="login-password-input"
               />
@@ -107,7 +122,7 @@ const Login = () => {
 
             <Button 
               type="submit" 
-              className="w-full btn-primary mt-8"
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/20"
               disabled={loading}
               data-testid="login-submit-btn"
             >
@@ -118,41 +133,49 @@ const Login = () => {
                 </>
               ) : (
                 <>
-                  <Mail className="w-4 h-4 mr-2" />
-                  Sign In with Email
+                  Sign In
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
             </Button>
           </form>
 
-          <p className="mt-8 text-center text-[#051F1A]/60">
+          <p className="mt-8 text-center text-slate-500">
             Don't have an account?{' '}
             <Link 
               to="/register" 
-              className="text-[#051F1A] font-bold hover:text-[#FF0099] transition-colors"
+              className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
               data-testid="register-link"
             >
-              Create one
+              Sign up free
             </Link>
           </p>
         </div>
       </div>
 
       {/* Image Side */}
-      <div 
-        className="hidden lg:block relative"
-        style={{ 
-          backgroundImage: 'url(https://images.pexels.com/photos/5332442/pexels-photo-5332442.jpeg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#051F1A]/90 to-[#051F1A]/50" />
-        <div className="relative z-10 h-full flex flex-col justify-end p-12">
-          <blockquote className="text-white/90 text-2xl font-heading font-bold max-w-md">
-            "Finally, an AI that actually understands MY business. Game changer."
-          </blockquote>
-          <p className="text-white/60 mt-4">— Sarah Chen, Founder & CEO</p>
+      <div className="hidden lg:block relative bg-gradient-to-br from-blue-600 to-blue-700">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"30\" height=\"30\" viewBox=\"0 0 30 30\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z\" fill=\"rgba(255,255,255,0.1)\"%3E%3C/path%3E%3C/svg%3E')] opacity-50" />
+        <div className="relative z-10 h-full flex flex-col justify-center items-center p-12 text-center">
+          <div className="max-w-md">
+            <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-8 backdrop-blur-sm">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <blockquote className="text-white text-2xl font-heading font-semibold mb-6 leading-relaxed">
+              "Finally, an AI that actually understands MY business. Not generic advice — real, actionable strategies."
+            </blockquote>
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">SC</span>
+              </div>
+              <div className="text-left">
+                <p className="text-white font-medium">Sarah Chen</p>
+                <p className="text-blue-200 text-sm">Founder, Bloom Digital</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
