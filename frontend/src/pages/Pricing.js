@@ -351,18 +351,37 @@ const Pricing = () => {
         </div>
       </section>
 
+      {/* General Advice Disclaimer */}
+      <section className="py-6 px-6 bg-slate-800">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-slate-400 text-xs leading-relaxed">
+            <strong className="text-slate-300">Important:</strong> The Strategy Squad provides general information and educational content only. 
+            It does not constitute financial, legal, tax, or professional advice. You should seek independent professional advice 
+            before making any business decisions. See our <button onClick={() => navigate('/terms')} className="text-blue-400 hover:underline">Terms and Conditions</button> for full details.
+          </p>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 px-6 bg-slate-900">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-              <span className="font-heading font-bold text-white text-sm">TS</span>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <span className="font-heading font-bold text-white text-sm">TS</span>
+              </div>
+              <span className="font-heading font-semibold text-white">The Strategy Squad</span>
             </div>
-            <span className="font-heading font-semibold text-white">The Strategy Squad</span>
+            <div className="flex items-center gap-6">
+              <button onClick={() => navigate('/terms')} className="text-slate-400 hover:text-white text-sm transition-colors">Terms & Conditions</button>
+              <button className="text-slate-400 hover:text-white text-sm transition-colors">Privacy Policy</button>
+            </div>
           </div>
-          <p className="text-slate-400 text-sm">
-            © 2024 The Strategy Squad. Built for businesses that want more.
-          </p>
+          <div className="pt-6 border-t border-slate-800">
+            <p className="text-slate-500 text-sm text-center">
+              © 2025 The Strategy Squad Pty Ltd. All rights reserved. Personalised AI Business Advisory • General Information Only
+            </p>
+          </div>
         </div>
       </footer>
     </div>
