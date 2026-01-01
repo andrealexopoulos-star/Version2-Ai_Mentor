@@ -71,6 +71,7 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
