@@ -21,6 +21,7 @@ import DataCenter from "./pages/DataCenter";
 import BusinessProfile from "./pages/BusinessProfile";
 import Pricing from "./pages/Pricing";
 import Integrations from "./pages/Integrations";
+import TermsAndConditions from "./pages/TermsAndConditions";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
