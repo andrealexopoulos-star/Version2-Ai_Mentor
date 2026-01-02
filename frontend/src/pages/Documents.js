@@ -36,10 +36,6 @@ const Documents = () => {
   const [filterType, setFilterType] = useState('all');
   const [deleteId, setDeleteId] = useState(null);
 
-  useEffect(() => {
-    fetchDocuments();
-  }, [filterType]);
-
   const fetchDocuments = async () => {
     try {
       const params = filterType !== 'all' ? { document_type: filterType } : {};
