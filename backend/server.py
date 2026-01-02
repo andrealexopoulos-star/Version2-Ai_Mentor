@@ -1303,6 +1303,62 @@ async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
     total_size = size_result[0]["total_size"] if size_result else 0
     
     # Categories
+
+# ==================== RETENTION BENCHMARKS (AU) ====================
+
+# Lightweight baseline benchmarks by ANZSIC Division (editable later)
+ANZSIC_DIVISION_BENCHMARKS_AU: Dict[str, Dict[str, int]] = {
+    # threshold values are "good" and "ok" minimums (in %). Below ok => red.
+    "A": {"good": 70, "ok": 55},  # Agriculture, Forestry and Fishing
+    "B": {"good": 75, "ok": 60},  # Mining
+    "C": {"good": 65, "ok": 50},  # Manufacturing
+    "D": {"good": 80, "ok": 65},  # Electricity, Gas, Water and Waste Services
+    "E": {"good": 70, "ok": 55},  # Construction
+    "F": {"good": 80, "ok": 65},  # Wholesale Trade
+    "G": {"good": 70, "ok": 55},  # Retail Trade
+    "H": {"good": 75, "ok": 60},  # Accommodation and Food Services
+    "I": {"good": 75, "ok": 60},  # Transport, Postal and Warehousing
+    "J": {"good": 85, "ok": 70},  # Information Media and Telecommunications
+    "K": {"good": 85, "ok": 70},  # Financial and Insurance Services
+    "L": {"good": 75, "ok": 60},  # Rental, Hiring and Real Estate Services
+    "M": {"good": 80, "ok": 65},  # Professional, Scientific and Technical Services
+    "N": {"good": 75, "ok": 60},  # Administrative and Support Services
+    "O": {"good": 75, "ok": 60},  # Public Administration and Safety
+    "P": {"good": 80, "ok": 65},  # Education and Training
+    "Q": {"good": 85, "ok": 70},  # Health Care and Social Assistance
+    "R": {"good": 70, "ok": 55},  # Arts and Recreation Services
+    "S": {"good": 70, "ok": 55},  # Other Services
+}
+
+RETENTION_RANGE_MIDPOINTS: Dict[str, int] = {
+    "<20%": 10,
+    "20-40%": 30,
+    "40-60%": 50,
+    "60-80%": 70,
+    ">80%": 90,
+}
+
+def compute_retention_rag(anzsic_division: Optional[str], retention_known: Optional[bool], retention_rate_range: Optional[str]) -> Optional[str]:
+    if not retention_known:
+        return None
+    if not retention_rate_range:
+        return None
+
+    midpoint = RETENTION_RANGE_MIDPOINTS.get(retention_rate_range)
+    if midpoint is None:
+        return None
+
+    division = (anzsic_division or "").strip().upper()
+    bench = ANZSIC_DIVISION_BENCHMARKS_AU.get(division)
+    if not bench:
+        bench = {"good": 75, "ok": 60}  # generic fallback
+
+    if midpoint >= bench["good"]:
+        return "green"
+    if midpoint >= bench["ok"]:
+        return "amber"
+    return "red"
+
     categories = await get_data_categories(current_user)
     
     # Has business profile
