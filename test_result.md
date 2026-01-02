@@ -209,11 +209,14 @@ frontend:
     file: "frontend/src/pages/BusinessProfile.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Replaced industry with ANZSIC divisions, added target country, AU business types, ABN/ACN fields, retention known/unknown radio + ranges + RAG badge"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Business Profile page loads correctly with all AU-specific fields. ANZSIC industry dropdown present, Business Type dropdown includes 'Company (Pty Ltd)', ABN/ACN input fields visible with correct placeholders. Customer retention radio buttons (Known/Unknown) working. Page structure and navigation confirmed working."
 
   - task: "Ops Advisory Centre page"
     implemented: true
