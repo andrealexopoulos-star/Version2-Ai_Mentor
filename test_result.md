@@ -212,6 +212,21 @@ frontend:
         agent: "testing"
         comment: "✅ VERIFIED: Login page working correctly. Successfully logged in existing user and redirected to dashboard. Login form functional and responsive."
 
+  - task: "Integrations page with Connect buttons"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Integrations.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Created integrations page with various third-party service connections and modal feedback"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Integrations page loads correctly at /integrations route. Page displays various integration options including LinkedIn, HubSpot, etc. Connect buttons present and functional. Modal feedback system working for upgrade/coming soon messages."
+
   - task: "Business Profile AU dropdowns + retention UI"
     implemented: true
     working: true
