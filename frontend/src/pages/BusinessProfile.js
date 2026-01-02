@@ -645,7 +645,7 @@ const BusinessProfile = () => {
                     <Rocket className="w-5 h-5 text-[#ccff00]" />
                     Strategy & Vision
                   </CardTitle>
-                  <CardDescription>Where you're going and how you'll get there</CardDescription>
+                  <CardDescription>Where you&apos;re going and how you&apos;ll get there</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
