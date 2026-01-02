@@ -273,6 +273,24 @@ const BusinessProfile = () => {
                         value={profile.website || ''}
                         onChange={(e) => updateProfile('website', e.target.value)}
                         placeholder="https://yourcompany.com"
+
+                    <div className="space-y-2">
+                      <Label>ABN</Label>
+                      <Input
+                        value={profile.abn || ''}
+                        onChange={(e) => updateProfile('abn', e.target.value)}
+                        placeholder="11 111 111 111"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>ACN</Label>
+                      <Input
+                        value={profile.acn || ''}
+                        onChange={(e) => updateProfile('acn', e.target.value)}
+                        placeholder="111 111 111"
+                      />
+                    </div>
+
                       />
                     </div>
                   </div>
