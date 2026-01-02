@@ -360,8 +360,8 @@ const Integrations = () => {
                   Coming Soon!
                 </h2>
                 <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
-                  We're working hard to bring {showModal.integration.name} integration to Strategy Squad. 
-                  We'll notify you when it's ready!
+                  We&apos;re working hard to bring {showModal.integration.name} integration to Strategy Squad.
+                  We&apos;ll notify you when it&apos;s ready!
                 </p>
                 <Button onClick={closeModal} className="btn-primary w-full">
                   Got It
