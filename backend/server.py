@@ -423,7 +423,13 @@ def build_business_knowledge_context(business_context: dict) -> str:
         if profile.get('average_customer_value'):
             context_parts.append(f"- Average Customer Value: {profile.get('average_customer_value')}")
         if profile.get('customer_retention_rate'):
-            context_parts.append(f"- Retention Rate: {profile.get('customer_retention_rate')}")
+            context_parts.append(f"- Retention Rate (legacy): {profile.get('customer_retention_rate')}")
+        if profile.get('retention_known') is not None:
+            context_parts.append(f"- Retention Known: {profile.get('retention_known')}")
+        if profile.get('retention_rate_range'):
+            context_parts.append(f"- Retention Rate Range: {profile.get('retention_rate_range')}")
+        if profile.get('retention_rag'):
+            context_parts.append(f"- Retention Score: {profile.get('retention_rag').upper()}")
         
         # Products & Services
         context_parts.append("\n### Products & Services:")
