@@ -239,11 +239,14 @@ frontend:
     file: "frontend/src/lib/api.js, multiple pages, frontend/src/context/AuthContext.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Centralised API base + auth header injection with axios client; removed debug console logs from AuthContext; updated all pages to use apiClient"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Frontend API usage is stable. User registration, login, and dashboard redirect working correctly. No redirect loops detected on page refresh. Authentication flow working properly with proper session management."
 
 
   - task: "Register page redesign"
