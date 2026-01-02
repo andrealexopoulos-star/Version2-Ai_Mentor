@@ -417,8 +417,32 @@ class StrategicAdvisorAPITester:
         """Test admin subscription management"""
         print("\n🔍 Testing Admin Subscription Endpoint...")
         
-        if not self.admin_token or not self.user_id:
-            self.log_test("Admin Subscription Test", False, "Admin token or user ID not available")
+        # Create a regular user to test admin functionality on
+        test_user_id = str(uuid.uuid4())[:8]
+        test_user_data = {
+            "name": "Test Target User",
+            "email": f"target{test_user_id}@example.com",
+            "password": "testpass123",
+            "business_name": "Target Business",
+            "industry": "Technology"
+        }
+        
+        success, response = self.run_test(
+            "Create Target User for Admin Test",
+            "POST",
+            "auth/register",
+            200,
+            data=test_user_data
+        )
+        
+        if not success:
+            self.log_test("Admin Subscription Test", False, "Could not create target user")
+            return False
+        
+        target_user_id = response['user']['id']
+        
+        if not self.admin_token:
+            self.log_test("Admin Subscription Test", False, "Admin token not available")
             return False
         
         # Save current token and switch to admin
@@ -433,7 +457,7 @@ class StrategicAdvisorAPITester:
         success, response = self.run_test(
             "Admin Set Subscription Tier",
             "PUT",
-            f"admin/users/{self.user_id}/subscription",
+            f"admin/users/{target_user_id}/subscription",
             200,
             data=subscription_data
         )
