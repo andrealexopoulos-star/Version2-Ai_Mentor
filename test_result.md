@@ -243,6 +243,8 @@ frontend:
         agent: "main"
         comment: "Updated register page with premium modern business design"
 
+  - agent: "main"
+    message: "Implemented AU Business Profile fields (ANZSIC divisions, ABN/ACN, target country), retention known/unknown + RAG scoring, added Ops Advisory Centre page + backend /api/oac/recommendations with monthly tier limits and prorating, and centralised frontend API calls via apiClient to stabilise login/redirect behavior. Please run full frontend + key backend tests per test_plan."
   - task: "Dashboard layout update"
     implemented: true
     working: true
