@@ -19,6 +19,7 @@ import Settings from "./pages/Settings";
 import Diagnosis from "./pages/Diagnosis";
 import DataCenter from "./pages/DataCenter";
 import BusinessProfile from "./pages/BusinessProfile";
+import OpsAdvisoryCentre from "./pages/OpsAdvisoryCentre";
 import Pricing from "./pages/Pricing";
 import Integrations from "./pages/Integrations";
 import TermsAndConditions from "./pages/TermsAndConditions";
