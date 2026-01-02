@@ -258,7 +258,7 @@ const Pricing = () => {
                 <HeadphonesIcon className="w-6 h-6 text-blue-600" />
               </div>
               <p className="font-medium text-slate-900">Expert Support</p>
-              <p className="text-sm text-slate-500">We're here to help</p>
+              <p className="text-sm text-slate-500">We&apos;re here to help</p>
             </div>
           </div>
         </div>
