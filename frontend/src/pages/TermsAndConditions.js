@@ -70,9 +70,9 @@ const TermsAndConditions = () => {
               </h2>
               <div className="pl-10 space-y-4 text-slate-600">
                 <p>
-                  By accessing or using The Strategy Squad platform ("Service"), operated by The Strategy Squad Pty Ltd 
-                  (ABN to be registered) ("Company", "we", "us", or "our"), you agree to be bound by these Terms and 
-                  Conditions ("Terms"). If you do not agree to these Terms, you must not access or use the Service.
+                  By accessing or using The Strategy Squad platform (&quot;Service&quot;), operated by The Strategy Squad Pty Ltd
+                  (ABN to be registered) (&quot;Company&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), you agree to be bound by these Terms and
+                  Conditions (&quot;Terms&quot;). If you do not agree to these Terms, you must not access or use the Service.
                 </p>
                 <p>
                   These Terms constitute a legally binding agreement between you and The Strategy Squad. By using our 
