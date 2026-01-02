@@ -36,6 +36,7 @@ const DashboardLayout = ({ children }) => {
     { icon: MessageSquare, label: 'AI Advisor', path: '/advisor' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Database, label: 'Data Center', path: '/data-center' },
+    { icon: Zap, label: 'Ops Advisory Centre', path: '/oac', isNew: true },
     { type: 'divider', label: 'Tools' },
     { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis' },
     { icon: BarChart3, label: 'Analysis', path: '/analysis' },
