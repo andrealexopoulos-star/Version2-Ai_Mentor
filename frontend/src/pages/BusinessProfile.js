@@ -246,7 +246,7 @@ const BusinessProfile = () => {
                       <Select value={profile.business_type || ''} onValueChange={(v) => updateProfile('business_type', v)}>
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                         <SelectContent className="bg-white">
-                          {businessTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          {auBusinessTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
