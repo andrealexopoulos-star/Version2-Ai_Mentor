@@ -19,14 +19,9 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      console.log('Fetching user from:', `${API}/auth/me`);
-      const response = await axios.get(`${API}/auth/me`);
-      console.log('User fetched:', response.data);
+      const response = await apiClient.get(`/auth/me`);
       setUser(response.data);
     } catch (error) {
-      console.error('Auth error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
       logout();
     } finally {
       setLoading(false);
