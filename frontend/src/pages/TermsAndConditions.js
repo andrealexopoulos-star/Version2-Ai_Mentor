@@ -141,7 +141,7 @@ const TermsAndConditions = () => {
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
                   <p>
                     <strong>3.1</strong> The Strategy Squad, its directors, officers, employees, agents, contractors, 
-                    and affiliates ("Released Parties") shall not be liable for any:
+                    and affiliates (&quot;Released Parties&quot;) shall not be liable for any:
                   </p>
                   <ul className="list-disc pl-5 space-y-1">
                     <li>Direct, indirect, incidental, special, consequential, or punitive damages</li>
