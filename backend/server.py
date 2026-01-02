@@ -1382,20 +1382,6 @@ def compute_retention_rag(anzsic_division: Optional[str], retention_known: Optio
         return "amber"
     return "red"
 
-    categories = await get_data_categories(current_user)
-    
-    # Has business profile
-    profile = await db.business_profiles.find_one({"user_id": current_user["id"]})
-    
-    return {
-        "total_files": total_files,
-        "total_size_bytes": total_size,
-        "total_size_mb": round(total_size / (1024 * 1024), 2),
-        "categories": categories,
-        "has_business_profile": profile is not None,
-        "profile_completeness": calculate_profile_completeness(profile) if profile else 0
-    }
-
 def calculate_profile_completeness(profile: dict) -> int:
     """Calculate profile completeness percentage"""
     if not profile:
