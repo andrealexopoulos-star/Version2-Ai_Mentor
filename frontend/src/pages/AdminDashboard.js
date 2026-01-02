@@ -24,12 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import { Users, BarChart3, FileText, MessageSquare, Trash2, Shield, User, Loader2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const AdminDashboard = () => {
   const { user } = useAuth();
