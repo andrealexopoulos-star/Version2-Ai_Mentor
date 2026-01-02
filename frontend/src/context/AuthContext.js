@@ -1,14 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { apiClient, API_BASE } from '../lib/api';
 
 const AuthContext = createContext(null);
-
-// Get API URL from environment or use relative path
-const API = process.env.REACT_APP_BACKEND_URL 
-  ? `${process.env.REACT_APP_BACKEND_URL}/api`
-  : '/api';
-
-console.log('Auth API URL:', API);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
