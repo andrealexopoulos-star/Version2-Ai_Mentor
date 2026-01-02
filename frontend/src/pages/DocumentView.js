@@ -162,7 +162,7 @@ const DocumentView = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Document</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{document?.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{document?.title}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
