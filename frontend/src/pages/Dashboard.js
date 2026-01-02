@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API}/dashboard/stats`);
+      const response = await apiClient.get(`/dashboard/stats`);
       setStats(response.data);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
