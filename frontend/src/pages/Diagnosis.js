@@ -6,13 +6,13 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, Stethoscope, AlertTriangle, Save, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 
 const problemAreas = [
   { id: 'revenue', label: 'Revenue & Sales' },
@@ -56,7 +56,7 @@ const Diagnosis = () => {
     setResult(null);
 
     try {
-      const response = await axios.post(`${API}/diagnose`, formData);
+      const response = await apiClient.post(`/diagnose`, formData);
       setResult(response.data);
       toast.success('Diagnosis complete!');
     } catch (error) {

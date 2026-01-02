@@ -6,13 +6,13 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Card, CardContent } from '../components/ui/card';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, BarChart3, ArrowRight, Save, FileText } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 
 const analysisTypes = [
   { value: 'business_analysis', label: 'Business Model Analysis', desc: 'Analyze strengths, weaknesses, opportunities' },
@@ -44,7 +44,7 @@ const Analysis = () => {
     setResult(null);
 
     try {
-      const response = await axios.post(`${API}/analyses`, formData);
+      const response = await apiClient.post(`/analyses`, formData);
       setResult(response.data);
       toast.success('Analysis complete!');
     } catch (error) {
