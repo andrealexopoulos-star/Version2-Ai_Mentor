@@ -1614,17 +1614,17 @@ Recent documents created (latest first):
 Recent uploaded files (latest first):
 {recent_files}
 
-Return exactly 5 recommendations.
-For each recommendation:
-1) a short title
-2) one-line reason referencing the business context above
-3) 3-5 concrete actions.
+CRITICAL OUTPUT RULES:
+- Output ONLY the 5 recommendations. No intro, no closing text, no markdown headings.
+- Must start with "1." and end with "5." section.
+- Exactly 5 items.
 
-Formatting:
-1. Title
-Reason: ...
-- action
-- action
+FORMAT (repeat 5x):
+1. <Short title>
+Reason: <One line referencing the business context above>
+- <Action>
+- <Action>
+- <Action>
 """
 
     session_id = f"oac_{uuid.uuid4()}"
