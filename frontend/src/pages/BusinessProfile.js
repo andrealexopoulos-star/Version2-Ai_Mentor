@@ -238,6 +238,13 @@ const BusinessProfile = () => {
                       <Select value={profile.industry || ''} onValueChange={(v) => updateProfile('industry', v)}>
                         <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
                         <SelectContent className="bg-white">
+                          {anzsicDivisions.map(i => (
+                            <SelectItem key={i.code} value={i.code}>{i.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="space-y-2">
                       <Label>Target Country</Label>
                       <Select value={profile.target_country || 'Australia'} onValueChange={(v) => updateProfile('target_country', v)}>
@@ -247,12 +254,6 @@ const BusinessProfile = () => {
                         </SelectContent>
                       </Select>
                     </div>
-
-                          {anzsicDivisions.map(i => (
-                            <SelectItem key={i.code} value={i.code}>{i.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Business Type</Label>
