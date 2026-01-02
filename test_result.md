@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Update fonts to premium modern business style, add pricing page with 3 subscription tiers (Free, $29/mo, $99/mo)"
+user_problem_statement: "Australian business profile updates (ANZSIC + ABN/ACN + retention known/unknown + RAG scoring), Ops Advisory Centre (OAC) with recommendation limits by subscription tier, and stabilise frontend API usage"
 
 backend:
   - task: "Health check endpoint"
