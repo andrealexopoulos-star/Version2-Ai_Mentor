@@ -86,6 +86,7 @@ function AppRoutes() {
       <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
       <Route path="/data-center" element={<ProtectedRoute><DataCenter /></ProtectedRoute>} />
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
+      <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
