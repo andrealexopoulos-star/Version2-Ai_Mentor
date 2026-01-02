@@ -319,7 +319,177 @@ class StrategicAdvisorAPITester:
         
         return doc_id
 
-    def test_sop_generators(self):
+    def test_business_profile_au_fields(self):
+        """Test business profile with new AU fields"""
+        print("\n🔍 Testing Business Profile AU Fields...")
+        
+        # Test business profile update with AU fields
+        profile_data = {
+            "industry": "M",  # ANZSIC division M
+            "business_type": "Company (Pty Ltd)",
+            "abn": "12345678901",
+            "acn": "123456789",
+            "target_country": "Australia",
+            "retention_known": True,
+            "retention_rate_range": "60-80%"
+        }
+        
+        success, response = self.run_test(
+            "Update Business Profile with AU Fields",
+            "PUT",
+            "business-profile",
+            200,
+            data=profile_data
+        )
+        
+        if success:
+            # Verify retention_rag is computed and present
+            retention_rag = response.get('retention_rag')
+            if retention_rag is not None:
+                self.log_test("Business Profile - Retention RAG Computed", True, f"RAG: {retention_rag}")
+            else:
+                self.log_test("Business Profile - Retention RAG Computed", False, "retention_rag field missing")
+            
+            # Verify all AU fields are present
+            au_fields = ['industry', 'business_type', 'abn', 'acn', 'target_country', 'retention_known', 'retention_rate_range']
+            missing_fields = []
+            for field in au_fields:
+                if field not in response:
+                    missing_fields.append(field)
+            
+            if not missing_fields:
+                self.log_test("Business Profile - All AU Fields Present", True, "")
+            else:
+                self.log_test("Business Profile - All AU Fields Present", False, f"Missing: {missing_fields}")
+        
+        return success
+
+    def test_oac_recommendations(self):
+        """Test OAC recommendations endpoint"""
+        print("\n🔍 Testing OAC Recommendations...")
+        
+        # First call - should return locked:false, items length 5
+        success1, response1 = self.run_test(
+            "OAC Recommendations - First Call",
+            "GET",
+            "oac/recommendations",
+            200
+        )
+        
+        if success1:
+            # Verify locked is false
+            locked = response1.get('locked')
+            if locked == False:
+                self.log_test("OAC - First Call Not Locked", True, "")
+            else:
+                self.log_test("OAC - First Call Not Locked", False, f"locked: {locked}")
+            
+            # Verify items length is 5
+            items = response1.get('items', [])
+            if len(items) == 5:
+                self.log_test("OAC - First Call Items Length", True, f"Items: {len(items)}")
+            else:
+                self.log_test("OAC - First Call Items Length", False, f"Expected 5 items, got {len(items)}")
+            
+            # Store usage for comparison
+            usage1 = response1.get('usage', {})
+            used1 = usage1.get('used', 0)
+        
+        # Second call - should be cached and not increment usage
+        success2, response2 = self.run_test(
+            "OAC Recommendations - Second Call (Cached)",
+            "GET",
+            "oac/recommendations",
+            200
+        )
+        
+        if success2:
+            # Verify cached is true
+            meta = response2.get('meta', {})
+            cached = meta.get('cached')
+            if cached == True:
+                self.log_test("OAC - Second Call Cached", True, "")
+            else:
+                self.log_test("OAC - Second Call Cached", False, f"cached: {cached}")
+            
+            # Verify usage didn't increment
+            usage2 = response2.get('usage', {})
+            used2 = usage2.get('used', 0)
+            if success1 and used1 == used2:
+                self.log_test("OAC - Usage Not Incremented on Cache", True, f"Usage stayed at {used2}")
+            else:
+                self.log_test("OAC - Usage Not Incremented on Cache", False, f"Usage changed from {used1} to {used2}")
+        
+        return success1 and success2
+
+    def test_admin_subscription_endpoint(self):
+        """Test admin subscription management"""
+        print("\n🔍 Testing Admin Subscription Endpoint...")
+        
+        if not self.admin_token or not self.user_id:
+            self.log_test("Admin Subscription Test", False, "Admin token or user ID not available")
+            return False
+        
+        # Save current token and switch to admin
+        user_token = self.token
+        self.token = self.admin_token
+        
+        # Test setting subscription tier to professional
+        subscription_data = {
+            "subscription_tier": "professional"
+        }
+        
+        success, response = self.run_test(
+            "Admin Set Subscription Tier",
+            "PUT",
+            f"admin/users/{self.user_id}/subscription",
+            200,
+            data=subscription_data
+        )
+        
+        if success:
+            # Verify the tier was updated
+            updated_tier = response.get('subscription_tier')
+            if updated_tier == 'professional':
+                self.log_test("Admin - Subscription Tier Updated", True, f"Tier: {updated_tier}")
+            else:
+                self.log_test("Admin - Subscription Tier Updated", False, f"Expected 'professional', got '{updated_tier}'")
+        
+        # Restore user token
+        self.token = user_token
+        
+        return success
+
+    def test_quota_lock_simulation(self):
+        """Test quota lock behavior for free users"""
+        print("\n🔍 Testing Quota Lock Simulation...")
+        
+        # First, make one OAC call to establish baseline
+        success, response = self.run_test(
+            "Quota Test - Initial OAC Call",
+            "GET",
+            "oac/recommendations",
+            200
+        )
+        
+        if success:
+            usage = response.get('usage', {})
+            used = usage.get('used', 0)
+            limit = usage.get('limit', 0)
+            locked = response.get('locked', True)
+            
+            # Verify used <= limit and locked is false after first call
+            if used <= limit:
+                self.log_test("Quota - Used Within Limit", True, f"Used: {used}, Limit: {limit}")
+            else:
+                self.log_test("Quota - Used Within Limit", False, f"Used: {used} exceeds Limit: {limit}")
+            
+            if locked == False:
+                self.log_test("Quota - Not Locked After First Call", True, "")
+            else:
+                self.log_test("Quota - Not Locked After First Call", False, f"locked: {locked}")
+        
+        return success
         """Test SOP generation endpoints"""
         print("\n🔍 Testing SOP Generators...")
         
