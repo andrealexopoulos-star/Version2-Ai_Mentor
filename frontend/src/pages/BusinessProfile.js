@@ -17,8 +17,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { apiClient } from '../lib/api';
 
 const industries = [
   'Retail & E-commerce', 'Professional Services', 'Food & Hospitality',
