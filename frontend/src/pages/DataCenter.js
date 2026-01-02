@@ -72,9 +72,9 @@ const DataCenter = () => {
   const fetchData = async () => {
     try {
       const [filesRes, statsRes, profileRes] = await Promise.all([
-        axios.get(`${API}/data-center/files`),
-        axios.get(`${API}/data-center/stats`),
-        axios.get(`${API}/business-profile`)
+        apiClient.get(`/data-center/files`),
+        apiClient.get(`/data-center/stats`),
+        apiClient.get(`/business-profile`)
       ]);
       setFiles(filesRes.data);
       setStats(statsRes.data);
@@ -124,7 +124,7 @@ const DataCenter = () => {
     formData.append('description', uploadForm.description);
 
     try {
-      await axios.post(`${API}/data-center/upload`, formData, {
+      await apiClient.post(`/data-center/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('File uploaded successfully!');
@@ -140,7 +140,7 @@ const DataCenter = () => {
   const handleDeleteFile = async () => {
     if (!deleteFileId) return;
     try {
-      await axios.delete(`${API}/data-center/files/${deleteFileId}`);
+      await apiClient.delete(`/data-center/files/${deleteFileId}`);
       setFiles(files.filter(f => f.id !== deleteFileId));
       toast.success('File deleted');
       fetchData();
@@ -154,7 +154,7 @@ const DataCenter = () => {
   const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
-      const response = await axios.put(`${API}/business-profile`, profile);
+      const response = await apiClient.put(`/business-profile`, profile);
       setProfile(response.data);
       toast.success('Business profile saved!');
       fetchData();
