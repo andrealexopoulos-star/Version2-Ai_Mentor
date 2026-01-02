@@ -68,7 +68,7 @@ const AdminDashboard = () => {
 
   const toggleUserStatus = async (userId, isActive) => {
     try {
-      await axios.put(`${API}/admin/users/${userId}`, { is_active: !isActive });
+      await apiClient.put(`/admin/users/${userId}`, { is_active: !isActive });
       setUsers(users.map(u => u.id === userId ? { ...u, is_active: !isActive } : u));
       toast.success(`User ${isActive ? 'deactivated' : 'activated'}`);
     } catch (error) {
