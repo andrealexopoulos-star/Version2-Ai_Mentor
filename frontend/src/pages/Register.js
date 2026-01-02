@@ -288,7 +288,7 @@ const Register = () => {
               ))}
             </div>
             <p className="text-gray-700 mb-4">
-              "Finally an AI that understands MY business. The personalised advice helped me increase revenue by 40%."
+              &quot;Finally an AI that understands MY business. The personalised advice helped me increase revenue by 40%.&quot;
             </p>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
