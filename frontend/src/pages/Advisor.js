@@ -83,7 +83,7 @@ const Advisor = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/chat`, {
+      const response = await apiClient.post(`/chat`, {
         message: userMessage,
         context_type: contextType,
         session_id: sessionId
