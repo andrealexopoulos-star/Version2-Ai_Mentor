@@ -28,10 +28,6 @@ const DocumentView = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    fetchDocument();
-  }, [id]);
-
   const fetchDocument = async () => {
     try {
       const response = await apiClient.get(`/documents/${id}`);
