@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 
 import { 
   Building2, Users, Target, Briefcase, TrendingUp, Settings2,
