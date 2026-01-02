@@ -76,6 +76,8 @@ const crmSystems = ['None', 'HubSpot', 'Salesforce', 'Zoho CRM', 'Pipedrive', 'M
 const accountingSystems = ['None', 'QuickBooks', 'Xero', 'FreshBooks', 'Wave', 'Sage', 'NetSuite', 'Custom/Other'];
 const pmTools = ['None', 'Asana', 'Monday.com', 'Trello', 'ClickUp', 'Notion', 'Jira', 'Basecamp', 'Custom/Other'];
 
+const retentionRanges = ['<20%', '20-40%', '40-60%', '60-80%', '>80%'];
+
 const BusinessProfile = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
