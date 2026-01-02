@@ -1,232 +1,238 @@
 {
-  "summary": "Backend API testing completed - 34/37 tests passed (91.9%)",
-  "total_tests": 37,
-  "passed_tests": 34,
+  "summary": "Backend API testing completed - 35/38 tests passed (92.1%)",
+  "total_tests": 38,
+  "passed_tests": 35,
   "failed_tests": 3,
-  "success_rate": "91.9%",
+  "success_rate": "92.1%",
   "test_details": [
     {
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:27.580470"
+      "timestamp": "2026-01-02T23:13:17.066384"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:27.613056"
+      "timestamp": "2026-01-02T23:13:17.104112"
     },
     {
       "test_name": "User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:27.885138"
+      "timestamp": "2026-01-02T23:13:17.374603"
     },
     {
       "test_name": "Registration - Default Free Tier",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:27.885826"
+      "timestamp": "2026-01-02T23:13:17.375246"
     },
     {
       "test_name": "Get Current User",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:27.936171"
+      "timestamp": "2026-01-02T23:13:17.452242"
     },
     {
       "test_name": "Auth Me - Subscription Tier Present",
       "success": true,
       "details": "Tier: free",
-      "timestamp": "2026-01-02T23:11:27.936681"
+      "timestamp": "2026-01-02T23:13:17.452859"
     },
     {
       "test_name": "Update Business Profile with AU Fields",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:27.975288"
+      "timestamp": "2026-01-02T23:13:17.530803"
     },
     {
       "test_name": "Business Profile - Retention RAG Computed",
       "success": true,
       "details": "RAG: amber",
-      "timestamp": "2026-01-02T23:11:27.975729"
+      "timestamp": "2026-01-02T23:13:17.531347"
     },
     {
       "test_name": "Business Profile - All AU Fields Present",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:27.975747"
+      "timestamp": "2026-01-02T23:13:17.531373"
     },
     {
       "test_name": "OAC Recommendations - First Call",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:33.476374"
+      "timestamp": "2026-01-02T23:13:23.411860"
     },
     {
       "test_name": "OAC - First Call Not Locked",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:33.476965"
+      "timestamp": "2026-01-02T23:13:23.412549"
     },
     {
       "test_name": "OAC - First Call Items Length",
       "success": true,
       "details": "Items: 5",
-      "timestamp": "2026-01-02T23:11:33.476982"
+      "timestamp": "2026-01-02T23:13:23.412569"
     },
     {
       "test_name": "OAC Recommendations - Second Call (Cached)",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:33.538040"
+      "timestamp": "2026-01-02T23:13:23.469399"
     },
     {
       "test_name": "OAC - Second Call Cached",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:33.538576"
+      "timestamp": "2026-01-02T23:13:23.469896"
     },
     {
       "test_name": "OAC - Usage Not Incremented on Cache",
       "success": true,
       "details": "Usage stayed at 1",
-      "timestamp": "2026-01-02T23:11:33.538592"
+      "timestamp": "2026-01-02T23:13:23.469910"
+    },
+    {
+      "test_name": "Create Target User for Admin Test",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:13:23.729480"
     },
     {
       "test_name": "Admin Subscription Test",
       "success": false,
-      "details": "Admin token or user ID not available",
-      "timestamp": "2026-01-02T23:11:33.538604"
+      "details": "Admin token not available",
+      "timestamp": "2026-01-02T23:13:23.730126"
     },
     {
       "test_name": "Quota Test - Initial OAC Call",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:33.572832"
+      "timestamp": "2026-01-02T23:13:23.763755"
     },
     {
       "test_name": "Quota - Used Within Limit",
       "success": true,
       "details": "Used: 1, Limit: 5",
-      "timestamp": "2026-01-02T23:11:33.573304"
+      "timestamp": "2026-01-02T23:13:23.764245"
     },
     {
       "test_name": "Quota - Not Locked After First Call",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:33.573318"
+      "timestamp": "2026-01-02T23:13:23.764261"
     },
     {
       "test_name": "Send Chat Message",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:43.215630"
+      "timestamp": "2026-01-02T23:13:31.914581"
     },
     {
       "test_name": "Get Chat History",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:43.263704"
+      "timestamp": "2026-01-02T23:13:31.972468"
     },
     {
       "test_name": "Get Chat Sessions",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:43.297248"
+      "timestamp": "2026-01-02T23:13:32.009554"
     },
     {
       "test_name": "Create Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:54.312396"
+      "timestamp": "2026-01-02T23:13:42.786503"
     },
     {
       "test_name": "Get All Analyses",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:54.378407"
+      "timestamp": "2026-01-02T23:13:42.840950"
     },
     {
       "test_name": "Get Specific Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:54.422747"
+      "timestamp": "2026-01-02T23:13:42.878481"
     },
     {
       "test_name": "Create Document",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:54.470625"
+      "timestamp": "2026-01-02T23:13:42.909108"
     },
     {
       "test_name": "Get All Documents",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:54.512701"
+      "timestamp": "2026-01-02T23:13:42.941353"
     },
     {
       "test_name": "Get Specific Document",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:54.589972"
+      "timestamp": "2026-01-02T23:13:42.990795"
     },
     {
       "test_name": "Update Document",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:11:54.627896"
+      "timestamp": "2026-01-02T23:13:43.067615"
     },
     {
       "test_name": "Generate SOP",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:12:04.644674"
+      "timestamp": "2026-01-02T23:13:54.711392"
     },
     {
       "test_name": "Generate Checklist",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:12:13.463086"
+      "timestamp": "2026-01-02T23:14:06.327375"
     },
     {
       "test_name": "Generate Action Plan",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:12:27.541421"
+      "timestamp": "2026-01-02T23:14:20.391484"
     },
     {
       "test_name": "Get Dashboard Stats",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:12:27.592484"
+      "timestamp": "2026-01-02T23:14:20.459022"
     },
     {
       "test_name": "Get Admin Stats",
       "success": false,
       "details": "Status: 403, Expected: 200, Response: {'detail': 'Admin access required'}",
-      "timestamp": "2026-01-02T23:12:27.629805"
+      "timestamp": "2026-01-02T23:14:20.505690"
     },
     {
       "test_name": "Get All Users",
       "success": false,
       "details": "Status: 403, Expected: 200, Response: {'detail': 'Admin access required'}",
-      "timestamp": "2026-01-02T23:12:27.664785"
+      "timestamp": "2026-01-02T23:14:20.542901"
     },
     {
       "test_name": "Delete Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:12:27.743080"
+      "timestamp": "2026-01-02T23:14:20.576355"
     },
     {
       "test_name": "Delete Document",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-02T23:12:27.777483"
+      "timestamp": "2026-01-02T23:14:20.650222"
     }
   ],
-  "timestamp": "2026-01-02T23:12:27.778003"
+  "timestamp": "2026-01-02T23:14:20.650882"
 }
