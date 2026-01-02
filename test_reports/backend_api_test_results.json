@@ -1,142 +1,232 @@
 {
-  "summary": "Backend API testing completed - 22/22 tests passed (100.0%)",
-  "total_tests": 22,
-  "passed_tests": 22,
-  "failed_tests": 0,
-  "success_rate": "100.0%",
+  "summary": "Backend API testing completed - 34/37 tests passed (91.9%)",
+  "total_tests": 37,
+  "passed_tests": 34,
+  "failed_tests": 3,
+  "success_rate": "91.9%",
   "test_details": [
     {
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:30:59.355398"
+      "timestamp": "2026-01-02T23:11:27.580470"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:30:59.396043"
+      "timestamp": "2026-01-02T23:11:27.613056"
     },
     {
       "test_name": "User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:30:59.702618"
+      "timestamp": "2026-01-02T23:11:27.885138"
+    },
+    {
+      "test_name": "Registration - Default Free Tier",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:27.885826"
     },
     {
       "test_name": "Get Current User",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:30:59.745414"
+      "timestamp": "2026-01-02T23:11:27.936171"
+    },
+    {
+      "test_name": "Auth Me - Subscription Tier Present",
+      "success": true,
+      "details": "Tier: free",
+      "timestamp": "2026-01-02T23:11:27.936681"
+    },
+    {
+      "test_name": "Update Business Profile with AU Fields",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:27.975288"
+    },
+    {
+      "test_name": "Business Profile - Retention RAG Computed",
+      "success": true,
+      "details": "RAG: amber",
+      "timestamp": "2026-01-02T23:11:27.975729"
+    },
+    {
+      "test_name": "Business Profile - All AU Fields Present",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:27.975747"
+    },
+    {
+      "test_name": "OAC Recommendations - First Call",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:33.476374"
+    },
+    {
+      "test_name": "OAC - First Call Not Locked",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:33.476965"
+    },
+    {
+      "test_name": "OAC - First Call Items Length",
+      "success": true,
+      "details": "Items: 5",
+      "timestamp": "2026-01-02T23:11:33.476982"
+    },
+    {
+      "test_name": "OAC Recommendations - Second Call (Cached)",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:33.538040"
+    },
+    {
+      "test_name": "OAC - Second Call Cached",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:33.538576"
+    },
+    {
+      "test_name": "OAC - Usage Not Incremented on Cache",
+      "success": true,
+      "details": "Usage stayed at 1",
+      "timestamp": "2026-01-02T23:11:33.538592"
+    },
+    {
+      "test_name": "Admin Subscription Test",
+      "success": false,
+      "details": "Admin token or user ID not available",
+      "timestamp": "2026-01-02T23:11:33.538604"
+    },
+    {
+      "test_name": "Quota Test - Initial OAC Call",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:33.572832"
+    },
+    {
+      "test_name": "Quota - Used Within Limit",
+      "success": true,
+      "details": "Used: 1, Limit: 5",
+      "timestamp": "2026-01-02T23:11:33.573304"
+    },
+    {
+      "test_name": "Quota - Not Locked After First Call",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-02T23:11:33.573318"
     },
     {
       "test_name": "Send Chat Message",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:01.805062"
+      "timestamp": "2026-01-02T23:11:43.215630"
     },
     {
       "test_name": "Get Chat History",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:01.845829"
+      "timestamp": "2026-01-02T23:11:43.263704"
     },
     {
       "test_name": "Get Chat Sessions",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:01.884802"
+      "timestamp": "2026-01-02T23:11:43.297248"
     },
     {
       "test_name": "Create Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:11.198055"
+      "timestamp": "2026-01-02T23:11:54.312396"
     },
     {
       "test_name": "Get All Analyses",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:11.253710"
+      "timestamp": "2026-01-02T23:11:54.378407"
     },
     {
       "test_name": "Get Specific Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:11.302079"
+      "timestamp": "2026-01-02T23:11:54.422747"
     },
     {
       "test_name": "Create Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:11.372512"
+      "timestamp": "2026-01-02T23:11:54.470625"
     },
     {
       "test_name": "Get All Documents",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:11.419053"
+      "timestamp": "2026-01-02T23:11:54.512701"
     },
     {
       "test_name": "Get Specific Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:11.498506"
+      "timestamp": "2026-01-02T23:11:54.589972"
     },
     {
       "test_name": "Update Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:11.536629"
+      "timestamp": "2026-01-02T23:11:54.627896"
     },
     {
       "test_name": "Generate SOP",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:24.397897"
+      "timestamp": "2026-01-02T23:12:04.644674"
     },
     {
       "test_name": "Generate Checklist",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:34.371262"
+      "timestamp": "2026-01-02T23:12:13.463086"
     },
     {
       "test_name": "Generate Action Plan",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:43.977298"
+      "timestamp": "2026-01-02T23:12:27.541421"
     },
     {
       "test_name": "Get Dashboard Stats",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:44.044215"
+      "timestamp": "2026-01-02T23:12:27.592484"
     },
     {
       "test_name": "Get Admin Stats",
-      "success": true,
-      "details": "",
-      "timestamp": "2025-12-30T11:31:44.093754"
+      "success": false,
+      "details": "Status: 403, Expected: 200, Response: {'detail': 'Admin access required'}",
+      "timestamp": "2026-01-02T23:12:27.629805"
     },
     {
       "test_name": "Get All Users",
-      "success": true,
-      "details": "",
-      "timestamp": "2025-12-30T11:31:44.134534"
+      "success": false,
+      "details": "Status: 403, Expected: 200, Response: {'detail': 'Admin access required'}",
+      "timestamp": "2026-01-02T23:12:27.664785"
     },
     {
       "test_name": "Delete Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:44.173923"
+      "timestamp": "2026-01-02T23:12:27.743080"
     },
     {
       "test_name": "Delete Document",
       "success": true,
       "details": "",
-      "timestamp": "2025-12-30T11:31:44.217354"
+      "timestamp": "2026-01-02T23:12:27.777483"
     }
   ],
-  "timestamp": "2025-12-30T11:31:44.218080"
+  "timestamp": "2026-01-02T23:12:27.778003"
 }
