@@ -224,11 +224,14 @@ frontend:
     file: "frontend/src/pages/OpsAdvisoryCentre.js, frontend/src/App.js, frontend/src/components/DashboardLayout.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added /oac route + sidebar nav and UI to display OAC recommendations and quota lock state"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: OAC page loads successfully at /oac route. Page displays 5+ recommendations as expected. Navigation from sidebar working correctly. Page shows 'Today's Recommendations' heading and recommendation items are visible. Core functionality confirmed working."
 
   - task: "Stabilise frontend API usage"
     implemented: true
