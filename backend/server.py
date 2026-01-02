@@ -162,6 +162,8 @@ class BusinessProfileUpdate(BaseModel):
     
     # Market & Customers
     target_market: Optional[str] = None
+    target_country: Optional[str] = None  # ISO country or display name; start with Australia
+
     ideal_customer_profile: Optional[str] = None
     customer_segments: Optional[List[str]] = None
     geographic_focus: Optional[str] = None
