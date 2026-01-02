@@ -186,7 +186,17 @@ class StrategicAdvisorAPITester:
     def test_auth_me(self):
         """Test get current user"""
         print("\n🔍 Testing Auth Me...")
-        self.run_test("Get Current User", "GET", "auth/me", 200)
+        success, response = self.run_test("Get Current User", "GET", "auth/me", 200)
+        
+        if success:
+            # Verify subscription_tier is present
+            subscription_tier = response.get('subscription_tier')
+            if subscription_tier is not None:
+                self.log_test("Auth Me - Subscription Tier Present", True, f"Tier: {subscription_tier}")
+            else:
+                self.log_test("Auth Me - Subscription Tier Present", False, "subscription_tier field missing")
+        
+        return success
 
     def test_chat_functionality(self):
         """Test chat endpoints"""
