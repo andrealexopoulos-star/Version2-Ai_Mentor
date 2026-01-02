@@ -79,7 +79,7 @@ const AdminDashboard = () => {
   const deleteUser = async () => {
     if (!deleteUserId) return;
     try {
-      await axios.delete(`${API}/admin/users/${deleteUserId}`);
+      await apiClient.delete(`/admin/users/${deleteUserId}`);
       setUsers(users.filter(u => u.id !== deleteUserId));
       toast.success('User deleted');
     } catch (error) {
