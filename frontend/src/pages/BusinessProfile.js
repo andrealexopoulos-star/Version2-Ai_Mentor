@@ -254,7 +254,6 @@ const BusinessProfile = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    </div>
                     <div className="space-y-2">
                       <Label>Business Type</Label>
                       <Select value={profile.business_type || ''} onValueChange={(v) => updateProfile('business_type', v)}>
