@@ -3,7 +3,12 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// Get API URL from environment or use relative path
+const API = process.env.REACT_APP_BACKEND_URL 
+  ? `${process.env.REACT_APP_BACKEND_URL}/api`
+  : '/api';
+
+console.log('Auth API URL:', API);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -21,10 +26,14 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
+      console.log('Fetching user from:', `${API}/auth/me`);
       const response = await axios.get(`${API}/auth/me`);
+      console.log('User fetched:', response.data);
       setUser(response.data);
     } catch (error) {
       console.error('Auth error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       logout();
     } finally {
       setLoading(false);
@@ -32,8 +41,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
+    console.log('Logging in to:', `${API}/auth/login`);
     const response = await axios.post(`${API}/auth/login`, { email, password });
     const { access_token, user: userData } = response.data;
+    console.log('Login successful, token received');
     localStorage.setItem('token', access_token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     setToken(access_token);
