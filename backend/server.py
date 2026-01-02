@@ -77,6 +77,7 @@ class UserResponse(BaseModel):
     business_name: Optional[str] = None
     industry: Optional[str] = None
     role: str
+    subscription_tier: Optional[str] = None
     created_at: str
 
 class TokenResponse(BaseModel):
