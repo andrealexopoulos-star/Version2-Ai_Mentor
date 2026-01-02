@@ -219,7 +219,7 @@ const Advisor = () => {
 
               {/* Custom Question Hint */}
               <p className="text-center text-sm text-[#0f2f24]/50 mt-8">
-                Or type your own question below — I'll tailor my advice to {user?.business_name || 'your business'}
+                Or type your own question below — I&apos;ll tailor my advice to {user?.business_name || 'your business'}
               </p>
             </div>
           ) : (
