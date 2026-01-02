@@ -1448,46 +1448,59 @@ def parse_recommendations(text: str, max_items: int = 5) -> List[Dict[str, Any]]
         if line.lower().startswith("recommendation") or line.startswith("##"):
             continue
 
-        if line.startswith("-") or line.startswith("•"):
-            a = line.lstrip("-• ").strip()
+        # Recognize common patterns:
+        # - Title lines like "1. ..." or "**1. ...**"
+        # - Reason lines like "Reason: ..." or "- action"
+        normalized = line.strip('*').strip()
+
+        if normalized.lower().startswith("reason:"):
+            reason_text = normalized.split(":", 1)[1].strip()
+            if current and reason_text and "reason" not in current:
+                current["reason"] = reason_text
+            continue
+
+        if normalized.startswith("-") or normalized.startswith("•"):
+            a = normalized.lstrip("-• ").strip()
             if a:
                 actions.append(a)
             continue
 
         # numbered item
-        if line[0].isdigit() and "." in line[:4]:
+        if normalized and normalized[0].isdigit() and "." in normalized[:4]:
             # flush previous
             if current:
                 current["actions"] = actions[:]
                 items.append(current)
                 current = {}
                 actions = []
-            title = line.split(".", 1)[1].strip()
+            title = normalized.split(".", 1)[1].strip().strip('*').strip()
             current = {"title": title}
             continue
 
         # fallback: treat as title if none
         if not current:
-            current = {"title": line}
+            current = {"title": normalized}
         else:
             # treat as reason
             if "reason" not in current:
-                current["reason"] = line
+                current["reason"] = normalized
 
     if current:
         current["actions"] = actions[:]
         items.append(current)
 
-    # normalize and cap
-    cleaned = []
+    cleaned: List[Dict[str, Any]] = []
     for it in items:
-        if not it.get("title"):
+        title = (it.get("title") or "").strip()
+        if not title:
             continue
         cleaned.append({
-            "title": it.get("title"),
+            "title": title,
             "reason": it.get("reason"),
-            "actions": it.get("actions", [])[:5]
+            "actions": (it.get("actions") or [])[:5]
         })
+
+    # If the model didn't number items, take the first max_items anyway
     return cleaned[:max_items]
 
 
