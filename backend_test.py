@@ -113,6 +113,12 @@ class StrategicAdvisorAPITester:
             else:
                 self.log_test("Registration - Default Free Tier", False, f"Expected 'free', got '{subscription_tier}'")
             
+            # Check if this user is admin (first user becomes admin)
+            if user_info.get('role') == 'admin':
+                self.admin_token = self.token
+                self.admin_user_id = self.user_id
+                self.log_test("Registration - Admin User Setup", True, "First user is admin")
+            
             return True
         return False
 
