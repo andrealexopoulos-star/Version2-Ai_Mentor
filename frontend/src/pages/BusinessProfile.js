@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
-import axios from 'axios';
+
 import { 
   Building2, Users, Target, Briefcase, TrendingUp, Settings2,
   Loader2, Save, CheckCircle, AlertCircle, Lightbulb, DollarSign,

@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-import axios from 'axios';
+
 import { 
   Upload, FileText, Database, Building2, Trash2, Download,
   Loader2, FolderOpen, Check, AlertCircle, HardDrive,
@@ -26,8 +26,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { apiClient } from '../lib/api';
 
 const fileCategories = [
   { value: 'financial', label: 'Financial & Accounting', icon: FileSpreadsheet },
