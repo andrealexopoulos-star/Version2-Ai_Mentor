@@ -275,7 +275,7 @@ const TermsAndConditions = () => {
               </h2>
               <div className="pl-10 space-y-4 text-slate-600">
                 <p>
-                  To the maximum extent permitted by applicable law, the Service is provided "as is" and "as available" 
+                  To the maximum extent permitted by applicable law, the Service is provided &quot;as is&quot; and &quot;as available&quot;
                   without warranties of any kind, whether express, implied, statutory, or otherwise, including but not 
                   limited to implied warranties of merchantability, fitness for a particular purpose, title, and 
                   non-infringement.
