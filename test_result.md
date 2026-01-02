@@ -263,10 +263,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Pricing page functionality"
-    - "Landing page with new design"
-    - "Login/Register flow"
-  stuck_tasks: []
+    - "Login/Register flow + redirect stability"
+    - "Business Profile AU fields + retention scoring"
+    - "Ops Advisory Centre (OAC) recommendations + quota lock"
+  stuck_tasks:
+    - "Recurring Login/Redirect Malfunction"
   test_all: false
   test_priority: "high_first"
 
