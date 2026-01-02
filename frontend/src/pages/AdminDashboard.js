@@ -58,7 +58,7 @@ const AdminDashboard = () => {
   const toggleUserRole = async (userId, currentRole) => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     try {
-      await axios.put(`${API}/admin/users/${userId}`, { role: newRole });
+      await apiClient.put(`/admin/users/${userId}`, { role: newRole });
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
       toast.success(`User role updated to ${newRole}`);
     } catch (error) {
