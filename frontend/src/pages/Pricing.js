@@ -284,7 +284,7 @@ const Pricing = () => {
                     </svg>
                   ))}
                 </div>
-                <p className="text-slate-700 mb-6 leading-relaxed">"{testimonial.quote}"</p>
+                <p className="text-slate-700 mb-6 leading-relaxed">&quot;{testimonial.quote}&quot;</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-semibold">{testimonial.avatar}</span>
