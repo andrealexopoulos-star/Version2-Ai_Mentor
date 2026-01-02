@@ -1155,6 +1155,16 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     now = datetime.now(timezone.utc).isoformat()
     
     profile_data = {k: v for k, v in profile.model_dump().items() if v is not None}
+
+    # Compute retention score (AU baselines) if inputs are present
+    computed_rag = compute_retention_rag(
+        profile_data.get("industry"),
+        profile_data.get("retention_known"),
+        profile_data.get("retention_rate_range"),
+    )
+    if computed_rag:
+        profile_data["retention_rag"] = computed_rag
+
     profile_data["user_id"] = current_user["id"]
     profile_data["updated_at"] = now
     
