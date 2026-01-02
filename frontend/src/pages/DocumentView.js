@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { ArrowLeft, Loader2, Download, Trash2, Clock, Tag, Copy, Check } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
