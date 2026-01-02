@@ -63,8 +63,8 @@ const BusinessProfile = () => {
   const fetchProfile = async () => {
     try {
       const [profileRes, statsRes] = await Promise.all([
-        axios.get(`${API}/business-profile`),
-        axios.get(`${API}/data-center/stats`)
+        apiClient.get(`/business-profile`),
+        apiClient.get(`/data-center/stats`)
       ]);
       setProfile(profileRes.data);
       setCompleteness(statsRes.data.profile_completeness || 0);
