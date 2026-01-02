@@ -1313,6 +1313,19 @@ async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
     total_size = size_result[0]["total_size"] if size_result else 0
     
     # Categories
+    categories = await get_data_categories(current_user)
+    
+    # Has business profile
+    profile = await db.business_profiles.find_one({"user_id": current_user["id"]})
+    
+    return {
+        "total_files": total_files,
+        "total_size_bytes": total_size,
+        "total_size_mb": round(total_size / (1024 * 1024), 2),
+        "categories": categories,
+        "has_business_profile": profile is not None,
+        "profile_completeness": calculate_profile_completeness(profile) if profile else 0
+    }
 
 # ==================== RETENTION BENCHMARKS (AU) ====================
 
