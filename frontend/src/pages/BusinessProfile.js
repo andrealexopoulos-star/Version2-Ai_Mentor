@@ -19,14 +19,41 @@ import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 
-const industries = [
-  'Retail & E-commerce', 'Professional Services', 'Food & Hospitality',
-  'Healthcare', 'Technology', 'Manufacturing', 'Construction',
-  'Real Estate', 'Education', 'Finance', 'Marketing & Advertising',
-  'Transportation & Logistics', 'Entertainment & Media', 'Non-profit', 'Other'
+const anzsicDivisions = [
+  { code: 'A', label: 'A — Agriculture, Forestry and Fishing' },
+  { code: 'B', label: 'B — Mining' },
+  { code: 'C', label: 'C — Manufacturing' },
+  { code: 'D', label: 'D — Electricity, Gas, Water and Waste Services' },
+  { code: 'E', label: 'E — Construction' },
+  { code: 'F', label: 'F — Wholesale Trade' },
+  { code: 'G', label: 'G — Retail Trade' },
+  { code: 'H', label: 'H — Accommodation and Food Services' },
+  { code: 'I', label: 'I — Transport, Postal and Warehousing' },
+  { code: 'J', label: 'J — Information Media and Telecommunications' },
+  { code: 'K', label: 'K — Financial and Insurance Services' },
+  { code: 'L', label: 'L — Rental, Hiring and Real Estate Services' },
+  { code: 'M', label: 'M — Professional, Scientific and Technical Services' },
+  { code: 'N', label: 'N — Administrative and Support Services' },
+  { code: 'O', label: 'O — Public Administration and Safety' },
+  { code: 'P', label: 'P — Education and Training' },
+  { code: 'Q', label: 'Q — Health Care and Social Assistance' },
+  { code: 'R', label: 'R — Arts and Recreation Services' },
+  { code: 'S', label: 'S — Other Services' },
+  { code: 'OTHER', label: 'Other / Not sure' },
 ];
 
-const businessTypes = ['Sole Proprietorship', 'LLC', 'Corporation', 'Partnership', 'S-Corp', 'C-Corp', 'Non-profit', 'Cooperative'];
+const auBusinessTypes = [
+  'Sole Trader',
+  'Partnership',
+  'Company (Pty Ltd)',
+  'Company (Ltd)',
+  'Trust',
+  'Incorporated Association',
+  'Co-operative',
+  'Not-for-profit',
+  'Government',
+  'Other'
+];
 const employeeCounts = ['Just me', '2-5', '6-10', '11-25', '26-50', '51-100', '101-250', '250+'];
 const revenueRanges = ['Pre-revenue', '< $50K', '$50K - $100K', '$100K - $250K', '$250K - $500K', '$500K - $1M', '$1M - $2.5M', '$2.5M - $5M', '$5M - $10M', '$10M+'];
 const fundingStages = ['Bootstrapped', 'Friends & Family', 'Angel', 'Seed', 'Series A', 'Series B+', 'Profitable'];
