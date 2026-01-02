@@ -255,11 +255,14 @@ frontend:
     file: "frontend/src/pages/Register.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Updated register page with premium modern business design"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Register page working correctly. Successfully registered new user with realistic business data. Form validation working, password confirmation working, redirect to dashboard after registration confirmed working."
 
   - agent: "main"
     message: "Implemented AU Business Profile fields (ANZSIC divisions, ABN/ACN, target country), retention known/unknown + RAG scoring, added Ops Advisory Centre page + backend /api/oac/recommendations with monthly tier limits and prorating, and centralised frontend API calls via apiClient to stabilise login/redirect behavior. Please run full frontend + key backend tests per test_plan."
