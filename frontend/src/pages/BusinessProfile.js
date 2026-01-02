@@ -839,7 +839,7 @@ const BusinessProfile = () => {
                   <div className="p-4 bg-[#f5f5f0] rounded-sm">
                     <h4 className="font-medium text-[#0f2f24] mb-2">Coming Soon: Direct Integrations</h4>
                     <p className="text-sm text-[#0f2f24]/60">
-                      We're working on direct integrations with HubSpot, QuickBooks, and other platforms
+                      We&apos;re working on direct integrations with HubSpot, QuickBooks, and other platforms
                       to automatically sync your business data for even smarter AI recommendations.
                     </p>
                   </div>
