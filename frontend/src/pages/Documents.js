@@ -48,15 +48,14 @@ const Documents = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    try {
-
   useEffect(() => {
     fetchDocuments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterType]);
 
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
       await apiClient.delete(`/documents/${deleteId}`);
       setDocuments(documents.filter(d => d.id !== deleteId));
       toast.success('Document deleted');
