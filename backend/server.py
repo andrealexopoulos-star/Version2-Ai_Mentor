@@ -389,6 +389,12 @@ def build_business_knowledge_context(business_context: dict) -> str:
         # Basic Info
         if profile.get('business_type'):
             context_parts.append(f"- Business Type: {profile.get('business_type')}")
+        if profile.get('abn'):
+            context_parts.append(f"- ABN: {profile.get('abn')}")
+        if profile.get('acn'):
+            context_parts.append(f"- ACN: {profile.get('acn')}")
+        if profile.get('target_country'):
+            context_parts.append(f"- Target Country: {profile.get('target_country')}")
         if profile.get('year_founded'):
             context_parts.append(f"- Year Founded: {profile.get('year_founded')}")
         if profile.get('location'):

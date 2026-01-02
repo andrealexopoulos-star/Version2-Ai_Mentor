@@ -230,7 +230,7 @@ const BusinessProfile = () => {
                       <Input
                         value={profile.business_name || ''}
                         onChange={(e) => updateProfile('business_name', e.target.value)}
-                        placeholder="Your Company LLC"
+                        placeholder="Your Company Pty Ltd"
                       />
                     </div>
                     <div className="space-y-2">
