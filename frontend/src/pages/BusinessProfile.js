@@ -416,13 +416,82 @@ const BusinessProfile = () => {
                         placeholder="e.g., $5,000"
                       />
                     </div>
+
                     <div className="space-y-2">
-                      <Label>Customer Retention Rate</Label>
-                      <Input
-                        value={profile.customer_retention_rate || ''}
-                        onChange={(e) => updateProfile('customer_retention_rate', e.target.value)}
-                        placeholder="e.g., 85%"
-                      />
+                      <Label>Customer Retention</Label>
+                      <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}>
+                        <RadioGroup
+                          value={profile.retention_known === true ? 'known' : profile.retention_known === false ? 'unknown' : ''}
+                          onValueChange={(v) => {
+                            if (v === 'known') {
+                              updateProfile('retention_known', true);
+                            } else if (v === 'unknown') {
+                              updateProfile('retention_known', false);
+                              updateProfile('retention_rate_range', null);
+                              updateProfile('customer_retention_rate', null);
+                            }
+                          }}
+                          className="grid gap-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <RadioGroupItem value="unknown" id="retention_unknown" />
+                            <Label htmlFor="retention_unknown" className="cursor-pointer">Unknown</Label>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <RadioGroupItem value="known" id="retention_known" />
+                            <Label htmlFor="retention_known" className="cursor-pointer">Known</Label>
+                          </div>
+                        </RadioGroup>
+
+                        {profile.retention_known === true && (
+                          <div className="mt-4 space-y-2">
+                            <Label>Retention rate (approx.)</Label>
+                            <Select
+                              value={profile.retention_rate_range || ''}
+                              onValueChange={(v) => {
+                                updateProfile('retention_rate_range', v);
+                                updateProfile('customer_retention_rate', v);
+                              }}
+                            >
+                              <SelectTrigger><SelectValue placeholder="Select range" /></SelectTrigger>
+                              <SelectContent className="bg-white">
+                                {retentionRanges.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            {profile.retention_rag && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span
+                                  className="inline-flex items-center gap-2 px-2 py-1 rounded-full"
+                                  style={{
+                                    background:
+                                      profile.retention_rag === 'green'
+                                        ? 'rgba(0, 200, 83, 0.12)'
+                                        : profile.retention_rag === 'amber'
+                                          ? 'rgba(255, 149, 0, 0.12)'
+                                          : 'rgba(255, 59, 48, 0.12)',
+                                    color:
+                                      profile.retention_rag === 'green'
+                                        ? 'var(--accent-success)'
+                                        : profile.retention_rag === 'amber'
+                                          ? 'var(--accent-warning)'
+                                          : 'var(--accent-danger)'
+                                  }}
+                                >
+                                  <span className="w-2 h-2 rounded-full" style={{
+                                    background:
+                                      profile.retention_rag === 'green'
+                                        ? 'var(--accent-success)'
+                                        : profile.retention_rag === 'amber'
+                                          ? 'var(--accent-warning)'
+                                          : 'var(--accent-danger)'
+                                  }} />
+                                  Customer retention: {profile.retention_rag.toUpperCase()} vs AU benchmark
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
