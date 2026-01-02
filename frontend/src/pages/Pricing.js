@@ -153,7 +153,7 @@ const Pricing = () => {
             <span className="text-sm font-medium text-blue-700">Simple, transparent pricing</span>
           </div>
           <h1 className="font-heading font-bold text-4xl md:text-5xl lg:text-6xl text-slate-900 mb-6">
-            Choose the plan that's
+            Choose the plan that&apos;s
             <span className="gradient-text"> right for you</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto">
