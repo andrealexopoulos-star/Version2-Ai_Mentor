@@ -120,29 +120,6 @@ class StrategicAdvisorAPITester:
         """Test user login"""
         print("\n🔍 Testing User Login...")
         
-        # Create admin user first for admin tests
-        admin_unique_id = str(uuid.uuid4())[:8]
-        admin_data = {
-            "name": "Admin User",
-            "email": f"admin{admin_unique_id}@example.com",
-            "password": "adminpass123",
-            "business_name": "Admin Business",
-            "industry": "Technology"
-        }
-        
-        # Register admin (first user becomes admin)
-        success, response = self.run_test(
-            "Admin User Registration",
-            "POST",
-            "auth/register",
-            200,
-            data=admin_data
-        )
-        
-        if success and 'access_token' in response:
-            self.admin_token = response['access_token']
-            self.admin_user_id = response['user']['id']
-        
         # Now test regular login with existing user
         login_data = {
             "email": f"test{str(uuid.uuid4())[:8]}@example.com",
@@ -180,6 +157,14 @@ class StrategicAdvisorAPITester:
         if success and 'access_token' in response:
             self.token = response['access_token']
             self.user_id = response['user']['id']
+            
+            # Check if this user is admin (first user becomes admin)
+            user_info = response.get('user', {})
+            if user_info.get('role') == 'admin':
+                self.admin_token = self.token
+                self.admin_user_id = self.user_id
+                self.log_test("Admin User Setup", True, "First user is admin")
+            
             return True
         return False
 
