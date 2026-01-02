@@ -130,7 +130,7 @@ const MarketAnalysis = () => {
                     <li>• Be specific about your target market segment</li>
                     <li>• Name your main competitors if known</li>
                     <li>• Include your current market position</li>
-                    <li>• Mention any recent market trends you've observed</li>
+                    <li>• Mention any recent market trends you&apos;ve observed</li>
                   </ul>
                 </div>
               </CardContent>
