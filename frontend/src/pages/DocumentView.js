@@ -43,6 +43,12 @@ const DocumentView = () => {
   const handleDelete = async () => {
     try {
       await apiClient.delete(`/documents/${id}`);
+
+  useEffect(() => {
+    fetchDocument();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
       toast.success('Document deleted');
       navigate('/documents');
     } catch (error) {
