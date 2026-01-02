@@ -1382,6 +1382,270 @@ def compute_retention_rag(anzsic_division: Optional[str], retention_known: Optio
         return "amber"
     return "red"
 
+
+# ==================== SUBSCRIPTIONS & OAC ====================
+
+class SubscriptionUpdate(BaseModel):
+    subscription_tier: str
+
+
+def month_key(dt: datetime) -> str:
+    return dt.strftime("%Y-%m")
+
+
+def get_month_start(dt: datetime) -> datetime:
+    return datetime(dt.year, dt.month, 1, tzinfo=timezone.utc)
+
+
+def add_months(dt: datetime, months: int) -> datetime:
+    year = dt.year + ((dt.month - 1 + months) // 12)
+    month = ((dt.month - 1 + months) % 12) + 1
+    day = min(dt.day, 28)
+    return datetime(year, month, day, tzinfo=timezone.utc)
+
+
+def oac_monthly_limit_for_tier(tier: str) -> int:
+    t = (tier or "").lower()
+    if t == "free":
+        return 5
+    if t == "starter":
+        return 20
+    if t == "professional":
+        return 60
+    if t == "enterprise":
+        return 150
+    return 5
+
+
+def prorated_allowance(limit: int, started_at: datetime, now: datetime) -> int:
+    # Prorate for the remainder of the current month
+    month_start = get_month_start(now)
+    next_month = add_months(month_start, 1)
+    days_in_month = (next_month - month_start).days
+    remaining_days = max((next_month.date() - now.date()).days, 0)
+    # Include today as usable day
+    remaining_days = min(days_in_month, remaining_days + 1)
+    allowance = int((limit * remaining_days) / days_in_month)
+    return max(1, allowance) if limit > 0 else 0
+
+
+def parse_recommendations(text: str, max_items: int = 5) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    current: Dict[str, Any] = {}
+    actions: List[str] = []
+
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+
+        if line.lower().startswith("recommendation") or line.startswith("##"):
+            continue
+
+        if line.startswith("-") or line.startswith("•"):
+            a = line.lstrip("-• ").strip()
+            if a:
+                actions.append(a)
+            continue
+
+        # numbered item
+        if line[0].isdigit() and "." in line[:4]:
+            # flush previous
+            if current:
+                current["actions"] = actions[:]
+                items.append(current)
+                current = {}
+                actions = []
+            title = line.split(".", 1)[1].strip()
+            current = {"title": title}
+            continue
+
+        # fallback: treat as title if none
+        if not current:
+            current = {"title": line}
+        else:
+            # treat as reason
+            if "reason" not in current:
+                current["reason"] = line
+
+    if current:
+        current["actions"] = actions[:]
+        items.append(current)
+
+    # normalize and cap
+    cleaned = []
+    for it in items:
+        if not it.get("title"):
+            continue
+        cleaned.append({
+            "title": it.get("title"),
+            "reason": it.get("reason"),
+            "actions": it.get("actions", [])[:5]
+        })
+    return cleaned[:max_items]
+
+
+def tier_from_user(user: dict) -> str:
+    return (user.get("subscription_tier") or "free").lower()
+
+
+@api_router.put("/admin/users/{user_id}/subscription")
+async def admin_set_subscription(user_id: str, update: SubscriptionUpdate, admin: dict = Depends(get_admin_user)):
+    tier = update.subscription_tier.lower().strip()
+    if tier not in {"free", "starter", "professional", "enterprise"}:
+        raise HTTPException(status_code=400, detail="Invalid subscription tier")
+
+    now = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "subscription_tier": tier,
+            "subscription_started_at": now.isoformat(),
+            "updated_at": now.isoformat()
+        }}
+    )
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@api_router.get("/oac/recommendations")
+async def get_oac_recommendations(current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    mk = month_key(now)
+
+    # Load user + profile
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    profile = await db.business_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
+
+    tier = tier_from_user(user or {})
+    base_limit = oac_monthly_limit_for_tier(tier)
+
+    # prorate if started this month and not free
+    limit = base_limit
+    started_at_iso = (user or {}).get("subscription_started_at")
+    if tier != "free" and started_at_iso:
+        try:
+            started_at = datetime.fromisoformat(started_at_iso)
+            if month_key(started_at) == mk:
+                limit = prorated_allowance(base_limit, started_at, now)
+        except Exception:
+            pass
+
+    usage = await db.oac_usage.find_one({"user_id": current_user["id"], "month": mk}, {"_id": 0})
+    used = int((usage or {}).get("used", 0))
+
+    if used >= limit:
+        return {
+            "locked": True,
+            "usage": {"used": used, "limit": limit, "tier": tier, "month": mk}
+        }
+
+    # cache per day
+    day_key = now.strftime("%Y-%m-%d")
+    cached = await db.oac_recommendations.find_one({"user_id": current_user["id"], "date": day_key}, {"_id": 0})
+    if cached:
+        return {
+            "locked": False,
+            "meta": {"date": day_key, "cached": True},
+            "items": cached.get("items", []),
+            "usage": {"used": used, "limit": limit, "tier": tier, "month": mk}
+        }
+
+    # Build context snippets
+    recent_chats = await db.chat_history.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "message": 1, "response": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(8).to_list(8)
+
+    recent_docs = await db.documents.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "title": 1, "document_type": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(8).to_list(8)
+
+    recent_files = await db.data_files.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "filename": 1, "category": 1, "description": 1}
+    ).sort("created_at", -1).limit(8).to_list(8)
+
+    # Prompt: strict, non-generic, actionable
+    biz_name = (user or {}).get("business_name") or (profile or {}).get("business_name") or "this business"
+    industry = (profile or {}).get("industry") or (user or {}).get("industry")
+
+    prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
+Your job: produce deeply customised operational recommendations that are SPECIFIC to this business and NOT generic.
+
+Business name: {biz_name}
+Industry (ANZSIC division): {industry}
+Target country: {(profile or {}).get('target_country') or 'Australia'}
+Business type: {(profile or {}).get('business_type')}
+ABN/ACN present: {bool((profile or {}).get('abn')) or bool((profile or {}).get('acn'))}
+Customer retention known: {(profile or {}).get('retention_known')}
+Customer retention range: {(profile or {}).get('retention_rate_range')}
+Retention score: {(profile or {}).get('retention_rag')}
+
+Recent AI chats (latest first):
+{recent_chats}
+
+Recent documents created (latest first):
+{recent_docs}
+
+Recent uploaded files (latest first):
+{recent_files}
+
+Return exactly 5 recommendations.
+For each recommendation:
+1) a short title
+2) one-line reason referencing the business context above
+3) 3-5 concrete actions.
+
+Formatting:
+1. Title
+Reason: ...
+- action
+- action
+"""
+
+    session_id = f"oac_{uuid.uuid4()}"
+    ai_text = await get_ai_response(prompt, "general", session_id, user_id=current_user["id"], user_data={
+        "name": (user or {}).get("name"),
+        "business_name": biz_name,
+        "industry": industry,
+    }, use_advanced=True)
+
+    items = parse_recommendations(ai_text, max_items=5)
+
+    # persist cache + increment usage by 1 (daily batch counts as 1)
+    rec_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "date": day_key,
+        "items": items,
+        "created_at": now.isoformat()
+    }
+    await db.oac_recommendations.update_one(
+        {"user_id": current_user["id"], "date": day_key},
+        {"$set": rec_doc},
+        upsert=True
+    )
+
+    await db.oac_usage.update_one(
+        {"user_id": current_user["id"], "month": mk},
+        {"$set": {"user_id": current_user["id"], "month": mk}, "$inc": {"used": 1}},
+        upsert=True
+    )
+
+    used_after = used + 1
+
+    return {
+        "locked": False,
+        "meta": {"date": day_key, "cached": False},
+        "items": items,
+        "usage": {"used": used_after, "limit": limit, "tier": tier, "month": mk}
+    }
+
 def calculate_profile_completeness(profile: dict) -> int:
     """Calculate profile completeness percentage"""
     if not profile:
