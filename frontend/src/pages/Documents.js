@@ -14,12 +14,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import { FileText, Search, Trash2, Clock, Tag, Loader2, FolderOpen } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const documentTypes = [
   { value: 'all', label: 'All Types' },
@@ -45,7 +43,7 @@ const Documents = () => {
   const fetchDocuments = async () => {
     try {
       const params = filterType !== 'all' ? { document_type: filterType } : {};
-      const response = await axios.get(`${API}/documents`, { params });
+      const response = await apiClient.get(`/documents`, { params });
       setDocuments(response.data);
     } catch (error) {
       toast.error('Failed to load documents');
@@ -57,7 +55,7 @@ const Documents = () => {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await axios.delete(`${API}/documents/${deleteId}`);
+      await apiClient.delete(`/documents/${deleteId}`);
       setDocuments(documents.filter(d => d.id !== deleteId));
       toast.success('Document deleted');
     } catch (error) {

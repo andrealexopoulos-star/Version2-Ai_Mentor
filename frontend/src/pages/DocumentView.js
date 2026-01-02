@@ -34,7 +34,7 @@ const DocumentView = () => {
 
   const fetchDocument = async () => {
     try {
-      const response = await axios.get(`${API}/documents/${id}`);
+      const response = await apiClient.get(`/documents/${id}`);
       setDocument(response.data);
     } catch (error) {
       toast.error('Document not found');
@@ -46,7 +46,7 @@ const DocumentView = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`${API}/documents/${id}`);
+      await apiClient.delete(`/documents/${id}`);
       toast.success('Document deleted');
       navigate('/documents');
     } catch (error) {
