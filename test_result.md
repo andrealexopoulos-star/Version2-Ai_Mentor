@@ -127,11 +127,14 @@ backend:
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added /api/oac/recommendations with per-user daily cache + monthly quota (4 tiers) + prorating; added admin endpoint to set user subscription tier; added free tier default on register; added retention RAG scoring fields"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: OAC recommendations endpoint working perfectly. First call returns locked:false with 5 items, second call is cached (meta.cached:true) and doesn't increment usage. Quota system working correctly with used<=limit and locked:false after first call. Admin subscription endpoint exists with proper access control (403 for non-admin users)."
 
   - task: "Business profile AU fields + retention RAG scoring"
     implemented: true
@@ -139,11 +142,14 @@ backend:
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added ABN/ACN, target_country, retention_known, retention_rate_range, retention_rag; compute_retention_rag uses ANZSIC division baselines"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Business profile update with AU fields working correctly. PUT /api/business-profile accepts industry:'M', business_type:'Company (Pty Ltd)', abn, acn, target_country:'Australia', retention_known:true, retention_rate_range:'60-80%' and correctly computes retention_rag. All AU fields present in response."
 
 frontend:
   - task: "Premium fonts update (Inter + Plus Jakarta Sans)"
