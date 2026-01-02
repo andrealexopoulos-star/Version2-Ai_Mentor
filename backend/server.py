@@ -289,7 +289,7 @@ def extract_text_from_txt(file_content: bytes) -> str:
     """Extract text from plain text file"""
     try:
         return file_content.decode('utf-8', errors='ignore')[:50000]
-    except Exception as e:
+    except Exception:
         return "[Could not extract text]"
 
 async def extract_file_content(filename: str, file_content: bytes) -> str:
