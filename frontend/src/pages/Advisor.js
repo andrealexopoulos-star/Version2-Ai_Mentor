@@ -168,8 +168,8 @@ const Advisor = () => {
                   Hey {user?.name?.split(' ')[0]}! 👋
                 </h2>
                 <p className="text-[#0f2f24]/60 max-w-lg mx-auto">
-                  I'm your Strategy Squad advisor. 
-                  {user?.business_name && <> I'm here to help <strong>{user.business_name}</strong> succeed.</>}
+                  I&apos;m your Strategy Squad advisor.
+                  {user?.business_name && <> I&apos;m here to help <strong>{user.business_name}</strong> succeed.</>}
                   {user?.industry && <> I know the <strong>{user.industry}</strong> industry well.</>}
                   {' '}What would you like to work on today?
                 </p>
