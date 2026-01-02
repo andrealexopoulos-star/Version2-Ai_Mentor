@@ -120,6 +120,31 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: Health check endpoint (GET /api/health) returns {\"status\": \"healthy\"} as expected. Root endpoint (GET /api/) returns API info correctly. All 22 backend API tests passed (100% success rate). Full backend functionality confirmed working including auth, chat, analysis, documents, SOP generators, and admin features."
 
+
+  - task: "OAC recommendations + subscription tier usage limits"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added /api/oac/recommendations with per-user daily cache + monthly quota (4 tiers) + prorating; added admin endpoint to set user subscription tier; added free tier default on register; added retention RAG scoring fields"
+
+  - task: "Business profile AU fields + retention RAG scoring"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added ABN/ACN, target_country, retention_known, retention_rate_range, retention_rag; compute_retention_rag uses ANZSIC division baselines"
+
 frontend:
   - task: "Premium fonts update (Inter + Plus Jakarta Sans)"
     implemented: true
