@@ -588,6 +588,18 @@ class StrategicAdvisorAPITester:
         
         self.test_auth_me()
         
+        # NEW: Test business profile with AU fields
+        self.test_business_profile_au_fields()
+        
+        # NEW: Test OAC recommendations
+        self.test_oac_recommendations()
+        
+        # NEW: Test admin subscription endpoint
+        self.test_admin_subscription_endpoint()
+        
+        # NEW: Test quota lock simulation
+        self.test_quota_lock_simulation()
+        
         # Core functionality tests
         session_id = self.test_chat_functionality()
         analysis_id = self.test_analysis_functionality()
