@@ -490,6 +490,8 @@ class StrategicAdvisorAPITester:
                 self.log_test("Quota - Not Locked After First Call", False, f"locked: {locked}")
         
         return success
+
+    def test_sop_generators(self):
         """Test SOP generation endpoints"""
         print("\n🔍 Testing SOP Generators...")
         
@@ -518,6 +520,23 @@ class StrategicAdvisorAPITester:
             "POST",
             "generate/checklist",
             200,
+            data=checklist_data
+        )
+        
+        # Test action plan generation
+        action_plan_data = {
+            "goal": "Increase monthly revenue by 25%",
+            "timeline": "6 months",
+            "resources": "Marketing team of 3, $10k budget"
+        }
+        
+        self.run_test(
+            "Generate Action Plan",
+            "POST",
+            "generate/action-plan",
+            200,
+            data=action_plan_data
+        )
             data=checklist_data
         )
         
