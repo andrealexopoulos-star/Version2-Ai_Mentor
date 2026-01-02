@@ -659,6 +659,7 @@ async def register(user_data: UserCreate):
             business_name=user_data.business_name,
             industry=user_data.industry,
             role=role,
+            subscription_tier="free",
             created_at=now
         )
     )
@@ -683,6 +684,7 @@ async def login(credentials: UserLogin):
             business_name=user.get("business_name"),
             industry=user.get("industry"),
             role=user["role"],
+            subscription_tier=user.get("subscription_tier"),
             created_at=user["created_at"]
         )
     )
@@ -696,6 +698,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         business_name=current_user.get("business_name"),
         industry=current_user.get("industry"),
         role=current_user["role"],
+        subscription_tier=current_user.get("subscription_tier"),
         created_at=current_user["created_at"]
     )
 
