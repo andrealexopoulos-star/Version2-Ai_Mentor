@@ -78,7 +78,7 @@ const BusinessProfile = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API}/business-profile`, profile);
+      await apiClient.put(`/business-profile`, profile);
       toast.success('Profile saved successfully!');
       fetchProfile();
     } catch (error) {
