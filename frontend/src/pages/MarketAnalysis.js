@@ -4,13 +4,13 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, Target, TrendingUp, Save } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 
 const MarketAnalysis = () => {
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ const MarketAnalysis = () => {
     setResult(null);
 
     try {
-      const response = await axios.post(`${API}/analyses`, {
+      const response = await apiClient.post(`/analyses`, {
         ...formData,
         business_context: `Market Analysis Request:\n${formData.business_context}\n\nPlease analyze: market trends, competitive landscape, target audience, positioning opportunities, and growth potential.`
       });
@@ -48,7 +48,7 @@ const MarketAnalysis = () => {
   const saveAsDocument = async () => {
     if (!result) return;
     try {
-      await axios.post(`${API}/documents`, {
+      await apiClient.post(`/documents`, {
         title: result.title,
         document_type: 'Market Analysis',
         content: result.ai_analysis,

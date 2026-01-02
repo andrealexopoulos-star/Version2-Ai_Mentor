@@ -5,13 +5,13 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Card, CardContent } from '../components/ui/card';
-import axios from 'axios';
+import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, FileText, CheckSquare, Target, Save, Copy, Check } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 
 const SOPGenerator = () => {
   const [activeTab, setActiveTab] = useState('sop');
@@ -32,7 +32,7 @@ const SOPGenerator = () => {
     setLoading(true);
     setResult(null);
     try {
-      const response = await axios.post(`${API}/generate/sop`, sopForm);
+      const response = await apiClient.post(`/generate/sop`, sopForm);
       setResult({ type: 'SOP', content: response.data.sop_content, title: sopForm.topic });
       toast.success('SOP generated!');
     } catch (error) {
@@ -51,7 +51,7 @@ const SOPGenerator = () => {
     setLoading(true);
     setResult(null);
     try {
-      const response = await axios.post(`${API}/generate/checklist`, checklistForm);
+      const response = await apiClient.post(`/generate/checklist`, checklistForm);
       setResult({ type: 'Checklist', content: response.data.checklist_content, title: checklistForm.topic });
       toast.success('Checklist generated!');
     } catch (error) {
@@ -70,7 +70,7 @@ const SOPGenerator = () => {
     setLoading(true);
     setResult(null);
     try {
-      const response = await axios.post(`${API}/generate/action-plan`, actionPlanForm);
+      const response = await apiClient.post(`/generate/action-plan`, actionPlanForm);
       setResult({ type: 'Action Plan', content: response.data.action_plan, title: actionPlanForm.goal });
       toast.success('Action plan generated!');
     } catch (error) {
@@ -83,7 +83,7 @@ const SOPGenerator = () => {
   const saveDocument = async () => {
     if (!result) return;
     try {
-      await axios.post(`${API}/documents`, {
+      await apiClient.post(`/documents`, {
         title: result.title,
         document_type: result.type,
         content: result.content,
