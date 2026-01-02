@@ -69,7 +69,7 @@ const Diagnosis = () => {
   const saveAsDocument = async () => {
     if (!result) return;
     try {
-      await axios.post(`${API}/documents`, {
+      await apiClient.post(`/documents`, {
         title: `Business Diagnosis - ${new Date().toLocaleDateString()}`,
         document_type: 'Diagnosis',
         content: result.diagnosis,
