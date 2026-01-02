@@ -10,9 +10,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
-const API = process.env.REACT_APP_BACKEND_URL 
-  ? `${process.env.REACT_APP_BACKEND_URL}/api`
-  : '/api';
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
