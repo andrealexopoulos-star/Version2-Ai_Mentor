@@ -146,6 +146,12 @@ class BusinessProfileUpdate(BaseModel):
     year_founded: Optional[int] = None
     website: Optional[str] = None
     location: Optional[str] = None
+    abn: Optional[str] = None
+    acn: Optional[str] = None
+    retention_known: Optional[bool] = None
+    retention_rate_range: Optional[str] = None  # e.g. "60-80%"
+    retention_rag: Optional[str] = None  # green | amber | red
+
     
     # Size & Financials
     employee_count: Optional[str] = None  # 1-5, 6-20, 21-50, 51-200, 200+
