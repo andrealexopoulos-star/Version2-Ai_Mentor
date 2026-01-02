@@ -194,6 +194,43 @@ frontend:
         agent: "main"
         comment: "Updated login page with premium modern business design"
 
+  - task: "Business Profile AU dropdowns + retention UI"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BusinessProfile.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Replaced industry with ANZSIC divisions, added target country, AU business types, ABN/ACN fields, retention known/unknown radio + ranges + RAG badge"
+
+  - task: "Ops Advisory Centre page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/OpsAdvisoryCentre.js, frontend/src/App.js, frontend/src/components/DashboardLayout.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added /oac route + sidebar nav and UI to display OAC recommendations and quota lock state"
+
+  - task: "Stabilise frontend API usage"
+    implemented: true
+    working: true
+    file: "frontend/src/lib/api.js, multiple pages, frontend/src/context/AuthContext.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Centralised API base + auth header injection with axios client; removed debug console logs from AuthContext; updated all pages to use apiClient"
+
+
   - task: "Register page redesign"
     implemented: true
     working: true
