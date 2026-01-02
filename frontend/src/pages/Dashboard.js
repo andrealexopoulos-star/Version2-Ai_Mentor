@@ -105,7 +105,7 @@ const Dashboard = () => {
               Welcome back, {user?.name?.split(' ')[0]} 👋
             </h1>
             <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
-              Here's what's happening with your business today
+              Here&apos;s what&apos;s happening with your business today
             </p>
           </div>
           <Button 
