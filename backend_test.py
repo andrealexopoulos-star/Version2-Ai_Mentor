@@ -537,23 +537,6 @@ class StrategicAdvisorAPITester:
             200,
             data=action_plan_data
         )
-            data=checklist_data
-        )
-        
-        # Test action plan generation
-        action_plan_data = {
-            "goal": "Increase monthly revenue by 25%",
-            "timeline": "6 months",
-            "resources": "Marketing team of 3, $10k budget"
-        }
-        
-        self.run_test(
-            "Generate Action Plan",
-            "POST",
-            "generate/action-plan",
-            200,
-            data=action_plan_data
-        )
 
     def test_dashboard_stats(self):
         """Test dashboard statistics"""
