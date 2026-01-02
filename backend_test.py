@@ -551,11 +551,18 @@ class StrategicAdvisorAPITester:
         """Test admin endpoints"""
         print("\n🔍 Testing Admin Functionality...")
         
-        # Test admin stats
-        self.run_test("Get Admin Stats", "GET", "admin/stats", 200)
+        # Test admin stats (should fail with 403 for non-admin user)
+        success1, response1 = self.run_test("Admin Stats Access Control", "GET", "admin/stats", 403)
         
-        # Test get users
-        self.run_test("Get All Users", "GET", "admin/users", 200)
+        # Test get users (should fail with 403 for non-admin user)
+        success2, response2 = self.run_test("Admin Users Access Control", "GET", "admin/users", 403)
+        
+        if success1 and success2:
+            self.log_test("Admin Endpoints - Access Control Working", True, "Non-admin users properly rejected")
+        else:
+            self.log_test("Admin Endpoints - Access Control Working", False, "Admin endpoint security issue")
+        
+        return success1 and success2
 
     def test_cleanup(self, analysis_id=None, doc_id=None):
         """Clean up test data"""
