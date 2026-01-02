@@ -83,10 +83,11 @@ class StrategicAdvisorAPITester:
         """Test user registration"""
         print("\n🔍 Testing User Registration...")
         
-        # Test with valid data
+        # Test with valid data - use unique email
+        unique_id = str(uuid.uuid4())[:8]
         user_data = {
             "name": "Test User",
-            "email": "test@example.com",
+            "email": f"test{unique_id}@example.com",
             "password": "testpass123",
             "business_name": "Test Business",
             "industry": "Technology"
@@ -103,6 +104,15 @@ class StrategicAdvisorAPITester:
         if success and 'access_token' in response:
             self.token = response['access_token']
             self.user_id = response['user']['id']
+            
+            # Verify subscription_tier is present and defaults to 'free'
+            user_info = response.get('user', {})
+            subscription_tier = user_info.get('subscription_tier')
+            if subscription_tier == 'free':
+                self.log_test("Registration - Default Free Tier", True, "")
+            else:
+                self.log_test("Registration - Default Free Tier", False, f"Expected 'free', got '{subscription_tier}'")
+            
             return True
         return False
 
