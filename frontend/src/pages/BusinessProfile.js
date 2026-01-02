@@ -231,11 +231,13 @@ const BusinessProfile = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Industry *</Label>
+                      <Label>Industry (ANZSIC) *</Label>
                       <Select value={profile.industry || ''} onValueChange={(v) => updateProfile('industry', v)}>
                         <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
                         <SelectContent className="bg-white">
-                          {industries.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                          {anzsicDivisions.map(i => (
+                            <SelectItem key={i.code} value={i.code}>{i.label}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
