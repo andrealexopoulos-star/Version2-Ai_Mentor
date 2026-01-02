@@ -58,7 +58,7 @@ const Analysis = () => {
     if (!result) return;
     
     try {
-      await axios.post(`${API}/documents`, {
+      await apiClient.post(`/documents`, {
         title: result.title,
         document_type: 'Analysis',
         content: result.ai_analysis,
