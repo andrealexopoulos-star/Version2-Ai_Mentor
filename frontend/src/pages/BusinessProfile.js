@@ -138,6 +138,12 @@ const BusinessProfile = () => {
       setProfile((p) => ({ ...p, ...patch }));
 
       toast.success('Profile updated from your sources');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Autofill failed');
+    } finally {
+      setAutofillLoading(false);
+    }
+  };
 
   const uploadQuickFiles = async (fileList) => {
     if (!fileList?.length) return;
