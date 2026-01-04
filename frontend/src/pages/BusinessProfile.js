@@ -179,6 +179,9 @@ const BusinessProfile = () => {
     } finally {
       setSaving(false);
     }
+
+  const isMissing = (field) => missingFields?.includes(field);
+
   };
 
   const updateProfile = (field, value) => {
