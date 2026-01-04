@@ -792,12 +792,6 @@ async def google_exchange(payload: GoogleExchangeRequest):
         ),
     )
 
-        industry=current_user.get("industry"),
-        role=current_user["role"],
-        subscription_tier=current_user.get("subscription_tier"),
-        created_at=current_user["created_at"]
-    )
-
 # ==================== CHAT ROUTES ====================
 
 @api_router.post("/chat", response_model=ChatResponse)
