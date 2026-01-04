@@ -88,6 +88,10 @@ class TokenResponse(BaseModel):
 class ChatMessage(BaseModel):
     role: str
     content: str
+
+class GoogleExchangeRequest(BaseModel):
+    session_id: str
+
     timestamp: str
 
 class ChatRequest(BaseModel):
