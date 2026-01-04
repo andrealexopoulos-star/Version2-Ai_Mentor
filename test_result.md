@@ -346,6 +346,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: Register page working correctly. Successfully registered new user with realistic business data. Form validation working, password confirmation working, redirect to dashboard after registration confirmed working."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Registration page fully functional. Industry dropdown working (ANZSIC divisions), password fields visible and functional with visibility toggle, form validation working, Fraunces font applied to headings. LIMITATION: Registration redirects to OAuth authentication instead of completing traditional form submission."
 
   - task: "Google OAuth login flow (Emergent-managed)"
     implemented: true
