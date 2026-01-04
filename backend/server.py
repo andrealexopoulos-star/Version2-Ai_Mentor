@@ -103,6 +103,18 @@ class ChatResponse(BaseModel):
     response: str
     session_id: str
 
+
+class BusinessProfileAutofillRequest(BaseModel):
+    business_name: Optional[str] = None
+    abn: Optional[str] = None
+    website_url: Optional[str] = None
+    data_file_ids: Optional[List[str]] = None
+
+class BusinessProfileAutofillResponse(BaseModel):
+    patch: Dict[str, Any]
+    missing_fields: List[str]
+    sources: Dict[str, Any]
+
 class AnalysisCreate(BaseModel):
     title: str
     analysis_type: str
