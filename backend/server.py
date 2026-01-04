@@ -13,6 +13,8 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+import httpx
+
 import base64
 import io
 
