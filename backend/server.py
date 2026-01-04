@@ -218,6 +218,41 @@ class BusinessProfileUpdate(BaseModel):
     growth_strategy: Optional[str] = None
     
     # Tools & Technology
+
+# ==================== PROFILE AUTOFILL HELPERS ====================
+
+def strip_html_to_text(html: str) -> str:
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html or "", "html.parser")
+
+    for tag in soup(["script", "style", "noscript", "svg"]):
+        tag.decompose()
+
+    text = soup.get_text("\n")
+    lines = [ln.strip() for ln in text.splitlines()]
+    lines = [ln for ln in lines if ln]
+    return "\n".join(lines)
+
+
+async def fetch_website_text(url: str) -> str:
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        resp = await client.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (compatible; StrategySquadBot/1.0)"
+        })
+        if resp.status_code >= 400:
+            return ""
+        return strip_html_to_text(resp.text)
+
+
+def compute_missing_profile_fields(profile_patch: Dict[str, Any]) -> List[str]:
+    essentials = ["business_name", "industry", "business_type", "target_country", "retention_known"]
+    missing = []
+    for f in essentials:
+        v = profile_patch.get(f)
+        if v is None or (isinstance(v, str) and not v.strip()):
+            missing.append(f)
+    return missing
+
     key_metrics: Optional[List[str]] = None
     tools_used: Optional[List[str]] = None  # CRMs, accounting software, etc.
     tech_stack: Optional[str] = None
