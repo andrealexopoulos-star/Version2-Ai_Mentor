@@ -1907,9 +1907,11 @@ def calculate_profile_completeness(profile: dict) -> int:
     
     # Core fields (weighted higher)
     core_fields = [
-        "business_name", "industry", "business_type", "target_market",
-        "main_products_services", "competitive_advantages", "main_challenges", 
-        "business_goals", "ideal_customer_profile"
+        "business_name",
+        "industry",
+        "business_type",
+        "target_country",
+        "retention_known",
     ]
     
     # Extended fields
