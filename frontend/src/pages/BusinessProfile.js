@@ -632,7 +632,12 @@ const BusinessProfile = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Customer Retention</Label>
+                      <Label>
+                        Customer Retention
+                        {isMissing('retention_known') ? (
+                          <span className="ml-2 text-xs" style={{ color: 'var(--accent-warning)' }}>(missing)</span>
+                        ) : null}
+                      </Label>
                       <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}>
                         <RadioGroup
                           value={profile.retention_known === true ? 'known' : profile.retention_known === false ? 'unknown' : ''}
