@@ -91,6 +91,7 @@ const BusinessProfile = () => {
   const [files, setFiles] = useState([]);
   const [selectedFileIds, setSelectedFileIds] = useState([]);
   const [autofillLoading, setAutofillLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [missingFields, setMissingFields] = useState([]);
 
   useEffect(() => {
@@ -137,6 +138,30 @@ const BusinessProfile = () => {
       setProfile((p) => ({ ...p, ...patch }));
 
       toast.success('Profile updated from your sources');
+
+  const uploadQuickFiles = async (fileList) => {
+    if (!fileList?.length) return;
+    setUploading(true);
+    try {
+      // Upload each file (small count). Data Centre already does text extraction.
+      for (const file of Array.from(fileList).slice(0, 3)) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('category', 'Business Profile');
+        formData.append('description', 'Quick setup upload');
+        await apiClient.post('/data-center/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+      toast.success('Uploaded. You can now run Auto-Fill.');
+      await fetchFiles();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Autofill failed');
     } finally {
@@ -148,6 +173,9 @@ const BusinessProfile = () => {
     setSaving(true);
     try {
       await apiClient.put(`/business-profile`, profile);
+
+  const isMissing = (field) => missingFields?.includes(field);
+
       toast.success('Profile saved successfully!');
       fetchProfile();
     } catch (error) {
