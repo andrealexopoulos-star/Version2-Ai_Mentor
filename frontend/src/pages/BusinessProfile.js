@@ -105,6 +105,13 @@ const BusinessProfile = () => {
         apiClient.get(`/data-center/stats`)
       ]);
       setProfile(profileRes.data);
+      setCompleteness(statsRes.data.profile_completeness || 0);
+    } catch (error) {
+      toast.error('Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchFiles = async () => {
     try {
@@ -127,8 +134,6 @@ const BusinessProfile = () => {
 
       const patch = res.data?.patch || {};
       setMissingFields(res.data?.missing_fields || []);
-
-      // Merge patch into editable profile
       setProfile((p) => ({ ...p, ...patch }));
 
       toast.success('Profile updated from your sources');
