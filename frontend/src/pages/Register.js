@@ -150,7 +150,7 @@ const Register = () => {
                   value={formData.business_name}
                   onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                   className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none transition-colors"
-                  placeholder="Acme Inc"
+                  placeholder="Acme Pty Ltd"
                 />
               </div>
             </div>
