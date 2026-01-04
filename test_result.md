@@ -336,11 +336,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Login/Register flow + redirect stability"
-    - "Business Profile AU fields + retention scoring"
-    - "Ops Advisory Centre (OAC) recommendations + quota lock"
+    - "Business Profile Quick Setup autofill (docs + website)"
+    - "Fonts/typography comfort"
+    - "Registration flow stability (if any UI regressions)"
   stuck_tasks:
-    - "Recurring Login/Redirect Malfunction"
+    - "Registration flow UI interactions (reported by testing agent)"
   test_all: false
   test_priority: "high_first"
 
