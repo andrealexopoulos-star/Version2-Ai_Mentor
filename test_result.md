@@ -288,6 +288,17 @@ frontend:
         agent: "testing"
         comment: "✅ VERIFIED: Register page working correctly. Successfully registered new user with realistic business data. Form validation working, password confirmation working, redirect to dashboard after registration confirmed working."
 
+  - task: "Google OAuth login flow (Emergent-managed)"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Login.js, frontend/src/pages/AuthCallback.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Google OAuth login flow working correctly. 'Continue with Google' button redirects to auth.emergentagent.com. AuthCallback component properly handles session_id from URL fragment and exchanges it via /auth/google/exchange endpoint. Missing/malformed session_id correctly redirects to /login. No console errors or redirect loops. Protected routes correctly redirect to login when not authenticated. All edge cases handled properly."
   - agent: "main"
     message: "Implemented AU Business Profile fields (ANZSIC divisions, ABN/ACN, target country), retention known/unknown + RAG scoring, added Ops Advisory Centre page + backend /api/oac/recommendations with monthly tier limits and prorating, and centralised frontend API calls via apiClient to stabilise login/redirect behavior. Please run full frontend + key backend tests per test_plan."
   - task: "Dashboard layout update"
