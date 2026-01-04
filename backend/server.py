@@ -708,6 +708,85 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         name=current_user["name"],
         business_name=current_user.get("business_name"),
+
+# ==================== EMERGENT GOOGLE AUTH (MANAGED) ====================
+
+async def fetch_emergent_session_data(session_id: str) -> Dict[str, Any]:
+    url = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(url, headers={"X-Session-ID": session_id})
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google session")
+        return resp.json()
+
+
+@api_router.post("/auth/google/exchange", response_model=TokenResponse)
+async def google_exchange(payload: GoogleExchangeRequest):
+    now = datetime.now(timezone.utc).isoformat()
+
+    data = await fetch_emergent_session_data(payload.session_id)
+    email = (data.get("email") or "").strip().lower()
+    name = (data.get("name") or "").strip() or "User"
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Google session missing email")
+
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+
+    if not user:
+        user_count = await db.users.count_documents({})
+        role = "admin" if user_count == 0 else "user"
+
+        user_id = str(uuid.uuid4())
+        user_doc = {
+            "id": user_id,
+            "email": email,
+            "password": None,
+            "name": name,
+            "business_name": None,
+            "industry": None,
+            "subscription_tier": "free",
+            "subscription_started_at": now,
+            "role": role,
+            "is_active": True,
+            "created_at": now,
+            "updated_at": now,
+            "auth_provider": "google",
+            "picture": data.get("picture"),
+        }
+        await db.users.insert_one(user_doc)
+        user = user_doc
+    else:
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {
+                "name": name,
+                "picture": data.get("picture"),
+                "updated_at": now,
+                "auth_provider": user.get("auth_provider") or "google",
+            }}
+        )
+        user["name"] = name
+
+    if not user.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Account deactivated")
+
+    token = create_token(user["id"], user["email"], user["role"])
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            name=user["name"],
+            business_name=user.get("business_name"),
+            industry=user.get("industry"),
+            role=user["role"],
+            subscription_tier=user.get("subscription_tier"),
+            created_at=user["created_at"],
+        ),
+    )
+
         industry=current_user.get("industry"),
         role=current_user["role"],
         subscription_tier=current_user.get("subscription_tier"),
