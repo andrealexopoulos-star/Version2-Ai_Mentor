@@ -182,6 +182,14 @@ const Register = () => {
               </select>
             </div>
 
+
+            <div className="p-3 rounded-xl border" style={{ borderColor: 'rgba(245, 158, 11, 0.25)', background: 'rgba(245, 158, 11, 0.06)' }}>
+              <div className="text-sm font-medium text-gray-900">Tip</div>
+              <div className="text-sm text-gray-600 mt-1">
+                You can skip most fields here and use Business Profile Quick Setup to auto-fill from your website and documents.
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
