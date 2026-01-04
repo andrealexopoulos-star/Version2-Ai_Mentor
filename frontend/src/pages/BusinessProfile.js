@@ -638,7 +638,7 @@ const BusinessProfile = () => {
                           <span className="ml-2 text-xs" style={{ color: 'var(--accent-warning)' }}>(missing)</span>
                         ) : null}
                       </Label>
-                      <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}>
+                      <div className="p-4 rounded-xl border" style={{ borderColor: isMissing('retention_known') ? 'rgba(245, 158, 11, 0.5)' : 'var(--border-light)', background: 'var(--bg-tertiary)' }}>
                         <RadioGroup
                           value={profile.retention_known === true ? 'known' : profile.retention_known === false ? 'unknown' : ''}
                           onValueChange={(v) => {
