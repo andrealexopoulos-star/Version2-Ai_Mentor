@@ -162,13 +162,6 @@ const BusinessProfile = () => {
     }
   };
 
-    } catch (e) {
-      toast.error(e.response?.data?.detail || 'Autofill failed');
-    } finally {
-      setAutofillLoading(false);
-    }
-  };
-
   const handleSave = async () => {
     setSaving(true);
     try {
