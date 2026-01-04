@@ -192,7 +192,7 @@ const BusinessProfile = () => {
                 The more we know, the better your AI advisor becomes
               </p>
             </div>
-            <Button onClick={handleSave} className="btn-lime" disabled={saving} data-testid="save-profile-btn">
+            <Button onClick={handleSave} className="btn-primary" disabled={saving} data-testid="save-profile-btn">
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Profile
             </Button>
