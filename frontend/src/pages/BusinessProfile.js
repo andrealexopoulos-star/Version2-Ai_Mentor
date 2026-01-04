@@ -144,14 +144,6 @@ const BusinessProfile = () => {
     }
   };
 
-      setCompleteness(statsRes.data.profile_completeness || 0);
-    } catch (error) {
-      toast.error('Failed to load profile');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSave = async () => {
     setSaving(true);
     try {
