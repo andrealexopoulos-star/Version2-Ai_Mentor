@@ -94,8 +94,6 @@ class ChatMessage(BaseModel):
 class GoogleExchangeRequest(BaseModel):
     session_id: str
 
-    timestamp: str
-
 class ChatRequest(BaseModel):
     message: str
     context_type: Optional[str] = "general"
