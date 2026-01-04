@@ -454,9 +454,14 @@ const BusinessProfile = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Business Type</Label>
+                      <Label>
+                        Business Type
+                        {isMissing('business_type') ? (
+                          <span className="ml-2 text-xs" style={{ color: 'var(--accent-warning)' }}>(missing)</span>
+                        ) : null}
+                      </Label>
                       <Select value={profile.business_type || ''} onValueChange={(v) => updateProfile('business_type', v)}>
-                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                        <SelectTrigger style={isMissing('business_type') ? { borderColor: 'rgba(245, 158, 11, 0.5)' } : undefined}><SelectValue placeholder="Select type" /></SelectTrigger>
                         <SelectContent className="bg-white">
                           {auBusinessTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                         </SelectContent>
