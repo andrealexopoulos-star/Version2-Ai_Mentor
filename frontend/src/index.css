@@ -11,12 +11,12 @@
     --bg-card-hover: #fafafa;
     
     /* Premium Accent Colors */
-    --accent-primary: #0066FF;
-    --accent-primary-hover: #0052CC;
-    --accent-secondary: #7C3AED;
-    --accent-success: #00C853;
-    --accent-warning: #FF9500;
-    --accent-danger: #FF3B30;
+    --accent-primary: #1d4ed8;
+    --accent-primary-hover: #1e40af;
+    --accent-secondary: #111827;
+    --accent-success: #16a34a;
+    --accent-warning: #f59e0b;
+    --accent-danger: #ef4444;
     
     /* Text Colors - High Contrast */
     --text-primary: #1a1a1a;
