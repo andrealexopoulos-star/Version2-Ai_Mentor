@@ -1280,6 +1280,106 @@ async def get_business_profile(current_user: dict = Depends(get_current_user)):
     profile = await db.business_profiles.find_one(
         {"user_id": current_user["id"]},
         {"_id": 0}
+
+@api_router.post("/business-profile/autofill", response_model=BusinessProfileAutofillResponse)
+async def business_profile_autofill(req: BusinessProfileAutofillRequest, current_user: dict = Depends(get_current_user)):
+    """Autofill business profile from uploaded docs + website URL + existing profile."""
+
+    # Collect sources
+    files_text = ""
+    used_files = []
+    if req.data_file_ids:
+        files = await db.data_files.find(
+            {"user_id": current_user["id"], "id": {"$in": req.data_file_ids}},
+            {"_id": 0, "id": 1, "filename": 1, "extracted_text": 1, "category": 1}
+        ).to_list(20)
+        for f in files:
+            used_files.append({"id": f.get("id"), "filename": f.get("filename"), "category": f.get("category")})
+            if f.get("extracted_text"):
+                files_text += f"\n\n--- FILE: {f.get('filename')} ---\n{f.get('extracted_text')[:6000]}"
+
+    website_text = ""
+    if req.website_url:
+        website_text = await fetch_website_text(req.website_url)
+        website_text = website_text[:8000]
+
+    existing_profile = await db.business_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
+
+    prompt = f"""You are a business analyst helping autofill a structured business profile.
+Return ONLY a valid JSON object with keys matching the profile schema.
+Do not include markdown or commentary.
+
+Profile schema keys (common):
+- business_name (string)
+- industry (ANZSIC division letter A-S or OTHER)
+- business_type (AU business type string)
+- website (string)
+- location (string)
+- target_country (string, use Australia)
+- abn (string)
+- acn (string)
+- retention_known (boolean)
+- retention_rate_range (one of: <20%, 20-40%, 40-60%, 60-80%, >80%)
+
+User input:
+- business_name: {req.business_name}
+- abn: {req.abn}
+- website_url: {req.website_url}
+
+Existing profile (may be partial):
+{existing_profile}
+
+Website extracted text (if any):
+{website_text}
+
+Uploaded documents extracted text (if any):
+{files_text}
+
+Rules:
+- Only include fields you have reasonable evidence for.
+- If unsure, omit the field.
+- Use target_country="Australia" if not specified.
+- Prefer business_name from user input if provided.
+"""
+
+    session_id = f"autofill_{uuid.uuid4()}"
+    ai = await get_ai_response(prompt, "general", session_id, user_id=current_user["id"], user_data={
+        "name": current_user.get("name"),
+        "business_name": current_user.get("business_name"),
+        "industry": current_user.get("industry"),
+    }, use_advanced=True)
+
+    patch: Dict[str, Any] = {}
+    try:
+        import json
+        patch = json.loads(ai)
+    except Exception:
+        # If the model returns non-JSON, fall back to minimal patch
+        patch = {}
+
+    # Always respect explicit inputs
+    if req.business_name:
+        patch["business_name"] = req.business_name
+    if req.abn:
+        patch["abn"] = req.abn
+    if req.website_url and not patch.get("website"):
+        patch["website"] = req.website_url
+
+    if not patch.get("target_country"):
+        patch["target_country"] = "Australia"
+
+    missing_fields = compute_missing_profile_fields(patch)
+
+    return {
+        "patch": patch,
+        "missing_fields": missing_fields,
+        "sources": {
+            "website_url": req.website_url,
+            "used_files": used_files,
+            "has_existing_profile": bool(existing_profile),
+        }
+    }
+
     )
     if not profile:
         # Return default empty profile
