@@ -229,6 +229,118 @@ const BusinessProfile = () => {
             </CardContent>
           </Card>
 
+          {/* Quick Setup / Autofill */}
+          <Card className="card-clean mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+                Quick Setup
+              </CardTitle>
+              <CardDescription>
+                Upload docs or add your website and we&apos;ll pre-fill what we can. Anything missing will be highlighted.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {missingFields?.length ? (
+                <div className="p-4 rounded-xl border" style={{ borderColor: 'rgba(255, 149, 0, 0.25)', background: 'rgba(255, 149, 0, 0.06)' }}>
+                  <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Missing essentials</div>
+                  <div className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
+                    {missingFields.map((f) => (
+                      <span key={f} className="inline-flex mr-2 mt-2 px-2 py-1 rounded-full" style={{ background: 'rgba(255, 149, 0, 0.12)', color: 'var(--accent-warning)' }}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Business name</Label>
+                  <Input
+                    value={quickSetup.business_name}
+                    onChange={(e) => setQuickSetup((s) => ({ ...s, business_name: e.target.value }))}
+                    placeholder="e.g., Acme Pty Ltd"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>ABN (optional)</Label>
+                  <Input
+                    value={quickSetup.abn}
+                    onChange={(e) => setQuickSetup((s) => ({ ...s, abn: e.target.value }))}
+                    placeholder="11 111 111 111"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Website URL (optional)</Label>
+                  <Input
+                    value={quickSetup.website_url}
+                    onChange={(e) => setQuickSetup((s) => ({ ...s, website_url: e.target.value }))}
+                    placeholder="https://yourcompany.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Use uploaded documents (Data Centre)</Label>
+                  <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Select up to 3 documents to extract business details.
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {(files || []).slice(0, 8).map((f) => {
+                        const checked = selectedFileIds.includes(f.id);
+                        return (
+                          <label key={f.id} className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setSelectedFileIds((prev) => {
+                                  if (prev.includes(f.id)) return prev.filter((x) => x !== f.id);
+                                  if (prev.length >= 3) return prev;
+                                  return [...prev, f.id];
+                                });
+                              }}
+                            />
+                            <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{f.filename}</span>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{f.category}</span>
+                          </label>
+                        );
+                      })}
+                      {!files?.length ? (
+                        <div className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+                          No documents found yet. Upload files in Data Centre first.
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Autofill</Label>
+                  <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      We&apos;ll update your profile with what we can infer from your sources.
+                    </div>
+                    <div className="mt-4 flex items-center gap-3 flex-wrap">
+                      <Button className="btn-primary" onClick={runAutofill} disabled={autofillLoading}>
+                        {autofillLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                        Run Auto-Fill
+                      </Button>
+                      <Button className="btn-secondary" onClick={() => (window.location.href = '/data-center')}>Upload documents</Button>
+                    </div>
+                    <div className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+                      Tip: after autofill, hit Save Profile.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-[#f5f5f0] p-1 mb-6 flex-wrap h-auto gap-1">
