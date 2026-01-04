@@ -356,6 +356,20 @@ const BusinessProfile = () => {
                         Run Auto-Fill
                       </Button>
                       <Button className="btn-secondary" onClick={() => (window.location.href = '/data-center')}>Upload documents</Button>
+                      <div>
+                        <input
+                          type="file"
+                          multiple
+                          className="text-sm"
+                          onChange={(e) => uploadQuickFiles(e.target.files)}
+                        />
+                        {uploading ? (
+                          <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Uploading…</div>
+                        ) : (
+                          <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Upload up to 3 files. We’ll extract what we can.</div>
+                        )}
+                      </div>
+
                     </div>
                     <div className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
                       Tip: after autofill, hit Save Profile.
