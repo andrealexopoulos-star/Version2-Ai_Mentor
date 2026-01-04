@@ -428,9 +428,14 @@ const BusinessProfile = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Industry (ANZSIC) *</Label>
+                      <Label>
+                        Industry (ANZSIC) *
+                        {isMissing('industry') ? (
+                          <span className="ml-2 text-xs" style={{ color: 'var(--accent-warning)' }}>(missing)</span>
+                        ) : null}
+                      </Label>
                       <Select value={profile.industry || ''} onValueChange={(v) => updateProfile('industry', v)}>
-                        <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
+                        <SelectTrigger style={isMissing('industry') ? { borderColor: 'rgba(245, 158, 11, 0.5)' } : undefined}><SelectValue placeholder="Select industry" /></SelectTrigger>
                         <SelectContent className="bg-white">
                           {anzsicDivisions.map(i => (
                             <SelectItem key={i.code} value={i.code}>{i.label}</SelectItem>
