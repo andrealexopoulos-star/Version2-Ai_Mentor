@@ -260,6 +260,8 @@ frontend:
         agent: "main"
         comment: "Created integrations page with various third-party service connections and modal feedback"
       - working: true
+  - agent: "main"
+    message: "Implemented Business Profile Quick Setup + /api/business-profile/autofill (website + docs) and typography refresh (Fraunces headings). Please retest registration interactions, quick setup autofill end-to-end, and check for any UI regressions."
         agent: "testing"
         comment: "✅ VERIFIED: Integrations page loads correctly at /integrations route. Page displays various integration options including LinkedIn, HubSpot, etc. Connect buttons present and functional. Modal feedback system working for upgrade/coming soon messages."
 
