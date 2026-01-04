@@ -208,6 +208,42 @@ frontend:
       - working: true
         agent: "main"
         comment: "Updated login page with premium modern business design"
+
+  - task: "Business Profile autofill backend endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added /api/business-profile/autofill to prefill profile from website text + Data Centre extracted docs; returns patch + missing_fields for guided completion. Added bs4 dependency."
+
+  - task: "Business Profile Quick Setup UI"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/BusinessProfile.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added Quick Setup card with website URL + ABN + file upload (to Data Centre) + Run Auto-Fill + Missing essentials highlighting on key fields."
+
+  - task: "Typography refresh (Fraunces headings)"
+    implemented: true
+    working: true
+    file: "frontend/public/index.html, frontend/src/index.css"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Switched headings to Fraunces for a more premium, comfortable hierarchy; kept Inter for UI/body."
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: Login page working correctly. Successfully logged in existing user and redirected to dashboard. Login form functional and responsive."
