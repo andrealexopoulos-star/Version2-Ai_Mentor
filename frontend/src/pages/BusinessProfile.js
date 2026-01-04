@@ -86,6 +86,13 @@ const BusinessProfile = () => {
   const [completeness, setCompleteness] = useState(0);
   const [activeTab, setActiveTab] = useState('basics');
 
+  // Quick Setup / Autofill
+  const [quickSetup, setQuickSetup] = useState({ business_name: '', abn: '', website_url: '' });
+  const [files, setFiles] = useState([]);
+  const [selectedFileIds, setSelectedFileIds] = useState([]);
+  const [autofillLoading, setAutofillLoading] = useState(false);
+  const [missingFields, setMissingFields] = useState([]);
+
   useEffect(() => {
     fetchProfile();
   }, []);
