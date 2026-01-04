@@ -708,6 +708,11 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         name=current_user["name"],
         business_name=current_user.get("business_name"),
+        industry=current_user.get("industry"),
+        role=current_user["role"],
+        subscription_tier=current_user.get("subscription_tier"),
+        created_at=current_user["created_at"]
+    )
 
 # ==================== EMERGENT GOOGLE AUTH (MANAGED) ====================
 
