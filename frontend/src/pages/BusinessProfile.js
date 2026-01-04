@@ -166,9 +166,6 @@ const BusinessProfile = () => {
     setSaving(true);
     try {
       await apiClient.put(`/business-profile`, profile);
-
-  const isMissing = (field) => missingFields?.includes(field);
-
       toast.success('Profile saved successfully!');
       fetchProfile();
     } catch (error) {
