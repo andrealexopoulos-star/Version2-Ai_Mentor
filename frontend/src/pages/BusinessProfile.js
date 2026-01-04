@@ -95,6 +95,7 @@ const BusinessProfile = () => {
 
   useEffect(() => {
     fetchProfile();
+    fetchFiles();
   }, []);
 
   const fetchProfile = async () => {
