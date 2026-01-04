@@ -1280,6 +1280,16 @@ async def get_business_profile(current_user: dict = Depends(get_current_user)):
     profile = await db.business_profiles.find_one(
         {"user_id": current_user["id"]},
         {"_id": 0}
+    )
+    if not profile:
+        # Return default empty profile
+        return {
+            "user_id": current_user["id"],
+            "business_name": current_user.get("business_name"),
+            "industry": current_user.get("industry")
+        }
+    return profile
+
 
 @api_router.post("/business-profile/autofill", response_model=BusinessProfileAutofillResponse)
 async def business_profile_autofill(req: BusinessProfileAutofillRequest, current_user: dict = Depends(get_current_user)):
