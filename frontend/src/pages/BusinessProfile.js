@@ -293,6 +293,7 @@ const BusinessProfile = () => {
                             <input
                               type="checkbox"
                               checked={checked}
+                              disabled={!checked && selectedFileIds.length >= 3}
                               onChange={() => {
                                 setSelectedFileIds((prev) => {
                                   if (prev.includes(f.id)) return prev.filter((x) => x !== f.id);
