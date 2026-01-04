@@ -1390,16 +1390,6 @@ Rules:
         }
     }
 
-    )
-    if not profile:
-        # Return default empty profile
-        return {
-            "user_id": current_user["id"],
-            "business_name": current_user.get("business_name"),
-            "industry": current_user.get("industry")
-        }
-    return profile
-
 @api_router.put("/business-profile")
 async def update_business_profile(profile: BusinessProfileUpdate, current_user: dict = Depends(get_current_user)):
     """Update user's business profile"""
