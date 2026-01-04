@@ -104,6 +104,40 @@ const BusinessProfile = () => {
         apiClient.get(`/data-center/stats`)
       ]);
       setProfile(profileRes.data);
+
+  const fetchFiles = async () => {
+    try {
+      const res = await apiClient.get('/data-center/files');
+      setFiles(res.data || []);
+    } catch (e) {
+      // non-blocking
+    }
+  };
+
+  const runAutofill = async () => {
+    setAutofillLoading(true);
+    try {
+      const res = await apiClient.post('/business-profile/autofill', {
+        business_name: quickSetup.business_name || profile.business_name,
+        abn: quickSetup.abn || profile.abn,
+        website_url: quickSetup.website_url || profile.website,
+        data_file_ids: selectedFileIds,
+      });
+
+      const patch = res.data?.patch || {};
+      setMissingFields(res.data?.missing_fields || []);
+
+      // Merge patch into editable profile
+      setProfile((p) => ({ ...p, ...patch }));
+
+      toast.success('Profile updated from your sources');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Autofill failed');
+    } finally {
+      setAutofillLoading(false);
+    }
+  };
+
       setCompleteness(statsRes.data.profile_completeness || 0);
     } catch (error) {
       toast.error('Failed to load profile');
