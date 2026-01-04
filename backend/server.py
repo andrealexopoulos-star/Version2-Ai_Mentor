@@ -1916,11 +1916,16 @@ def calculate_profile_completeness(profile: dict) -> int:
     
     # Extended fields
     extended_fields = [
-        "year_founded", "employee_count", "annual_revenue", "location",
-        "pricing_model", "business_model", "sales_cycle_length",
-        "mission_statement", "short_term_goals", "long_term_goals",
-        "founder_background", "key_team_members", "growth_strategy",
-        "communication_style", "risk_tolerance"
+        "year_founded",
+        "location",
+        "website",
+        "abn",
+        "acn",
+        "retention_rate_range",
+        "average_customer_value",
+        "crm_system",
+        "accounting_system",
+        "project_management_tool",
     ]
     
     core_filled = sum(1 for f in core_fields if profile.get(f))
