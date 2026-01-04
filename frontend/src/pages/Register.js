@@ -6,17 +6,26 @@ import { toast } from 'sonner';
 import { ArrowLeft, Loader2, ArrowRight, Eye, EyeOff, Zap, Check, CheckCircle2, Circle } from 'lucide-react';
 
 const industries = [
-  'Retail & E-commerce',
-  'Professional Services',
-  'Food & Hospitality',
-  'Healthcare',
-  'Technology',
-  'Manufacturing',
-  'Construction',
-  'Real Estate',
-  'Education',
-  'Marketing & Advertising',
-  'Other'
+  { code: 'A', label: 'A — Agriculture, Forestry and Fishing' },
+  { code: 'B', label: 'B — Mining' },
+  { code: 'C', label: 'C — Manufacturing' },
+  { code: 'D', label: 'D — Electricity, Gas, Water and Waste Services' },
+  { code: 'E', label: 'E — Construction' },
+  { code: 'F', label: 'F — Wholesale Trade' },
+  { code: 'G', label: 'G — Retail Trade' },
+  { code: 'H', label: 'H — Accommodation and Food Services' },
+  { code: 'I', label: 'I — Transport, Postal and Warehousing' },
+  { code: 'J', label: 'J — Information Media and Telecommunications' },
+  { code: 'K', label: 'K — Financial and Insurance Services' },
+  { code: 'L', label: 'L — Rental, Hiring and Real Estate Services' },
+  { code: 'M', label: 'M — Professional, Scientific and Technical Services' },
+  { code: 'N', label: 'N — Administrative and Support Services' },
+  { code: 'O', label: 'O — Public Administration and Safety' },
+  { code: 'P', label: 'P — Education and Training' },
+  { code: 'Q', label: 'Q — Health Care and Social Assistance' },
+  { code: 'R', label: 'R — Arts and Recreation Services' },
+  { code: 'S', label: 'S — Other Services' },
+  { code: 'OTHER', label: 'Other / Not sure' },
 ];
 
 const Register = () => {
@@ -168,7 +177,7 @@ const Register = () => {
               >
                 <option value="">Select your industry</option>
                 {industries.map((ind) => (
-                  <option key={ind} value={ind}>{ind}</option>
+                  <option key={ind.code} value={ind.code}>{ind.label}</option>
                 ))}
               </select>
             </div>
