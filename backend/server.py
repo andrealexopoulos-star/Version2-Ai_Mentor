@@ -31,7 +31,7 @@ except ImportError:
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-SERPAPI_API_KEY = os.environ.get("SERPAPI_API_KEY")
+SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -279,23 +279,26 @@ def compute_missing_profile_fields(profile_patch: Dict[str, Any]) -> List[str]:
     project_management_tool: Optional[str] = None
     communication_tools: Optional[List[str]] = None
 
-async def serpapi_search(query: str, gl: str = "au", hl: str = "en", num: int = 5) -> Dict[str, Any]:
-    """Return {results: [...], error: str|None}."""
-    if not SERPAPI_API_KEY:
-        return {"results": [], "error": "SERPAPI_API_KEY not configured"}
+async def serper_search(query: str, gl: str = "au", hl: str = "en", num: int = 5) -> Dict[str, Any]:
+    """Return {results: [...], error: str|None}. Uses Serper.dev Google Web Search."""
+    if not SERPER_API_KEY:
+        return {"results": [], "error": "SERPER_API_KEY not configured"}
 
-    url = "https://serpapi.com/search.json"
-    params = {
-        "engine": "google",
+    url = "https://google.serper.dev/search"
+    payload = {
         "q": query,
-        "api_key": SERPAPI_API_KEY,
         "gl": gl,
         "hl": hl,
         "num": num,
     }
 
+    headers = {
+        "X-API-KEY": SERPER_API_KEY,
+        "Content-Type": "application/json",
+    }
+
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-        resp = await client.get(url, params=params)
+        resp = await client.post(url, json=payload, headers=headers)
         data = {}
         try:
             data = resp.json()
@@ -303,18 +306,16 @@ async def serpapi_search(query: str, gl: str = "au", hl: str = "en", num: int = 
             data = {}
 
         if resp.status_code != 200:
-            return {"results": [], "error": data.get("error") or f"SerpAPI HTTP {resp.status_code}"}
+            return {"results": [], "error": data.get("message") or data.get("error") or f"Serper HTTP {resp.status_code}"}
 
-    if data.get("error"):
-        return {"results": [], "error": data.get("error")}
-
+    organic = data.get("organic") or []
     results = []
-    for r in (data.get("organic_results") or [])[:num]:
+    for i, r in enumerate(organic[:num], start=1):
         results.append({
             "title": r.get("title"),
             "link": r.get("link"),
             "snippet": r.get("snippet"),
-            "position": r.get("position"),
+            "position": r.get("position") or i,
         })
 
     return {"results": results, "error": None}
