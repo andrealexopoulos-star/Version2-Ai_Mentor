@@ -105,7 +105,7 @@ const Dashboard = () => {
 
   const completedSteps = setupSteps.filter(s => s.done).length;
 
-  if (loading) {
+  if (loading || checkingOnboarding) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-[60vh]">
