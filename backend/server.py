@@ -1334,11 +1334,22 @@ async def get_business_profile(current_user: dict = Depends(get_current_user)):
     return profile
 
 
+class BusinessProfileBuildRequest(BaseModel):
+    business_name: Optional[str] = None
+    abn: Optional[str] = None
+    website_url: Optional[str] = None
+
+
+class BusinessProfileBuildResponse(BaseModel):
+    patch: Dict[str, Any]
+    missing_fields: List[str]
+    sources: Dict[str, Any]
+
+
 @api_router.post("/business-profile/autofill", response_model=BusinessProfileAutofillResponse)
 async def business_profile_autofill(req: BusinessProfileAutofillRequest, current_user: dict = Depends(get_current_user)):
     """Autofill business profile from uploaded docs + website URL + existing profile."""
 
-    # Collect sources
     files_text = ""
     used_files = []
     if req.data_file_ids:
@@ -1358,23 +1369,91 @@ async def business_profile_autofill(req: BusinessProfileAutofillRequest, current
 
     existing_profile = await db.business_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
+    prompt = f"""You are a business analyst helping autofill a structured business profile.
+Return ONLY a valid JSON object with keys matching the profile schema.
+Do not include markdown or commentary.
 
-class BusinessProfileBuildRequest(BaseModel):
-    business_name: Optional[str] = None
-    abn: Optional[str] = None
-    website_url: Optional[str] = None
+Profile schema keys (common):
+- business_name (string)
+- industry (ANZSIC division letter A-S or OTHER)
+- business_type (AU business type string)
+- website (string)
+- location (string)
+- target_country (string, use Australia)
+- abn (string)
+- acn (string)
+- retention_known (boolean)
+- retention_rate_range (one of: <20%, 20-40%, 40-60%, 60-80%, >80%)
 
+User input:
+- business_name: {req.business_name}
+- abn: {req.abn}
+- website_url: {req.website_url}
 
-class BusinessProfileBuildResponse(BaseModel):
-    patch: Dict[str, Any]
-    missing_fields: List[str]
-    sources: Dict[str, Any]
+Existing profile (may be partial):
+{existing_profile}
+
+Website extracted text (if any):
+{website_text}
+
+Uploaded documents extracted text (if any):
+{files_text}
+
+Rules:
+- Only include fields you have reasonable evidence for.
+- If unsure, omit the field.
+- Use target_country=\"Australia\" if not specified.
+- Prefer business_name from user input if provided.
+"""
+
+    session_id = f"autofill_{uuid.uuid4()}"
+    ai = await get_ai_response(
+        prompt,
+        "general",
+        session_id,
+        user_id=current_user["id"],
+        user_data={
+            "name": current_user.get("name"),
+            "business_name": current_user.get("business_name"),
+            "industry": current_user.get("industry"),
+        },
+        use_advanced=True,
+    )
+
+    patch: Dict[str, Any] = {}
+    try:
+        import json
+        patch = json.loads(ai)
+    except Exception:
+        patch = {}
+
+    if req.business_name:
+        patch["business_name"] = req.business_name
+    if req.abn:
+        patch["abn"] = req.abn
+    if req.website_url and not patch.get("website"):
+        patch["website"] = req.website_url
+
+    if not patch.get("target_country"):
+        patch["target_country"] = "Australia"
+
+    missing_fields = compute_missing_profile_fields(patch)
+
+    return {
+        "patch": patch,
+        "missing_fields": missing_fields,
+        "sources": {
+            "website_url": req.website_url,
+            "used_files": used_files,
+            "has_existing_profile": bool(existing_profile),
+        },
+    }
+
 
 @api_router.post("/business-profile/build", response_model=BusinessProfileBuildResponse)
 async def business_profile_build(req: BusinessProfileBuildRequest, current_user: dict = Depends(get_current_user)):
     """Build the business profile by searching external web + scraping top sources, plus in-app sources."""
 
-    # Build AU-focused queries
     name = (req.business_name or "").strip() or current_user.get("business_name") or ""
     abn = (req.abn or "").strip()
     website = (req.website_url or "").strip()
@@ -1390,12 +1469,10 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         queries.append(f"site:{website} about")
         queries.append(f"site:{website} services")
 
-    # Search
     serp_results = []
     for q in queries[:5]:
         serp_results.extend(await serpapi_search(q, gl="au", hl="en", num=5))
 
-    # Choose top unique URLs
     seen = set()
     top_urls = []
     for r in serp_results:
@@ -1415,7 +1492,6 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         if txt:
             scraped.append({"url": u, "text": txt[:6000]})
 
-    # In-app sources (lightweight): last chats/docs/file texts
     recent_chats = await db.chat_history.find(
         {"user_id": current_user["id"]},
         {"_id": 0, "message": 1, "response": 1, "created_at": 1}
@@ -1481,16 +1557,23 @@ Fill as many of these keys as possible, only if reasonably supported by sources:
 - target_country (Australia)
 
 Rules:
-- Use target_country="Australia" if missing.
+- Use target_country=\"Australia\" if missing.
 - If you cannot infer a value, omit it.
 """
 
     session_id = f"build_profile_{uuid.uuid4()}"
-    ai = await get_ai_response(prompt, "general", session_id, user_id=current_user["id"], user_data={
-        "name": current_user.get("name"),
-        "business_name": name,
-        "industry": current_user.get("industry"),
-    }, use_advanced=True)
+    ai = await get_ai_response(
+        prompt,
+        "general",
+        session_id,
+        user_id=current_user["id"],
+        user_data={
+            "name": current_user.get("name"),
+            "business_name": name,
+            "industry": current_user.get("industry"),
+        },
+        use_advanced=True,
+    )
 
     patch: Dict[str, Any] = {}
     try:
@@ -1499,13 +1582,13 @@ Rules:
     except Exception:
         patch = {}
 
-    # Respect explicit inputs
     if name:
         patch["business_name"] = name
     if abn:
         patch["abn"] = abn
     if website:
         patch["website"] = website
+
     if not patch.get("target_country"):
         patch["target_country"] = "Australia"
 
@@ -1519,65 +1602,6 @@ Rules:
             "serp_count": len(serp_results),
             "scraped_urls": top_urls,
         },
-    }
-
-User input:
-- business_name: {req.business_name}
-- abn: {req.abn}
-- website_url: {req.website_url}
-
-Existing profile (may be partial):
-{existing_profile}
-
-Website extracted text (if any):
-{website_text}
-
-Uploaded documents extracted text (if any):
-{files_text}
-
-Rules:
-- Only include fields you have reasonable evidence for.
-- If unsure, omit the field.
-- Use target_country="Australia" if not specified.
-- Prefer business_name from user input if provided.
-"""
-
-    session_id = f"autofill_{uuid.uuid4()}"
-    ai = await get_ai_response(prompt, "general", session_id, user_id=current_user["id"], user_data={
-        "name": current_user.get("name"),
-        "business_name": current_user.get("business_name"),
-        "industry": current_user.get("industry"),
-    }, use_advanced=True)
-
-    patch: Dict[str, Any] = {}
-    try:
-        import json
-        patch = json.loads(ai)
-    except Exception:
-        # If the model returns non-JSON, fall back to minimal patch
-        patch = {}
-
-    # Always respect explicit inputs
-    if req.business_name:
-        patch["business_name"] = req.business_name
-    if req.abn:
-        patch["abn"] = req.abn
-    if req.website_url and not patch.get("website"):
-        patch["website"] = req.website_url
-
-    if not patch.get("target_country"):
-        patch["target_country"] = "Australia"
-
-    missing_fields = compute_missing_profile_fields(patch)
-
-    return {
-        "patch": patch,
-        "missing_fields": missing_fields,
-        "sources": {
-            "website_url": req.website_url,
-            "used_files": used_files,
-            "has_existing_profile": bool(existing_profile),
-        }
     }
 
 @api_router.put("/business-profile")
