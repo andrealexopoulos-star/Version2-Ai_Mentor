@@ -1878,6 +1878,7 @@ def compute_retention_rag(anzsic_division: Optional[str], retention_known: Optio
 # ==================== SUBSCRIPTIONS & OAC ====================
 
 class SubscriptionUpdate(BaseModel):
+    subscription_tier: str
 
 # Persist web sources discovered during profile build (for citations)
 async def upsert_web_sources(user_id: str, serp_results: List[Dict[str, Any]]):
