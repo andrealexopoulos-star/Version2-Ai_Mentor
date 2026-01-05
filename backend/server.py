@@ -1358,6 +1358,17 @@ async def business_profile_autofill(req: BusinessProfileAutofillRequest, current
 
     existing_profile = await db.business_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
+
+class BusinessProfileBuildRequest(BaseModel):
+    business_name: Optional[str] = None
+    abn: Optional[str] = None
+    website_url: Optional[str] = None
+
+class BusinessProfileBuildResponse(BaseModel):
+    patch: Dict[str, Any]
+    missing_fields: List[str]
+    sources: Dict[str, Any]
+
     prompt = f"""You are a business analyst helping autofill a structured business profile.
 Return ONLY a valid JSON object with keys matching the profile schema.
 Do not include markdown or commentary.
