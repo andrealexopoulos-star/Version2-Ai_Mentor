@@ -1986,6 +1986,128 @@ def parse_recommendations(text: str, max_items: int = 5) -> List[Dict[str, Any]]
     return cleaned[:max_items]
 
 
+
+# OAC response parsing with "Why" + citations
+
+def parse_citations_block(text: str) -> List[Dict[str, Any]]:
+    citations = []
+    for raw in (text or "").splitlines():
+        line = raw.strip().lstrip('-').strip()
+        if not line:
+            continue
+        # Expect formats like:
+        # - [web] Title — https://...
+        # - [document] "Q2 Strategy" (doc_id=...)
+        source_type = None
+        if line.startswith('[') and ']' in line:
+            source_type = line[1:line.index(']')].strip().lower()
+            rest = line[line.index(']') + 1:].strip()
+        else:
+            rest = line
+
+        url = None
+        if 'http://' in rest or 'https://' in rest:
+            # naive url split
+            parts = rest.split('http')
+            url = 'http' + parts[-1].strip()
+            title = rest.replace(url, '').strip(' -–—')
+        else:
+            title = rest
+
+        citations.append({
+            'source_type': source_type or 'unknown',
+            'title': title or None,
+            'url': url,
+        })
+    return citations[:6]
+
+
+def parse_oac_items_with_why(text: str, max_items: int = 5) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    current: Dict[str, Any] = {}
+    actions: List[str] = []
+    in_citations = False
+    citations_lines: List[str] = []
+
+    def flush():
+        nonlocal current, actions, in_citations, citations_lines
+        if not current:
+            return
+        current['actions'] = actions[:]
+        if citations_lines:
+            current['citations'] = parse_citations_block('\n'.join(citations_lines))
+        items.append(current)
+        current = {}
+        actions = []
+        in_citations = False
+        citations_lines = []
+
+    for raw in (text or '').splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+
+        normalized = line.strip('*').strip()
+
+        if normalized.lower().startswith('citations:'):
+            in_citations = True
+            continue
+
+        if in_citations:
+            if normalized[0].isdigit() and '.' in normalized[:4]:
+                # next item
+                flush()
+            else:
+                citations_lines.append(normalized)
+                continue
+
+        if normalized[0].isdigit() and '.' in normalized[:4]:
+            flush()
+            title = normalized.split('.', 1)[1].strip()
+            current = {'title': title, 'citations': []}
+            continue
+
+        if normalized.lower().startswith('why:'):
+            if current:
+                current['why'] = normalized.split(':', 1)[1].strip()
+            continue
+
+        if normalized.lower().startswith('confidence:'):
+            if current:
+                current['confidence'] = normalized.split(':', 1)[1].strip().lower()
+            continue
+
+        if normalized.lower().startswith('reason:'):
+            if current and 'reason' not in current:
+                current['reason'] = normalized.split(':', 1)[1].strip()
+            continue
+
+        if normalized.startswith('-') or normalized.startswith('•'):
+            a = normalized.lstrip('-•').strip()
+            if a:
+                actions.append(a)
+            continue
+
+        # fallback reason
+        if current and 'reason' not in current:
+            current['reason'] = normalized
+
+    flush()
+
+    cleaned = []
+    for it in items:
+        if not it.get('title'):
+            continue
+        cleaned.append({
+            'title': it.get('title'),
+            'reason': it.get('reason'),
+            'actions': (it.get('actions') or [])[:6],
+            'why': it.get('why'),
+            'confidence': it.get('confidence'),
+            'citations': (it.get('citations') or [])[:6],
+        })
+    return cleaned[:max_items]
+
 def tier_from_user(user: dict) -> str:
     return (user.get("subscription_tier") or "free").lower()
 
