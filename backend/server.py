@@ -1086,6 +1086,86 @@ async def accept_invite(req: InviteAcceptRequest):
         ),
     )
 
+# ==================== ONBOARDING MODELS ====================
+
+class OnboardingSave(BaseModel):
+    current_step: int
+    business_stage: Optional[str] = None
+    data: Dict[str, Any]
+    completed: bool = False
+
+class OnboardingStatusResponse(BaseModel):
+    completed: bool
+    current_step: Optional[int] = None
+    business_stage: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None
+
+# ==================== ONBOARDING ROUTES ====================
+
+@api_router.get("/onboarding/status", response_model=OnboardingStatusResponse)
+async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
+    """Check if user has completed onboarding"""
+    user_id = current_user["id"]
+    
+    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not onboarding:
+        return OnboardingStatusResponse(
+            completed=False,
+            current_step=0,
+            business_stage=None,
+            data={}
+        )
+    
+    return OnboardingStatusResponse(
+        completed=onboarding.get("completed", False),
+        current_step=onboarding.get("current_step", 0),
+        business_stage=onboarding.get("business_stage"),
+        data=onboarding.get("data", {})
+    )
+
+@api_router.post("/onboarding/save")
+async def save_onboarding_progress(
+    request: OnboardingSave,
+    current_user: dict = Depends(get_current_user)
+):
+    """Save onboarding progress"""
+    user_id = current_user["id"]
+    
+    await db.onboarding.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {
+                "user_id": user_id,
+                "current_step": request.current_step,
+                "business_stage": request.business_stage,
+                "data": request.data,
+                "completed": request.completed,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        },
+        upsert=True
+    )
+    
+    return {"status": "saved", "current_step": request.current_step}
+
+@api_router.post("/onboarding/complete")
+async def complete_onboarding(current_user: dict = Depends(get_current_user)):
+    """Mark onboarding as completed"""
+    user_id = current_user["id"]
+    
+    await db.onboarding.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {
+                "completed": True,
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    return {"status": "completed"}
+
 # ==================== CHAT ROUTES ====================
 
 @api_router.post("/chat", response_model=ChatResponse)
