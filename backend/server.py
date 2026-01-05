@@ -194,6 +194,7 @@ class BusinessProfileUpdate(BaseModel):
     business_name: Optional[str] = None
     industry: Optional[str] = None
     business_type: Optional[str] = None  # LLC, Corporation, Sole Prop, etc.
+    business_stage: Optional[str] = None  # idea, startup, established
     year_founded: Optional[int] = None
     website: Optional[str] = None
     location: Optional[str] = None
