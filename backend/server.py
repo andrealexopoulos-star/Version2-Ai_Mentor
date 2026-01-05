@@ -109,6 +109,23 @@ class ChatResponse(BaseModel):
 class BusinessProfileAutofillRequest(BaseModel):
     business_name: Optional[str] = None
     abn: Optional[str] = None
+
+class Citation(BaseModel):
+    source_type: str  # web | document | data_file | chat | analysis | diagnosis
+    title: Optional[str] = None
+    url: Optional[str] = None
+    file_id: Optional[str] = None
+    doc_id: Optional[str] = None
+    snippet: Optional[str] = None
+
+class OACItemWithWhy(BaseModel):
+    title: str
+    reason: Optional[str] = None
+    actions: List[str] = []
+    why: Optional[str] = None
+    confidence: Optional[str] = None  # high | medium | low
+    citations: List[Citation] = []
+
     website_url: Optional[str] = None
     data_file_ids: Optional[List[str]] = None
 
