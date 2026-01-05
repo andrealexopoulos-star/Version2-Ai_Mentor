@@ -969,6 +969,15 @@ async def google_exchange(payload: GoogleExchangeRequest):
         access_token=token,
         user=UserResponse(
             id=user["id"],
+            email=user["email"],
+            name=user["name"],
+            business_name=user.get("business_name"),
+            industry=user.get("industry"),
+            role=user["role"],
+            subscription_tier=user.get("subscription_tier"),
+            created_at=user["created_at"],
+        ),
+    )
 
 # ==================== INVITES (ENTERPRISE ONLY) ====================
 
