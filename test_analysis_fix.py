@@ -38,18 +38,13 @@ def test_analysis_insights():
     }
     
     response = requests.post(f"{BASE_URL}/auth/register", json=register_data, timeout=30)
-        
-        if response.status_code != 200:
-            print(f"❌ Registration failed: {response.status_code}")
-            print(f"   Response: {response.text}")
-            return False
-        print("✅ User registered successfully")
-    elif response.status_code == 200:
-        print("✅ User logged in successfully")
-    else:
-        print(f"❌ Login failed: {response.status_code}")
+    
+    if response.status_code != 200:
+        print(f"❌ Registration failed: {response.status_code}")
         print(f"   Response: {response.text}")
         return False
+    
+    print("✅ User registered successfully")
     
     data = response.json()
     token = data.get('access_token')
