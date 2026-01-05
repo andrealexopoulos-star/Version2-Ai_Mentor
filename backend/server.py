@@ -503,6 +503,12 @@ def get_email_domain(email: str) -> str:
 
 # ==================== AI HELPER ====================
 
+
+def require_owner_or_admin(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in {"owner", "admin"}:
+        raise HTTPException(status_code=403, detail="Owner/Admin access required")
+    return current_user
+
 async def get_business_context(user_id: str) -> dict:
     """Get comprehensive business context for AI personalization"""
     # Get business profile
