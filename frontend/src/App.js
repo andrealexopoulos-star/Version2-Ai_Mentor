@@ -79,6 +79,9 @@ function AppRoutes() {
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
+      {/* Onboarding */}
+      <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
+
       {/* Protected Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
