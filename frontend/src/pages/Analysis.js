@@ -172,73 +172,106 @@ const Analysis = () => {
 
               {result && (
                 <div className="space-y-6 animate-fade-in">
+                  {/* Full Analysis Text */}
                   <Card className="card-clean">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <h3 className="text-xl font-serif text-[#0f2f24]">{result.title}</h3>
-                          <p className="text-sm text-[#0f2f24]/60">{result.analysis_type}</p>
+                          <h3 className="text-xl font-serif" style={{ color: 'var(--text-primary)' }}>{formData.title}</h3>
+                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{formData.analysis_type}</p>
                         </div>
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={saveAsDocument}
-                          className="border-[#0f2f24] text-[#0f2f24]"
-                          data-testid="save-analysis-btn"
+                          className="btn-secondary"
                         >
                           <Save className="w-4 h-4 mr-2" />
                           Save
                         </Button>
                       </div>
-                      <div className="markdown-content prose prose-sm max-w-none">
-                        <ReactMarkdown>{result.ai_analysis}</ReactMarkdown>
+                      <div className="markdown-content prose prose-sm max-w-none" style={{ color: 'var(--text-secondary)' }}>
+                        <ReactMarkdown>{result.analysis}</ReactMarkdown>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {result.recommendations?.length > 0 && (
-                    <Card className="card-clean bg-[#0f2f24] text-white">
-                      <CardContent className="p-6">
-                        <h4 className="text-lg font-serif text-[#ccff00] mb-4">Key Recommendations</h4>
-                        <ul className="space-y-3">
-                          {result.recommendations.slice(0, 5).map((rec, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <span className="w-6 h-6 bg-[#ccff00] text-[#0f2f24] rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
-                                {i + 1}
-                              </span>
-                              <span className="text-white/90">{rec}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                  )}
+                  {/* Structured Insights with Why? */}
+                  {result.insights?.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Key Insights</h3>
+                      {result.insights.map((insight, idx) => (
+                        <Card key={idx} className="card">
+                          <CardContent className="p-5">
+                            <h4 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                              {insight.title}
+                            </h4>
+                            {insight.reason && (
+                              <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
+                                {insight.reason}
+                              </p>
+                            )}
+                            
+                            {insight.actions?.length > 0 && (
+                              <ul className="space-y-2 mb-3">
+                                {insight.actions.map((action, i) => (
+                                  <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                    <ArrowRight className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent-primary)' }} />
+                                    <span>{action}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
 
-                  {result.action_items?.length > 0 && (
-                    <Card className="card-clean">
-                      <CardContent className="p-6">
-                        <h4 className="text-lg font-serif text-[#0f2f24] mb-4">Action Items</h4>
-                        <ul className="space-y-2">
-                          {result.action_items.slice(0, 5).map((item, i) => (
-                            <li key={i} className="flex items-start gap-3 p-3 bg-[#f5f5f0] rounded-sm">
-                              <ArrowRight className="w-4 h-4 text-[#0f2f24]/60 mt-1 flex-shrink-0" />
-                              <span className="text-[#0f2f24]">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
+                            {(insight.why || insight.citations?.length > 0) && (
+                              <Accordion type="single" collapsible>
+                                <AccordionItem value={`why-${idx}`}>
+                                  <AccordionTrigger className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                    Why?
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    {insight.why && (
+                                      <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                                        {insight.why}
+                                      </p>
+                                    )}
+                                    
+                                    {insight.confidence && (
+                                      <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+                                        Confidence: <span className="font-medium">{insight.confidence}</span>
+                                      </p>
+                                    )}
+                                    
+                                    {insight.citations?.length > 0 && (
+                                      <div>
+                                        <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Sources:</p>
+                                        <ul className="space-y-2">
+                                          {insight.citations.map((citation, i) => (
+                                            <li key={i} className="text-sm">
+                                              <span className="text-xs mr-2" style={{ color: 'var(--text-muted)' }}>
+                                                [{citation.source_type}]
+                                              </span>
+                                              {citation.url ? (
+                                                <a href={citation.url} target="_blank" rel="noreferrer" className="underline" style={{ color: 'var(--accent-primary)' }}>
+                                                  {citation.title || citation.url}
+                                                </a>
+                                              ) : (
+                                                <span style={{ color: 'var(--text-secondary)' }}>{citation.title}</span>
+                                              )}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </AccordionContent>
+                                </AccordionItem>
+                              </Accordion>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   )}
-
-                  <Button 
-                    onClick={() => navigate('/documents')}
-                    variant="outline"
-                    className="w-full border-[#0f2f24] text-[#0f2f24]"
-                    data-testid="view-documents-btn"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    View All Documents
-                  </Button>
                 </div>
               )}
 
