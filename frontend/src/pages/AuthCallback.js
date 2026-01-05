@@ -24,11 +24,23 @@ const AuthCallback = () => {
 
       try {
         const res = await apiClient.post('/auth/google/exchange', { session_id: sessionId });
-        const { access_token } = res.data;
+        const { access_token, user } = res.data;
         localStorage.setItem('token', access_token);
 
         // Clear fragment to avoid re-processing
         window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Check if onboarding is needed
+        try {
+          const onboardingRes = await apiClient.get('/onboarding/status');
+          if (!onboardingRes.data.completed) {
+            toast.success('Welcome! Let\'s set up your profile');
+            navigate('/onboarding', { replace: true });
+            return;
+          }
+        } catch (err) {
+          console.error('Error checking onboarding status:', err);
+        }
 
         toast.success('Signed in with Google');
         navigate('/dashboard', { replace: true });
