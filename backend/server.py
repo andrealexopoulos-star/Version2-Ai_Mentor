@@ -1878,6 +1878,32 @@ def compute_retention_rag(anzsic_division: Optional[str], retention_known: Optio
 # ==================== SUBSCRIPTIONS & OAC ====================
 
 class SubscriptionUpdate(BaseModel):
+
+# Persist web sources discovered during profile build (for citations)
+async def upsert_web_sources(user_id: str, serp_results: List[Dict[str, Any]]):
+    if not serp_results:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    for r in serp_results[:25]:
+        url = (r.get('link') or '').strip()
+        if not url:
+            continue
+        doc = {
+            'id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'source_type': 'web',
+            'title': r.get('title'),
+            'url': url,
+            'snippet': r.get('snippet'),
+            'created_at': now,
+            'updated_at': now,
+        }
+        await db.web_sources.update_one(
+            {'user_id': user_id, 'url': url},
+            {'$set': doc},
+            upsert=True
+        )
+
     subscription_tier: str
 
 
