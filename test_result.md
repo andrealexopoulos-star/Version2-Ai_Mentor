@@ -151,6 +151,18 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: Business profile update with AU fields working correctly. PUT /api/business-profile accepts industry:'M', business_type:'Company (Pty Ltd)', abn, acn, target_country:'Australia', retention_known:true, retention_rate_range:'60-80%' and correctly computes retention_rag. All AU fields present in response."
 
+  - task: "Onboarding Wizard Backend APIs"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: All onboarding wizard backend APIs working perfectly (14/14 tests passed - 100% success rate). 1) GET /api/onboarding/status returns correct initial state (completed:false, current_step:0) for new users ✅ 2) POST /api/onboarding/save successfully saves progress with business_stage and step data ✅ 3) POST /api/onboarding/complete marks onboarding as completed ✅ 4) GET /api/business-profile/scores returns completeness and strength scores (0 for empty profile, increases after profile data saved - tested with 52% completeness and 42% strength after adding business data) ✅ Complete test flow verified: register user → check status (incomplete) → save progress → check scores → complete onboarding → verify completed status. All endpoints functioning correctly with proper data persistence and score calculation."
+
 frontend:
   - task: "Premium fonts update (Inter + Plus Jakarta Sans)"
     implemented: true
