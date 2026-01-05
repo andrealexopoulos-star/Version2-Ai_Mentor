@@ -792,6 +792,30 @@ async def register(user_data: UserCreate):
     role = "admin" if user_count == 0 else "user"
     
     user_id = str(uuid.uuid4())
+    # Workspace/account creation for the first user
+    account_id = None
+    if user_count == 0:
+        account_id = str(uuid.uuid4())
+        account_doc = {
+            "id": account_id,
+            "owner_user_id": user_id,
+            "account_name": user_data.business_name or user_data.name,
+            "primary_contact_name": user_data.name,
+            "email": user_data.email,
+            "timezone": "Australia/Sydney",
+            "currency": "AUD",
+            "currency_locked": False,
+            "trial_started_at": now,
+            "trial_ends_at": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
+            "subscription_tier": "trial",
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.accounts.insert_one(account_doc)
+
+        # Disable self-serve registration after the owner exists
+        await db.settings.update_one({"key": "registration_open"}, {"$set": {"key": "registration_open", "value": False}}, upsert=True)
+
     now = datetime.now(timezone.utc).isoformat()
     
     user_doc = {
