@@ -1530,74 +1530,63 @@ Format with clear structure and actionable steps."""
 
 @api_router.post("/diagnose")
 async def diagnose_business(request: dict, current_user: dict = Depends(get_current_user)):
-    """AGI-Ready comprehensive business diagnosis"""
+    """Business diagnosis with Advisor Brain pattern"""
     symptoms = request.get("symptoms", "")
     areas = request.get("areas", [])
     urgency = request.get("urgency", "medium")
     
-    user_data = {
-        "name": current_user.get("name"),
-        "business_name": current_user.get("business_name"),
-        "industry": current_user.get("industry")
-    }
+    user_id = current_user["id"]
+    context = await build_advisor_context(user_id)
+    profile = context.get("profile", {})
     
+    communication_style = profile.get("advice_style", "conversational")
     areas_text = ", ".join(areas) if areas else "all areas"
     
-    prompt = f"""As an expert business diagnostician, analyze these business issues:
+    task_prompt = f"""Diagnose these business issues and provide solutions:
 
-Business: {user_data.get('business_name', 'N/A')}
-Industry: {user_data.get('industry', 'General')}
 Problem Areas: {areas_text}
 Urgency Level: {urgency}
 
-Symptoms/Issues Reported:
+Symptoms/Issues:
 {symptoms}
 
-Please provide a comprehensive diagnosis:
-
-## 1. Root Cause Analysis
-- Identify the underlying causes (not just symptoms)
-- Explain the chain of causation
-- Rate confidence level for each diagnosis
-
-## 2. Impact Assessment
-- Immediate impacts on operations
-- Financial implications
-- Customer/market impact
-- Team/culture effects
-
-## 3. Prioritized Solutions
-For each solution provide:
-- Implementation difficulty (Easy/Medium/Hard)
-- Time to implement
-- Expected ROI
-- Resources needed
-
-## 4. Emergency Actions (if urgency is high)
-- What to do in the next 24-48 hours
-- Quick stabilization measures
-
-## 5. Long-term Prevention
-- Systemic changes to prevent recurrence
-- Monitoring systems to implement
-- Early warning indicators
-
-## 6. Success Metrics
-- How to measure if the problem is truly solved
-- Leading vs lagging indicators
-
-Be specific, actionable, and consider SMB resource constraints."""
-
+Provide 3-5 diagnostic insights with root causes and solutions.
+Each insight must include Why explanation, Confidence level, Actions, and Citations."""
+    
+    prompt = format_advisor_brain_prompt(task_prompt, context, "diagnosis", communication_style)
+    
     session_id = f"diagnosis_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "business_analysis", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
+    response_text = await get_ai_response(
+        prompt,
+        "business_analysis",
+        session_id,
+        user_id=user_id,
+        user_data={"name": current_user.get("name"), "business_name": profile.get("business_name")},
+        use_advanced=True
+    )
+    
+    # Parse with Advisor Brain pattern
+    insights = parse_advisor_brain_response(response_text)
     
     # Save diagnosis
     diagnosis_doc = {
         "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
+        "user_id": user_id,
         "symptoms": symptoms,
         "areas": areas,
         "urgency": urgency,
+        "diagnosis": response_text,
+        "insights": insights,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.diagnoses.insert_one(diagnosis_doc)
+    
+    return {
+        "diagnosis": response_text,
+        "insights": insights,
+        "areas": areas,
+        "urgency": urgency
+    }
         "diagnosis": response,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
