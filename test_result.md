@@ -163,6 +163,18 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: All onboarding wizard backend APIs working perfectly (14/14 tests passed - 100% success rate). 1) GET /api/onboarding/status returns correct initial state (completed:false, current_step:0) for new users ✅ 2) POST /api/onboarding/save successfully saves progress with business_stage and step data ✅ 3) POST /api/onboarding/complete marks onboarding as completed ✅ 4) GET /api/business-profile/scores returns completeness and strength scores (0 for empty profile, increases after profile data saved - tested with 52% completeness and 42% strength after adding business data) ✅ Complete test flow verified: register user → check status (incomplete) → save progress → check scores → complete onboarding → verify completed status. All endpoints functioning correctly with proper data persistence and score calculation."
 
+  - task: "Advisor Brain Analysis Pattern"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL BUG FOUND: POST /api/analyses endpoint creates analysis successfully and returns id, analysis text, and created_at fields ✅, BUT insights array is ALWAYS EMPTY ❌. ROOT CAUSE: Mismatch between AI prompt format and parser expectations. The prompt (lines 2453-2467) asks AI to format output as 'Title:', 'Reason:', 'Why:', 'Confidence:', 'Actions:', 'Citations:' with markdown formatting. However, the parser parse_oac_items_with_why() (line 2481) expects numbered list format like '1. Title' followed by 'Reason:', 'Why:', etc. The AI returns markdown headers like '### Insight 1:' and '**Reason:**' which the parser cannot parse. Verified: Parser works correctly when given numbered list format (tested manually), but AI consistently returns markdown format. This means NO structured insights are being extracted from ANY analysis, making the Advisor Brain pattern non-functional. Business profile personalization IS working (analysis text contains business-specific terms like 'Tech Consulting Firm', 'scale from 5 to 20 clients'). FIX REQUIRED: Either update prompt to explicitly request numbered list format '1. Title\\nReason: ...\\nWhy: ...', OR update parser to handle markdown format with '###' headers and '**Field:**' bold text."
+
   - task: "Onboarding Wizard Frontend Complete Flow"
     implemented: true
     working: true
