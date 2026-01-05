@@ -820,7 +820,7 @@ async def login(credentials: UserLogin):
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account deactivated")
     
-    token = create_token(user["id"], user["email"], user["role"])
+    token = create_token(user["id"], user["email"], user["role"], account_id=user.get("account_id"))
     
     return TokenResponse(
         access_token=token,
@@ -911,7 +911,7 @@ async def google_exchange(payload: GoogleExchangeRequest):
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account deactivated")
 
-    token = create_token(user["id"], user["email"], user["role"])
+    token = create_token(user["id"], user["email"], user["role"], account_id=user.get("account_id"))
 
     return TokenResponse(
         access_token=token,
