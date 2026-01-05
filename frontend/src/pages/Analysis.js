@@ -6,6 +6,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Card, CardContent } from '../components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, BarChart3, ArrowRight, Save, FileText } from 'lucide-react';
