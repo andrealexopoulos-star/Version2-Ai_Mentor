@@ -2253,7 +2253,7 @@ Citations:
         "industry": industry,
     }, use_advanced=True)
 
-    items = parse_recommendations(ai_text, max_items=5)
+    items = parse_oac_items_with_why(ai_text, max_items=5)
 
     # persist cache + increment usage by 1 (daily batch counts as 1)
     rec_doc = {
