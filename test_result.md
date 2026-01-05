@@ -431,10 +431,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Business Profile Quick Setup autofill (docs + website)"
-    - "Fonts/typography comfort"
-    - "Registration flow stability (if any UI regressions)"
-  stuck_tasks: []
+    - "Advisor Brain Analysis Pattern"
+  stuck_tasks:
+    - "Advisor Brain Analysis Pattern"
   test_all: false
   test_priority: "high_first"
 
