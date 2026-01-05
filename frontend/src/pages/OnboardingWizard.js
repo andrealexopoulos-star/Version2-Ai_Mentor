@@ -1018,35 +1018,38 @@ const OnboardingWizard = () => {
                 <div>
                   <Label className="text-lg mb-4 block">What stage is your business at?</Label>
                   <div className="space-y-3">
-                    {BUSINESS_STAGES.map((stage) => (
-                      <button
-                        key={stage.id}
-                        onClick={() => handleStageSelect(stage.id)}
-                        className="w-full text-left p-6 rounded-xl border-2 transition-all hover:border-opacity-100"
-                        style={{ 
-                          borderColor: 'var(--border-medium)',
-                          background: 'var(--bg-primary)'
-                        }}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div 
-                            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: `${stage.color}15` }}
-                          >
-                            <stage.icon className="w-6 h-6" style={{ color: stage.color }} />
+                    {BUSINESS_STAGES.map((stage) => {
+                      const StageIcon = stage.icon;
+                      return (
+                        <button
+                          key={stage.id}
+                          onClick={() => handleStageSelect(stage.id)}
+                          className="w-full text-left p-6 rounded-xl border-2 transition-all hover:border-opacity-100"
+                          style={{ 
+                            borderColor: 'var(--border-medium)',
+                            background: 'var(--bg-primary)'
+                          }}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div 
+                              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                              style={{ background: `${stage.color}15` }}
+                            >
+                              <StageIcon className="w-6 h-6" style={{ color: stage.color }} />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                                {stage.label}
+                              </h3>
+                              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                                {stage.description}
+                              </p>
+                            </div>
+                            <ArrowRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'var(--text-muted)' }} />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                              {stage.label}
-                            </h3>
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                              {stage.description}
-                            </p>
-                          </div>
-                          <ArrowRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
