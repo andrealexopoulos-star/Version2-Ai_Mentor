@@ -483,6 +483,22 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+
+async def get_current_account(current_user: dict = Depends(get_current_user)):
+    account_id = current_user.get("account_id")
+    if not account_id:
+        raise HTTPException(status_code=400, detail="Account not configured")
+    account = await db.accounts.find_one({"id": account_id}, {"_id": 0})
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return account
+
+
+def get_email_domain(email: str) -> str:
+    if not email or "@" not in email:
+        return ""
+    return email.split("@", 1)[1].lower().strip()
+
     return current_user
 
 # ==================== AI HELPER ====================
