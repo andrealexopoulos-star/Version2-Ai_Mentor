@@ -915,7 +915,7 @@ async def google_exchange(payload: GoogleExchangeRequest):
 
     if not user:
         user_count = await db.users.count_documents({})
-        role = "admin" if user_count == 0 else "user"
+        role = "owner" if user_count == 0 else "member"
 
         user_id = str(uuid.uuid4())
         user_doc = {
