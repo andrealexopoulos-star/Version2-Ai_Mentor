@@ -1,0 +1,93 @@
+{
+  "total_tests": 14,
+  "passed": 14,
+  "failed": 0,
+  "success_rate": "100.0%",
+  "test_results": [
+    {
+      "test": "Register User",
+      "passed": true,
+      "details": "User ID: d6b000a3-f5e9-40b0-841b-6ad66e908677",
+      "timestamp": "2026-01-05T06:45:22.189326"
+    },
+    {
+      "test": "Onboarding Status - Completed False",
+      "passed": true,
+      "details": "completed: False",
+      "timestamp": "2026-01-05T06:45:22.228953"
+    },
+    {
+      "test": "Onboarding Status - Current Step 0",
+      "passed": true,
+      "details": "current_step: 0",
+      "timestamp": "2026-01-05T06:45:22.228964"
+    },
+    {
+      "test": "Save Onboarding Progress",
+      "passed": true,
+      "details": "Progress saved successfully",
+      "timestamp": "2026-01-05T06:45:22.297393"
+    },
+    {
+      "test": "Save Progress - Current Step",
+      "passed": true,
+      "details": "current_step: 1",
+      "timestamp": "2026-01-05T06:45:22.297405"
+    },
+    {
+      "test": "Profile Scores - Completeness Present",
+      "passed": true,
+      "details": "completeness: 0",
+      "timestamp": "2026-01-05T06:45:22.335236"
+    },
+    {
+      "test": "Profile Scores - Strength Present",
+      "passed": true,
+      "details": "strength: 0",
+      "timestamp": "2026-01-05T06:45:22.335246"
+    },
+    {
+      "test": "Complete Onboarding",
+      "passed": true,
+      "details": "Onboarding marked as completed",
+      "timestamp": "2026-01-05T06:45:22.375597"
+    },
+    {
+      "test": "Onboarding Status - Completed True",
+      "passed": true,
+      "details": "Onboarding successfully completed",
+      "timestamp": "2026-01-05T06:45:22.410885"
+    },
+    {
+      "test": "Empty Profile - Completeness Score",
+      "passed": true,
+      "details": "completeness: 0",
+      "timestamp": "2026-01-05T06:45:22.446724"
+    },
+    {
+      "test": "Empty Profile - Strength Score",
+      "passed": true,
+      "details": "strength: 0",
+      "timestamp": "2026-01-05T06:45:22.446734"
+    },
+    {
+      "test": "Update Business Profile",
+      "passed": true,
+      "details": "Profile data saved",
+      "timestamp": "2026-01-05T06:45:22.491100"
+    },
+    {
+      "test": "Profile Scores Increased - Completeness",
+      "passed": true,
+      "details": "completeness: 52",
+      "timestamp": "2026-01-05T06:45:22.529125"
+    },
+    {
+      "test": "Profile Scores Increased - Strength",
+      "passed": true,
+      "details": "strength: 42",
+      "timestamp": "2026-01-05T06:45:22.529137"
+    }
+  ],
+  "timestamp": "2026-01-05T06:45:22.529172"
+}
