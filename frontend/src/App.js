@@ -24,6 +24,7 @@ import OpsAdvisoryCentre from "./pages/OpsAdvisoryCentre";
 import Pricing from "./pages/Pricing";
 import Integrations from "./pages/Integrations";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import OnboardingWizard from "./pages/OnboardingWizard";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
