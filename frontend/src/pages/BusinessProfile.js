@@ -267,8 +267,8 @@ const BusinessProfile = () => {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-4xl font-serif text-[#ccff00]">{completeness}%</p>
-                  <p className="text-sm text-white/60">Complete</p>
+                  <p className="text-4xl font-serif" style={{ color: 'var(--accent-primary)' }}>{completeness}%</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Complete</p>
                 </div>
               </div>
             </CardContent>
