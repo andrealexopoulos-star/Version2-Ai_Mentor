@@ -840,7 +840,7 @@ async def register(user_data: UserCreate):
     
     await db.users.insert_one(user_doc)
     
-    token = create_token(user_id, user_data.email, role, account_id=user_doc.get("account_id"))
+    token = create_token(user_id, user_data.email, role, account_id=account_id)
     
     return TokenResponse(
         access_token=token,
