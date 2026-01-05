@@ -434,9 +434,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Advisor Brain Analysis Pattern"
+    []
   stuck_tasks:
-    - "Advisor Brain Analysis Pattern"
+    []
   test_all: false
   test_priority: "high_first"
 
