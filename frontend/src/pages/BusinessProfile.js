@@ -259,8 +259,8 @@ const BusinessProfile = () => {
                     )}
                     <span className="font-medium">Profile Completeness</span>
                   </div>
-                  <Progress value={completeness} className="h-3 bg-white/20" />
-                  <p className="text-sm text-white/70 mt-2">
+                  <Progress value={completeness} className="h-3" />
+                  <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
                     {completeness < 50 && "Complete your profile to unlock personalized AI insights"}
                     {completeness >= 50 && completeness < 80 && "Good progress! Add more details for better recommendations"}
                     {completeness >= 80 && "Excellent! Your AI advisor is fully personalized"}
