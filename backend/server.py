@@ -2197,6 +2197,12 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
     biz_name = (user or {}).get("business_name") or (profile or {}).get("business_name") or "this business"
     industry = (profile or {}).get("industry") or (user or {}).get("industry")
 
+    # Build a compact evidence list for citations
+    evidence_web = await db.web_sources.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "title": 1, "url": 1, "snippet": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(6).to_list(6)
+
     prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
 Your job: produce deeply customised operational recommendations that are SPECIFIC to this business and NOT generic.
 
@@ -2218,17 +2224,26 @@ Recent documents created (latest first):
 Recent uploaded files (latest first):
 {recent_files}
 
+Recent web sources (from Build Business Profile):
+{evidence_web}
+
 CRITICAL OUTPUT RULES:
-- Output ONLY the 5 recommendations. No intro, no closing text, no markdown headings.
-- Must start with "1." and end with "5." section.
-- Exactly 5 items.
+- Output ONLY 5 items. No intro, no closing text.
+- Exactly 5 items, numbered 1. to 5.
+- If evidence is missing for a claim, set Confidence: low and ask 1 clarifying question in the Why line.
 
 FORMAT (repeat 5x):
 1. <Short title>
 Reason: <One line referencing the business context above>
+Why: <2–3 lines: why this applies to THIS business; if missing info, ask 1 question>
+Confidence: high|medium|low
 - <Action>
 - <Action>
 - <Action>
+Citations:
+- [web] <title> — <url>
+- [data_file] <filename>
+- [document] <title>
 """
 
     session_id = f"oac_{uuid.uuid4()}"
