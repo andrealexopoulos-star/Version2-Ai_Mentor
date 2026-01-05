@@ -145,9 +145,6 @@ class OACItemWithWhy(BaseModel):
     confidence: Optional[str] = None  # high | medium | low
     citations: List[Citation] = []
 
-    website_url: Optional[str] = None
-    data_file_ids: Optional[List[str]] = None
-
 class BusinessProfileAutofillResponse(BaseModel):
     patch: Dict[str, Any]
     missing_fields: List[str]
