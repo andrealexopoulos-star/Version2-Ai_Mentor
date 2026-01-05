@@ -157,15 +157,9 @@ class AnalysisCreate(BaseModel):
 
 class AnalysisResponse(BaseModel):
     id: str
-    user_id: str
-    title: str
-    analysis_type: str
-    business_context: str
-    ai_analysis: str
-    recommendations: List[str]
-    action_items: List[str]
+    analysis: str  # Full text response
+    insights: Optional[List[Dict[str, Any]]] = None  # Structured insights with Why + Citations
     created_at: str
-    updated_at: str
 
 class DocumentCreate(BaseModel):
     title: str
