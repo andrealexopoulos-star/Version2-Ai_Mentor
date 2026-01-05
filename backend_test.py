@@ -256,6 +256,129 @@ class StrategicAdvisorAPITester:
         
         return analysis_id
 
+    def test_advisor_brain_analysis(self):
+        """Test Analysis with Advisor Brain pattern"""
+        print("\n🔍 Testing Advisor Brain Analysis Pattern...")
+        
+        # First, update business profile to provide context for personalization
+        profile_data = {
+            "business_name": "Tech Consulting Firm",
+            "industry": "M",  # Professional Services
+            "business_type": "Company (Pty Ltd)",
+            "business_stage": "established",
+            "target_country": "Australia",
+            "employee_count": "1-5",
+            "main_challenges": "Scaling from 5 to 20 clients while maintaining quality",
+            "short_term_goals": "Increase client base and streamline operations"
+        }
+        
+        success, profile_response = self.run_test(
+            "Setup Business Profile for Advisor Brain",
+            "PUT",
+            "business-profile",
+            200,
+            data=profile_data
+        )
+        
+        if not success:
+            self.log_test("Advisor Brain - Profile Setup Failed", False, "Could not set up business profile")
+            return None
+        
+        # Create analysis with Advisor Brain
+        analysis_data = {
+            "title": "Growth Strategy Analysis",
+            "analysis_type": "business_analysis",
+            "business_context": "Tech consulting business, 2 years old, looking to scale from 5 to 20 clients"
+        }
+        
+        success, response = self.run_test(
+            "Create Advisor Brain Analysis",
+            "POST",
+            "analyses",
+            200,
+            data=analysis_data
+        )
+        
+        if not success:
+            self.log_test("Advisor Brain - Analysis Creation Failed", False, "Could not create analysis")
+            return None
+        
+        analysis_id = response.get('id')
+        
+        # Verify response structure
+        if 'id' in response:
+            self.log_test("Advisor Brain - ID Field Present", True, f"ID: {response['id']}")
+        else:
+            self.log_test("Advisor Brain - ID Field Present", False, "Missing 'id' field")
+        
+        if 'analysis' in response:
+            analysis_text = response['analysis']
+            self.log_test("Advisor Brain - Analysis Field Present", True, f"Length: {len(analysis_text)} chars")
+        else:
+            self.log_test("Advisor Brain - Analysis Field Present", False, "Missing 'analysis' field")
+        
+        if 'insights' in response:
+            insights = response['insights']
+            if isinstance(insights, list):
+                self.log_test("Advisor Brain - Insights Array Present", True, f"Count: {len(insights)}")
+                
+                # Verify insights structure
+                if len(insights) > 0:
+                    first_insight = insights[0]
+                    required_fields = ['title', 'reason', 'actions', 'why', 'confidence', 'citations']
+                    missing_fields = []
+                    
+                    for field in required_fields:
+                        if field not in first_insight:
+                            missing_fields.append(field)
+                    
+                    if not missing_fields:
+                        self.log_test("Advisor Brain - Insight Structure Complete", True, "All required fields present")
+                        
+                        # Verify field types
+                        if isinstance(first_insight.get('actions'), list):
+                            self.log_test("Advisor Brain - Actions is Array", True, f"Actions count: {len(first_insight['actions'])}")
+                        else:
+                            self.log_test("Advisor Brain - Actions is Array", False, f"Actions type: {type(first_insight.get('actions'))}")
+                        
+                        if isinstance(first_insight.get('citations'), list):
+                            self.log_test("Advisor Brain - Citations is Array", True, f"Citations count: {len(first_insight['citations'])}")
+                        else:
+                            self.log_test("Advisor Brain - Citations is Array", False, f"Citations type: {type(first_insight.get('citations'))}")
+                        
+                        # Check confidence value
+                        confidence = first_insight.get('confidence', '').lower()
+                        if confidence in ['high', 'medium', 'low']:
+                            self.log_test("Advisor Brain - Valid Confidence Level", True, f"Confidence: {confidence}")
+                        else:
+                            self.log_test("Advisor Brain - Valid Confidence Level", False, f"Invalid confidence: {confidence}")
+                    else:
+                        self.log_test("Advisor Brain - Insight Structure Complete", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("Advisor Brain - Insights Not Empty", False, "Insights array is empty")
+            else:
+                self.log_test("Advisor Brain - Insights Array Present", False, f"Insights type: {type(insights)}")
+        else:
+            self.log_test("Advisor Brain - Insights Array Present", False, "Missing 'insights' field")
+        
+        if 'created_at' in response:
+            self.log_test("Advisor Brain - Created At Present", True, "")
+        else:
+            self.log_test("Advisor Brain - Created At Present", False, "Missing 'created_at' field")
+        
+        # Check if business profile data was used for personalization
+        if 'analysis' in response:
+            analysis_text = response['analysis'].lower()
+            profile_terms = ['tech consulting', 'consulting', 'professional services', 'clients', 'scale', 'scaling']
+            found_terms = [term for term in profile_terms if term in analysis_text]
+            
+            if found_terms:
+                self.log_test("Advisor Brain - Uses Business Context", True, f"Found terms: {', '.join(found_terms[:3])}")
+            else:
+                self.log_test("Advisor Brain - Uses Business Context", False, "No business-specific terms found in analysis")
+        
+        return analysis_id
+
     def test_document_functionality(self):
         """Test document management endpoints"""
         print("\n🔍 Testing Document Functionality...")
