@@ -2340,7 +2340,165 @@ def parse_citations_block(text: str) -> List[Dict[str, Any]]:
     return citations[:6]
 
 
-def parse_oac_items_with_why(text: str, max_items: int = 5) -> List[Dict[str, Any]]:
+# ==================== ADVISOR BRAIN CORE ====================
+# Unified system for evidence-based, personalized AI advice across all features
+
+async def build_advisor_context(user_id: str) -> dict:
+    """
+    Build comprehensive context for Advisor Brain.
+    This is the 'truth serum' - all evidence the AI needs to provide personalized advice.
+    """
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Recent activity for context
+    recent_chats = await db.chat_history.find(
+        {"user_id": user_id},
+        {"_id": 0, "message": 1, "response": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    recent_docs = await db.data_files.find(
+        {"user_id": user_id},
+        {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    web_sources = await db.web_sources.find(
+        {"user_id": user_id},
+        {"_id": 0, "title": 1, "url": 1, "snippet": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    sops = await db.sops.find(
+        {"user_id": user_id},
+        {"_id": 0, "title": 1, "category": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "user": user,
+        "profile": profile or {},
+        "onboarding": onboarding or {},
+        "recent_chats": recent_chats,
+        "recent_docs": recent_docs,
+        "web_sources": web_sources,
+        "sops": sops
+    }
+
+
+def format_advisor_brain_prompt(
+    task_description: str,
+    context: dict,
+    output_format: str = "recommendations",
+    communication_style: str = None
+) -> str:
+    """
+    Create a unified prompt for Advisor Brain that ensures:
+    - Evidence-based reasoning
+    - Citations to sources
+    - Confidence levels
+    - Personalization based on user's business
+    """
+    profile = context.get("profile", {})
+    user = context.get("user", {})
+    
+    # Extract communication style from profile if not provided
+    if not communication_style:
+        communication_style = profile.get("advice_style", "conversational")
+    
+    # Build business identity
+    biz_name = profile.get("business_name") or user.get("business_name") or "this business"
+    industry = profile.get("industry") or user.get("industry") or "unknown industry"
+    stage = profile.get("business_stage", "unknown stage")
+    
+    # Style instructions
+    style_instructions = {
+        "concise": "Be brief and direct. Use bullet points. Maximum 2-3 sentences per point.",
+        "detailed": "Provide thorough explanations with context and reasoning. Go deep into the 'why' and 'how'.",
+        "conversational": "Write in a friendly, approachable tone like a trusted business partner.",
+        "data-driven": "Focus on metrics, data, and evidence. Use numbers and concrete examples."
+    }
+    
+    style_guide = style_instructions.get(communication_style, style_instructions["conversational"])
+    
+    # Build evidence summary
+    evidence_summary = f"""
+BUSINESS PROFILE:
+- Name: {biz_name}
+- Industry: {industry}  
+- Stage: {stage}
+- Team Size: {profile.get('team_size', 'unknown')}
+- Revenue Range: {profile.get('revenue_range', 'unknown')}
+- Main Challenges: {profile.get('main_challenges') or profile.get('growth_challenge', 'not specified')}
+- Goals: {profile.get('short_term_goals', 'not specified')}
+- Tools Used: {', '.join(profile.get('current_tools', []) or ['none specified'])}
+
+RECENT ACTIVITY:
+- AI Conversations: {len(context.get('recent_chats', []))}
+- Documents Uploaded: {len(context.get('recent_docs', []))}
+- SOPs Created: {len(context.get('sops', []))}
+- Web Sources: {len(context.get('web_sources', []))}
+"""
+    
+    # Recent docs summary for citations
+    docs_context = ""
+    if context.get('recent_docs'):
+        docs_context = "\n\nRECENT DOCUMENTS (for citations):\n"
+        for doc in context.get('recent_docs', [])[:3]:
+            docs_context += f"- [{doc.get('category', 'doc')}] {doc.get('filename')}\n"
+    
+    # Web sources for citations
+    web_context = ""
+    if context.get('web_sources'):
+        web_context = "\n\nWEB SOURCES (for citations):\n"
+        for web in context.get('web_sources', [])[:3]:
+            web_context += f"- {web.get('title')} — {web.get('url')}\n"
+    
+    base_prompt = f"""You are the AI Advisor for Strategy Squad, providing deeply personalized business advice.
+
+{evidence_summary}{docs_context}{web_context}
+
+COMMUNICATION STYLE: {style_guide}
+
+TASK: {task_description}
+
+CRITICAL OUTPUT FORMAT:
+You MUST structure your response with evidence-based reasoning. For each recommendation/insight:
+
+Title: <Clear, specific title>
+Reason: <One line explaining the business context>
+Why: <2-3 lines explaining why this applies to THIS specific business. If missing info, ask 1 clarifying question>
+Confidence: high|medium|low (based on available evidence)
+Actions:
+- <Specific action item>
+- <Specific action item>
+- <Specific action item>
+Citations:
+- [data_file] <filename if used>
+- [web] <title> — <url if used>
+- [profile] Business profile data
+
+RULES:
+1. Be SPECIFIC to {biz_name}, not generic advice
+2. Reference their actual situation ({industry}, {stage})
+3. Cite your sources (documents, web data, profile)
+4. If confidence is low, ask clarifying questions
+5. Never make assumptions - admit when you need more data
+6. Follow the {communication_style} communication style
+"""
+    
+    return base_prompt
+
+
+def parse_advisor_brain_response(text: str) -> List[Dict[str, Any]]:
+    """
+    Parse AI response into structured format with Why? + Citations.
+    Reusable across all Advisor Brain features.
+    """
+    return parse_oac_items_with_why(text, max_items=10)  # Reuse existing parser
+
+
+# ==================== OAC HELPERS ====================
+
+def parse_citations_block(text: str) -> List[Dict[str, str]]:
     items: List[Dict[str, Any]] = []
     current: Dict[str, Any] = {}
     actions: List[str] = []
