@@ -369,7 +369,7 @@ const BusinessProfile = () => {
                   <Label>Autofill</Label>
                   <div className="p-4 rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}>
                     <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      We&apos;ll update your profile with what we can infer from your sources.
+                      Build Business Profile uses AU web search + website scrape + your workspace to prefill as much as possible.
                     </div>
                     <div className="mt-4 flex items-center gap-3 flex-wrap">
                       <Button className="btn-primary" onClick={buildBusinessProfile} disabled={buildLoading}>
