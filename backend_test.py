@@ -314,6 +314,9 @@ class StrategicAdvisorAPITester:
         if 'analysis' in response:
             analysis_text = response['analysis']
             self.log_test("Advisor Brain - Analysis Field Present", True, f"Length: {len(analysis_text)} chars")
+            
+            # Debug: Print first 1000 chars of analysis
+            print(f"\n🔍 DEBUG - Analysis text (first 1000 chars):\n{analysis_text[:1000]}\n")
         else:
             self.log_test("Advisor Brain - Analysis Field Present", False, "Missing 'analysis' field")
         
