@@ -968,6 +968,114 @@ async def google_exchange(payload: GoogleExchangeRequest):
         access_token=token,
         user=UserResponse(
             id=user["id"],
+
+# ==================== INVITES (ENTERPRISE ONLY) ====================
+
+def tier_allows_seats(account: dict) -> bool:
+    # Per your instruction: only Enterprise can create users
+    return (account.get("subscription_tier") or "").lower() == "enterprise"
+
+
+def generate_temp_password() -> str:
+    # Simple temp password (shown once)
+    return f"Temp!{uuid.uuid4().hex[:10]}"
+
+
+@api_router.post("/account/users/invite", response_model=InviteResponse)
+async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(require_owner_or_admin), account: dict = Depends(get_current_account)):
+    if not tier_allows_seats(account):
+        raise HTTPException(status_code=403, detail="User seats are available on Enterprise only")
+
+    # Enforce same-domain (enterprise policy)
+    owner_domain = get_email_domain(account.get("email"))
+    invite_domain = get_email_domain(req.email)
+    if owner_domain and invite_domain and owner_domain != invite_domain:
+        raise HTTPException(status_code=400, detail="Invited user must use the same email domain as the account")
+
+    # Create invited user with temp password
+    existing = await db.users.find_one({"email": req.email.lower().strip()}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already exists")
+
+    now = datetime.now(timezone.utc)
+    token = uuid.uuid4().hex
+    temp_password = generate_temp_password()
+
+    invite = {
+        "id": str(uuid.uuid4()),
+        "account_id": account["id"],
+        "email": req.email.lower().strip(),
+        "name": req.name,
+        "role": req.role if req.role in {"member", "admin"} else "member",
+        "token": token,
+        "temp_password_hash": hash_password(temp_password),
+        "expires_at": (now + timedelta(days=7)).isoformat(),
+        "created_at": now.isoformat(),
+    }
+    await db.invites.insert_one(invite)
+
+    invite_link = f"/invite/accept?token={token}"
+    return InviteResponse(invite_link=invite_link, temp_password=temp_password, expires_at=invite["expires_at"])
+
+
+@api_router.post("/account/users/accept", response_model=TokenResponse)
+async def accept_invite(req: InviteAcceptRequest):
+    invite = await db.invites.find_one({"token": req.token}, {"_id": 0})
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invite not found")
+
+    now = datetime.now(timezone.utc)
+    try:
+        exp = datetime.fromisoformat(invite["expires_at"])
+        if exp < now:
+            raise HTTPException(status_code=400, detail="Invite expired")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invite expired")
+
+    if not verify_password(req.temp_password, invite["temp_password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid temporary password")
+
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    user_id = str(uuid.uuid4())
+    created_at = now.isoformat()
+    user_doc = {
+        "id": user_id,
+        "email": invite["email"],
+        "password": hash_password(req.new_password),
+        "name": invite.get("name") or "User",
+        "business_name": None,
+        "industry": None,
+        "subscription_tier": "free",
+        "subscription_started_at": created_at,
+        "role": invite.get("role") or "member",
+        "account_id": invite["account_id"],
+        "is_active": True,
+        "created_at": created_at,
+        "updated_at": created_at,
+        "auth_provider": "invite",
+    }
+    await db.users.insert_one(user_doc)
+
+    # Consume invite
+    await db.invites.delete_one({"id": invite["id"]})
+
+    access_token = create_token(user_id, user_doc["email"], user_doc["role"], account_id=user_doc.get("account_id"))
+    return TokenResponse(
+        access_token=access_token,
+        user=UserResponse(
+            id=user_id,
+            email=user_doc["email"],
+            name=user_doc["name"],
+            business_name=None,
+            industry=None,
+            role=user_doc["role"],
+            subscription_tier=user_doc.get("subscription_tier"),
+            created_at=user_doc["created_at"],
+        ),
+    )
+
             email=user["email"],
             name=user["name"],
             business_name=user.get("business_name"),
