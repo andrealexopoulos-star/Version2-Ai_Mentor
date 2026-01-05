@@ -28,10 +28,10 @@ except ImportError:
     DocxDocument = None
     openpyxl = None
 
-SERPAPI_API_KEY = os.environ.get("SERPAPI_API_KEY")
-
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+SERPAPI_API_KEY = os.environ.get("SERPAPI_API_KEY")
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
