@@ -29,6 +29,7 @@ const Dashboard = () => {
       const response = await apiClient.get('/onboarding/status');
       if (!response.data.completed) {
         // Redirect to onboarding if not completed
+        // Keep checkingOnboarding=true so we don't render dashboard
         navigate('/onboarding', { replace: true });
         return;
       }
