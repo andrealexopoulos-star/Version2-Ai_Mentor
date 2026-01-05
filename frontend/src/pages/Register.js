@@ -63,7 +63,7 @@ const Register = () => {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
       toast.success('Welcome to Strategy Squad!');
-      navigate('/dashboard');
+      navigate('/onboarding');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Registration failed');
     } finally {
