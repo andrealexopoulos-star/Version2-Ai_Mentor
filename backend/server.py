@@ -1383,6 +1383,158 @@ Profile schema keys (common):
 - abn (string)
 - acn (string)
 - retention_known (boolean)
+
+@api_router.post("/business-profile/build", response_model=BusinessProfileBuildResponse)
+async def business_profile_build(req: BusinessProfileBuildRequest, current_user: dict = Depends(get_current_user)):
+    """Build the business profile by searching external web + scraping top sources, plus in-app sources."""
+
+    # Build AU-focused queries
+    name = (req.business_name or "").strip() or current_user.get("business_name") or ""
+    abn = (req.abn or "").strip()
+    website = (req.website_url or "").strip()
+
+    queries = []
+    if name:
+        queries.append(f"{name} Australia")
+        queries.append(f"{name} company profile Australia")
+    if abn and name:
+        queries.append(f"{name} ABN {abn}")
+        queries.append(f"ABN {abn} business")
+    if website:
+        queries.append(f"site:{website} about")
+        queries.append(f"site:{website} services")
+
+    # Search
+    serp_results = []
+    for q in queries[:5]:
+        serp_results.extend(await serpapi_search(q, gl="au", hl="en", num=5))
+
+    # Choose top unique URLs
+    seen = set()
+    top_urls = []
+    for r in serp_results:
+        link = (r.get("link") or "").strip()
+        if not link:
+            continue
+        if link in seen:
+            continue
+        seen.add(link)
+        top_urls.append(link)
+        if len(top_urls) >= 6:
+            break
+
+    scraped = []
+    for u in top_urls:
+        txt = await scrape_url_text(u)
+        if txt:
+            scraped.append({"url": u, "text": txt[:6000]})
+
+    # In-app sources (lightweight): last chats/docs/file texts
+    recent_chats = await db.chat_history.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "message": 1, "response": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(6).to_list(6)
+
+    recent_docs = await db.documents.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "title": 1, "content": 1, "document_type": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(6).to_list(6)
+
+    recent_files = await db.data_files.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "filename": 1, "extracted_text": 1, "category": 1}
+    ).sort("created_at", -1).limit(6).to_list(6)
+
+    website_text = ""
+    if website:
+        website_text = await fetch_website_text(website)
+        website_text = website_text[:8000]
+
+    prompt = f"""You are building a structured Australian SMB business profile for a Personalised AI Business Advisory platform.
+
+Return ONLY valid JSON.
+Do not include markdown.
+
+Business input:
+- business_name: {name}
+- abn: {abn}
+- website: {website}
+
+Internal sources:
+- recent_chats: {recent_chats}
+- recent_documents: {[{'title': d.get('title'), 'type': d.get('document_type')} for d in recent_docs]}
+- recent_files: {[{'filename': f.get('filename'), 'category': f.get('category')} for f in recent_files]}
+
+Website extracted text:
+{website_text}
+
+External web sources (scraped snippets):
+{scraped}
+
+Fill as many of these keys as possible, only if reasonably supported by sources:
+- business_name
+- abn
+- acn
+- website
+- location
+- industry (ANZSIC division letter A-S or OTHER)
+- business_type (AU)
+- year_founded
+- mission_statement
+- main_products_services
+- target_customer
+- key_team_members
+- growth_strategy
+- crm_system
+- accounting_system
+- project_management_tool
+- communication_style
+- risk_tolerance
+- retention_known (boolean)
+- retention_rate_range (<20%, 20-40%, 40-60%, 60-80%, >80%)
+- target_country (Australia)
+
+Rules:
+- Use target_country="Australia" if missing.
+- If you cannot infer a value, omit it.
+"""
+
+    session_id = f"build_profile_{uuid.uuid4()}"
+    ai = await get_ai_response(prompt, "general", session_id, user_id=current_user["id"], user_data={
+        "name": current_user.get("name"),
+        "business_name": name,
+        "industry": current_user.get("industry"),
+    }, use_advanced=True)
+
+    patch: Dict[str, Any] = {}
+    try:
+        import json
+        patch = json.loads(ai)
+    except Exception:
+        patch = {}
+
+    # Respect explicit inputs
+    if name:
+        patch["business_name"] = name
+    if abn:
+        patch["abn"] = abn
+    if website:
+        patch["website"] = website
+    if not patch.get("target_country"):
+        patch["target_country"] = "Australia"
+
+    missing_fields = compute_missing_profile_fields(patch)
+
+    return {
+        "patch": patch,
+        "missing_fields": missing_fields,
+        "sources": {
+            "queries": queries[:5],
+            "serp_count": len(serp_results),
+            "scraped_urls": top_urls,
+        },
+    }
+
 - retention_rate_range (one of: <20%, 20-40%, 40-60%, 60-80%, >80%)
 
 User input:
