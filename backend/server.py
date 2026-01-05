@@ -2478,6 +2478,94 @@ RULES:
     return base_prompt
 
 
+def parse_oac_items_with_why(text: str, max_items: int = 5) -> List[Dict[str, Any]]:
+    """Parse AI response with Why + Citations pattern"""
+    items: List[Dict[str, Any]] = []
+    current: Dict[str, Any] = {}
+    actions: List[str] = []
+    in_citations = False
+    citations_lines: List[str] = []
+
+    def flush():
+        nonlocal current, actions, in_citations, citations_lines
+        if not current:
+            return
+        current['actions'] = actions[:]
+        if citations_lines:
+            current['citations'] = parse_citations_block('\n'.join(citations_lines))
+        items.append(current)
+        current = {}
+        actions = []
+        in_citations = False
+        citations_lines = []
+
+    for raw in (text or '').splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+
+        normalized = line.strip('*').strip()
+
+        if normalized.lower().startswith('citations:'):
+            in_citations = True
+            continue
+
+        if in_citations:
+            if normalized[0].isdigit() and '.' in normalized[:4]:
+                # next item
+                flush()
+            else:
+                citations_lines.append(normalized)
+                continue
+
+        if normalized[0].isdigit() and '.' in normalized[:4]:
+            flush()
+            title = normalized.split('.', 1)[1].strip()
+            current = {'title': title, 'citations': []}
+            continue
+
+        if normalized.lower().startswith('why:'):
+            if current:
+                current['why'] = normalized.split(':', 1)[1].strip()
+            continue
+
+        if normalized.lower().startswith('confidence:'):
+            if current:
+                current['confidence'] = normalized.split(':', 1)[1].strip().lower()
+            continue
+
+        if normalized.lower().startswith('reason:'):
+            if current and 'reason' not in current:
+                current['reason'] = normalized.split(':', 1)[1].strip()
+            continue
+
+        if normalized.startswith('-') or normalized.startswith('•'):
+            a = normalized.lstrip('-•').strip()
+            if a:
+                actions.append(a)
+            continue
+
+        # fallback reason
+        if current and 'reason' not in current:
+            current['reason'] = normalized
+
+    flush()
+
+    cleaned = []
+    for it in items:
+        if not it.get('title'):
+            continue
+        cleaned.append({
+            'title': it.get('title'),
+            'reason': it.get('reason'),
+            'actions': (it.get('actions') or [])[:6],
+            'why': it.get('why'),
+            'confidence': it.get('confidence'),
+            'citations': (it.get('citations') or [])[:6],
+        })
+    return cleaned[:max_items]
+
+
 def parse_advisor_brain_response(text: str) -> List[Dict[str, Any]]:
     """
     Parse AI response into structured format with Why? + Citations.
