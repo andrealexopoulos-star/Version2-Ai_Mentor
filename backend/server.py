@@ -279,9 +279,10 @@ def compute_missing_profile_fields(profile_patch: Dict[str, Any]) -> List[str]:
     project_management_tool: Optional[str] = None
     communication_tools: Optional[List[str]] = None
 
-async def serpapi_search(query: str, gl: str = "au", hl: str = "en", num: int = 5) -> List[Dict[str, Any]]:
+async def serpapi_search(query: str, gl: str = "au", hl: str = "en", num: int = 5) -> Dict[str, Any]:
+    """Return {results: [...], error: str|None}."""
     if not SERPAPI_API_KEY:
-        return []
+        return {"results": [], "error": "SERPAPI_API_KEY not configured"}
 
     url = "https://serpapi.com/search.json"
     params = {
@@ -295,9 +296,17 @@ async def serpapi_search(query: str, gl: str = "au", hl: str = "en", num: int = 
 
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
         resp = await client.get(url, params=params)
+        data = {}
+        try:
+            data = resp.json()
+        except Exception:
+            data = {}
+
         if resp.status_code != 200:
-            return []
-        data = resp.json()
+            return {"results": [], "error": data.get("error") or f"SerpAPI HTTP {resp.status_code}"}
+
+    if data.get("error"):
+        return {"results": [], "error": data.get("error")}
 
     results = []
     for r in (data.get("organic_results") or [])[:num]:
@@ -307,7 +316,8 @@ async def serpapi_search(query: str, gl: str = "au", hl: str = "en", num: int = 
             "snippet": r.get("snippet"),
             "position": r.get("position"),
         })
-    return results
+
+    return {"results": results, "error": None}
 
 
 async def scrape_url_text(url: str) -> str:
@@ -1470,8 +1480,12 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         queries.append(f"site:{website} services")
 
     serp_results = []
+    serp_errors = []
     for q in queries[:5]:
-        serp_results.extend(await serpapi_search(q, gl="au", hl="en", num=5))
+        sr = await serpapi_search(q, gl="au", hl="en", num=5)
+        if sr.get("error"):
+            serp_errors.append(sr.get("error"))
+        serp_results.extend(sr.get("results") or [])
 
     seen = set()
     top_urls = []
@@ -1600,6 +1614,7 @@ Rules:
         "sources": {
             "queries": queries[:5],
             "serp_count": len(serp_results),
+            "serp_error": serp_errors[0] if serp_errors else None,
             "scraped_urls": top_urls,
         },
     }
