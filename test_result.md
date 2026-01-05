@@ -165,15 +165,18 @@ backend:
 
   - task: "Advisor Brain Analysis Pattern"
     implemented: true
-    working: false
+    working: true
     file: "backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL BUG FOUND: POST /api/analyses endpoint creates analysis successfully and returns id, analysis text, and created_at fields ✅, BUT insights array is ALWAYS EMPTY ❌. ROOT CAUSE: Mismatch between AI prompt format and parser expectations. The prompt (lines 2453-2467) asks AI to format output as 'Title:', 'Reason:', 'Why:', 'Confidence:', 'Actions:', 'Citations:' with markdown formatting. However, the parser parse_oac_items_with_why() (line 2481) expects numbered list format like '1. Title' followed by 'Reason:', 'Why:', etc. The AI returns markdown headers like '### Insight 1:' and '**Reason:**' which the parser cannot parse. Verified: Parser works correctly when given numbered list format (tested manually), but AI consistently returns markdown format. This means NO structured insights are being extracted from ANY analysis, making the Advisor Brain pattern non-functional. Business profile personalization IS working (analysis text contains business-specific terms like 'Tech Consulting Firm', 'scale from 5 to 20 clients'). FIX REQUIRED: Either update prompt to explicitly request numbered list format '1. Title\\nReason: ...\\nWhy: ...', OR update parser to handle markdown format with '###' headers and '**Field:**' bold text."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED FIXED: POST /api/analyses endpoint now working correctly after prompt fix. Tested with business context 'Professional services business, 2-5 years old, currently serving < 10 clients, revenue $100K-$500K, main challenge is client retention and ideal customer acquisition'. RESULTS: 1) Response includes all required fields (id, analysis, insights, created_at) ✅ 2) insights array is NOW POPULATED with 5 items (was empty before) ✅ 3) Each insight has complete structure: title (string), reason (string), why (string), confidence (high/medium/low), actions (array with 3 items), citations (array with proper structure including source_type, title, url) ✅ 4) All field types are correct ✅ 5) Citations have proper structure with source_type field ✅ 6) Business profile personalization working (insights reference specific business context) ✅. ROOT CAUSE FIX CONFIRMED: The prompt at lines 2453-2490 was updated to explicitly request numbered list format without markdown headers or bold text, which matches the parser's expectations. Parser parse_oac_items_with_why() now successfully extracts structured insights from AI response. Advisor Brain pattern is now fully functional."
 
   - task: "Onboarding Wizard Frontend Complete Flow"
     implemented: true
