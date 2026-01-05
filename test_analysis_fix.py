@@ -21,28 +21,23 @@ def test_analysis_insights():
     
     print_section("ANALYSIS INSIGHTS TEST - AFTER PROMPT FIX")
     
-    # Step 1: Login or register with andre.alexopoulos@gmail.com
-    print("📝 Step 1: Authenticating with andre.alexopoulos@gmail.com...")
+    # Step 1: Register a new test user with business profile data
+    # Note: andre.alexopoulos@gmail.com uses Google OAuth, so we'll create a test user
+    print("📝 Step 1: Creating test user with business profile...")
     
-    login_data = {
-        "email": "andre.alexopoulos@gmail.com",
-        "password": "testpass123"
+    import uuid
+    unique_id = str(uuid.uuid4())[:8]
+    test_email = f"analysis_test_{unique_id}@example.com"
+    
+    register_data = {
+        "name": "Analysis Test User",
+        "email": test_email,
+        "password": "testpass123",
+        "business_name": "Professional Services Firm",
+        "industry": "M"  # Professional Services
     }
     
-    # Try login first
-    response = requests.post(f"{BASE_URL}/auth/login", json=login_data, timeout=30)
-    
-    if response.status_code == 401:
-        # User doesn't exist, register
-        print("   User doesn't exist, registering...")
-        register_data = {
-            "name": "Andre Alexopoulos",
-            "email": "andre.alexopoulos@gmail.com",
-            "password": "testpass123",
-            "business_name": "Professional Services Firm",
-            "industry": "M"  # Professional Services
-        }
-        response = requests.post(f"{BASE_URL}/auth/register", json=register_data, timeout=30)
+    response = requests.post(f"{BASE_URL}/auth/register", json=register_data, timeout=30)
         
         if response.status_code != 200:
             print(f"❌ Registration failed: {response.status_code}")
