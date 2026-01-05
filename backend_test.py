@@ -322,6 +322,9 @@ class StrategicAdvisorAPITester:
             if isinstance(insights, list):
                 self.log_test("Advisor Brain - Insights Array Present", True, f"Count: {len(insights)}")
                 
+                # Debug: Print insights for inspection
+                print(f"\n🔍 DEBUG - Insights received: {json.dumps(insights, indent=2)[:500]}")
+                
                 # Verify insights structure
                 if len(insights) > 0:
                     first_insight = insights[0]
