@@ -1262,22 +1262,68 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/analyses", response_model=AnalysisResponse)
 async def create_analysis(analysis: AnalysisCreate, current_user: dict = Depends(get_current_user)):
-    # Generate AI analysis using advanced model with full business context
-    user_data = {
-        "name": current_user.get("name"),
-        "business_name": current_user.get("business_name"),
-        "industry": current_user.get("industry")
-    }
+    """Generate business analysis with Advisor Brain (evidence-based with citations)"""
+    user_id = current_user["id"]
     
-    prompt = f"""Analyze this business context and provide comprehensive insights:
+    # Build Advisor Brain context
+    context = await build_advisor_context(user_id)
+    profile = context.get("profile", {})
+    
+    # Get communication style
+    communication_style = profile.get("advice_style", "conversational")
+    
+    task_prompt = f"""Analyze this business situation in detail:
 
 Title: {analysis.title}
 Analysis Type: {analysis.analysis_type}
 Business Context: {analysis.business_context}
 
-Using your knowledge of this specific business (from their profile and uploaded documents), please provide:
-1. A detailed analysis (be thorough and reference specific business details you know)
-2. Key recommendations (numbered list with reasoning, tailored to their situation)
+Provide a comprehensive analysis with 3-5 key insights or recommendations.
+Each insight MUST include:
+- Title (specific insight or recommendation)
+- Reason (one line business context)
+- Why (2-3 lines explaining why this matters for THIS specific business)
+- Confidence level (high/medium/low based on available evidence)
+- 2-3 concrete action items
+- Citations (reference business profile, uploaded documents, or web sources)
+
+Be specific to their situation. Reference actual business details."""
+
+    prompt = format_advisor_brain_prompt(task_prompt, context, "analysis", communication_style)
+    
+    session_id = f"analysis_{uuid.uuid4()}"
+    ai_response = await get_ai_response(
+        prompt,
+        "business_analysis",
+        session_id,
+        user_id=user_id,
+        user_data={"name": user.get("name"), "business_name": profile.get("business_name")},
+        use_advanced=True
+    )
+    
+    # Parse response with Advisor Brain pattern
+    insights = parse_advisor_brain_response(ai_response)
+    
+    # Store analysis
+    analysis_id = str(uuid.uuid4())
+    analysis_doc = {
+        "id": analysis_id,
+        "user_id": user_id,
+        "title": analysis.title,
+        "analysis_type": analysis.analysis_type,
+        "business_context": analysis.business_context,
+        "insights": insights,
+        "raw_response": ai_response,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.analyses.insert_one(analysis_doc)
+    
+    return AnalysisResponse(
+        id=analysis_id,
+        analysis=ai_response,
+        insights=insights,
+        created_at=analysis_doc["created_at"]
+    )
 3. Specific action items (numbered list with priority levels)
 4. Potential risks and how to mitigate them
 5. Quick wins that can be implemented immediately
