@@ -2641,45 +2641,138 @@ def calculate_profile_completeness(profile: dict) -> int:
 
 
 def calculate_profile_strength(profile: dict, onboarding: dict = None) -> int:
-    """Calculate profile strength score out of 100"""
+    """
+    DEPRECATED: Use calculate_business_score instead.
+    This is kept for backward compatibility only.
+    """
+    return calculate_business_score(profile, onboarding)
+
+
+async def calculate_business_score(profile: dict, onboarding: dict = None, user_id: str = None) -> int:
+    """
+    Calculate dynamic Business Score out of 100.
+    This score evolves based on:
+    - Business profile completeness (foundation)
+    - Platform engagement & usage
+    - Goals set and achieved
+    - SOPs created and implemented
+    - Business performance indicators
+    - AI advisor interactions
+    
+    The score can go up AND down based on business activity and performance.
+    """
     if not profile:
         return 0
     
     score = 0
     
-    # Business stage identified (10 points)
-    if onboarding and onboarding.get("business_stage"):
-        score += 10
+    # === FOUNDATION (30 points) ===
+    # Business stage identified (5 points)
+    if profile.get("business_stage") or (onboarding and onboarding.get("business_stage")):
+        score += 5
     
-    # Basic info completeness (20 points)
-    basic_fields = ["business_name", "industry"]
-    basic_filled = sum(1 for f in basic_fields if profile.get(f))
-    score += (basic_filled / len(basic_fields)) * 20
+    # Core business info present (15 points)
+    core_fields = ["business_name", "industry", "business_model", "target_market"]
+    core_filled = sum(1 for f in core_fields if profile.get(f))
+    score += (core_filled / len(core_fields)) * 15
     
-    # Business details richness (20 points)
-    details = ["business_type", "year_founded", "website", "target_country", "abn"]
-    details_filled = sum(1 for f in details if profile.get(f))
-    score += (details_filled / len(details)) * 20
-    
-    # Strategic info (20 points)
-    strategic = ["target_market", "unique_value_proposition", "main_challenges", "short_term_goals", "long_term_goals"]
+    # Strategic clarity (10 points)
+    strategic = ["short_term_goals", "long_term_goals", "main_challenges"]
     strategic_filled = sum(1 for f in strategic if profile.get(f))
-    score += (strategic_filled / len(strategic)) * 20
+    score += (strategic_filled / len(strategic)) * 10
     
-    # Operational/Tools info (15 points)
-    operational = ["crm_system", "accounting_system", "project_management_tool", "business_model", "pricing_model"]
-    operational_filled = sum(1 for f in operational if profile.get(f))
-    score += (operational_filled / len(operational)) * 15
+    # === PLATFORM ENGAGEMENT (20 points) ===
+    if user_id and db:
+        # Documents uploaded (5 points)
+        doc_count = await db.data_files.count_documents({"user_id": user_id})
+        score += min(5, doc_count * 1)  # 1 point per doc, max 5
+        
+        # AI advisor conversations (5 points)
+        chat_count = await db.chat_history.count_documents({"user_id": user_id})
+        score += min(5, chat_count * 0.5)  # 0.5 points per chat, max 5
+        
+        # SOPs created (5 points)
+        sop_count = await db.sops.count_documents({"user_id": user_id}) if await db.sops.count_documents({}) else 0
+        score += min(5, sop_count * 2)  # 2 points per SOP, max 5
+        
+        # Analyses run (5 points)
+        analysis_count = await db.analyses.count_documents({"user_id": user_id})
+        score += min(5, analysis_count * 1)  # 1 point per analysis, max 5
     
-    # Data richness - has uploaded documents (15 points)
-    # This will be added by the endpoint based on data files
+    # === BUSINESS DEPTH (25 points) ===
+    # Product/Service definition (5 points)
+    if profile.get("products_services") or profile.get("main_products_services"):
+        products_text = profile.get("products_services") or profile.get("main_products_services") or ""
+        if len(products_text) > 100:  # Detailed description
+            score += 5
+        elif len(products_text) > 20:  # Basic description
+            score += 3
     
-    return int(score)
+    # Unique value proposition defined (5 points)
+    if profile.get("unique_value_proposition"):
+        uvp_text = profile.get("unique_value_proposition") or ""
+        if len(uvp_text) > 50:
+            score += 5
+        elif len(uvp_text) > 10:
+            score += 3
+    
+    # Team information (5 points)
+    team_fields = ["team_size", "founder_background", "team_strengths"]
+    team_filled = sum(1 for f in team_fields if profile.get(f))
+    score += (team_filled / len(team_fields)) * 5
+    
+    # Market understanding (5 points)
+    market_fields = ["ideal_customer_profile", "competitive_advantages", "geographic_focus"]
+    market_filled = sum(1 for f in market_fields if profile.get(f))
+    score += (market_filled / len(market_fields)) * 5
+    
+    # Vision & Mission (5 points)
+    vision_fields = ["mission_statement", "vision_statement", "growth_strategy"]
+    vision_filled = sum(1 for f in vision_fields if profile.get(f))
+    score += (vision_filled / len(vision_fields)) * 5
+    
+    # === BUSINESS PERFORMANCE INDICATORS (25 points) ===
+    # Revenue/Customer growth indicators (10 points)
+    if profile.get("revenue_range"):
+        # Base points for having revenue data
+        score += 5
+        # Bonus for higher revenue ranges
+        revenue = profile.get("revenue_range", "")
+        if "$1M" in revenue or "$5M" in revenue or "$10M" in revenue:
+            score += 3
+    
+    if profile.get("customer_count"):
+        # Having customer data
+        score += 2
+    
+    # Growth trajectory (5 points)
+    growth_indicators = ["growth_strategy", "growth_goals", "growth_challenge"]
+    growth_filled = sum(1 for f in growth_indicators if profile.get(f))
+    score += (growth_filled / len(growth_indicators)) * 5
+    
+    # Business maturity (5 points)
+    if profile.get("years_operating"):
+        years = profile.get("years_operating", "")
+        if "10+" in years or "5-10" in years:
+            score += 5
+        elif "2-5" in years:
+            score += 3
+        elif "1-2" in years:
+            score += 2
+    
+    # Tools & Systems adoption (5 points)
+    tools = profile.get("current_tools") or []
+    if len(tools) >= 3:
+        score += 5
+    elif len(tools) >= 1:
+        score += 3
+    
+    return min(100, int(score))  # Cap at 100
 
 
 @api_router.get("/business-profile/scores")
 async def get_profile_scores(current_user: dict = Depends(get_current_user)):
-    """Get profile completeness and strength scores"""
+    """Get profile completeness and dynamic business score"""
     user_id = current_user["id"]
     
     # Get profile
@@ -2687,6 +2780,22 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
     
     # Get onboarding data
     onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Get data files count
+    files_count = await db.data_files.count_documents({"user_id": user_id})
+    
+    # Calculate scores
+    completeness = calculate_profile_completeness(profile) if profile else 0
+    business_score = await calculate_business_score(profile, onboarding, user_id) if profile else 0
+    
+    return {
+        "completeness": completeness,
+        "strength": business_score,  # Using 'strength' key for backward compatibility
+        "business_score": business_score,  # New explicit name
+        "has_documents": files_count > 0,
+        "document_count": files_count,
+        "onboarding_completed": onboarding.get("completed", False) if onboarding else False
+    }
     
     # Get data files count
     files_count = await db.data_files.count_documents({"user_id": user_id})
