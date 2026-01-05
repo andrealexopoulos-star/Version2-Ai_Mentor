@@ -252,6 +252,33 @@ class BusinessProfileUpdate(BaseModel):
     business_goals: Optional[str] = None
     growth_strategy: Optional[str] = None
     
+    # Onboarding-specific fields
+    problem_statement: Optional[str] = None
+    target_customer: Optional[str] = None
+    unique_value: Optional[str] = None
+    operating_regions: Optional[List[str]] = None
+    has_competitors: Optional[str] = None
+    launch_timeline: Optional[str] = None
+    biggest_challenge: Optional[str] = None
+    funding_status: Optional[str] = None
+    time_commitment: Optional[str] = None
+    current_tools: Optional[List[str]] = None
+    product_description: Optional[str] = None
+    has_customers: Optional[str] = None
+    revenue_range: Optional[str] = None
+    fundraising_status: Optional[str] = None
+    launch_date: Optional[str] = None
+    years_operating: Optional[str] = None
+    products_services: Optional[str] = None
+    customer_count: Optional[str] = None
+    growth_challenge: Optional[str] = None
+    growth_goals: Optional[List[str]] = None
+    exit_strategy: Optional[str] = None
+    team_size: Optional[str] = None
+    hiring_status: Optional[str] = None
+    advice_style: Optional[str] = None
+    time_availability: Optional[str] = None
+    
     # Tools & Technology
 
 # ==================== PROFILE AUTOFILL HELPERS ====================
