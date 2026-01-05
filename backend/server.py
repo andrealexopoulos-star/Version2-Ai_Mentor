@@ -832,6 +832,7 @@ async def register(user_data: UserCreate):
         "subscription_tier": "free",
         "subscription_started_at": now,
         "role": role,
+        "account_id": account_id,
         "is_active": True,
         "created_at": now,
         "updated_at": now
