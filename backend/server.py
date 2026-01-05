@@ -2450,29 +2450,44 @@ COMMUNICATION STYLE: {style_guide}
 
 TASK: {task_description}
 
-CRITICAL OUTPUT FORMAT:
-You MUST structure your response with evidence-based reasoning. For each recommendation/insight:
+CRITICAL OUTPUT FORMAT - YOU MUST FOLLOW THIS EXACTLY:
+Output ONLY numbered items (1. 2. 3. etc.). No intro, no markdown headers, no bold text.
 
-Title: <Clear, specific title>
+FORMAT (repeat for each insight):
+1. <Clear, specific title - plain text only>
 Reason: <One line explaining the business context>
 Why: <2-3 lines explaining why this applies to THIS specific business. If missing info, ask 1 clarifying question>
-Confidence: high|medium|low (based on available evidence)
+Confidence: high|medium|low
 Actions:
 - <Specific action item>
-- <Specific action item>
+- <Specific action item>  
 - <Specific action item>
 Citations:
-- [data_file] <filename if used>
-- [web] <title> — <url if used>
+- [data_file] <filename>
+- [web] <title> — <url>
 - [profile] Business profile data
+
+EXAMPLE OUTPUT:
+1. Implement client onboarding automation
+Reason: Manual onboarding is time-consuming for small teams
+Why: With just you handling operations, automating the onboarding process will free up 5-8 hours per week that can be redirected to client acquisition. Your CRM (HubSpot) has built-in workflows that integrate with your existing tech stack.
+Confidence: high
+Actions:
+- Set up automated welcome email sequence in HubSpot
+- Create onboarding checklist template
+- Configure client portal access automation
+Citations:
+- [profile] Current tools: HubSpot / CRM
+- [profile] Team size: Just me
 
 RULES:
 1. Be SPECIFIC to {biz_name}, not generic advice
 2. Reference their actual situation ({industry}, {stage})
-3. Cite your sources (documents, web data, profile)
+3. Cite your sources - use actual filenames, URLs from context provided
 4. If confidence is low, ask clarifying questions
 5. Never make assumptions - admit when you need more data
 6. Follow the {communication_style} communication style
+7. NO markdown headers (###), NO bold text (**text**), ONLY numbered lists
 """
     
     return base_prompt
