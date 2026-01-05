@@ -60,10 +60,10 @@ const Analysis = () => {
     
     try {
       await apiClient.post(`/documents`, {
-        title: result.title,
+        title: formData.title || 'Business Analysis',
         document_type: 'Analysis',
-        content: result.ai_analysis,
-        tags: [result.analysis_type]
+        content: result.analysis,
+        tags: [formData.analysis_type]
       });
       toast.success('Saved to documents!');
     } catch (error) {
