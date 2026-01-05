@@ -109,9 +109,6 @@ class InviteResponse(BaseModel):
     temp_password: str
     expires_at: str
 
-    role: str
-    content: str
-
 class GoogleExchangeRequest(BaseModel):
     session_id: str
 
