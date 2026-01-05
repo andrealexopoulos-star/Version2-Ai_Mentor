@@ -16,10 +16,12 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
+  const [profileScores, setProfileScores] = useState({ completeness: 0, strength: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
+    fetchProfileScores();
   }, []);
 
   const fetchStats = async () => {
@@ -33,17 +35,14 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate strength score based on profile completeness
-  const getStrengthScore = () => {
-    let score = 30;
-    if (user?.business_name) score += 20;
-    if (user?.industry) score += 15;
-    if (stats?.total_documents > 0) score += 15;
-    if (stats?.total_chat_sessions > 0) score += 20;
-    return Math.min(score, 100);
+  const fetchProfileScores = async () => {
+    try {
+      const response = await apiClient.get(`/business-profile/scores`);
+      setProfileScores(response.data);
+    } catch (error) {
+      console.error('Failed to fetch profile scores:', error);
+    }
   };
-
-  const strengthScore = getStrengthScore();
 
   const quickActions = [
     { 
