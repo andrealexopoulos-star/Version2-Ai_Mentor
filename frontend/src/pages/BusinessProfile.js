@@ -133,9 +133,6 @@ const BusinessProfile = () => {
         website_url: quickSetup.website_url || profile.website,
         data_file_ids: selectedFileIds,
       });
-
-
-  const buildBusinessProfile = async () => {
     setBuildLoading(true);
     try {
       const res = await apiClient.post('/business-profile/build', {
