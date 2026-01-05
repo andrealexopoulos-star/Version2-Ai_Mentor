@@ -1521,8 +1521,6 @@ Rules:
         },
     }
 
-- retention_rate_range (one of: <20%, 20-40%, 40-60%, 60-80%, >80%)
-
 User input:
 - business_name: {req.business_name}
 - abn: {req.abn}
