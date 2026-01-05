@@ -91,6 +91,7 @@ const BusinessProfile = () => {
   const [files, setFiles] = useState([]);
   const [selectedFileIds, setSelectedFileIds] = useState([]);
   const [autofillLoading, setAutofillLoading] = useState(false);
+  const [buildLoading, setBuildLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [missingFields, setMissingFields] = useState([]);
 
@@ -132,6 +133,28 @@ const BusinessProfile = () => {
         website_url: quickSetup.website_url || profile.website,
         data_file_ids: selectedFileIds,
       });
+
+
+  const buildBusinessProfile = async () => {
+    setBuildLoading(true);
+    try {
+      const res = await apiClient.post('/business-profile/build', {
+        business_name: quickSetup.business_name || profile.business_name,
+        abn: quickSetup.abn || profile.abn,
+        website_url: quickSetup.website_url || profile.website,
+      });
+
+      const patch = res.data?.patch || {};
+      setMissingFields(res.data?.missing_fields || []);
+      setProfile((p) => ({ ...p, ...patch }));
+
+      toast.success('Business profile built from web + your workspace');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Build Business Profile failed');
+    } finally {
+      setBuildLoading(false);
+    }
+  };
 
       const patch = res.data?.patch || {};
       setMissingFields(res.data?.missing_fields || []);
@@ -349,9 +372,13 @@ const BusinessProfile = () => {
                       We&apos;ll update your profile with what we can infer from your sources.
                     </div>
                     <div className="mt-4 flex items-center gap-3 flex-wrap">
-                      <Button className="btn-primary" onClick={runAutofill} disabled={autofillLoading}>
+                      <Button className="btn-primary" onClick={buildBusinessProfile} disabled={buildLoading}>
+                        {buildLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                        Build Business Profile
+                      </Button>
+                      <Button className="btn-secondary" onClick={runAutofill} disabled={autofillLoading}>
                         {autofillLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                        Run Auto-Fill
+                        Auto-fill from docs & website
                       </Button>
                       <Button className="btn-secondary" onClick={() => (window.location.href = '/data-center')}>Upload documents</Button>
                       <div>
