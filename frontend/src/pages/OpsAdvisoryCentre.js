@@ -106,6 +106,58 @@ const OpsAdvisoryCentre = () => {
                           ))}
                         </ul>
                       ) : null}
+
+                      {(item.why || item.citations?.length) ? (
+                        <div className="mt-4">
+                          <Accordion type="single" collapsible>
+                            <AccordionItem value={`why-${idx}`}>
+                              <AccordionTrigger className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                Why?
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                {item.why ? (
+                                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                    {item.why}
+                                  </div>
+                                ) : null}
+
+                                {item.confidence ? (
+                                  <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                                    Confidence: {item.confidence}
+                                  </div>
+                                ) : null}
+
+                                {item.citations?.length ? (
+                                  <div className="mt-3">
+                                    <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Sources</div>
+                                    <ul className="mt-2 space-y-2">
+                                      {item.citations.map((c, i) => (
+                                        <li key={i} className="text-sm">
+                                          <div style={{ color: 'var(--text-secondary)' }}>
+                                            <span className="mr-2 text-xs" style={{ color: 'var(--text-muted)' }}>[{c.source_type}]</span>
+                                            {c.url ? (
+                                              <a href={c.url} target="_blank" rel="noreferrer" className="underline">
+                                                {c.title || c.url}
+                                              </a>
+                                            ) : (
+                                              <span>{c.title}</span>
+                                            )}
+                                          </div>
+                                          {c.snippet ? (
+                                            <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                                              {c.snippet}
+                                            </div>
+                                          ) : null}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : null}
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
