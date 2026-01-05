@@ -279,6 +279,41 @@ def compute_missing_profile_fields(profile_patch: Dict[str, Any]) -> List[str]:
     project_management_tool: Optional[str] = None
     communication_tools: Optional[List[str]] = None
 
+async def serpapi_search(query: str, gl: str = "au", hl: str = "en", num: int = 5) -> List[Dict[str, Any]]:
+    if not SERPAPI_API_KEY:
+        return []
+
+    url = "https://serpapi.com/search.json"
+    params = {
+        "engine": "google",
+        "q": query,
+        "api_key": SERPAPI_API_KEY,
+        "gl": gl,
+        "hl": hl,
+        "num": num,
+    }
+
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+        resp = await client.get(url, params=params)
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+
+    results = []
+    for r in (data.get("organic_results") or [])[:num]:
+        results.append({
+            "title": r.get("title"),
+            "link": r.get("link"),
+            "snippet": r.get("snippet"),
+            "position": r.get("position"),
+        })
+    return results
+
+
+async def scrape_url_text(url: str) -> str:
+    return await fetch_website_text(url)
+
+
 class DataFileResponse(BaseModel):
     id: str
     user_id: str
