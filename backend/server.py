@@ -90,6 +90,8 @@ class TokenResponse(BaseModel):
     user: UserResponse
 
 class ChatMessage(BaseModel):
+    role: str
+    content: str
 
 class AccountCreate(BaseModel):
     account_name: str
