@@ -117,10 +117,14 @@ const OnboardingWizard = () => {
     setSaving(true);
     try {
       // Save final data to business profile
-      await apiClient.put('/business-profile', {
+      const profileData = {
         business_stage: businessStage,
         ...formData
-      });
+      };
+      
+      console.log('Saving profile data:', profileData);
+      
+      await apiClient.put('/business-profile', profileData);
       
       // Mark onboarding as complete
       await apiClient.post('/onboarding/complete');
@@ -129,8 +133,9 @@ const OnboardingWizard = () => {
       toast.success('🎉 Profile completed! Welcome to Strategy Squad');
       navigate('/dashboard');
     } catch (error) {
-      toast.error('Failed to complete onboarding');
-      console.error(error);
+      const errorMsg = error.response?.data?.detail || error.message || 'Failed to complete onboarding';
+      toast.error(errorMsg);
+      console.error('Onboarding completion error:', error.response?.data || error);
     } finally {
       setSaving(false);
     }
