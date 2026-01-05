@@ -235,6 +235,12 @@ def strip_html_to_text(html: str) -> str:
 
 
 async def fetch_website_text(url: str) -> str:
+    if not url:
+        return ""
+    url = url.strip()
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = f"https://{url}"
+
     async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
         resp = await client.get(url, headers={
             "User-Agent": "Mozilla/5.0 (compatible; StrategySquadBot/1.0)"
