@@ -26,6 +26,8 @@ try:
 except ImportError:
     PyPDF2 = None
     DocxDocument = None
+SERPAPI_API_KEY = os.environ.get("SERPAPI_API_KEY")
+
     openpyxl = None
 
 ROOT_DIR = Path(__file__).parent
