@@ -1364,25 +1364,11 @@ class BusinessProfileBuildRequest(BaseModel):
     abn: Optional[str] = None
     website_url: Optional[str] = None
 
+
 class BusinessProfileBuildResponse(BaseModel):
     patch: Dict[str, Any]
     missing_fields: List[str]
     sources: Dict[str, Any]
-
-    prompt = f"""You are a business analyst helping autofill a structured business profile.
-Return ONLY a valid JSON object with keys matching the profile schema.
-Do not include markdown or commentary.
-
-Profile schema keys (common):
-- business_name (string)
-- industry (ANZSIC division letter A-S or OTHER)
-- business_type (AU business type string)
-- website (string)
-- location (string)
-- target_country (string, use Australia)
-- abn (string)
-- acn (string)
-- retention_known (boolean)
 
 @api_router.post("/business-profile/build", response_model=BusinessProfileBuildResponse)
 async def business_profile_build(req: BusinessProfileBuildRequest, current_user: dict = Depends(get_current_user)):
