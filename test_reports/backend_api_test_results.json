@@ -9,92 +9,92 @@
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:52:52.107664"
+      "timestamp": "2026-01-05T21:53:20.152774"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:52:52.141228"
+      "timestamp": "2026-01-05T21:53:20.184462"
     },
     {
       "test_name": "User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:52:52.412651"
+      "timestamp": "2026-01-05T21:53:20.486580"
     },
     {
       "test_name": "Registration - Default Free Tier",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:52:52.413399"
+      "timestamp": "2026-01-05T21:53:20.487253"
     },
     {
       "test_name": "Get Current User",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:52:52.476326"
+      "timestamp": "2026-01-05T21:53:20.519236"
     },
     {
       "test_name": "Auth Me - Subscription Tier Present",
       "success": true,
       "details": "Tier: free",
-      "timestamp": "2026-01-05T21:52:52.476943"
+      "timestamp": "2026-01-05T21:53:20.519753"
     },
     {
       "test_name": "Setup Business Profile for Advisor Brain",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:52:52.520062"
+      "timestamp": "2026-01-05T21:53:20.555156"
     },
     {
       "test_name": "Create Advisor Brain Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:53:06.119305"
+      "timestamp": "2026-01-05T21:53:33.261651"
     },
     {
       "test_name": "Advisor Brain - ID Field Present",
       "success": true,
-      "details": "ID: c5c9d90f-606b-4f28-992d-9adabe585e44",
-      "timestamp": "2026-01-05T21:53:06.119932"
+      "details": "ID: 04d3bfca-63be-4448-a77c-075ffa82e953",
+      "timestamp": "2026-01-05T21:53:33.262393"
     },
     {
       "test_name": "Advisor Brain - Analysis Field Present",
       "success": true,
-      "details": "Length: 4237 chars",
-      "timestamp": "2026-01-05T21:53:06.119946"
+      "details": "Length: 4181 chars",
+      "timestamp": "2026-01-05T21:53:33.262413"
     },
     {
       "test_name": "Advisor Brain - Insights Array Present",
       "success": true,
       "details": "Count: 0",
-      "timestamp": "2026-01-05T21:53:06.119952"
+      "timestamp": "2026-01-05T21:53:33.262419"
     },
     {
       "test_name": "Advisor Brain - Insights Not Empty",
       "success": false,
       "details": "Insights array is empty",
-      "timestamp": "2026-01-05T21:53:06.119955"
+      "timestamp": "2026-01-05T21:53:33.262454"
     },
     {
       "test_name": "Advisor Brain - Created At Present",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:53:06.119960"
+      "timestamp": "2026-01-05T21:53:33.262460"
     },
     {
       "test_name": "Advisor Brain - Uses Business Context",
       "success": true,
       "details": "Found terms: tech consulting, consulting, clients",
-      "timestamp": "2026-01-05T21:53:06.120134"
+      "timestamp": "2026-01-05T21:53:33.262615"
     },
     {
       "test_name": "Delete Analysis",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:53:06.175799"
+      "timestamp": "2026-01-05T21:53:33.319138"
     }
   ],
-  "timestamp": "2026-01-05T21:53:06.176512"
+  "timestamp": "2026-01-05T21:53:33.319854"
 }
