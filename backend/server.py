@@ -469,6 +469,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
+        if user and payload.get("account_id") and not user.get("account_id"):
+            await db.users.update_one({"id": user["id"]}, {"$set": {"account_id": payload.get("account_id")}})
+            user["account_id"] = payload.get("account_id")
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         return user
