@@ -18,11 +18,32 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [profileScores, setProfileScores] = useState({ completeness: 0, strength: 0 });
   const [loading, setLoading] = useState(true);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
-    fetchStats();
-    fetchProfileScores();
+    checkOnboarding();
   }, []);
+
+  const checkOnboarding = async () => {
+    try {
+      const response = await apiClient.get('/onboarding/status');
+      if (!response.data.completed) {
+        // Redirect to onboarding if not completed
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+      // Onboarding completed, fetch dashboard data
+      setCheckingOnboarding(false);
+      fetchStats();
+      fetchProfileScores();
+    } catch (error) {
+      console.error('Failed to check onboarding:', error);
+      // If error, continue to dashboard anyway
+      setCheckingOnboarding(false);
+      fetchStats();
+      fetchProfileScores();
+    }
+  };
 
   const fetchStats = async () => {
     try {
