@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { Sparkles, Lock } from 'lucide-react';
