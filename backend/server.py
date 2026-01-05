@@ -789,7 +789,7 @@ async def register(user_data: UserCreate):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     user_count = await db.users.count_documents({})
-    role = "admin" if user_count == 0 else "user"
+    role = "owner" if user_count == 0 else "member"
     
     user_id = str(uuid.uuid4())
     # Workspace/account creation for the first user
