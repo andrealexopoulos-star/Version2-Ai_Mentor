@@ -1505,6 +1505,9 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
             serp_errors.append(sr.get("error"))
         serp_results.extend(sr.get("results") or [])
 
+    # Persist web sources (for "Why" citations)
+    await upsert_web_sources(current_user["id"], serp_results)
+
     seen = set()
     top_urls = []
     for r in serp_results:
