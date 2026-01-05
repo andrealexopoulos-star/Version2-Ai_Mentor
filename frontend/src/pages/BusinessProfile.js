@@ -247,15 +247,15 @@ const BusinessProfile = () => {
           </div>
 
           {/* Progress Card */}
-          <Card className="card-clean mb-8 bg-gradient-to-r from-[#0f2f24] to-[#1a4a3a] text-white">
+          <Card className="card-clean mb-8" style={{ background: 'linear-gradient(90deg, rgba(29,78,216,0.12), rgba(17,24,39,0.08))' }}>
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     {completeness >= 80 ? (
-                      <CheckCircle className="w-5 h-5 text-[#ccff00]" />
+                      <CheckCircle className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
                     ) : (
-                      <AlertCircle className="w-5 h-5 text-[#ccff00]" />
+                      <AlertCircle className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
                     )}
                     <span className="font-medium">Profile Completeness</span>
                   </div>
