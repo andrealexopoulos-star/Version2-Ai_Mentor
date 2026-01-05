@@ -1189,7 +1189,8 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
                 "completed": True,
                 "completed_at": datetime.now(timezone.utc).isoformat()
             }
-        }
+        },
+        upsert=True
     )
     
     return {"status": "completed"}
