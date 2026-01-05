@@ -795,6 +795,12 @@ async def register(user_data: UserCreate):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     user_count = await db.users.count_documents({})
+    reg = await db.settings.find_one({"key": "registration_open"}, {"_id": 0})
+    if reg and reg.get("value") is False and user_count > 0:
+        raise HTTPException(status_code=403, detail="Registration is closed. Ask your owner/admin for an invite.")
+
+
+    user_count = await db.users.count_documents({})
     role = "owner" if user_count == 0 else "member"
     
     user_id = str(uuid.uuid4())
