@@ -331,6 +331,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: Business Profile Quick Setup implementation working correctly. 1) Quick Setup card positioned above tabs ✅ 2) Business name, ABN, and website URL input fields present ✅ 3) Run Auto-Fill button functional ✅ 4) Missing essentials highlighting system implemented with orange chips and (missing) labels ✅ 5) Save Profile button accessible ✅ 6) File uploader component exists ✅ 7) Fraunces font successfully implemented on all headings ✅ LIMITATION: Full end-to-end testing requires user authentication - registration form has UI interaction issues preventing complete signup flow. Core Quick Setup functionality and UI components verified working."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Business Profile Quick Setup latest changes working correctly. 1) Successfully registered new user and navigated to /business-profile ✅ 2) Quick Setup shows both required buttons: 'Build Business Profile' (primary blue button) and 'Auto-fill from docs & website' (secondary button) ✅ 3) Tested Build Business Profile with dummy data (Example Business Pty Ltd, example.com) - button responds and shows toast notifications ✅ 4) Missing essentials chips and field highlighting system implemented and functional ✅ 5) Screenshot captured of Quick Setup buttons area ✅ All requested functionality verified working as expected."
 
   - task: "Register page redesign"
     implemented: true
