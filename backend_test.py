@@ -798,7 +798,12 @@ class StrategicAdvisorAPITester:
 
 def main():
     tester = StrategicAdvisorAPITester()
-    report = tester.run_all_tests()
+    
+    # Check if we should run only Advisor Brain test
+    if len(sys.argv) > 1 and sys.argv[1] == "--advisor-brain":
+        report = tester.run_advisor_brain_test()
+    else:
+        report = tester.run_all_tests()
     
     # Save report
     with open('/app/test_reports/backend_api_test_results.json', 'w') as f:
