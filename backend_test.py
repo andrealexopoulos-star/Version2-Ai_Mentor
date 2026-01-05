@@ -347,11 +347,11 @@ class StrategicAdvisorAPITester:
                             self.log_test("Advisor Brain - Citations is Array", False, f"Citations type: {type(first_insight.get('citations'))}")
                         
                         # Check confidence value
-                        confidence = first_insight.get('confidence', '').lower()
-                        if confidence in ['high', 'medium', 'low']:
+                        confidence = first_insight.get('confidence')
+                        if confidence and str(confidence).lower() in ['high', 'medium', 'low']:
                             self.log_test("Advisor Brain - Valid Confidence Level", True, f"Confidence: {confidence}")
                         else:
-                            self.log_test("Advisor Brain - Valid Confidence Level", False, f"Invalid confidence: {confidence}")
+                            self.log_test("Advisor Brain - Valid Confidence Level", False, f"Invalid or missing confidence: {confidence}")
                     else:
                         self.log_test("Advisor Brain - Insight Structure Complete", False, f"Missing fields: {missing_fields}")
                 else:
