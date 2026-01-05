@@ -1268,6 +1268,7 @@ async def create_analysis(analysis: AnalysisCreate, current_user: dict = Depends
     # Build Advisor Brain context
     context = await build_advisor_context(user_id)
     profile = context.get("profile", {})
+    user = context.get("user", {})
     
     # Get communication style
     communication_style = profile.get("advice_style", "conversational")
