@@ -90,6 +90,25 @@ class TokenResponse(BaseModel):
     user: UserResponse
 
 class ChatMessage(BaseModel):
+
+class AccountCreate(BaseModel):
+    account_name: str
+
+class InviteCreateRequest(BaseModel):
+    email: EmailStr
+    name: str
+    role: str = "member"  # owner|admin|member
+
+class InviteAcceptRequest(BaseModel):
+    token: str
+    temp_password: str
+    new_password: str
+
+class InviteResponse(BaseModel):
+    invite_link: str
+    temp_password: str
+    expires_at: str
+
     role: str
     content: str
 
