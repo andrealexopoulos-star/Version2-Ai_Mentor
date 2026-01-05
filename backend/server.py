@@ -1319,57 +1319,6 @@ Be specific to their situation. Reference actual business details."""
         insights=insights,
         created_at=analysis_doc["created_at"]
     )
-3. Specific action items (numbered list with priority levels)
-4. Potential risks and how to mitigate them
-5. Quick wins that can be implemented immediately
-
-Format your response with clear sections using markdown headers."""
-
-    session_id = f"analysis_{uuid.uuid4()}"
-    ai_response = await get_ai_response(prompt, analysis.analysis_type, session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
-    
-    # Parse recommendations and action items from response
-    recommendations = []
-    action_items = []
-    current_section = None
-    
-    for line in ai_response.split('\n'):
-        line = line.strip()
-        if 'recommendation' in line.lower():
-            current_section = 'recommendations'
-        elif 'action' in line.lower() and 'item' in line.lower():
-            current_section = 'actions'
-        elif line.startswith(('-', '•', '*')) or (line and line[0].isdigit() and '.' in line[:3]):
-            item = line.lstrip('-•*0123456789. ')
-            if current_section == 'recommendations' and item:
-                recommendations.append(item)
-            elif current_section == 'actions' and item:
-                action_items.append(item)
-    
-    if not recommendations:
-        recommendations = ["Review the analysis above for detailed recommendations"]
-    if not action_items:
-        action_items = ["Implement the recommendations based on priority"]
-    
-    now = datetime.now(timezone.utc).isoformat()
-    analysis_id = str(uuid.uuid4())
-    
-    doc = {
-        "id": analysis_id,
-        "user_id": current_user["id"],
-        "title": analysis.title,
-        "analysis_type": analysis.analysis_type,
-        "business_context": analysis.business_context,
-        "ai_analysis": ai_response,
-        "recommendations": recommendations[:10],
-        "action_items": action_items[:10],
-        "created_at": now,
-        "updated_at": now
-    }
-    
-    await db.analyses.insert_one(doc)
-    
-    return AnalysisResponse(**{k: v for k, v in doc.items() if k != "_id"})
 
 @api_router.get("/analyses", response_model=List[AnalysisResponse])
 async def get_analyses(current_user: dict = Depends(get_current_user)):
