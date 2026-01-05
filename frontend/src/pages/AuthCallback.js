@@ -30,19 +30,8 @@ const AuthCallback = () => {
         // Clear fragment to avoid re-processing
         window.history.replaceState({}, document.title, window.location.pathname);
 
-        // Check if onboarding is needed
-        try {
-          const onboardingRes = await apiClient.get('/onboarding/status');
-          if (!onboardingRes.data.completed) {
-            toast.success('Welcome! Let\'s set up your profile');
-            navigate('/onboarding', { replace: true });
-            return;
-          }
-        } catch (err) {
-          console.error('Error checking onboarding status:', err);
-        }
-
-        toast.success('Signed in with Google');
+        toast.success('Welcome! Signing you in...');
+        // Always go to dashboard, it will check onboarding and redirect if needed
         navigate('/dashboard', { replace: true });
       } catch (e) {
         toast.error(e.response?.data?.detail || 'Google sign-in failed');
