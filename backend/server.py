@@ -789,10 +789,6 @@ async def get_ai_response(message: str, context_type: str, session_id: str, user
 # ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/register", response_model=TokenResponse)
-    reg = await db.settings.find_one({"key": "registration_open"}, {"_id": 0})
-    if reg and reg.get("value") is False and user_count > 0:
-        raise HTTPException(status_code=403, detail="Registration is closed. Ask your owner/admin for an invite.")
-
 async def register(user_data: UserCreate):
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
