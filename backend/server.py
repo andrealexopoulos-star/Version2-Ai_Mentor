@@ -1483,7 +1483,7 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
     serp_results = []
     serp_errors = []
     for q in queries[:5]:
-        sr = await serpapi_search(q, gl="au", hl="en", num=5)
+        sr = await serper_search(q, gl="au", hl="en", num=5)
         if sr.get("error"):
             serp_errors.append(sr.get("error"))
         serp_results.extend(sr.get("results") or [])
