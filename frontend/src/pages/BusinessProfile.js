@@ -124,15 +124,7 @@ const BusinessProfile = () => {
     }
   };
 
-  const runAutofill = async () => {
-    setAutofillLoading(true);
-    try {
-      const res = await apiClient.post('/business-profile/autofill', {
-        business_name: quickSetup.business_name || profile.business_name,
-        abn: quickSetup.abn || profile.abn,
-        website_url: quickSetup.website_url || profile.website,
-        data_file_ids: selectedFileIds,
-      });
+  const buildBusinessProfile = async () => {
     setBuildLoading(true);
     try {
       const res = await apiClient.post('/business-profile/build', {
@@ -152,6 +144,16 @@ const BusinessProfile = () => {
       setBuildLoading(false);
     }
   };
+
+  const runAutofill = async () => {
+    setAutofillLoading(true);
+    try {
+      const res = await apiClient.post('/business-profile/autofill', {
+        business_name: quickSetup.business_name || profile.business_name,
+        abn: quickSetup.abn || profile.abn,
+        website_url: quickSetup.website_url || profile.website,
+        data_file_ids: selectedFileIds,
+      });
 
       const patch = res.data?.patch || {};
       setMissingFields(res.data?.missing_fields || []);
