@@ -752,6 +752,31 @@ class StrategicAdvisorAPITester:
         self.test_cleanup(analysis_id, doc_id)
         
         return self.generate_report()
+    
+    def run_advisor_brain_test(self):
+        """Run only Advisor Brain analysis test"""
+        print("🚀 Starting Advisor Brain Analysis Test...")
+        print(f"Base URL: {self.base_url}")
+        
+        # Health check
+        self.test_health_check()
+        
+        # Authentication flow
+        if not self.test_user_registration():
+            if not self.test_user_login():
+                print("❌ Authentication failed, stopping tests")
+                return self.generate_report()
+        
+        self.test_auth_me()
+        
+        # Test Advisor Brain Analysis
+        analysis_id = self.test_advisor_brain_analysis()
+        
+        # Cleanup
+        if analysis_id:
+            self.test_cleanup(analysis_id=analysis_id)
+        
+        return self.generate_report()
 
     def generate_report(self):
         """Generate test report"""
