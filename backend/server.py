@@ -2610,6 +2610,75 @@ def calculate_profile_completeness(profile: dict) -> int:
     
     return int(core_score + extended_score)
 
+
+def calculate_profile_strength(profile: dict, onboarding: dict = None) -> int:
+    """Calculate profile strength score out of 100"""
+    if not profile:
+        return 0
+    
+    score = 0
+    
+    # Business stage identified (10 points)
+    if onboarding and onboarding.get("business_stage"):
+        score += 10
+    
+    # Basic info completeness (20 points)
+    basic_fields = ["business_name", "industry"]
+    basic_filled = sum(1 for f in basic_fields if profile.get(f))
+    score += (basic_filled / len(basic_fields)) * 20
+    
+    # Business details richness (20 points)
+    details = ["business_type", "year_founded", "website", "target_country", "abn"]
+    details_filled = sum(1 for f in details if profile.get(f))
+    score += (details_filled / len(details)) * 20
+    
+    # Strategic info (20 points)
+    strategic = ["target_market", "unique_value_proposition", "main_challenges", "short_term_goals", "long_term_goals"]
+    strategic_filled = sum(1 for f in strategic if profile.get(f))
+    score += (strategic_filled / len(strategic)) * 20
+    
+    # Operational/Tools info (15 points)
+    operational = ["crm_system", "accounting_system", "project_management_tool", "business_model", "pricing_model"]
+    operational_filled = sum(1 for f in operational if profile.get(f))
+    score += (operational_filled / len(operational)) * 15
+    
+    # Data richness - has uploaded documents (15 points)
+    # This will be added by the endpoint based on data files
+    
+    return int(score)
+
+
+@api_router.get("/business-profile/scores")
+async def get_profile_scores(current_user: dict = Depends(get_current_user)):
+    """Get profile completeness and strength scores"""
+    user_id = current_user["id"]
+    
+    # Get profile
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Get onboarding data
+    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Get data files count
+    files_count = await db.data_files.count_documents({"user_id": user_id})
+    
+    # Calculate scores
+    completeness = calculate_profile_completeness(profile) if profile else 0
+    strength = calculate_profile_strength(profile, onboarding) if profile else 0
+    
+    # Add bonus for uploaded documents
+    if files_count > 0:
+        strength = min(100, strength + 15)
+    
+    return {
+        "completeness": completeness,
+        "strength": strength,
+        "has_documents": files_count > 0,
+        "document_count": files_count,
+        "onboarding_completed": onboarding.get("completed", False) if onboarding else False
+    }
+
+
 # ==================== ADMIN ROUTES ====================
 
 @api_router.get("/admin/users")
