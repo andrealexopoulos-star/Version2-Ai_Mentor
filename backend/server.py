@@ -1086,16 +1086,6 @@ async def accept_invite(req: InviteAcceptRequest):
         ),
     )
 
-            email=user["email"],
-            name=user["name"],
-            business_name=user.get("business_name"),
-            industry=user.get("industry"),
-            role=user["role"],
-            subscription_tier=user.get("subscription_tier"),
-            created_at=user["created_at"],
-        ),
-    )
-
 # ==================== CHAT ROUTES ====================
 
 @api_router.post("/chat", response_model=ChatResponse)
