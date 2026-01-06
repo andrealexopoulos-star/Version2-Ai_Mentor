@@ -3196,6 +3196,12 @@ async def build_advisor_context(user_id: str) -> dict:
         {"_id": 0, "title": 1, "category": 1, "created_at": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
     
+    # Outlook emails (if connected)
+    outlook_emails = await db.outlook_emails.find(
+        {"user_id": user_id},
+        {"_id": 0, "subject": 1, "from_name": 1, "from_address": 1, "received_date": 1, "body_preview": 1}
+    ).sort("received_date", -1).limit(10).to_list(10)
+    
     return {
         "user": user,
         "profile": profile or {},
@@ -3203,7 +3209,8 @@ async def build_advisor_context(user_id: str) -> dict:
         "recent_chats": recent_chats,
         "recent_docs": recent_docs,
         "web_sources": web_sources,
-        "sops": sops
+        "sops": sops,
+        "outlook_emails": outlook_emails
     }
 
 
