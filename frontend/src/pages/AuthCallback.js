@@ -31,11 +31,13 @@ const AuthCallback = () => {
         // Clear fragment to avoid re-processing
         window.history.replaceState({}, document.title, window.location.pathname);
 
-        toast.success('Welcome! Signing you in...');
         // Always go to dashboard, it will check onboarding and redirect if needed
         navigate('/dashboard', { replace: true });
       } catch (e) {
-        toast.error(e.response?.data?.detail || 'Google sign-in failed');
+        const errorMsg = e.response?.data?.detail || 'Sign-in failed. Please try again.';
+        toast.error(errorMsg);
+        // Clear any stale data
+        localStorage.removeItem('token');
         navigate('/login', { replace: true });
       }
     };
