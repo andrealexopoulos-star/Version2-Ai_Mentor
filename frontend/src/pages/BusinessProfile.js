@@ -33,6 +33,11 @@ const BusinessProfile = () => {
   const [scores, setScores] = useState({ completeness: 0, strength: 0 });
   const [activeTab, setActiveTab] = useState('basics');
 
+  // Get user subscription tier
+  const userTier = user?.subscription_tier || 'free';
+  const isPaidUser = !['free', 'trial'].includes(userTier.toLowerCase());
+  const isEnterprise = userTier.toLowerCase() === 'enterprise';
+
   useEffect(() => {
     fetchProfile();
     fetchScores();
