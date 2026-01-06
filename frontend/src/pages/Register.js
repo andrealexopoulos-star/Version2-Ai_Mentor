@@ -5,7 +5,9 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
+import { GoogleLogin } from '@react-oauth/google';
 import { ArrowLeft, Loader2, Eye, EyeOff, Zap } from 'lucide-react';
+import { apiClient } from '../lib/api';
 
 const Register = () => {
   const navigate = useNavigate();
