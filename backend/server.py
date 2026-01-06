@@ -3496,6 +3496,12 @@ async def build_advisor_context(user_id: str) -> dict:
         {"_id": 0, "subject": 1, "from_name": 1, "from_address": 1, "received_date": 1, "body_preview": 1}
     ).sort("received_date", -1).limit(10).to_list(10)
     
+    # Email intelligence summary
+    email_intel = await db.email_intelligence.find_one(
+        {"user_id": user_id},
+        {"_id": 0}
+    )
+    
     return {
         "user": user,
         "profile": profile or {},
@@ -3504,7 +3510,8 @@ async def build_advisor_context(user_id: str) -> dict:
         "recent_docs": recent_docs,
         "web_sources": web_sources,
         "sops": sops,
-        "outlook_emails": outlook_emails
+        "outlook_emails": outlook_emails,
+        "email_intelligence": email_intel or {}
     }
 
 
