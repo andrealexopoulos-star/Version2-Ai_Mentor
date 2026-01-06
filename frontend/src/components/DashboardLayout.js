@@ -34,7 +34,7 @@ const DashboardLayout = ({ children }) => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
-    { icon: Zap, label: 'Advisory Centre', path: '/oac' },
+    { icon: Zap, label: 'Strategic Suggestions', path: '/oac' },
     { type: 'divider', label: 'Tools' },
     { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
     { icon: Target, label: 'Intel Centre', path: '/intel-centre', isNew: true },
