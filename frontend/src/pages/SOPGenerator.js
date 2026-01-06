@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Card, CardContent } from '../components/ui/card';
 import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
-import { Loader2, FileText, CheckSquare, Target, Save, Copy, Check } from 'lucide-react';
+import { Loader2, FileText, CheckSquare, Target, Save, Copy, Check, Upload } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
