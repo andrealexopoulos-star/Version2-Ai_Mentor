@@ -81,8 +81,29 @@ const Diagnosis = ({ embedded = false }) => {
     }
   };
 
-  return (
-    <DashboardLayout>
+  const content = (
+    <div className="p-8">
+      <div className="max-w-5xl mx-auto">
+        {!embedded && (
+          <div className="mb-8">
+            <p className="overline text-[#0f2f24]/60 mb-2">Business Health</p>
+            <h1 className="text-3xl md:text-4xl font-serif text-[#0f2f24]">Quick Diagnosis</h1>
+            <p className="text-[#0f2f24]/60 mt-2">
+              Identify root causes and get actionable solutions for your business challenges
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Rest of the diagnosis content */}
+          {/* ... existing form and results code ... */}
+        </div>
+      </div>
+    </div>
+  );
+
+  return embedded ? content : <DashboardLayout>{content}</DashboardLayout>;
+};
       <div className="p-8" data-testid="diagnosis-page">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
