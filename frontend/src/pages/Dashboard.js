@@ -195,6 +195,44 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Profile Scores Card */}
+        <div 
+          className="card p-6"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(0,102,255,0.08) 0%, var(--bg-card) 100%)',
+            border: '1px solid rgba(0,102,255,0.2)'
+          }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Profile Completeness */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Profile Completeness</span>
+              </div>
+              <div className="flex items-end gap-3 mb-2">
+                <span className="text-5xl font-serif" style={{ color: 'var(--accent-primary)' }}>{profileScores.completeness}%</span>
+                <span className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>of fields filled</span>
+              </div>
+              <Progress value={profileScores.completeness} className="h-3" />
+            </div>
+
+            {/* Business Score */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent-success)' }} />
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Business Score</span>
+              </div>
+              <div className="flex items-end gap-3 mb-2">
+                <span className="text-5xl font-serif" style={{ color: 'var(--accent-success)' }}>{profileScores.strength}</span>
+                <span className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>/100</span>
+              </div>
+              <Progress value={profileScores.strength} className="h-3" />
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Based on business performance & activity</p>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
