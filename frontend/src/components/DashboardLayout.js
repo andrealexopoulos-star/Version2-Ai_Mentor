@@ -33,18 +33,16 @@ const DashboardLayout = ({ children }) => {
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: MessageSquare, label: 'AI Advisor', path: '/advisor' },
-    { icon: Building2, label: 'Business Profile', path: '/business-profile' },
-    { icon: Database, label: 'Data Center', path: '/data-center' },
-    { icon: Zap, label: 'Ops Advisory Centre', path: '/oac', isNew: true },
+    { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
+    { icon: Zap, label: 'Advisory Centre', path: '/oac' },
     { type: 'divider', label: 'Tools' },
-    { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis' },
-    { icon: BarChart3, label: 'Analysis', path: '/analysis' },
-    { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
-    { icon: Target, label: 'Market Intel', path: '/market-analysis' },
+    { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
+    { icon: Target, label: 'Intel Centre', path: '/intel-centre', isNew: true },
     { type: 'divider', label: 'Workspace' },
+    { icon: Database, label: 'Data Centre', path: '/data-center' },
+    { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
     { icon: FolderOpen, label: 'Documents', path: '/documents' },
-    { icon: Plug, label: 'Integrations', path: '/integrations', isNew: true },
+    { icon: Plug, label: 'Integrations', path: '/integrations' },
   ];
 
   const handleLogout = () => {
