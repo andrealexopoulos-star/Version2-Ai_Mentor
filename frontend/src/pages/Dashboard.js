@@ -222,12 +222,76 @@ const Dashboard = () => {
                 </div>
               </div>
               <Button 
-                onClick={() => navigate(setupSteps.find(s => !s.done)?.label === 'Business profile' ? '/business-profile' : '/integrations')}
+                onClick={() => setShowSetupOptions(true)}
                 className="btn-primary"
               >
                 Continue Setup
                 <ArrowRight className="w-4 h-4" />
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Setup Options Modal */}
+        {showSetupOptions && (
+          <div className="modal-overlay" onClick={() => setShowSetupOptions(false)}>
+            <div className="modal-content max-w-2xl" onClick={e => e.stopPropagation()}>
+              <button 
+                onClick={() => setShowSetupOptions(false)}
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <h2 className="text-2xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
+                Continue Setup
+              </h2>
+              <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
+                Choose what you'd like to set up next
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {setupOptions.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <button
+                      key={option.path}
+                      onClick={() => {
+                        setShowSetupOptions(false);
+                        navigate(option.path);
+                      }}
+                      className="text-left p-5 rounded-xl border-2 transition-all hover:border-opacity-100"
+                      style={{ 
+                        borderColor: option.done ? 'var(--accent-success)' : 'var(--border-medium)',
+                        background: 'var(--bg-card)'
+                      }}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div 
+                          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: `${option.color}15` }}
+                        >
+                          <Icon className="w-6 h-6" style={{ color: option.color }} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                              {option.title}
+                            </h3>
+                            {option.done && (
+                              <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--accent-success)' }} />
+                            )}
+                          </div>
+                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                            {option.description}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
