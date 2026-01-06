@@ -412,15 +412,18 @@ frontend:
 
   - task: "Google OAuth login flow (Emergent-managed)"
     implemented: true
-    working: true
+    working: false
     file: "frontend/src/pages/Login.js, frontend/src/pages/AuthCallback.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: Google OAuth login flow working correctly. 'Continue with Google' button redirects to auth.emergentagent.com. AuthCallback component properly handles session_id from URL fragment and exchanges it via /auth/google/exchange endpoint. Missing/malformed session_id correctly redirects to /login. No console errors or redirect loops. Protected routes correctly redirect to login when not authenticated. All edge cases handled properly."
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE: Google OAuth integration has CONFIGURATION ERROR. FINDINGS: 1) Google Login button IS VISIBLE and rendered correctly on login page ✅ 2) GoogleOAuthProvider wrapping app correctly ✅ 3) @react-oauth/google library loaded ✅ 4) Google OAuth script loaded (accounts.google.com/gsi/client) ✅ 5) Button is clickable with valid position ✅ BUT: Console error '[GSI_LOGGER]: The given origin is not allowed for the given client ID' ❌ Network 403 error from accounts.google.com ❌ Error 'Provider's accounts list is empty' ❌. ROOT CAUSE: Google Client ID (903194754324-ife21qnmrokplbcu2ck5afce0kjd6j10.apps.googleusercontent.com) is NOT configured to allow origin 'https://smart-advisor-33.preview.emergentagent.com' in Google Cloud Console. This is a Google Cloud Console configuration issue, NOT a code issue. FIX REQUIRED: Add 'https://smart-advisor-33.preview.emergentagent.com' to Authorized JavaScript origins in Google Cloud Console OAuth 2.0 Client ID settings. MINOR: Warning about button width='100%' - should use pixel value instead."
   - agent: "main"
     message: "Implemented AU Business Profile fields (ANZSIC divisions, ABN/ACN, target country), retention known/unknown + RAG scoring, added Ops Advisory Centre page + backend /api/oac/recommendations with monthly tier limits and prorating, and centralised frontend API calls via apiClient to stabilise login/redirect behavior. Please run full frontend + key backend tests per test_plan."
   - task: "Dashboard layout update"
