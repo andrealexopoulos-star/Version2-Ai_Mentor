@@ -40,6 +40,27 @@ const Login = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await apiClient.post('/auth/google', {
+        credential: credentialResponse.credential
+      });
+      
+      const { access_token, user } = response.data;
+      localStorage.setItem('token', access_token);
+      
+      toast.success('Signed in with Google!');
+      window.location.href = '/dashboard';
+    } catch (error) {
+      toast.error('Google sign-in failed. Please try again.');
+      console.error('Google auth error:', error);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Google sign-in cancelled or failed');
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Form Side */}
