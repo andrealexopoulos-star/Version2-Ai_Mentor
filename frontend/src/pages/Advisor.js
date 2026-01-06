@@ -200,34 +200,29 @@ const Advisor = () => {
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`mb-6 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`mb-4 ${message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}
               >
-                {message.role === 'assistant' && (
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
-                    style={{ background: 'var(--accent-primary)' }}
-                  >
-                    <span className="text-white font-semibold">SS</span>
-                  </div>
-                )}
                 <div
-                  className={`max-w-[80%] rounded-2xl px-5 py-4 ${
+                  className={`max-w-[85%] ${
                     message.role === 'user'
-                      ? 'rounded-br-sm'
-                      : 'rounded-bl-sm'
+                      ? 'bg-blue-600 text-white rounded-3xl rounded-br-md px-6 py-4'
+                      : 'bg-white rounded-3xl rounded-bl-md px-6 py-4 shadow-sm border border-gray-100'
                   }`}
                   style={{
-                    background: message.role === 'user' ? 'var(--accent-primary)' : 'var(--bg-card)',
-                    color: message.role === 'user' ? 'white' : 'var(--text-primary)',
-                    border: message.role === 'user' ? 'none' : '1px solid var(--border-light)'
+                    fontFamily: message.role === 'assistant' ? 'Georgia, Cambria, "Times New Roman", serif' : 'inherit'
                   }}
                 >
-                  {message.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-secondary)' }}>
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-white">{message.content}</p>
-                  )}
+                  <p 
+                    className={`whitespace-pre-wrap leading-relaxed ${
+                      message.role === 'user' ? 'text-white' : 'text-gray-800'
+                    }`}
+                    style={{ 
+                      fontSize: '15px',
+                      lineHeight: '1.6'
+                    }}
+                  >
+                    {message.content}
+                  </p>
                 </div>
               </div>
             ))}
