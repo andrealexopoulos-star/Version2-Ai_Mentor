@@ -2161,7 +2161,25 @@ async def get_diagnoses(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/business-profile")
 async def get_business_profile(current_user: dict = Depends(get_current_user)):
-    """Get user's business profile"""
+    """Get user's business profile - returns active versioned profile or legacy"""
+    # Try versioned profile first
+    versioned_profile = await get_active_profile(current_user["id"])
+    
+    if versioned_profile:
+        # Flatten domains for backward compatibility
+        flattened = {
+            "user_id": versioned_profile["user_id"],
+            "profile_id": versioned_profile["profile_id"],
+            "version": versioned_profile["version"],
+            **versioned_profile["domains"]["business_identity"],
+            **versioned_profile["domains"]["market"],
+            **versioned_profile["domains"]["offer"],
+            **versioned_profile["domains"]["team"],
+            **versioned_profile["domains"]["strategy"]
+        }
+        return flattened
+    
+    # Fallback to legacy profile
     profile = await db.business_profiles.find_one(
         {"user_id": current_user["id"]},
         {"_id": 0}
@@ -2174,6 +2192,82 @@ async def get_business_profile(current_user: dict = Depends(get_current_user)):
             "industry": current_user.get("industry")
         }
     return profile
+
+
+@api_router.get("/business-profile/versioned")
+async def get_versioned_profile(current_user: dict = Depends(get_current_user)):
+    """Get full versioned business profile with all metadata"""
+    profile = await get_active_profile(current_user["id"])
+    
+    if not profile:
+        raise HTTPException(status_code=404, detail="No business profile found")
+    
+    return profile
+
+
+@api_router.get("/business-profile/history")
+async def get_profile_history(current_user: dict = Depends(get_current_user)):
+    """Get all profile versions (active and archived)"""
+    profiles = await db.business_profiles_versioned.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return profiles
+
+
+class ProfileUpdateRequest(BaseModel):
+    updated_fields: Dict[str, Any]
+    change_type: str = "minor"  # "major" | "minor"
+    reason_summary: str
+
+
+@api_router.post("/business-profile/request-update")
+async def request_profile_update(
+    request: ProfileUpdateRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Request a business profile update - creates new immutable version.
+    This is the ONLY way to update a profile in the versioned system.
+    """
+    user_id = current_user["id"]
+    
+    # Get current active profile
+    current_profile = await get_active_profile(user_id)
+    
+    # Merge current data with updates
+    if current_profile:
+        # Extract current flat data from domains
+        current_data = {
+            **current_profile["domains"]["business_identity"],
+            **current_profile["domains"]["market"],
+            **current_profile["domains"]["offer"],
+            **current_profile["domains"]["team"],
+            **current_profile["domains"]["strategy"]
+        }
+        # Remove metadata fields
+        current_data = {k: v for k, v in current_data.items() if k not in ['confidence_level', 'completeness_percentage', 'last_updated_at']}
+    else:
+        current_data = {}
+    
+    # Merge with updates
+    updated_data = {**current_data, **request.updated_fields}
+    
+    # Create new version
+    new_profile_id = await create_profile_version(
+        user_id=user_id,
+        profile_data=updated_data,
+        change_type=request.change_type,
+        reason=request.reason_summary,
+        initiated_by=user_id
+    )
+    
+    return {
+        "success": True,
+        "new_profile_id": new_profile_id,
+        "message": "Profile updated successfully. New version created."
+    }
 
 
 class BusinessProfileBuildRequest(BaseModel):
