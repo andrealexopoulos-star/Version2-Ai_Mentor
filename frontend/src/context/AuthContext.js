@@ -20,29 +20,47 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await apiClient.get(`/auth/me`);
       setUser(response.data);
+      setLoading(false);
     } catch (error) {
-      logout();
-    } finally {
+      console.error('Auth error:', error);
+      // Clear invalid token
+      localStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
       setLoading(false);
     }
   };
 
   const login = async (email, password) => {
-    const response = await apiClient.post(`/auth/login`, { email, password });
-    const { access_token, user: userData } = response.data;
-    localStorage.setItem('token', access_token);
-    setToken(access_token);
-    setUser(userData);
-    return userData;
+    try {
+      const response = await apiClient.post(`/auth/login`, { email, password });
+      const { access_token, user: userData } = response.data;
+      localStorage.setItem('token', access_token);
+      setToken(access_token);
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      // Clear any stale token
+      localStorage.removeItem('token');
+      setToken(null);
+      throw error;
+    }
   };
 
   const register = async (data) => {
-    const response = await apiClient.post(`/auth/register`, data);
-    const { access_token, user: userData } = response.data;
-    localStorage.setItem('token', access_token);
-    setToken(access_token);
-    setUser(userData);
-    return userData;
+    try {
+      const response = await apiClient.post(`/auth/register`, data);
+      const { access_token, user: userData } = response.data;
+      localStorage.setItem('token', access_token);
+      setToken(access_token);
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      // Clear any stale token
+      localStorage.removeItem('token');
+      setToken(null);
+      throw error;
+    }
   };
 
   const logout = () => {
