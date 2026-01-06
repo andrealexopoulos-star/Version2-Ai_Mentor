@@ -166,15 +166,6 @@ const Integrations = () => {
       tier: 'free',
       popular: true
     },
-    {
-      id: 'outlook',
-      name: 'Microsoft Outlook',
-      description: 'Email and calendar integration',
-      category: 'communication',
-      logo: 'OL',
-      color: '#0078D4',
-      tier: 'free'
-    },
   ];
 
   const filteredIntegrations = integrations.filter(integration => {
