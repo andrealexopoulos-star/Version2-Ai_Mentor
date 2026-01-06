@@ -77,7 +77,6 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* Onboarding */}
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
