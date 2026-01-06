@@ -25,6 +25,42 @@ const SOPGenerator = () => {
   const [checklistForm, setChecklistForm] = useState({ topic: '', context: '' });
   const [actionPlanForm, setActionPlanForm] = useState({ goal: '', timeline: '3 months', resources: '' });
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+      'application/msword', // doc
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+      'application/vnd.ms-excel', // xls
+      'application/vnd.google-apps.document', // Google Docs
+      'text/plain'
+    ];
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'SOP Reference');
+      formData.append('description', 'Document for SOP generation');
+
+      const response = await apiClient.post('/data-center/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setUploadedFile(response.data);
+      setSopForm({ ...sopForm, document_id: response.data.id });
+      toast.success(`${file.name} uploaded successfully!`);
+    } catch (error) {
+      toast.error('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const generateSOP = async (e) => {
     e.preventDefault();
     if (!sopForm.topic) {
@@ -34,7 +70,10 @@ const SOPGenerator = () => {
     setLoading(true);
     setResult(null);
     try {
-      const response = await apiClient.post(`/generate/sop`, sopForm);
+      const response = await apiClient.post(`/generate/sop`, {
+        ...sopForm,
+        uploaded_file_id: uploadedFile?.id
+      });
       setResult({ type: 'SOP', content: response.data.sop_content, title: sopForm.topic });
       toast.success('SOP generated!');
     } catch (error) {
