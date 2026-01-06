@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [profileScores, setProfileScores] = useState({ completeness: 0, strength: 0 });
   const [loading, setLoading] = useState(true);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [showSetupOptions, setShowSetupOptions] = useState(false);
 
   useEffect(() => {
     checkOnboarding();
