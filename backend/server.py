@@ -39,6 +39,11 @@ SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 
+# Microsoft Outlook OAuth Configuration
+AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID")
+AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
+AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
