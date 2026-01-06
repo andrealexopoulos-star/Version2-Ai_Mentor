@@ -1,220 +1,214 @@
 {
-  "summary": "Auth System Testing - 34/35 tests passed (97.1%)",
-  "total_tests": 35,
+  "summary": "Auth System Testing - 34/34 tests passed (100.0%)",
+  "total_tests": 34,
   "passed_tests": 34,
-  "failed_tests": 1,
-  "success_rate": "97.1%",
+  "failed_tests": 0,
+  "success_rate": "100.0%",
   "test_details": [
     {
-      "test_name": "Registration - access_token present",
+      "test_name": "Registration - User Already Exists",
+      "success": true,
+      "details": "Expected behavior for existing user",
+      "timestamp": "2026-01-06T01:05:22.907950"
+    },
+    {
+      "test_name": "Login - access_token present",
       "success": true,
       "details": "Token length: 253",
-      "timestamp": "2026-01-06T01:04:51.987844"
+      "timestamp": "2026-01-06T01:05:23.166250"
     },
     {
-      "test_name": "Registration - user object present",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-06T01:04:51.987859"
-    },
-    {
-      "test_name": "Registration - user.id present",
+      "test_name": "Login - user object with id",
       "success": true,
       "details": "User ID: 6fca1c04-bbfd-4dac-a598-b4bf13132be3",
-      "timestamp": "2026-01-06T01:04:51.987863"
-    },
-    {
-      "test_name": "Registration - email matches",
-      "success": true,
-      "details": "Email: reliableauth@test.com",
-      "timestamp": "2026-01-06T01:04:51.987869"
-    },
-    {
-      "test_name": "Registration - name matches",
-      "success": true,
-      "details": "Name: Reliable Auth Test",
-      "timestamp": "2026-01-06T01:04:51.987874"
+      "timestamp": "2026-01-06T01:05:23.166266"
     },
     {
       "test_name": "Auth Me - User ID matches",
       "success": true,
       "details": "User ID: 6fca1c04-bbfd-4dac-a598-b4bf13132be3",
-      "timestamp": "2026-01-06T01:04:52.026279"
+      "timestamp": "2026-01-06T01:05:23.217347"
     },
     {
       "test_name": "Auth Me - Email matches",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-06T01:04:52.026292"
+      "timestamp": "2026-01-06T01:05:23.217364"
     },
     {
       "test_name": "Business Profile - Save returns 200",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-06T01:04:52.070722"
+      "timestamp": "2026-01-06T01:05:23.255041"
     },
     {
       "test_name": "Business Profile - business_name saved",
       "success": true,
       "details": "Value: Test Business",
-      "timestamp": "2026-01-06T01:04:52.070735"
+      "timestamp": "2026-01-06T01:05:23.255054"
     },
     {
       "test_name": "Business Profile - industry saved",
       "success": true,
       "details": "Value: Technology",
-      "timestamp": "2026-01-06T01:04:52.070742"
+      "timestamp": "2026-01-06T01:05:23.255062"
     },
     {
       "test_name": "Business Profile - mission_statement saved",
       "success": true,
       "details": "Value: To test data persistence",
-      "timestamp": "2026-01-06T01:04:52.070748"
+      "timestamp": "2026-01-06T01:05:23.255070"
     },
     {
       "test_name": "Business Profile - short_term_goals saved",
       "success": true,
       "details": "Value: Verify saves work",
-      "timestamp": "2026-01-06T01:04:52.070753"
+      "timestamp": "2026-01-06T01:05:23.255077"
     },
     {
       "test_name": "Persistence GET #1 - business_name persists",
       "success": true,
       "details": "Value: Test Business",
-      "timestamp": "2026-01-06T01:04:52.112863"
+      "timestamp": "2026-01-06T01:05:23.289775"
     },
     {
       "test_name": "Persistence GET #1 - industry persists",
       "success": true,
       "details": "Value: Technology",
-      "timestamp": "2026-01-06T01:04:52.112876"
+      "timestamp": "2026-01-06T01:05:23.289790"
     },
     {
       "test_name": "Persistence GET #1 - mission_statement persists",
       "success": true,
       "details": "Value: To test data persistence",
-      "timestamp": "2026-01-06T01:04:52.112882"
+      "timestamp": "2026-01-06T01:05:23.289798"
     },
     {
       "test_name": "Persistence GET #1 - short_term_goals persists",
       "success": true,
       "details": "Value: Verify saves work",
-      "timestamp": "2026-01-06T01:04:52.112887"
+      "timestamp": "2026-01-06T01:05:23.289804"
     },
     {
       "test_name": "Persistence GET #1 - All data persists",
       "success": true,
       "details": "All fields match expected values",
-      "timestamp": "2026-01-06T01:04:52.112892"
+      "timestamp": "2026-01-06T01:05:23.289811"
     },
     {
       "test_name": "Persistence GET #2 - business_name persists",
       "success": true,
       "details": "Value: Test Business",
-      "timestamp": "2026-01-06T01:04:52.155595"
+      "timestamp": "2026-01-06T01:05:23.333980"
     },
     {
       "test_name": "Persistence GET #2 - industry persists",
       "success": true,
       "details": "Value: Technology",
-      "timestamp": "2026-01-06T01:04:52.155610"
+      "timestamp": "2026-01-06T01:05:23.333996"
     },
     {
       "test_name": "Persistence GET #2 - mission_statement persists",
       "success": true,
       "details": "Value: To test data persistence",
-      "timestamp": "2026-01-06T01:04:52.155619"
+      "timestamp": "2026-01-06T01:05:23.334008"
     },
     {
       "test_name": "Persistence GET #2 - short_term_goals persists",
       "success": true,
       "details": "Value: Verify saves work",
-      "timestamp": "2026-01-06T01:04:52.155624"
+      "timestamp": "2026-01-06T01:05:23.334015"
     },
     {
       "test_name": "Persistence GET #2 - All data persists",
       "success": true,
       "details": "All fields match expected values",
-      "timestamp": "2026-01-06T01:04:52.155629"
+      "timestamp": "2026-01-06T01:05:23.334023"
     },
     {
       "test_name": "Persistence GET #3 - business_name persists",
       "success": true,
       "details": "Value: Test Business",
-      "timestamp": "2026-01-06T01:04:52.234198"
+      "timestamp": "2026-01-06T01:05:23.373588"
     },
     {
       "test_name": "Persistence GET #3 - industry persists",
       "success": true,
       "details": "Value: Technology",
-      "timestamp": "2026-01-06T01:04:52.234212"
+      "timestamp": "2026-01-06T01:05:23.373605"
     },
     {
       "test_name": "Persistence GET #3 - mission_statement persists",
       "success": true,
       "details": "Value: To test data persistence",
-      "timestamp": "2026-01-06T01:04:52.234216"
+      "timestamp": "2026-01-06T01:05:23.373614"
     },
     {
       "test_name": "Persistence GET #3 - short_term_goals persists",
       "success": true,
       "details": "Value: Verify saves work",
-      "timestamp": "2026-01-06T01:04:52.234221"
+      "timestamp": "2026-01-06T01:05:23.373621"
     },
     {
       "test_name": "Persistence GET #3 - All data persists",
       "success": true,
       "details": "All fields match expected values",
-      "timestamp": "2026-01-06T01:04:52.234226"
+      "timestamp": "2026-01-06T01:05:23.373629"
     },
     {
       "test_name": "MongoDB - Profile document exists",
       "success": true,
       "details": "Found profile for user_id: 6fca1c04-bbfd-4dac-a598-b4bf13132be3",
-      "timestamp": "2026-01-06T01:04:52.236662"
+      "timestamp": "2026-01-06T01:05:23.375847"
     },
     {
       "test_name": "MongoDB - business_name matches",
       "success": true,
       "details": "Value: Test Business",
-      "timestamp": "2026-01-06T01:04:52.236674"
+      "timestamp": "2026-01-06T01:05:23.375862"
     },
     {
       "test_name": "MongoDB - industry matches",
       "success": true,
       "details": "Value: Technology",
-      "timestamp": "2026-01-06T01:04:52.236679"
+      "timestamp": "2026-01-06T01:05:23.375870"
     },
     {
       "test_name": "MongoDB - mission_statement matches",
       "success": true,
       "details": "Value: To test data persistence",
-      "timestamp": "2026-01-06T01:04:52.236684"
+      "timestamp": "2026-01-06T01:05:23.375878"
     },
     {
       "test_name": "MongoDB - short_term_goals matches",
       "success": true,
       "details": "Value: Verify saves work",
-      "timestamp": "2026-01-06T01:04:52.236689"
+      "timestamp": "2026-01-06T01:05:23.375884"
     },
     {
-      "test_name": "Scores - completeness_score exists",
-      "success": false,
-      "details": "Missing completeness_score field",
-      "timestamp": "2026-01-06T01:04:52.277357"
+      "test_name": "Scores - completeness valid",
+      "success": true,
+      "details": "Score: 24%",
+      "timestamp": "2026-01-06T01:05:23.414256"
+    },
+    {
+      "test_name": "Scores - completeness updated",
+      "success": true,
+      "details": "Score increased to 24% after profile save",
+      "timestamp": "2026-01-06T01:05:23.414271"
     },
     {
       "test_name": "Scores - business_score valid",
       "success": true,
       "details": "Score: 12%",
-      "timestamp": "2026-01-06T01:04:52.277372"
+      "timestamp": "2026-01-06T01:05:23.414279"
     },
     {
       "test_name": "Scores - business_score updated",
       "success": true,
       "details": "Score increased to 12% after profile save",
-      "timestamp": "2026-01-06T01:04:52.277378"
+      "timestamp": "2026-01-06T01:05:23.414285"
     }
   ],
-  "timestamp": "2026-01-06T01:04:52.278195"
+  "timestamp": "2026-01-06T01:05:23.415139"
 }
