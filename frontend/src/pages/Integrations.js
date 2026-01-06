@@ -18,22 +18,13 @@ const Integrations = () => {
   const categories = [
     { id: 'all', label: 'All' },
     { id: 'crm', label: 'CRM' },
-    { id: 'accounting', label: 'Accounting' },
+    { id: 'financial', label: 'Financial' },
     { id: 'marketing', label: 'Marketing' },
-    { id: 'productivity', label: 'Productivity' },
+    { id: 'communication', label: 'Email & Communication' },
   ];
 
   const integrations = [
-    {
-      id: 'linkedin',
-      name: 'LinkedIn',
-      description: 'Import professional profiles and company data',
-      category: 'marketing',
-      logo: 'in',
-      color: '#0A66C2',
-      tier: 'free',
-      popular: true
-    },
+    // CRM
     {
       id: 'hubspot',
       name: 'HubSpot',
@@ -55,12 +46,32 @@ const Integrations = () => {
       popular: true
     },
     {
+      id: 'pipedrive',
+      name: 'Pipedrive',
+      description: 'Sales CRM and pipeline management',
+      category: 'crm',
+      logo: 'PD',
+      color: '#1A1A1A',
+      tier: 'pro'
+    },
+    // Financial
+    {
       id: 'xero',
       name: 'Xero',
       description: 'Financial data and accounting insights',
-      category: 'accounting',
+      category: 'financial',
       logo: 'XE',
       color: '#13B5EA',
+      tier: 'pro',
+      popular: true
+    },
+    {
+      id: 'quickbooks',
+      name: 'QuickBooks',
+      description: 'Bookkeeping and financial reports',
+      category: 'financial',
+      logo: 'QB',
+      color: '#2CA01C',
       tier: 'pro',
       popular: true
     },
@@ -68,21 +79,22 @@ const Integrations = () => {
       id: 'myob',
       name: 'MYOB',
       description: 'Accounting and business management',
-      category: 'accounting',
+      category: 'financial',
       logo: 'MY',
       color: '#6B21A8',
       tier: 'pro'
     },
     {
-      id: 'quickbooks',
-      name: 'QuickBooks',
-      description: 'Bookkeeping and financial reports',
-      category: 'accounting',
-      logo: 'QB',
-      color: '#2CA01C',
+      id: 'stripe',
+      name: 'Stripe',
+      description: 'Payment data and revenue analytics',
+      category: 'financial',
+      logo: 'ST',
+      color: '#635BFF',
       tier: 'pro',
       popular: true
     },
+    // Marketing
     {
       id: 'google-analytics',
       name: 'Google Analytics',
@@ -90,35 +102,66 @@ const Integrations = () => {
       category: 'marketing',
       logo: 'GA',
       color: '#E37400',
+      tier: 'pro',
+      popular: true
+    },
+    {
+      id: 'linkedin',
+      name: 'LinkedIn',
+      description: 'Professional network and lead generation',
+      category: 'marketing',
+      logo: 'LI',
+      color: '#0A66C2',
+      tier: 'pro',
+      popular: true
+    },
+    {
+      id: 'meta-ads',
+      name: 'Meta Ads',
+      description: 'Facebook and Instagram advertising data',
+      category: 'marketing',
+      logo: 'FB',
+      color: '#1877F2',
+      tier: 'pro'
+    },
+    // Email & Communication
+    {
+      id: 'mailchimp',
+      name: 'Mailchimp',
+      description: 'Email marketing campaigns and analytics',
+      category: 'communication',
+      logo: 'MC',
+      color: '#FFE01B',
+      tier: 'free',
+      popular: true
+    },
+    {
+      id: 'sendgrid',
+      name: 'SendGrid',
+      description: 'Transactional email and delivery tracking',
+      category: 'communication',
+      logo: 'SG',
+      color: '#1A82E2',
       tier: 'pro'
     },
     {
       id: 'slack',
       name: 'Slack',
       description: 'Team communication and notifications',
-      category: 'productivity',
+      category: 'communication',
       logo: 'SL',
       color: '#4A154B',
       tier: 'free',
       popular: true
     },
     {
-      id: 'notion',
-      name: 'Notion',
-      description: 'Docs, wikis, and project management',
-      category: 'productivity',
-      logo: 'NO',
-      color: '#000000',
-      tier: 'pro'
-    },
-    {
-      id: 'stripe',
-      name: 'Stripe',
-      description: 'Payment data and revenue analytics',
-      category: 'accounting',
-      logo: 'ST',
-      color: '#635BFF',
-      tier: 'enterprise'
+      id: 'outlook',
+      name: 'Microsoft Outlook',
+      description: 'Email and calendar integration',
+      category: 'communication',
+      logo: 'OL',
+      color: '#0078D4',
+      tier: 'free'
     },
   ];
 
