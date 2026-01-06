@@ -404,21 +404,21 @@ class AuthSystemTester:
                 data = response.json()
                 print(f"📥 Response: {json.dumps(data, indent=2)}")
                 
-                # Verify completeness_score exists and is a number
-                if 'completeness_score' in data:
-                    completeness = data['completeness_score']
+                # Verify completeness exists and is a number (API returns 'completeness' not 'completeness_score')
+                if 'completeness' in data:
+                    completeness = data['completeness']
                     if isinstance(completeness, (int, float)) and 0 <= completeness <= 100:
-                        self.log_test("Scores - completeness_score valid", True, f"Score: {completeness}%")
+                        self.log_test("Scores - completeness valid", True, f"Score: {completeness}%")
                         
                         # Since we saved 4 fields, completeness should be > 0
                         if completeness > 0:
-                            self.log_test("Scores - completeness_score updated", True, f"Score increased to {completeness}% after profile save")
+                            self.log_test("Scores - completeness updated", True, f"Score increased to {completeness}% after profile save")
                         else:
-                            self.log_test("Scores - completeness_score updated", False, "Score is 0 despite saving profile data")
+                            self.log_test("Scores - completeness updated", False, "Score is 0 despite saving profile data")
                     else:
-                        self.log_test("Scores - completeness_score valid", False, f"Invalid score value: {completeness}")
+                        self.log_test("Scores - completeness valid", False, f"Invalid score value: {completeness}")
                 else:
-                    self.log_test("Scores - completeness_score exists", False, "Missing completeness_score field")
+                    self.log_test("Scores - completeness exists", False, "Missing completeness field")
                 
                 # Verify business_score exists and is a number
                 if 'business_score' in data:
