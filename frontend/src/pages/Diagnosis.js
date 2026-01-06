@@ -27,7 +27,7 @@ const problemAreas = [
   { id: 'leadership', label: 'Leadership & Strategy' },
 ];
 
-const Diagnosis = () => {
+const Diagnosis = ({ embedded = false }) => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [formData, setFormData] = useState({
