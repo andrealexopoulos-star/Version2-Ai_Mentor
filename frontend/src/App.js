@@ -108,13 +108,17 @@ function AppRoutes() {
 }
 
 function App() {
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster position="top-right" richColors />
-      </AuthProvider>
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
 
