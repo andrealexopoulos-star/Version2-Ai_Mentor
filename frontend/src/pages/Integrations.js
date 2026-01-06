@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import { apiClient } from '../lib/api';
+import { toast } from 'sonner';
 import { 
   Plug, Check, ExternalLink, Search, X,
   Lock, ArrowRight, Zap, AlertCircle
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { toast } from 'sonner';
 
 const Integrations = () => {
   const navigate = useNavigate();
