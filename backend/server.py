@@ -3515,6 +3515,35 @@ async def build_advisor_context(user_id: str) -> dict:
     }
 
 
+def format_email_intelligence(email_intel: dict, recent_emails: list) -> str:
+    """Format email intelligence for AI context"""
+    if not email_intel and not recent_emails:
+        return "Outlook not connected yet - suggest connecting to analyze client communications"
+    
+    intel_text = ""
+    
+    if email_intel:
+        total_analyzed = email_intel.get("total_emails_analyzed", 0)
+        top_clients = email_intel.get("top_clients", [])[:5]
+        
+        intel_text += f"Analyzed {total_analyzed} emails over 36 months\n"
+        intel_text += f"Unique contacts: {email_intel.get('unique_contacts', 0)}\n"
+        
+        if top_clients:
+            intel_text += "\nTop client relationships (by email frequency):\n"
+            for client in top_clients:
+                intel_text += f"- {client.get('email')} ({client.get('email_count')} emails, {client.get('relationship_strength')} relationship)\n"
+    
+    if recent_emails:
+        intel_text += f"\nRecent email activity (last {len(recent_emails)} emails):\n"
+        for email in recent_emails[:5]:
+            from_name = email.get('from_name', email.get('from_address', 'Unknown'))
+            subject = email.get('subject', 'No subject')
+            intel_text += f"- From {from_name}: \"{subject[:50]}...\"\n"
+    
+    return intel_text if intel_text else "No email data available yet"
+
+
 def format_advisor_brain_prompt(
     task_description: str,
     context: dict,
