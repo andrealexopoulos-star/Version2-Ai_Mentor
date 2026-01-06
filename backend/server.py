@@ -3673,9 +3673,6 @@ async def get_active_profile(user_id: str) -> Optional[dict]:
     return profile
 
 
-# ==================== LEGACY BUSINESS PROFILE MODELS ====================
-
-class BusinessProfileUpdate(BaseModel):
 def calculate_profile_completeness(profile: dict) -> int:
     """Calculate profile completeness percentage"""
     if not profile:
