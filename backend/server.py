@@ -1587,17 +1587,6 @@ Each insight must include Why explanation, Confidence level, Actions, and Citati
         "areas": areas,
         "urgency": urgency
     }
-        "diagnosis": response,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.diagnoses.insert_one(diagnosis_doc)
-    
-    return {
-        "diagnosis": response,
-        "diagnosis_id": diagnosis_doc["id"],
-        "areas": areas,
-        "urgency": urgency
-    }
 
 
 @api_router.get("/diagnoses")
