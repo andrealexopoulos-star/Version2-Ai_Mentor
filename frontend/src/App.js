@@ -27,6 +27,7 @@ import Integrations from "./pages/Integrations";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import IntelCentre from "./pages/IntelCentre";
+import ProfileImport from "./pages/ProfileImport";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -82,6 +83,7 @@ function AppRoutes() {
 
       {/* Onboarding */}
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
+      <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
       {/* Protected Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
