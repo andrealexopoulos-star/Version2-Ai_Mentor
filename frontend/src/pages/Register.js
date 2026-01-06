@@ -51,6 +51,27 @@ const Register = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await apiClient.post('/auth/google', {
+        credential: credentialResponse.credential
+      });
+      
+      const { access_token, user } = response.data;
+      localStorage.setItem('token', access_token);
+      
+      toast.success('Account created with Google!');
+      window.location.href = '/onboarding';
+    } catch (error) {
+      toast.error('Google sign-up failed. Please try again.');
+      console.error('Google auth error:', error);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Google sign-up cancelled or failed');
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Form Side */}
