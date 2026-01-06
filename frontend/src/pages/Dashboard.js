@@ -238,8 +238,8 @@ const Dashboard = () => {
           {[
             { label: 'AI Chats', value: stats?.total_chat_sessions || 0, icon: MessageSquare, change: '+12%' },
             { label: 'Documents', value: stats?.total_documents || 0, icon: FileText, change: '+5%' },
-            { label: 'Completeness', value: `${profileScores.completeness}%`, icon: BarChart3, change: profileScores.completeness >= 70 ? 'Good' : 'Build' },
-            { label: 'Strength', value: `${profileScores.strength}/100`, icon: TrendingUp, change: profileScores.strength >= 70 ? 'Strong' : 'Grow' },
+            { label: 'Analyses', value: stats?.total_analyses || 0, icon: BarChart3, change: '+8%' },
+            { label: 'SOPs', value: stats?.total_sops || 0, icon: FileText, change: 'New' },
           ].map((stat, i) => (
             <div key={i} className="stat-card">
               <div className="flex items-center justify-between mb-4">
