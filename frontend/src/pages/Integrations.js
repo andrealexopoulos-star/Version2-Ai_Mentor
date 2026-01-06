@@ -176,6 +176,12 @@ const Integrations = () => {
   });
 
   const handleConnect = (integration) => {
+    // Special handling for Outlook
+    if (integration.isOutlook || integration.id === 'outlook') {
+      handleOutlookConnect();
+      return;
+    }
+    
     if (integration.tier === 'enterprise') {
       setShowModal({
         type: 'enterprise',
@@ -196,6 +202,15 @@ const Integrations = () => {
           integration
         });
       }, 1500);
+    }
+  };
+
+  const handleOutlookConnect = async () => {
+    try {
+      const response = await apiClient.get('/auth/outlook/login');
+      window.location.href = response.data.auth_url;
+    } catch (error) {
+      toast.error('Failed to initiate Outlook connection');
     }
   };
 
