@@ -240,22 +240,25 @@ const Advisor = () => {
         </div>
 
         {/* Input Area */}
-        <div className="border-t" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
-          <div className="max-w-4xl mx-auto px-6 py-4">
-            <form onSubmit={handleSubmit} className="flex gap-3">
+        <div className="border-t bg-white shadow-lg" style={{ borderColor: '#E5E7EB' }}>
+          <div className="max-w-4xl mx-auto px-6 py-6">
+            <form onSubmit={handleSubmit} className="flex gap-3 items-end">
               <Textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your question or answer here..."
-                className="flex-1 min-h-[60px] max-h-[200px] resize-none"
-                style={{ background: 'var(--bg-primary)' }}
+                placeholder="Type your message..."
+                className="flex-1 min-h-[56px] max-h-[200px] resize-none bg-gray-50 border-gray-200 rounded-2xl px-4 py-3 focus:bg-white"
+                style={{ 
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: '15px'
+                }}
               />
               <Button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="btn-primary h-[60px] px-6"
+                className="h-[56px] px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-sm"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -264,8 +267,8 @@ const Advisor = () => {
                 )}
               </Button>
             </form>
-            <p className="text-xs mt-2 text-center" style={{ color: 'var(--text-muted)' }}>
-              Press Enter to send, Shift+Enter for new line
+            <p className="text-xs mt-2 text-center text-gray-400">
+              Press Enter to send • Shift+Enter for new line
             </p>
           </div>
         </div>
