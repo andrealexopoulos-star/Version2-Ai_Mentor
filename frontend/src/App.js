@@ -26,6 +26,7 @@ import Pricing from "./pages/Pricing";
 import Integrations from "./pages/Integrations";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import OnboardingWizard from "./pages/OnboardingWizard";
+import IntelCentre from "./pages/IntelCentre";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -85,14 +86,14 @@ function AppRoutes() {
       {/* Protected Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
-      <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
-      <Route path="/analysis/:id" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
-      <Route path="/sop-generator" element={<ProtectedRoute><SOPGenerator /></ProtectedRoute>} />
-      <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
-      <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
-      <Route path="/data-center" element={<ProtectedRoute><DataCenter /></ProtectedRoute>} />
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
+      <Route path="/intel-centre" element={<ProtectedRoute><IntelCentre /></ProtectedRoute>} />
+      <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
+      <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
+      <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
+      <Route path="/sop-generator" element={<ProtectedRoute><SOPGenerator /></ProtectedRoute>} />
+      <Route path="/data-center" element={<ProtectedRoute><DataCenter /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
