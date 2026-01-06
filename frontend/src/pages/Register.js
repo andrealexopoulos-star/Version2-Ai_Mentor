@@ -98,24 +98,6 @@ const Register = () => {
             <p className="text-gray-500">Get personalised AI business advisory today</p>
           </div>
 
-          {/* Google Sign Up Button */}
-          <div className="mb-6">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="outline"
-              size="large"
-              text="signup_with"
-              width="100%"
-            />
-          </div>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-gray-200"></div>
-            <span className="text-sm text-gray-400 font-medium">or</span>
-            <div className="flex-1 h-px bg-gray-200"></div>
-          </div>
-
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
