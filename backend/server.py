@@ -3586,6 +3586,9 @@ CONTEXT FROM PREVIOUS CONVERSATIONS:
 
 UPLOADED DOCUMENTS YOU CAN REFERENCE:
 {chr(10).join([f"- {doc.get('filename')} ({doc.get('category')})" for doc in context.get('recent_docs', [])[:5]]) if context.get('recent_docs') else 'No documents uploaded yet - suggest they upload business plans, financials, etc.'}
+
+EMAIL INTELLIGENCE (LAST 36 MONTHS):
+{format_email_intelligence(context.get('email_intelligence', {}), context.get('outlook_emails', []))}
 """
     
     # Style guide with examples
