@@ -87,6 +87,24 @@ const Login = () => {
             <p className="text-gray-500">Sign in to your account</p>
           </div>
 
+          {/* Google Login Button */}
+          <div className="mb-6">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap
+              theme="outline"
+              size="large"
+              width="100%"
+            />
+          </div>
+
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="text-sm text-gray-400 font-medium">or</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
