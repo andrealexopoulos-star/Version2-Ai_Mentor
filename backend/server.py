@@ -201,8 +201,111 @@ class AdminUserUpdate(BaseModel):
     role: Optional[str] = None
     is_active: Optional[bool] = None
 
-# ==================== BUSINESS PROFILE MODELS ====================
+# ==================== BUSINESS PROFILE MODELS (VERSIONED) ====================
 
+class ConfidenceLevel(BaseModel):
+    business_identity: str = "low"  # low, medium, high
+    market: str = "low"
+    offer: str = "low"
+    team: str = "low"
+    strategy: str = "low"
+
+class ProfileScore(BaseModel):
+    value: int = 0  # 0-100
+    calculated_at: str
+    score_version: str = "v1.0"
+    explanation_summary: str = ""
+
+class BusinessIdentityDomain(BaseModel):
+    business_name: Optional[str] = None
+    legal_structure: Optional[str] = None
+    industry: Optional[str] = None
+    country: Optional[str] = "Australia"
+    year_founded: Optional[int] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    abn: Optional[str] = None
+    acn: Optional[str] = None
+    confidence_level: str = "low"
+    completeness_percentage: int = 0
+    last_updated_at: Optional[str] = None
+
+class MarketDomain(BaseModel):
+    target_customer_summary: Optional[str] = None
+    primary_problem_solved: Optional[str] = None
+    geography: Optional[str] = None
+    business_model: Optional[str] = None
+    acquisition_channels: Optional[List[str]] = None
+    ideal_customer_profile: Optional[str] = None
+    target_market: Optional[str] = None
+    confidence_level: str = "low"
+    completeness_percentage: int = 0
+    last_updated_at: Optional[str] = None
+
+class OfferDomain(BaseModel):
+    products_services_summary: Optional[str] = None
+    pricing_model: Optional[str] = None
+    sales_cycle_length: Optional[str] = None
+    value_proposition: Optional[str] = None
+    competitive_advantage: Optional[str] = None
+    unique_value_proposition: Optional[str] = None
+    confidence_level: str = "low"
+    completeness_percentage: int = 0
+    last_updated_at: Optional[str] = None
+
+class TeamDomain(BaseModel):
+    team_size_range: Optional[str] = None
+    key_roles_present: Optional[str] = None
+    capability_strengths: Optional[str] = None
+    capability_gaps: Optional[str] = None
+    founder_background: Optional[str] = None
+    hiring_status: Optional[str] = None
+    confidence_level: str = "low"
+    completeness_percentage: int = 0
+    last_updated_at: Optional[str] = None
+
+class StrategyDomain(BaseModel):
+    mission: Optional[str] = None
+    short_term_goals: Optional[str] = None
+    long_term_goals: Optional[str] = None
+    current_challenges: Optional[str] = None
+    growth_approach: Optional[str] = None
+    vision_statement: Optional[str] = None
+    confidence_level: str = "low"
+    completeness_percentage: int = 0
+    last_updated_at: Optional[str] = None
+
+class ProfileDomains(BaseModel):
+    business_identity: BusinessIdentityDomain
+    market: MarketDomain
+    offer: OfferDomain
+    team: TeamDomain
+    strategy: StrategyDomain
+
+class ChangeLogEntry(BaseModel):
+    change_id: str
+    change_type: str  # "created" | "updated"
+    affected_domains: List[str]
+    initiated_by: str
+    initiated_at: str
+    reason_summary: str
+
+class VersionedBusinessProfile(BaseModel):
+    profile_id: str
+    business_id: str
+    user_id: str
+    version: str  # e.g., "v1.0", "v1.1", "v2.0"
+    status: str = "active"  # "active" | "archived"
+    created_at: str
+    created_by: str
+    last_reviewed_at: Optional[str] = None
+    
+    confidence_summary: ConfidenceLevel
+    score: ProfileScore
+    domains: ProfileDomains
+    change_log: List[ChangeLogEntry] = []
+
+# Legacy model for backward compatibility (will be deprecated)
 class BusinessProfileUpdate(BaseModel):
     # Basic Info
     business_name: Optional[str] = None
