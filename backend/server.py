@@ -1055,6 +1055,121 @@ async def google_auth(request: GoogleAuthRequest):
         logger.error(f"Google auth error: {e}")
         raise HTTPException(status_code=500, detail="Google authentication failed")
 
+# ==================== GOOGLE OAUTH (CUSTOM) ====================
+
+class GoogleAuthRequest(BaseModel):
+    credential: str  # JWT credential from Google
+
+@api_router.post("/auth/google", response_model=TokenResponse)
+async def google_auth(request: GoogleAuthRequest):
+    """Handle Google OAuth login/register"""
+    try:
+        # Decode and verify Google JWT token
+        async with httpx.AsyncClient() as client:
+            # Get Google's public keys
+            keys_response = await client.get('https://www.googleapis.com/oauth2/v3/certs')
+            
+            # Verify the token using httpx to call Google's tokeninfo endpoint
+            verify_response = await client.get(
+                'https://oauth2.googleapis.com/tokeninfo',
+                params={'id_token': request.credential}
+            )
+            
+            if verify_response.status_code != 200:
+                raise HTTPException(status_code=401, detail="Invalid Google token")
+            
+            idinfo = verify_response.json()
+            
+            # Verify audience (client ID)
+            if idinfo.get('aud') != GOOGLE_CLIENT_ID:
+                raise HTTPException(status_code=401, detail="Token audience mismatch")
+            
+            # Extract user info
+            email = idinfo.get('email')
+            name = idinfo.get('name')
+            google_id = idinfo.get('sub')
+            
+            if not email:
+                raise HTTPException(status_code=400, detail="Email not provided by Google")
+        
+        # Check if user exists
+        user = await db.users.find_one({"email": email}, {"_id": 0})
+        
+        if user:
+            # Existing user - login
+            user_id = user["id"]
+            
+            # Update google_id if not set
+            if not user.get("google_id"):
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$set": {"google_id": google_id}}
+                )
+        else:
+            # New user - register
+            user_id = str(uuid.uuid4())
+            now = datetime.now(timezone.utc).isoformat()
+            
+            # Check if this is the first user (owner)
+            user_count = await db.users.count_documents({})
+            role = "owner" if user_count == 0 else "member"
+            
+            # Create account for first user
+            account_id = None
+            if user_count == 0:
+                account_id = str(uuid.uuid4())
+                account_doc = {
+                    "id": account_id,
+                    "owner_user_id": user_id,
+                    "account_name": name,
+                    "email": email,
+                    "subscription_tier": "trial",
+                    "trial_started_at": now,
+                    "trial_ends_at": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
+                    "created_at": now
+                }
+                await db.accounts.insert_one(account_doc)
+            
+            # Create user
+            user_doc = {
+                "id": user_id,
+                "email": email,
+                "name": name,
+                "password": None,  # Google OAuth users have no password
+                "google_id": google_id,
+                "role": role,
+                "account_id": account_id,
+                "subscription_tier": "trial" if user_count == 0 else "free",
+                "is_active": True,
+                "created_at": now
+            }
+            await db.users.insert_one(user_doc)
+            user = user_doc
+        
+        # Create JWT token
+        token = create_token(user["id"], user["email"], user["role"], account_id=user.get("account_id"))
+        
+        return TokenResponse(
+            access_token=token,
+            user=UserResponse(
+                id=user["id"],
+                email=user["email"],
+                name=user["name"],
+                business_name=user.get("business_name"),
+                industry=user.get("industry"),
+                role=user["role"],
+                subscription_tier=user.get("subscription_tier"),
+                created_at=user["created_at"]
+            )
+        )
+        
+    except ValueError as e:
+        # Invalid token
+        raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
+    except Exception as e:
+        logger.error(f"Google auth error: {e}")
+        raise HTTPException(status_code=500, detail="Google authentication failed")
+
 # ==================== EMERGENT GOOGLE AUTH (MANAGED) ====================
 
 async def fetch_emergent_session_data(session_id: str) -> Dict[str, Any]:
