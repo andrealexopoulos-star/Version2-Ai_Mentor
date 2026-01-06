@@ -228,16 +228,9 @@ const Advisor = () => {
             ))}
 
             {loading && (
-              <div className="flex items-start mb-6">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
-                  style={{ background: 'var(--accent-primary)' }}
-                >
-                  <span className="text-white font-semibold">SS</span>
-                </div>
-                <div className="rounded-2xl rounded-bl-sm px-5 py-4 border"
-                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
-                >
-                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+              <div className="flex items-start mb-4">
+                <div className="bg-white rounded-3xl rounded-bl-md px-6 py-4 shadow-sm border border-gray-100">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
                 </div>
               </div>
             )}
