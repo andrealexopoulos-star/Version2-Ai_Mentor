@@ -24,6 +24,18 @@ const Integrations = () => {
   ];
 
   const integrations = [
+    // Email & Communication (PRIORITY)
+    {
+      id: 'outlook',
+      name: 'Microsoft Outlook',
+      description: 'Read emails for AI context and client intelligence',
+      category: 'communication',
+      logo: 'OL',
+      color: '#0078D4',
+      tier: 'free',
+      popular: true,
+      isOutlook: true
+    },
     // CRM
     {
       id: 'hubspot',
