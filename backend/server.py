@@ -1674,37 +1674,72 @@ async def delete_document(doc_id: str, current_user: dict = Depends(get_current_
 
 @api_router.post("/generate/sop")
 async def generate_sop(request: dict, current_user: dict = Depends(get_current_user)):
+    """Generate SOP with Advisor Brain personalization and document context"""
     topic = request.get("topic", "")
     business_context = request.get("business_context", "")
+    uploaded_file_id = request.get("uploaded_file_id")
     
-    user_data = {
-        "name": current_user.get("name"),
-        "business_name": current_user.get("business_name"),
-        "industry": current_user.get("industry")
-    }
+    user_id = current_user["id"]
+    context = await build_advisor_context(user_id)
+    profile = context.get("profile", {})
     
-    prompt = f"""Create a comprehensive Standard Operating Procedure (SOP) for:
+    # Get uploaded document content if provided
+    document_context = ""
+    if uploaded_file_id:
+        uploaded_doc = await db.data_files.find_one(
+            {"user_id": user_id, "id": uploaded_file_id},
+            {"_id": 0, "filename": 1, "extracted_text": 1}
+        )
+        if uploaded_doc and uploaded_doc.get("extracted_text"):
+            document_context = f"\n\nREFERENCE DOCUMENT: {uploaded_doc.get('filename')}\n{uploaded_doc.get('extracted_text')[:3000]}\n"
+    
+    communication_style = profile.get("advice_style", "detailed")
+    
+    task_prompt = f"""Create a comprehensive Standard Operating Procedure (SOP) for: {topic}
 
-Topic: {topic}
 Business Context: {business_context}
-Business: {user_data.get('business_name', 'N/A')}
-Industry: {user_data.get('industry', 'General')}
+{document_context}
 
-Please provide a complete SOP including:
-1. Purpose and Scope
-2. Responsibilities (who does what)
-3. Step-by-step Procedures (numbered with detailed sub-steps)
-4. Quality Checks and Verification Points
-5. Documentation Requirements
-6. Troubleshooting Common Issues
-7. Review and Update Schedule
-8. Key Performance Indicators (KPIs) to track
+Create a detailed, actionable SOP that:
+1. Is specific to their business ({profile.get('business_name', 'the business')})
+2. Considers their team size ({profile.get('team_size', 'unknown')})
+3. Fits their industry ({profile.get('industry', 'unknown')})
+4. References any uploaded document content provided above
+5. Is practical and immediately implementable
 
-Make this specific to the industry and practical for immediate implementation.
-Format using markdown with clear headers and numbered steps."""
+Include:
+- Purpose and Scope
+- Responsibilities (tailored to their team size)
+- Step-by-step procedures (numbered, detailed)
+- Quality checks
+- Documentation requirements
+- Troubleshooting
+- KPIs to track
 
+Format using clear markdown with headers and numbered lists."""
+
+    prompt = format_advisor_brain_prompt(task_prompt, context, "sop", communication_style)
+    
     session_id = f"sop_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "sop_generator", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
+    response = await get_ai_response(
+        prompt,
+        "sop_generator",
+        session_id,
+        user_id=user_id,
+        user_data={"name": current_user.get("name"), "business_name": profile.get("business_name")},
+        use_advanced=True
+    )
+    
+    # Save SOP to database
+    sop_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "title": topic,
+        "category": "SOP",
+        "content": response,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.sops.insert_one(sop_doc)
     
     return {"sop_content": response, "topic": topic}
 
