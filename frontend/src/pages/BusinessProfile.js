@@ -121,40 +121,6 @@ const BusinessProfile = () => {
             </Button>
           </div>
 
-          {/* Scores Card */}
-          <Card className="mb-8" style={{ background: 'linear-gradient(135deg, rgba(0,102,255,0.08) 0%, var(--bg-card) 100%)', border: '1px solid rgba(0,102,255,0.2)' }}>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Profile Completeness */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
-                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Profile Completeness</span>
-                  </div>
-                  <div className="flex items-end gap-3 mb-2">
-                    <span className="text-4xl font-serif" style={{ color: 'var(--accent-primary)' }}>{scores.completeness}%</span>
-                    <span className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>of fields filled</span>
-                  </div>
-                  <Progress value={scores.completeness} className="h-2" />
-                </div>
-
-                {/* Business Score */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent-success)' }} />
-                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Business Score</span>
-                  </div>
-                  <div className="flex items-end gap-3 mb-2">
-                    <span className="text-4xl font-serif" style={{ color: 'var(--accent-success)' }}>{scores.strength}</span>
-                    <span className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>/100</span>
-                  </div>
-                  <Progress value={scores.strength} className="h-2" />
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Based on business performance & activity</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-5 w-full mb-8">
@@ -162,21 +128,25 @@ const BusinessProfile = () => {
                 <Building2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Basics</span>
               </TabsTrigger>
-              <TabsTrigger value="market" className="flex items-center gap-2">
+              <TabsTrigger value="market" disabled={!isPaidUser} className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 <span className="hidden sm:inline">Market</span>
+                {!isPaidUser && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
-              <TabsTrigger value="product" className="flex items-center gap-2">
+              <TabsTrigger value="product" disabled={!isPaidUser} className="flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 <span className="hidden sm:inline">Product</span>
+                {!isPaidUser && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
-              <TabsTrigger value="team" className="flex items-center gap-2">
+              <TabsTrigger value="team" disabled={!isEnterprise} className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Team</span>
+                {!isEnterprise && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
-              <TabsTrigger value="strategy" className="flex items-center gap-2">
+              <TabsTrigger value="strategy" disabled={!isPaidUser} className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
                 <span className="hidden sm:inline">Strategy</span>
+                {!isPaidUser && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
             </TabsList>
 
