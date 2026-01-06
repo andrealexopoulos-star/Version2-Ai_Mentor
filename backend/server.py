@@ -1520,6 +1520,190 @@ async def google_exchange(payload: GoogleExchangeRequest):
         ),
     )
 
+
+
+# ==================== MICROSOFT OUTLOOK INTEGRATION ====================
+
+@api_router.get("/auth/outlook/login")
+async def outlook_login():
+    """Initiate Microsoft OAuth flow for Outlook"""
+    redirect_uri = f"{os.environ.get('REACT_APP_BACKEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')}/api/auth/outlook/callback"
+    
+    auth_url = (
+        f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/authorize?"
+        f"client_id={AZURE_CLIENT_ID}&"
+        f"response_type=code&"
+        f"redirect_uri={redirect_uri}&"
+        f"response_mode=query&"
+        f"scope=offline_access User.Read Mail.Read Mail.ReadBasic&"
+        f"state=outlook_auth"
+    )
+    
+    return {"auth_url": auth_url}
+
+
+@api_router.get("/auth/outlook/callback")
+async def outlook_callback(code: str, state: str, current_user: dict = Depends(get_current_user)):
+    """Handle Microsoft OAuth callback and store tokens"""
+    if state != "outlook_auth":
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+    
+    # Exchange code for tokens
+    token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
+    
+    redirect_uri = f"{os.environ.get('REACT_APP_BACKEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')}/api/auth/outlook/callback"
+    
+    payload = {
+        "client_id": AZURE_CLIENT_ID,
+        "client_secret": AZURE_CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code",
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=payload)
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"Token exchange failed: {response.text}")
+        
+        token_data = response.json()
+    
+    # Store tokens in user document
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "outlook_access_token": token_data.get("access_token"),
+            "outlook_refresh_token": token_data.get("refresh_token"),
+            "outlook_token_expires_at": (datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))).isoformat(),
+            "outlook_connected_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"status": "connected", "message": "Outlook connected successfully"}
+
+
+@api_router.get("/outlook/emails/sync")
+async def sync_outlook_emails(
+    folder: str = "inbox",
+    top: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """Sync emails from Outlook and store for AI context"""
+    user_id = current_user["id"]
+    
+    # Get user's Outlook token
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    
+    if not user_doc.get("outlook_access_token"):
+        raise HTTPException(status_code=400, detail="Outlook not connected. Please connect first.")
+    
+    # Check if token expired
+    token_expires = user_doc.get("outlook_token_expires_at")
+    if token_expires and datetime.fromisoformat(token_expires) < datetime.now(timezone.utc):
+        # Refresh token
+        await refresh_outlook_token(user_id, user_doc.get("outlook_refresh_token"))
+        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    
+    access_token = user_doc.get("outlook_access_token")
+    
+    # Fetch emails from Microsoft Graph
+    headers = {"Authorization": f"Bearer {access_token}"}
+    graph_url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder}/messages"
+    params = {
+        "$select": "subject,from,toRecipients,receivedDateTime,bodyPreview,body,isRead",
+        "$top": top,
+        "$orderby": "receivedDateTime desc"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(graph_url, headers=headers, params=params)
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"Failed to fetch emails: {response.text}")
+        
+        emails_data = response.json()
+    
+    # Store emails for AI context
+    synced_count = 0
+    for email in emails_data.get("value", []):
+        email_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "graph_message_id": email.get("id"),
+            "subject": email.get("subject", ""),
+            "from_address": email.get("from", {}).get("emailAddress", {}).get("address", ""),
+            "from_name": email.get("from", {}).get("emailAddress", {}).get("name", ""),
+            "received_date": email.get("receivedDateTime"),
+            "body_preview": email.get("bodyPreview", ""),
+            "body_content": email.get("body", {}).get("content", "")[:5000],  # Store first 5000 chars
+            "is_read": email.get("isRead", False),
+            "folder": folder,
+            "synced_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Upsert (avoid duplicates)
+        await db.outlook_emails.update_one(
+            {"user_id": user_id, "graph_message_id": email.get("id")},
+            {"$set": email_doc},
+            upsert=True
+        )
+        synced_count += 1
+    
+    return {
+        "status": "synced",
+        "emails_synced": synced_count,
+        "message": f"Synced {synced_count} emails from {folder}"
+    }
+
+
+async def refresh_outlook_token(user_id: str, refresh_token: str):
+    """Refresh Outlook access token"""
+    token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
+    
+    payload = {
+        "client_id": AZURE_CLIENT_ID,
+        "client_secret": AZURE_CLIENT_SECRET,
+        "refresh_token": refresh_token,
+        "grant_type": "refresh_token",
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=payload)
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Failed to refresh Outlook token")
+        
+        token_data = response.json()
+    
+    # Update tokens
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "outlook_access_token": token_data.get("access_token"),
+            "outlook_refresh_token": token_data.get("refresh_token"),
+            "outlook_token_expires_at": (datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))).isoformat()
+        }}
+    )
+
+
+@api_router.get("/outlook/status")
+async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
+    """Check if Outlook is connected"""
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    
+    is_connected = bool(user_doc.get("outlook_access_token"))
+    emails_count = await db.outlook_emails.count_documents({"user_id": current_user["id"]})
+    
+    return {
+        "connected": is_connected,
+        "connected_at": user_doc.get("outlook_connected_at"),
+        "emails_synced": emails_count
+    }
+
+
 # ==================== INVITES (ENTERPRISE ONLY) ====================
 
 def tier_allows_seats(account: dict) -> bool:
