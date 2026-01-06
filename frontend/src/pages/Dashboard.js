@@ -109,11 +109,11 @@ const Dashboard = () => {
   const setupOptions = [
     {
       title: 'Complete Business Profile',
-      description: 'Add your business details for personalized AI advice',
+      description: 'Add detailed business data for maximum AI personalization',
       icon: Building2,
-      path: '/business-profile',
+      path: '/profile-import',
       color: '#0066FF',
-      done: !!user?.business_name
+      done: profileScores.completeness >= 80
     },
     {
       title: 'Upload Documents',
