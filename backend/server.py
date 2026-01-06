@@ -1440,28 +1440,38 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest, current_user: dict = Depends(get_current_user)):
+    """Enhanced AI chat with deep personalization and proactive questioning"""
     session_id = request.session_id or f"{current_user['id']}_{uuid.uuid4()}"
+    user_id = current_user["id"]
     
-    # Pass user data for personalization
-    user_data = {
-        "name": current_user.get("name"),
-        "business_name": current_user.get("business_name"),
-        "industry": current_user.get("industry")
-    }
+    # Build comprehensive Advisor Brain context
+    context = await build_advisor_context(user_id)
+    profile = context.get("profile", {})
+    
+    # Get communication style
+    communication_style = profile.get("advice_style", "conversational")
+    
+    # Enhanced prompt with business context
+    enhanced_message = format_advisor_brain_prompt(
+        f"User message: {request.message}\n\nProvide a personalized, specific response that references their business situation. Ask clarifying questions if needed.",
+        context,
+        "chat",
+        communication_style
+    )
     
     response = await get_ai_response(
-        request.message,
+        enhanced_message,
         request.context_type or "general",
         session_id,
-        user_id=current_user["id"],
-        user_data=user_data,
+        user_id=user_id,
+        user_data={"name": current_user.get("name"), "business_name": profile.get("business_name")},
         use_advanced=False
     )
     
     # Store chat history
     chat_doc = {
         "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
+        "user_id": user_id,
         "session_id": session_id,
         "message": request.message,
         "response": response,
