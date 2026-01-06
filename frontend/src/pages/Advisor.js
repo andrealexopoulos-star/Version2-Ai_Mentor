@@ -2,56 +2,48 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { ScrollArea } from '../components/ui/scroll-area';
+import { Card, CardContent } from '../components/ui/card';
 import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
-import { Send, Loader2, Sparkles, RotateCcw, MessageSquare } from 'lucide-react';
+import { Send, Loader2, Target, TrendingUp, DollarSign, Zap, Users, RotateCcw } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
-
-
-const contextTypes = [
-  { value: 'general', label: 'General Strategy', icon: '💡' },
-  { value: 'business_analysis', label: 'Business Analysis', icon: '📊' },
-  { value: 'sop_generator', label: 'Operations & SOPs', icon: '📋' },
-  { value: 'market_analysis', label: 'Market & Competition', icon: '🎯' },
-  { value: 'financial', label: 'Financial Strategy', icon: '💰' },
-];
-
-const promptCategories = [
+const focusAreas = [
   {
-    title: "🚀 Growth & Strategy",
-    prompts: [
-      "What are the top 3 growth opportunities for my business right now?",
-      "How can I differentiate my business from competitors in my industry?",
-      "What's the best pricing strategy for my type of business?",
-    ]
+    id: 'growth',
+    title: 'Growth & Strategy',
+    icon: TrendingUp,
+    color: '#0066FF',
+    description: 'Scale your business, find new opportunities'
   },
   {
-    title: "⚙️ Operations & Efficiency",
-    prompts: [
-      "Help me identify bottlenecks in my business operations",
-      "Create a daily workflow routine to maximize productivity",
-      "What processes should I automate first?",
-    ]
+    id: 'operations',
+    title: 'Operations',
+    icon: Zap,
+    color: '#00C853',
+    description: 'Improve efficiency, streamline processes'
   },
   {
-    title: "📈 Marketing & Sales",
-    prompts: [
-      "What marketing channels would work best for my business?",
-      "Help me create a customer acquisition strategy",
-      "How can I improve my customer retention rate?",
-    ]
+    id: 'financial',
+    title: 'Financial',
+    icon: DollarSign,
+    color: '#FF9500',
+    description: 'Cash flow, pricing, profitability'
   },
   {
-    title: "💵 Financial Health",
-    prompts: [
-      "How can I improve my cash flow management?",
-      "What key financial metrics should I track weekly?",
-      "Help me create a budget for the next quarter",
-    ]
+    id: 'marketing',
+    title: 'Marketing & Sales',
+    icon: Target,
+    color: '#7C3AED',
+    description: 'Win clients, improve conversion'
+  },
+  {
+    id: 'team',
+    title: 'Team & Leadership',
+    icon: Users,
+    color: '#EC4899',
+    description: 'Hiring, culture, delegation'
   }
 ];
 
@@ -60,8 +52,8 @@ const Advisor = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [contextType, setContextType] = useState('general');
   const [sessionId, setSessionId] = useState(null);
+  const [showFocusAreas, setShowFocusAreas] = useState(true);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -73,40 +65,52 @@ const Advisor = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e) => {
-    e?.preventDefault();
-    if (!input.trim() || loading) return;
+  const handleFocusAreaSelect = async (area) => {
+    setShowFocusAreas(false);
+    const focusMessage = `I want to focus on ${area.title.toLowerCase()}`;
+    await sendMessage(focusMessage);
+  };
 
-    const userMessage = input.trim();
+  const sendMessage = async (messageText) => {
+    const userMessage = messageText || input.trim();
+    if (!userMessage || loading) return;
+
+    const newMessage = { role: 'user', content: userMessage };
+    setMessages(prev => [...prev, newMessage]);
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
 
     try {
-      const response = await apiClient.post(`/chat`, {
+      const response = await apiClient.post('/chat', {
         message: userMessage,
-        context_type: contextType,
-        session_id: sessionId
+        session_id: sessionId,
+        context_type: 'mentor'
       });
 
+      const aiMessage = { 
+        role: 'assistant', 
+        content: response.data.response 
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
       setSessionId(response.data.session_id);
-      setMessages(prev => [...prev, { role: 'assistant', content: response.data.response }]);
     } catch (error) {
-      toast.error('Failed to get response. Please try again.');
-      setMessages(prev => prev.slice(0, -1));
+      toast.error('Failed to get response');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePromptClick = (prompt) => {
-    setInput(prompt);
-    textareaRef.current?.focus();
+  const handleSubmit = (e) => {
+    e?.preventDefault();
+    sendMessage();
   };
 
-  const startNewChat = () => {
+  const handleNewSession = () => {
     setMessages([]);
     setSessionId(null);
+    setShowFocusAreas(true);
     setInput('');
   };
 
@@ -119,160 +123,152 @@ const Advisor = () => {
 
   return (
     <DashboardLayout>
-      <div className="h-screen flex flex-col" data-testid="advisor-page">
+      <div className="flex flex-col h-[calc(100vh-4rem)]">
         {/* Header */}
-        <div className="border-b border-[#e5e5e5] bg-white px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-serif text-[#0f2f24]">Strategy Squad</h1>
-            <p className="text-sm text-[#0f2f24]/60">
-              {user?.business_name ? `Advising ${user.business_name}` : 'Your AI business partner'}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Select value={contextType} onValueChange={setContextType}>
-              <SelectTrigger className="w-48 bg-white" data-testid="context-type-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {contextTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="border-b" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
+          <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>MyAdvisor</h1>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your personal business mentor</p>
+            </div>
             {messages.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={startNewChat}
-                className="border-[#0f2f24] text-[#0f2f24]"
-                data-testid="new-chat-btn"
-              >
+              <Button onClick={handleNewSession} variant="outline" className="btn-secondary">
                 <RotateCcw className="w-4 h-4 mr-2" />
-                New Chat
+                New Session
               </Button>
             )}
           </div>
         </div>
 
-        {/* Chat Area */}
-        <ScrollArea className="flex-1 p-6">
-          {messages.length === 0 ? (
-            <div className="max-w-4xl mx-auto pt-8">
-              <div className="text-center mb-10">
-                <div className="w-16 h-16 bg-[#ccff00] rounded-sm flex items-center justify-center mx-auto mb-6">
-                  <Sparkles className="w-8 h-8 text-[#0f2f24]" />
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            {/* Focus Area Cards - Show at start */}
+            {showFocusAreas && messages.length === 0 && (
+              <div className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
+                    What would you like to work on today?
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)' }}>
+                    Choose a focus area and I'll guide you step by step
+                  </p>
                 </div>
-                <h2 className="text-3xl font-serif text-[#0f2f24] mb-3">
-                  Hey {user?.name?.split(' ')[0]}! 👋
-                </h2>
-                <p className="text-[#0f2f24]/60 max-w-lg mx-auto">
-                  I&apos;m your Strategy Squad advisor.
-                  {user?.business_name && <> I&apos;m here to help <strong>{user.business_name}</strong> succeed.</>}
-                  {user?.industry && <> I know the <strong>{user.industry}</strong> industry well.</>}
-                  {' '}What would you like to work on today?
-                </p>
-              </div>
 
-              {/* Quick Context Selector */}
-              <div className="flex flex-wrap justify-center gap-2 mb-8">
-                {contextTypes.map((type) => (
-                  <button
-                    key={type.value}
-                    onClick={() => setContextType(type.value)}
-                    className={`px-4 py-2 rounded-full text-sm transition-all ${
-                      contextType === type.value 
-                        ? 'bg-[#0f2f24] text-white' 
-                        : 'bg-white border border-[#e5e5e5] text-[#0f2f24] hover:border-[#0f2f24]'
-                    }`}
-                    data-testid={`context-quick-${type.value}`}
-                  >
-                    {type.icon} {type.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Prompt Categories */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {promptCategories.map((category, catIndex) => (
-                  <div key={catIndex} className="bg-white border border-[#e5e5e5] rounded-sm p-5">
-                    <h3 className="font-medium text-[#0f2f24] mb-4">{category.title}</h3>
-                    <div className="space-y-2">
-                      {category.prompts.map((prompt, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handlePromptClick(prompt)}
-                          className="w-full text-left p-3 bg-[#f5f5f0] rounded-sm hover:bg-[#e8e8e3] transition-colors group text-sm"
-                          data-testid={`prompt-${catIndex}-${i}`}
-                        >
-                          <div className="flex items-start gap-2">
-                            <MessageSquare className="w-4 h-4 text-[#0f2f24]/40 group-hover:text-[#0f2f24] mt-0.5 flex-shrink-0" />
-                            <span className="text-[#0f2f24]/80 group-hover:text-[#0f2f24]">{prompt}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {focusAreas.map((area) => {
+                    const Icon = area.icon;
+                    return (
+                      <button
+                        key={area.id}
+                        onClick={() => handleFocusAreaSelect(area)}
+                        className="text-left p-6 rounded-xl border-2 transition-all hover:shadow-lg"
+                        style={{
+                          borderColor: 'var(--border-medium)',
+                          background: 'var(--bg-card)'
+                        }}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: `${area.color}15` }}
+                          >
+                            <Icon className="w-6 h-6" style={{ color: area.color }} />
                           </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                              {area.title}
+                            </h3>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                              {area.description}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Custom Question Hint */}
-              <p className="text-center text-sm text-[#0f2f24]/50 mt-8">
-                Or type your own question below — I&apos;ll tailor my advice to {user?.business_name || 'your business'}
-              </p>
-            </div>
-          ) : (
-            <div className="max-w-3xl mx-auto space-y-6">
-              {messages.map((msg, i) => (
+                <div className="text-center mt-8">
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Or type your question below to start
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Messages */}
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`mb-6 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {message.role === 'assistant' && (
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
+                    style={{ background: 'var(--accent-primary)' }}
+                  >
+                    <span className="text-white font-semibold">SS</span>
+                  </div>
+                )}
                 <div
-                  key={i}
-                  className={`message-bubble animate-fade-in ${
-                    msg.role === 'user' ? 'message-user' : 'message-ai'
+                  className={`max-w-[80%] rounded-2xl px-5 py-4 ${
+                    message.role === 'user'
+                      ? 'rounded-br-sm'
+                      : 'rounded-bl-sm'
                   }`}
-                  data-testid={`message-${i}`}
+                  style={{
+                    background: message.role === 'user' ? 'var(--accent-primary)' : 'var(--bg-card)',
+                    color: message.role === 'user' ? 'white' : 'var(--text-primary)',
+                    border: message.role === 'user' ? 'none' : '1px solid var(--border-light)'
+                  }}
                 >
-                  {msg.role === 'assistant' ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  {message.role === 'assistant' ? (
+                    <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-secondary)' }}>
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
                     </div>
                   ) : (
-                    <p>{msg.content}</p>
+                    <p className="text-white">{message.content}</p>
                   )}
                 </div>
-              ))}
-              {loading && (
-                <div className="message-bubble message-ai animate-fade-in">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-[#0f2f24]/60">Thinking...</span>
-                  </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex items-start mb-6">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 flex-shrink-0"
+                  style={{ background: 'var(--accent-primary)' }}
+                >
+                  <span className="text-white font-semibold">SS</span>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </ScrollArea>
+                <div className="rounded-2xl rounded-bl-sm px-5 py-4 border"
+                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
+                >
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
 
         {/* Input Area */}
-        <div className="chat-input-area">
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-            <div className="flex gap-3">
+        <div className="border-t" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <form onSubmit={handleSubmit} className="flex gap-3">
               <Textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask anything about your business..."
-                className="flex-1 min-h-[56px] max-h-[200px] resize-none bg-[#f5f5f0] border-0 focus:ring-2 focus:ring-[#0f2f24]"
-                disabled={loading}
-                data-testid="chat-input"
+                placeholder="Type your question or answer here..."
+                className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+                style={{ background: 'var(--bg-primary)' }}
               />
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={!input.trim() || loading}
-                className="btn-forest h-14 w-14 rounded-sm p-0"
-                data-testid="send-message-btn"
+                className="btn-primary h-[60px] px-6"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -280,11 +276,11 @@ const Advisor = () => {
                   <Send className="w-5 h-5" />
                 )}
               </Button>
-            </div>
-            <p className="text-xs text-[#0f2f24]/40 mt-2 text-center">
+            </form>
+            <p className="text-xs mt-2 text-center" style={{ color: 'var(--text-muted)' }}>
               Press Enter to send, Shift+Enter for new line
             </p>
-          </form>
+          </div>
         </div>
       </div>
     </DashboardLayout>
