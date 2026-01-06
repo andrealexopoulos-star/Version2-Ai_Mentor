@@ -3337,6 +3337,238 @@ Citations:
         "usage": {"used": used_after, "limit": limit, "tier": tier, "month": mk}
     }
 
+
+
+# ==================== VERSIONED PROFILE HELPERS ====================
+
+def generate_version_number(current_version: Optional[str], change_type: str) -> str:
+    """Generate next version number based on change type"""
+    if not current_version:
+        return "v1.0"
+    
+    # Parse current version (e.g., "v1.2" -> major=1, minor=2)
+    version_str = current_version.lstrip('v')
+    parts = version_str.split('.')
+    major = int(parts[0]) if len(parts) > 0 else 1
+    minor = int(parts[1]) if len(parts) > 1 else 0
+    
+    # Major changes: new business model, pivot, major strategic shift
+    # Minor changes: data updates, refinements
+    if change_type == "major":
+        return f"v{major + 1}.0"
+    else:
+        return f"v{major}.{minor + 1}"
+
+
+def calculate_domain_confidence(domain_data: dict, domain_type: str) -> str:
+    """Calculate confidence level for a domain based on data completeness"""
+    if not domain_data:
+        return "low"
+    
+    # Count non-empty fields
+    filled_fields = sum(1 for v in domain_data.values() if v not in [None, "", [], {}])
+    total_fields = len(domain_data)
+    
+    if total_fields == 0:
+        return "low"
+    
+    completeness = (filled_fields / total_fields) * 100
+    
+    if completeness >= 70:
+        return "high"
+    elif completeness >= 40:
+        return "medium"
+    else:
+        return "low"
+
+
+def calculate_domain_completeness(domain_data: dict) -> int:
+    """Calculate completeness percentage for a domain"""
+    if not domain_data:
+        return 0
+    
+    filled_fields = sum(1 for v in domain_data.values() if v not in [None, "", [], {}, "low"])
+    total_fields = len([k for k in domain_data.keys() if k not in ['confidence_level', 'completeness_percentage', 'last_updated_at']])
+    
+    if total_fields == 0:
+        return 0
+    
+    return int((filled_fields / total_fields) * 100)
+
+
+async def create_profile_version(
+    user_id: str,
+    profile_data: dict,
+    change_type: str = "minor",
+    reason: str = "Profile update",
+    initiated_by: str = None
+) -> str:
+    """Create a new immutable version of the business profile"""
+    
+    # Get current active profile
+    current_profile = await db.business_profiles_versioned.find_one(
+        {"user_id": user_id, "status": "active"},
+        {"_id": 0}
+    )
+    
+    # Generate new version number
+    current_version = current_profile.get("version") if current_profile else None
+    new_version = generate_version_number(current_version, change_type)
+    
+    # Archive current profile if exists
+    if current_profile:
+        await db.business_profiles_versioned.update_one(
+            {"profile_id": current_profile["profile_id"]},
+            {"$set": {"status": "archived"}}
+        )
+    
+    # Build domains from profile data
+    now = datetime.now(timezone.utc).isoformat()
+    
+    business_identity = {
+        "business_name": profile_data.get("business_name"),
+        "legal_structure": profile_data.get("business_type"),
+        "industry": profile_data.get("industry"),
+        "country": profile_data.get("target_country", "Australia"),
+        "year_founded": profile_data.get("year_founded"),
+        "location": profile_data.get("location"),
+        "website": profile_data.get("website"),
+        "abn": profile_data.get("abn"),
+        "acn": profile_data.get("acn"),
+        "last_updated_at": now
+    }
+    business_identity["confidence_level"] = calculate_domain_confidence(business_identity, "business_identity")
+    business_identity["completeness_percentage"] = calculate_domain_completeness(business_identity)
+    
+    market = {
+        "target_customer_summary": profile_data.get("ideal_customer_profile"),
+        "primary_problem_solved": profile_data.get("main_challenges"),
+        "geography": profile_data.get("geographic_focus"),
+        "business_model": profile_data.get("business_model"),
+        "acquisition_channels": profile_data.get("customer_acquisition_channels"),
+        "ideal_customer_profile": profile_data.get("ideal_customer_profile"),
+        "target_market": profile_data.get("target_market"),
+        "last_updated_at": now
+    }
+    market["confidence_level"] = calculate_domain_confidence(market, "market")
+    market["completeness_percentage"] = calculate_domain_completeness(market)
+    
+    offer = {
+        "products_services_summary": profile_data.get("products_services") or profile_data.get("main_products_services"),
+        "pricing_model": profile_data.get("pricing_model"),
+        "sales_cycle_length": profile_data.get("sales_cycle_length"),
+        "value_proposition": profile_data.get("unique_value_proposition"),
+        "competitive_advantage": profile_data.get("competitive_advantages"),
+        "unique_value_proposition": profile_data.get("unique_value_proposition"),
+        "last_updated_at": now
+    }
+    offer["confidence_level"] = calculate_domain_confidence(offer, "offer")
+    offer["completeness_percentage"] = calculate_domain_completeness(offer)
+    
+    team = {
+        "team_size_range": profile_data.get("team_size"),
+        "key_roles_present": profile_data.get("key_team_members"),
+        "capability_strengths": profile_data.get("team_strengths"),
+        "capability_gaps": profile_data.get("team_gaps"),
+        "founder_background": profile_data.get("founder_background"),
+        "hiring_status": profile_data.get("hiring_status"),
+        "last_updated_at": now
+    }
+    team["confidence_level"] = calculate_domain_confidence(team, "team")
+    team["completeness_percentage"] = calculate_domain_completeness(team)
+    
+    strategy = {
+        "mission": profile_data.get("mission_statement"),
+        "short_term_goals": profile_data.get("short_term_goals"),
+        "long_term_goals": profile_data.get("long_term_goals"),
+        "current_challenges": profile_data.get("main_challenges"),
+        "growth_approach": profile_data.get("growth_strategy"),
+        "vision_statement": profile_data.get("vision_statement"),
+        "last_updated_at": now
+    }
+    strategy["confidence_level"] = calculate_domain_confidence(strategy, "strategy")
+    strategy["completeness_percentage"] = calculate_domain_completeness(strategy)
+    
+    # Calculate overall confidence summary
+    confidence_summary = {
+        "business_identity": business_identity["confidence_level"],
+        "market": market["confidence_level"],
+        "offer": offer["confidence_level"],
+        "team": team["confidence_level"],
+        "strategy": strategy["confidence_level"]
+    }
+    
+    # Calculate score
+    # Get onboarding data
+    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Build temporary profile dict for scoring
+    temp_profile = {**profile_data}
+    score_value = await calculate_business_score(temp_profile, onboarding, user_id)
+    
+    score = {
+        "value": score_value,
+        "calculated_at": now,
+        "score_version": "v1.0",
+        "explanation_summary": f"Score based on profile completeness, business depth, platform engagement, and performance indicators"
+    }
+    
+    # Create new profile version
+    profile_id = str(uuid.uuid4())
+    business_id = current_profile.get("business_id") if current_profile else str(uuid.uuid4())
+    
+    new_profile = {
+        "profile_id": profile_id,
+        "business_id": business_id,
+        "user_id": user_id,
+        "version": new_version,
+        "status": "active",
+        "created_at": now,
+        "created_by": initiated_by or user_id,
+        "last_reviewed_at": None,
+        "confidence_summary": confidence_summary,
+        "score": score,
+        "domains": {
+            "business_identity": business_identity,
+            "market": market,
+            "offer": offer,
+            "team": team,
+            "strategy": strategy
+        },
+        "change_log": [
+            {
+                "change_id": str(uuid.uuid4()),
+                "change_type": "created" if not current_profile else "updated",
+                "affected_domains": ["all"] if not current_profile else list(profile_data.keys()),
+                "initiated_by": initiated_by or user_id,
+                "initiated_at": now,
+                "reason_summary": reason
+            }
+        ]
+    }
+    
+    # Add previous change log if exists
+    if current_profile and current_profile.get("change_log"):
+        new_profile["change_log"] = current_profile["change_log"] + new_profile["change_log"]
+    
+    # Insert new version
+    await db.business_profiles_versioned.insert_one(new_profile)
+    
+    return profile_id
+
+
+async def get_active_profile(user_id: str) -> Optional[dict]:
+    """Get the active (current) business profile version"""
+    profile = await db.business_profiles_versioned.find_one(
+        {"user_id": user_id, "status": "active"},
+        {"_id": 0}
+    )
+    return profile
+
+
+# ==================== LEGACY BUSINESS PROFILE MODELS ====================
+
+class BusinessProfileUpdate(BaseModel):
 def calculate_profile_completeness(profile: dict) -> int:
     """Calculate profile completeness percentage"""
     if not profile:
