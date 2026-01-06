@@ -2550,8 +2550,12 @@ Rules:
 
 @api_router.put("/business-profile")
 async def update_business_profile(profile: BusinessProfileUpdate, current_user: dict = Depends(get_current_user)):
-    """Update user's business profile"""
+    """
+    Update user's business profile - creates new immutable version.
+    This maintains backward compatibility while using versioned system.
+    """
     now = datetime.now(timezone.utc).isoformat()
+    user_id = current_user["id"]
     
     profile_data = {k: v for k, v in profile.model_dump().items() if v is not None}
 
@@ -2559,16 +2563,15 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     computed_rag = compute_retention_rag(
         profile_data.get("industry"),
         profile_data.get("retention_known"),
-
         profile_data.get("retention_rate_range"),
     )
     if computed_rag:
         profile_data["retention_rag"] = computed_rag
 
-    profile_data["user_id"] = current_user["id"]
+    profile_data["user_id"] = user_id
     profile_data["updated_at"] = now
     
-    # Also update user's basic info
+    # Update user's basic info
     user_updates = {}
     if profile.business_name:
         user_updates["business_name"] = profile.business_name
@@ -2576,12 +2579,22 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
         user_updates["industry"] = profile.industry
     
     if user_updates:
-        await db.users.update_one({"id": current_user["id"]}, {"$set": user_updates})
+        await db.users.update_one({"id": user_id}, {"$set": user_updates})
     
+    # Update legacy profile (for backward compatibility)
     await db.business_profiles.update_one(
-        {"user_id": current_user["id"]},
+        {"user_id": user_id},
         {"$set": profile_data},
         upsert=True
+    )
+    
+    # Create new versioned profile
+    await create_profile_version(
+        user_id=user_id,
+        profile_data=profile_data,
+        change_type="minor",
+        reason="Profile update via UI",
+        initiated_by=user_id
     )
     
     return await get_business_profile(current_user)
