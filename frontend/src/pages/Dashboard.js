@@ -100,10 +100,45 @@ const Dashboard = () => {
   ];
 
   const setupSteps = [
-    { label: 'Account created', done: true },
-    { label: 'Business profile', done: !!user?.business_name },
-    { label: 'Upload documents', done: stats?.total_documents > 0 },
-    { label: 'Connect integrations', done: false },
+    { label: 'Account created', done: true, icon: CheckCircle2 },
+    { label: 'Business profile', done: !!user?.business_name, path: '/business-profile', icon: Building2 },
+    { label: 'Upload documents', done: stats?.total_documents > 0, path: '/data-center', icon: FolderOpen },
+    { label: 'Connect integrations', done: false, path: '/integrations', icon: Plug },
+  ];
+
+  const setupOptions = [
+    {
+      title: 'Complete Business Profile',
+      description: 'Add your business details for personalized AI advice',
+      icon: Building2,
+      path: '/business-profile',
+      color: '#0066FF',
+      done: !!user?.business_name
+    },
+    {
+      title: 'Upload Documents',
+      description: 'Add business plans, financials, or reports for AI analysis',
+      icon: FolderOpen,
+      path: '/data-center',
+      color: '#00C853',
+      done: stats?.total_documents > 0
+    },
+    {
+      title: 'Connect Integrations',
+      description: 'Link your CRM, accounting, and marketing tools',
+      icon: Plug,
+      path: '/integrations',
+      color: '#7C3AED',
+      done: false
+    },
+    {
+      title: 'Generate Your First SOP',
+      description: 'Create standard operating procedures for your business',
+      icon: FileText,
+      path: '/sop-generator',
+      color: '#FF9500',
+      done: false
+    }
   ];
 
   const completedSteps = setupSteps.filter(s => s.done).length;
