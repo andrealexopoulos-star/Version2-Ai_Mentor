@@ -7,7 +7,7 @@ import { apiClient } from '../lib/api';
 import { 
   MessageSquare, FileText, BarChart3, TrendingUp, 
   Plus, ArrowRight, ArrowUpRight, Loader2, Zap, Target,
-  CheckCircle2, Circle, Plug, Sparkles
+  CheckCircle2, Circle, Plug, Sparkles, Building2, FolderOpen, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
