@@ -62,12 +62,21 @@ const BusinessProfile = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await apiClient.put('/business-profile', profile);
+      console.log('Saving profile data:', profile);
+      const response = await apiClient.put('/business-profile', profile);
+      console.log('Save response:', response.data);
+      
       toast.success('Profile saved successfully!');
+      
+      // Refresh scores immediately after save
       await fetchScores();
+      
+      // Refresh profile data to confirm save
+      await fetchProfile();
     } catch (error) {
-      toast.error('Failed to save profile');
-      console.error(error);
+      const errorMsg = error.response?.data?.detail || error.message || 'Failed to save profile';
+      toast.error(errorMsg);
+      console.error('Save error:', error.response?.data || error);
     } finally {
       setSaving(false);
     }
