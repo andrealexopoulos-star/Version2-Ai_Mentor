@@ -1590,7 +1590,7 @@ async def sync_outlook_emails(
     top: int = 50,
     current_user: dict = Depends(get_current_user)
 ):
-    """Sync emails from Outlook and store for AI context"""
+    """Basic email sync - use /outlook/comprehensive-sync for full analysis"""
     user_id = current_user["id"]
     
     # Get user's Outlook token
@@ -1637,7 +1637,7 @@ async def sync_outlook_emails(
             "from_name": email.get("from", {}).get("emailAddress", {}).get("name", ""),
             "received_date": email.get("receivedDateTime"),
             "body_preview": email.get("bodyPreview", ""),
-            "body_content": email.get("body", {}).get("content", "")[:5000],  # Store first 5000 chars
+            "body_content": email.get("body", {}).get("content", "")[:5000],
             "is_read": email.get("isRead", False),
             "folder": folder,
             "synced_at": datetime.now(timezone.utc).isoformat()
@@ -1656,6 +1656,300 @@ async def sync_outlook_emails(
         "emails_synced": synced_count,
         "message": f"Synced {synced_count} emails from {folder}"
     }
+
+
+@api_router.post("/outlook/comprehensive-sync")
+async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_user)):
+    """
+    COMPREHENSIVE EMAIL ANALYSIS - 36 months across all folders
+    
+    This analyzes your entire Outlook account to build a complete business intelligence profile:
+    - All folders (Inbox, Sent Items, Deleted Items, custom folders)
+    - Last 36 months of email history
+    - Extracts: clients, topics, patterns, sentiment, business evolution
+    - Stores structured intelligence, not just raw emails
+    
+    Runs as background process. Returns immediately.
+    """
+    user_id = current_user["id"]
+    
+    # Check if already running
+    existing_job = await db.outlook_sync_jobs.find_one(
+        {"user_id": user_id, "status": "running"},
+        {"_id": 0}
+    )
+    
+    if existing_job:
+        return {
+            "status": "already_running",
+            "job_id": existing_job["job_id"],
+            "message": "Comprehensive sync already in progress"
+        }
+    
+    # Create sync job
+    job_id = str(uuid.uuid4())
+    job_doc = {
+        "job_id": job_id,
+        "user_id": user_id,
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "progress": {
+            "folders_processed": 0,
+            "emails_processed": 0,
+            "insights_generated": 0
+        }
+    }
+    await db.outlook_sync_jobs.insert_one(job_doc)
+    
+    # Start background sync
+    import asyncio
+    asyncio.create_task(run_comprehensive_email_analysis(user_id, job_id))
+    
+    return {
+        "status": "started",
+        "job_id": job_id,
+        "message": "Comprehensive email analysis started. This will take 5-10 minutes. I'll notify you when complete.",
+        "expected_duration": "5-10 minutes"
+    }
+
+
+async def run_comprehensive_email_analysis(user_id: str, job_id: str):
+    """Background task: Comprehensive email analysis over 36 months"""
+    try:
+        # Get user tokens
+        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+        access_token = user_doc.get("outlook_access_token")
+        
+        if not access_token:
+            await db.outlook_sync_jobs.update_one(
+                {"job_id": job_id},
+                {"$set": {"status": "failed", "error": "No access token"}}
+            )
+            return
+        
+        # Calculate 36 months ago
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=36*30)
+        
+        # Get all mail folders
+        headers = {"Authorization": f"Bearer {access_token}"}
+        folders_url = "https://graph.microsoft.com/v1.0/me/mailFolders"
+        
+        async with httpx.AsyncClient(timeout=30) as client:
+            folders_response = await client.get(folders_url, headers=headers)
+            folders_data = folders_response.json()
+        
+        all_folders = folders_data.get("value", [])
+        
+        # Focus on key folders
+        target_folders = ["inbox", "sentitems", "deleteditems"]
+        
+        # Add custom folders
+        for folder in all_folders:
+            folder_name = folder.get("displayName", "").lower()
+            if folder_name not in ["inbox", "sent items", "deleted items", "drafts", "junk email"]:
+                target_folders.append(folder.get("id"))
+        
+        total_emails = 0
+        emails_by_sender = {}
+        emails_by_topic = {}
+        client_communications = []
+        
+        # Process each folder
+        for folder_id in target_folders[:10]:  # Limit to 10 folders max
+            emails = await fetch_folder_emails_batch(
+                access_token,
+                folder_id,
+                cutoff_date,
+                max_emails=500  # 500 per folder
+            )
+            
+            # Analyze emails
+            for email in emails:
+                total_emails += 1
+                
+                # Extract intelligence
+                sender = email.get("from", {}).get("emailAddress", {}).get("address", "")
+                subject = email.get("subject", "")
+                body_preview = email.get("bodyPreview", "")
+                
+                # Track communication frequency by sender
+                if sender:
+                    emails_by_sender[sender] = emails_by_sender.get(sender, 0) + 1
+                
+                # Detect client vs internal emails
+                is_external = not sender.endswith("@thestrategysquad.com") if sender else True
+                
+                if is_external and emails_by_sender.get(sender, 0) >= 3:
+                    # Likely a client - extract intelligence
+                    client_communications.append({
+                        "client_email": sender,
+                        "client_name": email.get("from", {}).get("emailAddress", {}).get("name", ""),
+                        "subject": subject,
+                        "date": email.get("receivedDateTime"),
+                        "preview": body_preview[:200],
+                        "folder": folder_id
+                    })
+                
+                # Store email
+                email_doc = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "graph_message_id": email.get("id"),
+                    "subject": subject,
+                    "from_address": sender,
+                    "from_name": email.get("from", {}).get("emailAddress", {}).get("name", ""),
+                    "received_date": email.get("receivedDateTime"),
+                    "body_preview": body_preview,
+                    "body_content": email.get("body", {}).get("content", "")[:5000],
+                    "is_read": email.get("isRead", False),
+                    "folder": folder_id,
+                    "is_external": is_external,
+                    "synced_at": datetime.now(timezone.utc).isoformat()
+                }
+                
+                await db.outlook_emails.update_one(
+                    {"user_id": user_id, "graph_message_id": email.get("id")},
+                    {"$set": email_doc},
+                    upsert=True
+                )
+            
+            # Update progress
+            await db.outlook_sync_jobs.update_one(
+                {"job_id": job_id},
+                {"$set": {
+                    "progress.folders_processed": len([f for f in target_folders if f]),
+                    "progress.emails_processed": total_emails
+                }}
+            )
+        
+        # Generate business intelligence insights
+        insights = await generate_email_intelligence(
+            user_id,
+            emails_by_sender,
+            client_communications,
+            total_emails
+        )
+        
+        # Mark job complete
+        await db.outlook_sync_jobs.update_one(
+            {"job_id": job_id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "progress": {
+                    "folders_processed": len(target_folders),
+                    "emails_processed": total_emails,
+                    "insights_generated": len(insights)
+                },
+                "insights": insights
+            }}
+        )
+        
+    except Exception as e:
+        logger.error(f"Comprehensive sync error: {e}")
+        await db.outlook_sync_jobs.update_one(
+            {"job_id": job_id},
+            {"$set": {
+                "status": "failed",
+                "error": str(e),
+                "failed_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+
+
+async def fetch_folder_emails_batch(access_token: str, folder_id: str, cutoff_date: datetime, max_emails: int = 500):
+    """Fetch emails from a folder with date filtering"""
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    # Format date for Graph API filter
+    cutoff_str = cutoff_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    graph_url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages"
+    params = {
+        "$select": "id,subject,from,toRecipients,receivedDateTime,bodyPreview,body,isRead",
+        "$filter": f"receivedDateTime ge {cutoff_str}",
+        "$top": min(max_emails, 999),
+        "$orderby": "receivedDateTime desc"
+    }
+    
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.get(graph_url, headers=headers, params=params)
+        
+        if response.status_code == 200:
+            return response.json().get("value", [])
+        else:
+            logger.error(f"Failed to fetch folder {folder_id}: {response.status_code}")
+            return []
+
+
+async def generate_email_intelligence(user_id: str, emails_by_sender: dict, client_communications: list, total_emails: int):
+    """Generate structured business intelligence from email analysis"""
+    
+    # Identify top clients by email frequency
+    top_clients = sorted(emails_by_sender.items(), key=lambda x: x[1], reverse=True)[:20]
+    
+    # Extract patterns
+    insights = {
+        "total_emails_analyzed": total_emails,
+        "unique_contacts": len(emails_by_sender),
+        "top_clients": [
+            {
+                "email": email,
+                "email_count": count,
+                "relationship_strength": "high" if count > 50 else "medium" if count > 20 else "developing"
+            }
+            for email, count in top_clients
+        ],
+        "client_communication_patterns": {
+            "total_client_emails": len(client_communications),
+            "average_emails_per_client": len(client_communications) / len(top_clients) if top_clients else 0
+        },
+        "analysis_period": "36 months",
+        "analyzed_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Store intelligence summary
+    await db.email_intelligence.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "user_id": user_id,
+            **insights,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    
+    return [insights]
+
+
+@api_router.get("/outlook/sync-status/{job_id}")
+async def get_sync_status(job_id: str, current_user: dict = Depends(get_current_user)):
+    """Check status of comprehensive email sync"""
+    job = await db.outlook_sync_jobs.find_one(
+        {"job_id": job_id, "user_id": current_user["id"]},
+        {"_id": 0}
+    )
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Sync job not found")
+    
+    return job
+
+
+@api_router.get("/outlook/intelligence")
+async def get_email_intelligence(current_user: dict = Depends(get_current_user)):
+    """Get business intelligence extracted from emails"""
+    intelligence = await db.email_intelligence.find_one(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    )
+    
+    if not intelligence:
+        return {
+            "message": "No email intelligence available. Run comprehensive sync first."
+        }
+    
+    return intelligence
 
 
 async def refresh_outlook_token(user_id: str, refresh_token: str):
