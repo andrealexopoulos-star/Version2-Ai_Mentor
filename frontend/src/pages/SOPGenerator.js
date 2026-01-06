@@ -16,10 +16,12 @@ import { toast } from 'sonner';
 const SOPGenerator = () => {
   const [activeTab, setActiveTab] = useState('sop');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
   
-  const [sopForm, setSopForm] = useState({ topic: '', business_context: '' });
+  const [sopForm, setSopForm] = useState({ topic: '', business_context: '', document_id: null });
   const [checklistForm, setChecklistForm] = useState({ topic: '', context: '' });
   const [actionPlanForm, setActionPlanForm] = useState({ goal: '', timeline: '3 months', resources: '' });
 
