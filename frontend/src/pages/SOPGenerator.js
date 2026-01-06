@@ -185,6 +185,54 @@ const SOPGenerator = () => {
                           data-testid="sop-topic-input"
                         />
                       </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Upload Reference Document (Optional)</Label>
+                        <div className="border-2 border-dashed rounded-lg p-4" style={{ borderColor: 'var(--border-medium)' }}>
+                          <input
+                            type="file"
+                            onChange={handleFileUpload}
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            className="hidden"
+                            id="sop-file-upload"
+                            disabled={uploading}
+                          />
+                          <label 
+                            htmlFor="sop-file-upload"
+                            className="cursor-pointer flex flex-col items-center gap-2"
+                          >
+                            {uploadedFile ? (
+                              <>
+                                <Check className="w-8 h-8" style={{ color: 'var(--accent-success)' }} />
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                  {uploadedFile.filename}
+                                </p>
+                                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                  Click to change file
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                {uploading ? (
+                                  <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+                                ) : (
+                                  <FileText className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+                                )}
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                  {uploading ? 'Uploading...' : 'Upload document'}
+                                </p>
+                                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                  PDF, Word, Excel, Google Docs
+                                </p>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          Upload existing documents, templates, or processes. AI will use them to generate better SOPs.
+                        </p>
+                      </div>
+                      
                       <div className="space-y-2">
                         <Label>Business Context (Optional)</Label>
                         <Textarea
