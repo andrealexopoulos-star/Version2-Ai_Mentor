@@ -475,6 +475,9 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(password: str, hashed: str) -> bool:
+    """Verify password hash - returns False if hashed is None"""
+    if hashed is None:
+        return False
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 def create_token(user_id: str, email: str, role: str, account_id: Optional[str] = None) -> str:
@@ -888,7 +891,17 @@ async def register(user_data: UserCreate):
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
-    if not user or not verify_password(credentials.password, user["password"]):
+    
+    # Check if user exists
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if user has a password set (Google OAuth users have password=None)
+    if user.get("password") is None:
+        raise HTTPException(status_code=400, detail="This account uses Google sign-in. Please use 'Continue with Google'")
+    
+    # Verify password
+    if not verify_password(credentials.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     if not user.get("is_active", True):
