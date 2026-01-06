@@ -60,6 +60,20 @@ AI_MODEL_ADVANCED = "gpt-4o"  # For complex analysis tasks
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 app = FastAPI(title="Strategic Advisor API")
+
+# Add session middleware for OAuth
+app.add_middleware(SessionMiddleware, secret_key=os.environ['JWT_SECRET_KEY'])
+
+# Configure OAuth
+oauth = OAuth()
+oauth.register(
+    name='google',
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
