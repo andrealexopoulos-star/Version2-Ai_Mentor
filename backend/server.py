@@ -35,6 +35,10 @@ load_dotenv(ROOT_DIR / '.env')
 
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
