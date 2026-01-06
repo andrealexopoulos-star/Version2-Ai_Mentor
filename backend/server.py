@@ -1543,9 +1543,9 @@ async def outlook_login():
 
 
 @api_router.get("/auth/outlook/callback")
-async def outlook_callback(code: str, state: str, current_user: dict = Depends(get_current_user)):
-    """Handle Microsoft OAuth callback and store tokens"""
-    if state != "outlook_auth":
+async def outlook_callback(code: str, state: str = None):
+    """Handle Microsoft OAuth callback and store tokens - NO AUTH REQUIRED"""
+    if state and state != "outlook_auth":
         raise HTTPException(status_code=400, detail="Invalid state parameter")
     
     # Exchange code for tokens
@@ -1566,13 +1566,38 @@ async def outlook_callback(code: str, state: str, current_user: dict = Depends(g
         response = await client.post(token_url, data=payload)
         
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail=f"Token exchange failed: {response.text}")
+            error_text = response.text
+            # Redirect to frontend with error
+            from fastapi.responses import RedirectResponse
+            frontend_url = os.environ.get('FRONTEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')
+            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=auth_failed")
         
         token_data = response.json()
     
+    # Get user info from Microsoft Graph
+    access_token = token_data.get("access_token")
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    async with httpx.AsyncClient() as client:
+        user_response = await client.get(
+            "https://graph.microsoft.com/v1.0/me",
+            headers=headers
+        )
+        user_info = user_response.json()
+    
+    # Find user by email in our database
+    user_email = user_info.get("mail") or user_info.get("userPrincipalName")
+    our_user = await db.users.find_one({"email": user_email}, {"_id": 0})
+    
+    if not our_user:
+        # User not found - redirect with error
+        from fastapi.responses import RedirectResponse
+        frontend_url = os.environ.get('FRONTEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')
+        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
+    
     # Store tokens in user document
     await db.users.update_one(
-        {"id": current_user["id"]},
+        {"id": our_user["id"]},
         {"$set": {
             "outlook_access_token": token_data.get("access_token"),
             "outlook_refresh_token": token_data.get("refresh_token"),
@@ -1581,7 +1606,29 @@ async def outlook_callback(code: str, state: str, current_user: dict = Depends(g
         }}
     )
     
-    return {"status": "connected", "message": "Outlook connected successfully"}
+    # Trigger comprehensive sync in background
+    import asyncio
+    job_id = str(uuid.uuid4())
+    asyncio.create_task(start_comprehensive_sync_job(our_user["id"], job_id))
+    
+    # Redirect to frontend success page
+    from fastapi.responses import RedirectResponse
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')
+    return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true&job_id={job_id}")
+
+
+async def start_comprehensive_sync_job(user_id: str, job_id: str):
+    """Start comprehensive sync as background task"""
+    job_doc = {
+        "job_id": job_id,
+        "user_id": user_id,
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "progress": {"folders_processed": 0, "emails_processed": 0, "insights_generated": 0}
+    }
+    await db.outlook_sync_jobs.insert_one(job_doc)
+    
+    await run_comprehensive_email_analysis(user_id, job_id)
 
 
 @api_router.get("/outlook/emails/sync")
