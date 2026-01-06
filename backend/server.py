@@ -3846,33 +3846,57 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
 
 @api_router.get("/business-profile/scores")
 async def get_profile_scores(current_user: dict = Depends(get_current_user)):
-    """Get profile completeness and dynamic business score"""
+    """Get profile scores from versioned profile with confidence levels"""
     user_id = current_user["id"]
     
-    # Get profile
+    # Try versioned profile first
+    versioned_profile = await get_active_profile(user_id)
+    
+    if versioned_profile:
+        # Use pre-calculated score from versioned profile
+        score_data = versioned_profile.get("score", {})
+        confidence = versioned_profile.get("confidence_summary", {})
+        
+        # Calculate overall completeness from domains
+        domains = versioned_profile.get("domains", {})
+        domain_completeness = [
+            domains.get("business_identity", {}).get("completeness_percentage", 0),
+            domains.get("market", {}).get("completeness_percentage", 0),
+            domains.get("offer", {}).get("completeness_percentage", 0),
+            domains.get("team", {}).get("completeness_percentage", 0),
+            domains.get("strategy", {}).get("completeness_percentage", 0)
+        ]
+        overall_completeness = int(sum(domain_completeness) / len(domain_completeness)) if domain_completeness else 0
+        
+        return {
+            "completeness": overall_completeness,
+            "strength": score_data.get("value", 0),
+            "business_score": score_data.get("value", 0),
+            "score_explanation": score_data.get("explanation_summary", ""),
+            "confidence_summary": confidence,
+            "version": versioned_profile.get("version"),
+            "profile_id": versioned_profile.get("profile_id"),
+            "has_documents": await db.data_files.count_documents({"user_id": user_id}) > 0,
+            "document_count": await db.data_files.count_documents({"user_id": user_id}),
+            "onboarding_completed": (await db.onboarding.find_one({"user_id": user_id}, {"_id": 0}) or {}).get("completed", False)
+        }
+    
+    # Fallback to legacy profile calculation
     profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
-    
-    # Get onboarding data
     onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
-    
-    # Get data files count
     files_count = await db.data_files.count_documents({"user_id": user_id})
     
-    # Calculate scores
     completeness = calculate_profile_completeness(profile) if profile else 0
     business_score = await calculate_business_score(profile, onboarding, user_id) if profile else 0
     
     return {
         "completeness": completeness,
-        "strength": business_score,  # Using 'strength' key for backward compatibility
-        "business_score": business_score,  # New explicit name
+        "strength": business_score,
+        "business_score": business_score,
         "has_documents": files_count > 0,
         "document_count": files_count,
         "onboarding_completed": onboarding.get("completed", False) if onboarding else False
     }
-    
-    # Get data files count
-    files_count = await db.data_files.count_documents({"user_id": user_id})
     
     # Calculate scores
     completeness = calculate_profile_completeness(profile) if profile else 0
