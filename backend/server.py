@@ -16,6 +16,7 @@ import bcrypt
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import httpx
 from authlib.integrations.starlette_client import OAuth
+from urllib.parse import quote
 
 import base64
 import io
