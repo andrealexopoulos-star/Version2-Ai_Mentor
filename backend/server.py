@@ -1530,13 +1530,18 @@ async def outlook_login():
     """Initiate Microsoft OAuth flow for Outlook"""
     redirect_uri = f"{os.environ.get('REACT_APP_BACKEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')}/api/auth/outlook/callback"
     
+    # URL encode parameters to prevent malformed URLs
+    scope = "offline_access User.Read Mail.Read Mail.ReadBasic"
+    encoded_redirect = quote(redirect_uri, safe='')
+    encoded_scope = quote(scope, safe='')
+    
     auth_url = (
         f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/authorize?"
         f"client_id={AZURE_CLIENT_ID}&"
         f"response_type=code&"
-        f"redirect_uri={redirect_uri}&"
+        f"redirect_uri={encoded_redirect}&"
         f"response_mode=query&"
-        f"scope=offline_access User.Read Mail.Read Mail.ReadBasic&"
+        f"scope={encoded_scope}&"
         f"state=outlook_auth"
     )
     
