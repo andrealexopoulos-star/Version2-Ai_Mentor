@@ -52,6 +52,7 @@ const OnboardingWizard = () => {
 
   useEffect(() => {
     checkOnboardingStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkOnboardingStatus = async () => {

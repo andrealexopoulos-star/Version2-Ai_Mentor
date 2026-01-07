@@ -24,6 +24,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     checkOnboarding();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkOnboarding = async () => {
