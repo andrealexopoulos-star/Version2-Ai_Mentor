@@ -28,7 +28,6 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import IntelCentre from "./pages/IntelCentre";
 import ProfileImport from "./pages/ProfileImport";
-import Blog from "./pages/Blog";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -79,8 +78,6 @@ function AppRoutes() {
       <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/terms" element={<TermsAndConditions />} />
-      <Route path="/blog" element={<Blog />} />
-      <Route path="/blog/:slug" element={<Blog />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
