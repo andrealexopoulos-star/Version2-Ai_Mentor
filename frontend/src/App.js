@@ -28,6 +28,7 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import IntelCentre from "./pages/IntelCentre";
 import ProfileImport from "./pages/ProfileImport";
+import OutlookTest from "./pages/OutlookTest";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -91,6 +92,7 @@ function AppRoutes() {
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
       <Route path="/intel-centre" element={<ProtectedRoute><IntelCentre /></ProtectedRoute>} />
+      <Route path="/outlook-test" element={<ProtectedRoute><OutlookTest /></ProtectedRoute>} />
       <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
       <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
       <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
