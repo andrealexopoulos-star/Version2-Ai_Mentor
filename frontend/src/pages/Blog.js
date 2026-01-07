@@ -321,7 +321,7 @@ Traditional excels at complex organizational change. AI excels at tactical execu
 
 Despite AI advantages, traditional consultants excel at:
 - Major organizational transformation
-- M&A advisory and due diligence
+- Mergers and acquisitions (M&amp;A) advisory and due diligence
 - Regulatory compliance in complex industries
 - Situations requiring deep industry connections
 - Board-level strategy for large enterprises
