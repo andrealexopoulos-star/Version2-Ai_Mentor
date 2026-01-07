@@ -78,6 +78,7 @@ const Landing = () => {
           </div>
           <div className="hidden md:flex items-center gap-8">
             <button onClick={() => navigate('/pricing')} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Pricing</button>
+            <button onClick={() => navigate('/blog')} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Blog</button>
             <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Features</button>
             <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">How It Works</button>
           </div>
