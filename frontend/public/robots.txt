@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /blog
+Allow: /blog/*
+Disallow: /dashboard
+Disallow: /advisor
+Disallow: /business-profile
+Disallow: /data-center
+Disallow: /admin
+
+Sitemap: https://www.thestrategysquad.com.au/sitemap.xml
