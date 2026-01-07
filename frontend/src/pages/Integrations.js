@@ -208,10 +208,20 @@ const Integrations = () => {
 
   const handleOutlookConnect = async () => {
     try {
+      console.log('Starting Outlook connection...');
       const response = await apiClient.get('/auth/outlook/login');
-      window.location.href = response.data.auth_url;
+      console.log('Got auth URL:', response.data);
+      
+      if (response.data && response.data.auth_url) {
+        console.log('Redirecting to:', response.data.auth_url);
+        window.location.href = response.data.auth_url;
+      } else {
+        toast.error('No auth URL received from server');
+        console.error('Invalid response:', response.data);
+      }
     } catch (error) {
-      toast.error('Failed to initiate Outlook connection');
+      console.error('Outlook connection error:', error);
+      toast.error('Failed to initiate Outlook connection: ' + (error.message || 'Unknown error'));
     }
   };
 
