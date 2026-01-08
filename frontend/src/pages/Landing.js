@@ -116,8 +116,8 @@ const Landing = () => {
               </div>
               
               <h1 className="font-bold text-4xl sm:text-5xl lg:text-6xl text-slate-900 leading-tight">
-                Your Personalised AI Business Advisor That 
-                <span className="text-blue-600"> Actually Gets You</span>
+                Your Business Soundboard —
+                <span className="text-blue-600"> Powered by AI, Grounded in Experience</span>
               </h1>
               
               <p className="text-lg text-slate-700 max-w-xl leading-relaxed">
