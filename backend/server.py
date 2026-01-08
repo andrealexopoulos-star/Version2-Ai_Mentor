@@ -1557,7 +1557,7 @@ async def outlook_callback(code: str, state: str = None):
     # Exchange code for tokens
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
     
-    redirect_uri = f"{os.environ.get('REACT_APP_BACKEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')}/api/auth/outlook/callback"
+    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
     
     payload = {
         "client_id": AZURE_CLIENT_ID,
@@ -1575,7 +1575,7 @@ async def outlook_callback(code: str, state: str = None):
             error_text = response.text
             # Redirect to frontend with error
             from fastapi.responses import RedirectResponse
-            frontend_url = os.environ.get('FRONTEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')
+            frontend_url = os.environ['FRONTEND_URL']
             return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=auth_failed")
         
         token_data = response.json()
@@ -1598,7 +1598,7 @@ async def outlook_callback(code: str, state: str = None):
     if not our_user:
         # User not found - redirect with error
         from fastapi.responses import RedirectResponse
-        frontend_url = os.environ.get('FRONTEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')
+        frontend_url = os.environ['FRONTEND_URL']
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
     
     # Store tokens in user document
@@ -1619,7 +1619,7 @@ async def outlook_callback(code: str, state: str = None):
     
     # Redirect to frontend success page
     from fastapi.responses import RedirectResponse
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')
+    frontend_url = os.environ['FRONTEND_URL']
     return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true&job_id={job_id}")
 
 
