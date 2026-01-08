@@ -1528,7 +1528,7 @@ async def google_exchange(payload: GoogleExchangeRequest):
 @api_router.get("/auth/outlook/login")
 async def outlook_login():
     """Initiate Microsoft OAuth flow for Outlook"""
-    redirect_uri = f"{os.environ.get('REACT_APP_BACKEND_URL', 'https://smart-advisor-33.preview.emergentagent.com')}/api/auth/outlook/callback"
+    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
     
     # URL encode parameters to prevent malformed URLs
     scope = "offline_access User.Read Mail.Read Mail.ReadBasic"
