@@ -264,33 +264,79 @@ const Landing = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500 opacity-10 blur-[150px]" />
         
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-            <div className="lg:col-span-5 space-y-6">
-              <span className="text-blue-400 font-bold text-sm tracking-wide uppercase">How It Works</span>
-              <h2 className="font-bold text-3xl md:text-4xl">
-                Three steps to
-                <span className="text-blue-400"> personalised business clarity</span>
-              </h2>
-              <p className="text-slate-300 text-lg">
-                Get your personalised AI business advisor in minutes. No complex setup, no lengthy onboarding.
-              </p>
-            </div>
-            
-            <div className="lg:col-span-7 space-y-6">
-              {[
-                { num: '01', title: 'Share Your Business Story', desc: 'Fill your profile and upload key documents. The more context you provide, the more personalised your AI advisor becomes.' },
-                { num: '02', title: 'Get Personalised AI Superpowers', desc: 'Chat with an AI that truly understands YOUR business. Ask anything — strategy, operations, marketing, finance. Get advice tailored to you.' },
-                { num: '03', title: 'Execute & Grow', desc: 'Get personalised SOPs, action plans, and strategies built for YOUR reality. Implement with confidence.' }
-              ].map((step, i) => (
-                <div key={step.num} className="flex gap-6 items-start bg-white/5 rounded-2xl p-6 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors">
-                  <span className="font-bold text-4xl text-blue-500/40">{step.num}</span>
-                  <div>
-                    <h4 className="font-bold text-xl mb-2 text-white">{step.title}</h4>
-                    <p className="text-slate-300 leading-relaxed">{step.desc}</p>
+          <div className="text-center mb-16">
+            <span className="text-blue-400 font-bold text-sm tracking-wide uppercase">How It Works</span>
+            <h2 className="font-bold text-3xl md:text-4xl mt-4 mb-4">
+              From sign-up to
+              <span className="text-blue-400"> strategic execution</span> in 5 simple steps
+            </h2>
+            <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+              Get your personalised AI business soundboard working for you in under 15 minutes
+            </p>
+          </div>
+          
+          <div className="max-w-4xl mx-auto space-y-6">
+            {[
+              { 
+                num: '01', 
+                title: 'Sign Up — Free Account', 
+                desc: 'Create your account in 60 seconds. No credit card required. No lengthy forms. Just your name, email, and you\'re in.',
+                icon: '✓'
+              },
+              { 
+                num: '02', 
+                title: 'Complete Onboarding Questionnaire', 
+                desc: 'Answer 7 quick questions about your business stage, goals, and challenges. Takes 5-10 minutes. The AI learns your business from the start.',
+                icon: '📋'
+              },
+              { 
+                num: '03', 
+                title: 'Integrate Business Tools', 
+                desc: 'Connect your CRM, accounting software, and email (optional but powerful). The more integrated, the smarter your AI becomes about YOUR business reality.',
+                icon: '🔗'
+              },
+              { 
+                num: '04', 
+                title: 'Start Getting Strategic Advice', 
+                desc: 'Chat with MyAdvisor, run business diagnoses, get strategic suggestions daily. Your AI mentor knows your business, your goals, your constraints — and guides you accordingly.',
+                icon: '💡'
+              },
+              { 
+                num: '05', 
+                title: 'Execute & Grow', 
+                desc: 'Implement AI-generated SOPs, action plans, and strategies built specifically for your business. Track progress as your Business Score evolves with every decision you execute.',
+                icon: '🚀'
+              }
+            ].map((step, i) => (
+              <div key={step.num} className="flex gap-6 items-start bg-white/5 rounded-2xl p-8 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all hover:scale-[1.02]">
+                <div className="flex-shrink-0">
+                  <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl font-bold">
+                    {step.num}
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-xl mb-3 text-white">{step.title}</h4>
+                  <p className="text-slate-300 leading-relaxed text-base">{step.desc}</p>
+                </div>
+                <div className="text-3xl opacity-50">
+                  {step.icon}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <Button 
+              onClick={() => navigate('/register')}
+              size="lg" 
+              className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6 shadow-xl shadow-blue-600/30"
+            >
+              Start Your Free Account Now
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <p className="text-slate-400 text-sm mt-4">
+              Setup takes 15 minutes • Strategic advice starts immediately
+            </p>
           </div>
         </div>
       </section>
