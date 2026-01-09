@@ -4054,6 +4054,12 @@ UPLOADED DOCUMENTS YOU CAN REFERENCE:
 
 EMAIL INTELLIGENCE (LAST 36 MONTHS):
 {format_email_intelligence(context.get('email_intelligence', {}), context.get('outlook_emails', []))}
+
+CALENDAR INTELLIGENCE:
+{format_calendar_intelligence(context.get('calendar_intelligence', {}), context.get('calendar_events', []))}
+
+EMAIL PRIORITY INSIGHTS:
+{format_email_priority(context.get('email_priority', {}))}
 """
     
     # Style guide with examples
