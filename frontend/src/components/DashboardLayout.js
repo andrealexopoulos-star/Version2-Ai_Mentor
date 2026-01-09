@@ -13,7 +13,8 @@ import {
   LayoutDashboard, MessageSquare, BarChart3, FileText, 
   Target, FolderOpen, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Database, Building2,
-  Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Inbox, Calendar
+  Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Inbox, Calendar,
+  Lightbulb
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
@@ -36,7 +37,8 @@ const DashboardLayout = ({ children }) => {
     { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
     { icon: Zap, label: 'Strategic Suggestions', path: '/oac' },
     { type: 'divider', label: 'Tools' },
-    { icon: MessageSquare, label: 'Chief of Strategy', path: '/advisor' },
+    { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard', isNew: true },
+    { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
     { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox', isNew: true },
     { icon: Calendar, label: 'Calendar', path: '/calendar', isNew: true },
     { icon: Target, label: 'Intel Centre', path: '/intel-centre' },
