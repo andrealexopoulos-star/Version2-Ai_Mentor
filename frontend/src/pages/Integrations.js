@@ -343,7 +343,13 @@ const Integrations = () => {
                     <h4 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                       {integration.name}
                     </h4>
-                    {integration.popular && (
+                    {isConnected && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs font-medium text-green-700">Connected</span>
+                      </div>
+                    )}
+                    {integration.popular && !isConnected && (
                       <span 
                         className="text-xs px-2 py-0.5 rounded-full"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
