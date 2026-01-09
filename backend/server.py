@@ -3917,6 +3917,24 @@ async def build_advisor_context(user_id: str) -> dict:
         {"_id": 0}
     )
     
+    # Calendar intelligence
+    calendar_intel = await db.calendar_intelligence.find_one(
+        {"user_id": user_id},
+        {"_id": 0}
+    )
+    
+    # Calendar events (upcoming)
+    calendar_events = await db.calendar_events.find(
+        {"user_id": user_id},
+        {"_id": 0, "subject": 1, "start": 1, "end": 1, "attendees": 1, "location": 1}
+    ).sort("start", 1).limit(10).to_list(10)
+    
+    # Email priority analysis
+    email_priority = await db.email_priority_analysis.find_one(
+        {"user_id": user_id},
+        {"_id": 0}
+    )
+    
     return {
         "user": user,
         "profile": profile or {},
@@ -3926,7 +3944,10 @@ async def build_advisor_context(user_id: str) -> dict:
         "web_sources": web_sources,
         "sops": sops,
         "outlook_emails": outlook_emails,
-        "email_intelligence": email_intel or {}
+        "email_intelligence": email_intel or {},
+        "calendar_intelligence": calendar_intel or {},
+        "calendar_events": calendar_events,
+        "email_priority": email_priority or {}
     }
 
 
