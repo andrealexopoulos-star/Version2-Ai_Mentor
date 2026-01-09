@@ -36,7 +36,7 @@ const DashboardLayout = ({ children }) => {
     { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
     { icon: Zap, label: 'Strategic Suggestions', path: '/oac' },
     { type: 'divider', label: 'Tools' },
-    { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
+    { icon: MessageSquare, label: 'Chief of Strategy', path: '/advisor' },
     { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox', isNew: true },
     { icon: Calendar, label: 'Calendar', path: '/calendar', isNew: true },
     { icon: Target, label: 'Intel Centre', path: '/intel-centre' },
