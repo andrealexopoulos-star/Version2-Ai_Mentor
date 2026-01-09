@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { 
   Plug, Check, ExternalLink, Search, X,
-  Lock, ArrowRight, Zap, AlertCircle
+  Lock, ArrowRight, Zap, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -15,6 +15,7 @@ const Integrations = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showModal, setShowModal] = useState(null);
   const [connecting, setConnecting] = useState(null);
+  const [outlookStatus, setOutlookStatus] = useState({ connected: false, emails_synced: 0 });
 
   const categories = [
     { id: 'all', label: 'All' },
