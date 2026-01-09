@@ -13,7 +13,7 @@ import {
   LayoutDashboard, MessageSquare, BarChart3, FileText, 
   Target, FolderOpen, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Database, Building2,
-  Plug, Zap, Sun, Moon, Bell, Search, HelpCircle
+  Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Inbox
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
@@ -37,7 +37,8 @@ const DashboardLayout = ({ children }) => {
     { icon: Zap, label: 'Strategic Suggestions', path: '/oac' },
     { type: 'divider', label: 'Tools' },
     { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
-    { icon: Target, label: 'Intel Centre', path: '/intel-centre', isNew: true },
+    { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox', isNew: true },
+    { icon: Target, label: 'Intel Centre', path: '/intel-centre' },
     { type: 'divider', label: 'Workspace' },
     { icon: Database, label: 'Data Centre', path: '/data-center' },
     { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
