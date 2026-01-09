@@ -2051,6 +2051,368 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
     }
 
 
+# ==================== CALENDAR INTEGRATION ====================
+
+@api_router.get("/outlook/calendar/events")
+async def get_calendar_events(
+    days_ahead: int = 14,
+    days_back: int = 7,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get calendar events for AI context"""
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    
+    if not user_doc.get("outlook_access_token"):
+        raise HTTPException(status_code=400, detail="Outlook not connected")
+    
+    access_token = user_doc.get("outlook_access_token")
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    # Calculate date range
+    start_date = (datetime.now(timezone.utc) - timedelta(days=days_back)).isoformat()
+    end_date = (datetime.now(timezone.utc) + timedelta(days=days_ahead)).isoformat()
+    
+    graph_url = "https://graph.microsoft.com/v1.0/me/calendarView"
+    params = {
+        "startDateTime": start_date,
+        "endDateTime": end_date,
+        "$select": "subject,start,end,location,attendees,organizer,bodyPreview,isAllDay,importance",
+        "$orderby": "start/dateTime",
+        "$top": 100
+    }
+    
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(graph_url, headers=headers, params=params)
+        
+        if response.status_code == 401:
+            # Token expired - try refresh
+            await refresh_outlook_token(current_user["id"], user_doc.get("outlook_refresh_token"))
+            user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+            headers = {"Authorization": f"Bearer {user_doc.get('outlook_access_token')}"}
+            response = await client.get(graph_url, headers=headers, params=params)
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"Failed to fetch calendar: {response.text}")
+        
+        events_data = response.json()
+    
+    events = []
+    for event in events_data.get("value", []):
+        events.append({
+            "id": event.get("id"),
+            "subject": event.get("subject"),
+            "start": event.get("start", {}).get("dateTime"),
+            "end": event.get("end", {}).get("dateTime"),
+            "location": event.get("location", {}).get("displayName"),
+            "attendees": [a.get("emailAddress", {}).get("name") for a in event.get("attendees", [])],
+            "organizer": event.get("organizer", {}).get("emailAddress", {}).get("name"),
+            "preview": event.get("bodyPreview", "")[:200],
+            "is_all_day": event.get("isAllDay", False),
+            "importance": event.get("importance", "normal")
+        })
+    
+    # Store for AI context
+    await db.calendar_events.delete_many({"user_id": current_user["id"]})
+    if events:
+        for e in events:
+            e["user_id"] = current_user["id"]
+            e["synced_at"] = datetime.now(timezone.utc).isoformat()
+        await db.calendar_events.insert_many(events)
+    
+    return {
+        "events": events,
+        "total": len(events),
+        "date_range": {"start": start_date, "end": end_date}
+    }
+
+
+@api_router.post("/outlook/calendar/sync")
+async def sync_calendar(current_user: dict = Depends(get_current_user)):
+    """Sync calendar and generate AI insights"""
+    # First fetch events
+    events_response = await get_calendar_events(days_ahead=30, days_back=7, current_user=current_user)
+    events = events_response.get("events", [])
+    
+    # Generate calendar intelligence
+    if events:
+        upcoming_meetings = len([e for e in events if e.get("start") and datetime.fromisoformat(e["start"].replace("Z", "+00:00")) > datetime.now(timezone.utc)])
+        meeting_load = "heavy" if upcoming_meetings > 20 else "moderate" if upcoming_meetings > 10 else "light"
+        
+        # Analyze meeting patterns
+        attendee_frequency = {}
+        for event in events:
+            for attendee in event.get("attendees", []):
+                attendee_frequency[attendee] = attendee_frequency.get(attendee, 0) + 1
+        
+        top_collaborators = sorted(attendee_frequency.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        calendar_intel = {
+            "user_id": current_user["id"],
+            "total_events": len(events),
+            "upcoming_meetings": upcoming_meetings,
+            "meeting_load": meeting_load,
+            "top_collaborators": [{"name": name, "meetings": count} for name, count in top_collaborators],
+            "synced_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.calendar_intelligence.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": calendar_intel},
+            upsert=True
+        )
+    
+    return {
+        "status": "synced",
+        "events_synced": len(events),
+        "message": f"Calendar synced: {len(events)} events"
+    }
+
+
+# ==================== SMART EMAIL INTELLIGENCE ====================
+
+@api_router.post("/email/analyze-priority")
+async def analyze_email_priority(current_user: dict = Depends(get_current_user)):
+    """
+    AI-powered email prioritization based on business goals.
+    Analyzes recent emails and provides strategic priority rankings.
+    """
+    user_id = current_user["id"]
+    
+    # Get business profile for context
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    business_goals = profile.get("short_term_goals", "") if profile else ""
+    business_challenges = profile.get("main_challenges", "") if profile else ""
+    
+    # Get recent unread emails (or all recent)
+    recent_emails = await db.outlook_emails.find(
+        {"user_id": user_id},
+        {"_id": 0, "subject": 1, "from_address": 1, "from_name": 1, "body_preview": 1, "received_date": 1, "is_read": 1, "id": 1}
+    ).sort("received_date", -1).limit(50).to_list(50)
+    
+    if not recent_emails:
+        return {"message": "No emails to analyze. Please sync your Outlook first."}
+    
+    # Get email intelligence for relationship context
+    email_intel = await db.email_intelligence.find_one({"user_id": user_id}, {"_id": 0})
+    top_clients = email_intel.get("top_clients", []) if email_intel else []
+    high_value_contacts = [c.get("email") for c in top_clients if c.get("relationship_strength") == "high"]
+    
+    # Prepare email summaries for AI
+    email_summaries = []
+    for i, email in enumerate(recent_emails[:30]):
+        email_summaries.append(f"{i+1}. From: {email.get('from_name', email.get('from_address', 'Unknown'))} | Subject: {email.get('subject', 'No subject')} | Preview: {email.get('body_preview', '')[:100]}")
+    
+    # AI prompt for prioritization
+    priority_prompt = f"""You are a strategic business advisor analyzing emails for a business owner.
+
+BUSINESS CONTEXT:
+- Goals: {business_goals or 'Not specified'}
+- Challenges: {business_challenges or 'Not specified'}
+- High-value contacts: {', '.join(high_value_contacts[:10]) if high_value_contacts else 'Not yet identified'}
+
+EMAILS TO PRIORITIZE:
+{chr(10).join(email_summaries)}
+
+Analyze these emails and return a JSON response with this structure:
+{{
+    "high_priority": [
+        {{"email_index": 1, "reason": "Why this is urgent", "suggested_action": "What to do"}}
+    ],
+    "medium_priority": [
+        {{"email_index": 2, "reason": "Why this matters", "suggested_action": "What to do"}}
+    ],
+    "low_priority": [
+        {{"email_index": 3, "reason": "Can wait", "suggested_action": "What to do"}}
+    ],
+    "strategic_insights": "Brief insight about email patterns and what they reveal about the business"
+}}
+
+Prioritize based on:
+1. Revenue impact potential
+2. Relationship importance
+3. Time sensitivity
+4. Alignment with stated business goals
+5. Problem resolution urgency
+
+Return ONLY valid JSON, no markdown."""
+
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_KEY,
+            session_id=f"email_priority_{user_id}_{datetime.now().timestamp()}",
+            system_message="You are a strategic business email analyst. Always respond with valid JSON only."
+        )
+        chat.with_model("openai", AI_MODEL)
+        
+        response = await chat.send_message(UserMessage(text=priority_prompt))
+        
+        # Parse AI response
+        import json
+        try:
+            priority_analysis = json.loads(response.strip())
+        except:
+            # Try to extract JSON from response
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                priority_analysis = json.loads(json_match.group())
+            else:
+                priority_analysis = {"error": "Could not parse AI response", "raw": response[:500]}
+        
+        # Enrich with email details
+        def enrich_priority(items):
+            enriched = []
+            for item in items:
+                idx = item.get("email_index", 1) - 1
+                if 0 <= idx < len(recent_emails):
+                    email = recent_emails[idx]
+                    enriched.append({
+                        **item,
+                        "email_id": email.get("id"),
+                        "from": email.get("from_name") or email.get("from_address"),
+                        "subject": email.get("subject"),
+                        "received": email.get("received_date")
+                    })
+            return enriched
+        
+        if "high_priority" in priority_analysis:
+            priority_analysis["high_priority"] = enrich_priority(priority_analysis.get("high_priority", []))
+            priority_analysis["medium_priority"] = enrich_priority(priority_analysis.get("medium_priority", []))
+            priority_analysis["low_priority"] = enrich_priority(priority_analysis.get("low_priority", []))
+        
+        # Store analysis
+        await db.email_priority_analysis.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "user_id": user_id,
+                "analysis": priority_analysis,
+                "emails_analyzed": len(recent_emails),
+                "analyzed_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
+        
+        return priority_analysis
+        
+    except Exception as e:
+        logger.error(f"Email priority analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+
+@api_router.post("/email/suggest-reply/{email_id}")
+async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Generate strategic reply suggestions for a specific email.
+    """
+    user_id = current_user["id"]
+    
+    # Get the email
+    email = await db.outlook_emails.find_one(
+        {"user_id": user_id, "id": email_id},
+        {"_id": 0}
+    )
+    
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    # Get business context
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    
+    # Get communication history with this sender
+    sender = email.get("from_address", "")
+    history = await db.outlook_emails.find(
+        {"user_id": user_id, "from_address": sender},
+        {"_id": 0, "subject": 1, "body_preview": 1}
+    ).sort("received_date", -1).limit(5).to_list(5)
+    
+    history_context = "\n".join([f"- {h.get('subject')}: {h.get('body_preview', '')[:100]}" for h in history])
+    
+    reply_prompt = f"""You are helping a business owner craft a strategic reply to an email.
+
+BUSINESS OWNER: {user.get('name', 'Business Owner')}
+BUSINESS: {profile.get('business_name', user.get('business_name', 'Their business')) if profile else user.get('business_name', 'Their business')}
+COMMUNICATION STYLE: {profile.get('communication_style', 'Professional and friendly') if profile else 'Professional and friendly'}
+
+EMAIL TO REPLY TO:
+From: {email.get('from_name', email.get('from_address', 'Unknown'))}
+Subject: {email.get('subject', 'No subject')}
+Content: {email.get('body_content', email.get('body_preview', ''))[:2000]}
+
+RECENT HISTORY WITH THIS CONTACT:
+{history_context if history_context else 'No previous history'}
+
+Generate 3 reply options with different tones/approaches:
+
+1. DIRECT & EFFICIENT - Get to the point quickly
+2. RELATIONSHIP-BUILDING - Warm, builds rapport
+3. STRATEGIC - Positions for future opportunity
+
+For each, provide:
+- A suggested subject line (if reply changes topic)
+- The full reply text (ready to send)
+- Strategic note (why this approach)
+
+Format as JSON:
+{{
+    "replies": [
+        {{
+            "style": "direct",
+            "subject": "Re: ...",
+            "body": "Full reply text...",
+            "strategic_note": "Why this works..."
+        }}
+    ],
+    "context_insight": "What this email tells us about the relationship/opportunity"
+}}"""
+
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_KEY,
+            session_id=f"reply_suggest_{user_id}_{email_id}",
+            system_message="You are an expert business communication strategist. Generate professional, effective email replies."
+        )
+        chat.with_model("openai", AI_MODEL)
+        
+        response = await chat.send_message(UserMessage(text=reply_prompt))
+        
+        import json
+        try:
+            suggestions = json.loads(response.strip())
+        except:
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                suggestions = json.loads(json_match.group())
+            else:
+                suggestions = {"error": "Could not parse response", "raw_response": response[:1000]}
+        
+        return {
+            "email_id": email_id,
+            "original_subject": email.get("subject"),
+            "from": email.get("from_name") or email.get("from_address"),
+            **suggestions
+        }
+        
+    except Exception as e:
+        logger.error(f"Reply suggestion error: {e}")
+        raise HTTPException(status_code=500, detail=f"Suggestion failed: {str(e)}")
+
+
+@api_router.get("/email/priority-inbox")
+async def get_priority_inbox(current_user: dict = Depends(get_current_user)):
+    """Get the latest email priority analysis"""
+    analysis = await db.email_priority_analysis.find_one(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    )
+    
+    if not analysis:
+        return {"message": "No priority analysis available. Run /email/analyze-priority first."}
+    
+    return analysis
+
+
 # ==================== INVITES (ENTERPRISE ONLY) ====================
 
 def tier_allows_seats(account: dict) -> bool:
