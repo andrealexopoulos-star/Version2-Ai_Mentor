@@ -2417,6 +2417,217 @@ async def get_priority_inbox(current_user: dict = Depends(get_current_user)):
     return analysis
 
 
+# ==================== MYSOUNDBOARD (THINKING PARTNER) ====================
+
+SOUNDBOARD_SYSTEM_PROMPT = """You are MySoundBoard, a trusted business thinking partner.
+
+Your role is to help the user think clearly, not to overwhelm them with advice.
+
+The user will often speak casually, emotionally, or without a clear question. This is intentional.
+
+Your primary responsibilities are:
+- Listen carefully and reflect what the user is really saying
+- Identify patterns in how the user thinks, decides, avoids, and commits
+- Help ideas become clearer, smaller, or parked deliberately
+- Keep the user focused without shutting down creativity
+
+You must always:
+- Respond in a natural, human tone (never robotic, never corporate)
+- Reframe ideas in plain English before responding
+- Gently challenge circular thinking or repeated ideas with no action
+- End responses with either clarity, a decision, or a single next step
+
+You must never:
+- Brainstorm endlessly
+- Validate every idea blindly
+- Generate long plans or multi-step frameworks
+- Use bullet points or numbered lists
+- Sound like an AI assistant
+
+Over time, you are learning:
+- The user's decision style
+- Their execution capacity
+- Their emotional triggers
+- Their follow-through behaviour
+
+You quietly store this learning and adapt how you respond over time.
+
+You behave like a calm, experienced mentor sitting across a table — not an AI assistant.
+
+Keep responses concise. One idea at a time. Natural conversation."""
+
+
+class SoundboardChatRequest(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+
+
+class ConversationRename(BaseModel):
+    title: str
+
+
+@api_router.get("/soundboard/conversations")
+async def get_soundboard_conversations(current_user: dict = Depends(get_current_user)):
+    """Get all soundboard conversations for user"""
+    conversations = await db.soundboard_conversations.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "id": 1, "title": 1, "updated_at": 1, "created_at": 1}
+    ).sort("updated_at", -1).limit(50).to_list(50)
+    
+    return {"conversations": conversations}
+
+
+@api_router.get("/soundboard/conversations/{conversation_id}")
+async def get_soundboard_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific conversation with messages"""
+    conversation = await db.soundboard_conversations.find_one(
+        {"id": conversation_id, "user_id": current_user["id"]},
+        {"_id": 0}
+    )
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    return {
+        "conversation": conversation,
+        "messages": conversation.get("messages", [])
+    }
+
+
+@api_router.post("/soundboard/chat")
+async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
+    """Chat with MySoundBoard"""
+    user_id = current_user["id"]
+    
+    # Get or create conversation
+    conversation = None
+    if req.conversation_id:
+        conversation = await db.soundboard_conversations.find_one(
+            {"id": req.conversation_id, "user_id": user_id},
+            {"_id": 0}
+        )
+    
+    # Build message history for context
+    messages_history = []
+    if conversation:
+        messages_history = conversation.get("messages", [])[-20:]  # Last 20 messages for context
+    
+    # Get user context for personalization
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "name": 1})
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Build context
+    user_context = f"""
+USER: {user.get('name', 'Business Owner')}
+BUSINESS: {profile.get('business_name', 'Their business') if profile else 'Unknown'}
+"""
+    
+    # Prepare conversation for LLM
+    system_message = SOUNDBOARD_SYSTEM_PROMPT + f"\n\nCONTEXT:\n{user_context}"
+    
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_KEY,
+            session_id=f"soundboard_{user_id}_{req.conversation_id or 'new'}",
+            system_message=system_message
+        )
+        chat.with_model("openai", AI_MODEL)
+        
+        # Add conversation history
+        for msg in messages_history:
+            if msg["role"] == "user":
+                chat.add_message(UserMessage(text=msg["content"]))
+            else:
+                chat.add_message(AssistantMessage(text=msg["content"]))
+        
+        # Send current message
+        response = await chat.send_message(UserMessage(text=req.message))
+        
+        # Generate title for new conversations
+        conversation_title = None
+        if not conversation:
+            # Generate a title from the first message
+            title_prompt = f"Generate a very short title (3-5 words max) for a conversation that starts with: '{req.message[:100]}'. Just the title, nothing else."
+            title_chat = LlmChat(
+                api_key=EMERGENT_KEY,
+                session_id=f"title_{user_id}_{datetime.now().timestamp()}",
+                system_message="Generate very short conversation titles. Just output the title, nothing else."
+            )
+            title_chat.with_model("openai", AI_MODEL)
+            conversation_title = await title_chat.send_message(UserMessage(text=title_prompt))
+            conversation_title = conversation_title.strip().strip('"\'')[:50]
+        
+        # Save to database
+        now = datetime.now(timezone.utc).isoformat()
+        new_messages = [
+            {"role": "user", "content": req.message, "timestamp": now},
+            {"role": "assistant", "content": response, "timestamp": now}
+        ]
+        
+        if conversation:
+            # Update existing conversation
+            await db.soundboard_conversations.update_one(
+                {"id": req.conversation_id},
+                {
+                    "$push": {"messages": {"$each": new_messages}},
+                    "$set": {"updated_at": now}
+                }
+            )
+            conversation_id = req.conversation_id
+        else:
+            # Create new conversation
+            conversation_id = str(uuid.uuid4())
+            await db.soundboard_conversations.insert_one({
+                "id": conversation_id,
+                "user_id": user_id,
+                "title": conversation_title or "New Conversation",
+                "messages": new_messages,
+                "created_at": now,
+                "updated_at": now
+            })
+        
+        return {
+            "reply": response,
+            "conversation_id": conversation_id,
+            "conversation_title": conversation_title
+        }
+        
+    except Exception as e:
+        logger.error(f"Soundboard chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.patch("/soundboard/conversations/{conversation_id}")
+async def rename_soundboard_conversation(
+    conversation_id: str, 
+    req: ConversationRename,
+    current_user: dict = Depends(get_current_user)
+):
+    """Rename a conversation"""
+    result = await db.soundboard_conversations.update_one(
+        {"id": conversation_id, "user_id": current_user["id"]},
+        {"$set": {"title": req.title, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    return {"status": "renamed"}
+
+
+@api_router.delete("/soundboard/conversations/{conversation_id}")
+async def delete_soundboard_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a conversation"""
+    result = await db.soundboard_conversations.delete_one(
+        {"id": conversation_id, "user_id": current_user["id"]}
+    )
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    return {"status": "deleted"}
+
+
 # ==================== INVITES (ENTERPRISE ONLY) ====================
 
 def tier_allows_seats(account: dict) -> bool:
