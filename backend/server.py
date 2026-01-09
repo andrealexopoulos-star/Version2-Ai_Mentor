@@ -3980,6 +3980,60 @@ def format_email_intelligence(email_intel: dict, recent_emails: list) -> str:
     return intel_text if intel_text else "No email data available yet"
 
 
+def format_calendar_intelligence(calendar_intel: dict, calendar_events: list) -> str:
+    """Format calendar intelligence for AI context"""
+    if not calendar_intel and not calendar_events:
+        return "Calendar not synced yet - suggest syncing to understand their schedule and time management"
+    
+    cal_text = ""
+    
+    if calendar_intel:
+        meeting_load = calendar_intel.get("meeting_load", "unknown")
+        upcoming = calendar_intel.get("upcoming_meetings", 0)
+        top_collaborators = calendar_intel.get("top_collaborators", [])[:5]
+        
+        cal_text += f"Meeting load: {meeting_load} ({upcoming} meetings in next 2 weeks)\n"
+        
+        if top_collaborators:
+            cal_text += "Frequent meeting partners:\n"
+            for collab in top_collaborators:
+                cal_text += f"- {collab.get('name')} ({collab.get('meetings')} meetings)\n"
+    
+    if calendar_events:
+        cal_text += f"\nUpcoming schedule ({len(calendar_events)} events):\n"
+        for event in calendar_events[:5]:
+            subject = event.get('subject', 'Untitled')
+            start = event.get('start', '')[:10] if event.get('start') else 'TBD'
+            attendees = ', '.join(event.get('attendees', [])[:3])
+            cal_text += f"- {start}: {subject}"
+            if attendees:
+                cal_text += f" (with {attendees})"
+            cal_text += "\n"
+    
+    return cal_text if cal_text else "No calendar data available yet"
+
+
+def format_email_priority(email_priority: dict) -> str:
+    """Format email priority insights for AI context"""
+    if not email_priority or "analysis" not in email_priority:
+        return "Email priority analysis not run yet - suggest running to help prioritize inbox"
+    
+    analysis = email_priority.get("analysis", {})
+    priority_text = ""
+    
+    high = analysis.get("high_priority", [])
+    if high:
+        priority_text += f"HIGH PRIORITY EMAILS ({len(high)}):\n"
+        for item in high[:3]:
+            priority_text += f"- From: {item.get('from', 'Unknown')} | Subject: {item.get('subject', 'No subject')[:40]} | Action: {item.get('suggested_action', '')[:50]}\n"
+    
+    insights = analysis.get("strategic_insights", "")
+    if insights:
+        priority_text += f"\nStrategic insight: {insights[:200]}\n"
+    
+    return priority_text if priority_text else "No email priority data available"
+
+
 def format_advisor_brain_prompt(
     task_description: str,
     context: dict,
