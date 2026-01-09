@@ -260,6 +260,40 @@ const Integrations = () => {
           </p>
         </div>
 
+        {/* Connected Business Tools Section */}
+        {outlookStatus.connected && (
+          <div className="card p-6" style={{ background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, var(--bg-card) 100%)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <CheckCircle2 className="w-6 h-6 text-green-600" />
+              <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Connected Business Tools
+              </h2>
+            </div>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Your AI has access to these tools for deeper business intelligence
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {outlookStatus.connected && (
+                <div className="flex items-center gap-4 p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: '#0078D4' }}>
+                    <span className="text-white font-bold text-lg">OL</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Microsoft Outlook</h3>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Connected"></div>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {outlookStatus.emails_synced} emails synced • AI intelligence active
+                    </p>
+                  </div>
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
