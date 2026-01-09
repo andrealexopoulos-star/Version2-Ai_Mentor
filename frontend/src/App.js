@@ -30,6 +30,7 @@ import IntelCentre from "./pages/IntelCentre";
 import ProfileImport from "./pages/ProfileImport";
 import OutlookTest from "./pages/OutlookTest";
 import EmailInbox from "./pages/EmailInbox";
+import CalendarView from "./pages/CalendarView";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -104,6 +105,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
       <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
+      <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
