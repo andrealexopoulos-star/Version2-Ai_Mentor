@@ -381,10 +381,15 @@ const Integrations = () => {
                 
                 <Button 
                   onClick={() => handleConnect(integration)}
-                  className={integration.tier === 'free' ? 'btn-primary text-sm py-2 px-4' : 'btn-secondary text-sm py-2 px-4'}
-                  disabled={connecting === integration.id}
+                  className={isConnected ? 'btn-secondary text-sm py-2 px-4' : integration.tier === 'free' ? 'btn-primary text-sm py-2 px-4' : 'btn-secondary text-sm py-2 px-4'}
+                  disabled={connecting === integration.id || isConnected}
                 >
-                  {connecting === integration.id ? (
+                  {isConnected ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-1" />
+                      Connected
+                    </>
+                  ) : connecting === integration.id ? (
                     <>
                       <span className="animate-pulse">Connecting...</span>
                     </>
@@ -394,7 +399,8 @@ const Integrations = () => {
                 </Button>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
 
         {filteredIntegrations.length === 0 && (
