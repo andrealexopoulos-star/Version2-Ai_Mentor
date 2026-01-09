@@ -29,7 +29,6 @@ const Integrations = () => {
       // Not connected yet
     }
   };
-  const [outlookStatus, setOutlookStatus] = useState({ connected: false, emails_synced: 0 });
 
   const categories = [
     { id: 'all', label: 'All' },
