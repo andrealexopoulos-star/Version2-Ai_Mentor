@@ -17,6 +17,20 @@ const Integrations = () => {
   const [connecting, setConnecting] = useState(null);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, emails_synced: 0 });
 
+  useEffect(() => {
+    checkOutlookStatus();
+  }, []);
+
+  const checkOutlookStatus = async () => {
+    try {
+      const response = await apiClient.get('/outlook/status');
+      setOutlookStatus(response.data);
+    } catch (error) {
+      // Not connected yet
+    }
+  };
+  const [outlookStatus, setOutlookStatus] = useState({ connected: false, emails_synced: 0 });
+
   const categories = [
     { id: 'all', label: 'All' },
     { id: 'crm', label: 'CRM' },
