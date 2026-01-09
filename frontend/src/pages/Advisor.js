@@ -127,8 +127,8 @@ const Advisor = () => {
         <div className="border-b" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
           <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>MyAdvisor</h1>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your personal business mentor</p>
+              <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>Chief of Strategy</h1>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your personal strategic advisor</p>
             </div>
             {messages.length > 0 && (
               <Button onClick={handleNewSession} variant="outline" className="btn-secondary">
