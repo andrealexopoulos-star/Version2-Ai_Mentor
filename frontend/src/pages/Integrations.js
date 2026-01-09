@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
@@ -11,11 +11,34 @@ import DashboardLayout from '../components/DashboardLayout';
 
 const Integrations = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showModal, setShowModal] = useState(null);
   const [connecting, setConnecting] = useState(null);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, emails_synced: 0 });
+
+  // Handle URL parameters from OAuth callback
+  useEffect(() => {
+    const outlookConnected = searchParams.get('outlook_connected');
+    const outlookError = searchParams.get('outlook_error');
+    const jobId = searchParams.get('job_id');
+
+    if (outlookConnected === 'true') {
+      toast.success('Microsoft Outlook connected successfully! Your AI is now analyzing your emails.');
+      // Clear URL parameters
+      setSearchParams({});
+      // Refresh status
+      checkOutlookStatus();
+    } else if (outlookError) {
+      const errorMessages = {
+        'auth_failed': 'Failed to authenticate with Microsoft. Please try again.',
+        'user_not_found': 'Your email address is not registered with this app. Please register first.',
+      };
+      toast.error(errorMessages[outlookError] || `Connection error: ${outlookError}`);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     checkOutlookStatus();
