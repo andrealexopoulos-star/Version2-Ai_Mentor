@@ -31,6 +31,7 @@ import ProfileImport from "./pages/ProfileImport";
 import OutlookTest from "./pages/OutlookTest";
 import EmailInbox from "./pages/EmailInbox";
 import CalendarView from "./pages/CalendarView";
+import MySoundBoard from "./pages/MySoundBoard";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -106,6 +107,7 @@ function AppRoutes() {
       <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
       <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
+      <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
