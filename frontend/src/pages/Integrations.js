@@ -326,8 +326,11 @@ const Integrations = () => {
 
         {/* Integration Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredIntegrations.map((integration) => (
-            <div key={integration.id} className="integration-card">
+          {filteredIntegrations.map((integration) => {
+            const isConnected = integration.id === 'outlook' && outlookStatus.connected;
+            
+            return (
+              <div key={integration.id} className={`integration-card ${isConnected ? 'border-2 border-green-500' : ''}`}>
               <div className="flex items-start gap-4 mb-4">
                 <div 
                   className="integration-logo"
