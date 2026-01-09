@@ -1531,7 +1531,7 @@ async def outlook_login():
     redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
     
     # URL encode parameters to prevent malformed URLs
-    scope = "offline_access User.Read Mail.Read Mail.ReadBasic"
+    scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
     
@@ -1565,7 +1565,7 @@ async def outlook_callback(code: str, state: str = None):
         "code": code,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
     }
     
     async with httpx.AsyncClient() as client:
@@ -2014,7 +2014,7 @@ async def refresh_outlook_token(user_id: str, refresh_token: str):
         "client_secret": AZURE_CLIENT_SECRET,
         "refresh_token": refresh_token,
         "grant_type": "refresh_token",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
     }
     
     async with httpx.AsyncClient() as client:
