@@ -377,7 +377,7 @@ const DashboardLayout = ({ children }) => {
         className="lg:ml-64 pt-16 min-h-screen"
         style={{ background: 'var(--bg-secondary)' }}
       >
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>
