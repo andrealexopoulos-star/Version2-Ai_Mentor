@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { apiClient } from '../lib/api';
 import { 
-  MessageSquare, FileText, BarChart3, TrendingUp, 
+  MessageSquare, FileText, BarChart3, 
   Plus, ArrowRight, ArrowUpRight, Loader2, Zap, Target,
   CheckCircle2, Circle, Plug, Sparkles, Building2, FolderOpen, X
 } from 'lucide-react';
