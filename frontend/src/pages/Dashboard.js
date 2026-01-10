@@ -76,37 +76,6 @@ const Dashboard = () => {
     }
   };
 
-  const quickActions = [
-    { 
-      icon: MessageSquare, 
-      title: 'AI Advisor', 
-      desc: 'Get personalised advice',
-      path: '/advisor',
-      color: '#0066FF'
-    },
-    { 
-      icon: Zap, 
-      title: 'Quick Diagnosis', 
-      desc: 'Analyse your business',
-      path: '/diagnosis',
-      color: '#7C3AED'
-    },
-    { 
-      icon: FileText, 
-      title: 'Generate SOP', 
-      desc: 'Create documentation',
-      path: '/sop-generator',
-      color: '#00C853'
-    },
-    { 
-      icon: Target, 
-      title: 'Market Intel', 
-      desc: 'Competitive insights',
-      path: '/market-analysis',
-      color: '#FF9500'
-    }
-  ];
-
   const setupSteps = [
     { label: 'Account created', done: true, icon: CheckCircle2 },
     { label: 'Business profile', done: !!user?.business_name, path: '/business-profile', icon: Building2 },
