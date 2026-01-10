@@ -4,9 +4,10 @@ import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { 
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
-  Loader2, ChevronLeft, ChevronRight, MoreVertical
+  Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import VoiceChat from '../components/VoiceChat';
 
 const MySoundBoard = () => {
   const [conversations, setConversations] = useState([]);
@@ -18,6 +19,7 @@ const MySoundBoard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
