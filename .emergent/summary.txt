@@ -1,168 +1,192 @@
-<analysis>original_problem_statement:
-The user wants to transform The Strategy Squad application into a hyper-personalized, virtually human-like AI business advisor. The project's core is a deep architectural refactor to provide accurate, non-generic, and proactive advice.
+<analysis>**original_problem_statement:**
+The user wants to transform The Strategy Squad application into a hyper-personalized, virtually human-like AI business advisor.
 
 Key requirements:
--   **Onboarding Overhaul**: A smart, multi-step Onboarding Questionnaire to replace the manual form.
--   **Profile Scoring**: Business Profile Completeness and a dynamic Business Score to gauge business health and performance.
--   **Hyper-Personalization (Advisor Brain)**: A unified backend brain that provides consistent, evidence-based, and personalized advice across all features. A core user request is to make the AI interaction feel like a conversation with a real human mentor, avoiding robotic, structured responses.
--   **World-Class Settings & Billing**: A comprehensive, multi-section settings area.
--   **User & Seat Management**: An invite system for team members on an Enterprise plan.
--   **Deep Integration**: Integrate with the user's business tools, with the highest priority on Microsoft Outlook, to provide the AI with deep, real-world context from emails.
--   **SEO-Optimized Landing Page**: Create a public-facing landing page and blog structure to attract users from search engines.
+*   **Onboarding Overhaul**: A smart, multi-step Onboarding Questionnaire.
+*   **Profile Scoring**: Business Profile Completeness and a dynamic Business Score.
+*   **Hyper-Personalization (Advisor Brain)**: A unified backend brain that provides consistent, evidence-based, and personalized advice. The user now wants three distinct AI personas:  (thinking partner),  (strategic risk), and  (accountability).
+*   **Deep Integration**: Integrate with business tools, with the highest priority on Microsoft Outlook (email and calendar).
+*   **Advanced Features**: The user has requested a Priority Inbox to surface important emails, Calendar Intelligence, and a ChatGPT-style chat interface with conversation history ().
+*   **Voice Chat**: A realistic, video-call-like voice chat experience within .
+*   **UI/UX**: Numerous requests to restructure navigation, redesign the dashboard, and create new UI pages for the features above.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack React/FastAPI project. An onboarding wizard for new users and a dynamic business scoring system have been implemented. The UI navigation has been reorganized as per user requests, and the landing page has been optimized for SEO. The AI's core prompt has been significantly iterated upon to act as a human-like mentor. Authentication is currently email/password-based, as multiple attempts at Google and Microsoft OAuth have been unreliable. The backend logic for Microsoft Outlook integration exists, but the connection flow is broken. A Connected Integrations section has been added to the UI to show the status of connected tools. A major architectural shift to a versioned, immutable Business Profile has begun on the backend, but the frontend has not yet been updated to use it.
+The application is a full-stack React/FastAPI project. The Microsoft Outlook email integration has been successfully fixed and is confirmed working by the user. Several new features and UI components have been built in this session:
+*   **AI Personas**: MySoundboard and Chief Business Advisor personas are implemented in the backend and connected to their respective UI features.
+*   **MySoundBoard**: A new page with a ChatGPT-style UI, including a conversation history sidebar and a placeholder for a video-call-like voice chat.
+*   **MyAdvisor**: Rebranded from Chief of Strategy, this page now incorporates the AI-powered Focus section that was previously on the dashboard.
+*   **Priority Inbox & Calendar**: UI pages have been created (, ) and backend endpoint stubs exist, but the core logic is not implemented.
+*   **Restructured UI**: The navigation has been completely reorganized into Advisory Team and Agent IQ Builder sections. The main Dashboard page has been removed from navigation, and its functionality was distributed to other pages.
+*   **Smart Notifications**: A backend system and UI hooks (badges on navigation items) are in place to show alerts based on email/calendar data, though no alerts have been triggered for the test user.
+*   **Voice Chat UI**: A placeholder UI () has been created to simulate a realistic video call within .
 
 **Last working item**:
--   **Last item agent was working**: Fixing the Microsoft Outlook integration. The user clicks Connect, is redirected to Microsoft to sign in, but upon returning to the application, they are taken to the dashboard page instead of the integrations page, and the connection is not established.
+-   **Last item agent was working**: Building a realistic, video-call-like voice chat UI for the MySoundBoard feature, as per the user's request for it to feel like speaking with a real person, not an avatar. The agent created the  component and integrated a toggle for it into the  page.
 -   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
 -   **Which testing method agent to use?**: both
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Microsoft Outlook Integration Fails (P0)**
+-   **Issue 1: Microsoft Outlook Login Loop (P0)**
 -   **Issue 2: Non-Functional UI Elements (P2)**
 
 **Issues Detail**:
--   **Issue 1: Microsoft Outlook Integration Fails**
-    -   **Description**: The OAuth 2.0 flow for Microsoft Outlook is not completing successfully. When the user authenticates with Microsoft and is redirected back to the application, the callback logic seems to fail, sending the user to the dashboard without saving the connection tokens or updating the integration status. The user is highly frustrated by this recurring issue.
-    -   **Attempted fixes**: The agent has tried numerous fixes, including updating Azure credentials (Tenant ID, Client ID, Client Secret), adjusting the redirect URI in the Azure portal, making the backend callback endpoint not require auth, and using the . The last attempt was to whitelist a second redirect URI in Azure that included  in the path, as this was observed in an error message.
+-   **Issue 1: Microsoft Outlook Login Loop**
+    -   **Description**: After the main Outlook integration was fixed, the user reported a new issue where a specific test account () gets stuck in a login loop, constantly being redirected back to the app's sign-in page after Microsoft authentication.
+    -   **Attempted fixes**: The agent correctly diagnosed that the callback was failing because it was trying to find a user in the DB by the Microsoft email, not the currently logged-in user. The proposed solution was to pass the authenticated user's ID through the OAuth  parameter. The backend was updated to generate this state, but a test of the callback flow timed out, and the user changed priorities before the fix could be fully implemented and verified.
     -   **Next debug checklist**:
-        1.  Examine the backend callback logic in  at the  endpoint. The primary suspect is an incorrect redirect. The backend should handle the token exchange with Microsoft and then redirect the user's *browser* to , not perform a server-side redirect to the dashboard.
-        2.  Verify the  parameter is being correctly generated during the login request and validated in the callback to prevent CSRF and session mix-up issues.
-        3.  Check the frontend  page to ensure it correctly handles the redirect from the callback, potentially by checking URL parameters for a success or failure message upon loading.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker for the user's vision of a hyper-personalized AI. Success will unlock deep business intelligence from the user's emails, making the AI mentor significantly more effective and valuable. Fixing this is essential to user satisfaction and retention.
+        1.  Verify the frontend  correctly calls the  endpoint with an auth token.
+        2.  Review the backend  endpoint in  to ensure it correctly extracts the  from the  parameter.
+        3.  Confirm the database lookup uses this  to find the user and associate the Microsoft tokens.
+        4.  Run an end-to-end test by clicking the Connect button and completing the Microsoft login flow.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker preventing some users from connecting their Outlook account, which is a core feature of the application. Fixing it ensures all users can leverage the email and calendar intelligence features.
     -   **Status**: IN PROGRESS
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Should Test frontend/backend/both after fix?**: both
     -   **Blocked on other issue**: None
 
 -   **Issue 2: Non-Functional UI Elements**
     -   **Description**: The dark/light mode toggle and several Connect buttons for non-implemented integrations on the Integrations page are unresponsive.
-    -   **Attempted fixes**: None recently. This has been a low-priority issue.
+    -   **Attempted fixes**: None.
     -   **Next debug checklist**:
-        1.  In , verify the  handler for the theme toggle and its corresponding state management logic.
-        2.  In , ensure the  function for placeholder integrations triggers a Coming Soon toast or modal.
-    -   **Why fix this issue and what will be achieved with the fix?**: This improves the overall user experience and makes the application feel polished and complete.
+        1.  In , inspect the  handler for the theme toggle.
+        2.  In , ensure placeholder buttons have a disabled state or trigger a Coming Soon toast.
+    -   **Why fix this issue and what will be achieved with the fix?**: Improves UI polish and user experience.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?**: Frontend
+    -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
--   None.
+-   **Task 1: Implement Voice Chat Functionality (P1)**
+    -   **Where to resume**: The UI shell  and backend integration playbook exist. The next step is to implement the WebRTC logic for capturing the user's microphone, sending the audio stream to the backend, calling the OpenAI voice API, and playing the returned audio.
+    -   **What will be achieved with this?**: Fulfills the user's request for a real-time, conversational voice interface in .
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on something**: The user needs to provide an OpenAI API key.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0: Complete the Immutable Business Profile Refactor**: The backend has new versioned models and endpoints, but the frontend (, ) still uses the old mutable system. The frontend must be updated to fetch from the versioned endpoints and a new Update Profile wizard needs to be created.
-    -   **P1: Build Email Viewer UI**: As requested by the user, after the Outlook integration is working, create a simple UI to view the emails that the AI is analyzing (Inbox, Sent, etc.).
-    -   **P2: Roll out Advisor Brain Persona**: The advanced, human-like AI prompt from  needs to be applied to all other AI features: **Diagnosis, Analysis, SOP Generator, Market Intel**.
+    -   **P0: Implement Full Email Intelligence**: The UI () and backend endpoints (, ) exist as placeholders. The backend logic needs to be built to analyze emails and provide prioritization and reply suggestions.
+    -   **P0: Implement Calendar Intelligence**: The UI () and backend endpoint () exist as placeholders. The backend logic needs to be built to fetch, store, analyze, and display calendar events.
+    -   **P1: Complete Immutable Business Profile Refactor**: The frontend () must be updated to use the new versioned backend API for business profiles. This is a significant piece of technical debt from a previous session.
+    -   **P2: Implement Execution Coach AI Persona**: Create the backend prompt for this persona and integrate it into a relevant feature (e.g., Priority Inbox or a new Accountability feature).
+
 -   **Future Tasks**:
     -   World-Class Settings & Billing Section.
     -   User Seat Management & Invite Flow.
     -   Full Feature Gating for subscription tiers.
-    -   Live integrations for HubSpot, Xero, LinkedIn, Google Ads, and Meta.
-    -   Chat History Sidebar.
+    -   Live integrations for WhatsApp, SMS, HubSpot, Xero, LinkedIn, Google Ads, and Meta.
     -   PDF Export.
 
 **Completed work in this session**
--   **AI Persona Revolution**: Extensively refined the backend AI prompts in  to create a sophisticated, human-like AI mentor that asks Socratic questions and learns the user's personality.
--   **Onboarding & Scoring System**: Implemented a multi-step onboarding wizard and a dynamic business scoring system (Completeness & Strength).
--   **UI/UX Overhaul**:
-    -   Redesigned the left-side navigation menu.
-    -   Refactored the  page with a 5-tab structure and role-based locking.
-    -   Moved score bars to the .
-    -   Redesigned the  page to show a Connected Business Tools section with status indicators.
-    -   Redesigned the  chat UI to feel more conversational.
--   **Authentication Simplification**: Removed all complex and unreliable Google OAuth code, standardizing on a more stable email/password login flow.
--   **SEO Foundation**: Created , , and added SEO meta tags to  to prepare the landing page for deployment and search engine indexing.
+-   **Microsoft Outlook Integration (FIXED)**: Successfully resolved redirect URI and credential issues, enabling the user to connect their Outlook account.
+-   **Multi-Persona AI Framework**: Implemented backend logic and frontend UIs for distinct AI personas (, ).
+-   **MySoundBoard Feature**: Created a new page with a ChatGPT-style UI for conversational AI interaction.
+-   **Major UI/UX Restructuring**: Reorganized the navigation into Advisory Team and Agent IQ Builder, removed the main dashboard, and redistributed its components to more logical pages (, ).
+-   **AI-Powered Dashboard Focus**: Implemented a backend endpoint and UI component to provide a single, clear focus for the user, which is now the centerpiece of the  page.
+-   **Smart Notifications System**: Built the backend endpoint and UI hooks (nav badges) to surface critical business alerts.
+-   **Voice Chat UI Scaffolding**: Created the initial UI component () for a realistic video-call experience.
 
 **Earlier issues found/mentioned but not fixed**
 -   The non-functional dark/light mode toggle and placeholder integration Connect buttons remain unfixed.
 
 **Known issue recurrence from previous fork**
--   **Unreliable External Authentication**: The project has been plagued by persistent issues with OAuth integrations (first Google, now Microsoft). The core problem seems to be a mix of incorrect provider-side configuration (redirect URIs, tenant IDs) and fragile callback handling in the application, causing failed redirects.
+-   **Unreliable External Authentication**: This issue recurred with the Microsoft Outlook integration, manifesting as a new login loop for a specific test user after the initial fix. The core problem of handling OAuth callbacks correctly remains a sensitive area in the codebase.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **AI Personalization**: Deep prompt engineering in  to create a human-like mentor persona that learns the user's communication style and grounds its advice in the user's specific business data.
--   **OAuth 2.0 Integration**: The current challenge is the Microsoft Graph API flow. The backend initiates the login and is supposed to handle the  exchange at the  endpoint, but this is where the flow breaks.
--   **Immutable Data Model**: A new versioned schema for  has been designed and partially implemented on the backend to create a traceable world model of the user's business.
+-   **Multi-Persona AI**: Using a  function in  to serve different AI system prompts based on the requested feature.
+-   **OAuth State Parameter for User Context**: The correct, but unverified, approach to link an OAuth callback to a logged-in user by encoding the  in the  parameter.
+-   **API-Driven UI**: The primary focus on the MyAdvisor page is now dynamically fetched from a dedicated backend endpoint ().
+-   **WebRTC for Voice (Planned)**: The chosen technology for implementing real-time voice chat, based on the integration playbook.
 
 **key DB schema**
--   **users**: {uid=0(root) gid=0(root) groups=0(root), , , }
--   **onboarding**: {, , , }
--   **business_profiles (New Versioned Model)**: {, , , , : {, ...}, , }
+-   **users**: {uid=0(root) gid=0(root) groups=0(root), , , , ...}
+-   **soundboard_conversations**: {, , , }
+-   **soundboard_messages**: {, ,  ('user' or 'ai'), , }
 -   **microsoft_tokens**: {, }
--   **email_intelligence**: {, , , }
-
-**changes in tech stack**
--   **Backend**: Added  for Microsoft authentication.
--   **Frontend**: Removed .
 
 **All files of reference**
--   : Contains all business logic, including the broken Outlook callback and the advanced AI prompts.
--   : UI for triggering the Outlook connection.
--   : Stores the , , and .
-
-**Areas that need refactoring**:
--   ****: Critically monolithic. It needs to be broken down into separate modules for authentication, AI services, and business profile management.
--   **Business Profile Data Flow**: The frontend needs to be refactored to work with the new versioned Business Profile API on the backend. Currently, it uses legacy endpoints.
+*   **Created**:
+    *   : New chat interface page.
+    *   : New UI for priority email feature.
+    *   : New UI for calendar feature.
+    *   : UI for the planned voice chat feature.
+*   **Updated**:
+    *   : Heavily modified with new endpoints for MySoundBoard, notifications, calendar, email priority, and AI focus, plus fixes for Outlook auth.
+    *   : Navigation completely restructured, notification badges added.
+    *   : Rebranded and updated to include the AI focus section.
+    *   : Added new routes and a redirect from  to .
+    *   : Stripped of most components.
+    *   : Updated to include the Business Score.
+    *   : Updated to include the Profile Completeness score.
 
 **key api endpoints**
--   : Initiates the Microsoft OAuth flow.
--   : **(CURRENTLY BROKEN)** Handles the redirect from Microsoft.
--   : Fetches connection status for tools like Outlook.
--   : Endpoint for the MyAdvisor feature.
+-   : Initiates Microsoft OAuth flow. Now includes  in the state.
+-   : **(LIKELY STILL BUGGY)** Handles redirect, extracts  from state to link tokens.
+-   : **(New)** Returns the AI-generated focus statement.
+-   : **(New)** Returns a list of smart notifications and alerts.
+-   : **(New)** Creates a new chat conversation.
+-   : **(New)** Sends a message in a conversation.
+-   : **(New - Placeholder)** Endpoint for calendar events.
+-   : **(New - Placeholder)** Endpoint for the priority inbox.
 
 **Critical Info for New Agent**
--   **Fix Outlook Integration First**: This is the top priority. The user is extremely frustrated. The root of the problem is the  endpoint, which incorrectly redirects to the dashboard instead of completing the auth flow and returning to the integrations page.
--   **Embrace the Human-Like AI Vision**: The user has a very specific and sophisticated vision for the AI's personality. Do not revert to generic, list-based outputs. All AI responses should be conversational, empathetic, and Socratic, as defined in the latest prompts in .
--   **Complete the Versioned Profile Refactor**: After fixing the Outlook bug, the next major task is to update the frontend to use the new immutable, versioned Business Profile system that has been started on the backend.
+-   **Prioritize Fixing the Outlook Login Loop**: The user reported a login loop for a specific test account (). The fix of passing the  in the OAuth  parameter was started but never fully tested. This is a recurring pain point and should be validated end-to-end.
+-   **Focus on Backend Implementation for New UIs**: A significant number of new UI pages have been created (, , ). The immediate priority should be to build the backend logic to make these features functional, as requested by the user.
+-   **Follow User's Vision for AI Personas**: The user has a clear vision for three distinct AI roles. The Execution Coach persona is still pending. Ensure new features align with this multi-persona architecture.
+-   **Technical Debt**: The frontend has not been updated to use the versioned, immutable  API on the backend. This is a major architectural task that should be addressed after the current feature requests are completed.
 
 **documents and test reports created in this job**
--   
--   
+-   None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-10. 
-9.  
-8.  
-7.  
-6.  
-5.  
-4.  
-3.  
-2.  
-1.  
+-   **10. User wants a video-call-like voice chat in MySoundboard instead of just typing.** (In Progress - UI created)
+-   **9. User wants smart notifications for important business events (operational deficiencies, complaints) surfaced in MyIntel/MyAdvisor.** (Completed - Backend/UI hooks in place)
+-   **8. User wants the AI Focus screen moved into MyAdvisor, reorders the Advisory Team nav, and asks where the moved components went.** (Completed)
+-   **7. User wants to remove the Dashboard from navigation and clean up the page.** (Completed)
+-   **6. User provides a detailed prompt for the AI-powered dashboard focus section.** (Completed)
+-   **5. User wants to move Profile Completeness to Business Profile Builder and Business Score to MyIntel, and notes an issue with an integration checkbox.** (Completed)
+-   **4. User provides detailed instructions for a copy and visual hierarchy update to the Dashboard.** (Completed)
+-   **3. User confirms the new navigation structure.** (Completed)
+-   **2. User wants to rearrange the left-hand navigation menu into new categories.** (Completed)
+-   **1. User reports the Outlook integration is looping back to the sign-in page for a specific test account.** (In Progress - P0 Issue)
 
 **Project Health Check:**
 -   **Broken**:
-    -   Microsoft Outlook Integration
-    -   Dark/Light mode toggle
+    -   Microsoft Outlook Integration (Login loop for specific users).
+    -   Dark/Light mode toggle.
 -   **Mocked**:
-    -   Billing & Subscription system
-    -   User Seat Management
+    -   Priority Inbox (UI only).
+    -   Calendar View (UI only).
+    -   Voice Chat (UI only).
+    -   Billing & Subscription system.
+    -   User Seat Management.
 
 **3rd Party Integrations**
 -   **OpenAI GPT-4o**: Used for all AI features. Uses Emergent LLM Key.
+-   **OpenAI Realtime Voice API**: Planned for voice chat. Requires User-provided API Key.
 -   **Serper.dev**: Used for live Google Search. Requires User API Key.
--   **Microsoft Graph API (Outlook)**: For email intelligence. Requires User-provided Azure credentials. **(Currently Broken)**
+-   **Microsoft Graph API (Outlook)**: For email and calendar intelligence. Requires User-provided Azure credentials. **(Partially Broken - Login Loop)**
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, used to debug the Outlook integration.
--   **Troubleshoot agent used after agent stuck in loop**: YES, used multiple times to resolve backend crashes and diagnose OAuth issues.
--   **Test files created**: None.
--   **Known regressions**: None.
+-   **Testing agent used after significant changes**: NO
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: []
+-   **Known regressions**: The Outlook integration, while fixed for the main use case, has regressed for certain users/accounts, causing a login loop.
 
 **Credentials to test flow:**
-Use the registration page to create a new test user with an email and password.
+Use the registration page to create a new test user with an email and password. To test the Outlook login loop, an account that can reproduce the issue (like ) would be needed, or the bug needs to be generalized.
 
 **What agent forgot to execute**
--   The agent started the refactor to a versioned business profile on the backend but **forgot to update the frontend** to use the new endpoints. The frontend still interacts with the old, mutable profile.
--   The task to apply the Advisor Brain persona to **all** AI features was only partially completed. It was applied to MyAdvisor and Analysis but not to **Diagnosis, SOP Generator, or Market Intel**.</analysis>
+-   The agent did not fully verify the fix for the Outlook login loop after the test timed out.
+-   The agent created multiple UI-only features (Priority Inbox, Calendar, Voice Chat) without circling back to implement the backend functionality.
+-   The non-functional dark/light mode toggle has been repeatedly overlooked.
+-   The major frontend refactor to support the immutable business profile on the backend remains pending.
+-   The Execution Coach AI persona, requested by the user, was never implemented.</analysis>
