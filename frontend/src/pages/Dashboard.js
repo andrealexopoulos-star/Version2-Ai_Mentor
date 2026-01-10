@@ -62,8 +62,8 @@ const Dashboard = () => {
 
   const checkOutlookStatus = async () => {
     try {
-      const response = await apiClient.get('/integrations/status');
-      setOutlookConnected(response.data?.outlook?.connected || false);
+      const response = await apiClient.get('/outlook/status');
+      setOutlookConnected(response.data?.connected || false);
     } catch (error) {
       console.error('Failed to check Outlook status:', error);
     }
