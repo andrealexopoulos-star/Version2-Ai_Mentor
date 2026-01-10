@@ -2140,6 +2140,62 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
     }
 
 
+@api_router.post("/outlook/disconnect")
+async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
+    """Disconnect Microsoft Outlook integration and remove all synced data"""
+    user_id = current_user["id"]
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    
+    if not user_doc.get("outlook_access_token"):
+        raise HTTPException(status_code=400, detail="Outlook is not connected")
+    
+    connected_email = user_doc.get("outlook_connected_email", "unknown")
+    
+    # Log the disconnection for security audit
+    await db.security_audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "event_type": "outlook_integration_disconnected",
+        "user_id": user_id,
+        "user_email": user_doc.get("email"),
+        "microsoft_email": connected_email,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Remove all Microsoft-related data from user document
+    await db.users.update_one(
+        {"id": user_id},
+        {"$unset": {
+            "outlook_access_token": "",
+            "outlook_refresh_token": "",
+            "outlook_token_expires_at": "",
+            "outlook_connected_at": "",
+            "outlook_connected_email": "",
+            "outlook_connected_name": ""
+        }}
+    )
+    
+    # Delete all synced emails for this user
+    deleted_emails = await db.outlook_emails.delete_many({"user_id": user_id})
+    
+    # Delete calendar events
+    deleted_events = await db.calendar_events.delete_many({"user_id": user_id})
+    
+    # Delete email intelligence
+    await db.email_intelligence.delete_many({"user_id": user_id})
+    
+    # Delete sync jobs
+    await db.outlook_sync_jobs.delete_many({"user_id": user_id})
+    
+    logger.info(f"Outlook disconnected for user {user_id}. Deleted {deleted_emails.deleted_count} emails, {deleted_events.deleted_count} events.")
+    
+    return {
+        "success": True,
+        "message": f"Microsoft Outlook ({connected_email}) disconnected successfully",
+        "deleted_emails": deleted_emails.deleted_count,
+        "deleted_events": deleted_events.deleted_count
+    }
+
+
 # ==================== CALENDAR INTEGRATION ====================
 
 @api_router.get("/outlook/calendar/events")
