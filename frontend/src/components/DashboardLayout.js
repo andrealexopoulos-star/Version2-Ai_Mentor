@@ -33,7 +33,6 @@ const DashboardLayout = ({ children }) => {
   }, [darkMode]);
 
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { type: 'divider', label: 'Advisory Team' },
     { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
     { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
