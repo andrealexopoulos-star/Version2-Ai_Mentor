@@ -277,6 +277,30 @@ const Integrations = () => {
     }
   };
 
+  const handleOutlookDisconnect = async () => {
+    if (!window.confirm(`Are you sure you want to disconnect Microsoft Outlook (${outlookStatus.connected_email})?\n\nThis will remove all synced emails and calendar data from your Strategy Squad account.`)) {
+      return;
+    }
+    
+    setDisconnecting(true);
+    try {
+      const response = await apiClient.post('/outlook/disconnect');
+      toast.success(response.data.message || 'Outlook disconnected successfully');
+      setOutlookStatus({ 
+        connected: false, 
+        emails_synced: 0,
+        connected_email: null,
+        connected_name: null,
+        user_email: null
+      });
+    } catch (error) {
+      console.error('Disconnect error:', error);
+      toast.error('Failed to disconnect Outlook: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   const closeModal = () => setShowModal(null);
 
   return (
