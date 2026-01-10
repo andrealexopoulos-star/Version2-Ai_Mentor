@@ -90,7 +90,7 @@ function AppRoutes() {
       <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
       {/* Protected Routes */}
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
       <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
