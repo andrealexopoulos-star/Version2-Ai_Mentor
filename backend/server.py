@@ -1557,10 +1557,19 @@ async def outlook_login():
 
 
 @api_router.get("/auth/outlook/callback")
-async def outlook_callback(code: str, state: str = None):
+async def outlook_callback(code: str, state: str = None, error: str = None, error_description: str = None):
     """Handle Microsoft OAuth callback and store tokens - NO AUTH REQUIRED"""
+    from fastapi.responses import RedirectResponse
+    frontend_url = os.environ['FRONTEND_URL']
+    
+    # Handle OAuth errors
+    if error:
+        logger.error(f"Outlook OAuth error: {error} - {error_description}")
+        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error={error}")
+    
     if state and state != "outlook_auth":
-        raise HTTPException(status_code=400, detail="Invalid state parameter")
+        logger.error(f"Invalid state: {state}")
+        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
     
     # Exchange code for tokens
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
@@ -1576,15 +1585,15 @@ async def outlook_callback(code: str, state: str = None):
         "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
     }
     
+    logger.info(f"Outlook callback: exchanging code for tokens")
+    
     async with httpx.AsyncClient() as client:
         response = await client.post(token_url, data=payload)
         
         if response.status_code != 200:
             error_text = response.text
-            # Redirect to frontend with error
-            from fastapi.responses import RedirectResponse
-            frontend_url = os.environ['FRONTEND_URL']
-            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=auth_failed")
+            logger.error(f"Token exchange failed: {error_text}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=token_exchange_failed")
         
         token_data = response.json()
     
