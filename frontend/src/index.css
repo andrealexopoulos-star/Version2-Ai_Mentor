@@ -69,7 +69,7 @@ body {
     line-height: 1.6;
 }
 
-/* Premium Typography */
+/* Premium Typography - Mobile First */
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Fraunces', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     font-weight: 600;
@@ -78,9 +78,21 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-primary);
 }
 
-h1 { font-size: 2.5rem; font-weight: 650; }
-h2 { font-size: 1.75rem; }
-h3 { font-size: 1.25rem; }
+h1 { font-size: 1.75rem; font-weight: 650; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.1rem; }
+
+@media (min-width: 640px) {
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+}
+
+@media (min-width: 1024px) {
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 1.75rem; }
+    h3 { font-size: 1.25rem; }
+}
 
 p {
     color: var(--text-secondary);
@@ -129,20 +141,31 @@ p {
     animation: slideUp 0.5s ease-out forwards;
 }
 
-/* Premium Button */
+/* Premium Button - Mobile Responsive */
 .btn-primary {
     background: var(--accent-primary);
     color: white;
     font-weight: 600;
-    font-size: 14px;
-    padding: 12px 24px;
+    font-size: 13px;
+    padding: 10px 16px;
     border-radius: 10px;
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    .btn-primary {
+        font-size: 14px;
+        padding: 12px 24px;
+        width: auto;
+        gap: 8px;
+    }
 }
 
 .btn-primary:hover {
@@ -155,15 +178,26 @@ p {
     background: var(--bg-tertiary);
     color: var(--text-primary);
     font-weight: 600;
-    font-size: 14px;
-    padding: 12px 24px;
+    font-size: 13px;
+    padding: 10px 16px;
     border-radius: 10px;
     border: 1px solid var(--border-light);
     cursor: pointer;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    .btn-secondary {
+        font-size: 14px;
+        padding: 12px 24px;
+        width: auto;
+        gap: 8px;
+    }
 }
 
 .btn-secondary:hover {
@@ -221,13 +255,26 @@ input[type="password"]::placeholder {
     color: var(--text-placeholder) !important;
 }
 
-/* Premium Card */
+/* Premium Card - Mobile Responsive */
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 16px;
     transition: all 0.2s ease;
+}
+
+@media (min-width: 640px) {
+    .card {
+        border-radius: 16px;
+        padding: 20px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .card {
+        padding: 24px;
+    }
 }
 
 .card:hover {
