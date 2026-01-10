@@ -5413,6 +5413,160 @@ async def generate_focus_insight(signals: dict, profile: dict, user: dict) -> di
     }
 
 
+# ==================== SMART NOTIFICATIONS ====================
+
+@api_router.get("/notifications/alerts")
+async def get_smart_notifications(current_user: dict = Depends(get_current_user)):
+    """
+    AI-powered notifications that surface important business signals.
+    Analyzes emails, calendar, web data to identify material impacts.
+    """
+    user_id = current_user["id"]
+    notifications = []
+    
+    # Check for high priority emails (customer complaints, urgent issues)
+    priority_analysis = await db.email_priority_analysis.find_one(
+        {"user_id": user_id}, {"_id": 0}
+    )
+    
+    if priority_analysis and priority_analysis.get("analysis"):
+        high_priority = priority_analysis["analysis"].get("high_priority", [])
+        for email in high_priority[:3]:
+            notifications.append({
+                "id": f"email_{email.get('email_id', 'unknown')}",
+                "type": "email",
+                "severity": "high",
+                "title": "Important email needs attention",
+                "message": f"From {email.get('from', 'Unknown')}: {email.get('subject', 'No subject')[:50]}",
+                "action": email.get("suggested_action", "Review and respond"),
+                "source": "Email Intelligence",
+                "timestamp": email.get("received") or datetime.now(timezone.utc).isoformat()
+            })
+    
+    # Check recent emails for complaint keywords
+    recent_emails = await db.outlook_emails.find(
+        {"user_id": user_id},
+        {"_id": 0, "subject": 1, "body_preview": 1, "from_name": 1, "from_address": 1, "received_date": 1, "id": 1}
+    ).sort("received_date", -1).limit(50).to_list(50)
+    
+    complaint_keywords = ["complaint", "unhappy", "disappointed", "refund", "cancel", "frustrated", "unacceptable", "terrible", "worst", "issue", "problem", "urgent"]
+    
+    for email in recent_emails:
+        subject = (email.get("subject") or "").lower()
+        preview = (email.get("body_preview") or "").lower()
+        content = subject + " " + preview
+        
+        for keyword in complaint_keywords:
+            if keyword in content:
+                notifications.append({
+                    "id": f"complaint_{email.get('id', 'unknown')}",
+                    "type": "complaint",
+                    "severity": "high",
+                    "title": "Potential customer concern detected",
+                    "message": f"Email from {email.get('from_name') or email.get('from_address', 'Unknown')}: {email.get('subject', '')[:40]}",
+                    "action": "Review and respond promptly",
+                    "source": "Email Analysis",
+                    "timestamp": email.get("received_date") or datetime.now(timezone.utc).isoformat()
+                })
+                break  # Only one notification per email
+    
+    # Check calendar for important upcoming meetings
+    calendar_events = await db.calendar_events.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("start", 1).limit(20).to_list(20)
+    
+    now = datetime.now(timezone.utc)
+    important_keywords = ["review", "client", "investor", "board", "presentation", "pitch", "deadline", "important", "urgent", "critical"]
+    
+    for event in calendar_events:
+        try:
+            event_start = datetime.fromisoformat(event.get("start", "").replace("Z", "+00:00"))
+            hours_until = (event_start - now).total_seconds() / 3600
+            
+            # Check if it's within 24 hours and has important keywords
+            if 0 < hours_until < 24:
+                subject = (event.get("subject") or "").lower()
+                is_important = any(kw in subject for kw in important_keywords) or event.get("importance") == "high"
+                
+                if is_important:
+                    notifications.append({
+                        "id": f"meeting_{event.get('id', 'unknown')}",
+                        "type": "meeting",
+                        "severity": "medium",
+                        "title": "Important meeting coming up",
+                        "message": f"{event.get('subject', 'Meeting')} in {int(hours_until)} hours",
+                        "action": "Prepare materials and review agenda",
+                        "source": "Calendar",
+                        "timestamp": event.get("start")
+                    })
+        except:
+            pass
+    
+    # Check for operational patterns in emails
+    email_intel = await db.email_intelligence.find_one({"user_id": user_id}, {"_id": 0})
+    if email_intel:
+        # Check for declining engagement with key clients
+        top_clients = email_intel.get("top_clients", [])
+        for client in top_clients[:5]:
+            if client.get("trend") == "declining":
+                notifications.append({
+                    "id": f"client_{client.get('email', 'unknown')}",
+                    "type": "relationship",
+                    "severity": "medium",
+                    "title": "Client engagement declining",
+                    "message": f"Communication with {client.get('name', client.get('email', 'key contact'))} has decreased",
+                    "action": "Consider reaching out to maintain relationship",
+                    "source": "Relationship Intelligence",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+    
+    # Deduplicate notifications by ID
+    seen_ids = set()
+    unique_notifications = []
+    for notif in notifications:
+        if notif["id"] not in seen_ids:
+            seen_ids.add(notif["id"])
+            unique_notifications.append(notif)
+    
+    # Sort by severity (high first) then by timestamp
+    severity_order = {"high": 0, "medium": 1, "low": 2}
+    unique_notifications.sort(key=lambda x: (severity_order.get(x["severity"], 2), x.get("timestamp", "")))
+    
+    # Limit to top 10 notifications
+    unique_notifications = unique_notifications[:10]
+    
+    # Calculate summary counts
+    high_count = sum(1 for n in unique_notifications if n["severity"] == "high")
+    medium_count = sum(1 for n in unique_notifications if n["severity"] == "medium")
+    
+    return {
+        "notifications": unique_notifications,
+        "summary": {
+            "total": len(unique_notifications),
+            "high": high_count,
+            "medium": medium_count,
+            "low": len(unique_notifications) - high_count - medium_count
+        },
+        "has_alerts": len(unique_notifications) > 0
+    }
+
+
+@api_router.post("/notifications/dismiss/{notification_id}")
+async def dismiss_notification(notification_id: str, current_user: dict = Depends(get_current_user)):
+    """Dismiss a notification"""
+    await db.dismissed_notifications.update_one(
+        {"user_id": current_user["id"], "notification_id": notification_id},
+        {"$set": {
+            "user_id": current_user["id"],
+            "notification_id": notification_id,
+            "dismissed_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    return {"status": "dismissed"}
+
+
 # ==================== ROOT ====================
 
 @api_router.get("/")
