@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
+import { apiClient } from '../lib/api';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,7 @@ import {
   Target, FolderOpen, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Database, Building2,
   Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Inbox, Calendar,
-  Lightbulb
+  Lightbulb, AlertCircle
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
@@ -22,6 +23,9 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState({ total: 0, high: 0 });
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationsList, setNotificationsList] = useState([]);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
@@ -32,10 +36,27 @@ const DashboardLayout = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [darkMode]);
 
+  useEffect(() => {
+    fetchNotifications();
+    // Refresh notifications every 5 minutes
+    const interval = setInterval(fetchNotifications, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await apiClient.get('/notifications/alerts');
+      setNotifications(response.data.summary || { total: 0, high: 0 });
+      setNotificationsList(response.data.notifications || []);
+    } catch (error) {
+      console.error('Failed to fetch notifications');
+    }
+  };
+
   const navItems = [
     { type: 'divider', label: 'Advisory Team' },
-    { icon: Target, label: 'MyIntel', path: '/intel-centre' },
-    { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
+    { icon: Target, label: 'MyIntel', path: '/intel-centre', showBadge: true },
+    { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor', showBadge: true },
     { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'Agent IQ Builder' },
     { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
