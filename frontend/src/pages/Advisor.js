@@ -53,8 +53,22 @@ const Advisor = () => {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [showFocusAreas, setShowFocusAreas] = useState(true);
+  const [focus, setFocus] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  useEffect(() => {
+    fetchFocus();
+  }, []);
+
+  const fetchFocus = async () => {
+    try {
+      const response = await apiClient.get('/dashboard/focus');
+      setFocus(response.data);
+    } catch (error) {
+      console.error('Failed to fetch focus:', error);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
