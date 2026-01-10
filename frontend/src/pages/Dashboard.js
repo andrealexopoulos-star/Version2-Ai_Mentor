@@ -17,10 +17,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
-  const [profileScores, setProfileScores] = useState({ completeness: 0, strength: 0 });
   const [loading, setLoading] = useState(true);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [showSetupOptions, setShowSetupOptions] = useState(false);
+  const [outlookConnected, setOutlookConnected] = useState(false);
 
   useEffect(() => {
     checkOnboarding();
@@ -39,13 +39,13 @@ const Dashboard = () => {
       // Onboarding completed, fetch dashboard data
       setCheckingOnboarding(false);
       fetchStats();
-      fetchProfileScores();
+      checkOutlookStatus();
     } catch (error) {
       console.error('Failed to check onboarding:', error);
       // If error, continue to dashboard anyway
       setCheckingOnboarding(false);
       fetchStats();
-      fetchProfileScores();
+      checkOutlookStatus();
     }
   };
 
@@ -60,12 +60,12 @@ const Dashboard = () => {
     }
   };
 
-  const fetchProfileScores = async () => {
+  const checkOutlookStatus = async () => {
     try {
-      const response = await apiClient.get(`/business-profile/scores`);
-      setProfileScores(response.data);
+      const response = await apiClient.get('/integrations/status');
+      setOutlookConnected(response.data?.outlook?.connected || false);
     } catch (error) {
-      console.error('Failed to fetch profile scores:', error);
+      console.error('Failed to check Outlook status:', error);
     }
   };
 
@@ -104,7 +104,7 @@ const Dashboard = () => {
     { label: 'Account created', done: true, icon: CheckCircle2 },
     { label: 'Business profile', done: !!user?.business_name, path: '/business-profile', icon: Building2 },
     { label: 'Upload documents', done: stats?.total_documents > 0, path: '/data-center', icon: FolderOpen },
-    { label: 'Connect integrations', done: false, path: '/integrations', icon: Plug },
+    { label: 'Connect integrations', done: outlookConnected, path: '/integrations', icon: Plug },
   ];
 
   const setupOptions = [
@@ -114,7 +114,7 @@ const Dashboard = () => {
       icon: Building2,
       path: '/profile-import',
       color: '#0066FF',
-      done: profileScores.completeness >= 80
+      done: !!user?.business_name
     },
     {
       title: 'Upload Documents',
@@ -130,7 +130,7 @@ const Dashboard = () => {
       icon: Plug,
       path: '/integrations',
       color: '#7C3AED',
-      done: false
+      done: outlookConnected
     },
     {
       title: 'Generate Your First SOP',
