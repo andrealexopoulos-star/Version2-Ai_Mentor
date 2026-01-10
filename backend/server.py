@@ -1570,8 +1570,13 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.error(f"Outlook OAuth error: {error} - {error_description}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error={error}")
     
-    if state and state != "outlook_auth":
-        logger.error(f"Invalid state: {state}")
+    # Extract user ID from state
+    user_id = None
+    if state and state.startswith("outlook_auth_"):
+        user_id = state.replace("outlook_auth_", "")
+        logger.info(f"Outlook callback for user: {user_id}")
+    else:
+        logger.error(f"Invalid or missing state: {state}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
     
     # Exchange code for tokens
