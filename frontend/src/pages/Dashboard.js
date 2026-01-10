@@ -301,59 +301,67 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Profile Scores Card */}
+        {/* Profile Scores Card - Secondary */}
         <div 
-          className="card p-6"
+          className="card p-5"
           style={{ 
-            background: 'linear-gradient(135deg, rgba(0,102,255,0.08) 0%, var(--bg-card) 100%)',
-            border: '1px solid rgba(0,102,255,0.2)'
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-light)',
+            opacity: 0.9
           }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Profile Completeness */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
-                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Profile Completeness</span>
+                <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Profile Completeness</span>
               </div>
               <div className="flex items-end gap-3 mb-2">
-                <span className="text-5xl font-serif" style={{ color: 'var(--accent-primary)' }}>{profileScores.completeness}%</span>
-                <span className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>of fields filled</span>
+                <span className="text-4xl font-serif" style={{ color: 'var(--text-primary)' }}>{profileScores.completeness}%</span>
+                <span className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>of fields filled</span>
               </div>
-              <Progress value={profileScores.completeness} className="h-3" />
+              <Progress value={profileScores.completeness} className="h-2" />
             </div>
 
             {/* Business Score */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent-success)' }} />
-                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Business Score</span>
+                <TrendingUp className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Business Score</span>
               </div>
               <div className="flex items-end gap-3 mb-2">
-                <span className="text-5xl font-serif" style={{ color: 'var(--accent-success)' }}>{profileScores.strength}</span>
-                <span className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>/100</span>
+                <span className="text-4xl font-serif" style={{ color: 'var(--text-primary)' }}>{profileScores.strength}</span>
+                <span className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>/100</span>
               </div>
-              <Progress value={profileScores.strength} className="h-3" />
+              <Progress value={profileScores.strength} className="h-2" />
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Based on business performance & activity</p>
             </div>
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats Row - Secondary */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: 'AI Chats', value: stats?.total_chat_sessions || 0, icon: MessageSquare, change: '+12%' },
             { label: 'Documents', value: stats?.total_documents || 0, icon: FileText, change: '+5%' },
             { label: 'Analyses', value: stats?.total_analyses || 0, icon: BarChart3, change: '+8%' },
             { label: 'SOPs', value: stats?.total_sops || 0, icon: FileText, change: 'New' },
           ].map((stat, i) => (
-            <div key={i} className="stat-card">
-              <div className="flex items-center justify-between mb-4">
+            <div 
+              key={i} 
+              className="p-4 rounded-xl"
+              style={{ 
+                background: 'var(--bg-card)', 
+                border: '1px solid var(--border-light)'
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
                 <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
                   style={{ background: 'var(--bg-tertiary)' }}
                 >
-                  <stat.icon className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+                  <stat.icon className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                 </div>
                 <span 
                   className="text-xs font-medium flex items-center gap-1"
@@ -363,8 +371,8 @@ const Dashboard = () => {
                   {stat.change}
                 </span>
               </div>
-              <p className="stat-label mb-1">{stat.label}</p>
-              <p className="stat-value">{stat.value}</p>
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
+              <p className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
             </div>
           ))}
         </div>
