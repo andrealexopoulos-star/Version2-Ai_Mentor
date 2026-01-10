@@ -1534,14 +1534,17 @@ async def google_exchange(payload: GoogleExchangeRequest):
 # ==================== MICROSOFT OUTLOOK INTEGRATION ====================
 
 @api_router.get("/auth/outlook/login")
-async def outlook_login():
-    """Initiate Microsoft OAuth flow for Outlook"""
+async def outlook_login(current_user: dict = Depends(get_current_user)):
+    """Initiate Microsoft OAuth flow for Outlook - requires authenticated user"""
     redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
     
     # URL encode parameters to prevent malformed URLs
     scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
+    
+    # Pass user ID in state parameter for callback
+    state = f"outlook_auth_{current_user['id']}"
     
     auth_url = (
         f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/authorize?"
@@ -1550,7 +1553,7 @@ async def outlook_login():
         f"redirect_uri={encoded_redirect}&"
         f"response_mode=query&"
         f"scope={encoded_scope}&"
-        f"state=outlook_auth"
+        f"state={state}"
     )
     
     return {"auth_url": auth_url}
