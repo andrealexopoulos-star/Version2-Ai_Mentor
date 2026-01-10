@@ -333,22 +333,50 @@ const Integrations = () => {
             <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
               Your AI has access to these tools for deeper business intelligence
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {outlookStatus.connected && (
-                <div className="flex items-center gap-4 p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: '#0078D4' }}>
+                <div className="flex items-start gap-4 p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#0078D4' }}>
                     <span className="text-white font-bold text-lg">OL</span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Microsoft Outlook</h3>
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Connected"></div>
                     </div>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {outlookStatus.connected_email && (
+                      <p className="text-sm font-medium mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {outlookStatus.connected_email}
+                      </p>
+                    )}
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                       {outlookStatus.emails_synced} emails synced • AI intelligence active
                     </p>
+                    {outlookStatus.connected_email && outlookStatus.user_email && 
+                     outlookStatus.connected_email.toLowerCase() !== outlookStatus.user_email.toLowerCase() && (
+                      <div className="flex items-center gap-2 mt-2 p-2 rounded-lg" style={{ background: 'rgba(251, 191, 36, 0.1)' }}>
+                        <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <p className="text-xs text-amber-700">
+                          Note: This Microsoft account ({outlookStatus.connected_email}) is different from your Strategy Squad account ({outlookStatus.user_email})
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <Button 
+                      onClick={handleOutlookDisconnect}
+                      disabled={disconnecting}
+                      className="btn-secondary text-sm py-1.5 px-3"
+                      title="Disconnect Outlook"
+                    >
+                      {disconnecting ? (
+                        <span className="animate-pulse">...</span>
+                      ) : (
+                        <LogOut className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
