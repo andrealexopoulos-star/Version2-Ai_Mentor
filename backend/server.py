@@ -2124,7 +2124,7 @@ async def refresh_outlook_token(user_id: str, refresh_token: str):
 
 @api_router.get("/outlook/status")
 async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
-    """Check if Outlook is connected"""
+    """Check if Outlook is connected and return connected Microsoft account details"""
     user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     
     is_connected = bool(user_doc.get("outlook_access_token"))
@@ -2133,7 +2133,10 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
     return {
         "connected": is_connected,
         "connected_at": user_doc.get("outlook_connected_at"),
-        "emails_synced": emails_count
+        "connected_email": user_doc.get("outlook_connected_email"),  # Microsoft email that's connected
+        "connected_name": user_doc.get("outlook_connected_name"),    # Microsoft display name
+        "emails_synced": emails_count,
+        "user_email": user_doc.get("email")  # Strategy Squad account email
     }
 
 
