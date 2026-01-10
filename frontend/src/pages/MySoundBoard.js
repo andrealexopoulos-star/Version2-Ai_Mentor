@@ -458,6 +458,14 @@ const MySoundBoard = () => {
           </div>
         </div>
       </div>
+      
+      {/* Voice Chat Modal */}
+      {showVoiceChat && (
+        <VoiceChat 
+          onClose={() => setShowVoiceChat(false)}
+          onSwitchToText={() => setShowVoiceChat(false)}
+        />
+      )}
     </DashboardLayout>
   );
 };
