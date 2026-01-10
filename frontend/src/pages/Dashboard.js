@@ -17,6 +17,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
+  const [focus, setFocus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [showSetupOptions, setShowSetupOptions] = useState(false);
@@ -31,20 +32,18 @@ const Dashboard = () => {
     try {
       const response = await apiClient.get('/onboarding/status');
       if (!response.data.completed) {
-        // Redirect to onboarding if not completed
-        // Keep checkingOnboarding=true so we don't render dashboard
         navigate('/onboarding', { replace: true });
         return;
       }
-      // Onboarding completed, fetch dashboard data
       setCheckingOnboarding(false);
       fetchStats();
+      fetchFocus();
       checkOutlookStatus();
     } catch (error) {
       console.error('Failed to check onboarding:', error);
-      // If error, continue to dashboard anyway
       setCheckingOnboarding(false);
       fetchStats();
+      fetchFocus();
       checkOutlookStatus();
     }
   };
@@ -57,6 +56,15 @@ const Dashboard = () => {
       console.error('Failed to fetch stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFocus = async () => {
+    try {
+      const response = await apiClient.get('/dashboard/focus');
+      setFocus(response.data);
+    } catch (error) {
+      console.error('Failed to fetch focus:', error);
     }
   };
 
