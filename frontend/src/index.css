@@ -325,13 +325,26 @@ input[type="password"]::placeholder {
     color: white;
 }
 
-/* Stat Card */
+/* Stat Card - Mobile Responsive */
 .stat-card {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 16px;
     transition: all 0.2s ease;
+}
+
+@media (min-width: 640px) {
+    .stat-card {
+        border-radius: 16px;
+        padding: 20px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .stat-card {
+        padding: 24px;
+    }
 }
 
 .stat-card:hover {
@@ -341,10 +354,22 @@ input[type="password"]::placeholder {
 
 .stat-value {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 2.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1;
+}
+
+@media (min-width: 640px) {
+    .stat-value {
+        font-size: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .stat-value {
+        font-size: 2.5rem;
+    }
 }
 
 .stat-label {
@@ -441,14 +466,27 @@ input[type="password"]::placeholder {
     animation: slideUp 0.3s ease;
 }
 
-/* Integration Card */
+/* Integration Card - Mobile Responsive */
 .integration-card {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 16px;
     transition: all 0.2s ease;
     cursor: pointer;
+}
+
+@media (min-width: 640px) {
+    .integration-card {
+        border-radius: 16px;
+        padding: 20px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .integration-card {
+        padding: 24px;
+    }
 }
 
 .integration-card:hover {
@@ -463,15 +501,25 @@ input[type="password"]::placeholder {
 }
 
 .integration-logo {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     color: white;
+    flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .integration-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        font-size: 16px;
+    }
 }
 
 /* Quick Action Card */
