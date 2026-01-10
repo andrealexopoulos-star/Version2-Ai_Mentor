@@ -34,19 +34,18 @@ const DashboardLayout = ({ children }) => {
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
-    { icon: Zap, label: 'Strategic Suggestions', path: '/oac' },
-    { type: 'divider', label: 'Tools' },
-    { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard', isNew: true },
+    { type: 'divider', label: 'Advisory Team' },
+    { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
     { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
-    { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox', isNew: true },
-    { icon: Calendar, label: 'Calendar', path: '/calendar', isNew: true },
-    { icon: Target, label: 'Intel Centre', path: '/intel-centre' },
-    { type: 'divider', label: 'Workspace' },
-    { icon: Database, label: 'Data Centre', path: '/data-center' },
-    { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
-    { icon: FolderOpen, label: 'Documents', path: '/documents' },
+    { icon: Target, label: 'MyIntel', path: '/intel-centre' },
+    { type: 'divider', label: 'Agent IQ Builder' },
+    { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
+    { icon: Database, label: 'Data Centre', path: '/data-center' },
+    { icon: FileText, label: 'Documents & SOP', path: '/documents' },
+    { type: 'divider', label: '' },
+    { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
+    { icon: Calendar, label: 'Calendar', path: '/calendar' },
   ];
 
   const handleLogout = () => {
