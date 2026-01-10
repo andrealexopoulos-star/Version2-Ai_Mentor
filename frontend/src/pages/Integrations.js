@@ -455,24 +455,17 @@ const Integrations = () => {
                         Popular
                       </span>
                     )}
-                      <span 
-                        className="text-xs px-2 py-0.5 rounded-full"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
-                      >
-                        Popular
-                      </span>
-                    )}
                   </div>
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
                     {integration.description}
                   </p>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border-light)' }}>
+              <div className="flex items-center justify-between pt-3 sm:pt-4" style={{ borderTop: '1px solid var(--border-light)' }}>
                 {integration.tier !== 'free' && (
                   <span 
-                    className="badge"
+                    className="badge text-xs"
                     style={{ 
                       background: integration.tier === 'enterprise' ? 'rgba(255, 149, 0, 0.1)' : 'rgba(124, 58, 237, 0.1)',
                       color: integration.tier === 'enterprise' ? 'var(--accent-warning)' : 'var(--accent-secondary)'
@@ -486,18 +479,17 @@ const Integrations = () => {
                 
                 <Button 
                   onClick={() => handleConnect(integration)}
-                  className={isConnected ? 'btn-secondary text-sm py-2 px-4' : integration.tier === 'free' ? 'btn-primary text-sm py-2 px-4' : 'btn-secondary text-sm py-2 px-4'}
+                  className={`text-xs sm:text-sm py-2 px-3 sm:px-4 ${isConnected ? 'btn-secondary' : integration.tier === 'free' ? 'btn-primary' : 'btn-secondary'}`}
                   disabled={connecting === integration.id || isConnected}
                 >
                   {isConnected ? (
                     <>
-                      <CheckCircle2 className="w-4 h-4 mr-1" />
-                      Connected
+                      <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                      <span className="hidden sm:inline">Connected</span>
+                      <span className="sm:hidden">✓</span>
                     </>
                   ) : connecting === integration.id ? (
-                    <>
-                      <span className="animate-pulse">Connecting...</span>
-                    </>
+                    <span className="animate-pulse">...</span>
                   ) : (
                     integration.tier === 'free' ? 'Connect' : 'Upgrade'
                   )}
