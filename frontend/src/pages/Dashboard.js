@@ -377,26 +377,30 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Secondary */}
         <div>
-          <h3 className="mb-4" style={{ color: 'var(--text-primary)' }}>Quick Actions</h3>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>Quick Actions</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {quickActions.map((action, i) => (
               <button
                 key={i}
                 onClick={() => navigate(action.path)}
-                className="quick-action"
+                className="p-4 rounded-xl text-left transition-all hover:shadow-sm"
+                style={{ 
+                  background: 'var(--bg-card)', 
+                  border: '1px solid var(--border-light)'
+                }}
               >
                 <div 
-                  className="quick-action-icon"
-                  style={{ background: `${action.color}15` }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+                  style={{ background: `${action.color}10` }}
                 >
-                  <action.icon className="w-6 h-6" style={{ color: action.color }} />
+                  <action.icon className="w-4 h-4" style={{ color: action.color }} />
                 </div>
-                <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                <h4 className="text-sm font-medium mb-0.5" style={{ color: 'var(--text-primary)' }}>
                   {action.title}
                 </h4>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {action.desc}
                 </p>
               </button>
@@ -404,58 +408,64 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity - Secondary */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Recent Chats */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <h3 style={{ color: 'var(--text-primary)' }}>Recent Conversations</h3>
+          <div 
+            className="p-5 rounded-xl"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Recent Conversations</h3>
               <button 
                 onClick={() => navigate('/advisor')}
-                className="btn-ghost text-sm"
-                style={{ color: 'var(--accent-primary)' }}
+                className="text-xs"
+                style={{ color: 'var(--text-muted)' }}
               >
                 View All
               </button>
             </div>
             {stats?.recent_analyses?.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {stats.recent_analyses.slice(0, 3).map((item, i) => (
                   <div 
                     key={i}
-                    className="flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-colors"
+                    className="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors"
                     style={{ background: 'var(--bg-tertiary)' }}
                     onClick={() => navigate('/advisor')}
                   >
                     <div 
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ background: 'var(--accent-primary)' }}
                     >
-                      <MessageSquare className="w-5 h-5 text-white" />
+                      <MessageSquare className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                         {item.title || 'Business Advisory Chat'}
                       </p>
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                         {new Date(item.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <ArrowRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                    <ArrowRight className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <MessageSquare className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+              <div className="text-center py-6">
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
+                  style={{ background: 'var(--bg-tertiary)' }}
+                >
+                  <MessageSquare className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
                 </div>
-                <p className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No conversations yet</p>
-                <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-sm mb-1" style={{ color: 'var(--text-primary)' }}>No conversations yet</p>
+                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
                   Start chatting with your AI advisor
                 </p>
-                <Button onClick={() => navigate('/advisor')} className="btn-primary">
-                  <Plus className="w-4 h-4" />
+                <Button onClick={() => navigate('/advisor')} className="btn-secondary text-xs px-3 py-1.5">
+                  <Plus className="w-3 h-3" />
                   Start Chat
                 </Button>
               </div>
@@ -463,18 +473,21 @@ const Dashboard = () => {
           </div>
 
           {/* Connect Integrations */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <h3 style={{ color: 'var(--text-primary)' }}>Integrations</h3>
+          <div 
+            className="p-5 rounded-xl"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Integrations</h3>
               <button 
                 onClick={() => navigate('/integrations')}
-                className="btn-ghost text-sm"
-                style={{ color: 'var(--accent-primary)' }}
+                className="text-xs"
+                style={{ color: 'var(--text-muted)' }}
               >
                 View All
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {[
                 { name: 'HubSpot', desc: 'Connect your CRM', color: '#FF7A59', logo: 'HS' },
                 { name: 'Xero', desc: 'Sync accounting data', color: '#13B5EA', logo: 'XE' },
@@ -482,22 +495,22 @@ const Dashboard = () => {
               ].map((int, i) => (
                 <div 
                   key={i}
-                  className="flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors"
                   style={{ background: 'var(--bg-tertiary)' }}
                   onClick={() => navigate('/integrations')}
                 >
                   <div 
-                    className="integration-logo"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white"
                     style={{ background: int.color }}
                   >
                     {int.logo}
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{int.name}</p>
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{int.desc}</p>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{int.name}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{int.desc}</p>
                   </div>
                   <Button 
-                    className="btn-secondary text-sm py-2 px-4"
+                    className="btn-secondary text-xs px-3 py-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate('/integrations');
