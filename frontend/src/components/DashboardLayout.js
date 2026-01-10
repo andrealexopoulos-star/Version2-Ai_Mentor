@@ -333,6 +333,9 @@ const DashboardLayout = ({ children }) => {
               );
             }
             
+            // Check if this nav item should show notification badge
+            const showNotificationBadge = item.showBadge && notifications.total > 0;
+            
             return (
               <button
                 key={item.path}
@@ -344,7 +347,15 @@ const DashboardLayout = ({ children }) => {
               >
                 <item.icon className="w-5 h-5" />
                 <span className="flex-1 text-left">{item.label}</span>
-                {item.isNew && (
+                {showNotificationBadge && (
+                  <span 
+                    className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full"
+                    style={{ background: notifications.high > 0 ? '#EF4444' : '#F59E0B' }}
+                  >
+                    {notifications.total > 9 ? '•' : notifications.total}
+                  </span>
+                )}
+                {item.isNew && !showNotificationBadge && (
                   <span className="badge-new">New</span>
                 )}
               </button>
