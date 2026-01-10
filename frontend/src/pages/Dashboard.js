@@ -160,11 +160,11 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 style={{ color: 'var(--text-primary)' }}>
-              Welcome back, {user?.name?.split(' ')[0]} 👋
+            <h1 className="text-3xl md:text-4xl font-serif leading-tight" style={{ color: 'var(--text-primary)' }}>
+              Here's What Matters in Your Business Right Now
             </h1>
-            <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
-              Here&apos;s what&apos;s happening with your business today
+            <p className="mt-2 text-base" style={{ color: 'var(--text-secondary)' }}>
+              One clear priority. No noise. Updated as your business changes.
             </p>
           </div>
           <Button 
@@ -176,29 +176,33 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Setup Progress Card */}
+        {/* Hero Card - Your Best Move Right Now */}
         {completedSteps < setupSteps.length && (
           <div 
-            className="card p-6"
+            className="card p-8 relative overflow-hidden"
             style={{ 
-              background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.05) 0%, var(--bg-card) 100%)',
-              borderColor: 'rgba(0, 102, 255, 0.2)'
+              background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.12) 0%, rgba(0, 102, 255, 0.04) 50%, var(--bg-card) 100%)',
+              border: '2px solid rgba(0, 102, 255, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 102, 255, 0.15)'
             }}
           >
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
-                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    Complete your setup
-                  </span>
-                  <span 
-                    className="badge badge-primary"
+                <div className="flex items-center gap-3 mb-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ background: 'var(--accent-primary)' }}
                   >
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    Your Best Move Right Now
+                  </span>
+                  <span className="badge badge-primary text-sm px-3 py-1">
                     {completedSteps}/{setupSteps.length}
                   </span>
                 </div>
-                <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                <p className="text-base mb-5" style={{ color: 'var(--text-secondary)' }}>
                   Complete these steps to unlock personalised AI insights
                 </p>
                 <div className="flex flex-wrap gap-4">
@@ -224,7 +228,7 @@ const Dashboard = () => {
               </div>
               <Button 
                 onClick={() => setShowSetupOptions(true)}
-                className="btn-primary"
+                className="btn-primary text-base px-6 py-3"
               >
                 Continue Setup
                 <ArrowRight className="w-4 h-4" />
