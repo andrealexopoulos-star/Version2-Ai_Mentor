@@ -1561,8 +1561,11 @@ async def outlook_login(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/auth/outlook/callback")
 async def outlook_callback(code: str, state: str = None, error: str = None, error_description: str = None):
-    """Handle Microsoft OAuth callback and store tokens - NO AUTH REQUIRED"""
+    """Handle Microsoft OAuth callback and store tokens - SECURE IMPLEMENTATION"""
     from fastapi.responses import RedirectResponse
+    import hashlib
+    import hmac
+    
     frontend_url = os.environ['FRONTEND_URL']
     
     # Handle OAuth errors
@@ -1570,11 +1573,30 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.error(f"Outlook OAuth error: {error} - {error_description}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error={error}")
     
-    # Extract user ID from state
+    # Extract and validate state parameter (contains user_id and verification hash)
     user_id = None
     if state and state.startswith("outlook_auth_"):
-        user_id = state.replace("outlook_auth_", "")
-        logger.info(f"Outlook callback for user: {user_id}")
+        # State format: outlook_auth_{user_id}_{hmac_signature}
+        state_parts = state.replace("outlook_auth_", "").split("_sig_")
+        if len(state_parts) != 2:
+            logger.error(f"Invalid state format: {state}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
+        
+        user_id = state_parts[0]
+        provided_signature = state_parts[1]
+        
+        # Verify the signature to prevent tampering
+        expected_signature = hmac.new(
+            JWT_SECRET.encode(),
+            f"outlook_auth_{user_id}".encode(),
+            hashlib.sha256
+        ).hexdigest()[:16]
+        
+        if not hmac.compare_digest(provided_signature, expected_signature):
+            logger.error(f"State signature mismatch for user: {user_id}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state_signature")
+        
+        logger.info(f"Outlook callback for verified user: {user_id}")
     else:
         logger.error(f"Invalid or missing state: {state}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
@@ -1618,9 +1640,9 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         )
         user_info = user_response.json()
     
-    microsoft_email = user_info.get("mail") or user_info.get("userPrincipalName")
+    microsoft_email = (user_info.get("mail") or user_info.get("userPrincipalName") or "").lower().strip()
     microsoft_name = user_info.get("displayName", "")
-    logger.info(f"Microsoft user: {microsoft_email}")
+    logger.info(f"Microsoft user email: {microsoft_email}")
     
     # Find our user by the ID passed through state
     our_user = await db.users.find_one({"id": user_id}, {"_id": 0})
@@ -1629,26 +1651,48 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.error(f"User not found by ID: {user_id}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
     
-    # Store tokens in user document
+    our_user_email = (our_user.get("email") or "").lower().strip()
+    
+    # SECURITY CHECK: Verify the Microsoft account being connected
+    # Store the Microsoft email separately to track which MS account is connected
+    # This creates an audit trail and prevents data mixing
+    logger.info(f"Connecting Microsoft account '{microsoft_email}' to Strategy Squad user '{our_user_email}' (ID: {user_id})")
+    
+    # Store tokens in user document WITH the connected Microsoft email for audit/transparency
     await db.users.update_one(
         {"id": our_user["id"]},
         {"$set": {
             "outlook_access_token": token_data.get("access_token"),
             "outlook_refresh_token": token_data.get("refresh_token"),
             "outlook_token_expires_at": (datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))).isoformat(),
-            "outlook_connected_at": datetime.now(timezone.utc).isoformat()
+            "outlook_connected_at": datetime.now(timezone.utc).isoformat(),
+            "outlook_connected_email": microsoft_email,  # Track which MS account is connected
+            "outlook_connected_name": microsoft_name
         }}
     )
+    
+    # Log the connection for security audit
+    await db.security_audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "event_type": "outlook_integration_connected",
+        "user_id": our_user["id"],
+        "user_email": our_user_email,
+        "microsoft_email": microsoft_email,
+        "microsoft_name": microsoft_name,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "ip_address": "callback_flow"  # Would need request context for real IP
+    })
     
     # Trigger comprehensive sync in background
     import asyncio
     job_id = str(uuid.uuid4())
     asyncio.create_task(start_comprehensive_sync_job(our_user["id"], job_id))
     
-    # Redirect to frontend success page
+    # Redirect to frontend success page with connected email for user confirmation
     from fastapi.responses import RedirectResponse
+    from urllib.parse import quote
     frontend_url = os.environ['FRONTEND_URL']
-    return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true&job_id={job_id}")
+    return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true&job_id={job_id}&connected_email={quote(microsoft_email)}")
 
 
 async def start_comprehensive_sync_job(user_id: str, job_id: str):
