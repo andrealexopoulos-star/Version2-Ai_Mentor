@@ -423,22 +423,22 @@ const Integrations = () => {
         </div>
 
         {/* Integration Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filteredIntegrations.map((integration) => {
             const isConnected = integration.id === 'outlook' && outlookStatus.connected;
             
             return (
               <div key={integration.id} className={`integration-card ${isConnected ? 'border-2 border-green-500' : ''}`}>
-              <div className="flex items-start gap-4 mb-4">
+              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div 
                   className="integration-logo"
                   style={{ background: integration.color }}
                 >
                   {integration.logo}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <h4 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
                       {integration.name}
                     </h4>
                     {isConnected && (
@@ -448,6 +448,13 @@ const Integrations = () => {
                       </div>
                     )}
                     {integration.popular && !isConnected && (
+                      <span 
+                        className="text-xs px-2 py-0.5 rounded-full hidden sm:inline-block"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
+                      >
+                        Popular
+                      </span>
+                    )}
                       <span 
                         className="text-xs px-2 py-0.5 rounded-full"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
