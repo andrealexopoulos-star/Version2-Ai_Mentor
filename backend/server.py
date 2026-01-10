@@ -5260,6 +5260,159 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "recent_documents": recent_documents
     }
 
+
+@api_router.get("/dashboard/focus")
+async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
+    """
+    Generate ONE clear business focus for the user based on available data.
+    This is the AI mentor's primary output on the dashboard.
+    """
+    user_id = current_user["id"]
+    
+    # Gather available data signals
+    data_signals = {
+        "has_profile": False,
+        "profile_completeness": 0,
+        "has_outlook": False,
+        "emails_synced": 0,
+        "has_calendar": False,
+        "upcoming_meetings": 0,
+        "has_documents": False,
+        "document_count": 0,
+        "has_chat_history": False,
+        "recent_activity": False,
+        "email_priority_high": 0,
+        "days_since_last_activity": 0
+    }
+    
+    # Check business profile
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    if profile:
+        data_signals["has_profile"] = True
+        # Calculate simple completeness
+        fields = ["business_name", "industry", "business_model", "target_market", "main_challenges", "short_term_goals"]
+        filled = sum(1 for f in fields if profile.get(f))
+        data_signals["profile_completeness"] = int((filled / len(fields)) * 100)
+    
+    # Check Outlook connection
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if user_doc and user_doc.get("outlook_access_token"):
+        data_signals["has_outlook"] = True
+        email_count = await db.outlook_emails.count_documents({"user_id": user_id})
+        data_signals["emails_synced"] = email_count
+        
+        # Check high priority emails
+        priority = await db.email_priority_analysis.find_one({"user_id": user_id}, {"_id": 0})
+        if priority and priority.get("analysis"):
+            high_priority = priority["analysis"].get("high_priority", [])
+            data_signals["email_priority_high"] = len(high_priority)
+    
+    # Check calendar
+    calendar_count = await db.calendar_events.count_documents({"user_id": user_id})
+    if calendar_count > 0:
+        data_signals["has_calendar"] = True
+        data_signals["upcoming_meetings"] = calendar_count
+    
+    # Check documents
+    doc_count = await db.documents.count_documents({"user_id": user_id})
+    if doc_count > 0:
+        data_signals["has_documents"] = True
+        data_signals["document_count"] = doc_count
+    
+    # Check recent activity
+    recent_chats = await db.chat_history.find(
+        {"user_id": user_id},
+        {"_id": 0, "created_at": 1}
+    ).sort("created_at", -1).limit(1).to_list(1)
+    
+    if recent_chats:
+        data_signals["has_chat_history"] = True
+        last_activity = recent_chats[0].get("created_at")
+        if last_activity:
+            try:
+                last_date = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
+                days_diff = (datetime.now(timezone.utc) - last_date).days
+                data_signals["days_since_last_activity"] = days_diff
+                data_signals["recent_activity"] = days_diff < 7
+            except:
+                pass
+    
+    # Determine focus based on available signals
+    focus = await generate_focus_insight(data_signals, profile, user_doc)
+    
+    return focus
+
+
+async def generate_focus_insight(signals: dict, profile: dict, user: dict) -> dict:
+    """Generate a single, calm focus insight based on available data."""
+    
+    # Check what data is actually available
+    has_operational_data = signals["has_outlook"] or signals["has_calendar"] or signals["has_documents"]
+    has_profile_data = signals["has_profile"] and signals["profile_completeness"] > 30
+    
+    # Priority 1: High priority emails need attention
+    if signals["email_priority_high"] > 0:
+        return {
+            "focus": "You have emails that need attention.",
+            "context": "Recent patterns suggest these may impact important relationships or decisions.",
+            "type": "action",
+            "confidence": "high"
+        }
+    
+    # Priority 2: Upcoming meetings need prep
+    if signals["upcoming_meetings"] > 5:
+        return {
+            "focus": "Your calendar is busy. Protect your thinking time.",
+            "context": "With several meetings ahead, scheduling preparation blocks will help you stay effective.",
+            "type": "awareness",
+            "confidence": "high"
+        }
+    
+    # Priority 3: Profile needs attention for better insights
+    if signals["has_profile"] and signals["profile_completeness"] < 50:
+        return {
+            "focus": "Your profile could use more detail.",
+            "context": "More business context means sharper, more relevant guidance from your AI team.",
+            "type": "setup",
+            "confidence": "high"
+        }
+    
+    # Priority 4: No data connected yet
+    if not has_operational_data and not has_profile_data:
+        return {
+            "focus": "You're in the early signal phase. Clarity beats optimisation right now.",
+            "context": "As you connect tools and add context, your focus will become more precise.",
+            "type": "onboarding",
+            "confidence": "low"
+        }
+    
+    # Priority 5: Data exists but nothing urgent
+    if has_operational_data and signals["recent_activity"]:
+        return {
+            "focus": "Nothing requires urgent attention right now.",
+            "context": "Your available data suggests stability. This is a good time to maintain discipline.",
+            "type": "stability",
+            "confidence": "medium"
+        }
+    
+    # Priority 6: User hasn't been active recently
+    if signals["days_since_last_activity"] > 7:
+        return {
+            "focus": "Consistency creates clarity.",
+            "context": "A quick check-in keeps your business intelligence fresh and relevant.",
+            "type": "engagement",
+            "confidence": "medium"
+        }
+    
+    # Default: Calm reassurance
+    return {
+        "focus": "Everything looks stable. Stay the course.",
+        "context": "No significant changes detected since your last visit.",
+        "type": "stability",
+        "confidence": "medium"
+    }
+
+
 # ==================== ROOT ====================
 
 @api_router.get("/")
