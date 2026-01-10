@@ -305,41 +305,50 @@ const Integrations = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 max-w-6xl animate-fade-in">
+      <div className="space-y-6 sm:space-y-8 max-w-6xl animate-fade-in">
         {/* Header */}
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Plug className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-            <span className="badge badge-primary">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+            <Plug className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'var(--accent-primary)' }} />
+            <span className="badge badge-primary text-xs sm:text-sm">
               <Zap className="w-3 h-3" />
               Power Up
             </span>
           </div>
           <h1 style={{ color: 'var(--text-primary)' }}>Integrations</h1>
-          <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+          <p className="mt-2 text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
             Connect your business tools for ultra-personalised AI insights
           </p>
         </div>
 
         {/* Connected Business Tools Section */}
         {outlookStatus.connected && (
-          <div className="card p-6" style={{ background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, var(--bg-card) 100%)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
-              <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Connected Business Tools
+          <div className="card p-4 sm:p-6" style={{ background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, var(--bg-card) 100%)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+              <h2 className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Connected Tools
               </h2>
             </div>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: 'var(--text-secondary)' }}>
               Your AI has access to these tools for deeper business intelligence
             </p>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4">
               {outlookStatus.connected && (
-                <div className="flex items-start gap-4 p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#0078D4' }}>
-                    <span className="text-white font-bold text-lg">OL</span>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#0078D4' }}>
+                      <span className="text-white font-bold text-base sm:text-lg">OL</span>
+                    </div>
+                    <div className="flex-1 min-w-0 sm:hidden">
+                      <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Microsoft Outlook</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-green-600">Connected</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 hidden sm:block">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Microsoft Outlook</h3>
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Connected"></div>
