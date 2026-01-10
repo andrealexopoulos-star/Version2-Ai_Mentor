@@ -144,12 +144,100 @@ const DashboardLayout = ({ children }) => {
             {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
           
-          <button
-            className="p-2.5 rounded-lg transition-colors hidden sm:flex"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <Bell className="w-5 h-5" />
-          </button>
+          {/* Notifications Bell */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2.5 rounded-lg transition-colors hidden sm:flex relative"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <Bell className="w-5 h-5" />
+              {notifications.total > 0 && (
+                <span 
+                  className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full"
+                  style={{ background: notifications.high > 0 ? '#EF4444' : '#F59E0B' }}
+                >
+                  {notifications.total > 9 ? '9+' : notifications.total}
+                </span>
+              )}
+            </button>
+            
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <div 
+                className="absolute right-0 top-12 w-80 max-h-96 overflow-y-auto rounded-xl shadow-xl z-50"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+              >
+                <div className="p-3 border-b" style={{ borderColor: 'var(--border-light)' }}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Notifications</h3>
+                    {notifications.high > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600">
+                        {notifications.high} urgent
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {notificationsList.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Bell className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No notifications</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                      We'll alert you when something needs attention
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    {notificationsList.map((notif, idx) => (
+                      <div 
+                        key={idx}
+                        className="p-3 border-b cursor-pointer hover:bg-opacity-50 transition-colors"
+                        style={{ 
+                          borderColor: 'var(--border-light)',
+                          background: notif.severity === 'high' ? 'rgba(239, 68, 68, 0.05)' : 'transparent'
+                        }}
+                        onClick={() => {
+                          setShowNotifications(false);
+                          if (notif.type === 'email' || notif.type === 'complaint') {
+                            navigate('/email-inbox');
+                          } else if (notif.type === 'meeting') {
+                            navigate('/calendar');
+                          } else {
+                            navigate('/intel-centre');
+                          }
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{ 
+                              background: notif.severity === 'high' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)'
+                            }}
+                          >
+                            <AlertCircle 
+                              className="w-4 h-4" 
+                              style={{ color: notif.severity === 'high' ? '#EF4444' : '#F59E0B' }} 
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                              {notif.title}
+                            </p>
+                            <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--text-muted)' }}>
+                              {notif.message}
+                            </p>
+                            <p className="text-xs mt-1" style={{ color: 'var(--accent-primary)' }}>
+                              {notif.action}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           
           <button
             className="p-2.5 rounded-lg transition-colors hidden sm:flex"
