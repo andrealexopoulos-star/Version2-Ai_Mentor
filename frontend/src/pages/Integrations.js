@@ -5,7 +5,8 @@ import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { 
   Plug, Check, ExternalLink, Search, X,
-  Lock, ArrowRight, Zap, AlertCircle, CheckCircle2
+  Lock, ArrowRight, Zap, AlertCircle, CheckCircle2,
+  LogOut, ShieldAlert
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -16,16 +17,27 @@ const Integrations = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showModal, setShowModal] = useState(null);
   const [connecting, setConnecting] = useState(null);
-  const [outlookStatus, setOutlookStatus] = useState({ connected: false, emails_synced: 0 });
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [outlookStatus, setOutlookStatus] = useState({ 
+    connected: false, 
+    emails_synced: 0,
+    connected_email: null,
+    connected_name: null,
+    user_email: null
+  });
 
   // Handle URL parameters from OAuth callback
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');
     const outlookError = searchParams.get('outlook_error');
     const jobId = searchParams.get('job_id');
+    const connectedEmail = searchParams.get('connected_email');
 
     if (outlookConnected === 'true') {
-      toast.success('Microsoft Outlook connected successfully! Your AI is now analyzing your emails.');
+      const message = connectedEmail 
+        ? `Microsoft Outlook (${decodeURIComponent(connectedEmail)}) connected successfully!`
+        : 'Microsoft Outlook connected successfully!';
+      toast.success(message + ' Your AI is now analyzing your emails.');
       // Clear URL parameters
       setSearchParams({});
       // Refresh status
@@ -33,7 +45,10 @@ const Integrations = () => {
     } else if (outlookError) {
       const errorMessages = {
         'auth_failed': 'Failed to authenticate with Microsoft. Please try again.',
-        'user_not_found': 'Your email address is not registered with this app. Please register first.',
+        'user_not_found': 'Your account was not found. Please ensure you are logged in.',
+        'invalid_state': 'Security validation failed. Please try again.',
+        'invalid_state_signature': 'Security signature mismatch. Please try connecting again.',
+        'token_exchange_failed': 'Failed to complete Microsoft authentication. Please try again.',
       };
       toast.error(errorMessages[outlookError] || `Connection error: ${outlookError}`);
       setSearchParams({});
