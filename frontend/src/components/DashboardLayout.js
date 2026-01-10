@@ -34,9 +34,9 @@ const DashboardLayout = ({ children }) => {
 
   const navItems = [
     { type: 'divider', label: 'Advisory Team' },
-    { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
-    { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
     { icon: Target, label: 'MyIntel', path: '/intel-centre' },
+    { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor' },
+    { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'Agent IQ Builder' },
     { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
