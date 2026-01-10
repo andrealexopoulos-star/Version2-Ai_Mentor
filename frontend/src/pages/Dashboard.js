@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
-import { Progress } from '../components/ui/progress';
 import { apiClient } from '../lib/api';
 import { 
-  MessageSquare, FileText, BarChart3, 
-  Plus, ArrowRight, ArrowUpRight, Loader2, Zap, Target,
+  MessageSquare, FileText, 
+  ArrowRight, Loader2,
   CheckCircle2, Circle, Plug, Building2, FolderOpen, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
