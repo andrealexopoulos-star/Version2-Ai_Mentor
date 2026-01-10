@@ -184,48 +184,67 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Hero Card - Your Best Move Right Now */}
+        {/* AI Focus Card - Primary Hero */}
+        <div 
+          className="card p-8 relative overflow-hidden"
+          style={{ 
+            background: focus?.type === 'action' 
+              ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, var(--bg-card) 100%)'
+              : focus?.type === 'stability'
+              ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, var(--bg-card) 100%)'
+              : 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, var(--bg-card) 100%)',
+            border: focus?.type === 'action'
+              ? '2px solid rgba(245, 158, 11, 0.25)'
+              : focus?.type === 'stability'
+              ? '2px solid rgba(34, 197, 94, 0.25)'
+              : '2px solid rgba(0, 102, 255, 0.25)',
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)'
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <p 
+              className="text-2xl md:text-3xl font-serif leading-snug"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {focus?.focus || "Checking your business signals..."}
+            </p>
+            {focus?.context && (
+              <p 
+                className="text-base leading-relaxed max-w-2xl"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {focus.context}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Setup Progress - Secondary */}
         {completedSteps < setupSteps.length && (
           <div 
-            className="card p-8 relative overflow-hidden"
+            className="p-5 rounded-xl"
             style={{ 
-              background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.12) 0%, rgba(0, 102, 255, 0.04) 50%, var(--bg-card) 100%)',
-              border: '2px solid rgba(0, 102, 255, 0.3)',
-              boxShadow: '0 8px 32px rgba(0, 102, 255, 0.15)'
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-light)'
             }}
           >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ background: 'var(--accent-primary)' }}
-                  >
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    Your Best Move Right Now
-                  </span>
-                  <span className="badge badge-primary text-sm px-3 py-1">
-                    {completedSteps}/{setupSteps.length}
-                  </span>
-                </div>
-                <p className="text-base mb-5" style={{ color: 'var(--text-secondary)' }}>
-                  Complete these steps to unlock personalised AI insights
-                </p>
-                <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  Setup Progress
+                </span>
+                <div className="flex gap-3">
                   {setupSteps.map((step, i) => (
-                    <div key={i} className="flex items-center gap-2">
+                    <div key={i} className="flex items-center gap-1.5">
                       {step.done ? (
-                        <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--accent-success)' }} />
+                        <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--accent-success)' }} />
                       ) : (
-                        <Circle className="w-5 h-5" style={{ color: 'var(--border-medium)' }} />
+                        <Circle className="w-4 h-4" style={{ color: 'var(--border-medium)' }} />
                       )}
                       <span 
-                        className="text-sm"
+                        className="text-xs hidden sm:inline"
                         style={{ 
-                          color: step.done ? 'var(--text-primary)' : 'var(--text-muted)',
-                          textDecoration: step.done ? 'line-through' : 'none'
+                          color: step.done ? 'var(--text-primary)' : 'var(--text-muted)'
                         }}
                       >
                         {step.label}
@@ -236,10 +255,10 @@ const Dashboard = () => {
               </div>
               <Button 
                 onClick={() => setShowSetupOptions(true)}
-                className="btn-primary text-base px-6 py-3"
+                className="btn-secondary text-sm"
               >
                 Continue Setup
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3 h-3" />
               </Button>
             </div>
           </div>
