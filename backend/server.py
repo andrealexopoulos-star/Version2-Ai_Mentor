@@ -1536,6 +1536,9 @@ async def google_exchange(payload: GoogleExchangeRequest):
 @api_router.get("/auth/outlook/login")
 async def outlook_login(current_user: dict = Depends(get_current_user)):
     """Initiate Microsoft OAuth flow for Outlook - requires authenticated user"""
+    import hashlib
+    import hmac
+    
     redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
     
     # URL encode parameters to prevent malformed URLs
@@ -1543,8 +1546,19 @@ async def outlook_login(current_user: dict = Depends(get_current_user)):
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
     
-    # Pass user ID in state parameter for callback
-    state = f"outlook_auth_{current_user['id']}"
+    # Create a signed state parameter to prevent CSRF and tampering
+    # Format: outlook_auth_{user_id}_sig_{hmac_signature}
+    user_id = current_user['id']
+    signature = hmac.new(
+        JWT_SECRET.encode(),
+        f"outlook_auth_{user_id}".encode(),
+        hashlib.sha256
+    ).hexdigest()[:16]  # Use first 16 chars for shorter URL
+    
+    state = f"outlook_auth_{user_id}_sig_{signature}"
+    
+    # Log the OAuth initiation for security audit
+    logger.info(f"Outlook OAuth initiated for user: {current_user['email']} (ID: {user_id})")
     
     auth_url = (
         f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/authorize?"
