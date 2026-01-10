@@ -156,57 +156,87 @@ const Advisor = () => {
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
           <div className="max-w-4xl mx-auto px-6 py-8">
-            {/* Focus Area Cards - Show at start */}
+            {/* AI Focus + Focus Area Cards - Show at start */}
             {showFocusAreas && messages.length === 0 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
-                    What would you like to work on today?
+              <div className="space-y-8">
+                {/* AI Focus Hero */}
+                <div 
+                  className="p-8 rounded-2xl"
+                  style={{ 
+                    background: focus?.type === 'action' 
+                      ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, var(--bg-card) 100%)'
+                      : focus?.type === 'stability'
+                      ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, var(--bg-card) 100%)'
+                      : 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, var(--bg-card) 100%)',
+                    border: focus?.type === 'action'
+                      ? '1px solid rgba(245, 158, 11, 0.2)'
+                      : focus?.type === 'stability'
+                      ? '1px solid rgba(34, 197, 94, 0.2)'
+                      : '1px solid rgba(0, 102, 255, 0.2)'
+                  }}
+                >
+                  <p className="text-xs font-medium uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>
+                    Here's What Matters Right Now
+                  </p>
+                  <p 
+                    className="text-2xl md:text-3xl font-serif leading-snug mb-3"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {focus?.focus || "Checking your business signals..."}
+                  </p>
+                  {focus?.context && (
+                    <p 
+                      className="text-base leading-relaxed"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {focus.context}
+                    </p>
+                  )}
+                </div>
+
+                {/* Focus Areas */}
+                <div>
+                  <h2 className="text-lg font-medium mb-4" style={{ color: 'var(--text-primary)' }}>
+                    What would you like to work on?
                   </h2>
-                  <p style={{ color: 'var(--text-secondary)' }}>
-                    Choose a focus area and I'll guide you step by step
-                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {focusAreas.map((area) => {
+                      const Icon = area.icon;
+                      return (
+                        <button
+                          key={area.id}
+                          onClick={() => handleFocusAreaSelect(area)}
+                          className="text-left p-4 rounded-xl border transition-all hover:shadow-md"
+                          style={{
+                            borderColor: 'var(--border-light)',
+                            background: 'var(--bg-card)'
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ background: `${area.color}15` }}
+                            >
+                              <Icon className="w-5 h-5" style={{ color: area.color }} />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                                {area.title}
+                              </h3>
+                              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                {area.description}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {focusAreas.map((area) => {
-                    const Icon = area.icon;
-                    return (
-                      <button
-                        key={area.id}
-                        onClick={() => handleFocusAreaSelect(area)}
-                        className="text-left p-6 rounded-xl border-2 transition-all hover:shadow-lg"
-                        style={{
-                          borderColor: 'var(--border-medium)',
-                          background: 'var(--bg-card)'
-                        }}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: `${area.color}15` }}
-                          >
-                            <Icon className="w-6 h-6" style={{ color: area.color }} />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                              {area.title}
-                            </h3>
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                              {area.description}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="text-center mt-8">
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Or type your question below to start
-                  </p>
-                </div>
+                <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Or type your question below to start a conversation
+                </p>
               </div>
             )}
 
