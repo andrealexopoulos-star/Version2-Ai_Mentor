@@ -1,10 +1,27 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/card';
+import { Progress } from '../components/ui/progress';
 import { Target, Stethoscope, BarChart3, TrendingUp, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { apiClient } from '../lib/api';
 
 const IntelCentre = () => {
   const navigate = useNavigate();
+  const [businessScore, setBusinessScore] = useState(0);
+
+  useEffect(() => {
+    fetchBusinessScore();
+  }, []);
+
+  const fetchBusinessScore = async () => {
+    try {
+      const response = await apiClient.get('/business-profile/scores');
+      setBusinessScore(response.data?.strength || 0);
+    } catch (error) {
+      console.error('Failed to fetch business score:', error);
+    }
+  };
 
   const tools = [
     {
@@ -30,21 +47,65 @@ const IntelCentre = () => {
     }
   ];
 
+  const getScoreColor = (score) => {
+    if (score >= 70) return 'var(--accent-success)';
+    if (score >= 40) return '#F59E0B';
+    return '#EF4444';
+  };
+
+  const getScoreLabel = (score) => {
+    if (score >= 70) return 'Strong';
+    if (score >= 40) return 'Developing';
+    return 'Needs Attention';
+  };
+
   return (
     <DashboardLayout>
       <div className="p-8">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
               <Target className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
               <span className="badge badge-primary">Intelligence Hub</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
-              Intel Centre
+              MyIntel
             </h1>
             <p style={{ color: 'var(--text-secondary)' }}>
               Business intelligence, diagnostics, and market insights powered by AI
+            </p>
+          </div>
+
+          {/* Business Score Card */}
+          <div 
+            className="p-6 rounded-xl mb-8"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, var(--bg-card) 100%)',
+              border: `1px solid ${getScoreColor(businessScore)}40`
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" style={{ color: getScoreColor(businessScore) }} />
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Business Score</span>
+                <span 
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ 
+                    background: `${getScoreColor(businessScore)}20`,
+                    color: getScoreColor(businessScore)
+                  }}
+                >
+                  {getScoreLabel(businessScore)}
+                </span>
+              </div>
+              <span className="text-4xl font-serif" style={{ color: getScoreColor(businessScore) }}>
+                {businessScore}<span className="text-lg">/100</span>
+              </span>
+            </div>
+            <Progress value={businessScore} className="h-2 mb-2" />
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              Based on your business performance, profile completeness, and activity
             </p>
           </div>
 
