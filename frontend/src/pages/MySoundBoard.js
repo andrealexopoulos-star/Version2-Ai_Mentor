@@ -303,6 +303,15 @@ const MySoundBoard = () => {
                 Your thinking partner for clarity
               </p>
             </div>
+            
+            {/* Voice Call Button */}
+            <Button 
+              onClick={() => setShowVoiceChat(true)}
+              className="bg-green-600 hover:bg-green-700 text-white gap-2"
+            >
+              <Video className="w-4 h-4" />
+              Start Voice Call
+            </Button>
           </div>
 
           {/* Messages */}
@@ -319,9 +328,25 @@ const MySoundBoard = () => {
                   <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                     What's on your mind?
                   </h2>
-                  <p className="max-w-md mx-auto mb-6" style={{ color: 'var(--text-muted)' }}>
+                  <p className="max-w-md mx-auto mb-4" style={{ color: 'var(--text-muted)' }}>
                     I'm here to help you think clearly. Share what's going on — a decision you're wrestling with, an idea forming, or something that's been stuck.
                   </p>
+                  
+                  {/* Voice Call CTA */}
+                  <div 
+                    className="inline-flex items-center gap-3 px-5 py-3 rounded-xl mb-6 cursor-pointer hover:scale-105 transition-transform"
+                    style={{ background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05))', border: '1px solid rgba(34, 197, 94, 0.2)' }}
+                    onClick={() => setShowVoiceChat(true)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
+                      <Video className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Prefer to talk?</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Start a voice call with your advisor</p>
+                    </div>
+                  </div>
+                  
                   <div className="flex flex-wrap justify-center gap-2">
                     {[
                       "I'm trying to decide...",
