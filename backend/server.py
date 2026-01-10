@@ -1622,26 +1622,11 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     microsoft_name = user_info.get("displayName", "")
     logger.info(f"Microsoft user: {microsoft_email}")
     
-    # Try to find user by Microsoft email first
-    our_user = await db.users.find_one({"email": microsoft_email.lower()}, {"_id": 0})
-    
-    # If not found, look for any user who might have started the OAuth flow recently
-    # (within last 10 minutes) and doesn't have Outlook connected yet
-    if not our_user:
-        logger.info(f"User not found by Microsoft email, checking recent users")
-        # Get all users without Outlook connection and find the most recent active one
-        recent_users = await db.users.find(
-            {"outlook_access_token": {"$exists": False}},
-            {"_id": 0}
-        ).sort("created_at", -1).limit(10).to_list(10)
-        
-        if recent_users:
-            our_user = recent_users[0]  # Most recent user without Outlook
-            logger.info(f"Found recent user: {our_user.get('email')}")
+    # Find our user by the ID passed through state
+    our_user = await db.users.find_one({"id": user_id}, {"_id": 0})
     
     if not our_user:
-        # Still not found - try to find any user (fallback for testing)
-        logger.warning(f"No suitable user found for Microsoft email: {microsoft_email}")
+        logger.error(f"User not found by ID: {user_id}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
     
     # Store tokens in user document
