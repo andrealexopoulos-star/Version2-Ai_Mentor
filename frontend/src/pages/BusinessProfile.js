@@ -106,7 +106,7 @@ const BusinessProfile = () => {
       <div className="p-8">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl md:text-4xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
                 Business Profile
@@ -119,6 +119,32 @@ const BusinessProfile = () => {
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Profile
             </Button>
+          </div>
+
+          {/* Profile Completeness Card */}
+          <div 
+            className="p-5 rounded-xl mb-8"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, var(--bg-card) 100%)',
+              border: '1px solid rgba(0, 102, 255, 0.2)'
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Profile Completeness</span>
+              </div>
+              <span className="text-3xl font-serif" style={{ color: 'var(--accent-primary)' }}>{scores.completeness}%</span>
+            </div>
+            <Progress value={scores.completeness} className="h-2 mb-2" />
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {scores.completeness < 50 
+                ? 'Add more details to unlock personalized AI insights'
+                : scores.completeness < 80 
+                  ? 'Good progress! A few more fields will maximize AI accuracy'
+                  : 'Excellent! Your profile is well-detailed'
+              }
+            </p>
           </div>
 
           {/* Tabs */}
