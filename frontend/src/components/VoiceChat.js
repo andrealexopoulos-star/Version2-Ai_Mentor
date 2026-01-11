@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { 
   Mic, MicOff, Phone, PhoneOff, Video, VideoOff, 
-  MessageSquare, Volume2, VolumeX, Settings, Maximize2,
-  MoreVertical, Users, Share2
+  MessageSquare, Volume2, VolumeX, Maximize2, Users
 } from 'lucide-react';
 
 const AI_ADVISOR_IMAGE = "https://static.prod-images.emergentagent.com/jobs/5219767c-4311-47f6-b565-a6e726053b1e/images/fcc3dc83d3d0889615ef75f160ec065f7afa5dc888a66578583456fa4bbe979a.png";
@@ -19,12 +18,18 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
   const [callDuration, setCallDuration] = useState(0);
   const [transcript, setTranscript] = useState([]);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [error, setError] = useState(null);
   
   const videoRef = useRef(null);
+  const audioElementRef = useRef(null);
+  const peerConnectionRef = useRef(null);
+  const dataChannelRef = useRef(null);
+  const localStreamRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
-  const streamRef = useRef(null);
   const callTimerRef = useRef(null);
+
+  const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 
   // Format call duration
   const formatDuration = (seconds) => {
@@ -33,22 +38,58 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Start call
-  const startCall = async () => {
-    setIsConnecting(true);
-    
+  // Initialize WebRTC connection with OpenAI Realtime API
+  const initializeWebRTC = async () => {
     try {
-      // Request camera and microphone access
+      // Get session token from backend
+      const tokenResponse = await fetch(`${API_BASE}/api/voice/realtime/session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!tokenResponse.ok) {
+        throw new Error("Failed to get session token");
+      }
+      
+      const data = await tokenResponse.json();
+      if (!data.client_secret?.value) {
+        throw new Error("Invalid session response");
+      }
+
+      // Create WebRTC peer connection
+      peerConnectionRef.current = new RTCPeerConnection();
+
+      // Set up audio element for receiving AI voice
+      audioElementRef.current = document.createElement("audio");
+      audioElementRef.current.autoplay = true;
+      document.body.appendChild(audioElementRef.current);
+
+      peerConnectionRef.current.ontrack = (event) => {
+        audioElementRef.current.srcObject = event.streams[0];
+        setIsAgentSpeaking(true);
+        setTimeout(() => setIsAgentSpeaking(false), 500);
+      };
+
+      // Get local audio stream
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
         audio: true 
       });
       
-      streamRef.current = stream;
+      localStreamRef.current = stream;
       
+      // Display video preview
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+
+      // Add audio tracks to peer connection
+      stream.getAudioTracks().forEach(track => {
+        peerConnectionRef.current.addTrack(track, stream);
+      });
 
       // Set up audio analysis for user speaking detection
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -56,9 +97,81 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
       const source = audioContextRef.current.createMediaStreamSource(stream);
       source.connect(analyserRef.current);
       analyserRef.current.fftSize = 256;
+
+      // Set up data channel for events
+      dataChannelRef.current = peerConnectionRef.current.createDataChannel("oai-events");
+      dataChannelRef.current.onmessage = (event) => {
+        try {
+          const eventData = JSON.parse(event.data);
+          handleRealtimeEvent(eventData);
+        } catch (e) {
+          console.log("Received event:", event.data);
+        }
+      };
+
+      // Create and send offer
+      const offer = await peerConnectionRef.current.createOffer();
+      await peerConnectionRef.current.setLocalDescription(offer);
+
+      // Send offer to backend and get answer
+      const negotiateResponse = await fetch(`${API_BASE}/api/voice/realtime/negotiate`, {
+        method: "POST",
+        body: offer.sdp,
+        headers: {
+          "Content-Type": "application/sdp",
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!negotiateResponse.ok) {
+        throw new Error("Failed to negotiate WebRTC connection");
+      }
+
+      const { sdp: answerSdp } = await negotiateResponse.json();
+      const answer = {
+        type: "answer",
+        sdp: answerSdp
+      };
+
+      await peerConnectionRef.current.setRemoteDescription(answer);
       
-      // Simulate connection delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      return true;
+    } catch (err) {
+      console.error("WebRTC initialization failed:", err);
+      throw err;
+    }
+  };
+
+  // Handle realtime events from OpenAI
+  const handleRealtimeEvent = (event) => {
+    console.log("Realtime event:", event);
+    
+    if (event.type === "response.audio.delta") {
+      setIsAgentSpeaking(true);
+    } else if (event.type === "response.audio.done") {
+      setIsAgentSpeaking(false);
+    } else if (event.type === "conversation.item.created") {
+      if (event.item?.content?.[0]?.text) {
+        setTranscript(prev => [...prev, {
+          role: event.item.role === "assistant" ? "agent" : "user",
+          text: event.item.content[0].text,
+          time: new Date()
+        }]);
+      }
+    } else if (event.type === "input_audio_buffer.speech_started") {
+      setIsUserSpeaking(true);
+    } else if (event.type === "input_audio_buffer.speech_stopped") {
+      setIsUserSpeaking(false);
+    }
+  };
+
+  // Start call
+  const startCall = async () => {
+    setIsConnecting(true);
+    setError(null);
+    
+    try {
+      await initializeWebRTC();
       
       setIsConnected(true);
       setIsConnecting(false);
@@ -71,15 +184,17 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
       // Start audio level monitoring
       monitorAudioLevels();
       
-      // Simulate agent greeting after connection
-      setTimeout(() => {
-        simulateAgentSpeaking("Hello! I'm ready to help you think through your business challenges. What's on your mind today?");
-      }, 1000);
+      // Add initial greeting to transcript
+      setTranscript([{
+        role: 'agent',
+        text: "Hello! I'm your Strategy Advisor. What business challenge would you like to discuss today?",
+        time: new Date()
+      }]);
       
-    } catch (error) {
-      console.error('Failed to start call:', error);
+    } catch (err) {
+      console.error('Failed to start call:', err);
       setIsConnecting(false);
-      alert('Could not access camera/microphone. Please check permissions.');
+      setError(err.message || 'Failed to connect. Please try again.');
     }
   };
 
@@ -105,39 +220,48 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
     checkAudio();
   }, [isConnected, isMuted]);
 
-  // Simulate agent speaking (will be replaced with real TTS)
-  const simulateAgentSpeaking = (text) => {
-    setIsAgentSpeaking(true);
-    setTranscript(prev => [...prev, { role: 'agent', text, time: new Date() }]);
-    
-    // Simulate speaking duration based on text length
-    const duration = Math.max(2000, text.length * 50);
-    setTimeout(() => {
-      setIsAgentSpeaking(false);
-    }, duration);
-  };
-
   // End call
   const endCall = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+    // Close peer connection
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
     }
+    
+    // Stop local stream
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+    
+    // Remove audio element
+    if (audioElementRef.current) {
+      audioElementRef.current.remove();
+      audioElementRef.current = null;
+    }
+    
+    // Close audio context
     if (audioContextRef.current) {
       audioContextRef.current.close();
+      audioContextRef.current = null;
     }
+    
+    // Clear timer
     if (callTimerRef.current) {
       clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
     }
     
     setIsConnected(false);
     setCallDuration(0);
+    setTranscript([]);
     onClose?.();
   };
 
   // Toggle mute
   const toggleMute = () => {
-    if (streamRef.current) {
-      streamRef.current.getAudioTracks().forEach(track => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(track => {
         track.enabled = isMuted;
       });
     }
@@ -146,8 +270,8 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
 
   // Toggle video
   const toggleVideo = () => {
-    if (streamRef.current) {
-      streamRef.current.getVideoTracks().forEach(track => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getVideoTracks().forEach(track => {
         track.enabled = !isVideoOn;
       });
     }
@@ -157,65 +281,37 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (callTimerRef.current) {
-        clearInterval(callTimerRef.current);
-      }
+      endCall();
     };
   }, []);
-
-  // Demo: Simulate occasional agent responses
-  useEffect(() => {
-    if (!isConnected) return;
-    
-    const demoInterval = setInterval(() => {
-      if (isUserSpeaking && !isAgentSpeaking) {
-        // User finished speaking, agent responds
-        setTimeout(() => {
-          const responses = [
-            "That's an interesting point. Tell me more about what's driving that concern.",
-            "I hear you. What would success look like in this situation?",
-            "Let's break that down. What's the one thing that would make the biggest difference?",
-            "That makes sense. Have you considered approaching it from a different angle?",
-          ];
-          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-          simulateAgentSpeaking(randomResponse);
-        }, 1500);
-      }
-    }, 8000);
-    
-    return () => clearInterval(demoInterval);
-  }, [isConnected, isUserSpeaking, isAgentSpeaking]);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#1a1a2e] flex flex-col">
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-6 py-4 bg-[#16162a]">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-[#16162a]">
+        <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`} />
-            <span className="text-white/80 text-sm">
-              {isConnecting ? 'Connecting...' : isConnected ? 'Connected' : 'Ready to connect'}
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : error ? 'bg-red-500' : 'bg-yellow-500'} animate-pulse`} />
+            <span className="text-white/80 text-xs sm:text-sm">
+              {isConnecting ? 'Connecting...' : isConnected ? 'Connected' : error ? 'Error' : 'Ready'}
             </span>
           </div>
           {isConnected && (
-            <span className="text-white/60 text-sm font-mono">{formatDuration(callDuration)}</span>
+            <span className="text-white/60 text-xs sm:text-sm font-mono">{formatDuration(callDuration)}</span>
           )}
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button 
             onClick={() => setShowTranscript(!showTranscript)}
             className={`p-2 rounded-lg transition-colors ${showTranscript ? 'bg-white/20' : 'hover:bg-white/10'}`}
           >
-            <MessageSquare className="w-5 h-5 text-white/80" />
+            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-white/80" />
           </button>
-          <button className="p-2 rounded-lg hover:bg-white/10">
+          <button className="p-2 rounded-lg hover:bg-white/10 hidden sm:block">
             <Users className="w-5 h-5 text-white/80" />
           </button>
-          <button className="p-2 rounded-lg hover:bg-white/10">
+          <button className="p-2 rounded-lg hover:bg-white/10 hidden sm:block">
             <Maximize2 className="w-5 h-5 text-white/80" />
           </button>
         </div>
@@ -242,7 +338,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
             
             {/* Agent portrait */}
             <div 
-              className="w-80 h-80 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl relative"
+              className="w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl relative"
               style={{
                 animation: isConnected ? 'subtle-breathe 4s ease-in-out infinite' : 'none'
               }}
@@ -264,8 +360,8 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
             </div>
             
             {/* Name tag */}
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-lg">
-              <p className="text-white font-medium text-center">Strategy Advisor</p>
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">
+              <p className="text-white font-medium text-center text-sm sm:text-base">Strategy Advisor</p>
               <p className="text-white/60 text-xs text-center">MySoundBoard</p>
             </div>
             
@@ -290,27 +386,47 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
           {/* Connecting overlay */}
           {isConnecting && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-white text-lg">Connecting to your advisor...</p>
+              <div className="text-center px-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-white text-base sm:text-lg">Connecting to your advisor...</p>
+                <p className="text-white/60 text-xs sm:text-sm mt-2">Setting up secure voice channel</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Error state */}
+          {error && !isConnecting && !isConnected && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <div className="text-center px-4">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                  <PhoneOff className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" />
+                </div>
+                <h2 className="text-white text-lg sm:text-xl font-semibold mb-2">Connection Failed</h2>
+                <p className="text-white/60 text-sm mb-4 max-w-xs mx-auto">{error}</p>
+                <Button 
+                  onClick={() => { setError(null); startCall(); }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full"
+                >
+                  Try Again
+                </Button>
               </div>
             </div>
           )}
           
           {/* Pre-call state */}
-          {!isConnected && !isConnecting && (
+          {!isConnected && !isConnecting && !error && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 mx-auto mb-6">
+              <div className="text-center px-4">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-white/20 mx-auto mb-4 sm:mb-6">
                   <img src={AI_ADVISOR_IMAGE} alt="Advisor" className="w-full h-full object-cover grayscale" />
                 </div>
-                <h2 className="text-white text-2xl font-semibold mb-2">Ready to talk?</h2>
-                <p className="text-white/60 mb-6">Start a voice session with your Strategy Advisor</p>
+                <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">Ready to talk?</h2>
+                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6">Start a voice session with your Strategy Advisor</p>
                 <Button 
                   onClick={startCall}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full text-lg"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full text-base sm:text-lg"
                 >
-                  <Phone className="w-5 h-5 mr-2" />
+                  <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Start Call
                 </Button>
               </div>
@@ -319,19 +435,19 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
         </div>
 
         {/* User Video (Picture-in-Picture) */}
-        <div className="absolute bottom-24 right-6 w-48 h-36 rounded-xl overflow-hidden border-2 border-white/20 shadow-xl bg-[#1a1a2e]">
+        <div className="absolute bottom-20 sm:bottom-24 right-3 sm:right-6 w-28 h-20 sm:w-48 sm:h-36 rounded-xl overflow-hidden border-2 border-white/20 shadow-xl bg-[#1a1a2e]">
           {isVideoOn ? (
             <video 
               ref={videoRef}
               autoPlay 
               muted 
               playsInline
-              className="w-full h-full object-cover mirror"
+              className="w-full h-full object-cover"
               style={{ transform: 'scaleX(-1)' }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-800">
-              <VideoOff className="w-8 h-8 text-white/40" />
+              <VideoOff className="w-6 h-6 sm:w-8 sm:h-8 text-white/40" />
             </div>
           )}
           
@@ -342,31 +458,39 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
           
           {/* Muted indicator */}
           {isMuted && (
-            <div className="absolute top-2 right-2 bg-red-500 p-1 rounded-full">
-              <MicOff className="w-3 h-3 text-white" />
+            <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-500 p-0.5 sm:p-1 rounded-full">
+              <MicOff className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
             </div>
           )}
           
-          <div className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded text-xs text-white">
+          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-black/50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs text-white">
             You
           </div>
         </div>
 
         {/* Transcript Panel */}
         {showTranscript && (
-          <div className="absolute top-0 right-0 w-80 h-full bg-[#16162a]/95 backdrop-blur-sm border-l border-white/10 p-4 overflow-y-auto">
-            <h3 className="text-white font-semibold mb-4">Transcript</h3>
-            <div className="space-y-4">
+          <div className="absolute top-0 right-0 w-full sm:w-80 h-full bg-[#16162a]/95 backdrop-blur-sm border-l border-white/10 p-3 sm:p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold text-sm sm:text-base">Transcript</h3>
+              <button 
+                onClick={() => setShowTranscript(false)}
+                className="sm:hidden p-1 rounded hover:bg-white/10"
+              >
+                <span className="text-white/60 text-xs">Close</span>
+              </button>
+            </div>
+            <div className="space-y-3 sm:space-y-4">
               {transcript.map((item, idx) => (
                 <div key={idx} className={`${item.role === 'agent' ? 'text-blue-300' : 'text-green-300'}`}>
                   <p className="text-xs text-white/40 mb-1">
                     {item.role === 'agent' ? 'Advisor' : 'You'}
                   </p>
-                  <p className="text-sm text-white/80">{item.text}</p>
+                  <p className="text-xs sm:text-sm text-white/80">{item.text}</p>
                 </div>
               ))}
               {transcript.length === 0 && (
-                <p className="text-white/40 text-sm">Conversation transcript will appear here...</p>
+                <p className="text-white/40 text-xs sm:text-sm">Conversation transcript will appear here...</p>
               )}
             </div>
           </div>
@@ -374,67 +498,67 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
       </div>
 
       {/* Bottom Controls */}
-      <div className="bg-[#16162a] px-6 py-4">
-        <div className="flex items-center justify-center gap-4">
+      <div className="bg-[#16162a] px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex items-center justify-center gap-2 sm:gap-4">
           {/* Mute Button */}
           <button
             onClick={toggleMute}
             disabled={!isConnected}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+            className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all ${
               isMuted 
                 ? 'bg-red-500 hover:bg-red-600' 
                 : 'bg-white/10 hover:bg-white/20'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
+            {isMuted ? <MicOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
           </button>
           
           {/* Video Toggle */}
           <button
             onClick={toggleVideo}
             disabled={!isConnected}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+            className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all ${
               !isVideoOn 
                 ? 'bg-red-500 hover:bg-red-600' 
                 : 'bg-white/10 hover:bg-white/20'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {isVideoOn ? <Video className="w-6 h-6 text-white" /> : <VideoOff className="w-6 h-6 text-white" />}
+            {isVideoOn ? <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <VideoOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
           </button>
           
           {/* End Call */}
           <button
             onClick={endCall}
-            className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-all"
+            className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-all"
           >
-            <PhoneOff className="w-6 h-6 text-white" />
+            <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </button>
           
           {/* Speaker Toggle */}
           <button
             onClick={() => setIsSpeakerOn(!isSpeakerOn)}
             disabled={!isConnected}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+            className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all ${
               !isSpeakerOn 
                 ? 'bg-red-500 hover:bg-red-600' 
                 : 'bg-white/10 hover:bg-white/20'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {isSpeakerOn ? <Volume2 className="w-6 h-6 text-white" /> : <VolumeX className="w-6 h-6 text-white" />}
+            {isSpeakerOn ? <Volume2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <VolumeX className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
           </button>
           
           {/* Switch to Text Chat */}
           <button
             onClick={onSwitchToText}
-            className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+            className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
             title="Switch to text chat"
           >
-            <MessageSquare className="w-6 h-6 text-white" />
+            <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </button>
         </div>
         
         {/* Helper text */}
-        <p className="text-center text-white/40 text-xs mt-3">
+        <p className="text-center text-white/40 text-xs mt-2 sm:mt-3">
           {isConnected 
             ? isMuted ? 'You are muted' : 'Speak naturally - your advisor is listening'
             : 'Click "Start Call" to begin your voice session'
@@ -457,10 +581,6 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.7; }
-        }
-        
-        .mirror {
-          transform: scaleX(-1);
         }
       `}</style>
     </div>
