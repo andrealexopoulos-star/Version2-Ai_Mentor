@@ -1580,6 +1580,43 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
             context_parts.append("  → DEFER NON-URGENT: 'This can wait. Focus on [X].'")
         
         # ═══════════════════════════════════════════════════════════════
+        # 2.7 ESCALATION STATE - Evidence-based tone adjustment
+        # ═══════════════════════════════════════════════════════════════
+        try:
+            escalation = await cognitive_core.calculate_escalation_state(user_id)
+            escalation_level = escalation.get("level", 0)
+            
+            if escalation_level > 0:
+                context_parts.append(f"\n═══ ESCALATION STATE: {escalation['level_name'].upper()} ═══")
+                context_parts.append("Escalation is EVIDENCE-BASED, not emotional.")
+                context_parts.append(f"Score: {escalation['score']}/10+")
+                
+                context_parts.append("\nEVIDENCE:")
+                for ev in escalation.get("evidence", []):
+                    context_parts.append(f"  • {ev}")
+                
+                context_parts.append(f"\nREQUIRED RESPONSE PARAMETERS:")
+                context_parts.append(f"  TONE: {escalation['tone'].upper()}")
+                context_parts.append(f"  URGENCY: {escalation['urgency'].upper()}")
+                context_parts.append(f"  OPTIONALITY: {escalation['optionality'].upper()}")
+                context_parts.append(f"  FOCUS: {escalation['focus'].upper()}")
+                
+                context_parts.append(f"\nAPPROACH: {escalation['recommended_approach']}")
+                
+                if escalation_level >= 2:
+                    context_parts.append("\n⚠️ HIGH/CRITICAL ESCALATION:")
+                    context_parts.append("  → State consequences of inaction EXPLICITLY")
+                    context_parts.append("  → ONE recommendation only. No options.")
+                    context_parts.append("  → Survival-critical issues FIRST")
+                    
+                if escalation_level == 3:
+                    context_parts.append("\n🔴 CRITICAL: Focus ONLY on business survival.")
+                    context_parts.append("  → What will keep this business alive?")
+                    context_parts.append("  → Everything else can wait.")
+        except Exception as e:
+            logger.warning(f"Could not calculate escalation state: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════
         # 3. PRIOR ADVISORY OUTCOMES (Layer 4) - MANDATORY LOAD
         # ═══════════════════════════════════════════════════════════════
         context_parts.append("\n═══ 3. PRIOR ADVISORY OUTCOMES ═══")
