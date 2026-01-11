@@ -117,6 +117,9 @@ class UserResponse(BaseModel):
     industry: Optional[str] = None
     role: str
     subscription_tier: Optional[str] = None
+    is_master_account: Optional[bool] = False
+    is_admin: Optional[bool] = False
+    features: Optional[Dict[str, bool]] = None
     created_at: str
 
 class TokenResponse(BaseModel):
