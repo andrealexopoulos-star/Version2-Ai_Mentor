@@ -1560,6 +1560,8 @@ async def outlook_login(current_user: dict = Depends(get_current_user)):
     # Log the OAuth initiation for security audit
     logger.info(f"Outlook OAuth initiated for user: {current_user['email']} (ID: {user_id})")
     
+    # IMPORTANT: prompt=select_account forces Microsoft to show account picker
+    # This prevents auto-selecting a cached/wrong account
     auth_url = (
         f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/authorize?"
         f"client_id={AZURE_CLIENT_ID}&"
@@ -1567,7 +1569,8 @@ async def outlook_login(current_user: dict = Depends(get_current_user)):
         f"redirect_uri={encoded_redirect}&"
         f"response_mode=query&"
         f"scope={encoded_scope}&"
-        f"state={state}"
+        f"state={state}&"
+        f"prompt=select_account"
     )
     
     return {"auth_url": auth_url}
