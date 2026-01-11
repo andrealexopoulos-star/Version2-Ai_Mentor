@@ -9,12 +9,14 @@ The Cognitive Core does not speak to users. It exists solely to:
 - Learn
 - Update internal models
 - Feed accurate context to agents (MyIntel, MyAdvisor, MySoundboard)
+- Track advisory outcomes and escalate ignored advice
 """
 
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +30,14 @@ class CognitiveCore:
     2. Behavioural Truth Model - How the user ACTUALLY behaves
     3. Delivery Preference Model - HOW support should be delivered
     4. Consequence & Outcome Memory - Records outcomes over time
+    
+    Plus: Advisory Log - Tracks all recommendations and their outcomes
     """
     
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
         self.collection = db.cognitive_profiles
+        self.advisory_log = db.advisory_log  # New collection for recommendation tracking
     
     async def get_profile(self, user_id: str) -> Dict[str, Any]:
         """Retrieve or create the cognitive profile for a user."""
@@ -42,6 +47,214 @@ class CognitiveCore:
             profile = await self._create_initial_profile(user_id)
         
         return profile
+    
+    # ═══════════════════════════════════════════════════════════════
+    # ADVISORY LOG SYSTEM
+    # ═══════════════════════════════════════════════════════════════
+    
+    async def log_recommendation(
+        self,
+        user_id: str,
+        agent: str,
+        situation: str,
+        recommendation: str,
+        reason: str,
+        expected_outcome: str,
+        topic_tags: List[str] = None,
+        urgency: str = "normal"  # normal, elevated, critical
+    ) -> str:
+        """
+        Log every recommendation with full context.
+        Returns the recommendation ID for future tracking.
+        """
+        recommendation_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        log_entry = {
+            "id": recommendation_id,
+            "user_id": user_id,
+            "agent": agent,
+            "situation": situation,
+            "recommendation": recommendation,
+            "reason": reason,
+            "expected_outcome": expected_outcome,
+            "topic_tags": topic_tags or [],
+            "urgency": urgency,
+            "created_at": now,
+            "status": "pending",  # pending, acted, ignored, partially_acted
+            "times_repeated": 0,
+            "escalation_level": 0,  # 0 = normal, 1 = elevated, 2 = critical
+            "actual_outcome": None,
+            "outcome_recorded_at": None,
+            "follow_up_dates": [],
+            "user_acknowledged": False
+        }
+        
+        await self.advisory_log.insert_one(log_entry)
+        logger.info(f"Logged recommendation {recommendation_id} for user {user_id}: {recommendation[:50]}...")
+        
+        return recommendation_id
+    
+    async def record_recommendation_outcome(
+        self,
+        recommendation_id: str,
+        status: str,  # acted, ignored, partially_acted
+        actual_outcome: str = None,
+        notes: str = None
+    ) -> None:
+        """Record whether advice was acted on and what happened."""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        update = {
+            "$set": {
+                "status": status,
+                "outcome_recorded_at": now
+            }
+        }
+        
+        if actual_outcome:
+            update["$set"]["actual_outcome"] = actual_outcome
+        if notes:
+            update["$set"]["outcome_notes"] = notes
+        
+        await self.advisory_log.update_one(
+            {"id": recommendation_id},
+            update
+        )
+        
+        # If ignored, increment the counter for escalation tracking
+        if status == "ignored":
+            await self.advisory_log.update_one(
+                {"id": recommendation_id},
+                {"$inc": {"times_repeated": 1}}
+            )
+    
+    async def get_similar_past_advice(
+        self,
+        user_id: str,
+        topic_tags: List[str],
+        limit: int = 5
+    ) -> List[Dict]:
+        """
+        Get past recommendations on similar topics to inform future guidance.
+        Returns advice that succeeded or failed previously.
+        """
+        if not topic_tags:
+            return []
+        
+        cursor = self.advisory_log.find(
+            {
+                "user_id": user_id,
+                "topic_tags": {"$in": topic_tags},
+                "status": {"$in": ["acted", "ignored", "partially_acted"]}
+            },
+            {"_id": 0}
+        ).sort("created_at", -1).limit(limit)
+        
+        return await cursor.to_list(length=limit)
+    
+    async def get_ignored_advice_for_escalation(
+        self,
+        user_id: str,
+        topic_tags: List[str] = None
+    ) -> List[Dict]:
+        """
+        Get advice that has been repeatedly ignored and needs escalation.
+        Repeatedly ignored advice must escalate in clarity or urgency.
+        """
+        query = {
+            "user_id": user_id,
+            "status": "ignored",
+            "times_repeated": {"$gte": 1}
+        }
+        
+        if topic_tags:
+            query["topic_tags"] = {"$in": topic_tags}
+        
+        cursor = self.advisory_log.find(
+            query,
+            {"_id": 0}
+        ).sort("times_repeated", -1).limit(10)
+        
+        return await cursor.to_list(length=10)
+    
+    async def escalate_ignored_advice(
+        self,
+        recommendation_id: str
+    ) -> int:
+        """
+        Escalate ignored advice to higher urgency level.
+        Returns the new escalation level.
+        """
+        # Get current level
+        rec = await self.advisory_log.find_one({"id": recommendation_id}, {"_id": 0})
+        if not rec:
+            return 0
+        
+        current_level = rec.get("escalation_level", 0)
+        new_level = min(current_level + 1, 2)  # Max level is 2 (critical)
+        
+        urgency_map = {0: "normal", 1: "elevated", 2: "critical"}
+        
+        await self.advisory_log.update_one(
+            {"id": recommendation_id},
+            {
+                "$set": {
+                    "escalation_level": new_level,
+                    "urgency": urgency_map[new_level]
+                },
+                "$inc": {"times_repeated": 1},
+                "$push": {"follow_up_dates": datetime.now(timezone.utc).isoformat()}
+            }
+        )
+        
+        logger.info(f"Escalated recommendation {recommendation_id} to level {new_level}")
+        return new_level
+    
+    async def get_advisory_context_for_topic(
+        self,
+        user_id: str,
+        topic_tags: List[str]
+    ) -> Dict[str, Any]:
+        """
+        Build advisory context for a topic, including:
+        - Past similar advice and outcomes
+        - Ignored advice needing escalation
+        - Success/failure patterns
+        """
+        similar_advice = await self.get_similar_past_advice(user_id, topic_tags)
+        ignored_advice = await self.get_ignored_advice_for_escalation(user_id, topic_tags)
+        
+        # Calculate success rate for this topic
+        acted_count = sum(1 for a in similar_advice if a.get("status") == "acted")
+        ignored_count = sum(1 for a in similar_advice if a.get("status") == "ignored")
+        total = acted_count + ignored_count
+        
+        success_rate = acted_count / total if total > 0 else None
+        
+        # Find patterns
+        successful_approaches = [
+            a for a in similar_advice 
+            if a.get("status") == "acted" and a.get("actual_outcome") in ["positive", "successful"]
+        ]
+        
+        failed_approaches = [
+            a for a in similar_advice 
+            if a.get("status") == "acted" and a.get("actual_outcome") in ["negative", "failed"]
+        ]
+        
+        return {
+            "similar_past_advice": similar_advice,
+            "ignored_needing_escalation": ignored_advice,
+            "topic_action_rate": success_rate,
+            "successful_approaches": successful_approaches[:3],
+            "failed_approaches": failed_approaches[:3],
+            "has_escalation_candidates": len(ignored_advice) > 0
+        }
+    
+    # ═══════════════════════════════════════════════════════════════
+    # ORIGINAL METHODS (unchanged)
+    # ═══════════════════════════════════════════════════════════════
     
     async def _create_initial_profile(self, user_id: str) -> Dict[str, Any]:
         """Create initial cognitive profile with conservative defaults."""
