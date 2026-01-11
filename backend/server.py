@@ -1162,107 +1162,188 @@ One thoughtful question at a time.
 
 
 async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
-    """Build cognitive context string for injection into agent prompts."""
+    """
+    MANDATORY PRE-FLIGHT CHECK
+    
+    Before generating ANY response, this function MUST:
+    1. Load the current Business Reality Model
+    2. Load the Owner Behaviour Model
+    3. Load prior Advisory Outcomes relevant to the topic
+    4. Assess confidence based on data coverage
+    
+    If any are unavailable, certainty is reduced and the reason is stated.
+    """
     try:
         core_context = await cognitive_core.get_context_for_agent(user_id, agent)
         
         context_parts = []
+        confidence_issues = []
         
-        # Profile maturity indicator
-        maturity = core_context.get("profile_maturity", "nascent")
-        context_parts.append(f"PROFILE MATURITY: {maturity}")
-        if maturity == "nascent":
-            context_parts.append("(Limited data - responses may need to be more conservative)")
-        
-        # Reality Model
+        # ═══════════════════════════════════════════════════════════════
+        # 1. BUSINESS REALITY MODEL (Layer 1) - MANDATORY LOAD
+        # ═══════════════════════════════════════════════════════════════
         reality = core_context.get("reality", {})
-        if any(v and v != "unknown" for v in reality.values()):
-            context_parts.append("\n── BUSINESS REALITY ──")
+        reality_populated = sum(1 for v in reality.values() if v and v != "unknown" and not isinstance(v, list))
+        reality_populated += 1 if reality.get("constraints") else 0
+        
+        context_parts.append("═══ 1. BUSINESS REALITY MODEL ═══")
+        
+        if reality_populated >= 3:
             if reality.get("business_type"):
-                context_parts.append(f"Type: {reality['business_type']}")
+                context_parts.append(f"Business type: {reality['business_type']}")
             if reality.get("maturity"):
                 context_parts.append(f"Maturity: {reality['maturity']}")
             if reality.get("cashflow_sensitivity") and reality["cashflow_sensitivity"] != "unknown":
                 context_parts.append(f"Cashflow sensitivity: {reality['cashflow_sensitivity']}")
             if reality.get("time_scarcity") and reality["time_scarcity"] != "unknown":
-                context_parts.append(f"Time availability: {reality['time_scarcity']}")
+                context_parts.append(f"Time scarcity: {reality['time_scarcity']}")
+            if reality.get("decision_ownership") and reality["decision_ownership"] != "unknown":
+                context_parts.append(f"Decision ownership: {reality['decision_ownership']}")
             if reality.get("constraints"):
                 context_parts.append(f"Constraints: {', '.join(reality['constraints'][:3])}")
+        else:
+            context_parts.append("⚠️ INSUFFICIENT DATA")
+            confidence_issues.append("Business reality model is sparse - reduce certainty in advice")
         
-        # Behavioural Truth
+        # ═══════════════════════════════════════════════════════════════
+        # 2. OWNER BEHAVIOUR MODEL (Layer 2) - MANDATORY LOAD
+        # ═══════════════════════════════════════════════════════════════
         behaviour = core_context.get("behaviour", {})
-        if any(v and v != "unknown" for v in behaviour.values() if not isinstance(v, list)):
-            context_parts.append("\n── BEHAVIOURAL TRUTH (observed, not stated) ──")
+        behaviour_populated = sum(1 for k, v in behaviour.items() 
+                                   if v and v != "unknown" and not isinstance(v, list))
+        behaviour_populated += 1 if behaviour.get("avoids") else 0
+        behaviour_populated += 1 if behaviour.get("repeated_concerns") else 0
+        
+        context_parts.append("\n═══ 2. OWNER BEHAVIOUR MODEL ═══")
+        
+        if behaviour_populated >= 2:
             if behaviour.get("decision_velocity") and behaviour["decision_velocity"] != "unknown":
-                context_parts.append(f"Decision style: {behaviour['decision_velocity']}")
+                context_parts.append(f"Decision velocity: {behaviour['decision_velocity']}")
             if behaviour.get("follow_through") and behaviour["follow_through"] != "unknown":
-                context_parts.append(f"Follow-through: {behaviour['follow_through']}")
+                context_parts.append(f"Follow-through reliability: {behaviour['follow_through']}")
             if behaviour.get("avoids"):
-                context_parts.append(f"Tends to avoid: {', '.join(behaviour['avoids'][:3])}")
+                context_parts.append(f"Avoidance patterns: {', '.join(behaviour['avoids'][:3])}")
             if behaviour.get("repeated_concerns"):
                 context_parts.append(f"Recurring concerns: {', '.join(behaviour['repeated_concerns'][:3])}")
             if behaviour.get("decision_loops"):
-                context_parts.append(f"⚠️ Unresolved decision loops: {', '.join(behaviour['decision_loops'][:2])}")
+                context_parts.append(f"⚠️ Unresolved loops: {', '.join(behaviour['decision_loops'][:2])}")
+        else:
+            context_parts.append("⚠️ INSUFFICIENT DATA")
+            confidence_issues.append("Owner behaviour model is sparse - cannot predict reactions reliably")
         
-        # Delivery Preferences
+        # ═══════════════════════════════════════════════════════════════
+        # 3. PRIOR ADVISORY OUTCOMES (Layer 4) - MANDATORY LOAD
+        # ═══════════════════════════════════════════════════════════════
+        history = core_context.get("history", {})
+        
+        context_parts.append("\n═══ 3. PRIOR ADVISORY OUTCOMES ═══")
+        
+        outcomes_available = False
+        
+        if history.get("recent_wins"):
+            outcomes_available = True
+            context_parts.append("Recent wins (what worked):")
+            for win in history["recent_wins"][:2]:
+                if isinstance(win, dict) and win.get("summary"):
+                    context_parts.append(f"  ✓ {win['summary']}")
+        
+        if history.get("lessons"):
+            outcomes_available = True
+            context_parts.append("Lessons learned (patterns from past):")
+            for lesson in history["lessons"][:2]:
+                if isinstance(lesson, dict) and lesson.get("lesson"):
+                    context_parts.append(f"  • {lesson['lesson']}")
+        
+        if history.get("deferred_decisions"):
+            outcomes_available = True
+            context_parts.append("Deferred decisions (may need attention):")
+            for dec in history["deferred_decisions"][:2]:
+                if isinstance(dec, dict) and dec.get("decision"):
+                    cost = dec.get("opportunity_cost", "unknown")
+                    context_parts.append(f"  ⏸ {dec['decision']} (cost: {cost})")
+        
+        if not outcomes_available:
+            context_parts.append("⚠️ NO OUTCOME HISTORY")
+            confidence_issues.append("No prior advisory outcomes - cannot reference what worked or failed")
+        
+        # Current state indicators
+        if history.get("in_stress_period"):
+            context_parts.append("\n⚠️ USER IS IN A STRESS PERIOD")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 4. CONFIDENCE ASSESSMENT - MANDATORY
+        # ═══════════════════════════════════════════════════════════════
+        profile_maturity = core_context.get("profile_maturity", "nascent")
+        
+        context_parts.append("\n═══ 4. CONFIDENCE ASSESSMENT ═══")
+        context_parts.append(f"Profile maturity: {profile_maturity.upper()}")
+        
+        if confidence_issues:
+            context_parts.append("\n⚠️ CONFIDENCE REDUCED DUE TO:")
+            for issue in confidence_issues:
+                context_parts.append(f"  - {issue}")
+            context_parts.append("\nINTERNAL DIRECTIVE: Be more conservative. Ask more. Assume less.")
+        else:
+            context_parts.append("✓ Sufficient data for confident response")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 5. AGENT-SPECIFIC CONTEXT
+        # ═══════════════════════════════════════════════════════════════
+        if agent == "MyIntel" and core_context.get("intel_focus"):
+            focus = core_context["intel_focus"]
+            context_parts.append("\n═══ INTEL-SPECIFIC ═══")
+            if focus.get("avoidance_blind_spots"):
+                context_parts.append(f"Blind spots (topics they avoid): {', '.join(focus['avoidance_blind_spots'][:3])}")
+            if focus.get("topics_of_interest"):
+                context_parts.append(f"Topics of interest: {', '.join(focus['topics_of_interest'][:5])}")
+        
+        elif agent == "MyAdvisor" and core_context.get("advisor_focus"):
+            focus = core_context["advisor_focus"]
+            context_parts.append("\n═══ ADVISOR-SPECIFIC ═══")
+            if focus.get("action_success_rate") is not None:
+                rate = int(focus['action_success_rate'] * 100)
+                context_parts.append(f"Action rate on advice: {rate}%")
+                if rate < 40:
+                    context_parts.append("  → Low action rate: simplify recommendations")
+            if focus.get("advice_outcomes"):
+                context_parts.append("Recent advice outcomes:")
+                for outcome in focus["advice_outcomes"][:2]:
+                    if isinstance(outcome, dict):
+                        result = outcome.get("result", "unknown")
+                        advice = outcome.get("advice", "")[:50]
+                        context_parts.append(f"  [{result}] {advice}...")
+        
+        elif agent == "MySoundboard" and core_context.get("soundboard_focus"):
+            focus = core_context["soundboard_focus"]
+            context_parts.append("\n═══ SOUNDBOARD-SPECIFIC ═══")
+            if focus.get("unresolved_loops"):
+                context_parts.append("Unresolved thought loops (may need gentle challenge):")
+                for loop in focus["unresolved_loops"][:3]:
+                    context_parts.append(f"  ↻ {loop}")
+            if focus.get("recent_sentiment"):
+                sentiments = [s.get("sentiment") for s in focus["recent_sentiment"] if isinstance(s, dict)]
+                if sentiments:
+                    context_parts.append(f"Recent sentiment: {', '.join(sentiments[-3:])}")
+        
+        # Delivery preferences (applies to all agents)
         delivery = core_context.get("delivery", {})
         if any(v and v != "unknown" for v in delivery.values()):
-            context_parts.append("\n── DELIVERY PREFERENCES ──")
+            context_parts.append("\n═══ DELIVERY CALIBRATION ═══")
             if delivery.get("style") and delivery["style"] != "unknown":
-                context_parts.append(f"Prefers: {delivery['style']} communication")
+                context_parts.append(f"Communication style: {delivery['style']}")
             if delivery.get("pressure_sensitivity") and delivery["pressure_sensitivity"] != "unknown":
                 context_parts.append(f"Pressure sensitivity: {delivery['pressure_sensitivity']}")
             if delivery.get("depth") and delivery["depth"] != "unknown":
                 context_parts.append(f"Depth preference: {delivery['depth']}")
         
-        # Outcome Memory / History
-        history = core_context.get("history", {})
-        if history.get("in_stress_period"):
-            context_parts.append("\n⚠️ USER IS IN A STRESS PERIOD - adjust tone accordingly")
-        
-        if history.get("recent_wins"):
-            context_parts.append("\n── RECENT WINS (reference if relevant) ──")
-            for win in history["recent_wins"][:2]:
-                if isinstance(win, dict) and win.get("summary"):
-                    context_parts.append(f"• {win['summary']}")
-        
-        if history.get("lessons"):
-            context_parts.append("\n── LESSONS LEARNED (patterns from past) ──")
-            for lesson in history["lessons"][:2]:
-                if isinstance(lesson, dict) and lesson.get("lesson"):
-                    context_parts.append(f"• {lesson['lesson']}")
-        
-        if history.get("deferred_decisions"):
-            context_parts.append("\n── DEFERRED DECISIONS (may need attention) ──")
-            for dec in history["deferred_decisions"][:2]:
-                if isinstance(dec, dict) and dec.get("decision"):
-                    context_parts.append(f"• {dec['decision']}")
-        
-        # Agent-specific context
-        if agent == "MyIntel" and core_context.get("intel_focus"):
-            focus = core_context["intel_focus"]
-            if focus.get("avoidance_blind_spots"):
-                context_parts.append(f"\n── BLIND SPOTS (topics they avoid) ──")
-                context_parts.append(f"{', '.join(focus['avoidance_blind_spots'][:3])}")
-        
-        elif agent == "MyAdvisor" and core_context.get("advisor_focus"):
-            focus = core_context["advisor_focus"]
-            if focus.get("action_success_rate") is not None:
-                context_parts.append(f"\n── ACTION PATTERN ──")
-                context_parts.append(f"Action rate on advice: {int(focus['action_success_rate'] * 100)}%")
-        
-        elif agent == "MySoundboard" and core_context.get("soundboard_focus"):
-            focus = core_context["soundboard_focus"]
-            if focus.get("unresolved_loops"):
-                context_parts.append(f"\n── UNRESOLVED THOUGHT LOOPS ──")
-                for loop in focus["unresolved_loops"][:3]:
-                    context_parts.append(f"• {loop}")
-        
-        return "\n".join(context_parts) if context_parts else "Limited cognitive data available."
+        return "\n".join(context_parts)
         
     except Exception as e:
         logger.error(f"Error building cognitive context: {e}")
-        return "Cognitive context unavailable."
+        return """═══ COGNITIVE CONTEXT UNAVAILABLE ═══
+⚠️ Failed to load user intelligence layers.
+INTERNAL DIRECTIVE: Operate with maximum conservatism. 
+Do not assume. Ask before advising. Reduce certainty significantly."""
 
 
 async def get_ai_response(message: str, context_type: str, session_id: str, user_id: str = None, user_data: dict = None, use_advanced: bool = False) -> str:
