@@ -2685,7 +2685,7 @@ async def get_soundboard_conversation(conversation_id: str, current_user: dict =
 
 @api_router.post("/soundboard/chat")
 async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
-    """Chat with MySoundBoard"""
+    """Chat with MySoundBoard - Uses Cognitive Core for deep personalization"""
     user_id = current_user["id"]
     
     # Get or create conversation
@@ -2701,14 +2701,90 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     if conversation:
         messages_history = conversation.get("messages", [])[-20:]  # Last 20 messages for context
     
-    # Get user context for personalization
+    # ========== COGNITIVE CORE INTEGRATION ==========
+    # Get deep user context from the Cognitive Core
+    core_context = await cognitive_core.get_context_for_agent(user_id, "MySoundboard")
+    
+    # Record this interaction as an observation
+    await cognitive_core.observe(user_id, {
+        "type": "message",
+        "content": req.message,
+        "agent": "MySoundboard",
+        "topics": [],  # Could be extracted via NLP
+        "is_repeated_concern": False  # Could be detected
+    })
+    
+    # Record timing observation
+    from datetime import datetime
+    now = datetime.now(timezone.utc)
+    await cognitive_core.observe(user_id, {
+        "type": "timing",
+        "hour": now.hour,
+        "day": now.strftime("%A"),
+        "engagement": "high"  # They're using the platform
+    })
+    
+    # Build cognitive context for the prompt
+    cognitive_context = ""
+    
+    # Reality constraints
+    if core_context.get("reality"):
+        r = core_context["reality"]
+        if r.get("business_type"):
+            cognitive_context += f"\nBusiness type: {r['business_type']}"
+        if r.get("time_scarcity") and r["time_scarcity"] != "unknown":
+            cognitive_context += f"\nTime availability: {r['time_scarcity']}"
+        if r.get("cashflow_sensitivity") and r["cashflow_sensitivity"] != "unknown":
+            cognitive_context += f"\nCashflow sensitivity: {r['cashflow_sensitivity']}"
+    
+    # Behavioural truth
+    if core_context.get("behaviour"):
+        b = core_context["behaviour"]
+        if b.get("decision_velocity") and b["decision_velocity"] != "unknown":
+            cognitive_context += f"\nDecision style: {b['decision_velocity']}"
+        if b.get("avoids"):
+            cognitive_context += f"\nTends to avoid: {', '.join(b['avoids'][:3])}"
+        if b.get("repeated_concerns"):
+            cognitive_context += f"\nRecurring concerns: {', '.join(b['repeated_concerns'][:3])}"
+        if b.get("decision_loops"):
+            cognitive_context += f"\nUnresolved decisions circling back: {', '.join(b['decision_loops'][:2])}"
+    
+    # Delivery preferences
+    if core_context.get("delivery"):
+        d = core_context["delivery"]
+        if d.get("style") and d["style"] != "unknown":
+            cognitive_context += f"\nPrefers {d['style']} communication"
+        if d.get("depth") and d["depth"] != "unknown":
+            cognitive_context += f"\nDepth preference: {d['depth']}"
+    
+    # Soundboard-specific context
+    if core_context.get("soundboard_focus"):
+        sf = core_context["soundboard_focus"]
+        if sf.get("unresolved_loops"):
+            cognitive_context += f"\n\nUNRESOLVED DECISION LOOPS (may need gentle challenge):\n"
+            for loop in sf["unresolved_loops"][:3]:
+                cognitive_context += f"- {loop}\n"
+    
+    # History context
+    if core_context.get("history"):
+        h = core_context["history"]
+        if h.get("in_stress_period"):
+            cognitive_context += "\n⚠️ User appears to be in a stress period. Soften tone."
+    
+    # Get basic user info
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "name": 1})
     profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
     
-    # Build context
+    # Build final context
     user_context = f"""
 USER: {user.get('name', 'Business Owner')}
 BUSINESS: {profile.get('business_name', 'Their business') if profile else 'Unknown'}
+PROFILE MATURITY: {core_context.get('profile_maturity', 'nascent')}
+
+────────────────────────────────────────
+COGNITIVE CORE CONTEXT (USE THIS)
+────────────────────────────────────────
+{cognitive_context if cognitive_context else 'Limited data - ask questions to learn more about this user.'}
 """
     
     # Prepare conversation for LLM
