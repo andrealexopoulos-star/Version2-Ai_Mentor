@@ -1356,6 +1356,39 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
                         result = outcome.get("result", "unknown")
                         advice = outcome.get("advice", "")[:50]
                         context_parts.append(f"  [{result}] {advice}...")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # ADVISORY LOG - Past recommendations and outcomes
+            # ═══════════════════════════════════════════════════════════════
+            try:
+                # Get ignored advice that needs escalation
+                ignored_advice = await cognitive_core.get_ignored_advice_for_escalation(user_id)
+                if ignored_advice:
+                    context_parts.append("\n═══ ⚠️ IGNORED ADVICE REQUIRING ESCALATION ═══")
+                    context_parts.append("The following advice was given but NOT acted upon.")
+                    context_parts.append("If relevant to current topic, ESCALATE with increased clarity/urgency.")
+                    for adv in ignored_advice[:3]:
+                        level = adv.get("escalation_level", 0)
+                        urgency_label = ["NORMAL", "ELEVATED", "CRITICAL"][level]
+                        times = adv.get("times_repeated", 0)
+                        context_parts.append(f"  [{urgency_label}] (ignored {times}x): {adv.get('recommendation', '')[:60]}...")
+                        context_parts.append(f"      Reason given: {adv.get('reason', '')[:50]}...")
+                
+                # Get past successful approaches
+                recent_recs = await cognitive_core.advisory_log.find(
+                    {"user_id": user_id, "status": "acted"},
+                    {"_id": 0}
+                ).sort("created_at", -1).limit(3).to_list(length=3)
+                
+                if recent_recs:
+                    context_parts.append("\n═══ PAST SUCCESSFUL ADVICE ═══")
+                    context_parts.append("These recommendations were acted upon:")
+                    for rec in recent_recs:
+                        outcome = rec.get("actual_outcome", "unknown")
+                        context_parts.append(f"  ✓ {rec.get('recommendation', '')[:50]}... → Outcome: {outcome}")
+                
+            except Exception as e:
+                logger.warning(f"Could not load advisory log: {e}")
         
         elif agent == "MySoundboard" and core_context.get("soundboard_focus"):
             focus = core_context["soundboard_focus"]
