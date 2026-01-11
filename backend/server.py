@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.llm.openai import OpenAIChatRealtime
 import httpx
 from authlib.integrations.starlette_client import OAuth
 from urllib.parse import quote
