@@ -3358,6 +3358,132 @@ async def record_observation(
     return {"status": "recorded"}
 
 
+# ==================== ADVISORY LOG ENDPOINTS ====================
+
+class RecommendationLog(BaseModel):
+    situation: str
+    recommendation: str
+    reason: str
+    expected_outcome: str
+    topic_tags: Optional[List[str]] = None
+    urgency: Optional[str] = "normal"
+
+
+class RecommendationOutcome(BaseModel):
+    recommendation_id: str
+    status: str  # acted, ignored, partially_acted
+    actual_outcome: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@api_router.post("/advisory/log")
+async def log_advisory_recommendation(
+    log: RecommendationLog,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Log a recommendation with full context.
+    Every recommendation must be internally logged with:
+    - The situation it addresses
+    - The reason it was recommended
+    - The expected outcome
+    """
+    recommendation_id = await cognitive_core.log_recommendation(
+        user_id=current_user["id"],
+        agent="MyAdvisor",
+        situation=log.situation,
+        recommendation=log.recommendation,
+        reason=log.reason,
+        expected_outcome=log.expected_outcome,
+        topic_tags=log.topic_tags,
+        urgency=log.urgency
+    )
+    
+    return {
+        "status": "logged",
+        "recommendation_id": recommendation_id
+    }
+
+
+@api_router.post("/advisory/outcome")
+async def record_advisory_outcome(
+    outcome: RecommendationOutcome,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Record whether advice was acted on and what happened.
+    Future guidance will consider whether similar advice succeeded or failed.
+    """
+    await cognitive_core.record_recommendation_outcome(
+        recommendation_id=outcome.recommendation_id,
+        status=outcome.status,
+        actual_outcome=outcome.actual_outcome,
+        notes=outcome.notes
+    )
+    
+    # If ignored, check if escalation is needed
+    if outcome.status == "ignored":
+        new_level = await cognitive_core.escalate_ignored_advice(outcome.recommendation_id)
+        urgency_labels = ["normal", "elevated", "critical"]
+        return {
+            "status": "recorded",
+            "escalated": True,
+            "new_urgency": urgency_labels[new_level]
+        }
+    
+    return {"status": "recorded", "escalated": False}
+
+
+@api_router.get("/advisory/history")
+async def get_advisory_history(
+    topic: Optional[str] = None,
+    limit: int = 20,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get the advisory log for this user."""
+    query = {"user_id": current_user["id"]}
+    if topic:
+        query["topic_tags"] = topic
+    
+    cursor = cognitive_core.advisory_log.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit)
+    
+    history = await cursor.to_list(length=limit)
+    
+    # Calculate stats
+    total = len(history)
+    acted = sum(1 for h in history if h.get("status") == "acted")
+    ignored = sum(1 for h in history if h.get("status") == "ignored")
+    pending = sum(1 for h in history if h.get("status") == "pending")
+    
+    return {
+        "history": history,
+        "stats": {
+            "total": total,
+            "acted": acted,
+            "ignored": ignored,
+            "pending": pending,
+            "action_rate": round(acted / (acted + ignored), 2) if (acted + ignored) > 0 else None
+        }
+    }
+
+
+@api_router.get("/advisory/escalations")
+async def get_escalated_advice(current_user: dict = Depends(get_current_user)):
+    """
+    Get advice that has been repeatedly ignored and needs attention.
+    Repeatedly ignored advice must escalate in clarity or urgency.
+    """
+    escalations = await cognitive_core.get_ignored_advice_for_escalation(current_user["id"])
+    
+    return {
+        "escalations": escalations,
+        "count": len(escalations)
+    }
+
+
 # ==================== INVITES (ENTERPRISE ONLY) ====================
 
 def tier_allows_seats(account: dict) -> bool:
