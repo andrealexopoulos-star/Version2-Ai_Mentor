@@ -2802,8 +2802,7 @@ COGNITIVE CORE CONTEXT (USE THIS)
         for msg in messages_history:
             if msg["role"] == "user":
                 chat.add_message(UserMessage(text=msg["content"]))
-            else:
-                chat.add_message(AssistantMessage(text=msg["content"]))
+            # Note: Assistant messages are handled internally by LlmChat
         
         # Send current message
         response = await chat.send_message(UserMessage(text=req.message))
