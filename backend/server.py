@@ -2893,6 +2893,90 @@ async def delete_soundboard_conversation(conversation_id: str, current_user: dic
     return {"status": "deleted"}
 
 
+# ==================== COGNITIVE CORE ENDPOINTS ====================
+
+@api_router.get("/cognitive/profile")
+async def get_cognitive_profile(current_user: dict = Depends(get_current_user)):
+    """Get the user's cognitive profile (for debugging/admin only)"""
+    profile = await cognitive_core.get_profile(current_user["id"])
+    # Remove internal fields
+    if profile:
+        profile.pop("_id", None)
+    return {"profile": profile}
+
+
+@api_router.post("/cognitive/sync-business-profile")
+async def sync_business_to_cognitive(current_user: dict = Depends(get_current_user)):
+    """Sync business profile data to cognitive core reality model"""
+    user_id = current_user["id"]
+    
+    # Get business profile
+    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not profile:
+        return {"status": "no_profile", "message": "No business profile found to sync"}
+    
+    # Map business profile fields to cognitive core reality model
+    reality_update = {
+        "type": "reality_update",
+        "business_type": profile.get("business_type"),
+        "industry": profile.get("industry"),
+        "revenue_model": profile.get("business_model"),
+        "team_size": profile.get("team_size"),
+        "years_operating": profile.get("years_in_business")
+    }
+    
+    # Infer maturity from years
+    years = profile.get("years_in_business")
+    if years:
+        try:
+            y = int(years)
+            if y < 1:
+                reality_update["business_maturity"] = "idea"
+            elif y < 3:
+                reality_update["business_maturity"] = "early"
+            elif y < 7:
+                reality_update["business_maturity"] = "growth"
+            else:
+                reality_update["business_maturity"] = "mature"
+        except:
+            pass
+    
+    # Infer cashflow sensitivity from revenue
+    revenue = profile.get("annual_revenue", "")
+    if revenue:
+        rev_lower = revenue.lower()
+        if "under" in rev_lower or "<50" in rev_lower or "0-" in rev_lower:
+            reality_update["cashflow_sensitivity"] = "high"
+        elif "50" in rev_lower or "100" in rev_lower:
+            reality_update["cashflow_sensitivity"] = "medium"
+        else:
+            reality_update["cashflow_sensitivity"] = "low"
+    
+    # Update cognitive core
+    await cognitive_core.observe(user_id, reality_update)
+    
+    return {"status": "synced", "fields_updated": [k for k, v in reality_update.items() if v is not None]}
+
+
+@api_router.post("/cognitive/observe")
+async def record_observation(
+    observation: Dict[str, Any],
+    current_user: dict = Depends(get_current_user)
+):
+    """Record an observation for the cognitive core (for frontend integration)"""
+    user_id = current_user["id"]
+    
+    # Validate observation type
+    valid_types = ["message", "action", "decision", "avoidance", "outcome", "sentiment", "timing"]
+    if observation.get("type") not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Invalid observation type. Must be one of: {valid_types}")
+    
+    await cognitive_core.observe(user_id, observation)
+    
+    return {"status": "recorded"}
+
+
 # ==================== INVITES (ENTERPRISE ONLY) ====================
 
 def tier_allows_seats(account: dict) -> bool:
