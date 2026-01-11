@@ -3721,6 +3721,26 @@ async def sync_business_to_cognitive(current_user: dict = Depends(get_current_us
     return {"status": "synced", "fields_updated": [k for k, v in reality_update.items() if v is not None]}
 
 
+@api_router.get("/cognitive/escalation")
+async def get_escalation_state(
+    topic: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get the current escalation state for this user.
+    
+    Escalation is evidence-based:
+    - Level 0 (Normal): Balanced tone, standard urgency
+    - Level 1 (Elevated): Direct tone, reduced options
+    - Level 2 (High): Firm tone, minimal options, critical focus
+    - Level 3 (Critical): Urgent tone, survival focus, no options
+    """
+    topic_tags = [topic] if topic else None
+    escalation = await cognitive_core.calculate_escalation_state(current_user["id"], topic_tags)
+    
+    return escalation
+
+
 @api_router.post("/cognitive/observe")
 async def record_observation(
     observation: Dict[str, Any],
