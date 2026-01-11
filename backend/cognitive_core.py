@@ -61,10 +61,12 @@ class CognitiveCore:
         reason: str,
         expected_outcome: str,
         topic_tags: List[str] = None,
-        urgency: str = "normal"  # normal, elevated, critical
+        urgency: str = "normal",  # normal, elevated, critical
+        confidence: str = "medium",  # high, medium, low
+        confidence_factors: List[str] = None  # Why this confidence level
     ) -> str:
         """
-        Log every recommendation with full context.
+        Log every recommendation with full context and confidence classification.
         Returns the recommendation ID for future tracking.
         """
         recommendation_id = str(uuid.uuid4())
@@ -80,6 +82,8 @@ class CognitiveCore:
             "expected_outcome": expected_outcome,
             "topic_tags": topic_tags or [],
             "urgency": urgency,
+            "confidence": confidence,  # high, medium, low
+            "confidence_factors": confidence_factors or [],
             "created_at": now,
             "status": "pending",  # pending, acted, ignored, partially_acted
             "times_repeated": 0,
@@ -91,9 +95,157 @@ class CognitiveCore:
         }
         
         await self.advisory_log.insert_one(log_entry)
-        logger.info(f"Logged recommendation {recommendation_id} for user {user_id}: {recommendation[:50]}...")
+        logger.info(f"Logged recommendation {recommendation_id} [{confidence}] for user {user_id}: {recommendation[:50]}...")
         
         return recommendation_id
+    
+    async def calculate_confidence(self, user_id: str, topic_tags: List[str] = None) -> Dict[str, Any]:
+        """
+        Calculate confidence level for advice based on data coverage.
+        
+        Confidence must decrease when data visibility is limited.
+        Returns confidence level and the factors affecting it.
+        """
+        profile = await self.get_profile(user_id)
+        
+        confidence_score = 0
+        max_score = 0
+        factors = []
+        limiting_factors = []
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 1: Business Reality Model Coverage (30 points max)
+        # ═══════════════════════════════════════════════════════════════
+        max_score += 30
+        reality = profile.get("reality_model", {})
+        reality_fields = ["business_type", "business_maturity", "industry", 
+                         "revenue_model", "cashflow_sensitivity", "time_scarcity"]
+        reality_populated = sum(1 for f in reality_fields 
+                               if reality.get(f) and reality.get(f) != "unknown")
+        reality_score = (reality_populated / len(reality_fields)) * 30
+        confidence_score += reality_score
+        
+        if reality_score >= 25:
+            factors.append("Strong business reality understanding")
+        elif reality_score >= 15:
+            factors.append("Partial business reality data")
+        else:
+            limiting_factors.append("Limited business reality data - advice may not account for key constraints")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 2: Behavioural Truth Model Coverage (30 points max)
+        # ═══════════════════════════════════════════════════════════════
+        max_score += 30
+        behaviour = profile.get("behavioural_model", {})
+        behaviour_fields = ["decision_velocity", "follow_through_reliability", 
+                          "stress_tolerance", "information_tolerance"]
+        behaviour_populated = sum(1 for f in behaviour_fields 
+                                 if behaviour.get(f) and behaviour.get(f) != "unknown")
+        behaviour_score = (behaviour_populated / len(behaviour_fields)) * 20
+        
+        # Bonus for observed patterns
+        if behaviour.get("avoidance_patterns"):
+            behaviour_score += 5
+        if behaviour.get("repeated_concerns"):
+            behaviour_score += 5
+        
+        behaviour_score = min(behaviour_score, 30)
+        confidence_score += behaviour_score
+        
+        if behaviour_score >= 25:
+            factors.append("Strong behavioural understanding from observation")
+        elif behaviour_score >= 15:
+            factors.append("Some behavioural patterns observed")
+        else:
+            limiting_factors.append("Limited behavioural observation - cannot predict user reaction reliably")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 3: Outcome History (20 points max)
+        # ═══════════════════════════════════════════════════════════════
+        max_score += 20
+        
+        # Check advisory log for past outcomes
+        past_advice_count = await self.advisory_log.count_documents({
+            "user_id": user_id,
+            "status": {"$in": ["acted", "ignored"]}
+        })
+        
+        if past_advice_count >= 10:
+            confidence_score += 20
+            factors.append(f"Strong outcome history ({past_advice_count} tracked recommendations)")
+        elif past_advice_count >= 5:
+            confidence_score += 12
+            factors.append(f"Moderate outcome history ({past_advice_count} tracked recommendations)")
+        elif past_advice_count >= 1:
+            confidence_score += 5
+            limiting_factors.append("Limited outcome history - cannot verify what works for this user")
+        else:
+            limiting_factors.append("No outcome history - this is speculative advice")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 4: Topic-Specific History (10 points max)
+        # ═══════════════════════════════════════════════════════════════
+        max_score += 10
+        
+        if topic_tags:
+            topic_advice = await self.get_similar_past_advice(user_id, topic_tags, limit=5)
+            if len(topic_advice) >= 3:
+                confidence_score += 10
+                factors.append(f"Prior experience with this topic ({len(topic_advice)} past recommendations)")
+            elif len(topic_advice) >= 1:
+                confidence_score += 5
+                factors.append("Some prior experience with this topic")
+            else:
+                limiting_factors.append("No prior advice on this specific topic")
+        else:
+            limiting_factors.append("Topic not specified - cannot check topic-specific history")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # FACTOR 5: Profile Maturity (10 points max)
+        # ═══════════════════════════════════════════════════════════════
+        max_score += 10
+        observation_count = profile.get("observation_count", 0)
+        
+        if observation_count >= 100:
+            confidence_score += 10
+            factors.append("Deep profile (100+ observations)")
+        elif observation_count >= 50:
+            confidence_score += 7
+            factors.append("Mature profile (50+ observations)")
+        elif observation_count >= 20:
+            confidence_score += 4
+            factors.append("Developing profile")
+        else:
+            limiting_factors.append(f"Nascent profile ({observation_count} observations) - still learning this user")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # CALCULATE FINAL CONFIDENCE LEVEL
+        # ═══════════════════════════════════════════════════════════════
+        confidence_percentage = (confidence_score / max_score) * 100
+        
+        if confidence_percentage >= 70:
+            confidence_level = "high"
+        elif confidence_percentage >= 40:
+            confidence_level = "medium"
+        else:
+            confidence_level = "low"
+        
+        return {
+            "level": confidence_level,
+            "score": round(confidence_percentage, 1),
+            "factors": factors,
+            "limiting_factors": limiting_factors,
+            "recommendation": self._get_confidence_guidance(confidence_level, limiting_factors)
+        }
+    
+    def _get_confidence_guidance(self, level: str, limiting_factors: List[str]) -> str:
+        """Get guidance on how to adjust response based on confidence."""
+        if level == "high":
+            return "Proceed with direct, specific advice. Evidence supports confident recommendations."
+        elif level == "medium":
+            return "Provide advice but acknowledge limitations. Be specific where data exists, cautious where it doesn't."
+        else:
+            return "LOW CONFIDENCE: Ask clarifying questions before advising. State uncertainty explicitly. Avoid definitive recommendations."
     
     async def record_recommendation_outcome(
         self,
