@@ -3409,6 +3409,8 @@ class RecommendationLog(BaseModel):
     expected_outcome: str
     topic_tags: Optional[List[str]] = None
     urgency: Optional[str] = "normal"
+    confidence: Optional[str] = None  # high, medium, low - auto-calculated if not provided
+    confidence_factors: Optional[List[str]] = None
 
 
 class RecommendationOutcome(BaseModel):
@@ -3418,18 +3420,46 @@ class RecommendationOutcome(BaseModel):
     notes: Optional[str] = None
 
 
+@api_router.get("/advisory/confidence")
+async def get_current_confidence(
+    topic: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get the current confidence level for giving advice to this user.
+    Confidence is based on data coverage across all cognitive layers.
+    """
+    topic_tags = [topic] if topic else None
+    confidence = await cognitive_core.calculate_confidence(current_user["id"], topic_tags)
+    
+    return confidence
+
+
 @api_router.post("/advisory/log")
 async def log_advisory_recommendation(
     log: RecommendationLog,
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Log a recommendation with full context.
+    Log a recommendation with full context and confidence classification.
     Every recommendation must be internally logged with:
     - The situation it addresses
     - The reason it was recommended
     - The expected outcome
+    - The confidence level
     """
+    # Auto-calculate confidence if not provided
+    confidence = log.confidence
+    confidence_factors = log.confidence_factors or []
+    
+    if not confidence:
+        conf_data = await cognitive_core.calculate_confidence(
+            current_user["id"], 
+            log.topic_tags
+        )
+        confidence = conf_data.get("level", "medium")
+        confidence_factors = conf_data.get("limiting_factors", [])
+    
     recommendation_id = await cognitive_core.log_recommendation(
         user_id=current_user["id"],
         agent="MyAdvisor",
@@ -3438,12 +3468,16 @@ async def log_advisory_recommendation(
         reason=log.reason,
         expected_outcome=log.expected_outcome,
         topic_tags=log.topic_tags,
-        urgency=log.urgency
+        urgency=log.urgency,
+        confidence=confidence,
+        confidence_factors=confidence_factors
     )
     
     return {
         "status": "logged",
-        "recommendation_id": recommendation_id
+        "recommendation_id": recommendation_id,
+        "confidence": confidence,
+        "confidence_factors": confidence_factors
     }
 
 
