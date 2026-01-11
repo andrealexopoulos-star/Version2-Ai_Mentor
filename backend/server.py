@@ -1329,6 +1329,7 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
         
         # ═══════════════════════════════════════════════════════════════
         # 2. OWNER BEHAVIOUR MODEL (Layer 2) - MANDATORY LOAD
+        # This is a HUMAN, not a theoretical founder
         # ═══════════════════════════════════════════════════════════════
         behaviour = core_context.get("behaviour", {})
         behaviour_populated = sum(1 for k, v in behaviour.items() 
@@ -1337,27 +1338,73 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
         behaviour_populated += 1 if behaviour.get("repeated_concerns") else 0
         
         context_parts.append("\n═══ 2. OWNER BEHAVIOUR MODEL ═══")
+        context_parts.append("(Adapt your response to THIS human's patterns)")
         
         if behaviour_populated >= 2:
-            if behaviour.get("decision_velocity") and behaviour["decision_velocity"] != "unknown":
-                context_parts.append(f"Decision velocity: {behaviour['decision_velocity']}")
-            if behaviour.get("follow_through") and behaviour["follow_through"] != "unknown":
-                context_parts.append(f"Follow-through reliability: {behaviour['follow_through']}")
+            # Decision velocity - critical for adaptation
+            velocity = behaviour.get("decision_velocity")
+            if velocity and velocity != "unknown":
+                context_parts.append(f"\nDECISION VELOCITY: {velocity.upper()}")
+                if velocity == "frozen":
+                    context_parts.append("  → ADAPTATION: Simplify drastically. One small decision only.")
+                    context_parts.append("  → ADAPTATION: Create momentum with tiny wins.")
+                elif velocity == "cautious":
+                    context_parts.append("  → ADAPTATION: Prioritize clearly. Reduce options.")
+                    context_parts.append("  → ADAPTATION: Give them time but set soft deadlines.")
+                elif velocity == "fast":
+                    context_parts.append("  → ADAPTATION: Keep pace. Be direct. Don't over-explain.")
+            
+            # Follow-through - critical for recommendation style
+            follow = behaviour.get("follow_through")
+            if follow and follow != "unknown":
+                context_parts.append(f"\nFOLLOW-THROUGH: {follow.upper()}")
+                if follow == "low":
+                    context_parts.append("  → ADAPTATION: Smaller commitments. More check-ins.")
+                    context_parts.append("  → ADAPTATION: Ask 'What would make this easier to do?'")
+                elif follow == "moderate":
+                    context_parts.append("  → ADAPTATION: Standard accountability. Gentle reminders.")
+            
+            # Avoidance patterns - address respectfully
             if behaviour.get("avoids"):
-                context_parts.append(f"Avoidance patterns: {', '.join(behaviour['avoids'][:3])}")
-            if behaviour.get("repeated_concerns"):
-                context_parts.append(f"Recurring concerns: {', '.join(behaviour['repeated_concerns'][:3])}")
+                context_parts.append(f"\nAVOIDANCE PATTERNS: {', '.join(behaviour['avoids'][:3])}")
+                context_parts.append("  → ADAPTATION: Address consequences clearly but respectfully")
+                context_parts.append("  → ADAPTATION: Name the avoidance. Give them agency.")
+                context_parts.append("  → ADAPTATION: Never ambush or shame.")
+            
+            # Decision loops - something is blocking them
             if behaviour.get("decision_loops"):
-                context_parts.append(f"⚠️ Unresolved loops: {', '.join(behaviour['decision_loops'][:2])}")
+                context_parts.append(f"\n⚠️ DECISION LOOPS (circling without resolving):")
+                for loop in behaviour['decision_loops'][:2]:
+                    context_parts.append(f"  ↻ {loop}")
+                context_parts.append("  → ADAPTATION: Name the loop. Go deeper into the resistance.")
+                context_parts.append("  → ADAPTATION: Don't just re-advise. Understand the block.")
+            
+            # Recurring concerns
+            if behaviour.get("repeated_concerns"):
+                context_parts.append(f"\nRECURRING CONCERNS: {', '.join(behaviour['repeated_concerns'][:3])}")
+                context_parts.append("  → These keep coming up. They matter to this person.")
         else:
             context_parts.append("⚠️ INSUFFICIENT DATA")
             confidence_issues.append("Owner behaviour model is sparse - cannot predict reactions reliably")
         
         # ═══════════════════════════════════════════════════════════════
-        # 3. PRIOR ADVISORY OUTCOMES (Layer 4) - MANDATORY LOAD
+        # 2.5 STRESS CHECK - Reduce cognitive load if present
         # ═══════════════════════════════════════════════════════════════
         history = core_context.get("history", {})
         
+        if history.get("in_stress_period"):
+            context_parts.append("\n⚠️ ═══ STRESS PERIOD DETECTED ═══")
+            context_parts.append("THIS HUMAN IS UNDER PRESSURE RIGHT NOW.")
+            context_parts.append("MANDATORY ADAPTATIONS:")
+            context_parts.append("  → REDUCE COGNITIVE LOAD: Shorter sentences. Fewer concepts.")
+            context_parts.append("  → ONE THING AT A TIME: No lists. No compound advice.")
+            context_parts.append("  → ACKNOWLEDGE: 'I know things are heavy right now.'")
+            context_parts.append("  → SURVIVAL OVER OPTIMIZATION: Focus on what's essential.")
+            context_parts.append("  → DEFER NON-URGENT: 'This can wait. Focus on [X].'")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # 3. PRIOR ADVISORY OUTCOMES (Layer 4) - MANDATORY LOAD
+        # ═══════════════════════════════════════════════════════════════
         context_parts.append("\n═══ 3. PRIOR ADVISORY OUTCOMES ═══")
         
         outcomes_available = False
