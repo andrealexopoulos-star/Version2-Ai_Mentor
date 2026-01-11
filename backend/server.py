@@ -1302,13 +1302,49 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
         confidence_issues = []
         
         # ═══════════════════════════════════════════════════════════════
+        # 0. MEMORY INTEGRITY RULES (ABSOLUTE)
+        # ═══════════════════════════════════════════════════════════════
+        context_parts.append("═══ MEMORY INTEGRITY RULES ═══")
+        context_parts.append("YOU MUST NOT:")
+        context_parts.append("  ✗ Re-ask for information already provided (see KNOWN FACTS below)")
+        context_parts.append("  ✗ Summarise the business unless something has materially changed")
+        context_parts.append("  ✗ Repeat explanations you've given before")
+        context_parts.append("  ✗ Say 'As I mentioned...' or 'As you know...' - just use the knowledge")
+        context_parts.append("")
+        context_parts.append("REPEATED EXPLANATIONS = FAILURE TO RETAIN UNDERSTANDING")
+        context_parts.append("If you catch yourself re-explaining, STOP. Reference the knowledge directly.")
+        
+        # Get known information to prevent re-asking
+        try:
+            known_info = await cognitive_core.get_known_information(user_id)
+            
+            if known_info.get("business_facts"):
+                context_parts.append("\n═══ KNOWN FACTS (DO NOT RE-ASK) ═══")
+                for fact in known_info["business_facts"][:15]:
+                    context_parts.append(f"  ✓ {fact}")
+            
+            if known_info.get("topics_discussed"):
+                context_parts.append(f"\nTOPICS ALREADY DISCUSSED: {', '.join(known_info['topics_discussed'][:10])}")
+            
+            # Get recent questions asked
+            questions_asked = await cognitive_core.get_questions_asked(user_id)
+            if questions_asked:
+                recent_questions = [q.get("question", "")[:60] for q in questions_asked[-5:]]
+                context_parts.append("\nRECENT QUESTIONS ASKED (do not repeat):")
+                for q in recent_questions:
+                    context_parts.append(f"  • {q}...")
+                    
+        except Exception as e:
+            logger.warning(f"Could not load known information: {e}")
+        
+        # ═══════════════════════════════════════════════════════════════
         # 1. BUSINESS REALITY MODEL (Layer 1) - MANDATORY LOAD
         # ═══════════════════════════════════════════════════════════════
         reality = core_context.get("reality", {})
         reality_populated = sum(1 for v in reality.values() if v and v != "unknown" and not isinstance(v, list))
         reality_populated += 1 if reality.get("constraints") else 0
         
-        context_parts.append("═══ 1. BUSINESS REALITY MODEL ═══")
+        context_parts.append("\n═══ 1. BUSINESS REALITY MODEL ═══")
         
         if reality_populated >= 3:
             if reality.get("business_type"):
