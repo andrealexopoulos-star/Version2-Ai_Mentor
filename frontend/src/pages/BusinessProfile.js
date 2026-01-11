@@ -33,10 +33,11 @@ const BusinessProfile = () => {
   const [scores, setScores] = useState({ completeness: 0, strength: 0 });
   const [activeTab, setActiveTab] = useState('basics');
 
-  // Get user subscription tier
+  // Get user subscription tier - master accounts get full access
   const userTier = user?.subscription_tier || 'free';
-  const isPaidUser = !['free', 'trial'].includes(userTier.toLowerCase());
-  const isEnterprise = userTier.toLowerCase() === 'enterprise';
+  const isMasterAccount = user?.is_master_account === true || user?.features?.all_access === true;
+  const isPaidUser = isMasterAccount || !['free', 'trial'].includes(userTier.toLowerCase());
+  const isEnterprise = isMasterAccount || userTier.toLowerCase() === 'enterprise';
 
   useEffect(() => {
     fetchProfile();
