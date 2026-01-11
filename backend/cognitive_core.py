@@ -247,6 +247,168 @@ class CognitiveCore:
         else:
             return "LOW CONFIDENCE: Ask clarifying questions before advising. State uncertainty explicitly. Avoid definitive recommendations."
     
+    async def calculate_escalation_state(self, user_id: str, topic_tags: List[str] = None) -> Dict[str, Any]:
+        """
+        Calculate the current escalation state for this user.
+        
+        Escalation is evidence-based, not emotional:
+        - Tracks ignored advice count
+        - Tracks risk indicators
+        - Determines appropriate tone, urgency, and optionality
+        """
+        profile = await self.get_profile(user_id)
+        
+        escalation = {
+            "level": 0,  # 0=normal, 1=elevated, 2=high, 3=critical
+            "level_name": "normal",
+            "tone": "balanced",
+            "urgency": "standard",
+            "optionality": "normal",
+            "focus": "general",
+            "evidence": [],
+            "recommended_approach": ""
+        }
+        
+        evidence = []
+        escalation_score = 0
+        
+        # ═══════════════════════════════════════════════════════════════
+        # EVIDENCE 1: Ignored Advice Count
+        # ═══════════════════════════════════════════════════════════════
+        ignored_count = await self.advisory_log.count_documents({
+            "user_id": user_id,
+            "status": "ignored"
+        })
+        
+        if ignored_count >= 5:
+            escalation_score += 3
+            evidence.append(f"HIGH: {ignored_count} recommendations ignored")
+        elif ignored_count >= 3:
+            escalation_score += 2
+            evidence.append(f"MODERATE: {ignored_count} recommendations ignored")
+        elif ignored_count >= 1:
+            escalation_score += 1
+            evidence.append(f"LOW: {ignored_count} recommendation(s) ignored")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # EVIDENCE 2: Repeated Ignored Advice (same topic)
+        # ═══════════════════════════════════════════════════════════════
+        if topic_tags:
+            topic_ignored = await self.advisory_log.count_documents({
+                "user_id": user_id,
+                "status": "ignored",
+                "topic_tags": {"$in": topic_tags}
+            })
+            if topic_ignored >= 2:
+                escalation_score += 2
+                evidence.append(f"REPEATED: Same advice on this topic ignored {topic_ignored}x")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # EVIDENCE 3: Stress Period Duration
+        # ═══════════════════════════════════════════════════════════════
+        stress_periods = profile.get("outcome_memory", {}).get("stress_periods", [])
+        active_stress = [s for s in stress_periods if s.get("recovery") is None]
+        if active_stress:
+            escalation_score += 1
+            evidence.append("STRESS: User currently in stress period")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # EVIDENCE 4: Decision Loops (circling without resolving)
+        # ═══════════════════════════════════════════════════════════════
+        decision_loops = profile.get("behavioural_model", {}).get("decision_loops", [])
+        if len(decision_loops) >= 3:
+            escalation_score += 2
+            evidence.append(f"LOOPS: {len(decision_loops)} unresolved decision loops")
+        elif len(decision_loops) >= 1:
+            escalation_score += 1
+            evidence.append(f"LOOPS: {len(decision_loops)} unresolved decision loop(s)")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # EVIDENCE 5: Cashflow Sensitivity
+        # ═══════════════════════════════════════════════════════════════
+        cashflow = profile.get("reality_model", {}).get("cashflow_sensitivity")
+        if cashflow == "critical":
+            escalation_score += 2
+            evidence.append("RISK: Critical cashflow sensitivity")
+        elif cashflow == "high":
+            escalation_score += 1
+            evidence.append("RISK: High cashflow sensitivity")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # EVIDENCE 6: Deferred Decisions Piling Up
+        # ═══════════════════════════════════════════════════════════════
+        deferred = profile.get("outcome_memory", {}).get("deferred_decisions", [])
+        if len(deferred) >= 5:
+            escalation_score += 2
+            evidence.append(f"BACKLOG: {len(deferred)} deferred decisions")
+        elif len(deferred) >= 3:
+            escalation_score += 1
+            evidence.append(f"BACKLOG: {len(deferred)} deferred decisions")
+        
+        # ═══════════════════════════════════════════════════════════════
+        # CALCULATE ESCALATION LEVEL
+        # ═══════════════════════════════════════════════════════════════
+        if escalation_score >= 8:
+            level = 3
+            level_name = "critical"
+        elif escalation_score >= 5:
+            level = 2
+            level_name = "high"
+        elif escalation_score >= 2:
+            level = 1
+            level_name = "elevated"
+        else:
+            level = 0
+            level_name = "normal"
+        
+        # ═══════════════════════════════════════════════════════════════
+        # DETERMINE RESPONSE PARAMETERS
+        # ═══════════════════════════════════════════════════════════════
+        escalation_params = {
+            0: {  # Normal
+                "tone": "balanced",
+                "urgency": "standard",
+                "optionality": "normal",
+                "focus": "general guidance",
+                "approach": "Standard advisory approach. Balanced tone. Options where appropriate."
+            },
+            1: {  # Elevated
+                "tone": "direct",
+                "urgency": "increased",
+                "optionality": "reduced",
+                "focus": "priority issues",
+                "approach": "More direct tone. Clarify consequences. Reduce options to top 2. Focus on priorities."
+            },
+            2: {  # High
+                "tone": "firm",
+                "urgency": "high",
+                "optionality": "minimal",
+                "focus": "critical issues only",
+                "approach": "Firm, clear tone. State consequences explicitly. Single recommendation. Focus only on what matters most."
+            },
+            3: {  # Critical
+                "tone": "urgent",
+                "urgency": "critical",
+                "optionality": "none",
+                "focus": "survival",
+                "approach": "Urgent, no-nonsense tone. Survival-critical issues only. One action. No options. Clear consequences of inaction."
+            }
+        }
+        
+        params = escalation_params[level]
+        
+        return {
+            "level": level,
+            "level_name": level_name,
+            "score": escalation_score,
+            "tone": params["tone"],
+            "urgency": params["urgency"],
+            "optionality": params["optionality"],
+            "focus": params["focus"],
+            "evidence": evidence,
+            "recommended_approach": params["approach"]
+        }
+    
     async def get_known_information(self, user_id: str) -> Dict[str, Any]:
         """
         Get all information already known about this user.
