@@ -1316,19 +1316,61 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
         
         # ═══════════════════════════════════════════════════════════════
         # 4. CONFIDENCE ASSESSMENT - MANDATORY
+        # Never present certainty without evidence
         # ═══════════════════════════════════════════════════════════════
-        profile_maturity = core_context.get("profile_maturity", "nascent")
+        
+        # Calculate comprehensive confidence
+        try:
+            confidence_data = await cognitive_core.calculate_confidence(user_id)
+            confidence_level = confidence_data.get("level", "low")
+            confidence_score = confidence_data.get("score", 0)
+            confidence_factors = confidence_data.get("factors", [])
+            limiting_factors = confidence_data.get("limiting_factors", [])
+            confidence_guidance = confidence_data.get("recommendation", "")
+        except Exception as e:
+            logger.warning(f"Could not calculate confidence: {e}")
+            confidence_level = "low"
+            confidence_score = 0
+            confidence_factors = []
+            limiting_factors = ["Confidence calculation failed"]
+            confidence_guidance = "Operate with maximum caution. Ask before advising."
         
         context_parts.append("\n═══ 4. CONFIDENCE ASSESSMENT ═══")
-        context_parts.append(f"Profile maturity: {profile_maturity.upper()}")
+        context_parts.append(f"CONFIDENCE LEVEL: {confidence_level.upper()} ({confidence_score}%)")
         
+        if confidence_factors:
+            context_parts.append("\nSupporting factors:")
+            for factor in confidence_factors:
+                context_parts.append(f"  ✓ {factor}")
+        
+        if limiting_factors:
+            context_parts.append("\n⚠️ LIMITING FACTORS (reduce certainty):")
+            for factor in limiting_factors:
+                context_parts.append(f"  ⚠ {factor}")
+        
+        # Add confidence-based directives
+        context_parts.append(f"\n═══ CONFIDENCE DIRECTIVE ═══")
+        context_parts.append(confidence_guidance)
+        
+        if confidence_level == "high":
+            context_parts.append("\nTONE: Direct and specific")
+            context_parts.append("URGENCY: Match situation severity")
+            context_parts.append("SPECIFICITY: High - use concrete details")
+        elif confidence_level == "medium":
+            context_parts.append("\nTONE: Balanced - confident where data exists, cautious elsewhere")
+            context_parts.append("URGENCY: Moderate - avoid overstatement")
+            context_parts.append("SPECIFICITY: Medium - be specific only where evidence supports")
+        else:  # low
+            context_parts.append("\nTONE: Exploratory and questioning")
+            context_parts.append("URGENCY: Low - do not create false urgency")
+            context_parts.append("SPECIFICITY: Low - use tentative language, ask clarifying questions")
+            context_parts.append("⚠️ DO NOT give definitive advice with low confidence")
+        
+        # Add legacy confidence issues if any
         if confidence_issues:
-            context_parts.append("\n⚠️ CONFIDENCE REDUCED DUE TO:")
+            context_parts.append("\nAdditional data gaps:")
             for issue in confidence_issues:
                 context_parts.append(f"  - {issue}")
-            context_parts.append("\nINTERNAL DIRECTIVE: Be more conservative. Ask more. Assume less.")
-        else:
-            context_parts.append("✓ Sufficient data for confident response")
         
         # ═══════════════════════════════════════════════════════════════
         # 5. AGENT-SPECIFIC CONTEXT
