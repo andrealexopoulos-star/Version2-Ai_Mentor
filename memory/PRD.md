@@ -2,25 +2,27 @@
 
 ## Original Problem Statement
 Transform "The Strategy Squad" application into a hyper-personalized, "virtually human-like" AI business advisor with:
+- Per-User Cognitive Core (persistent intelligence layer)
+- Three distinct AI agents with enforced output shapes
 - Smart multi-step onboarding questionnaire
 - Business Profile Completeness and dynamic Business Score
-- Hyper-personalization with three AI personas: MySoundboard, Chief Business Advisor, Execution Coach
 - Deep integration with business tools (priority: Microsoft Outlook)
 - Priority Inbox, Calendar Intelligence, ChatGPT-style chat interface
 - Voice Chat functionality (video-call-like experience)
 
-## User Personas
-- Small business owners seeking strategic advice
-- Entrepreneurs needing accountability and execution coaching
-- Business advisors using the platform for client management
+## Agent Constitution v1.0
 
-## Core Requirements
-1. **Authentication**: Email/password + Google OAuth
-2. **Business Profile**: Comprehensive profile builder with completeness scoring
-3. **AI Advisory Team**: Three distinct AI personas
-4. **Microsoft Outlook Integration**: Email and calendar sync for AI context
-5. **Chat Interface**: MySoundBoard with conversation history
-6. **Voice Chat**: Real-time voice interaction
+### Three Agents (Fixed, Non-Negotiable):
+1. **MyIntel** - Surfaces intelligence (Headline → Fact → Implication)
+2. **MyAdvisor** - Directs action (Situation → Decision → Next step)  
+3. **MySoundboard** - Thinking partner (Observation → Question)
+
+### Cognitive Core (Per-User):
+Four layers of persistent user understanding:
+- Layer 1: Immutable Reality Model
+- Layer 2: Behavioural Truth Model
+- Layer 3: Delivery Preference Model
+- Layer 4: Consequence & Outcome Memory
 
 ---
 
@@ -36,33 +38,29 @@ Transform "The Strategy Squad" application into a hyper-personalized, "virtually
 - [x] Dashboard Focus AI feature
 - [x] Voice Chat with OpenAI Realtime API (Jan 10, 2025)
 - [x] Mobile responsive design improvements (Jan 10, 2025)
+- [x] **Per-User Cognitive Core (Jan 10, 2025)**
+- [x] **MySoundboard Agent Constitution compliance (Jan 10, 2025)**
 
-### Security Fixes (Jan 10, 2025) ✅
-- [x] HMAC-signed OAuth state parameter (CSRF protection)
-- [x] Security audit logging for Outlook connections
-- [x] Connected Microsoft email tracking and display
-- [x] Disconnect endpoint with full data cleanup
-- [x] `prompt=select_account` for Microsoft account picker
-- [x] User warning when Microsoft email differs from account email
-
-### Voice Chat Implementation (Jan 10, 2025) ✅
-- [x] OpenAI Realtime Voice API integration
-- [x] WebRTC-based real-time voice conversation
-- [x] Visual speaking indicators
-- [x] Transcript panel
-- [x] Mobile-responsive voice UI
+### Cognitive Core Implementation (Jan 10, 2025) ✅
+- [x] Four-layer persistent user profile
+- [x] Passive continuous learning
+- [x] Integration with MySoundboard
+- [x] Business profile sync to reality model
+- [x] Observation recording API
 
 ---
 
 ## Prioritized Backlog
 
 ### P0 - Critical
+- [ ] MyAdvisor Cognitive Core + Agent Constitution compliance
+- [ ] MyIntel Cognitive Core + Agent Constitution compliance
+- [ ] Notification state machine implementation
 - [ ] Email Intelligence backend implementation
 - [ ] Calendar Intelligence backend implementation
 
 ### P1 - High Priority
 - [ ] Business Profile immutable versioned API frontend update
-- [ ] Execution Coach AI persona
 - [ ] Custom voice chat persona for MySoundBoard
 
 ### P2 - Medium Priority
@@ -83,6 +81,7 @@ Transform "The Strategy Squad" application into a hyper-personalized, "virtually
 ### Backend
 - FastAPI (Python)
 - MongoDB
+- **Cognitive Core** - Per-user intelligence layer
 - OpenAI GPT-4o via Emergent LLM Key
 - OpenAI Realtime Voice API (direct key)
 - Microsoft Graph API for Outlook
@@ -94,10 +93,10 @@ Transform "The Strategy Squad" application into a hyper-personalized, "virtually
 - WebRTC for voice chat
 
 ### Key Files
-- `/app/backend/server.py` - Main API with voice chat routes
+- `/app/backend/cognitive_core.py` - Per-User Cognitive Core
+- `/app/backend/server.py` - Main API with agent endpoints
 - `/app/frontend/src/pages/MySoundBoard.js` - Chat interface
 - `/app/frontend/src/components/VoiceChat.js` - Voice chat component
-- `/app/frontend/src/pages/Integrations.js` - Tool connections
 
 ---
 
