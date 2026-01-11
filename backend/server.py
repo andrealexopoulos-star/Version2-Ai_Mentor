@@ -1152,18 +1152,142 @@ One thoughtful question at a time.
         "financial": base_prompt + "\n\nThe user wants financial guidance. Ask about their current financial situation first. Don't give generic advice.",
         "diagnosis": base_prompt + "\n\nThe user has a business problem. Ask what's happening first. Diagnose before prescribing.",
         "general": base_prompt,
-        "mentor": base_prompt
+        "mentor": base_prompt,
+        "advisor": base_prompt  # Will be overridden by the MyAdvisor prompt above
     }
     return context_prompts.get(context_type, base_prompt)
 
+
+async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
+    """Build cognitive context string for injection into agent prompts."""
+    try:
+        core_context = await cognitive_core.get_context_for_agent(user_id, agent)
+        
+        context_parts = []
+        
+        # Profile maturity indicator
+        maturity = core_context.get("profile_maturity", "nascent")
+        context_parts.append(f"PROFILE MATURITY: {maturity}")
+        if maturity == "nascent":
+            context_parts.append("(Limited data - responses may need to be more conservative)")
+        
+        # Reality Model
+        reality = core_context.get("reality", {})
+        if any(v and v != "unknown" for v in reality.values()):
+            context_parts.append("\n── BUSINESS REALITY ──")
+            if reality.get("business_type"):
+                context_parts.append(f"Type: {reality['business_type']}")
+            if reality.get("maturity"):
+                context_parts.append(f"Maturity: {reality['maturity']}")
+            if reality.get("cashflow_sensitivity") and reality["cashflow_sensitivity"] != "unknown":
+                context_parts.append(f"Cashflow sensitivity: {reality['cashflow_sensitivity']}")
+            if reality.get("time_scarcity") and reality["time_scarcity"] != "unknown":
+                context_parts.append(f"Time availability: {reality['time_scarcity']}")
+            if reality.get("constraints"):
+                context_parts.append(f"Constraints: {', '.join(reality['constraints'][:3])}")
+        
+        # Behavioural Truth
+        behaviour = core_context.get("behaviour", {})
+        if any(v and v != "unknown" for v in behaviour.values() if not isinstance(v, list)):
+            context_parts.append("\n── BEHAVIOURAL TRUTH (observed, not stated) ──")
+            if behaviour.get("decision_velocity") and behaviour["decision_velocity"] != "unknown":
+                context_parts.append(f"Decision style: {behaviour['decision_velocity']}")
+            if behaviour.get("follow_through") and behaviour["follow_through"] != "unknown":
+                context_parts.append(f"Follow-through: {behaviour['follow_through']}")
+            if behaviour.get("avoids"):
+                context_parts.append(f"Tends to avoid: {', '.join(behaviour['avoids'][:3])}")
+            if behaviour.get("repeated_concerns"):
+                context_parts.append(f"Recurring concerns: {', '.join(behaviour['repeated_concerns'][:3])}")
+            if behaviour.get("decision_loops"):
+                context_parts.append(f"⚠️ Unresolved decision loops: {', '.join(behaviour['decision_loops'][:2])}")
+        
+        # Delivery Preferences
+        delivery = core_context.get("delivery", {})
+        if any(v and v != "unknown" for v in delivery.values()):
+            context_parts.append("\n── DELIVERY PREFERENCES ──")
+            if delivery.get("style") and delivery["style"] != "unknown":
+                context_parts.append(f"Prefers: {delivery['style']} communication")
+            if delivery.get("pressure_sensitivity") and delivery["pressure_sensitivity"] != "unknown":
+                context_parts.append(f"Pressure sensitivity: {delivery['pressure_sensitivity']}")
+            if delivery.get("depth") and delivery["depth"] != "unknown":
+                context_parts.append(f"Depth preference: {delivery['depth']}")
+        
+        # Outcome Memory / History
+        history = core_context.get("history", {})
+        if history.get("in_stress_period"):
+            context_parts.append("\n⚠️ USER IS IN A STRESS PERIOD - adjust tone accordingly")
+        
+        if history.get("recent_wins"):
+            context_parts.append("\n── RECENT WINS (reference if relevant) ──")
+            for win in history["recent_wins"][:2]:
+                if isinstance(win, dict) and win.get("summary"):
+                    context_parts.append(f"• {win['summary']}")
+        
+        if history.get("lessons"):
+            context_parts.append("\n── LESSONS LEARNED (patterns from past) ──")
+            for lesson in history["lessons"][:2]:
+                if isinstance(lesson, dict) and lesson.get("lesson"):
+                    context_parts.append(f"• {lesson['lesson']}")
+        
+        if history.get("deferred_decisions"):
+            context_parts.append("\n── DEFERRED DECISIONS (may need attention) ──")
+            for dec in history["deferred_decisions"][:2]:
+                if isinstance(dec, dict) and dec.get("decision"):
+                    context_parts.append(f"• {dec['decision']}")
+        
+        # Agent-specific context
+        if agent == "MyIntel" and core_context.get("intel_focus"):
+            focus = core_context["intel_focus"]
+            if focus.get("avoidance_blind_spots"):
+                context_parts.append(f"\n── BLIND SPOTS (topics they avoid) ──")
+                context_parts.append(f"{', '.join(focus['avoidance_blind_spots'][:3])}")
+        
+        elif agent == "MyAdvisor" and core_context.get("advisor_focus"):
+            focus = core_context["advisor_focus"]
+            if focus.get("action_success_rate") is not None:
+                context_parts.append(f"\n── ACTION PATTERN ──")
+                context_parts.append(f"Action rate on advice: {int(focus['action_success_rate'] * 100)}%")
+        
+        elif agent == "MySoundboard" and core_context.get("soundboard_focus"):
+            focus = core_context["soundboard_focus"]
+            if focus.get("unresolved_loops"):
+                context_parts.append(f"\n── UNRESOLVED THOUGHT LOOPS ──")
+                for loop in focus["unresolved_loops"][:3]:
+                    context_parts.append(f"• {loop}")
+        
+        return "\n".join(context_parts) if context_parts else "Limited cognitive data available."
+        
+    except Exception as e:
+        logger.error(f"Error building cognitive context: {e}")
+        return "Cognitive context unavailable."
+
+
 async def get_ai_response(message: str, context_type: str, session_id: str, user_id: str = None, user_data: dict = None, use_advanced: bool = False) -> str:
-    """AGI-Ready AI response function with full business context"""
+    """AGI-Ready AI response function with full business context and Cognitive Core integration"""
     try:
         # Get comprehensive business context
         business_knowledge = None
         if user_id:
             business_context = await get_business_context(user_id)
             business_knowledge = build_business_knowledge_context(business_context)
+            
+            # Build cognitive context for deep personalization
+            agent_name = "MyAdvisor" if context_type in ["general", "mentor", "advisor"] else "MyIntel" if context_type == "intel" else "General"
+            cognitive_context = await build_cognitive_context_for_prompt(user_id, agent_name)
+            
+            # Append cognitive context to business knowledge
+            if business_knowledge:
+                business_knowledge = f"{business_knowledge}\n\n────────────────────────────────────────\nCOGNITIVE CORE CONTEXT (USE THIS FOR PERSONALIZATION)\n────────────────────────────────────────\n{cognitive_context}"
+            else:
+                business_knowledge = f"────────────────────────────────────────\nCOGNITIVE CORE CONTEXT\n────────────────────────────────────────\n{cognitive_context}"
+            
+            # Record this interaction as an observation
+            await cognitive_core.observe(user_id, {
+                "type": "message",
+                "content": message[:500],  # Truncate for storage
+                "agent": agent_name,
+                "context_type": context_type
+            })
         
         system_prompt = get_system_prompt(context_type, user_data, business_knowledge)
         
