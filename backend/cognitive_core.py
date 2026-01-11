@@ -1,0 +1,553 @@
+"""
+Per-User Cognitive Core
+========================
+Maintains a continuously evolving, non-resetting cognitive profile for each user.
+This profile persists across sessions, conversations, agents, and time.
+
+The Cognitive Core does not speak to users. It exists solely to:
+- Observe
+- Learn
+- Update internal models
+- Feed accurate context to agents (MyIntel, MyAdvisor, MySoundboard)
+"""
+
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Any
+from motor.motor_asyncio import AsyncIOMotorDatabase
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class CognitiveCore:
+    """
+    Per-User Cognitive Core - The persistent intelligence layer.
+    
+    Four Internal Layers:
+    1. Immutable Reality Model - Facts that rarely change
+    2. Behavioural Truth Model - How the user ACTUALLY behaves
+    3. Delivery Preference Model - HOW support should be delivered
+    4. Consequence & Outcome Memory - Records outcomes over time
+    """
+    
+    def __init__(self, db: AsyncIOMotorDatabase):
+        self.db = db
+        self.collection = db.cognitive_profiles
+    
+    async def get_profile(self, user_id: str) -> Dict[str, Any]:
+        """Retrieve or create the cognitive profile for a user."""
+        profile = await self.collection.find_one({"user_id": user_id}, {"_id": 0})
+        
+        if not profile:
+            profile = await self._create_initial_profile(user_id)
+        
+        return profile
+    
+    async def _create_initial_profile(self, user_id: str) -> Dict[str, Any]:
+        """Create initial cognitive profile with conservative defaults."""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        profile = {
+            "user_id": user_id,
+            "created_at": now,
+            "last_updated": now,
+            "observation_count": 0,
+            
+            # LAYER 1: Immutable Reality Model
+            # Facts that rarely change - prevents unrealistic advice
+            "reality_model": {
+                "business_type": None,           # e.g., "service", "product", "marketplace"
+                "business_maturity": None,       # e.g., "idea", "early", "growth", "mature"
+                "industry": None,
+                "industry_constraints": [],      # regulatory, seasonal, etc.
+                "revenue_model": None,           # subscription, project, hourly, etc.
+                "cashflow_sensitivity": "unknown",  # low, medium, high, critical
+                "risk_exposure": "unknown",      # low, medium, high
+                "regulatory_pressure": "unknown", # none, light, moderate, heavy
+                "time_scarcity": "unknown",      # abundant, normal, scarce, critical
+                "decision_ownership": "unknown", # solo, shared, delegated
+                "team_size": None,
+                "years_operating": None,
+                "confidence_level": 0.0,         # 0-1 confidence in this layer
+                "last_updated": now
+            },
+            
+            # LAYER 2: Behavioural Truth Model
+            # How the user ACTUALLY behaves - observed, not stated
+            "behavioural_model": {
+                "decision_velocity": "unknown",      # fast, cautious, frozen
+                "follow_through_reliability": "unknown",  # high, moderate, low
+                "avoidance_patterns": [],           # topics/decisions they avoid
+                "stress_tolerance": "unknown",      # high, moderate, low
+                "energy_cycles": {                  # when they're most engaged
+                    "peak_hours": [],
+                    "low_hours": [],
+                    "peak_days": []
+                },
+                "information_tolerance": "unknown", # brief, moderate, deep
+                "repeated_concerns": [],            # topics that keep coming up
+                "decision_loops": [],               # decisions they circle back to
+                "action_patterns": {
+                    "total_advice_given": 0,
+                    "advice_acted_on": 0,
+                    "advice_ignored": 0,
+                    "average_action_delay_days": None
+                },
+                "confidence_level": 0.0,
+                "last_updated": now
+            },
+            
+            # LAYER 3: Delivery Preference Model
+            # HOW support should be delivered - controls tone, timing, depth
+            "delivery_model": {
+                "communication_style": "unknown",   # blunt, framed, gentle
+                "pressure_sensitivity": "unknown",  # low, moderate, high
+                "reassurance_need": "unknown",      # none, occasional, frequent
+                "momentum_preference": "unknown",   # steady, urgent, relaxed
+                "interruption_tolerance": "unknown", # high, moderate, low
+                "support_cadence": "unknown",       # daily, weekly, as-needed
+                "depth_preference": "unknown",      # surface, moderate, deep
+                "response_length_preference": "unknown",  # brief, moderate, detailed
+                "confidence_level": 0.0,
+                "last_updated": now
+            },
+            
+            # LAYER 4: Consequence & Outcome Memory
+            # Records outcomes over time - generates personalised wisdom
+            "outcome_memory": {
+                "advice_outcomes": [],  # {advice, action_taken, result, timestamp}
+                "ignored_signals": [],  # {signal, downstream_impact, timestamp}
+                "deferred_decisions": [],  # {decision, opportunity_cost, timestamp}
+                "stress_periods": [],   # {trigger, duration_days, recovery, timestamp}
+                "strategic_shifts": [], # {shift, business_effect, timestamp}
+                "wins": [],             # positive outcomes to reference
+                "lessons": [],          # learned patterns
+                "last_updated": now
+            },
+            
+            # Meta-learning signals
+            "learning_signals": {
+                "total_interactions": 0,
+                "last_interaction": None,
+                "session_count": 0,
+                "average_session_length_mins": None,
+                "topics_discussed": {},  # topic -> frequency
+                "sentiment_trend": [],   # rolling sentiment observations
+                "engagement_trend": []   # rolling engagement observations
+            }
+        }
+        
+        await self.collection.insert_one(profile)
+        logger.info(f"Created initial cognitive profile for user {user_id}")
+        return profile
+    
+    async def observe(self, user_id: str, observation: Dict[str, Any]) -> None:
+        """
+        Record an observation about the user. Learning is passive and continuous.
+        
+        Observation types:
+        - message: User sent a message
+        - action: User took an action
+        - decision: User made a decision
+        - avoidance: User avoided something
+        - outcome: Result of previous advice/action
+        - sentiment: Emotional signal detected
+        - timing: Timing-based observation
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        observation["timestamp"] = now
+        
+        # Get current profile
+        profile = await self.get_profile(user_id)
+        
+        obs_type = observation.get("type")
+        
+        if obs_type == "message":
+            await self._observe_message(user_id, profile, observation)
+        elif obs_type == "action":
+            await self._observe_action(user_id, profile, observation)
+        elif obs_type == "decision":
+            await self._observe_decision(user_id, profile, observation)
+        elif obs_type == "avoidance":
+            await self._observe_avoidance(user_id, profile, observation)
+        elif obs_type == "outcome":
+            await self._observe_outcome(user_id, profile, observation)
+        elif obs_type == "sentiment":
+            await self._observe_sentiment(user_id, profile, observation)
+        elif obs_type == "timing":
+            await self._observe_timing(user_id, profile, observation)
+        elif obs_type == "reality_update":
+            await self._update_reality_model(user_id, profile, observation)
+        
+        # Increment observation count
+        await self.collection.update_one(
+            {"user_id": user_id},
+            {
+                "$inc": {"observation_count": 1},
+                "$set": {
+                    "last_updated": now,
+                    "learning_signals.last_interaction": now
+                }
+            }
+        )
+    
+    async def _observe_message(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Observe patterns in user messages."""
+        message = obs.get("content", "")
+        
+        # Track topics discussed
+        topics = obs.get("topics", [])
+        topic_updates = {}
+        for topic in topics:
+            key = f"learning_signals.topics_discussed.{topic}"
+            topic_updates[key] = profile.get("learning_signals", {}).get("topics_discussed", {}).get(topic, 0) + 1
+        
+        if topic_updates:
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$inc": topic_updates}
+            )
+        
+        # Detect repeated concerns
+        if obs.get("is_repeated_concern"):
+            concern = obs.get("concern_topic")
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$addToSet": {"behavioural_model.repeated_concerns": concern}}
+            )
+        
+        # Infer information tolerance from message length patterns
+        msg_length = len(message)
+        if msg_length < 50:
+            length_signal = "brief"
+        elif msg_length < 200:
+            length_signal = "moderate"
+        else:
+            length_signal = "deep"
+        
+        # Update with weighted inference (don't overwrite immediately)
+        current_pref = profile.get("delivery_model", {}).get("information_tolerance", "unknown")
+        if current_pref == "unknown":
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$set": {"delivery_model.information_tolerance": length_signal}}
+            )
+    
+    async def _observe_action(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Observe when user takes action on advice."""
+        action_type = obs.get("action_type")
+        related_advice_id = obs.get("advice_id")
+        delay_days = obs.get("delay_days", 0)
+        
+        updates = {
+            "behavioural_model.action_patterns.total_advice_given": 1
+        }
+        
+        if action_type == "acted":
+            updates["behavioural_model.action_patterns.advice_acted_on"] = 1
+            
+            # Update follow-through reliability
+            acted = profile.get("behavioural_model", {}).get("action_patterns", {}).get("advice_acted_on", 0) + 1
+            total = profile.get("behavioural_model", {}).get("action_patterns", {}).get("total_advice_given", 0) + 1
+            
+            if total >= 3:  # Need minimum observations
+                ratio = acted / total
+                reliability = "high" if ratio > 0.7 else "moderate" if ratio > 0.4 else "low"
+                await self.collection.update_one(
+                    {"user_id": user_id},
+                    {"$set": {"behavioural_model.follow_through_reliability": reliability}}
+                )
+        elif action_type == "ignored":
+            updates["behavioural_model.action_patterns.advice_ignored"] = 1
+        
+        await self.collection.update_one(
+            {"user_id": user_id},
+            {"$inc": updates}
+        )
+        
+        # Infer decision velocity from delay
+        if delay_days is not None:
+            if delay_days < 1:
+                velocity = "fast"
+            elif delay_days < 7:
+                velocity = "cautious"
+            else:
+                velocity = "frozen"
+            
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$set": {"behavioural_model.decision_velocity": velocity}}
+            )
+    
+    async def _observe_decision(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Observe decision patterns."""
+        decision = obs.get("decision")
+        decision_type = obs.get("decision_type")  # made, deferred, avoided
+        
+        if decision_type == "deferred":
+            deferred_entry = {
+                "decision": decision,
+                "timestamp": obs.get("timestamp"),
+                "opportunity_cost": obs.get("opportunity_cost")
+            }
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$push": {"outcome_memory.deferred_decisions": deferred_entry}}
+            )
+        
+        # Track decision loops (same decision coming up repeatedly)
+        if obs.get("is_recurring"):
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$addToSet": {"behavioural_model.decision_loops": decision}}
+            )
+    
+    async def _observe_avoidance(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Observe avoidance patterns."""
+        avoided_topic = obs.get("topic")
+        
+        await self.collection.update_one(
+            {"user_id": user_id},
+            {"$addToSet": {"behavioural_model.avoidance_patterns": avoided_topic}}
+        )
+    
+    async def _observe_outcome(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Record outcomes of advice/actions for learning."""
+        outcome_entry = {
+            "advice": obs.get("advice"),
+            "action_taken": obs.get("action_taken"),
+            "result": obs.get("result"),  # positive, negative, neutral
+            "details": obs.get("details"),
+            "timestamp": obs.get("timestamp")
+        }
+        
+        await self.collection.update_one(
+            {"user_id": user_id},
+            {"$push": {"outcome_memory.advice_outcomes": outcome_entry}}
+        )
+        
+        # Track wins for positive reinforcement
+        if obs.get("result") == "positive":
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$push": {"outcome_memory.wins": {
+                    "summary": obs.get("details"),
+                    "timestamp": obs.get("timestamp")
+                }}}
+            )
+        
+        # Extract lessons from negative outcomes
+        if obs.get("result") == "negative" and obs.get("lesson"):
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$push": {"outcome_memory.lessons": {
+                    "lesson": obs.get("lesson"),
+                    "context": obs.get("details"),
+                    "timestamp": obs.get("timestamp")
+                }}}
+            )
+    
+    async def _observe_sentiment(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Observe emotional signals."""
+        sentiment = obs.get("sentiment")  # stressed, confident, uncertain, frustrated, calm
+        
+        # Add to rolling trend (keep last 20)
+        await self.collection.update_one(
+            {"user_id": user_id},
+            {
+                "$push": {
+                    "learning_signals.sentiment_trend": {
+                        "$each": [{"sentiment": sentiment, "timestamp": obs.get("timestamp")}],
+                        "$slice": -20
+                    }
+                }
+            }
+        )
+        
+        # Detect stress periods
+        if sentiment == "stressed":
+            # Check if already in a stress period
+            stress_periods = profile.get("outcome_memory", {}).get("stress_periods", [])
+            recent_stress = [s for s in stress_periods if s.get("recovery") is None]
+            
+            if not recent_stress:
+                await self.collection.update_one(
+                    {"user_id": user_id},
+                    {"$push": {"outcome_memory.stress_periods": {
+                        "trigger": obs.get("trigger"),
+                        "start_timestamp": obs.get("timestamp"),
+                        "recovery": None
+                    }}}
+                )
+        elif sentiment in ["calm", "confident"]:
+            # Mark recovery from stress
+            await self.collection.update_one(
+                {"user_id": user_id,
+                 "outcome_memory.stress_periods.recovery": None},
+                {"$set": {"outcome_memory.stress_periods.$.recovery": obs.get("timestamp")}}
+            )
+    
+    async def _observe_timing(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Observe timing patterns (when user is most engaged)."""
+        hour = obs.get("hour")
+        day = obs.get("day")
+        engagement_level = obs.get("engagement")  # high, medium, low
+        
+        if engagement_level == "high" and hour:
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$addToSet": {"behavioural_model.energy_cycles.peak_hours": hour}}
+            )
+        
+        if engagement_level == "high" and day:
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$addToSet": {"behavioural_model.energy_cycles.peak_days": day}}
+            )
+    
+    async def _update_reality_model(self, user_id: str, profile: Dict, obs: Dict) -> None:
+        """Update immutable reality model with new facts."""
+        updates = {}
+        
+        for field in ["business_type", "business_maturity", "industry", "revenue_model",
+                      "cashflow_sensitivity", "risk_exposure", "regulatory_pressure",
+                      "time_scarcity", "decision_ownership", "team_size", "years_operating"]:
+            if obs.get(field) is not None:
+                updates[f"reality_model.{field}"] = obs.get(field)
+        
+        if obs.get("industry_constraints"):
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$addToSet": {"reality_model.industry_constraints": {"$each": obs.get("industry_constraints")}}}
+            )
+        
+        if updates:
+            updates["reality_model.last_updated"] = datetime.now(timezone.utc).isoformat()
+            # Increase confidence as we learn more
+            current_confidence = profile.get("reality_model", {}).get("confidence_level", 0)
+            updates["reality_model.confidence_level"] = min(1.0, current_confidence + 0.1)
+            
+            await self.collection.update_one(
+                {"user_id": user_id},
+                {"$set": updates}
+            )
+    
+    async def get_context_for_agent(self, user_id: str, agent: str) -> Dict[str, Any]:
+        """
+        Generate context for an agent based on cognitive profile.
+        
+        All agents (MyIntel, MyAdvisor, MySoundboard) MUST reference this
+        before generating any output.
+        """
+        profile = await self.get_profile(user_id)
+        
+        # Build context optimised for the specific agent
+        context = {
+            "user_id": user_id,
+            "profile_maturity": self._calculate_profile_maturity(profile),
+            
+            # Reality constraints (prevents unrealistic advice)
+            "reality": {
+                "business_type": profile.get("reality_model", {}).get("business_type"),
+                "maturity": profile.get("reality_model", {}).get("business_maturity"),
+                "cashflow_sensitivity": profile.get("reality_model", {}).get("cashflow_sensitivity"),
+                "time_scarcity": profile.get("reality_model", {}).get("time_scarcity"),
+                "decision_ownership": profile.get("reality_model", {}).get("decision_ownership"),
+                "constraints": profile.get("reality_model", {}).get("industry_constraints", [])
+            },
+            
+            # Behavioural truth (how they actually behave)
+            "behaviour": {
+                "decision_velocity": profile.get("behavioural_model", {}).get("decision_velocity"),
+                "follow_through": profile.get("behavioural_model", {}).get("follow_through_reliability"),
+                "avoids": profile.get("behavioural_model", {}).get("avoidance_patterns", []),
+                "repeated_concerns": profile.get("behavioural_model", {}).get("repeated_concerns", []),
+                "decision_loops": profile.get("behavioural_model", {}).get("decision_loops", [])
+            },
+            
+            # Delivery preferences (how to communicate)
+            "delivery": {
+                "style": profile.get("delivery_model", {}).get("communication_style"),
+                "pressure_sensitivity": profile.get("delivery_model", {}).get("pressure_sensitivity"),
+                "depth": profile.get("delivery_model", {}).get("depth_preference"),
+                "interruption_tolerance": profile.get("delivery_model", {}).get("interruption_tolerance")
+            },
+            
+            # Outcome memory (personalised wisdom)
+            "history": {
+                "recent_wins": profile.get("outcome_memory", {}).get("wins", [])[-3:],
+                "lessons": profile.get("outcome_memory", {}).get("lessons", [])[-5:],
+                "deferred_decisions": profile.get("outcome_memory", {}).get("deferred_decisions", [])[-3:],
+                "in_stress_period": self._is_in_stress_period(profile)
+            }
+        }
+        
+        # Agent-specific context additions
+        if agent == "MyIntel":
+            # MyIntel needs to know what signals to surface
+            context["intel_focus"] = {
+                "topics_of_interest": list(profile.get("learning_signals", {}).get("topics_discussed", {}).keys())[:10],
+                "avoidance_blind_spots": profile.get("behavioural_model", {}).get("avoidance_patterns", [])
+            }
+        
+        elif agent == "MyAdvisor":
+            # MyAdvisor needs outcome history for personalised advice
+            context["advisor_focus"] = {
+                "action_success_rate": self._calculate_action_rate(profile),
+                "advice_outcomes": profile.get("outcome_memory", {}).get("advice_outcomes", [])[-5:]
+            }
+        
+        elif agent == "MySoundboard":
+            # MySoundboard needs emotional and reflection context
+            context["soundboard_focus"] = {
+                "recent_sentiment": profile.get("learning_signals", {}).get("sentiment_trend", [])[-5:],
+                "unresolved_loops": profile.get("behavioural_model", {}).get("decision_loops", [])
+            }
+        
+        return context
+    
+    def _calculate_profile_maturity(self, profile: Dict) -> str:
+        """Calculate how mature/confident the profile is."""
+        observation_count = profile.get("observation_count", 0)
+        
+        if observation_count < 10:
+            return "nascent"
+        elif observation_count < 50:
+            return "developing"
+        elif observation_count < 200:
+            return "mature"
+        else:
+            return "deep"
+    
+    def _is_in_stress_period(self, profile: Dict) -> bool:
+        """Check if user is currently in a stress period."""
+        stress_periods = profile.get("outcome_memory", {}).get("stress_periods", [])
+        return any(s.get("recovery") is None for s in stress_periods)
+    
+    def _calculate_action_rate(self, profile: Dict) -> Optional[float]:
+        """Calculate the rate at which user acts on advice."""
+        action_patterns = profile.get("behavioural_model", {}).get("action_patterns", {})
+        total = action_patterns.get("total_advice_given", 0)
+        acted = action_patterns.get("advice_acted_on", 0)
+        
+        if total < 3:
+            return None
+        return round(acted / total, 2)
+
+
+# Singleton instance - initialized in server.py
+cognitive_core: Optional[CognitiveCore] = None
+
+
+def init_cognitive_core(db: AsyncIOMotorDatabase) -> CognitiveCore:
+    """Initialize the cognitive core singleton."""
+    global cognitive_core
+    cognitive_core = CognitiveCore(db)
+    return cognitive_core
+
+
+def get_cognitive_core() -> CognitiveCore:
+    """Get the cognitive core instance."""
+    if cognitive_core is None:
+        raise RuntimeError("Cognitive core not initialized")
+    return cognitive_core
