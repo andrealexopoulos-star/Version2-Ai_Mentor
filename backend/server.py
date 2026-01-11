@@ -1435,6 +1435,9 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         industry=current_user.get("industry"),
         role=current_user["role"],
         subscription_tier=current_user.get("subscription_tier"),
+        is_master_account=current_user.get("is_master_account", False),
+        is_admin=current_user.get("is_admin", False),
+        features=current_user.get("features"),
         created_at=current_user["created_at"]
     )
 
