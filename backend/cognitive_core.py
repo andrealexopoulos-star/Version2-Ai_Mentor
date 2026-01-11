@@ -247,6 +247,89 @@ class CognitiveCore:
         else:
             return "LOW CONFIDENCE: Ask clarifying questions before advising. State uncertainty explicitly. Avoid definitive recommendations."
     
+    async def get_known_information(self, user_id: str) -> Dict[str, Any]:
+        """
+        Get all information already known about this user.
+        Used to prevent re-asking for information already provided.
+        """
+        profile = await self.get_profile(user_id)
+        
+        known = {
+            "business_facts": [],
+            "behavioural_observations": [],
+            "topics_discussed": [],
+            "questions_already_asked": [],
+            "information_provided_dates": {}
+        }
+        
+        # Collect known business facts
+        reality = profile.get("reality_model", {})
+        for field, value in reality.items():
+            if value and value != "unknown" and field not in ["confidence_level", "last_updated"]:
+                known["business_facts"].append(f"{field}: {value}")
+                known["information_provided_dates"][field] = reality.get("last_updated")
+        
+        # Collect behavioural observations
+        behaviour = profile.get("behavioural_model", {})
+        for field, value in behaviour.items():
+            if value and value != "unknown" and field not in ["confidence_level", "last_updated", "action_patterns", "energy_cycles"]:
+                if isinstance(value, list) and value:
+                    known["behavioural_observations"].append(f"{field}: {', '.join(value[:3])}")
+                elif not isinstance(value, (list, dict)):
+                    known["behavioural_observations"].append(f"{field}: {value}")
+        
+        # Collect topics discussed
+        topics = profile.get("learning_signals", {}).get("topics_discussed", {})
+        known["topics_discussed"] = list(topics.keys())
+        
+        return known
+    
+    async def record_question_asked(self, user_id: str, question: str, topic: str = None) -> None:
+        """Record that a question was asked to prevent re-asking."""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        await self.collection.update_one(
+            {"user_id": user_id},
+            {
+                "$push": {
+                    "questions_asked": {
+                        "$each": [{
+                            "question": question,
+                            "topic": topic,
+                            "asked_at": now
+                        }],
+                        "$slice": -50  # Keep last 50 questions
+                    }
+                }
+            }
+        )
+    
+    async def get_questions_asked(self, user_id: str) -> List[Dict]:
+        """Get questions previously asked to this user."""
+        profile = await self.get_profile(user_id)
+        return profile.get("questions_asked", [])
+    
+    async def check_if_already_known(self, user_id: str, information_type: str) -> bool:
+        """Check if a piece of information is already known."""
+        profile = await self.get_profile(user_id)
+        
+        reality = profile.get("reality_model", {})
+        behaviour = profile.get("behavioural_model", {})
+        
+        # Check reality model
+        if information_type in reality:
+            value = reality.get(information_type)
+            if value and value != "unknown":
+                return True
+        
+        # Check behavioural model
+        if information_type in behaviour:
+            value = behaviour.get(information_type)
+            if value and value != "unknown":
+                return True
+        
+        return False
+    
     async def record_recommendation_outcome(
         self,
         recommendation_id: str,
