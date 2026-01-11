@@ -1363,6 +1363,96 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
             logger.warning(f"Could not load known information: {e}")
         
         # ═══════════════════════════════════════════════════════════════
+        # DATA VISIBILITY AUDIT - Know what you CANNOT see
+        # ═══════════════════════════════════════════════════════════════
+        context_parts.append("\n═══ DATA VISIBILITY AUDIT ═══")
+        context_parts.append("You must ALWAYS know what you cannot see.")
+        context_parts.append("NEVER fabricate certainty to compensate for missing data.")
+        
+        blind_spots = []
+        material_blind_spots = []  # Blind spots that materially affect advice quality
+        
+        # Check what business data is missing
+        reality = core_context.get("reality", {})
+        critical_fields = {
+            "business_type": "What type of business this is",
+            "cashflow_sensitivity": "How sensitive they are to cash flow issues",
+            "time_scarcity": "How time-constrained they are",
+            "revenue_model": "How they make money",
+            "team_size": "Whether they have a team or are solo"
+        }
+        
+        for field, description in critical_fields.items():
+            value = reality.get(field)
+            if not value or value == "unknown":
+                blind_spots.append(f"UNKNOWN: {description}")
+                if field in ["business_type", "cashflow_sensitivity"]:
+                    material_blind_spots.append(description)
+        
+        # Check what behavioural data is missing
+        behaviour = core_context.get("behaviour", {})
+        behaviour_fields = {
+            "decision_velocity": "How quickly they make decisions",
+            "follow_through": "Whether they follow through on commitments",
+            "stress_tolerance": "How they handle pressure"
+        }
+        
+        for field, description in behaviour_fields.items():
+            value = behaviour.get(field)
+            if not value or value == "unknown":
+                blind_spots.append(f"UNOBSERVED: {description}")
+        
+        # Check integration data visibility
+        integration_blind_spots = []
+        
+        # Check if email is connected
+        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "outlook_access_token": 1})
+        if not user_doc or not user_doc.get("outlook_access_token"):
+            integration_blind_spots.append("Email patterns (no inbox connected)")
+            material_blind_spots.append("Email communication patterns")
+        
+        # Check if calendar is connected
+        calendar_events = await db.calendar_events.count_documents({"user_id": user_id})
+        if calendar_events == 0:
+            integration_blind_spots.append("Calendar behaviour (no calendar data)")
+        
+        # Check if documents are uploaded
+        docs_count = await db.business_documents.count_documents({"user_id": user_id}) if "business_documents" in await db.list_collection_names() else 0
+        if docs_count == 0:
+            integration_blind_spots.append("Business documents and SOPs")
+        
+        # Output blind spots
+        if blind_spots:
+            context_parts.append("\n⚠️ BLIND SPOTS (data you cannot see):")
+            for spot in blind_spots:
+                context_parts.append(f"  ? {spot}")
+        
+        if integration_blind_spots:
+            context_parts.append("\n⚠️ INTEGRATION BLIND SPOTS:")
+            for spot in integration_blind_spots:
+                context_parts.append(f"  ? {spot}")
+        
+        # Material impact assessment
+        if material_blind_spots:
+            context_parts.append("\n🔴 MATERIAL BLIND SPOTS (significantly limit advice quality):")
+            for spot in material_blind_spots:
+                context_parts.append(f"  🔴 {spot}")
+            context_parts.append("\n→ REDUCE ASSERTIVENESS on topics affected by these blind spots")
+            context_parts.append("→ Flag uncertainty explicitly when advising in these areas")
+        
+        # Data connection encouragement (only when material)
+        if material_blind_spots:
+            context_parts.append("\n═══ DATA CONNECTION GUIDANCE ═══")
+            context_parts.append("Encourage data connection ONLY when it materially improves advice:")
+            if "Email communication patterns" in material_blind_spots:
+                context_parts.append("  → Email connection would reveal: client communication patterns, response times, complaint frequency")
+            if "How they make money" in material_blind_spots:
+                context_parts.append("  → Business profile completion would clarify: revenue model, pricing strategy, client segments")
+            context_parts.append("\nDO NOT push for data connection unless directly relevant to current topic.")
+        else:
+            context_parts.append("\n✓ No material blind spots - proceed with appropriate confidence")
+        
+        # ═══════════════════════════════════════════════════════════════
         # 1. BUSINESS REALITY MODEL (Layer 1) - MANDATORY LOAD
         # ═══════════════════════════════════════════════════════════════
         reality = core_context.get("reality", {})
