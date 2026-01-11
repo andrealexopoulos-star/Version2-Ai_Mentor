@@ -54,6 +54,11 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Initialize Cognitive Core - Per-User Intelligence Layer
+cognitive_core = init_cognitive_core(db)
+logger = logging.getLogger(__name__)
+logger.info("Cognitive Core initialized - Per-user intelligence active")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
