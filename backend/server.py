@@ -19,6 +19,9 @@ import httpx
 from authlib.integrations.starlette_client import OAuth
 from urllib.parse import quote
 
+# Import Cognitive Core
+from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
+
 import base64
 import io
 
