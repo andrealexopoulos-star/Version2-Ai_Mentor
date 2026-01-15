@@ -44,10 +44,11 @@ SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 
-# Microsoft Outlook OAuth Configuration - Hardcoded to fix env loading issue
-AZURE_TENANT_ID = "common"
-AZURE_CLIENT_ID = "111ac726-7248-4b0c-b0dc-71cacea7a8c5"
-AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET") or "vfd8Q~vKs2-IvwDdFVyDIaQvI6~gsnUg8h5wibJi"
+# Microsoft Azure OAuth Configuration (Unified for Auth + Outlook)
+AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID", "common")
+AZURE_TENANT_URL = os.environ.get("AZURE_TENANT_URL", "https://login.microsoftonline.com/common")
+AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
+AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
