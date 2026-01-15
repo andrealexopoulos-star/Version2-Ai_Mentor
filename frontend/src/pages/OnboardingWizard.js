@@ -133,9 +133,15 @@ const OnboardingWizard = () => {
       // Mark onboarding as complete
       await apiClient.post('/onboarding/complete');
       
-      await refreshUser();
+      // Refresh MongoDB user if using MongoDB auth
+      if (mongoUser && refreshUser) {
+        await refreshUser();
+      }
+      
       toast.success('🎉 Profile completed! Welcome to Strategy Squad');
-      navigate('/dashboard');
+      
+      // Navigate directly to advisor (skip /dashboard redirect)
+      navigate('/advisor', { replace: true });
     } catch (error) {
       const errorMsg = error.response?.data?.detail || error.message || 'Failed to complete onboarding';
       toast.error(errorMsg);
