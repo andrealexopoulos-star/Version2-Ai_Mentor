@@ -1,7 +1,7 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { SupabaseAuthProvider } from "./context/SupabaseAuthContext";
+import { SupabaseAuthProvider, useSupabaseAuth } from "./context/SupabaseAuthContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -37,9 +37,13 @@ import EmailInbox from "./pages/EmailInbox";
 import CalendarView from "./pages/CalendarView";
 import MySoundBoard from "./pages/MySoundBoard";
 
-// Protected Route Component
+// Protected Route Component - Updated to support both MongoDB and Supabase auth
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user: mongoUser, loading: mongoLoading, isAdmin } = useAuth();
+  const { user: supabaseUser, loading: supabaseLoading } = useSupabaseAuth();
+
+  const loading = mongoLoading || supabaseLoading;
+  const user = supabaseUser || mongoUser; // Prefer Supabase user
 
   if (loading) {
     return (
@@ -50,7 +54,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login-supabase" replace />;
   }
 
   if (adminOnly && !isAdmin()) {
