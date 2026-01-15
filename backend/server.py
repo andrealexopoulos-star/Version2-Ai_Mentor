@@ -115,12 +115,12 @@ class UserResponse(BaseModel):
     name: str
     business_name: Optional[str] = None
     industry: Optional[str] = None
-    role: str
+    role: str = "user"  # Default to "user" if None
     subscription_tier: Optional[str] = None
     is_master_account: Optional[bool] = False
     is_admin: Optional[bool] = False
     features: Optional[Dict[str, bool]] = None
-    created_at: str
+    created_at: str = ""  # Allow empty string
 
 class TokenResponse(BaseModel):
     access_token: str
