@@ -58,6 +58,23 @@ export const SupabaseAuthProvider = ({ children }) => {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      
+      // Create fallback user from session if profile fetch fails
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession) {
+        const fallbackUser = {
+          id: currentSession.user.id,
+          email: currentSession.user.email,
+          full_name: currentSession.user.user_metadata?.full_name || currentSession.user.user_metadata?.name || currentSession.user.email,
+          company_name: currentSession.user.user_metadata?.company_name || null,
+          industry: currentSession.user.user_metadata?.industry || null,
+          role: currentSession.user.user_metadata?.role || 'user',
+          subscription_tier: 'free',
+          is_master_account: currentSession.user.email === 'andre@thestrategysquad.com.au'
+        };
+        console.log('Using fallback user from session:', fallbackUser);
+        setUser(fallbackUser);
+      }
       setLoading(false);
     }
   };

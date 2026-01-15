@@ -40,10 +40,11 @@ import MySoundBoard from "./pages/MySoundBoard";
 // Protected Route Component - Updated to support both MongoDB and Supabase auth
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { user: mongoUser, loading: mongoLoading, isAdmin } = useAuth();
-  const { user: supabaseUser, loading: supabaseLoading } = useSupabaseAuth();
+  const { user: supabaseUser, session: supabaseSession, loading: supabaseLoading } = useSupabaseAuth();
 
   const loading = mongoLoading || supabaseLoading;
   const user = supabaseUser || mongoUser; // Prefer Supabase user
+  const isAuthenticated = user || supabaseSession; // Check session as fallback
 
   if (loading) {
     return (
@@ -53,7 +54,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login-supabase" replace />;
   }
 
@@ -67,10 +68,10 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 // Public Route (redirect to dashboard if logged in) - Updated for Supabase
 const PublicRoute = ({ children }) => {
   const { user: mongoUser, loading: mongoLoading } = useAuth();
-  const { user: supabaseUser, loading: supabaseLoading } = useSupabaseAuth();
+  const { user: supabaseUser, session: supabaseSession, loading: supabaseLoading } = useSupabaseAuth();
 
   const loading = mongoLoading || supabaseLoading;
-  const user = supabaseUser || mongoUser;
+  const isAuthenticated = supabaseUser || mongoUser || supabaseSession;
 
   if (loading) {
     return (
@@ -80,7 +81,7 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  if (user) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
