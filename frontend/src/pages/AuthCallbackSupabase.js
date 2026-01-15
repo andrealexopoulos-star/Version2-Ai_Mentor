@@ -10,43 +10,55 @@ const AuthCallbackSupabase = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        console.log('=== AUTH CALLBACK STARTED ===');
+        console.log('Current URL:', window.location.href);
+        
         // Exchange the code from URL for a session
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
         
-        console.log('Callback - Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
+        console.log('Hash params:', { 
+          accessToken: accessToken ? 'Present' : 'Missing', 
+          refreshToken: refreshToken ? 'Present' : 'Missing' 
+        });
 
-        // If we have tokens in the URL, Supabase has already set the session
         if (accessToken) {
-          console.log('Access token found, checking session...');
+          console.log('✅ Access token found in URL');
           
-          // Wait a bit for Supabase to process
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Wait for Supabase to process the auth
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
           const { data, error } = await supabase.auth.getSession();
           
-          console.log('Session data:', data);
-          console.log('Session error:', error);
+          console.log('Session check:', {
+            hasSession: !!data.session,
+            userId: data.session?.user?.id,
+            email: data.session?.user?.email,
+            error: error?.message
+          });
           
           if (error) {
-            console.error('Auth callback error:', error);
+            console.error('❌ Auth callback error:', error);
             setError(error.message);
             setTimeout(() => navigate('/login-supabase?error=auth_failed'), 2000);
             return;
           }
 
           if (data.session) {
-            console.log('Auth successful! User:', data.session.user.email);
-            console.log('Redirecting to dashboard...');
-            navigate('/dashboard');
+            console.log('✅ Session confirmed! User:', data.session.user.email);
+            console.log('🚀 Redirecting to /advisor...');
+            
+            // Redirect to advisor directly (skip /dashboard redirect)
+            setTimeout(() => {
+              navigate('/advisor', { replace: true });
+            }, 500);
           } else {
-            console.log('No session found despite access token');
+            console.log('❌ No session despite access token');
             setError('No session created');
             setTimeout(() => navigate('/login-supabase'), 2000);
           }
         } else {
-          // No tokens, try to get existing session
           console.log('No tokens in URL, checking for existing session...');
           const { data, error } = await supabase.auth.getSession();
           
@@ -54,8 +66,8 @@ const AuthCallbackSupabase = () => {
             console.log('No session found, redirecting to login');
             navigate('/login-supabase');
           } else {
-            console.log('Existing session found, redirecting to dashboard');
-            navigate('/dashboard');
+            console.log('Existing session found, redirecting to advisor');
+            navigate('/advisor', { replace: true });
           }
         }
       } catch (error) {
@@ -83,6 +95,9 @@ const AuthCallbackSupabase = () => {
             Error: {error}
           </p>
         )}
+        <p className="text-xs text-gray-400 mt-4">
+          Check browser console for detailed logs
+        </p>
       </div>
     </div>
   );
