@@ -112,12 +112,27 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
         db_user = await get_user_by_id(user.id)
         
         if not db_user:
-            # User exists in Auth but not in our database - create profile
-            db_user = await create_user_profile(
-                user_id=user.id,
-                email=user.email,
-                metadata=user.user_metadata
-            )
+            # Try to find by email in case user exists from different OAuth provider
+            db_user = await get_user_by_email(user.email)
+            
+            if db_user:
+                # User exists with same email but different ID
+                # This can happen when using multiple OAuth providers
+                print(f"Found existing user by email {user.email}, updating ID mapping")
+                try:
+                    # Update the user record with the new OAuth provider's ID
+                    supabase_admin.table("users").update({"id": user.id}).eq("email", user.email).execute()
+                    db_user["id"] = user.id
+                except Exception as update_error:
+                    print(f"Warning: Could not update user ID: {update_error}")
+                    # Continue with existing user data
+            else:
+                # User doesn't exist at all - create new profile
+                db_user = await create_user_profile(
+                    user_id=user.id,
+                    email=user.email,
+                    metadata=user.user_metadata
+                )
         
         return {
             "id": user.id,
@@ -134,8 +149,6 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
     except Exception as e:
         print(f"Error verifying token: {e}")
         raise HTTPException(status_code=401, detail="Invalid authentication token")
-
-# Dependency for protected routes
 async def get_current_user_supabase(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Dependency to get current authenticated user from Supabase token
