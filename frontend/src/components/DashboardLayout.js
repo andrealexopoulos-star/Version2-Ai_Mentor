@@ -33,7 +33,7 @@ const DashboardLayout = ({ children }) => {
     } else {
       await mongoLogout();
     }
-    navigate('/login-supabase');
+    navigate('/login-supabase'); // Always go to Supabase login page
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });

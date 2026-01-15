@@ -47,12 +47,29 @@ const AuthCallbackSupabase = () => {
 
           if (data.session) {
             console.log('✅ Session confirmed! User:', data.session.user.email);
-            console.log('🚀 Redirecting to /advisor...');
             
-            // Redirect to advisor directly (skip /dashboard redirect)
-            setTimeout(() => {
-              navigate('/advisor', { replace: true });
-            }, 500);
+            // Check if this is a new user (needs onboarding)
+            const { data: existingUser } = await supabase
+              .from('users')
+              .select('id, created_at')
+              .eq('id', data.session.user.id)
+              .single();
+            
+            // If user was just created (within last 30 seconds) or doesn't exist, send to onboarding
+            const isNewUser = !existingUser || 
+              (existingUser.created_at && new Date() - new Date(existingUser.created_at) < 30000);
+            
+            if (isNewUser) {
+              console.log('🎯 New user detected, redirecting to onboarding...');
+              setTimeout(() => {
+                navigate('/onboarding', { replace: true });
+              }, 500);
+            } else {
+              console.log('🚀 Existing user, redirecting to /advisor...');
+              setTimeout(() => {
+                navigate('/advisor', { replace: true });
+              }, 500);
+            }
           } else {
             console.log('❌ No session despite access token');
             setError('No session created');
