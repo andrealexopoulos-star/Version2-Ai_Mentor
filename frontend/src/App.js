@@ -64,9 +64,13 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   return children;
 };
 
-// Public Route (redirect to dashboard if logged in)
+// Public Route (redirect to dashboard if logged in) - Updated for Supabase
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user: mongoUser, loading: mongoLoading } = useAuth();
+  const { user: supabaseUser, loading: supabaseLoading } = useSupabaseAuth();
+
+  const loading = mongoLoading || supabaseLoading;
+  const user = supabaseUser || mongoUser;
 
   if (loading) {
     return (
