@@ -1,6 +1,7 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { SupabaseAuthProvider } from "./context/SupabaseAuthContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -8,6 +9,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import LoginSupabase from "./pages/LoginSupabase";
+import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import Advisor from "./pages/Advisor";
@@ -84,6 +87,10 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      
+      {/* New Supabase Auth Routes */}
+      <Route path="/login-supabase" element={<LoginSupabase />} />
+      <Route path="/register-supabase" element={<RegisterSupabase />} />
 
       {/* Onboarding */}
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
@@ -124,10 +131,12 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-          <Toaster position="top-right" richColors />
-        </AuthProvider>
+        <SupabaseAuthProvider>
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </SupabaseAuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
   );
