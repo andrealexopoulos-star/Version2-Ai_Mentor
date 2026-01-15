@@ -54,6 +54,15 @@ const RegisterSupabase = () => {
   };
 
   const handleOAuthSignIn = async (provider) => {
+    const providerName = provider === 'google' ? 'Google' : 'Microsoft';
+    
+    // Show confirmation before redirecting
+    const confirmMessage = `You will be redirected to ${providerName} to securely sign in.\n\nThis will:\n✓ Create your account using ${providerName}\n✓ Safely connect your identity\n✓ Keep your data secure\n\nContinue?`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return; // User cancelled
+    }
+    
     setOauthLoading(true);
     try {
       const result = await signInWithOAuth(provider);
@@ -62,7 +71,7 @@ const RegisterSupabase = () => {
         window.location.href = result.url;
       }
     } catch (error) {
-      toast.error(`${provider === 'google' ? 'Google' : 'Microsoft'} sign-in failed. Please try again.`);
+      toast.error(`${providerName} sign-in failed. Please try again.`);
       console.error('OAuth error:', error);
       setOauthLoading(false);
     }
