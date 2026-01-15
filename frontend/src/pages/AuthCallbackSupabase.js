@@ -48,6 +48,9 @@ const AuthCallbackSupabase = () => {
           if (data.session) {
             console.log('✅ Session confirmed! User:', data.session.user.email);
             
+            // Wait longer for session to fully propagate (especially for Microsoft)
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
             // Check if this is a new user (needs onboarding)
             const { data: existingUser } = await supabase
               .from('users')
@@ -55,9 +58,9 @@ const AuthCallbackSupabase = () => {
               .eq('id', data.session.user.id)
               .single();
             
-            // If user was just created (within last 30 seconds) or doesn't exist, send to onboarding
+            // If user was just created (within last 60 seconds) or doesn't exist, send to onboarding
             const isNewUser = !existingUser || 
-              (existingUser.created_at && new Date() - new Date(existingUser.created_at) < 30000);
+              (existingUser.created_at && new Date() - new Date(existingUser.created_at) < 60000);
             
             if (isNewUser) {
               console.log('🎯 New user detected, redirecting to onboarding...');
