@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy Squad - Mobile Testing Links</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .section {
+            margin-bottom: 32px;
+        }
+        .section-title {
+            color: #1a1a1a;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .emoji {
+            font-size: 20px;
+        }
+        .link {
+            display: block;
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #0066ff;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            border: 2px solid #e9ecef;
+            transition: all 0.2s;
+            word-break: break-all;
+        }
+        .link:active {
+            background: #e9ecef;
+            transform: scale(0.98);
+        }
+        .link-title {
+            color: #1a1a1a;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+        .primary-link {
+            background: #0066ff;
+            color: white;
+            border-color: #0066ff;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .primary-link:active {
+            background: #0052cc;
+        }
+        .checklist {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #495057;
+            margin-top: 12px;
+        }
+        .checklist-item {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .checklist-item:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 16px;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin-top: 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Strategy Squad - Mobile Testing</h1>
+        <p class="subtitle">Tap links below to test the app on your mobile device</p>
+
+        <!-- Quick Start -->
+        <div class="section">
+            <div class="section-title">
+                <span class="emoji">🚀</span>
+                <span>Quick Start Test</span>
+            </div>
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/" class="primary-link">
+                START HERE - Landing Page
+            </a>
+        </div>
+
+        <!-- Authentication Pages -->
+        <div class="section">
+            <div class="section-title">
+                <span class="emoji">🔐</span>
+                <span>Authentication Pages</span>
+            </div>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/register-supabase" class="link">
+                <div class="link-title">📝 Sign Up (with Google + Microsoft)</div>
+                /register-supabase
+            </a>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/login-supabase" class="link">
+                <div class="link-title">🔑 Log In (with Google + Microsoft)</div>
+                /login-supabase
+            </a>
+        </div>
+
+        <!-- Public Pages -->
+        <div class="section">
+            <div class="section-title">
+                <span class="emoji">🌐</span>
+                <span>Public Pages</span>
+            </div>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/pricing" class="link">
+                <div class="link-title">💰 Pricing</div>
+                /pricing
+            </a>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/terms" class="link">
+                <div class="link-title">📄 Terms & Conditions</div>
+                /terms
+            </a>
+        </div>
+
+        <!-- Protected Pages -->
+        <div class="section">
+            <div class="section-title">
+                <span class="emoji">🔒</span>
+                <span>Protected Pages (Need Login)</span>
+            </div>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/advisor" class="link">
+                <div class="link-title">🎯 Advisor Dashboard</div>
+                /advisor
+            </a>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/onboarding" class="link">
+                <div class="link-title">📋 Onboarding Wizard</div>
+                /onboarding
+            </a>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/business-profile" class="link">
+                <div class="link-title">🏢 Business Profile</div>
+                /business-profile
+            </a>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/settings" class="link">
+                <div class="link-title">⚙️ Settings</div>
+                /settings
+            </a>
+            
+            <a href="https://mongo-to-supa-1.preview.emergentagent.com/integrations" class="link">
+                <div class="link-title">🔌 Integrations</div>
+                /integrations
+            </a>
+        </div>
+
+        <!-- Quick Test Checklist -->
+        <div class="section">
+            <div class="section-title">
+                <span class="emoji">✅</span>
+                <span>5-Minute Test Checklist</span>
+            </div>
+            <div class="checklist">
+                <div class="checklist-item">Start at landing page</div>
+                <div class="checklist-item">Tap "Start your free account"</div>
+                <div class="checklist-item">See Google + Microsoft buttons</div>
+                <div class="checklist-item">Tap "Continue with Google"</div>
+                <div class="checklist-item">Accept confirmation dialog</div>
+                <div class="checklist-item">Sign in with Google account</div>
+                <div class="checklist-item">Complete onboarding (if shown)</div>
+                <div class="checklist-item">Verify you land on Advisor dashboard</div>
+                <div class="checklist-item">Test logout → return to landing</div>
+                <div class="checklist-item">Log in again → skip onboarding</div>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>💡 Tip:</strong> Use incognito/private mode for testing new user sign-up. Use regular mode to test existing user login.
+        </div>
+
+        <div class="note" style="margin-top: 12px; background: #d1ecf1; border-color: #0c5460; color: #0c5460;">
+            <strong>📋 Full Checklist:</strong> For detailed testing, refer to MOBILE_TESTING_CHECKLIST.md on your computer.
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #e9ecef; text-align: center; color: #6c757d; font-size: 13px;">
+            Strategy Squad • Supabase Migration Testing
+        </div>
+    </div>
+</body>
+</html>
