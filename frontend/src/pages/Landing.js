@@ -102,33 +102,33 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6 relative">
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 to-white" />
         <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[150px] opacity-50" />
         
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center">
             {/* Main Content */}
-            <div className="lg:col-span-7 space-y-8 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
+            <div className="lg:col-span-7 space-y-6 sm:space-y-8 animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
                 <Sparkles className="w-4 h-4 text-blue-700" />
-                <span className="text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
+                <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
               </div>
               
-              <h1 className="font-bold text-4xl sm:text-5xl lg:text-6xl text-slate-900 leading-tight">
+              <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-tight">
                 Your Business Soundboard —
                 <span className="text-blue-600"> Powered by AI, Grounded in Experience</span>
               </h1>
               
-              <p className="text-lg text-slate-700 max-w-xl leading-relaxed">
+              <p className="text-base sm:text-lg text-slate-700 max-w-xl leading-relaxed">
                 Stop guessing. Start growing. Get <strong>personalised strategic advice</strong> from an AI that 
                 knows YOUR business — your challenges, your market, your goals. Not generic tips.
               </p>
               
-              <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
                 <Button 
                   onClick={() => navigate('/register-supabase')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center gap-2 text-lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 sm:px-8 py-6 sm:py-4 h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto"
                   data-testid="hero-cta-btn"
                 >
                   Get Your Personalised Advisor
@@ -137,7 +137,7 @@ const Landing = () => {
                 <Button 
                   variant="outline"
                   onClick={() => navigate('/pricing')}
-                  className="border-2 border-slate-300 text-slate-800 hover:bg-slate-100 font-semibold px-8 py-4 h-auto rounded-xl"
+                  className="border-2 border-slate-300 text-slate-800 hover:bg-slate-100 font-semibold px-6 sm:px-8 py-6 sm:py-4 h-auto rounded-xl w-full sm:w-auto"
                   data-testid="hero-pricing-btn"
                 >
                   View Pricing
