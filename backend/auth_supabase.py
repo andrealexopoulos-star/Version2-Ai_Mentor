@@ -36,6 +36,12 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
     Create user profile in PostgreSQL and initialize Cognitive Core
     """
     try:
+        # Check if user already exists by email first
+        existing_user = await get_user_by_email(email)
+        if existing_user:
+            print(f"User with email {email} already exists, returning existing user")
+            return existing_user
+        
         # Create user record
         user_data = {
             "id": user_id,
@@ -75,12 +81,14 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         
         # Handle duplicate key error - user already exists with this email
         if "duplicate key" in error_str or "23505" in error_str or "users_email_key" in error_str:
-            print(f"User with email {email} already exists, fetching existing user")
+            print(f"Duplicate key error for {email}, fetching existing user")
             existing_user = await get_user_by_email(email)
             if existing_user:
                 return existing_user
         
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
+
+
 async def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
     """
     Get user from PostgreSQL by email
