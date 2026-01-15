@@ -21,6 +21,9 @@ const RegisterSupabase = () => {
     industry: ''
   });
 
+  // Form validation
+  const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
