@@ -84,14 +84,14 @@ const Landing = () => {
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login-supabase')}
               className="text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium"
               data-testid="nav-login-btn"
             >
               Log In
             </Button>
             <Button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/register-supabase')}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25"
               data-testid="nav-register-btn"
             >
@@ -127,7 +127,7 @@ const Landing = () => {
               
               <div className="flex flex-wrap gap-4 pt-2">
                 <Button 
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/register-supabase')}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center gap-2 text-lg"
                   data-testid="hero-cta-btn"
                 >
@@ -327,7 +327,7 @@ const Landing = () => {
 
           <div className="mt-12 text-center">
             <Button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/register-supabase')}
               size="lg" 
               className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6 shadow-xl shadow-blue-600/30"
             >
@@ -390,7 +390,7 @@ const Landing = () => {
                 </ul>
                 
                 <Button 
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/register-supabase')}
                   variant={plan.highlight ? 'default' : 'outline'}
                   className={`w-full h-12 font-semibold rounded-xl ${plan.highlight ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-2'}`}
                 >
@@ -424,7 +424,7 @@ const Landing = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/register-supabase')}
               className="bg-white text-blue-600 hover:bg-blue-50 px-10 py-4 h-auto text-lg font-bold rounded-xl shadow-xl"
               data-testid="cta-register-btn"
             >
