@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
 import {
@@ -21,7 +22,19 @@ import {
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const { user: mongoUser, logout: mongoLogout, isAdmin } = useAuth();
+  const { user: supabaseUser, signOut: supabaseSignOut } = useSupabaseAuth();
+  
+  // Prefer Supabase user if available
+  const user = supabaseUser || mongoUser;
+  const logout = async () => {
+    if (supabaseUser) {
+      await supabaseSignOut();
+    } else {
+      await mongoLogout();
+    }
+    navigate('/login-supabase');
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
   const [showNotifications, setShowNotifications] = useState(false);
