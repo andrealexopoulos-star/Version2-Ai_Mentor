@@ -70,9 +70,17 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         return user_response.data[0]
         
     except Exception as e:
+        error_str = str(e)
         print(f"Error creating user profile: {e}")
+        
+        # Handle duplicate key error - user already exists with this email
+        if "duplicate key" in error_str or "23505" in error_str or "users_email_key" in error_str:
+            print(f"User with email {email} already exists, fetching existing user")
+            existing_user = await get_user_by_email(email)
+            if existing_user:
+                return existing_user
+        
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
-
 async def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
     """
     Get user from PostgreSQL by email
