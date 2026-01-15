@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import LoginSupabase from "./pages/LoginSupabase";
 import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallback from "./pages/AuthCallback";
+import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
 import Dashboard from "./pages/Dashboard";
 import Advisor from "./pages/Advisor";
 import Analysis from "./pages/Analysis";
@@ -91,6 +92,7 @@ function AppRoutes() {
       {/* New Supabase Auth Routes */}
       <Route path="/login-supabase" element={<LoginSupabase />} />
       <Route path="/register-supabase" element={<RegisterSupabase />} />
+      <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
 
       {/* Onboarding */}
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
