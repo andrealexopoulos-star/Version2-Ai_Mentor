@@ -43,7 +43,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             "full_name": metadata.get("full_name") if metadata else None,
             "company_name": metadata.get("company_name") if metadata else None,
             "industry": metadata.get("industry") if metadata else None,
-            "role": metadata.get("role") if metadata else None,
+            "role": (metadata.get("role") if metadata else None) or "user",
             "subscription_tier": "free",
             "is_master_account": email == "andre@thestrategysquad.com.au",
             "created_at": datetime.utcnow().isoformat(),
@@ -122,7 +122,7 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
         return {
             "id": user.id,
             "email": user.email,
-            "role": db_user.get("role", "user"),
+            "role": db_user.get("role") or "user",
             "is_master_account": db_user.get("is_master_account", False),
             "subscription_tier": db_user.get("subscription_tier", "free"),
             "full_name": db_user.get("full_name"),

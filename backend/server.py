@@ -2093,7 +2093,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         name=user_name,
         business_name=current_user.get("business_name"),
         industry=current_user.get("industry"),
-        role=current_user.get("role", "user"),
+        role=current_user.get("role") or "user",
         subscription_tier=current_user.get("subscription_tier", "free"),
         is_master_account=current_user.get("is_master_account", False),
         is_admin=current_user.get("is_admin", False) or current_user.get("role") == "admin",
