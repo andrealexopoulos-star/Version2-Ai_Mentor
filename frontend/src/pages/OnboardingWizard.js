@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -43,7 +44,9 @@ const BUSINESS_STAGES = [
 
 const OnboardingWizard = () => {
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user: mongoUser, refreshUser } = useAuth();
+  const { user: supabaseUser } = useSupabaseAuth();
+  const user = supabaseUser || mongoUser;
   const [currentStep, setCurrentStep] = useState(0);
   const [businessStage, setBusinessStage] = useState(null);
   const [loading, setLoading] = useState(true);
