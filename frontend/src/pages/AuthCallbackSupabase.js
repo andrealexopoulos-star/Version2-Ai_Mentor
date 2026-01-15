@@ -13,15 +13,31 @@ const AuthCallbackSupabase = () => {
         console.log('=== AUTH CALLBACK STARTED ===');
         console.log('Current URL:', window.location.href);
         
-        // Exchange the code from URL for a session
+        // Microsoft/Azure sends tokens in query params, Google sends in hash
+        // Check BOTH locations
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
+        const queryParams = new URLSearchParams(window.location.search);
         
-        console.log('Hash params:', { 
-          accessToken: accessToken ? 'Present' : 'Missing', 
-          refreshToken: refreshToken ? 'Present' : 'Missing' 
+        const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
+        const errorCode = hashParams.get('error') || queryParams.get('error');
+        const errorDescription = hashParams.get('error_description') || queryParams.get('error_description');
+        
+        console.log('Token check:', { 
+          accessToken: accessToken ? 'Present' : 'Missing',
+          refreshToken: refreshToken ? 'Present' : 'Missing',
+          error: errorCode,
+          errorDescription: errorDescription,
+          hashParams: window.location.hash,
+          queryParams: window.location.search
         });
+        // Handle OAuth errors
+        if (errorCode) {
+          console.error('❌ OAuth error:', errorCode, errorDescription);
+          setError(`OAuth failed: ${errorDescription || errorCode}`);
+          setTimeout(() => navigate('/login-supabase?error=oauth_failed'), 2000);
+          return;
+        }
 
         if (accessToken) {
           console.log('✅ Access token found in URL');
