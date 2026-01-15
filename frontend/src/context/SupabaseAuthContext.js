@@ -164,7 +164,18 @@ export const SupabaseAuthProvider = ({ children }) => {
         provider: provider, // 'google' or 'azure'
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: false
+          skipBrowserRedirect: false,
+          queryParams: {
+            // Force account picker for Google
+            ...(provider === 'google' && { 
+              prompt: 'select_account',
+              access_type: 'offline'
+            }),
+            // Force account picker for Azure/Microsoft
+            ...(provider === 'azure' && { 
+              prompt: 'select_account'
+            })
+          }
         }
       });
 

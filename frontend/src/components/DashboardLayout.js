@@ -28,12 +28,19 @@ const DashboardLayout = ({ children }) => {
   // Prefer Supabase user if available
   const user = supabaseUser || mongoUser;
   const logout = async () => {
-    if (supabaseUser) {
-      await supabaseSignOut();
-    } else {
-      await mongoLogout();
+    try {
+      if (supabaseUser) {
+        await supabaseSignOut();
+      } else if (mongoUser) {
+        await mongoLogout();
+      }
+      // Redirect to landing page after logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if logout fails
+      window.location.href = '/';
     }
-    navigate('/login-supabase'); // Always go to Supabase login page
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
