@@ -1900,6 +1900,51 @@ async def get_ai_response(message: str, context_type: str, session_id: str, user
 
 # ==================== AUTH ROUTES ====================
 
+# ==================== SUPABASE AUTH ROUTES (NEW) ====================
+# Import Supabase auth functions
+from supabase_auth import (
+    signup_with_email,
+    signin_with_email,
+    get_oauth_url,
+    get_current_user_supabase,
+    SignUpRequest,
+    SignInRequest
+)
+
+@api_router.post("/auth/supabase/signup")
+async def supabase_signup(request: SignUpRequest):
+    """
+    New Supabase-based signup endpoint
+    """
+    return await signup_with_email(request)
+
+@api_router.post("/auth/supabase/login")
+async def supabase_login(request: SignInRequest):
+    """
+    New Supabase-based login endpoint
+    """
+    return await signin_with_email(request)
+
+@api_router.get("/auth/supabase/oauth/{provider}")
+async def supabase_oauth(provider: str, redirect_to: Optional[str] = None):
+    """
+    Get OAuth URL for Google or Azure sign-in via Supabase
+    """
+    return await get_oauth_url(provider, redirect_to)
+
+@api_router.get("/auth/supabase/me")
+async def supabase_get_me(current_user: dict = Depends(get_current_user_supabase)):
+    """
+    Get current authenticated user (Supabase version)
+    """
+    return {
+        "user": current_user,
+        "message": "Authenticated via Supabase"
+    }
+
+# ==================== LEGACY MONGODB AUTH ROUTES (TO BE DEPRECATED) ====================
+
+
 @api_router.post("/auth/register", response_model=TokenResponse)
 async def register(user_data: UserCreate):
     existing = await db.users.find_one({"email": user_data.email})
