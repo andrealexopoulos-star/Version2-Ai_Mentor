@@ -56,8 +56,11 @@ const RegisterSupabase = () => {
   const handleOAuthSignIn = async (provider) => {
     setOauthLoading(true);
     try {
-      await signInWithOAuth(provider);
-      // Redirect will happen automatically via Supabase
+      const result = await signInWithOAuth(provider);
+      if (result?.url) {
+        // Supabase returns a URL to redirect to
+        window.location.href = result.url;
+      }
     } catch (error) {
       toast.error(`${provider === 'google' ? 'Google' : 'Microsoft'} sign-in failed. Please try again.`);
       console.error('OAuth error:', error);
