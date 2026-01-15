@@ -2081,18 +2081,24 @@ async def login(credentials: UserLogin):
 
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
+    """
+    Get current user info - supports both MongoDB and Supabase user structures
+    """
+    # Handle both MongoDB (name) and Supabase (full_name) field names
+    user_name = current_user.get("name") or current_user.get("full_name") or current_user.get("email", "").split("@")[0]
+    
     return UserResponse(
         id=current_user["id"],
         email=current_user["email"],
-        name=current_user["name"],
+        name=user_name,
         business_name=current_user.get("business_name"),
         industry=current_user.get("industry"),
-        role=current_user["role"],
-        subscription_tier=current_user.get("subscription_tier"),
+        role=current_user.get("role", "user"),
+        subscription_tier=current_user.get("subscription_tier", "free"),
         is_master_account=current_user.get("is_master_account", False),
-        is_admin=current_user.get("is_admin", False),
+        is_admin=current_user.get("is_admin", False) or current_user.get("role") == "admin",
         features=current_user.get("features"),
-        created_at=current_user["created_at"]
+        created_at=current_user.get("created_at", "")
     )
 
 # ==================== GOOGLE OAUTH (CUSTOM) ====================
