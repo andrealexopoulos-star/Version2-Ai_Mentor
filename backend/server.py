@@ -1902,7 +1902,7 @@ async def get_ai_response(message: str, context_type: str, session_id: str, user
 
 # ==================== SUPABASE AUTH ROUTES (NEW) ====================
 # Import Supabase auth functions
-from supabase_auth import (
+from auth_supabase import (
     signup_with_email,
     signin_with_email,
     get_oauth_url,
