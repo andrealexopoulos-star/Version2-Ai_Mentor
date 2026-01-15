@@ -1,0 +1,149 @@
+/* Mobile-First Professional Enhancements */
+
+/* Ensure proper mobile scaling */
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+/* Improve touch targets for mobile */
+button, a, input, select, textarea {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Professional mobile typography */
+@media (max-width: 640px) {
+  /* Hero headlines - larger and more impactful */
+  h1 {
+    font-size: 2.25rem !important; /* 36px */
+    line-height: 1.2 !important;
+    letter-spacing: -0.03em !important;
+  }
+  
+  /* Section headers */
+  h2 {
+    font-size: 1.75rem !important; /* 28px */
+    line-height: 1.3 !important;
+  }
+  
+  /* Subheadings */
+  h3 {
+    font-size: 1.25rem !important; /* 20px */
+    line-height: 1.4 !important;
+  }
+  
+  /* Body text - larger for readability */
+  body, p {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+  
+  /* Buttons - larger touch targets */
+  button, .button, [role="button"] {
+    min-height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    padding: 14px 24px !important;
+  }
+  
+  /* Form inputs - comfortable for thumbs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  textarea,
+  select {
+    min-height: 52px !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 14px 16px !important;
+  }
+  
+  /* Labels - clear and readable */
+  label {
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    margin-bottom: 8px !important;
+    display: block;
+  }
+  
+  /* Spacing improvements */
+  section {
+    padding: 48px 20px !important;
+  }
+  
+  /* Card spacing */
+  .card, [class*="card"] {
+    padding: 20px !important;
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Auth page specific improvements */
+@media (max-width: 640px) {
+  /* OAuth buttons - larger and more prominent */
+  button[class*="outline"]:has(svg) {
+    min-height: 56px !important;
+    font-size: 16px !important;
+    padding: 16px 20px !important;
+    gap: 12px !important;
+  }
+  
+  /* Primary CTA buttons */
+  button[class*="bg-blue"] {
+    min-height: 56px !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+  }
+}
+
+/* Improve mobile nav */
+@media (max-width: 640px) {
+  nav {
+    padding: 16px 20px !important;
+  }
+  
+  nav button {
+    padding: 10px 20px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* Better mobile spacing */
+@media (max-width: 640px) {
+  /* More breathing room */
+  .space-y-4 > * + * {
+    margin-top: 16px !important;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 24px !important;
+  }
+  
+  /* Form spacing */
+  form .space-y-5 > * + * {
+    margin-top: 20px !important;
+  }
+  
+  form .space-y-6 > * + * {
+    margin-top: 24px !important;
+  }
+}
+
+/* Professional loading states */
+.spinner {
+  width: 48px;
+  height: 48px;
+}
+
+/* Improve focus states for accessibility */
+@media (max-width: 640px) {
+  input:focus,
+  button:focus,
+  select:focus,
+  textarea:focus {
+    outline: 3px solid #0066ff;
+    outline-offset: 2px;
+  }
+}
