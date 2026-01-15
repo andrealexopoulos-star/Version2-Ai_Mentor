@@ -247,7 +247,7 @@ const RegisterSupabase = () => {
 
             <Button
               type="submit"
-              disabled={loading || oauthLoading}
+              disabled={loading || oauthLoading || !isFormValid}
               className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700"
             >
               {loading ? (
