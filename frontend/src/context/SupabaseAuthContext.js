@@ -189,12 +189,20 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
+      console.log('Supabase signOut called');
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase signOut error:', error);
+        throw error;
+      }
+      console.log('Supabase signOut successful');
       setUser(null);
       setSession(null);
     } catch (error) {
       console.error('Logout error:', error);
+      // Force clear state even if API call fails
+      setUser(null);
+      setSession(null);
       throw error;
     }
   };

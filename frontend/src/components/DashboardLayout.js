@@ -29,16 +29,36 @@ const DashboardLayout = ({ children }) => {
   const user = supabaseUser || mongoUser;
   const logout = async () => {
     try {
+      console.log('Logout initiated...');
+      
+      // Clear Supabase session first
       if (supabaseUser) {
+        console.log('Signing out from Supabase...');
         await supabaseSignOut();
-      } else if (mongoUser) {
+      }
+      
+      // Clear MongoDB session if exists
+      if (mongoUser) {
+        console.log('Signing out from MongoDB...');
         await mongoLogout();
       }
-      // Redirect to landing page after logout
-      window.location.href = '/';
+      
+      // Clear local storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      console.log('Logout complete, redirecting to landing...');
+      
+      // Force redirect to landing page
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+      
     } catch (error) {
       console.error('Logout error:', error);
       // Force redirect even if logout fails
+      localStorage.clear();
+      sessionStorage.clear();
       window.location.href = '/';
     }
   };
