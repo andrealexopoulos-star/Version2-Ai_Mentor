@@ -2672,40 +2672,6 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     
     logger.info(f"✅ Outlook integration successful for user {user_id}")
     return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true")
-    await db.users.update_one(
-        {"id": our_user["id"]},
-        {"$set": {
-            "outlook_access_token": token_data.get("access_token"),
-            "outlook_refresh_token": token_data.get("refresh_token"),
-            "outlook_token_expires_at": (datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))).isoformat(),
-            "outlook_connected_at": datetime.now(timezone.utc).isoformat(),
-            "outlook_connected_email": microsoft_email,  # Track which MS account is connected
-            "outlook_connected_name": microsoft_name
-        }}
-    )
-    
-    # Log the connection for security audit
-    await db.security_audit_log.insert_one({
-        "id": str(uuid.uuid4()),
-        "event_type": "outlook_integration_connected",
-        "user_id": our_user["id"],
-        "user_email": our_user_email,
-        "microsoft_email": microsoft_email,
-        "microsoft_name": microsoft_name,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "ip_address": "callback_flow"  # Would need request context for real IP
-    })
-    
-    # Trigger comprehensive sync in background
-    import asyncio
-    job_id = str(uuid.uuid4())
-    asyncio.create_task(start_comprehensive_sync_job(our_user["id"], job_id))
-    
-    # Redirect to frontend success page with connected email for user confirmation
-    from fastapi.responses import RedirectResponse
-    from urllib.parse import quote
-    frontend_url = os.environ['FRONTEND_URL']
-    return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true&job_id={job_id}&connected_email={quote(microsoft_email)}")
 
 
 async def start_comprehensive_sync_job(user_id: str, job_id: str):
@@ -3123,20 +3089,37 @@ async def refresh_outlook_token(user_id: str, refresh_token: str):
 
 @api_router.get("/outlook/status")
 async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
-    """Check if Outlook is connected and return connected Microsoft account details"""
-    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    """Check if user has connected their Outlook account - HYBRID SUPPORT"""
+    user_id = current_user["id"]
     
-    is_connected = bool(user_doc.get("outlook_access_token"))
-    emails_count = await db.outlook_emails.count_documents({"user_id": current_user["id"]})
-    
-    return {
-        "connected": is_connected,
-        "connected_at": user_doc.get("outlook_connected_at"),
-        "connected_email": user_doc.get("outlook_connected_email"),  # Microsoft email that's connected
-        "connected_name": user_doc.get("outlook_connected_name"),    # Microsoft display name
-        "emails_synced": emails_count,
-        "user_email": user_doc.get("email")  # Strategy Squad account email
-    }
+    try:
+        # Use hybrid helper to get tokens
+        tokens = await get_outlook_tokens(user_id)
+        
+        if tokens:
+            # Check if token is still valid
+            if tokens.get("expires_at"):
+                expires_at = datetime.fromisoformat(tokens["expires_at"].replace('Z', '+00:00'))
+                is_valid = expires_at > datetime.now(timezone.utc)
+            else:
+                is_valid = True  # Assume valid if no expiration
+            
+            # Count synced emails (MongoDB for now - will migrate later)
+            emails_count = await db.outlook_emails.count_documents({"user_id": user_id})
+            
+            return {
+                "connected": True,
+                "valid": is_valid,
+                "email": tokens.get("microsoft_user_id"),
+                "emails_synced": emails_count,
+                "source": tokens.get("source", "unknown")
+            }
+        
+        return {"connected": False}
+        
+    except Exception as e:
+        logger.error(f"Error checking Outlook status for user {user_id}: {e}")
+        return {"connected": False}
 
 
 @api_router.post("/outlook/disconnect")
