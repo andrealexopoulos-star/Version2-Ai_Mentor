@@ -262,18 +262,51 @@ const Integrations = () => {
   const handleOutlookConnect = async () => {
     setConnecting('outlook');
     try {
-      // Use backend API (hybrid Supabase/MongoDB support)
-      const response = await apiClient.get('/auth/outlook/login');
+      // Get current Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (response.data && response.data.auth_url) {
-        console.log('Redirecting to Outlook OAuth');
-        window.location.href = response.data.auth_url;
-      } else {
-        throw new Error('No auth URL returned from server');
+      if (!session) {
+        toast.error('Please log in to connect Outlook');
+        setConnecting(null);
+        return;
       }
+
+      // Call Edge Function with proper Authorization header using fetch
+      const edgeFunctionUrl = `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/outlook/start`;
+      
+      console.log('Calling Edge Function:', edgeFunctionUrl);
+      
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Edge Function response status:', response.status);
+
+      // Edge Function should return 302 redirect
+      if (response.redirected || response.status === 302) {
+        // Follow redirect to Microsoft OAuth
+        window.location.href = response.url;
+      } else if (response.status === 200) {
+        // Or it might return the auth URL in JSON
+        const data = await response.json();
+        if (data.auth_url) {
+          window.location.href = data.auth_url;
+        } else {
+          throw new Error('No redirect or auth URL received');
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Edge Function error:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Edge Function failed');
+      }
+      
     } catch (error) {
       console.error('Outlook connection error:', error);
-      toast.error('Failed to initiate Outlook connection. Please try again.');
+      toast.error(`Failed to connect Outlook: ${error.message}`);
       setConnecting(null);
     }
   };
