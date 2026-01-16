@@ -133,15 +133,50 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
             
             if db_user:
                 # User exists with same email but different ID
-                # This can happen when using multiple OAuth providers
-                print(f"Found existing user by email {user.email}, updating ID mapping")
+                # This can happen when using multiple OAuth providers or email signup then OAuth
+                print(f"Found existing user by email {user.email} with different ID, merging accounts")
                 try:
-                    # Update the user record with the new OAuth provider's ID
+                    # STEP 1: Update cognitive_profiles first (to satisfy foreign key)
+                    supabase_admin.table("cognitive_profiles").update({"user_id": user.id}).eq("user_id", db_user["id"]).execute()
+                    print(f"✅ Updated cognitive_profiles user_id")
+                    
+                    # STEP 2: Update users table ID (foreign key now satisfied)
                     supabase_admin.table("users").update({"id": user.id}).eq("email", user.email).execute()
+                    print(f"✅ Updated users table ID")
+                    
+                    # Update local variable
                     db_user["id"] = user.id
-                except Exception as update_error:
-                    print(f"Warning: Could not update user ID: {update_error}")
-                    # Continue with existing user data
+                    print(f"✅ Successfully merged user accounts for {user.email}")
+                    
+                except Exception as merge_error:
+                    print(f"❌ Account merge failed: {merge_error}")
+                    # If merge fails, create new user profile with new OAuth ID
+                    # This is safer than leaving user in broken state
+                    try:
+                        db_user = await create_user_profile(
+                            user_id=user.id,
+                            email=user.email,
+                            metadata={
+                                **user.user_metadata,
+                                "full_name": db_user.get("full_name") or user.user_metadata.get("full_name"),
+                                "company_name": db_user.get("company_name"),
+                                "industry": db_user.get("industry"),
+                                "role": db_user.get("role")
+                            }
+                        )
+                        print(f"✅ Created new user profile for OAuth user {user.email}")
+                    except Exception as create_error:
+                        print(f"❌ Failed to create new profile: {create_error}")
+                        # Return basic user data from session as last resort
+                        db_user = {
+                            "id": user.id,
+                            "email": user.email,
+                            "full_name": user.user_metadata.get("full_name"),
+                            "company_name": user.user_metadata.get("company_name"),
+                            "role": "user",
+                            "subscription_tier": "free",
+                            "is_master_account": user.email == "andre@thestrategysquad.com.au"
+                        }
             else:
                 # User doesn't exist at all - create new profile
                 db_user = await create_user_profile(

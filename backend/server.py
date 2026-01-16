@@ -19,9 +19,8 @@ import httpx
 from authlib.integrations.starlette_client import OAuth
 from urllib.parse import quote
 
-# Import Cognitive Core - SUPABASE VERSION (Phase 1 Testing)
-from cognitive_core_supabase import CognitiveCore, init_cognitive_core, get_cognitive_core
-from supabase_client import supabase_admin
+# Import Cognitive Core - MongoDB version (STABLE)
+from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
 from supabase_client import supabase_admin
 
 import base64
@@ -57,10 +56,10 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Initialize Cognitive Core - Per-User Intelligence Layer (MIGRATED TO SUPABASE)
-cognitive_core = init_cognitive_core(supabase_admin)
+# Initialize Cognitive Core - Per-User Intelligence Layer
+cognitive_core = init_cognitive_core(db)
 logger = logging.getLogger(__name__)
-logger.info("Cognitive Core initialized - Per-user intelligence active (Supabase PostgreSQL)")
+logger.info("Cognitive Core initialized - Per-user intelligence active")
 
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
@@ -2419,6 +2418,8 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
                 "refresh_token": token_data["refresh_token"],
                 "expires_at": token_data["expires_at"],
                 "microsoft_user_id": token_data.get("microsoft_user_id"),
+                "microsoft_email": token_data.get("microsoft_email"),
+                "microsoft_name": token_data.get("microsoft_name"),
                 "source": "supabase"
             }
     except Exception as e:
@@ -2434,6 +2435,8 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
                 "refresh_token": user_doc.get("outlook_refresh_token"),
                 "expires_at": user_doc.get("outlook_token_expires"),
                 "microsoft_user_id": user_doc.get("microsoft_user_id"),
+                "microsoft_email": user_doc.get("outlook_connected_email"),
+                "microsoft_name": user_doc.get("outlook_connected_name"),
                 "source": "mongodb"
             }
     except Exception as e:
@@ -2442,7 +2445,7 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: str, expires_at: str, microsoft_user_id: str = None, scope: str = None):
+async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: str, expires_at: str, microsoft_user_id: str = None, microsoft_email: str = None, microsoft_name: str = None, scope: str = None):
     """
     Store Outlook tokens - hybrid support for Supabase and MongoDB users
     Stores in Supabase for Supabase OAuth users, MongoDB for legacy users
@@ -2459,6 +2462,8 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
                 "refresh_token": refresh_token,
                 "expires_at": expires_at,
                 "microsoft_user_id": microsoft_user_id,
+                "microsoft_email": microsoft_email,
+                "microsoft_name": microsoft_name,
                 "scope": scope,
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "updated_at": datetime.now(timezone.utc).isoformat()
@@ -2488,6 +2493,8 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
                 "outlook_refresh_token": refresh_token,
                 "outlook_token_expires": expires_at,
                 "microsoft_user_id": microsoft_user_id,
+                "outlook_connected_email": microsoft_email,
+                "outlook_connected_name": microsoft_name,
                 "outlook_connected_at": datetime.now(timezone.utc).isoformat()
             }}
         )
@@ -2670,6 +2677,8 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         refresh_token=token_data.get("refresh_token"),
         expires_at=expires_at,
         microsoft_user_id=user_info.get("id"),
+        microsoft_email=microsoft_email,
+        microsoft_name=microsoft_name,
         scope=token_data.get("scope")
     )
     
