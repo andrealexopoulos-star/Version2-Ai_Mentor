@@ -2649,12 +2649,29 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.info(f"Found MongoDB user: {our_user_email} (ID: {user_id})")
         user_source = "mongodb"
     
-    # SECURITY CHECK: Verify the Microsoft account being connected
-    # Store the Microsoft email separately to track which MS account is connected
-    # This creates an audit trail and prevents data mixing
-    logger.info(f"Connecting Microsoft account '{microsoft_email}' to Strategy Squad user '{our_user_email}' (ID: {user_id})")
+    # SECURITY CHECK & Store tokens using hybrid helper
+    logger.info(f"Connecting Microsoft account '{microsoft_email}' to user '{our_user_email}' (ID: {user_id})")
     
-    # Store tokens in user document WITH the connected Microsoft email for audit/transparency
+    # Calculate token expiration
+    expires_in = token_data.get("expires_in", 3600)
+    expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
+    
+    # Store using hybrid helper function
+    success = await store_outlook_tokens(
+        user_id=user_id,
+        access_token=access_token,
+        refresh_token=token_data.get("refresh_token"),
+        expires_at=expires_at,
+        microsoft_user_id=user_info.get("id"),
+        scope=token_data.get("scope")
+    )
+    
+    if not success:
+        logger.error(f"Failed to store Outlook tokens for user {user_id}")
+        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=storage_failed")
+    
+    logger.info(f"✅ Outlook integration successful for user {user_id}")
+    return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true")
     await db.users.update_one(
         {"id": our_user["id"]},
         {"$set": {
