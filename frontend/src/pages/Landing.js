@@ -118,13 +118,13 @@ const Landing = () => {
                 <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
               </div>
               
-              <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-slate-900 leading-tight tracking-tight">
+              <h1 className="font-semibold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-slate-900 leading-tight tracking-tight">
                 Your Personalised Business Soundboard —
                 <span className="text-blue-600"> Powered by AI, Built on Your Business Intelligence</span>
               </h1>
               
-              <p className="text-base sm:text-lg text-slate-600 max-w-2xl leading-relaxed">
-                Introducing <strong className="text-slate-900">BIQC</strong> — the world's first Business IQ Centre that continuously learns your business and delivers sound, personalised advice.
+              <p className="text-base sm:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal">
+                Introducing <strong className="text-slate-900 font-semibold">BIQC</strong> — the world's first Business IQ Centre that continuously learns your business and delivers sound, personalised advice.
               </p>
               
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
@@ -138,64 +138,54 @@ const Landing = () => {
                 </Button>
               </div>
               
-              {/* Social Proof */}
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex -space-x-2">
-                  {['bg-blue-600', 'bg-purple-600', 'bg-emerald-600', 'bg-orange-500'].map((bg, i) => (
-                    <div key={i} className={`w-10 h-10 rounded-full ${bg} border-2 border-white flex items-center justify-center`}>
-                      <span className="text-white text-xs font-bold">{['SC', 'MJ', 'ER', 'AK'][i]}</span>
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1 mb-0.5">
-                    {[1,2,3,4,5].map(i => (
-                      <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    <span className="font-bold text-slate-800">500+</span> business owners getting personalised advice
-                  </p>
-                </div>
-              </div>
             </div>
 
-            {/* Stats Card */}
+            {/* Stats Card - More Subtle */}
             <div className="lg:col-span-5 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <div className="bg-slate-900 text-white rounded-3xl p-8 relative overflow-hidden shadow-2xl">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500 opacity-20 blur-3xl" />
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500 opacity-20 blur-3xl" />
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-slate-200">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200 opacity-30 blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-cyan-200 opacity-20 blur-3xl" />
                 
-                <p className="text-blue-400 font-semibold text-sm mb-8 tracking-wide uppercase">Why Choose Personalised AI Advisory</p>
+                <p className="text-blue-700 font-semibold text-xs mb-6 tracking-wide uppercase relative z-10">Why BIQC is Different</p>
                 
-                <div className="space-y-8 relative z-10">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Zap className="w-6 h-6 text-blue-400" />
+                <div className="space-y-5 relative z-10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Shield className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-3xl text-white mb-1">24/7</p>
-                      <p className="text-slate-400 text-sm">Personalised AI advisor available anytime</p>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">Enterprise Grade Security</p>
+                      <p className="text-slate-600 text-xs">Data protection & encryption built-in</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Target className="w-6 h-6 text-purple-400" />
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Shield className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-3xl text-white mb-1">100%</p>
-                      <p className="text-slate-400 text-sm">Personalised to YOUR specific business</p>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">100% Your Data</p>
+                      <p className="text-slate-600 text-xs">Never shared, sold, or used for training</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-6 h-6 text-emerald-400" />
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Brain className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-3xl text-white mb-1">10x</p>
-                      <p className="text-slate-400 text-sm">Faster than traditional consulting</p>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">100% Personalised</p>
+                      <p className="text-slate-600 text-xs">Trained on YOUR business, not templates</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">24/7 Available</p>
+                      <p className="text-slate-600 text-xs">Strategic advice whenever you need it</p>
                     </div>
                   </div>
                 </div>
