@@ -2628,14 +2628,26 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     microsoft_name = user_info.get("displayName", "")
     logger.info(f"Microsoft user email: {microsoft_email}")
     
-    # Find our user by the ID passed through state
-    our_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    # Find our user - HYBRID SUPPORT (Supabase + MongoDB)
+    # First check if it's a Supabase user
+    supabase_user = supabase_admin.table("users").select("id, email").eq("id", user_id).execute()
     
-    if not our_user:
-        logger.error(f"User not found by ID: {user_id}")
-        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
-    
-    our_user_email = (our_user.get("email") or "").lower().strip()
+    if supabase_user.data and len(supabase_user.data) > 0:
+        # Supabase OAuth user
+        our_user_email = supabase_user.data[0]["email"].lower().strip()
+        logger.info(f"Found Supabase user: {our_user_email} (ID: {user_id})")
+        user_source = "supabase"
+    else:
+        # Try MongoDB (legacy user)
+        our_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        
+        if not our_user:
+            logger.error(f"User not found by ID: {user_id}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
+        
+        our_user_email = (our_user.get("email") or "").lower().strip()
+        logger.info(f"Found MongoDB user: {our_user_email} (ID: {user_id})")
+        user_source = "mongodb"
     
     # SECURITY CHECK: Verify the Microsoft account being connected
     # Store the Microsoft email separately to track which MS account is connected
