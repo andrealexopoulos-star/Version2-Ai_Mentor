@@ -1210,10 +1210,11 @@ class CognitiveCore:
 cognitive_core: Optional[CognitiveCore] = None
 
 
-def init_cognitive_core(db: AsyncIOMotorDatabase) -> CognitiveCore:
-    """Initialize the cognitive core singleton."""
+def init_cognitive_core(supabase_client: Client) -> CognitiveCore:
+    """Initialize the cognitive core singleton with Supabase client."""
     global cognitive_core
-    cognitive_core = CognitiveCore(db)
+    cognitive_core = CognitiveCore(supabase_client)
+    logger.info("Cognitive Core initialized with Supabase PostgreSQL")
     return cognitive_core
 
 

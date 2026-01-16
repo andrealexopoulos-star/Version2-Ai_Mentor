@@ -21,6 +21,7 @@ from urllib.parse import quote
 
 # Import Cognitive Core
 from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
+from supabase_client import supabase_admin
 
 import base64
 import io
@@ -55,10 +56,10 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Initialize Cognitive Core - Per-User Intelligence Layer
-cognitive_core = init_cognitive_core(db)
+# Initialize Cognitive Core - Per-User Intelligence Layer (MIGRATED TO SUPABASE)
+cognitive_core = init_cognitive_core(supabase_admin)
 logger = logging.getLogger(__name__)
-logger.info("Cognitive Core initialized - Per-user intelligence active")
+logger.info("Cognitive Core initialized - Per-user intelligence active (Supabase PostgreSQL)")
 
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
