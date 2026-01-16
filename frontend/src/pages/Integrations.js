@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
+import { supabase } from '../context/SupabaseAuthContext';
 import { toast } from 'sonner';
 import { 
   Plug, Check, ExternalLink, Search, X,
@@ -259,21 +260,29 @@ const Integrations = () => {
   };
 
   const handleOutlookConnect = async () => {
+    setConnecting('outlook');
     try {
-      console.log('Starting Outlook connection...');
-      const response = await apiClient.get('/auth/outlook/login');
-      console.log('Got auth URL:', response.data);
+      // Use Supabase Edge Function for Outlook integration
+      const { data, error } = await supabase.functions.invoke('outlook', {
+        body: { action: 'start' }
+      });
       
-      if (response.data && response.data.auth_url) {
-        console.log('Redirecting to:', response.data.auth_url);
-        window.location.href = response.data.auth_url;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+      
+      if (data?.auth_url) {
+        console.log('Redirecting to Outlook OAuth:', data.auth_url);
+        // Redirect to Microsoft OAuth
+        window.location.href = data.auth_url;
       } else {
-        toast.error('No auth URL received from server');
-        console.error('Invalid response:', response.data);
+        throw new Error('No auth URL returned from Outlook integration');
       }
     } catch (error) {
       console.error('Outlook connection error:', error);
-      toast.error('Failed to initiate Outlook connection: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to initiate Outlook connection. Please try again.');
+      setConnecting(null);
     }
   };
 

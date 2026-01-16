@@ -45,22 +45,13 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (userId) => {
     try {
-      // Fetch user profile from PostgreSQL
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-
-      setUser(data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
+      // Don't query Supabase directly from frontend - use backend API instead
+      // This avoids RLS policy conflicts and centralizes user data access
+      // The fallback user from session is sufficient for auth/routing
       
-      // Create fallback user from session if profile fetch fails
+      // For now, just create a user object from the session
       const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
       if (currentSession) {
         const fallbackUser = {
           id: currentSession.user.id,
@@ -72,9 +63,13 @@ export const SupabaseAuthProvider = ({ children }) => {
           subscription_tier: 'free',
           is_master_account: currentSession.user.email === 'andre@thestrategysquad.com.au'
         };
-        console.log('Using fallback user from session:', fallbackUser);
+        console.log('Using user data from session:', fallbackUser);
         setUser(fallbackUser);
       }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
       setLoading(false);
     }
   };
