@@ -3102,24 +3102,35 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
                 expires_at = datetime.fromisoformat(tokens["expires_at"].replace('Z', '+00:00'))
                 is_valid = expires_at > datetime.now(timezone.utc)
             else:
-                is_valid = True  # Assume valid if no expiration
+                is_valid = True
             
-            # Count synced emails (MongoDB for now - will migrate later)
+            # Count synced emails
             emails_count = await db.outlook_emails.count_documents({"user_id": user_id})
             
             return {
                 "connected": True,
-                "valid": is_valid,
-                "email": tokens.get("microsoft_user_id"),
+                "connected_at": None,  # TODO: Add to microsoft_tokens table
+                "connected_email": tokens.get("microsoft_user_id"),
+                "connected_name": None,  # TODO: Store name in microsoft_tokens
                 "emails_synced": emails_count,
-                "source": tokens.get("source", "unknown")
+                "user_email": current_user.get("email")
             }
         
-        return {"connected": False}
+        return {
+            "connected": False,
+            "connected_at": None,
+            "connected_email": None,
+            "connected_name": None,
+            "emails_synced": 0,
+            "user_email": current_user.get("email")
+        }
         
     except Exception as e:
         logger.error(f"Error checking Outlook status for user {user_id}: {e}")
-        return {"connected": False}
+        return {
+            "connected": False,
+            "emails_synced": 0
+        }
 
 
 @api_router.post("/outlook/disconnect")

@@ -262,22 +262,14 @@ const Integrations = () => {
   const handleOutlookConnect = async () => {
     setConnecting('outlook');
     try {
-      // Use Supabase Edge Function for Outlook integration
-      const { data, error } = await supabase.functions.invoke('outlook', {
-        body: { action: 'start' }
-      });
+      // Use backend API (hybrid Supabase/MongoDB support)
+      const response = await apiClient.get('/auth/outlook/login');
       
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-      
-      if (data?.auth_url) {
-        console.log('Redirecting to Outlook OAuth:', data.auth_url);
-        // Redirect to Microsoft OAuth
-        window.location.href = data.auth_url;
+      if (response.data && response.data.auth_url) {
+        console.log('Redirecting to Outlook OAuth');
+        window.location.href = response.data.auth_url;
       } else {
-        throw new Error('No auth URL returned from Outlook integration');
+        throw new Error('No auth URL returned from server');
       }
     } catch (error) {
       console.error('Outlook connection error:', error);
