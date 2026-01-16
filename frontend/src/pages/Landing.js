@@ -74,7 +74,10 @@ const Landing = () => {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/25">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-xl text-slate-900 hidden sm:block">The Strategy Squad</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-xl text-slate-900">BIQC</span>
+              <span className="text-[10px] text-gray-500 -mt-1 hidden sm:block">powered by The Strategy Squad</span>
+            </div>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <button onClick={() => navigate('/pricing')} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Pricing</button>
@@ -115,14 +118,13 @@ const Landing = () => {
                 <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
               </div>
               
-              <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-tight">
-                Your Business Soundboard —
-                <span className="text-blue-600"> Powered by AI, Grounded in Experience</span>
+              <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-slate-900 leading-tight tracking-tight">
+                Your Personalised Business Soundboard —
+                <span className="text-blue-600"> Powered by AI, Built on Your Business Intelligence</span>
               </h1>
               
-              <p className="text-base sm:text-lg text-slate-700 max-w-xl leading-relaxed">
-                Stop guessing. Start growing. Get <strong>personalised strategic advice</strong> from an AI that 
-                knows YOUR business — your challenges, your market, your goals. Not generic tips.
+              <p className="text-base sm:text-lg text-slate-600 max-w-2xl leading-relaxed">
+                Introducing <strong className="text-slate-900">BIQC</strong> — the world's first Business IQ Centre that continuously learns your business and delivers sound, personalised advice.
               </p>
               
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
@@ -131,16 +133,8 @@ const Landing = () => {
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 sm:px-8 py-6 sm:py-4 h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto"
                   data-testid="hero-cta-btn"
                 >
-                  Get Your Personalised Advisor
+                  Start For Free
                   <ArrowRight className="w-5 h-5" />
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate('/pricing')}
-                  className="border-2 border-slate-300 text-slate-800 hover:bg-slate-100 font-semibold px-6 sm:px-8 py-6 sm:py-4 h-auto rounded-xl w-full sm:w-auto"
-                  data-testid="hero-pricing-btn"
-                >
-                  View Pricing
                 </Button>
               </div>
               

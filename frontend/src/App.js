@@ -91,10 +91,12 @@ const PublicRoute = ({ children }) => {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+      {/* Public Routes - Landing page accessible to everyone */}
+      <Route path="/" element={<Landing />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/terms" element={<TermsAndConditions />} />
+      
+      {/* Auth Routes - Redirect to dashboard if already logged in */}
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       

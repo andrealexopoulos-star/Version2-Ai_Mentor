@@ -81,7 +81,10 @@ const LoginSupabase = () => {
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <span className="font-semibold text-xl text-gray-900">Strategy Squad</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-xl text-gray-900">BIQC</span>
+                <span className="text-[10px] text-gray-500 -mt-1">powered by The Strategy Squad</span>
+              </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Welcome back
