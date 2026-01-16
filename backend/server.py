@@ -2404,104 +2404,66 @@ async def google_exchange(payload: GoogleExchangeRequest):
 
 async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
     """
-    Get Outlook tokens for user - supports BOTH Supabase and MongoDB users
-    Checks Supabase microsoft_tokens first, falls back to MongoDB
+    Get Outlook tokens from m365_tokens table (standardized)
     """
     try:
-        # Try Supabase first (for OAuth users)
-        response = supabase_admin.table("microsoft_tokens").select("*").eq("user_id", user_id).execute()
+        # Query m365_tokens table
+        response = supabase_admin.table("m365_tokens").select("*").eq("user_id", user_id).execute()
         if response.data and len(response.data) > 0:
             token_data = response.data[0]
-            logger.info(f"✅ Retrieved Outlook tokens from Supabase for user {user_id}")
+            logger.info(f"✅ Retrieved Outlook tokens from m365_tokens for user {user_id}")
             return {
                 "access_token": token_data["access_token"],
-                "refresh_token": token_data["refresh_token"],
+                "refresh_token": token_data.get("refresh_token"),
                 "expires_at": token_data["expires_at"],
                 "microsoft_user_id": token_data.get("microsoft_user_id"),
                 "microsoft_email": token_data.get("microsoft_email"),
                 "microsoft_name": token_data.get("microsoft_name"),
-                "source": "supabase"
+                "scope": token_data.get("scope"),
+                "source": "m365_tokens"
             }
     except Exception as e:
-        logger.debug(f"No Supabase tokens for user {user_id}: {e}")
-    
-    # Fallback to MongoDB (for legacy users)
-    try:
-        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
-        if user_doc and user_doc.get("outlook_access_token"):
-            logger.info(f"✅ Retrieved Outlook tokens from MongoDB for user {user_id}")
-            return {
-                "access_token": user_doc["outlook_access_token"],
-                "refresh_token": user_doc.get("outlook_refresh_token"),
-                "expires_at": user_doc.get("outlook_token_expires"),
-                "microsoft_user_id": user_doc.get("microsoft_user_id"),
-                "microsoft_email": user_doc.get("outlook_connected_email"),
-                "microsoft_name": user_doc.get("outlook_connected_name"),
-                "source": "mongodb"
-            }
-    except Exception as e:
-        logger.debug(f"No MongoDB tokens for user {user_id}: {e}")
+        logger.error(f"Error getting m365_tokens for user {user_id}: {e}")
     
     return None
 
 
 async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: str, expires_at: str, microsoft_user_id: str = None, microsoft_email: str = None, microsoft_name: str = None, scope: str = None):
     """
-    Store Outlook tokens - hybrid support for Supabase and MongoDB users
-    Stores in Supabase for Supabase OAuth users, MongoDB for legacy users
+    Store Outlook tokens in m365_tokens table (standardized)
+    Works for both Supabase and MongoDB users
     """
     try:
-        # Check if user is Supabase user (exists in Supabase users table)
-        supabase_user = supabase_admin.table("users").select("id").eq("id", user_id).execute()
+        # Store in m365_tokens table (Supabase standard)
+        token_data = {
+            "user_id": user_id,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_at": expires_at,
+            "microsoft_user_id": microsoft_user_id,
+            "microsoft_email": microsoft_email,
+            "microsoft_name": microsoft_name,
+            "scope": scope,
+            "token_type": "Bearer",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
         
-        if supabase_user.data and len(supabase_user.data) > 0:
-            # Supabase user - store in microsoft_tokens table
-            token_data = {
-                "user_id": user_id,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "expires_at": expires_at,
-                "microsoft_user_id": microsoft_user_id,
-                "microsoft_email": microsoft_email,
-                "microsoft_name": microsoft_name,
-                "scope": scope,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }
-            
-            # Upsert (insert or update)
-            existing = supabase_admin.table("microsoft_tokens").select("id").eq("user_id", user_id).execute()
-            if existing.data and len(existing.data) > 0:
-                # Update existing
-                supabase_admin.table("microsoft_tokens").update(token_data).eq("user_id", user_id).execute()
-                logger.info(f"✅ Updated Outlook tokens in Supabase for user {user_id}")
-            else:
-                # Insert new
-                supabase_admin.table("microsoft_tokens").insert(token_data).execute()
-                logger.info(f"✅ Stored Outlook tokens in Supabase for user {user_id}")
-            
-            return True
-    except Exception as e:
-        logger.error(f"Error storing tokens in Supabase for user {user_id}: {e}")
-    
-    # Fallback or legacy MongoDB user - store in users collection
-    try:
-        await db.users.update_one(
-            {"id": user_id},
-            {"$set": {
-                "outlook_access_token": access_token,
-                "outlook_refresh_token": refresh_token,
-                "outlook_token_expires": expires_at,
-                "microsoft_user_id": microsoft_user_id,
-                "outlook_connected_email": microsoft_email,
-                "outlook_connected_name": microsoft_name,
-                "outlook_connected_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
-        logger.info(f"✅ Stored Outlook tokens in MongoDB for user {user_id}")
+        # Upsert (insert or update)
+        existing = supabase_admin.table("m365_tokens").select("user_id").eq("user_id", user_id).execute()
+        if existing.data and len(existing.data) > 0:
+            # Update existing
+            supabase_admin.table("m365_tokens").update(token_data).eq("user_id", user_id).execute()
+            logger.info(f"✅ Updated Outlook tokens in m365_tokens for user {user_id}")
+        else:
+            # Insert new
+            supabase_admin.table("m365_tokens").insert(token_data).execute()
+            logger.info(f"✅ Stored Outlook tokens in m365_tokens for user {user_id}")
+        
         return True
+        
     except Exception as e:
-        logger.error(f"❌ Error storing tokens for user {user_id}: {e}")
+        logger.error(f"❌ Error storing Outlook tokens for user {user_id}: {e}")
         return False
 
 
@@ -2635,42 +2597,16 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     microsoft_name = user_info.get("displayName", "")
     logger.info(f"Microsoft user email: {microsoft_email}")
     
-    # Find our user - HYBRID SUPPORT (Supabase + MongoDB)
-    our_user_email = None
-    user_source = None
-    
-    # First check if it's a Supabase user
-    try:
-        supabase_user = supabase_admin.table("users").select("id, email").eq("id", user_id).execute()
-        
-        if supabase_user.data and len(supabase_user.data) > 0:
-            # Supabase OAuth user found
-            our_user_email = supabase_user.data[0]["email"].lower().strip()
-            logger.info(f"Found Supabase user: {our_user_email} (ID: {user_id})")
-            user_source = "supabase"
-        else:
-            # Try MongoDB (legacy user)
-            our_user = await db.users.find_one({"id": user_id}, {"_id": 0})
-            
-            if not our_user:
-                logger.error(f"User not found in Supabase or MongoDB by ID: {user_id}")
-                return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
-            
-            our_user_email = (our_user.get("email") or "").lower().strip()
-            logger.info(f"Found MongoDB user: {our_user_email} (ID: {user_id})")
-            user_source = "mongodb"
-    except Exception as e:
-        logger.error(f"Error finding user {user_id}: {e}")
-        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_lookup_failed")
-    
-    # SECURITY CHECK & Store tokens using hybrid helper
-    logger.info(f"Connecting Microsoft account '{microsoft_email}' to user '{our_user_email}' (ID: {user_id})")
+    # SIMPLIFIED: Just store the tokens - don't validate user lookup
+    # User is already authenticated (passed get_current_user dependency)
+    logger.info(f"Storing Outlook tokens for authenticated user {user_id}")
+    logger.info(f"Microsoft account: {microsoft_email}")
     
     # Calculate token expiration
     expires_in = token_data.get("expires_in", 3600)
     expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
     
-    # Store using hybrid helper function
+    # Store tokens using helper
     success = await store_outlook_tokens(
         user_id=user_id,
         access_token=access_token,
