@@ -10,13 +10,11 @@ The Cognitive Core does not speak to users. It exists solely to:
 - Update internal models
 - Feed accurate context to agents (MyIntel, MyAdvisor, MySoundboard)
 - Track advisory outcomes and escalate ignored advice
-
-UPDATED: Migrated to Supabase PostgreSQL for OAuth compatibility
 """
 
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
-from supabase import Client
+from motor.motor_asyncio import AsyncIOMotorDatabase
 import logging
 import uuid
 
@@ -34,28 +32,21 @@ class CognitiveCore:
     4. Consequence & Outcome Memory - Records outcomes over time
     
     Plus: Advisory Log - Tracks all recommendations and their outcomes
-    
-    MIGRATED TO SUPABASE: Uses PostgreSQL tables instead of MongoDB collections
     """
     
-    def __init__(self, supabase_client: Client):
-        self.supabase = supabase_client
+    def __init__(self, db: AsyncIOMotorDatabase):
+        self.db = db
+        self.collection = db.cognitive_profiles
+        self.advisory_log = db.advisory_log  # New collection for recommendation tracking
     
     async def get_profile(self, user_id: str) -> Dict[str, Any]:
         """Retrieve or create the cognitive profile for a user."""
-        try:
-            response = self.supabase.table("cognitive_profiles").select("*").eq("user_id", user_id).execute()
-            
-            if response.data and len(response.data) > 0:
-                return response.data[0]
-            else:
-                # Create initial profile
-                profile = await self._create_initial_profile(user_id)
-                return profile
-        except Exception as e:
-            logger.error(f"Error getting cognitive profile for user {user_id}: {e}")
-            # Return basic profile on error
-            return await self._create_initial_profile(user_id)
+        profile = await self.collection.find_one({"user_id": user_id}, {"_id": 0})
+        
+        if not profile:
+            profile = await self._create_initial_profile(user_id)
+        
+        return profile
     
     # ═══════════════════════════════════════════════════════════════
     # ADVISORY LOG SYSTEM
@@ -675,90 +666,38 @@ class CognitiveCore:
             # LAYER 1: Immutable Reality Model
             # Facts that rarely change - prevents unrealistic advice
             "reality_model": {
-                "business_type": None,
-                "business_maturity": None,
+                "business_type": None,           # e.g., "service", "product", "marketplace"
+                "business_maturity": None,       # e.g., "idea", "early", "growth", "mature"
                 "industry": None,
-                "industry_constraints": [],
-                "revenue_model": None,
-                "cashflow_sensitivity": "unknown",
-                "risk_exposure": "unknown",
-                "regulatory_pressure": "unknown",
-                "time_scarcity": "unknown",
-                "decision_ownership": "unknown",
+                "industry_constraints": [],      # regulatory, seasonal, etc.
+                "revenue_model": None,           # subscription, project, hourly, etc.
+                "cashflow_sensitivity": "unknown",  # low, medium, high, critical
+                "risk_exposure": "unknown",      # low, medium, high
+                "regulatory_pressure": "unknown", # none, light, moderate, heavy
+                "time_scarcity": "unknown",      # abundant, normal, scarce, critical
+                "decision_ownership": "unknown", # solo, shared, delegated
                 "team_size": None,
                 "years_operating": None,
-                "confidence_level": 0.0,
+                "confidence_level": 0.0,         # 0-1 confidence in this layer
                 "last_updated": now
             },
             
             # LAYER 2: Behavioural Truth Model
+            # How the user ACTUALLY behaves - observed, not stated
             "behavioural_model": {
-                "decision_velocity": "unknown",
-                "follow_through_reliability": "unknown",
-                "avoidance_patterns": [],
-                "stress_tolerance": "unknown",
-                "energy_cycles": {
+                "decision_velocity": "unknown",      # fast, cautious, frozen
+                "follow_through_reliability": "unknown",  # high, moderate, low
+                "avoidance_patterns": [],           # topics/decisions they avoid
+                "stress_tolerance": "unknown",      # high, moderate, low
+                "energy_cycles": {                  # when they're most engaged
                     "peak_hours": [],
                     "low_hours": [],
                     "peak_days": []
                 },
-                "information_tolerance": "unknown",
-                "repeated_concerns": [],
-                "decision_loops": [],
+                "information_tolerance": "unknown", # brief, moderate, deep
+                "repeated_concerns": [],            # topics that keep coming up
+                "decision_loops": [],               # decisions they circle back to
                 "action_patterns": {
-                    "quick_wins": 0,
-                    "abandoned_initiatives": 0,
-                    "completed_projects": 0
-                },
-                "confidence_level": 0.0,
-                "last_updated": now
-            },
-            
-            # LAYER 3: Delivery Preference Model
-            "delivery_model": {
-                "preferred_format": "balanced",
-                "preferred_depth": "medium",
-                "preferred_tone": "professional",
-                "prefers_options_vs_directives": "balanced",
-                "prefers_why_explanations": True,
-                "responds_well_to": [],
-                "responds_poorly_to": [],
-                "confidence_level": 0.0,
-                "last_updated": now
-            },
-            
-            # LAYER 4: Consequence & Outcome Memory
-            "outcome_memory": {
-                "successful_actions": [],
-                "failed_actions": [],
-                "recurring_challenges": [],
-                "wins": [],
-                "near_misses": [],
-                "learning_moments": [],
-                "confidence_level": 0.0,
-                "last_updated": now
-            },
-            
-            # Meta
-            "questions_asked": [],
-            "topics_discussed": [],
-            "data_sources": [],
-            "profile_maturity": "nascent"
-        }
-        
-        try:
-            # Insert into Supabase
-            response = self.supabase.table("cognitive_profiles").insert(profile).execute()
-            if response.data and len(response.data) > 0:
-                logger.info(f"Created initial cognitive profile for user {user_id} in Supabase")
-                return response.data[0]
-            else:
-                logger.error(f"Failed to create profile in Supabase for user {user_id}")
-                return profile  # Return in-memory version as fallback
-        except Exception as e:
-            logger.error(f"Error creating profile in Supabase for user {user_id}: {e}")
-            # Return in-memory profile - will retry on next call
-            return profile
                     "total_advice_given": 0,
                     "advice_acted_on": 0,
                     "advice_ignored": 0,
