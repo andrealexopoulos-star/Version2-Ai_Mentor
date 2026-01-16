@@ -19,8 +19,9 @@ import httpx
 from authlib.integrations.starlette_client import OAuth
 from urllib.parse import quote
 
-# Import Cognitive Core
-from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
+# Import Cognitive Core - SUPABASE VERSION (Phase 1 Testing)
+from cognitive_core_supabase import CognitiveCore, init_cognitive_core, get_cognitive_core
+from supabase_client import supabase_admin
 from supabase_client import supabase_admin
 
 import base64
