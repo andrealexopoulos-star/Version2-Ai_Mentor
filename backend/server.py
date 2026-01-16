@@ -2629,25 +2629,32 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     logger.info(f"Microsoft user email: {microsoft_email}")
     
     # Find our user - HYBRID SUPPORT (Supabase + MongoDB)
-    # First check if it's a Supabase user
-    supabase_user = supabase_admin.table("users").select("id, email").eq("id", user_id).execute()
+    our_user_email = None
+    user_source = None
     
-    if supabase_user.data and len(supabase_user.data) > 0:
-        # Supabase OAuth user
-        our_user_email = supabase_user.data[0]["email"].lower().strip()
-        logger.info(f"Found Supabase user: {our_user_email} (ID: {user_id})")
-        user_source = "supabase"
-    else:
-        # Try MongoDB (legacy user)
-        our_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    # First check if it's a Supabase user
+    try:
+        supabase_user = supabase_admin.table("users").select("id, email").eq("id", user_id).execute()
         
-        if not our_user:
-            logger.error(f"User not found by ID: {user_id}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
-        
-        our_user_email = (our_user.get("email") or "").lower().strip()
-        logger.info(f"Found MongoDB user: {our_user_email} (ID: {user_id})")
-        user_source = "mongodb"
+        if supabase_user.data and len(supabase_user.data) > 0:
+            # Supabase OAuth user found
+            our_user_email = supabase_user.data[0]["email"].lower().strip()
+            logger.info(f"Found Supabase user: {our_user_email} (ID: {user_id})")
+            user_source = "supabase"
+        else:
+            # Try MongoDB (legacy user)
+            our_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+            
+            if not our_user:
+                logger.error(f"User not found in Supabase or MongoDB by ID: {user_id}")
+                return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_not_found")
+            
+            our_user_email = (our_user.get("email") or "").lower().strip()
+            logger.info(f"Found MongoDB user: {our_user_email} (ID: {user_id})")
+            user_source = "mongodb"
+    except Exception as e:
+        logger.error(f"Error finding user {user_id}: {e}")
+        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=user_lookup_failed")
     
     # SECURITY CHECK & Store tokens using hybrid helper
     logger.info(f"Connecting Microsoft account '{microsoft_email}' to user '{our_user_email}' (ID: {user_id})")
