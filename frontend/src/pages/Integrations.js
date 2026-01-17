@@ -262,15 +262,23 @@ const Integrations = () => {
   const handleOutlookConnect = async () => {
     setConnecting('outlook');
     try {
-      // Use backend API
-      const response = await apiClient.get('/auth/outlook/login');
+      // Get current Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (response.data && response.data.auth_url) {
-        console.log('Redirecting to Microsoft OAuth');
-        window.location.href = response.data.auth_url;
-      } else {
-        throw new Error('No auth URL returned from server');
+      if (!session || !session.access_token) {
+        toast.error('Please log in to connect Outlook');
+        setConnecting(null);
+        return;
       }
+
+      // Redirect to Edge Function START with access_token as state
+      const startUrl = `https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/outlook-auth/start?state=${session.access_token}`;
+      
+      console.log('Redirecting to Outlook OAuth with state=<access_token>');
+      
+      // Direct browser redirect (same tab)
+      window.location.href = startUrl;
+      
     } catch (error) {
       console.error('Outlook connection error:', error);
       toast.error('Failed to connect Outlook. Please try again.');

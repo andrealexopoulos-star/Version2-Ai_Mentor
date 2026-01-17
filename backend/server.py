@@ -2430,37 +2430,32 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
 
 async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: str, expires_at: str, microsoft_user_id: str = None, microsoft_email: str = None, microsoft_name: str = None, scope: str = None):
     """
-    Store Outlook tokens in m365_tokens table (standardized)
-    Works for both Supabase and MongoDB users
+    Store Outlook tokens in m365_tokens table - MINIMAL fields only
     """
     try:
-        # Store in m365_tokens table (Supabase standard)
+        # Use ONLY fields that definitely exist
         token_data = {
             "user_id": user_id,
             "access_token": access_token,
             "refresh_token": refresh_token,
-            "expires_at": expires_at,
-            "microsoft_user_id": microsoft_user_id,
-            "microsoft_email": microsoft_email,
-            "microsoft_name": microsoft_name,
-            "scope": scope,
-            "token_type": "Bearer",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "expires_at": expires_at
         }
         
-        # Upsert (insert or update)
-        existing = supabase_admin.table("m365_tokens").select("user_id").eq("user_id", user_id).execute()
-        if existing.data and len(existing.data) > 0:
-            # Update existing
-            supabase_admin.table("m365_tokens").update(token_data).eq("user_id", user_id).execute()
-            logger.info(f"✅ Updated Outlook tokens in m365_tokens for user {user_id}")
-        else:
-            # Insert new
-            supabase_admin.table("m365_tokens").insert(token_data).execute()
-            logger.info(f"✅ Stored Outlook tokens in m365_tokens for user {user_id}")
+        # Add optional fields only if we have them
+        if microsoft_user_id:
+            token_data["microsoft_user_id"] = microsoft_user_id
+        if scope:
+            token_data["scope"] = scope
         
-        return True
+        # Upsert
+        result = supabase_admin.table("m365_tokens").upsert(token_data, on_conflict="user_id").execute()
+        
+        if result.data:
+            logger.info(f"✅ Stored Outlook tokens in m365_tokens for user {user_id}")
+            return True
+        else:
+            logger.error(f"❌ No data returned from upsert for user {user_id}")
+            return False
         
     except Exception as e:
         logger.error(f"❌ Error storing Outlook tokens for user {user_id}: {e}")
