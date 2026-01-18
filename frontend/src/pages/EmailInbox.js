@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
+import { supabase } from '../context/SupabaseAuthContext';
 import { toast } from 'sonner';
 import { 
   Mail, Inbox, AlertCircle, Clock, CheckCircle2, 
@@ -11,6 +13,9 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 
 const EmailInbox = () => {
+  const navigate = useNavigate();
+  const [outlookConnected, setOutlookConnected] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(true);
   const [priorityAnalysis, setPriorityAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
@@ -20,8 +25,58 @@ const EmailInbox = () => {
   const [expandedSection, setExpandedSection] = useState('high');
 
   useEffect(() => {
-    fetchPriorityInbox();
+    checkOutlookConnection();
   }, []);
+
+  const checkOutlookConnection = async () => {
+    try {
+      setCheckingConnection(true);
+      
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setOutlookConnected(false);
+        setCheckingConnection(false);
+        return;
+      }
+
+      // Query outlook_oauth_tokens table for current user
+      const { data, error } = await supabase
+        .from('outlook_oauth_tokens')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('provider', 'microsoft')
+        .single();
+
+      if (data && !error) {
+        // Token exists - Outlook is connected
+        setOutlookConnected(true);
+        // Proceed to fetch emails
+        fetchPriorityInbox();
+      } else {
+        // No connection - show connect CTA
+        setOutlookConnected(false);
+      }
+      
+    } catch (error) {
+      console.error('Error checking Outlook connection:', error);
+      setOutlookConnected(false);
+    } finally {
+      setCheckingConnection(false);
+    }
+  };
+
+  const handleConnectOutlook = () => {
+    // Redirect to integrations page to connect
+    navigate('/integrations');
+  };
+
+  useEffect(() => {
+    if (outlookConnected) {
+      fetchPriorityInbox();
+    }
+  }, [outlookConnected]);
 
   const fetchPriorityInbox = async () => {
     try {
