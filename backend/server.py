@@ -884,6 +884,8 @@ def build_business_knowledge_context(business_context: dict) -> str:
     
     return "\n".join(context_parts)
 
+from biqc_constitution_prompt import get_constitution_prompt
+
 def get_system_prompt(context_type: str, user_data: dict = None, business_knowledge: str = None) -> str:
     # Build personalized context from user profile
     user_context = ""
@@ -912,10 +914,15 @@ You have access to detailed information about this business. Use this knowledge 
 ---
 """
 
+    # Get BIQC Constitution (mandatory rules)
+    constitution = get_constitution_prompt()
+
     # MENTOR MODE for MyAdvisor/general context - Now Chief Business Advisor
     # Agent Constitution: OUTPUT SHAPE = Situation → Decision → Immediate next step
     if context_type == "general" or context_type == "mentor" or context_type == "advisor":
-        return f"""You are MyAdvisor.
+        return f"""{constitution}
+
+You are MyAdvisor.
 
 You exist to protect this business, this owner, and their financial future.
 
@@ -1868,6 +1875,50 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
         
         return "\n".join(context_parts)
         
+
+async def get_intelligence_snapshot(user_id: str, user_access_token: str = None) -> str:
+    """
+    Call Supabase Edge Function "intelligence-snapshot" using USER's access token.
+    MUST use user's session token, NOT service role key.
+    Returns snapshot JSON as-is from Edge Function.
+    """
+    try:
+        # Abort if no user access token available
+        if not user_access_token:
+            logger.warning(f"No user access token available for intelligence snapshot")
+            return "Snapshot unavailable - no user token. Use Login Check-in Guardrail (Rule 4a)."
+        
+        # Call intelligence-snapshot Edge Function with USER's token
+        function_url = f"{os.environ.get('SUPABASE_URL')}/functions/v1/intelligence-snapshot"
+        
+        headers = {
+            "Authorization": f"Bearer {user_access_token}",  # User's token, not service role
+            "Content-Type": "application/json"
+        }
+        
+        payload = {"user_id": user_id}
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(function_url, headers=headers, json=payload, timeout=10.0)
+            
+            if response.status_code == 200:
+                snapshot_data = response.json()
+                logger.info(f"✅ Retrieved intelligence snapshot for user {user_id}")
+                # Return as-is, no interpretation
+                return str(snapshot_data)
+            elif response.status_code == 404:
+                logger.info("intelligence-snapshot Edge Function not deployed, using fallback")
+                return "No integrated signals yet. Use Login Check-in Guardrail (Rule 4a)."
+            else:
+                logger.warning(f"Edge Function returned {response.status_code}: {response.text}")
+                # Use Edge Function's fallback response as-is
+                return response.text or "Snapshot unavailable"
+                
+    except Exception as e:
+        logger.error(f"Failed to call intelligence-snapshot: {e}")
+        return "Snapshot call failed. Use Login Check-in Guardrail (Rule 4a)."
+
+
     except Exception as e:
         logger.error(f"Error building cognitive context: {e}")
         return """═══ COGNITIVE CONTEXT UNAVAILABLE ═══
@@ -1876,9 +1927,33 @@ INTERNAL DIRECTIVE: Operate with maximum conservatism.
 Do not assume. Ask before advising. Reduce certainty significantly."""
 
 
-async def get_ai_response(message: str, context_type: str, session_id: str, user_id: str = None, user_data: dict = None, use_advanced: bool = False) -> str:
-    """AGI-Ready AI response function with full business context and Cognitive Core integration"""
+async def get_ai_response(message: str, context_type: str, session_id: str, user_id: str = None, user_data: dict = None, use_advanced: bool = False, user_access_token: str = None) -> str:
+    """
+    Generate AI response with BIQC Constitution enforcement
+    MANDATORY: Calls intelligence-snapshot Edge Function before generating advice
+    """
     try:
+        # STEP 1: Get Business Intelligence Snapshot (MANDATORY) using user's token
+        intelligence_snapshot = await get_intelligence_snapshot(user_id, user_access_token)
+        
+        if intelligence_snapshot:
+            logger.info(f"✅ Retrieved intelligence snapshot for user {user_id}")
+            snapshot_context = f"""
+════════════════════════════════════════
+BUSINESS INTELLIGENCE SNAPSHOT (AUTHORITATIVE)
+════════════════════════════════════════
+
+{intelligence_snapshot}
+
+This is the current validated business state. Use this as your primary context.
+Do NOT ask clarifying questions about this data.
+Proceed directly with advice using this snapshot.
+
+════════════════════════════════════════
+"""
+        else:
+            logger.warning(f"⚠️ Intelligence snapshot unavailable for user {user_id}, using fallback")
+            snapshot_context = ""
         # Get comprehensive business context
         business_knowledge = None
         if user_id:
