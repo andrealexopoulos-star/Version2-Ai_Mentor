@@ -1874,7 +1874,14 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
                 context_parts.append(f"Depth preference: {delivery['depth']}")
         
         return "\n".join(context_parts)
-        
+    
+    except Exception as e:
+        logger.error(f"Error building cognitive context: {e}")
+        return """═══ COGNITIVE CONTEXT UNAVAILABLE ═══
+⚠️ Failed to load user intelligence layers.
+INTERNAL DIRECTIVE: Operate with maximum conservatism. 
+Do not assume. Ask before advising. Reduce certainty significantly."""
+
 
 async def get_intelligence_snapshot(user_id: str, user_access_token: str = None) -> str:
     """
