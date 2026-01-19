@@ -21,6 +21,10 @@ from urllib.parse import quote
 
 # Import Cognitive Core - MongoDB version (STABLE)
 from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
+from supabase_client import init_supabase
+
+# Initialize Supabase after imports
+supabase_admin = init_supabase()
 from supabase_client import supabase_admin
 
 import base64
