@@ -159,14 +159,13 @@ const Landing = () => {
           </div>
         </section>
       ) : (
-        // DESKTOP HERO - Original preserved with RIGHT COLUMN ADDED
+        // DESKTOP HERO - Original preserved
         <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-6 relative">
           <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 to-white" />
           <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[150px] opacity-50" />
           
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-              {/* LEFT COLUMN - Main Hero Content */}
               <div className="lg:col-span-7 space-y-5 sm:space-y-6 lg:space-y-8 animate-fade-in text-center sm:text-left">
                 <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full mx-auto sm:mx-0">
                   <Sparkles className="w-4 h-4 text-blue-700" />
@@ -192,63 +191,69 @@ const Landing = () => {
                     <ArrowRight className="w-5 h-5" />
                   </Button>
                 </div>
+                
               </div>
+          </div>
+          </div>
 
-              {/* RIGHT COLUMN - Why BIQC is Different */}
-              <div className="lg:col-span-5">
-                <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-slate-200">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200 opacity-30 blur-3xl" />
-                  <div className="absolute bottom-0 left-0 w-40 h-40 bg-cyan-200 opacity-20 blur-3xl" />
-                  
-                  <p className="text-blue-700 font-semibold text-xs mb-6 tracking-wide uppercase relative z-10">Why BIQC is Different</p>
-                  
-                  <div className="space-y-5 relative z-10">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Shield className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">Enterprise Grade Security</p>
-                        <p className="text-slate-600 text-xs">Data protection & encryption built-in</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Shield className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">100% Your Data</p>
-                        <p className="text-slate-600 text-xs">Never shared, sold, or used for training</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Brain className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">100% Personalised</p>
-                        <p className="text-slate-600 text-xs">Trained on YOUR business, not templates</p>
-                      </div>
-                    </div>
+        </section>
+      )}
 
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Zap className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">24/7 Available</p>
-                        <p className="text-slate-600 text-xs">Strategic advice whenever you need it</p>
-                      </div>
+      {/* Rest of page - same for mobile and desktop */}
+      
+      {/* Logos / Trust */}
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-slate-200">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200 opacity-30 blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-cyan-200 opacity-20 blur-3xl" />
+                
+                <p className="text-blue-700 font-semibold text-xs mb-6 tracking-wide uppercase relative z-10">Why BIQC is Different</p>
+                
+                <div className="space-y-5 relative z-10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">Enterprise Grade Security</p>
+                      <p className="text-slate-600 text-xs">Data protection & encryption built-in</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">100% Your Data</p>
+                      <p className="text-slate-600 text-xs">Never shared, sold, or used for training</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Brain className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">100% Personalised</p>
+                      <p className="text-slate-600 text-xs">Trained on YOUR business, not templates</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">24/7 Available</p>
+                      <p className="text-slate-600 text-xs">Strategic advice whenever you need it</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Logos / Trust */}
       <section className="py-12 px-6 bg-slate-50 border-y border-slate-200">
