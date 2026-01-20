@@ -7,8 +7,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
 import os
+import logging
 from supabase_client import supabase_admin
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
