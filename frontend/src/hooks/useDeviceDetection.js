@@ -13,16 +13,26 @@ export const useDeviceDetection = () => {
       const width = window.innerWidth;
       const userAgent = navigator.userAgent.toLowerCase();
       
-      // Check user agent for mobile devices
-      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      // More comprehensive mobile detection
+      const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(userAgent);
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       
       // Check screen width
       const isMobileWidth = width <= 768;
       const isTabletWidth = width > 768 && width <= 1024;
       
-      // Set mobile if either condition true
-      setIsMobile(isMobileDevice || isMobileWidth);
-      setIsTablet(isTabletWidth);
+      // Set mobile if ANY mobile indicator true
+      setIsMobile(isMobileUA || isMobileWidth || (isTouchDevice && isMobileWidth));
+      setIsTablet(isTabletWidth && !isMobileUA);
+      
+      // Debug log
+      console.log('Device Detection:', {
+        width,
+        isMobileUA,
+        isTouchDevice,
+        isMobileWidth,
+        RESULT_IS_MOBILE: isMobileUA || isMobileWidth || (isTouchDevice && isMobileWidth)
+      });
     };
 
     // Check on mount
