@@ -2054,6 +2054,77 @@ async def supabase_get_me(current_user: dict = Depends(get_current_user_supabase
         "message": "Authenticated via Supabase"
     }
 
+@api_router.get("/auth/check-profile")
+async def check_user_profile(current_user: dict = Depends(get_current_user_supabase)):
+    """
+    Check if user profile exists and needs onboarding
+    This endpoint is called by AuthCallbackSupabase to determine redirect path
+    
+    Returns:
+        - profile_exists: Whether user has a complete profile
+        - needs_onboarding: Whether user should be sent to onboarding
+        - user: User profile data
+    """
+    try:
+        user_id = current_user["id"]
+        email = current_user["email"]
+        
+        # User profile MUST exist at this point because get_current_user_supabase
+        # automatically creates it via verify_supabase_token() -> create_user_profile()
+        # But we still verify and check for completeness
+        
+        # Get full user profile from Supabase
+        from auth_supabase import get_user_by_id
+        user_profile = await get_user_by_id(user_id)
+        
+        if not user_profile:
+            # This should never happen, but handle gracefully
+            logger.warning(f"User {user_id} authenticated but no profile found, triggering onboarding")
+            return {
+                "profile_exists": False,
+                "needs_onboarding": True,
+                "user": current_user
+            }
+        
+        # Check if profile is complete (has business information)
+        # If user has company_name or went through onboarding, they're complete
+        has_company_info = bool(user_profile.get("company_name"))
+        has_industry = bool(user_profile.get("industry"))
+        
+        # Check if business profile exists (indicates completed onboarding)
+        business_profile_exists = False
+        try:
+            business_profile_check = supabase_admin.table("business_profiles").select("id").eq("user_id", user_id).execute()
+            business_profile_exists = bool(business_profile_check.data and len(business_profile_check.data) > 0)
+        except Exception as e:
+            logger.debug(f"No business profile check error (expected for new users): {e}")
+        
+        # User needs onboarding if they don't have company info AND no business profile
+        needs_onboarding = not has_company_info and not business_profile_exists
+        
+        logger.info(f"Profile check for {email}: exists=True, needs_onboarding={needs_onboarding}, has_company={has_company_info}, has_business_profile={business_profile_exists}")
+        
+        return {
+            "profile_exists": True,
+            "needs_onboarding": needs_onboarding,
+            "user": {
+                "id": user_profile["id"],
+                "email": user_profile["email"],
+                "full_name": user_profile.get("full_name"),
+                "company_name": user_profile.get("company_name"),
+                "industry": user_profile.get("industry"),
+                "role": user_profile.get("role"),
+                "subscription_tier": user_profile.get("subscription_tier"),
+                "is_master_account": user_profile.get("is_master_account", False)
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking user profile: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to check profile: {str(e)}")
+
 # ==================== LEGACY MONGODB AUTH ROUTES (TO BE DEPRECATED) ====================
 
 
