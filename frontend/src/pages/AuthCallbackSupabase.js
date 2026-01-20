@@ -64,30 +64,51 @@ const AuthCallbackSupabase = () => {
           if (data.session) {
             console.log('✅ Session confirmed! User:', data.session.user.email);
             
-            // Wait longer for session to fully propagate (especially for Microsoft)
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Wait for session to fully propagate (especially for Microsoft)
+            await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // Check if this is a new user (needs onboarding)
-            const { data: existingUser } = await supabase
-              .from('users')
-              .select('id, created_at')
-              .eq('id', data.session.user.id)
-              .single();
-            
-            // If user was just created (within last 60 seconds) or doesn't exist, send to onboarding
-            const isNewUser = !existingUser || 
-              (existingUser.created_at && new Date() - new Date(existingUser.created_at) < 60000);
-            
-            if (isNewUser) {
-              console.log('🎯 New user detected, redirecting to onboarding...');
-              setTimeout(() => {
-                navigate('/onboarding', { replace: true });
-              }, 500);
-            } else {
-              console.log('🚀 Existing user, redirecting to /advisor...');
-              setTimeout(() => {
-                navigate('/advisor', { replace: true });
-              }, 500);
+            // Call backend API to check if user needs onboarding
+            // This is more reliable than direct Supabase query because:
+            // 1. Backend ensures profile is created
+            // 2. Backend checks for business profile completion
+            // 3. Handles both new and existing users correctly
+            try {
+              const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+              const response = await fetch(`${BACKEND_URL}/api/auth/check-profile`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${data.session.access_token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (!response.ok) {
+                console.error('❌ Profile check failed:', response.status);
+                // Fallback: assume new user if check fails
+                console.log('Fallback: redirecting to onboarding');
+                setTimeout(() => navigate('/onboarding', { replace: true }), 500);
+                return;
+              }
+              
+              const profileData = await response.json();
+              console.log('📋 Profile check result:', profileData);
+              
+              if (profileData.needs_onboarding) {
+                console.log('🎯 User needs onboarding, redirecting...');
+                setTimeout(() => {
+                  navigate('/onboarding', { replace: true });
+                }, 500);
+              } else {
+                console.log('🚀 User profile complete, redirecting to /advisor...');
+                setTimeout(() => {
+                  navigate('/advisor', { replace: true });
+                }, 500);
+              }
+            } catch (profileCheckError) {
+              console.error('❌ Error checking profile:', profileCheckError);
+              // Fallback: try to load advisor, let ProtectedRoute handle auth
+              console.log('Fallback: redirecting to advisor');
+              setTimeout(() => navigate('/advisor', { replace: true }), 500);
             }
           } else {
             console.log('❌ No session despite access token');
