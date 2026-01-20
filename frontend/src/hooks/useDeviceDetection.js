@@ -1,11 +1,26 @@
 /**
- * Device Detection Hook
- * Detects if user is on mobile device for different UI rendering
+ * Device Detection Hook - Fixed for Mobile Chrome
+ * Lazy initialization to prevent desktop flash on mobile
  */
 import { useState, useEffect } from 'react';
 
 export const useDeviceDetection = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  // Lazy initialization - detect on first render, not after
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    
+    const width = window.innerWidth;
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    // Comprehensive detection
+    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(userAgent);
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isMobileWidth = width <= 1024; // Increased from 768 to catch edge cases
+    const isMediaQuery = window.matchMedia('(max-width: 768px)').matches;
+    
+    return isMobileUA || isMobileWidth || isMediaQuery || isTouchDevice;
+  });
+  
   const [isTablet, setIsTablet] = useState(false);
 
   useEffect(() => {
@@ -16,22 +31,22 @@ export const useDeviceDetection = () => {
       // More comprehensive mobile detection
       const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(userAgent);
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isMobileWidth = width <= 1024; // Increased breakpoint
+      const isMediaQuery = window.matchMedia('(max-width: 768px)').matches;
+      const isTabletWidth = width > 1024 && width <= 1280;
       
-      // Check screen width
-      const isMobileWidth = width <= 768;
-      const isTabletWidth = width > 768 && width <= 1024;
-      
-      // Set mobile if ANY mobile indicator true
-      setIsMobile(isMobileUA || isMobileWidth || (isTouchDevice && isMobileWidth));
+      // Set mobile if ANY indicator true
+      setIsMobile(isMobileUA || isMobileWidth || isMediaQuery || isTouchDevice);
       setIsTablet(isTabletWidth && !isMobileUA);
       
       // Debug log
-      console.log('Device Detection:', {
+      console.log('🔍 Device Detection:', {
         width,
         isMobileUA,
         isTouchDevice,
         isMobileWidth,
-        RESULT_IS_MOBILE: isMobileUA || isMobileWidth || (isTouchDevice && isMobileWidth)
+        isMediaQuery,
+        FINAL_IS_MOBILE: isMobileUA || isMobileWidth || isMediaQuery || isTouchDevice
       });
     };
 

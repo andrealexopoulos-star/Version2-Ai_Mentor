@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://mongo-to-supa-1.preview.emergentagent.com
+**Test URL:** https://auth-revival-11.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://mongo-to-supa-1.preview.emergentagent.com/advisor
+- [ ] Navigate to https://auth-revival-11.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://mongo-to-supa-1.preview.emergentagent.com/
+**Landing:** https://auth-revival-11.preview.emergentagent.com/
 
-**Login:** https://mongo-to-supa-1.preview.emergentagent.com/login-supabase
+**Login:** https://auth-revival-11.preview.emergentagent.com/login-supabase
 
-**Register:** https://mongo-to-supa-1.preview.emergentagent.com/register-supabase
+**Register:** https://auth-revival-11.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://mongo-to-supa-1.preview.emergentagent.com/pricing
+**Pricing:** https://auth-revival-11.preview.emergentagent.com/pricing
 
-**Terms:** https://mongo-to-supa-1.preview.emergentagent.com/terms
+**Terms:** https://auth-revival-11.preview.emergentagent.com/terms
 
-**Advisor:** https://mongo-to-supa-1.preview.emergentagent.com/advisor
+**Advisor:** https://auth-revival-11.preview.emergentagent.com/advisor
 
 ---
 

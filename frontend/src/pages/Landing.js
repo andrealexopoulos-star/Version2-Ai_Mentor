@@ -1,11 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ArrowRight, Zap, Target, FileText, TrendingUp, Brain, Rocket, Check, Star, Shield, BarChart3, Sparkles } from 'lucide-react';
-import useDeviceDetection from '../hooks/useDeviceDetection';
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { isMobile } = useDeviceDetection();
 
   const features = [
     {
@@ -69,186 +67,133 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Navigation - Mobile App Bar */}
-      {isMobile ? (
-        // MOBILE NAV - App-style top bar
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-          <div className="px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-semibold text-base text-gray-900">BIQC</span>
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/25">
+              <Zap className="w-5 h-5 text-white" />
             </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-xl text-slate-900">BIQC</span>
+              <span className="text-[10px] text-gray-500 -mt-1 hidden sm:block">powered by The Strategy Squad</span>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-8">
+            <button onClick={() => navigate('/pricing')} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Pricing</button>
+            <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Features</button>
+            <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">How It Works</button>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/login-supabase')}
+              className="text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium"
+              data-testid="nav-login-btn"
+            >
+              Log In
+            </Button>
             <Button 
               onClick={() => navigate('/register-supabase')}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 h-9 rounded-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25"
+              data-testid="nav-register-btn"
             >
               Start Free
             </Button>
           </div>
-        </nav>
-      ) : (
-        // DESKTOP NAV - Current design preserved
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/25">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-base sm:text-xl text-slate-900">BIQC</span>
-                <span className="text-[9px] sm:text-[10px] text-gray-500 -mt-1 hidden sm:block">powered by The Strategy Squad</span>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <button onClick={() => navigate('/pricing')} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Pricing</button>
-              <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Features</button>
-              <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">How It Works</button>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate('/login-supabase')}
-                className="text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base h-9 sm:h-auto"
-              >
-                Log In
-              </Button>
-              <Button 
-                onClick={() => navigate('/register-supabase')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 px-4 py-2 sm:px-4 sm:py-2 text-sm sm:text-base h-9 sm:h-auto"
-              >
-                Start Free
-              </Button>
-            </div>
-          </div>
-        </nav>
-      )}
+        </div>
+      </nav>
 
-      {/* Hero Section - Device Conditional */}
-      {isMobile ? (
-        // MOBILE HERO - App-first, centered, thumb-optimized
-        <section className="pt-16 pb-12 px-4 relative">
-          <div className="max-w-lg mx-auto text-center">
-            
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full mb-5">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span className="text-xs font-semibold text-blue-800">AI Business Advisory</span>
-            </div>
-            
-            <h1 className="text-2.5xl font-semibold text-slate-900 leading-tight mb-4 px-2">
-              Your Personalised Business Soundboard
-            </h1>
-            
-            <p className="text-base text-slate-600 mb-6 leading-relaxed px-2">
-              BIQC learns your business and delivers sound, personalised advice.
-            </p>
-            
-            <Button 
-              onClick={() => navigate('/register-supabase')}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 h-14 text-base rounded-xl shadow-lg w-full max-w-sm mb-3"
-            >
-              Start For Free
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-            
-            <p className="text-xs text-gray-500">
-              No credit card • 2 min setup
-            </p>
-            
-          </div>
-        </section>
-      ) : (
-        // DESKTOP HERO - Original preserved with RIGHT COLUMN ADDED
-        <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-6 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 to-white" />
-          <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[150px] opacity-50" />
-          
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-              {/* LEFT COLUMN - Main Hero Content */}
-              <div className="lg:col-span-7 space-y-5 sm:space-y-6 lg:space-y-8 animate-fade-in text-center sm:text-left">
-                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full mx-auto sm:mx-0">
-                  <Sparkles className="w-4 h-4 text-blue-700" />
-                  <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
-                </div>
-                
-                <h1 className="font-semibold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-slate-900 leading-tight tracking-tight">
-                  Your Personalised Business Soundboard —
-                  <span className="text-blue-600"> Powered by AI, Built on Your Business Intelligence</span>
-                </h1>
-                
-                <p className="text-base sm:text-lg lg:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal mx-auto sm:mx-0">
-                  Introducing <strong className="text-slate-900 font-semibold">BIQC</strong> — the world's first Business IQ Centre that continuously learns your business and delivers sound, personalised advice.
-                </p>
-                
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2 justify-center sm:justify-start">
-                  <Button 
-                    onClick={() => navigate('/register-supabase')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 sm:px-8 py-4 sm:py-4 lg:py-4 h-14 sm:h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto max-w-sm sm:max-w-none mx-auto sm:mx-0"
-                    data-testid="hero-cta-btn"
-                  >
-                    Start For Free
-                    <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </div>
+      {/* Hero Section */}
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 to-white" />
+        <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[150px] opacity-50" />
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Main Content */}
+            <div className="lg:col-span-7 space-y-6 lg:space-y-8 animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
+                <Sparkles className="w-4 h-4 text-blue-700" />
+                <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
               </div>
+              
+              <h1 className="font-semibold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-slate-900 leading-tight tracking-tight">
+                Your Personalised Business Soundboard —
+                <span className="text-blue-600"> Powered by AI, Built on Your Business Intelligence</span>
+              </h1>
+              
+              <p className="text-base sm:text-lg lg:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal">
+                Introducing <strong className="text-slate-900 font-semibold">BIQC</strong> — the world's first Business IQ Centre that continuously learns your business and delivers sound, personalised advice.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
+                <Button 
+                  onClick={() => navigate('/register-supabase')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 sm:px-8 py-4 sm:py-4 lg:py-4 h-14 sm:h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto"
+                  data-testid="hero-cta-btn"
+                >
+                  Start For Free
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </div>
+              
+            </div>
 
-              {/* RIGHT COLUMN - Why BIQC is Different */}
-              <div className="lg:col-span-5">
-                <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-slate-200">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200 opacity-30 blur-3xl" />
-                  <div className="absolute bottom-0 left-0 w-40 h-40 bg-cyan-200 opacity-20 blur-3xl" />
+            {/* Stats Card - More Subtle */}
+            <div className="lg:col-span-5 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-slate-200">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200 opacity-30 blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-cyan-200 opacity-20 blur-3xl" />
+                
+                <p className="text-blue-700 font-semibold text-xs mb-6 tracking-wide uppercase relative z-10">Why BIQC is Different</p>
+                
+                <div className="space-y-5 relative z-10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">Enterprise Grade Security</p>
+                      <p className="text-slate-600 text-xs">Data protection & encryption built-in</p>
+                    </div>
+                  </div>
                   
-                  <p className="text-blue-700 font-semibold text-xs mb-6 tracking-wide uppercase relative z-10">Why BIQC is Different</p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">100% Your Data</p>
+                      <p className="text-slate-600 text-xs">Never shared, sold, or used for training</p>
+                    </div>
+                  </div>
                   
-                  <div className="space-y-5 relative z-10">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Shield className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">Enterprise Grade Security</p>
-                        <p className="text-slate-600 text-xs">Data protection & encryption built-in</p>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Brain className="w-5 h-5 text-white" />
                     </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Shield className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">100% Your Data</p>
-                        <p className="text-slate-600 text-xs">Never shared, sold, or used for training</p>
-                      </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">100% Personalised</p>
+                      <p className="text-slate-600 text-xs">Trained on YOUR business, not templates</p>
                     </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Brain className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">100% Personalised</p>
-                        <p className="text-slate-600 text-xs">Trained on YOUR business, not templates</p>
-                      </div>
-                    </div>
+                  </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Zap className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base text-slate-900 mb-0.5">24/7 Available</p>
-                        <p className="text-slate-600 text-xs">Strategic advice whenever you need it</p>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base text-slate-900 mb-0.5">24/7 Available</p>
+                      <p className="text-slate-600 text-xs">Strategic advice whenever you need it</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Logos / Trust */}
       <section className="py-12 px-6 bg-slate-50 border-y border-slate-200">

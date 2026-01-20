@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://mongo-to-supa-1.preview.emergentagent.com/api"
+BASE_URL = "https://auth-revival-11.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "onboard@test.com"
 TEST_USER_PASSWORD = "Test123!"
 TEST_USER_NAME = "Onboard Tester"

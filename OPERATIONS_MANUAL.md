@@ -548,7 +548,7 @@ GOOGLE_CLIENT_SECRET=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
 
 AZURE_TENANT_ID=common
 AZURE_TENANT_URL=https://login.microsoftonline.com/common
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_ID=auth-revival-11
 AZURE_CLIENT_SECRET=o8S8Q~3.q3nakGJkPOSZ.WkcdA0xsdNJUZ8Y5aVb
 
 # AI Services
@@ -557,8 +557,8 @@ OPENAI_API_KEY=sk-proj-vEisusJarC_o4V7plhUG9kF8CpypZBlnVXgflEfdS5Ju...
 SERPER_API_KEY=5b4733e54463108c9b410ef3d38074f667ee3e46
 
 # URLs
-BACKEND_URL=https://mongo-to-supa-1.preview.emergentagent.com
-FRONTEND_URL=https://mongo-to-supa-1.preview.emergentagent.com
+BACKEND_URL=https://auth-revival-11.preview.emergentagent.com
+FRONTEND_URL=https://auth-revival-11.preview.emergentagent.com
 
 # Legacy
 JWT_SECRET_KEY=strategic-advisor-secret-key-2024-secure
@@ -570,7 +570,7 @@ CORS_ORIGINS="*"
 ## Frontend Environment Variables (/app/frontend/.env)
 
 ```bash
-REACT_APP_BACKEND_URL=https://mongo-to-supa-1.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://auth-revival-11.preview.emergentagent.com
 REACT_APP_GOOGLE_CLIENT_ID=903194754324-ife21qnmrokplbcu2ck5afce0kjd6j10.apps.googleusercontent.com
 
 # Supabase
@@ -594,9 +594,9 @@ ENABLE_HEALTH_CHECK=false
 ### Authentication Settings
 
 **URL Configuration:**
-- **Site URL:** `https://mongo-to-supa-1.preview.emergentagent.com`
+- **Site URL:** `https://auth-revival-11.preview.emergentagent.com`
 - **Redirect URLs:**
-  - `https://mongo-to-supa-1.preview.emergentagent.com/auth/callback`
+  - `https://auth-revival-11.preview.emergentagent.com/auth/callback`
 
 **Providers Enabled:**
 - ✅ Google OAuth
@@ -617,7 +617,7 @@ ENABLE_HEALTH_CHECK=false
 
 **Preview/Staging URL:**
 ```
-https://mongo-to-supa-1.preview.emergentagent.com
+https://auth-revival-11.preview.emergentagent.com
 ```
 
 **Status:** Active and running
@@ -684,7 +684,7 @@ tail -f /var/log/supervisor/frontend.out.log
 
 **Test Case 1: New User Sign Up**
 1. Open incognito browser
-2. Go to: https://mongo-to-supa-1.preview.emergentagent.com/
+2. Go to: https://auth-revival-11.preview.emergentagent.com/
 3. Click "Start your free account"
 4. Click "Continue with Google"
 5. Verify confirmation dialog appears
@@ -1022,7 +1022,7 @@ sudo supervisorctl status
 - **App Registration:** Strategy Squad Auth
 
 ## Application URLs
-- **Preview:** https://mongo-to-supa-1.preview.emergentagent.com
+- **Preview:** https://auth-revival-11.preview.emergentagent.com
 - **Login (New):** /login-supabase
 - **Register (New):** /register-supabase
 
