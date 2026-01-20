@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SupabaseAuthProvider, useSupabaseAuth } from "./context/SupabaseAuthContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { useEffect } from 'react';
+import InstallPrompt from './components/InstallPrompt';
 
 // Pages
 import Landing from "./pages/Landing";
@@ -141,11 +143,27 @@ function AppRoutes() {
 function App() {
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   
+  // Register service worker for PWA
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((registration) => {
+            console.log('✅ Service Worker registered:', registration);
+          })
+          .catch((error) => {
+            console.log('❌ Service Worker registration failed:', error);
+          });
+      });
+    }
+  }, []);
+  
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
         <SupabaseAuthProvider>
           <AuthProvider>
+            <InstallPrompt />
             <AppRoutes />
             <Toaster position="top-right" richColors />
           </AuthProvider>

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
+import '../mobile-dashboard.css';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +70,32 @@ const DashboardLayout = ({ children }) => {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+
+  // Mobile: Lock scroll when sidebar open
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.classList.add('sidebar-open');
+    } else {
+      document.body.classList.remove('sidebar-open');
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('sidebar-open');
+    };
+  }, [sidebarOpen]);
+
+  // Mobile: Close sidebar on Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [sidebarOpen]);
 
   useEffect(() => {
     const theme = darkMode ? 'dark' : 'light';

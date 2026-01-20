@@ -1,6 +1,6 @@
 """
 Supabase Client Initialization and Helper Functions
-Replaces MongoDB with Supabase PostgreSQL
+Lazy initialization to prevent crashes when env vars not loaded
 """
 import os
 from supabase import create_client, Client
@@ -32,5 +32,24 @@ def get_supabase_client() -> Client:
     
     return create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-# Global admin client instance
-supabase_admin: Client = get_supabase_admin()
+# Lazy initialization - don't create at import time
+supabase_admin = None
+
+def init_supabase():
+    """
+    Initialize supabase_admin - call after env vars loaded
+    Returns None if Supabase not configured (graceful degradation)
+    """
+    global supabase_admin
+    if supabase_admin is None:
+        try:
+            if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+                supabase_admin = get_supabase_admin()
+                return supabase_admin
+            else:
+                # Supabase not configured - return None (app can still run without it)
+                return None
+        except Exception as e:
+            print(f"Warning: Could not initialize Supabase: {e}")
+            return None
+    return supabase_admin

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BIQC Mobile Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8f9fa;
+      padding: 20px;
+    }
+    .test-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 24px; margin-bottom: 20px; color: #111; }
+    h2 { font-size: 18px; margin-bottom: 12px; color: #374151; }
+    p { font-size: 14px; color: #6b7280; line-height: 1.5; margin-bottom: 12px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: #111;
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .info { font-size: 12px; color: #9ca3af; }
+    .status { 
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .mobile { background: #dcfce7; color: #16a34a; }
+    .desktop { background: #fee2e2; color: #dc2626; }
+  </style>
+</head>
+<body>
+  <h1>📱 BIQC Mobile Test</h1>
+  
+  <div class="test-card">
+    <h2>Device Info</h2>
+    <span class="status" id="device-type">Detecting...</span>
+    <p class="info" id="screen-size"></p>
+    <p class="info" id="user-agent"></p>
+  </div>
+
+  <div class="test-card">
+    <h2>Test Mobile Pages</h2>
+    <a href="/register-supabase" class="btn">Test Sign Up Page</a>
+    <a href="/login-supabase" class="btn">Test Sign In Page</a>
+    <a href="/advisor" class="btn">Test Advisor Dashboard</a>
+    <a href="/" class="btn">Test Landing Page</a>
+  </div>
+
+  <div class="test-card">
+    <h2>Installation Test</h2>
+    <p>If you see an "Install" prompt, tap it to add BIQC to your home screen.</p>
+    <button class="btn" onclick="testInstall()">Trigger Install Prompt</button>
+  </div>
+
+  <script>
+    // Device detection
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const ua = navigator.userAgent;
+    const isMobile = /android|iphone|ipad|ipod/i.test(ua) || width <= 768;
+    
+    document.getElementById('device-type').textContent = isMobile ? '📱 Mobile Device' : '💻 Desktop';
+    document.getElementById('device-type').className = 'status ' + (isMobile ? 'mobile' : 'desktop');
+    document.getElementById('screen-size').textContent = `Screen: ${width}x${height}px`;
+    document.getElementById('user-agent').textContent = `Device: ${ua.includes('iPhone') ? 'iPhone' : ua.includes('Android') ? 'Android' : 'Other'}`;
+    
+    // Install prompt test
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+    
+    function testInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+      } else {
+        alert('Install prompt not available. Try:\niOS: Share → Add to Home Screen\nAndroid: Menu → Install App');
+      }
+    }
+  </script>
+</body>
+</html>

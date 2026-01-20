@@ -209,7 +209,9 @@ export const SupabaseAuthProvider = ({ children }) => {
             ...(provider === 'azure' && { 
               prompt: 'select_account'
             })
-          }
+          },
+          // PKCE flow for better mobile security
+          flowType: 'pkce'
         }
       });
 

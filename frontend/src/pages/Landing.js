@@ -67,16 +67,16 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Nav */}
+      {/* Nav - Mobile optimized */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/25">
-              <Zap className="w-5 h-5 text-white" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/25">
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-xl text-slate-900">BIQC</span>
-              <span className="text-[10px] text-gray-500 -mt-1 hidden sm:block">powered by The Strategy Squad</span>
+              <span className="font-bold text-base sm:text-xl text-slate-900">BIQC</span>
+              <span className="text-[9px] sm:text-[10px] text-gray-500 -mt-1 hidden sm:block">powered by The Strategy Squad</span>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-8">
@@ -84,18 +84,18 @@ const Landing = () => {
             <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">Features</button>
             <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="text-slate-700 hover:text-blue-600 font-medium text-sm transition-colors">How It Works</button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button 
               variant="ghost" 
               onClick={() => navigate('/login-supabase')}
-              className="text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium"
+              className="text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base h-9 sm:h-auto"
               data-testid="nav-login-btn"
             >
               Log In
             </Button>
             <Button 
               onClick={() => navigate('/register-supabase')}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 px-4 py-2 sm:px-4 sm:py-2 text-sm sm:text-base h-9 sm:h-auto"
               data-testid="nav-register-btn"
             >
               Start Free
@@ -104,16 +104,16 @@ const Landing = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-6 relative">
+      {/* Hero Section - Mobile centered */}
+      <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 to-white" />
         <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[150px] opacity-50" />
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Main Content */}
-            <div className="lg:col-span-7 space-y-6 lg:space-y-8 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
+            {/* Main Content - Centered on mobile */}
+            <div className="lg:col-span-7 space-y-5 sm:space-y-6 lg:space-y-8 animate-fade-in text-center sm:text-left">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full mx-auto sm:mx-0">
                 <Sparkles className="w-4 h-4 text-blue-700" />
                 <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
               </div>
@@ -123,14 +123,14 @@ const Landing = () => {
                 <span className="text-blue-600"> Powered by AI, Built on Your Business Intelligence</span>
               </h1>
               
-              <p className="text-base sm:text-lg lg:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal">
+              <p className="text-base sm:text-lg lg:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal mx-auto sm:mx-0">
                 Introducing <strong className="text-slate-900 font-semibold">BIQC</strong> — the world's first Business IQ Centre that continuously learns your business and delivers sound, personalised advice.
               </p>
               
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2 justify-center sm:justify-start">
                 <Button 
                   onClick={() => navigate('/register-supabase')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 sm:px-8 py-4 sm:py-4 lg:py-4 h-14 sm:h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 sm:px-8 py-4 sm:py-4 lg:py-4 h-14 sm:h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto max-w-sm sm:max-w-none mx-auto sm:mx-0"
                   data-testid="hero-cta-btn"
                 >
                   Start For Free
