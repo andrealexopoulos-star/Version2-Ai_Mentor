@@ -2086,21 +2086,24 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
                 "user": current_user
             }
         
-        # Check if profile is complete (has business information)
-        # If user has company_name or went through onboarding, they're complete
-        has_company_info = bool(user_profile.get("company_name"))
-        has_industry = bool(user_profile.get("industry"))
-        
-        # Check if business profile exists (indicates completed onboarding)
-        business_profile_exists = False
+        # Check if user already exists in MongoDB (legacy users who completed onboarding before Supabase migration)
+        # These users should NOT go through onboarding again
+        legacy_user_exists = False
         try:
-            business_profile_check = supabase_admin.table("business_profiles").select("id").eq("user_id", user_id).execute()
-            business_profile_exists = bool(business_profile_check.data and len(business_profile_check.data) > 0)
+            mongo_user = await db.users.find_one({"email": email}, {"_id": 0})
+            if mongo_user:
+                legacy_user_exists = True
+                logger.info(f"Found legacy MongoDB user for {email}, skipping onboarding")
         except Exception as e:
-            logger.debug(f"No business profile check error (expected for new users): {e}")
+            logger.debug(f"MongoDB check skipped: {e}")
         
-        # User needs onboarding if they don't have company info AND no business profile
-        needs_onboarding = not has_company_info and not business_profile_exists
+        # If user exists in MongoDB, they already completed onboarding - no need to do it again
+        if legacy_user_exists:
+            needs_onboarding = False
+        else:
+            # New Supabase-only user: check if they have company info
+            has_company_info = bool(user_profile.get("company_name"))
+            needs_onboarding = not has_company_info
         
         logger.info(f"Profile check for {email}: exists=True, needs_onboarding={needs_onboarding}, has_company={has_company_info}, has_business_profile={business_profile_exists}")
         
