@@ -194,9 +194,13 @@ const Landing = () => {
                 
               </div>
           </div>
+          </div>
+
         </section>
       )}
 
+      {/* Rest of page - same for mobile and desktop */}
+      
       {/* Logos / Trust */}
               <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-slate-200">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200 opacity-30 blur-3xl" />
