@@ -9,44 +9,14 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-// Check if localStorage is available (mobile browsers sometimes block it)
-const isStorageAvailable = () => {
-  try {
-    const test = '__storage_test__';
-    window.localStorage.setItem(test, test);
-    window.localStorage.removeItem(test);
-    return true;
-  } catch (e) {
-    console.warn('localStorage not available, using memory storage');
-    return false;
-  }
-};
-
-// Fallback memory storage for mobile browsers that block localStorage
-class MemoryStorage {
-  constructor() {
-    this.storage = {};
-  }
-  getItem(key) {
-    return this.storage[key] || null;
-  }
-  setItem(key, value) {
-    this.storage[key] = value;
-  }
-  removeItem(key) {
-    delete this.storage[key];
-  }
-}
-
-// Initialize Supabase client with mobile-optimized configuration
+// Initialize Supabase client with stable configuration
+// Removed MemoryStorage fallback that was causing abort errors
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: isStorageAvailable() ? window.localStorage : new MemoryStorage(),
-    persistSession: isStorageAvailable(),
     autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: true,
-    storageKey: 'biqc-auth',
-    flowType: 'pkce'  // More secure for mobile OAuth
+    storageKey: 'biqc-auth'
   }
 });
 
@@ -209,9 +179,7 @@ export const SupabaseAuthProvider = ({ children }) => {
             ...(provider === 'azure' && { 
               prompt: 'select_account'
             })
-          },
-          // PKCE flow for better mobile security
-          flowType: 'pkce'
+          }
         }
       });
 
