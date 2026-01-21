@@ -1570,12 +1570,12 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
             material_blind_spots.append("Email communication patterns")
         
         # Check if calendar is connected
-        calendar_events = await db.calendar_events.count_documents({ user_id)
+        calendar_events = await db.calendar_events.count_documents({"user_id": user_id})
         if calendar_events == 0:
             integration_blind_spots.append("Calendar behaviour (no calendar data)")
         
         # Check if documents are uploaded
-        docs_count = await db.business_documents.count_documents({ user_id) if "business_documents" in await db.list_collection_names() else 0
+        docs_count = await count_user_documents_supabase(supabase_admin, user_id)
         if docs_count == 0:
             integration_blind_spots.append("Business documents and SOPs")
         
