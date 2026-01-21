@@ -6221,7 +6221,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
         score += min(5, doc_count * 1)  # 1 point per doc, max 5
         
         # AI advisor conversations (5 points)
-        chat_count = await db.chat_history.count_documents({"user_id": user_id})
+        chat_count = await db.chat_history.count_documents({"user_id": user_id})  # TODO: Migrate
         score += min(5, chat_count * 0.5)  # 0.5 points per chat, max 5
         
         # SOPs created (5 points)
@@ -6229,7 +6229,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
         score += min(5, sop_count * 2)  # 2 points per SOP, max 5
         
         # Analyses run (5 points)
-        analysis_count = await db.analyses.count_documents({"user_id": user_id})
+        analysis_count = await db.analyses.count_documents({"user_id": user_id})  # TODO: Migrate to Supabase
         score += min(5, analysis_count * 1)  # 1 point per analysis, max 5
     
     # === BUSINESS DEPTH (25 points) ===
@@ -6438,7 +6438,7 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     
-    analysis_count = await db.analyses.count_documents({"user_id": user_id})
+    analysis_count = await db.analyses.count_documents({"user_id": user_id})  # TODO: Migrate to Supabase
     document_count = await db.documents.count_documents({"user_id": user_id})
     chat_sessions = await db.chat_history.distinct("session_id", {"user_id": user_id})
     
