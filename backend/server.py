@@ -2075,7 +2075,6 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
         # But we still verify and check for completeness
         
         # Get full user profile from Supabase
-        from auth_supabase import get_user_by_id
         user_profile = await get_user_by_id(user_id)
         
         if not user_profile:
