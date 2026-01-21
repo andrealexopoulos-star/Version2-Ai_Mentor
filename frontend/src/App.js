@@ -90,14 +90,14 @@ function AppRoutes() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       
-      {/* Auth Routes - Redirect to dashboard if already logged in */}
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-      
-      {/* New Supabase Auth Routes */}
+      {/* Auth Routes - Supabase Only */}
       <Route path="/login-supabase" element={<LoginSupabase />} />
       <Route path="/register-supabase" element={<RegisterSupabase />} />
       <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
+      
+      {/* Legacy routes - redirect to Supabase */}
+      <Route path="/login" element={<Navigate to="/login-supabase" replace />} />
+      <Route path="/register" element={<Navigate to="/register-supabase" replace />} />
 
       {/* Onboarding */}
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
