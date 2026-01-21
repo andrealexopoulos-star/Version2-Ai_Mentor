@@ -46,14 +46,72 @@ Let me examine the existing code...
 
 ---
 
-## CODE ANALYSIS
+## CODE ANALYSIS - CRITICAL FINDING ⚠️
 
-### Backend: Outlook OAuth Endpoints
+### Backend: Outlook OAuth Endpoints ✅ CORRECT
 **File:** `/app/backend/server.py`
 
-Examining lines around `/api/auth/outlook/login` and `/api/auth/outlook/callback`...
+**Endpoints that EXIST and work correctly:**
+1. `/api/auth/outlook/login` (lines 2628-2668)
+   - Generates Microsoft OAuth URL
+   - Uses secure HMAC-signed state parameter
+   - Requires authenticated user (Supabase token)
+   
+2. `/api/auth/outlook/callback` (lines 2671-2782)
+   - Handles OAuth redirect
+   - Exchanges code for tokens
+   - Stores in `m365_tokens` table via `store_outlook_tokens()` helper
+   - Redirects back to `/integrations`
+   
+3. `/api/outlook/status` (line 3198+)
+   - Checks connection status
+   - Retrieves tokens from `m365_tokens`
 
-**Status:** PENDING ANALYSIS
+**Helper Functions:**
+- `get_outlook_tokens()` (line 2566) - Retrieves from Supabase `m365_tokens`
+- `store_outlook_tokens()` (line 2592) - Stores to Supabase `m365_tokens`
+
+### Frontend: Integrations.js ❌ WRONG ENDPOINT
+**File:** `/app/frontend/src/pages/Integrations.js`
+
+**Problem Found (Line 275):**
+```javascript
+const startUrl = `https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/outlook-auth/start?state=${session.access_token}`;
+window.location.href = startUrl;
+```
+
+**Frontend is calling:** Supabase Edge Function (doesn't exist or broken)
+**Should be calling:** Backend API endpoint `/api/auth/outlook/login`
+
+---
+
+## ROOT CAUSE IDENTIFIED ✅
+
+The Outlook integration is broken because:
+1. ✅ Backend endpoints exist and are correct
+2. ❌ Frontend is calling wrong URL (Edge Function instead of backend API)
+3. The Edge Function approach was attempted and failed (per handoff summary)
+4. Frontend was never updated to use the working backend endpoints
+
+---
+
+## FIX REQUIRED
+
+**Change:** Update `handleOutlookConnect()` in Integrations.js to call backend API instead of Edge Function
+
+**From:**
+```javascript
+const startUrl = `https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/outlook-auth/start?state=${session.access_token}`;
+window.location.href = startUrl;
+```
+
+**To:**
+```javascript
+const response = await apiClient.get('/auth/outlook/login');
+window.location.href = response.data.auth_url;
+```
+
+This is a **SINGLE LINE CHANGE** with minimal risk.
 
 ---
 
