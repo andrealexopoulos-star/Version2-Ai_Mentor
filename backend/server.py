@@ -6659,7 +6659,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
         score += min(5, sop_count * 2)  # 2 points per SOP, max 5
         
         # Analyses run (5 points)
-        analysis_count = await db.analyses.count_documents({ user_id)
+        analysis_count = await db.analyses.count_documents({"user_id": user_id})
         score += min(5, analysis_count * 1)  # 1 point per analysis, max 5
     
     # === BUSINESS DEPTH (25 points) ===
@@ -6869,8 +6869,8 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     
-    analysis_count = await db.analyses.count_documents({ user_id)
-    document_count = await db.documents.count_documents({ user_id)
+    analysis_count = await db.analyses.count_documents({"user_id": user_id})
+    document_count = await db.documents.count_documents({"user_id": user_id})
     chat_sessions = await db.chat_history.distinct("session_id", { user_id)
     
     recent_analyses = await db.analyses.find(
@@ -6927,7 +6927,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
     user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
     if user_doc and user_doc.get("outlook_access_token"):
         data_signals["has_outlook"] = True
-        email_count = await db.outlook_emails.count_documents({ user_id)
+        email_count = await db.outlook_emails.count_documents({"user_id": user_id})
         data_signals["emails_synced"] = email_count
         
         # Check high priority emails
@@ -6937,7 +6937,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
             data_signals["email_priority_high"] = len(high_priority)
     
     # Check calendar
-    calendar_count = await db.calendar_events.count_documents({ user_id)
+    calendar_count = await db.calendar_events.count_documents({"user_id": user_id})
     if calendar_count > 0:
         data_signals["has_calendar"] = True
         data_signals["upcoming_meetings"] = calendar_count
