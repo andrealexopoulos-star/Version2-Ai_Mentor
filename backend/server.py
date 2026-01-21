@@ -2019,6 +2019,7 @@ from auth_supabase import (
     signin_with_email,
     get_oauth_url,
     get_current_user_supabase,
+    get_user_by_id,
     SignUpRequest,
     SignInRequest
 )
