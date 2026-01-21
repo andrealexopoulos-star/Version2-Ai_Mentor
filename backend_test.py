@@ -122,7 +122,7 @@ class StrategicAdvisorAPITester:
         # Register a new user for login test
         unique_id = str(uuid.uuid4())[:8]
         login_data = {
-            "email": f"logintest{unique_id}@example.com",
+            "email": f"logintest{unique_id}@testdomain.com",
             "password": "testpass123456"
         }
         
