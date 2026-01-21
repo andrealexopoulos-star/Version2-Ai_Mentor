@@ -9,26 +9,26 @@
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T06:59:13.479614"
+      "timestamp": "2026-01-21T07:00:08.860519"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T06:59:13.520440"
+      "timestamp": "2026-01-21T07:00:08.905304"
     },
     {
-      "test_name": "User Registration",
+      "test_name": "User Registration (Supabase)",
       "success": false,
-      "details": "Status: 404, Expected: 200, Response: {'detail': 'Not Found'}",
-      "timestamp": "2026-01-21T06:59:13.562418"
+      "details": "Status: 520, Expected: 200, Response: {'detail': 'Failed to create user: Email address \"testb1567db1@example.com\" is invalid'}",
+      "timestamp": "2026-01-21T07:00:10.893265"
     },
     {
-      "test_name": "Login Test User Registration",
+      "test_name": "Login Test User Registration (Supabase)",
       "success": false,
-      "details": "Status: 404, Expected: 200, Response: {'detail': 'Not Found'}",
-      "timestamp": "2026-01-21T06:59:13.604853"
+      "details": "Status: 520, Expected: 200, Response: {'detail': 'Failed to create user: Email address \"logintestcf92d294@example.com\" is invalid'}",
+      "timestamp": "2026-01-21T07:00:11.529981"
     }
   ],
-  "timestamp": "2026-01-21T06:59:13.605534"
+  "timestamp": "2026-01-21T07:00:11.530674"
 }
