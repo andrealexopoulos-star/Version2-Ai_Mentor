@@ -6655,7 +6655,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
         score += min(5, chat_count * 0.5)  # 0.5 points per chat, max 5
         
         # SOPs created (5 points)
-        sop_count = await db.sops.count_documents({ user_id) if await db.sops.count_documents({}) else 0
+        sop_count = await db.sops.count_documents({"user_id": user_id}) if await db.sops.count_documents({}) else 0
         score += min(5, sop_count * 2)  # 2 points per SOP, max 5
         
         # Analyses run (5 points)
