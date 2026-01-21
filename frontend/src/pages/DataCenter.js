@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -49,7 +48,7 @@ const employeeCounts = ['1-5', '6-20', '21-50', '51-200', '200+'];
 const revenueRanges = ['< $100K', '$100K - $500K', '$500K - $1M', '$1M - $5M', '$5M - $10M', '$10M+'];
 
 const DataCenter = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [activeTab, setActiveTab] = useState('files');
   const [files, setFiles] = useState([]);
   const [stats, setStats] = useState(null);

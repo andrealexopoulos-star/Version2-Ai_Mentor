@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { 
@@ -14,7 +13,7 @@ import DashboardLayout from '../components/DashboardLayout';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [stats, setStats] = useState(null);
   const [focus, setFocus] = useState(null);
   const [loading, setLoading] = useState(true);

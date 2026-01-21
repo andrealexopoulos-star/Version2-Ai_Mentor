@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -30,7 +29,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);

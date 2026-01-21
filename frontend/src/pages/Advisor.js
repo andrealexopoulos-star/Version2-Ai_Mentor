@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
@@ -51,9 +50,9 @@ const focusAreas = [
 ];
 
 const Advisor = () => {
-  const { user: mongoUser } = useAuth();
+  const { user } = useSupabaseAuth();
   const { user: supabaseUser, session } = useSupabaseAuth();
-  const user = supabaseUser || mongoUser; // Prefer Supabase user
+  const user = supabaseUser || user; // Prefer Supabase user
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
