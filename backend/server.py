@@ -5204,10 +5204,11 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         {"_id": 0, "message": 1, "response": 1, "created_at": 1}
     ).sort("created_at", -1).limit(6).to_list(6)
 
-    recent_docs = await db.documents.find(
-        {"user_id": current_user["id"]},
-        {"_id": 0, "title": 1, "content": 1, "document_type": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(6).to_list(6)
+    recent_docs = await get_user_documents_supabase(
+        supabase_admin,
+        current_user["id"],
+        limit=6
+    )
 
     recent_files = await db.data_files.find(
         {"user_id": current_user["id"]},
@@ -6234,10 +6235,11 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         {"_id": 0, "message": 1, "response": 1, "created_at": 1}
     ).sort("created_at", -1).limit(8).to_list(8)
 
-    recent_docs = await db.documents.find(
-        {"user_id": current_user["id"]},
-        {"_id": 0, "title": 1, "document_type": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(8).to_list(8)
+    recent_docs = await get_user_documents_supabase(
+        supabase_admin,
+        current_user["id"],
+        limit=8
+    )
 
     recent_files = await db.data_files.find(
         {"user_id": current_user["id"]},
