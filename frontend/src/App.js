@@ -8,11 +8,8 @@ import InstallPrompt from './components/InstallPrompt';
 
 // Pages
 import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import LoginSupabase from "./pages/LoginSupabase";
 import RegisterSupabase from "./pages/RegisterSupabase";
-import AuthCallback from "./pages/AuthCallback";
 import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
 import Dashboard from "./pages/Dashboard";
 import Advisor from "./pages/Advisor";
