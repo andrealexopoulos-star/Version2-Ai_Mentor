@@ -262,7 +262,7 @@ const Integrations = () => {
   const handleOutlookConnect = async () => {
     setConnecting('outlook');
     try {
-      // Get current Supabase session token
+      // Get current Supabase session to ensure user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.access_token) {
@@ -271,13 +271,18 @@ const Integrations = () => {
         return;
       }
 
-      // Redirect to Edge Function START with access_token as state
-      const startUrl = `https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/outlook-auth/start?state=${session.access_token}`;
+      // Call backend API to get OAuth URL
+      // Backend validates user via Supabase token and generates secure OAuth URL
+      const response = await apiClient.get('/auth/outlook/login');
       
-      console.log('Redirecting to Outlook OAuth with state=<access_token>');
+      if (!response.data || !response.data.auth_url) {
+        throw new Error('No auth URL returned from backend');
+      }
       
-      // Direct browser redirect (same tab)
-      window.location.href = startUrl;
+      console.log('Redirecting to Microsoft Outlook OAuth');
+      
+      // Redirect to Microsoft OAuth consent screen
+      window.location.href = response.data.auth_url;
       
     } catch (error) {
       console.error('Outlook connection error:', error);
