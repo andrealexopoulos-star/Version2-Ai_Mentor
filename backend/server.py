@@ -785,7 +785,7 @@ async def get_business_context(user_id: str) -> dict:
     profile = await get_business_profile_supabase(supabase_admin, user_id)
     
     # Get recent data files (summaries)
-    data_files = await db.data_files.find(
+    data_files = await get_user_data_files_supabase(supabase_admin, user_id) if "user_id" in locals() else await get_user_data_files_supabase(supabase_admin, current_user["id"]) # 
         {"user_id": user_id},
         {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
     ).sort("created_at", -1).limit(20).to_list(20)
@@ -4196,7 +4196,7 @@ Be specific to their situation. Reference actual business details."""
 
 @api_router.get("/analyses", response_model=List[AnalysisResponse])
 async def get_analyses(current_user: dict = Depends(get_current_user)):
-    analyses = await db.analyses.find(
+    analyses = await get_user_analyses_supabase(supabase_admin, user_id if "user_id" in locals() else current_user["id"]) # 
         {"user_id": current_user["id"]}, 
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
@@ -4642,7 +4642,7 @@ async def business_profile_autofill(req: BusinessProfileAutofillRequest, current
     files_text = ""
     used_files = []
     if req.data_file_ids:
-        files = await db.data_files.find(
+        files = await get_user_data_files_supabase(supabase_admin, user_id) if "user_id" in locals() else await get_user_data_files_supabase(supabase_admin, current_user["id"]) # 
             {"user_id": current_user["id"], "id": {"$in": req.data_file_ids}},
             {"_id": 0, "id": 1, "filename": 1, "extracted_text": 1, "category": 1}
         ).to_list(20)
@@ -4796,7 +4796,7 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         limit=6
     )
 
-    recent_files = await db.data_files.find(
+    recent_files = await get_user_data_files_supabase(supabase_admin, user_id) if "user_id" in locals() else await get_user_data_files_supabase(supabase_admin, current_user["id"]) # 
         {"user_id": current_user["id"]},
         {"_id": 0, "filename": 1, "extracted_text": 1, "category": 1}
     ).sort("created_at", -1).limit(6).to_list(6)
@@ -5005,7 +5005,7 @@ async def get_data_files(category: Optional[str] = None, current_user: dict = De
     if category:
         query["category"] = category
     
-    files = await db.data_files.find(
+    files = await get_user_data_files_supabase(supabase_admin, user_id) if "user_id" in locals() else await get_user_data_files_supabase(supabase_admin, current_user["id"]) # 
         query,
         {"_id": 0, "file_content": 0}  # Exclude file content for listing
     ).sort("created_at", -1).to_list(100)
@@ -5334,12 +5334,12 @@ async def build_advisor_context(user_id: str) -> dict:
     onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     
     # Recent activity for context
-    recent_chats = await db.chat_history.find(
+    recent_chats = await get_chat_history_supabase(supabase_admin, user_id if "user_id" in locals() else current_user["id"]) # 
         {"user_id": user_id},
         {"_id": 0, "message": 1, "response": 1, "created_at": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
     
-    recent_docs = await db.data_files.find(
+    recent_docs = await get_user_data_files_supabase(supabase_admin, user_id) if "user_id" in locals() else await get_user_data_files_supabase(supabase_admin, current_user["id"]) # 
         {"user_id": user_id},
         {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
@@ -5808,7 +5808,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         limit=8
     )
 
-    recent_files = await db.data_files.find(
+    recent_files = await get_user_data_files_supabase(supabase_admin, user_id) if "user_id" in locals() else await get_user_data_files_supabase(supabase_admin, current_user["id"]) # 
         {"user_id": current_user["id"]},
         {"_id": 0, "filename": 1, "category": 1, "description": 1}
     ).sort("created_at", -1).limit(8).to_list(8)
@@ -6385,7 +6385,7 @@ async def admin_get_stats(admin: dict = Depends(get_admin_user)):
     
     # Recent activity
     recent_users = await db.users.find({}, {"_id": 0, "password": 0}).sort("created_at", -1).limit(5).to_list(5)
-    recent_analyses = await db.analyses.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    recent_analyses = await get_user_analyses_supabase(supabase_admin, user_id if "user_id" in locals() else current_user["id"]) # {}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
     
     return {
         "total_users": user_count,
@@ -6437,7 +6437,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     document_count = await supabase_admin.table("documents").count_documents({"user_id": user_id})
     chat_sessions = await db.chat_history.distinct("session_id", {"user_id": user_id})
     
-    recent_analyses = await db.analyses.find(
+    recent_analyses = await get_user_analyses_supabase(supabase_admin, user_id if "user_id" in locals() else current_user["id"]) # 
         {"user_id": user_id}, {"_id": 0}
     ).sort("created_at", -1).limit(5).to_list(5)
     
@@ -6513,7 +6513,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
         data_signals["document_count"] = doc_count
     
     # Check recent activity
-    recent_chats = await db.chat_history.find(
+    recent_chats = await get_chat_history_supabase(supabase_admin, user_id if "user_id" in locals() else current_user["id"]) # 
         {"user_id": user_id},
         {"_id": 0, "created_at": 1}
     ).sort("created_at", -1).limit(1).to_list(1)
