@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
@@ -23,26 +22,14 @@ import {
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user: mongoUser, logout: mongoLogout, isAdmin } = useAuth();
-  const { user: supabaseUser, signOut: supabaseSignOut } = useSupabaseAuth();
+  const { user, signOut } = useSupabaseAuth();
   
-  // Prefer Supabase user if available
-  const user = supabaseUser || mongoUser;
   const logout = async () => {
     try {
       console.log('Logout initiated...');
       
-      // Clear Supabase session first
-      if (supabaseUser) {
-        console.log('Signing out from Supabase...');
-        await supabaseSignOut();
-      }
-      
-      // Clear MongoDB session if exists
-      if (mongoUser) {
-        console.log('Signing out from MongoDB...');
-        await mongoLogout();
-      }
+      // Sign out from Supabase
+      await signOut();
       
       // Clear local storage
       localStorage.clear();
