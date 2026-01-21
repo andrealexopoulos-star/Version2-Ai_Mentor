@@ -982,9 +982,14 @@ class StrategicAdvisorAPITester:
 def main():
     tester = StrategicAdvisorAPITester()
     
-    # Check if we should run only Advisor Brain test
-    if len(sys.argv) > 1 and sys.argv[1] == "--advisor-brain":
-        report = tester.run_advisor_brain_test()
+    # Check if we should run specific test suites
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--advisor-brain":
+            report = tester.run_advisor_brain_test()
+        elif sys.argv[1] == "--supabase":
+            report = tester.run_supabase_migration_tests()
+        else:
+            report = tester.run_all_tests()
     else:
         report = tester.run_all_tests()
     
