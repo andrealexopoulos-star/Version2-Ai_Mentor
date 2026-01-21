@@ -3504,29 +3504,24 @@ Return ONLY valid JSON, no markdown."""
 @api_router.post("/email/suggest-reply/{email_id}")
 async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_current_user)):
     """
-    Generate strategic reply suggestions for a specific email.
+    Generate strategic reply suggestions for a specific email - SUPABASE VERSION
     """
     user_id = current_user["id"]
     
-    # Get the email
-    email = await db.outlook_emails.find_one(
-        {"user_id": user_id, "id": email_id},
-        {"_id": 0}
-    )
+    # Get the email from Supabase
+    email = await find_email_by_id_supabase(supabase_admin, email_id)
     
-    if not email:
+    if not email or email.get("user_id") != user_id:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    # Get business context
+    # Get business context (still MongoDB for now)
     profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     
-    # Get communication history with this sender
+    # Get communication history with this sender from Supabase
     sender = email.get("from_address", "")
-    history = await db.outlook_emails.find(
-        {"user_id": user_id, "from_address": sender},
-        {"_id": 0, "subject": 1, "body_preview": 1}
-    ).sort("received_date", -1).limit(5).to_list(5)
+    all_emails = await get_user_emails_supabase(supabase_admin, user_id, limit=100)
+    history = [e for e in all_emails if e.get("from_address") == sender][:5]
     
     history_context = "\n".join([f"- {h.get('subject')}: {h.get('body_preview', '')[:100]}" for h in history])
     
