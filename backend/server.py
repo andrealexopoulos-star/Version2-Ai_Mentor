@@ -4004,7 +4004,7 @@ async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
     """Check if user has completed onboarding"""
     user_id = current_user["id"]
     
-    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     
     if not onboarding:
         return OnboardingStatusResponse(
@@ -4018,7 +4018,7 @@ async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
         completed=onboarding.get("completed", False),
         current_step=onboarding.get("current_step", 0),
         business_stage=onboarding.get("business_stage"),
-        data=onboarding.get("data", {})
+        data=onboarding.get("onboarding_data", {})
     )
 
 @api_router.post("/onboarding/save")
@@ -4026,39 +4026,31 @@ async def save_onboarding_progress(
     request: OnboardingSave,
     current_user: dict = Depends(get_current_user)
 ):
-    """Save onboarding progress"""
+    """Save onboarding progress - SUPABASE VERSION"""
     user_id = current_user["id"]
     
-    await db.onboarding.update_one(
-        {"user_id": user_id},
-        {
-            "$set": {
-                "user_id": user_id,
-                "current_step": request.current_step,
-                "business_stage": request.business_stage,
-                "data": request.data,
-                "completed": request.completed,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }
-        },
-        upsert=True
-    )
+    onboarding_data = {
+        "current_step": request.current_step,
+        "business_stage": request.business_stage,
+        "onboarding_data": request.data,
+        "completed": request.completed
+    }
+    
+    await update_onboarding_supabase(supabase_admin, user_id, onboarding_data)
     
     return {"status": "saved", "current_step": request.current_step}
 
 @api_router.post("/onboarding/complete")
 async def complete_onboarding(current_user: dict = Depends(get_current_user)):
-    """Mark onboarding as completed"""
+    """Mark onboarding as completed - SUPABASE VERSION"""
     user_id = current_user["id"]
     
-    await db.onboarding.update_one(
-        {"user_id": user_id},
-        {
-            "$set": {
-                "completed": True,
-                "completed_at": datetime.now(timezone.utc).isoformat()
-            }
-        },
+    completion_data = {
+        "completed": True,
+        "completed_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await update_onboarding_supabase(supabase_admin, user_id, completion_data),
         upsert=True
     )
     
@@ -6353,7 +6345,7 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
             "profile_id": versioned_profile.get("profile_id"),
             "has_documents": await count_user_data_files_supabase(supabase_admin,  user_id) > 0,
             "document_count": await count_user_data_files_supabase(supabase_admin,  user_id),
-            "onboarding_completed": (await db.onboarding.find_one({"user_id": user_id}, {"_id": 0}) or {}).get("completed", False)
+            "onboarding_completed": (await get_onboarding_supabase(supabase_admin, user_id) or {}).get("completed", False)
         }
     
     # Fallback to legacy profile calculation
