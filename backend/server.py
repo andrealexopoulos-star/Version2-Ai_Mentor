@@ -29,7 +29,10 @@ from supabase_email_helpers import (
     get_sync_job_supabase,
     update_sync_job_supabase,
     delete_user_sync_jobs_supabase,
-    find_user_sync_job_supabase
+    find_user_sync_job_supabase,
+    store_calendar_events_batch_supabase,
+    delete_user_calendar_events_supabase,
+    get_user_calendar_events_supabase
 )
 
 # Import Cognitive Core - MongoDB version (STABLE)
@@ -3264,13 +3267,14 @@ async def get_calendar_events(
     days_back: int = 7,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get calendar events for AI context"""
-    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    """Get calendar events for AI context - SUPABASE VERSION"""
+    # Get tokens from Supabase
+    tokens = await get_outlook_tokens(current_user["id"])
     
-    if not user_doc.get("outlook_access_token"):
+    if not tokens:
         raise HTTPException(status_code=400, detail="Outlook not connected")
     
-    access_token = user_doc.get("outlook_access_token")
+    access_token = tokens.get("access_token")
     headers = {"Authorization": f"Bearer {access_token}"}
     
     # Calculate date range
@@ -3289,18 +3293,35 @@ async def get_calendar_events(
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(graph_url, headers=headers, params=params)
         
-        if response.status_code == 401:
-            # Token expired - try refresh
-            await refresh_outlook_token(current_user["id"], user_doc.get("outlook_refresh_token"))
-            user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
-            headers = {"Authorization": f"Bearer {user_doc.get('outlook_access_token')}"}
-            response = await client.get(graph_url, headers=headers, params=params)
-        
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail=f"Failed to fetch calendar: {response.text}")
         
         events_data = response.json()
     
+    # Store events in Supabase
+    supabase_events = []
+    for event in events_data.get("value", []):
+        supabase_events.append({
+            "user_id": current_user["id"],
+            "graph_event_id": event.get("id"),
+            "subject": event.get("subject"),
+            "start_time": event.get("start", {}).get("dateTime"),
+            "end_time": event.get("end", {}).get("dateTime"),
+            "location": event.get("location", {}).get("displayName"),
+            "attendees": [{"name": a.get("emailAddress", {}).get("name"), "email": a.get("emailAddress", {}).get("address")} for a in event.get("attendees", [])],
+            "is_all_day": event.get("isAllDay", False),
+            "organizer_email": event.get("organizer", {}).get("emailAddress", {}).get("address"),
+            "organizer_name": event.get("organizer", {}).get("emailAddress", {}).get("name"),
+            "body_preview": event.get("bodyPreview", "")[:200],
+            "synced_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Clear old events and store new ones
+    await delete_user_calendar_events_supabase(supabase_admin, current_user["id"])
+    if supabase_events:
+        await store_calendar_events_batch_supabase(supabase_admin, supabase_events)
+    
+    # Return simplified format for frontend
     events = []
     for event in events_data.get("value", []):
         events.append({
@@ -3315,14 +3336,6 @@ async def get_calendar_events(
             "is_all_day": event.get("isAllDay", False),
             "importance": event.get("importance", "normal")
         })
-    
-    # Store for AI context
-    await db.calendar_events.delete_many({"user_id": current_user["id"]})
-    if events:
-        for e in events:
-            e["user_id"] = current_user["id"]
-            e["synced_at"] = datetime.now(timezone.utc).isoformat()
-        await db.calendar_events.insert_many(events)
     
     return {
         "events": events,
