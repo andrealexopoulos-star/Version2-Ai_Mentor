@@ -758,7 +758,7 @@ async def get_current_account(current_user: dict = Depends(get_current_user)):
     account_id = current_user.get("account_id")
     if not account_id:
         raise HTTPException(status_code=400, detail="Account not configured")
-    account = await db.accounts.find_one({"id": account_id}, {"_id": 0})
+    account = await get_account_supabase(supabase_admin, {"id": account_id}, {"_id": 0})
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     return account
@@ -4535,7 +4535,7 @@ async def get_business_profile(current_user: dict = Depends(get_current_user)):
         return flattened
     
     # Fallback to legacy profile
-    profile = await db.business_profiles.find_one(
+    profile = await get_business_profile_supabase(supabase_admin, 
         {"user_id": current_user["id"]},
         {"_id": 0}
     )
