@@ -4508,7 +4508,7 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
         "context_type": request.context_type,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.chat_history.insert_one(chat_doc)
+    await create_chat_message_supabase(supabase_admin, chat_doc)
     
     return ChatResponse(response=response, session_id=session_id)
 
@@ -5204,10 +5204,7 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         if txt:
             scraped.append({"url": u, "text": txt[:6000]})
 
-    recent_chats = await db.chat_history.find(
-        {"user_id": current_user["id"]},
-        {"_id": 0, "message": 1, "response": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(6).to_list(6)
+    recent_chats = await get_chat_history_supabase(supabase_admin, current_user["id"], limit=6)
 
     recent_docs = await get_user_documents_supabase(
         supabase_admin,
@@ -6861,7 +6858,7 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
     await db.analyses.delete_many({"user_id": user_id})
     # Delete documents from Supabase
     await delete_user_documents_supabase(supabase_admin, user_id)
-    await db.chat_history.delete_many({"user_id": user_id})
+    await delete_user_chats_supabase(supabase_admin, {"user_id": user_id})
     
     return {"message": "User and all associated data deleted"}
 
