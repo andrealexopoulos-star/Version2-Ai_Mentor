@@ -196,7 +196,7 @@ const Pricing = () => {
                 </div>
 
                 <Button 
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/register-supabase')}
                   variant={plan.ctaVariant}
                   className={`w-full mb-8 h-12 font-semibold rounded-lg ${
                     plan.highlight 
