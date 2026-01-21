@@ -1,70 +1,34 @@
 {
-  "summary": "Backend API testing completed - 8/10 tests passed (80.0%)",
-  "total_tests": 10,
-  "passed_tests": 8,
+  "summary": "Backend API testing completed - 2/4 tests passed (50.0%)",
+  "total_tests": 4,
+  "passed_tests": 2,
   "failed_tests": 2,
-  "success_rate": "80.0%",
+  "success_rate": "50.0%",
   "test_details": [
     {
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:03:24.132674"
+      "timestamp": "2026-01-21T06:59:13.479614"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:03:24.171886"
+      "timestamp": "2026-01-21T06:59:13.520440"
     },
     {
       "test_name": "User Registration",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T04:03:24.445861"
-    },
-    {
-      "test_name": "Registration - Default Free Tier",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T04:03:24.446582"
-    },
-    {
-      "test_name": "Supabase Auth Me",
       "success": false,
-      "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid authentication token'}",
-      "timestamp": "2026-01-21T04:03:24.902839"
+      "details": "Status: 404, Expected: 200, Response: {'detail': 'Not Found'}",
+      "timestamp": "2026-01-21T06:59:13.562418"
     },
     {
-      "test_name": "Check Profile Endpoint",
+      "test_name": "Login Test User Registration",
       "success": false,
-      "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid authentication token'}",
-      "timestamp": "2026-01-21T04:03:25.213766"
-    },
-    {
-      "test_name": "Outlook Status Endpoint",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T04:03:25.841982"
-    },
-    {
-      "test_name": "Outlook Status - Response Structure",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T04:03:25.842783"
-    },
-    {
-      "test_name": "Outlook Status - Connection Info",
-      "success": true,
-      "details": "Connected: False, Emails: 0",
-      "timestamp": "2026-01-21T04:03:25.842804"
-    },
-    {
-      "test_name": "Outlook Email Sync",
-      "success": true,
-      "details": "Skipped - Outlook not connected",
-      "timestamp": "2026-01-21T04:03:25.842809"
+      "details": "Status: 404, Expected: 200, Response: {'detail': 'Not Found'}",
+      "timestamp": "2026-01-21T06:59:13.604853"
     }
   ],
-  "timestamp": "2026-01-21T04:03:25.842822"
+  "timestamp": "2026-01-21T06:59:13.605534"
 }
