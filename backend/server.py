@@ -3214,8 +3214,6 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             
             return {
                 "connected": True,
-                "connected_email": tokens.get("microsoft_email"),
-                "connected_name": tokens.get("microsoft_name"),
                 "emails_synced": emails_count,
                 "user_email": current_user.get("email"),
                 "token_valid": is_valid
