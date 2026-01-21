@@ -4518,11 +4518,8 @@ Each insight must include Why explanation, Confidence level, Actions, and Citati
 
 @api_router.get("/diagnoses")
 async def get_diagnoses(current_user: dict = Depends(get_current_user)):
-    """Get user's business diagnoses history"""
-    diagnoses = await get_diagnoses_supabase(supabase_admin, current_user["id"]) # 
-        {"user_id": current_user["id"]},
-        {"_id": 0}
-    ).sort("created_at", -1).limit(20).to_list(20)
+    """Get user's business diagnoses history - SUPABASE VERSION"""
+    diagnoses = await get_diagnoses_supabase(supabase_admin, current_user["id"])
     return diagnoses
 
 # ==================== BUSINESS PROFILE ROUTES ====================
