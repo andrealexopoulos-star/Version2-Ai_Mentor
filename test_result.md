@@ -508,7 +508,7 @@ test_plan:
   current_focus:
     - "Cognitive Core Migration to Supabase"
   stuck_tasks:
-    []
+    - "Cognitive Core Migration to Supabase"
   test_all: false
   test_priority: "high_first"
 
