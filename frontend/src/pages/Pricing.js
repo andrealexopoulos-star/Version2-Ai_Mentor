@@ -130,13 +130,13 @@ const Pricing = () => {
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login-supabase')}
               className="text-slate-600 hover:text-slate-900 font-medium"
             >
               Log In
             </Button>
             <Button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/register-supabase')}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
             >
               Get Started
