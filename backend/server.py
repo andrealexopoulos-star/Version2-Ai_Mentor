@@ -69,8 +69,8 @@ from supabase_intelligence_helpers import (
     update_business_profile_supabase
 )
 
-# Import Cognitive Core - MongoDB version (STABLE)
-from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
+# Import Cognitive Core - SUPABASE VERSION (MIGRATED)
+from cognitive_core_supabase import CognitiveCore, init_cognitive_core, get_cognitive_core
 from supabase_client import init_supabase
 
 # Initialize Supabase after imports
