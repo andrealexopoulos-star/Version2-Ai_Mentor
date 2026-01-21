@@ -83,10 +83,10 @@ class StrategicAdvisorAPITester:
         """Test user registration with Supabase"""
         print("\n🔍 Testing User Registration (Supabase)...")
         
-        # Test with valid data - use unique email
+        # Test with valid data - use unique email with proper domain
         unique_id = str(uuid.uuid4())[:8]
         user_data = {
-            "email": f"test{unique_id}@example.com",
+            "email": f"testuser{unique_id}@testdomain.com",
             "password": "testpass123456",  # Supabase requires 6+ chars
             "full_name": "Test User",
             "company_name": "Test Business",
