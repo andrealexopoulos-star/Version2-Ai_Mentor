@@ -2589,10 +2589,6 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
                 "access_token": token_data["access_token"],
                 "refresh_token": token_data.get("refresh_token"),
                 "expires_at": token_data["expires_at"],
-                "microsoft_user_id": token_data.get("microsoft_user_id"),
-                "microsoft_email": token_data.get("microsoft_email"),
-                "microsoft_name": token_data.get("microsoft_name"),
-                "scope": token_data.get("scope"),
                 "source": "m365_tokens"
             }
     except Exception as e:
