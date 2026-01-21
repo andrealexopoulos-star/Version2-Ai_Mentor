@@ -9,62 +9,62 @@
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:01:16.969797"
+      "timestamp": "2026-01-21T04:03:24.132674"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:01:17.012475"
+      "timestamp": "2026-01-21T04:03:24.171886"
     },
     {
       "test_name": "User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:01:17.290529"
+      "timestamp": "2026-01-21T04:03:24.445861"
     },
     {
       "test_name": "Registration - Default Free Tier",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:01:17.294791"
+      "timestamp": "2026-01-21T04:03:24.446582"
     },
     {
       "test_name": "Supabase Auth Me",
       "success": false,
       "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid authentication token'}",
-      "timestamp": "2026-01-21T04:01:17.691626"
+      "timestamp": "2026-01-21T04:03:24.902839"
     },
     {
       "test_name": "Check Profile Endpoint",
       "success": false,
       "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid authentication token'}",
-      "timestamp": "2026-01-21T04:01:18.032595"
+      "timestamp": "2026-01-21T04:03:25.213766"
     },
     {
       "test_name": "Outlook Status Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:01:19.118558"
+      "timestamp": "2026-01-21T04:03:25.841982"
     },
     {
       "test_name": "Outlook Status - Response Structure",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T04:01:19.119422"
+      "timestamp": "2026-01-21T04:03:25.842783"
     },
     {
       "test_name": "Outlook Status - Connection Info",
       "success": true,
       "details": "Connected: False, Emails: 0",
-      "timestamp": "2026-01-21T04:01:19.119447"
+      "timestamp": "2026-01-21T04:03:25.842804"
     },
     {
       "test_name": "Outlook Email Sync",
       "success": true,
       "details": "Skipped - Outlook not connected",
-      "timestamp": "2026-01-21T04:01:19.119451"
+      "timestamp": "2026-01-21T04:03:25.842809"
     }
   ],
-  "timestamp": "2026-01-21T04:01:19.119472"
+  "timestamp": "2026-01-21T04:03:25.842822"
 }
