@@ -4518,7 +4518,8 @@ async def get_chat_history(session_id: Optional[str] = None, current_user: dict 
     if session_id:
         query["session_id"] = session_id
     
-    history = await db.chat_history.find(query, {"_id": 0}).sort("created_at", -1).limit(50).to_list(50)
+    # Get chat history from Supabase
+    history = await get_chat_history_supabase(supabase_admin, current_user["id"], session_id=session_id, limit=50)
     return history
 
 @api_router.get("/chat/sessions")
@@ -6650,7 +6651,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
         score += min(5, doc_count * 1)  # 1 point per doc, max 5
         
         # AI advisor conversations (5 points)
-        chat_count = await db.chat_history.count_documents({ user_id)
+        chat_count = await db.chat_history.count_documents({"user_id": user_id})
         score += min(5, chat_count * 0.5)  # 0.5 points per chat, max 5
         
         # SOPs created (5 points)
