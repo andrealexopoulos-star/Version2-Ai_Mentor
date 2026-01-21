@@ -3546,8 +3546,8 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
     if not email or email.get("user_id") != user_id:
         raise HTTPException(status_code=404, detail="Email not found")
     
-    # Get business context (still MongoDB for now)
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    # Get business context from Supabase
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     
     # Get communication history with this sender from Supabase
