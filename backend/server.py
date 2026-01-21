@@ -5815,10 +5815,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
     industry = (profile or {}).get("industry") or (user or {}).get("industry")
 
     # Build a compact evidence list for citations
-    evidence_web = await get_web_sources_supabase(supabase_admin, user_id) # 
-        {"user_id": current_user["id"]},
-        {"_id": 0, "title": 1, "url": 1, "snippet": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(6).to_list(6)
+    evidence_web = await get_web_sources_supabase(supabase_admin, user_id)
 
     prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
 Your job: produce deeply customised operational recommendations that are SPECIFIC to this business and NOT generic.
@@ -6664,10 +6661,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
                 break  # Only one notification per email
     
     # Check calendar for important upcoming meetings
-    calendar_events = await get_user_calendar_events_supabase(supabase_admin, user_id) # 
-        {"user_id": user_id},
-        {"_id": 0}
-    ).sort("start", 1).limit(20).to_list(20)
+    calendar_events = await get_user_calendar_events_supabase(supabase_admin, user_id)
     
     now = datetime.now(timezone.utc)
     important_keywords = ["review", "client", "investor", "board", "presentation", "pitch", "deadline", "important", "urgent", "critical"]
