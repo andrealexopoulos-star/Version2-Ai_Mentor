@@ -69,6 +69,31 @@ from supabase_intelligence_helpers import (
     update_business_profile_supabase
 )
 
+# Import remaining collection helpers
+from supabase_remaining_helpers import (
+    get_onboarding_supabase,
+    update_onboarding_supabase,
+    get_web_sources_supabase,
+    update_web_source_supabase,
+    create_sop_supabase,
+    get_sops_supabase,
+    count_sops_supabase,
+    create_invite_supabase,
+    get_invite_supabase,
+    delete_invite_supabase,
+    create_diagnosis_supabase,
+    get_diagnoses_supabase,
+    get_oac_usage_supabase,
+    update_oac_usage_supabase,
+    get_oac_recommendations_supabase,
+    update_oac_recommendations_supabase,
+    get_setting_supabase,
+    update_setting_supabase,
+    dismiss_notification_supabase,
+    get_account_supabase,
+    create_account_supabase
+)
+
 # Import Cognitive Core - SUPABASE VERSION (MIGRATED)
 from cognitive_core_supabase import CognitiveCore, init_cognitive_core, get_cognitive_core
 from supabase_client import init_supabase
@@ -3894,7 +3919,7 @@ async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(req
         "expires_at": (now + timedelta(days=7)).isoformat(),
         "created_at": now.isoformat(),
     }
-    await db.invites.insert_one(invite)
+    await create_invite_supabase(supabase_admin, invite)
 
     invite_link = f"/invite/accept?token={token}"
     return InviteResponse(invite_link=invite_link, temp_password=temp_password, expires_at=invite["expires_at"])
@@ -3902,7 +3927,7 @@ async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(req
 
 @api_router.post("/account/users/accept", response_model=TokenResponse)
 async def accept_invite(req: InviteAcceptRequest):
-    invite = await db.invites.find_one({"token": req.token}, {"_id": 0})
+    invite = await get_invite_supabase(supabase_admin, {"token": req.token}, {"_id": 0})
     if not invite:
         raise HTTPException(status_code=404, detail="Invite not found")
 
@@ -3941,7 +3966,7 @@ async def accept_invite(req: InviteAcceptRequest):
     await db.users.insert_one(user_doc)
 
     # Consume invite
-    await db.invites.delete_one({"id": invite["id"]})
+    await delete_invite_supabase(supabase_admin, {"id": invite["id"]})
 
     access_token = create_token(user_id, user_doc["email"], user_doc["role"], account_id=user_doc.get("account_id"))
     return TokenResponse(
@@ -4349,7 +4374,7 @@ Format using clear markdown with headers and numbered lists."""
         "content": response,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.sops.insert_one(sop_doc)
+    await create_sop_supabase(supabase_admin, sop_doc)
     
     return {"sop_content": response, "topic": topic}
 
@@ -4481,7 +4506,7 @@ Each insight must include Why explanation, Confidence level, Actions, and Citati
         "insights": insights,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.diagnoses.insert_one(diagnosis_doc)
+    await create_diagnosis_supabase(supabase_admin, diagnosis_doc)
     
     return {
         "diagnosis": response_text,
@@ -4494,7 +4519,7 @@ Each insight must include Why explanation, Confidence level, Actions, and Citati
 @api_router.get("/diagnoses")
 async def get_diagnoses(current_user: dict = Depends(get_current_user)):
     """Get user's business diagnoses history"""
-    diagnoses = await db.diagnoses.find(
+    diagnoses = await get_diagnoses_supabase(supabase_admin, current_user["id"]) # 
         {"user_id": current_user["id"]},
         {"_id": 0}
     ).sort("created_at", -1).limit(20).to_list(20)
@@ -5339,7 +5364,7 @@ async def build_advisor_context(user_id: str) -> dict:
         {"_id": 0, "title": 1, "url": 1, "snippet": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
     
-    sops = await db.sops.find(
+    sops = await get_sops_supabase(supabase_admin, current_user["id"]) # 
         {"user_id": user_id},
         {"_id": 0, "title": 1, "category": 1, "created_at": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
@@ -5781,7 +5806,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         except Exception:
             pass
 
-    usage = await db.oac_usage.find_one({"user_id": current_user["id"], "month": mk}, {"_id": 0})
+    usage = await get_oac_usage_supabase(supabase_admin, {"user_id": current_user["id"], "month": mk}, {"_id": 0})
     used = int((usage or {}).get("used", 0))
 
     if used >= limit:
@@ -5792,7 +5817,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
 
     # cache per day
     day_key = now.strftime("%Y-%m-%d")
-    cached = await db.oac_recommendations.find_one({"user_id": current_user["id"], "date": day_key}, {"_id": 0})
+    cached = await get_oac_recommendations_supabase(supabase_admin, {"user_id": current_user["id"], "date": day_key}, {"_id": 0})
     if cached:
         return {
             "locked": False,
@@ -5885,13 +5910,13 @@ Citations:
         "items": items,
         "created_at": now.isoformat()
     }
-    await db.oac_recommendations.update_one(
+    await update_oac_recommendations_supabase(supabase_admin, 
         {"user_id": current_user["id"], "date": day_key},
         {"$set": rec_doc},
         upsert=True
     )
 
-    await db.oac_usage.update_one(
+    await update_oac_usage_supabase(supabase_admin, 
         {"user_id": current_user["id"], "month": mk},
         {"$set": {"user_id": current_user["id"], "month": mk}, "$inc": {"used": 1}},
         upsert=True
@@ -6225,7 +6250,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
         score += min(5, chat_count * 0.5)  # 0.5 points per chat, max 5
         
         # SOPs created (5 points)
-        sop_count = await db.sops.count_documents({"user_id": user_id}) if await db.sops.count_documents({}) else 0
+        sop_count = await count_sops_supabase(supabase_admin, {"user_id": user_id}) if await count_sops_supabase(supabase_admin, {}) else 0
         score += min(5, sop_count * 2)  # 2 points per SOP, max 5
         
         # Analyses run (5 points)
@@ -6753,7 +6778,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
 @api_router.post("/notifications/dismiss/{notification_id}")
 async def dismiss_notification(notification_id: str, current_user: dict = Depends(get_current_user)):
     """Dismiss a notification"""
-    await db.dismissed_notifications.update_one(
+    await dismiss_notification_supabase(supabase_admin, 
         {"user_id": current_user["id"], "notification_id": notification_id},
         {"$set": {
             "user_id": current_user["id"],
