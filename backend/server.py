@@ -2606,7 +2606,7 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
     Store Outlook tokens in m365_tokens table - MINIMAL fields only
     """
     try:
-        # Use ONLY fields that definitely exist
+        # Use ONLY fields that definitely exist in the table
         token_data = {
             "user_id": user_id,
             "access_token": access_token,
@@ -2614,11 +2614,8 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
             "expires_at": expires_at
         }
         
-        # Add optional fields only if we have them
-        if microsoft_user_id:
-            token_data["microsoft_user_id"] = microsoft_user_id
-        if scope:
-            token_data["scope"] = scope
+        # Note: microsoft_user_id, microsoft_email, microsoft_name, scope fields
+        # are not in the current m365_tokens table schema, so we don't include them
         
         # Upsert
         result = supabase_admin.table("m365_tokens").upsert(token_data, on_conflict="user_id").execute()
