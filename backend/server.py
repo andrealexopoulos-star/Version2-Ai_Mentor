@@ -3241,8 +3241,6 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
     if not tokens:
         raise HTTPException(status_code=400, detail="Outlook is not connected")
     
-    connected_email = tokens.get("microsoft_email", "unknown")
-    
     try:
         # Delete tokens from Supabase m365_tokens table
         supabase_admin.table("m365_tokens").delete().eq("user_id", user_id).execute()
@@ -3258,7 +3256,7 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
         
         return {
             "success": True,
-            "message": f"Microsoft Outlook ({connected_email}) disconnected successfully",
+            "message": f"Microsoft Outlook disconnected successfully",
             "deleted_emails": deleted_emails,
             "deleted_jobs": deleted_jobs
         }
