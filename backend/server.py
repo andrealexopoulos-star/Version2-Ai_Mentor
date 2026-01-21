@@ -3239,19 +3239,6 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             "connected": False,
             "emails_synced": 0
         }
-            "connected_at": None,
-            "connected_email": None,
-            "connected_name": None,
-            "emails_synced": 0,
-            "user_email": current_user.get("email")
-        }
-        
-    except Exception as e:
-        logger.error(f"Error checking Outlook status for user {user_id}: {e}")
-        return {
-            "connected": False,
-            "emails_synced": 0
-        }
 
 
 @api_router.post("/outlook/disconnect")
