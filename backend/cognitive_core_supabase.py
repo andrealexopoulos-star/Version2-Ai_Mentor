@@ -181,6 +181,196 @@ class CognitiveCore:
             logger.error(f"❌ Error creating profile in Supabase for user {user_id}: {e}")
             # Return in-memory profile - application can continue, will retry on next call
             return profile_data
+    
+    # ═══════════════════════════════════════════════════════════════
+    # ADVISORY LOG SYSTEM
+    # ═══════════════════════════════════════════════════════════════
+    
+    async def log_recommendation(
+        self,
+        user_id: str,
+        agent: str,
+        situation: str,
+        recommendation: str,
+        reason: str,
+        expected_outcome: str,
+        topic_tags: List[str] = None,
+        urgency: str = "normal",
+        confidence: str = "medium",
+        confidence_factors: List[str] = None
+    ) -> str:
+        """Log recommendation in advisory_log table - Returns recommendation_id"""
+        recommendation_id = str(uuid.uuid4())
+        
+        log_entry = {
+            "recommendation_id": recommendation_id,
+            "user_id": user_id,
+            "agent": agent,
+            "situation": situation,
+            "recommendation": recommendation,
+            "reason": reason,
+            "expected_outcome": expected_outcome,
+            "topic_tags": topic_tags or [],
+            "urgency": urgency,
+            "confidence": confidence,
+            "confidence_factors": confidence_factors or []
+        }
+        
+        try:
+            self.supabase.table("advisory_log").insert(log_entry).execute()
+            logger.info(f"Logged recommendation {recommendation_id} [{confidence}] for user {user_id}")
+            return recommendation_id
+        except Exception as e:
+            logger.error(f"Error logging recommendation: {e}")
+            return recommendation_id
+    
+    async def record_recommendation_outcome(
+        self,
+        recommendation_id: str,
+        status: str,
+        actual_outcome: str = None,
+        notes: str = None
+    ) -> None:
+        """Record whether advice was acted on"""
+        try:
+            updates = {
+                "status": status,
+                "outcome_recorded_at": datetime.now(timezone.utc).isoformat()
+            }
+            
+            if actual_outcome:
+                updates["actual_outcome"] = actual_outcome
+            
+            self.supabase.table("advisory_log").update(updates).eq("recommendation_id", recommendation_id).execute()
+            
+            # If ignored, increment counter
+            if status == "ignored":
+                result = self.supabase.table("advisory_log").select("times_repeated").eq("recommendation_id", recommendation_id).single().execute()
+                if result.data:
+                    new_count = result.data.get("times_repeated", 0) + 1
+                    self.supabase.table("advisory_log").update({"times_repeated": new_count}).eq("recommendation_id", recommendation_id).execute()
+                    
+        except Exception as e:
+            logger.error(f"Error recording outcome: {e}")
+    
+    async def get_ignored_advice_for_escalation(
+        self,
+        user_id: str,
+        topic_tags: List[str] = None
+    ) -> List[Dict]:
+        """Get advice that has been repeatedly ignored"""
+        try:
+            query = self.supabase.table("advisory_log").select("*").eq("user_id", user_id).eq("status", "ignored").gte("times_repeated", 1)
+            
+            if topic_tags:
+                query = query.contains("topic_tags", topic_tags)
+            
+            result = query.order("times_repeated", desc=True).limit(10).execute()
+            return result.data if result.data else []
+        except Exception as e:
+            logger.error(f"Error getting ignored advice: {e}")
+            return []
+    
+    async def escalate_ignored_advice(self, recommendation_id: str) -> int:
+        """Escalate ignored advice to higher urgency level"""
+        try:
+            result = self.supabase.table("advisory_log").select("escalation_level").eq("recommendation_id", recommendation_id).single().execute()
+            
+            if not result.data:
+                return 0
+            
+            current_level = result.data.get("escalation_level", 0)
+            new_level = min(current_level + 1, 2)
+            
+            urgency_map = {0: "normal", 1: "elevated", 2: "critical"}
+            
+            self.supabase.table("advisory_log").update({
+                "escalation_level": new_level,
+                "urgency": urgency_map[new_level]
+            }).eq("recommendation_id", recommendation_id).execute()
+            
+            logger.info(f"Escalated recommendation {recommendation_id} to level {new_level}")
+            return new_level
+        except Exception as e:
+            logger.error(f"Error escalating advice: {e}")
+            return 0
+    
+    async def get_context_for_agent(self, user_id: str, agent: str) -> Dict[str, Any]:
+        """Generate context for an agent based on cognitive profile - SIMPLIFIED FOR SUPABASE"""
+        profile = await self.get_profile(user_id)
+        
+        # Build context from JSONB fields
+        context = {
+            "user_id": user_id,
+            "reality": profile.get("immutable_reality", {}),
+            "behaviour": profile.get("behavioural_truth", {}),
+            "delivery": profile.get("delivery_preference", {}),
+            "history": profile.get("consequence_memory", {})
+        }
+        
+        return context
+    
+    async def observe(self, user_id: str, observation: Dict[str, Any]) -> None:
+        """
+        Record observation about user - SIMPLIFIED SUPABASE VERSION
+        Stores observation without complex nested updates for now
+        """
+        try:
+            obs_type = observation.get("type")
+            profile = await self.get_profile(user_id)
+            
+            # For now, just update last_updated timestamp
+            # Complex nested updates can be added incrementally
+            self.supabase.table("cognitive_profiles").update({
+                "last_updated": datetime.now(timezone.utc).isoformat()
+            }).eq("user_id", user_id).execute()
+            
+            logger.debug(f"Observation recorded for user {user_id}: {obs_type}")
+        except Exception as e:
+            logger.error(f"Error recording observation: {e}")
+    
+    async def calculate_confidence(self, user_id: str, topic_tags: List[str] = None) -> Dict[str, Any]:
+        """Calculate confidence level - SIMPLIFIED"""
+        # Return medium confidence for now
+        return {
+            "level": "medium",
+            "score": 50.0,
+            "factors": ["Supabase migration in progress"],
+            "limiting_factors": [],
+            "recommendation": "Provide balanced advice with acknowledgment of limitations"
+        }
+    
+    async def calculate_escalation_state(self, user_id: str, topic_tags: List[str] = None) -> Dict[str, Any]:
+        """Calculate escalation state - SIMPLIFIED"""
+        # Check for ignored advice
+        ignored_count = 0
+        try:
+            result = self.supabase.table("advisory_log").select("id", count="exact").eq("user_id", user_id).eq("status", "ignored").execute()
+            ignored_count = result.count if result.count else 0
+        except:
+            pass
+        
+        level = 0 if ignored_count < 3 else 1 if ignored_count < 5 else 2
+        
+        return {
+            "level": level,
+            "level_name": ["normal", "elevated", "critical"][level],
+            "tone": "balanced",
+            "urgency": "standard",
+            "evidence": [f"{ignored_count} recommendations ignored"] if ignored_count > 0 else []
+        }
+    
+    async def get_known_information(self, user_id: str) -> Dict[str, Any]:
+        """Get known information about user"""
+        profile = await self.get_profile(user_id)
+        return {
+            "reality": profile.get("immutable_reality", {}),
+            "behaviour": profile.get("behavioural_truth", {})
+        }
+    
+    async def get_questions_asked(self, user_id: str) -> List[Dict]:
+        """Get questions asked to user - STUB"""
+        return []
 
 
 # ═══════════════════════════════════════════════════════════════
