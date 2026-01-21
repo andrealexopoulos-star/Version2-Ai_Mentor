@@ -5478,7 +5478,7 @@ async def get_data_categories(current_user: dict = Depends(get_current_user)):
 @api_router.get("/data-center/stats")
 async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
     """Get data center statistics"""
-    total_files = await count_user_data_files_supabase(supabase_admin, "user_id": current_user["id"]})
+    total_files = await count_user_data_files_supabase(supabase_admin, current_user["id"])
     
     # Total size
     pipeline = [
@@ -6646,7 +6646,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
     # === PLATFORM ENGAGEMENT (20 points) ===
     if user_id and db is not None:
         # Documents uploaded (5 points)
-        doc_count = await count_user_data_files_supabase(supabase_admin,  user_id)
+        doc_count = await count_user_data_files_supabase(supabase_admin, user_id)
         score += min(5, doc_count * 1)  # 1 point per doc, max 5
         
         # AI advisor conversations (5 points)
