@@ -35,6 +35,17 @@ from supabase_email_helpers import (
     get_user_calendar_events_supabase
 )
 
+# Import document helpers
+from supabase_document_helpers import (
+    create_document_supabase,
+    get_user_documents_supabase,
+    get_document_by_id_supabase,
+    update_document_supabase,
+    delete_document_supabase,
+    count_user_documents_supabase,
+    delete_user_documents_supabase
+)
+
 # Import Cognitive Core - MongoDB version (STABLE)
 from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
 from supabase_client import init_supabase
