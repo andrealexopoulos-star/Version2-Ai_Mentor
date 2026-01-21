@@ -180,3 +180,35 @@ async def get_user_calendar_events_supabase(
     except Exception as e:
         logger.error(f"Error fetching calendar events: {e}")
         return []
+
+
+async def store_calendar_events_batch_supabase(
+    supabase_client,
+    events_data: List[Dict[str, Any]]
+) -> int:
+    """Store multiple calendar events at once"""
+    try:
+        if not events_data:
+            return 0
+            
+        # Upsert all events
+        result = supabase_client.table("outlook_calendar_events").upsert(
+            events_data,
+            on_conflict="user_id,graph_event_id"
+        ).execute()
+        
+        return len(result.data) if result.data else 0
+    except Exception as e:
+        logger.error(f"Error batch storing calendar events: {e}")
+        return 0
+
+
+async def delete_user_calendar_events_supabase(supabase_client, user_id: str) -> int:
+    """Delete all calendar events for a user"""
+    try:
+        result = supabase_client.table("outlook_calendar_events").delete().eq("user_id", user_id).execute()
+        return len(result.data) if result.data else 0
+    except Exception as e:
+        logger.error(f"Error deleting calendar events: {e}")
+        return 0
+
