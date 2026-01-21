@@ -3426,8 +3426,8 @@ async def analyze_email_priority(current_user: dict = Depends(get_current_user))
     if not recent_emails:
         return {"message": "No emails to analyze. Please sync your Outlook first."}
     
-    # Get email intelligence for relationship context (still MongoDB for now)
-    email_intel = await db.email_intelligence.find_one({"user_id": user_id}, {"_id": 0})
+    # Get email intelligence for relationship context from Supabase
+    email_intel = await get_email_intelligence_supabase(supabase_admin, user_id)
     top_clients = email_intel.get("top_clients", []) if email_intel else []
     high_value_contacts = [c.get("email") for c in top_clients if c.get("relationship_strength") == "high"]
     
