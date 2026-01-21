@@ -6856,7 +6856,7 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
         raise HTTPException(status_code=404, detail="User not found")
     
     # Clean up user data
-    await db.analyses.delete_many({ user_id)
+    await db.analyses.delete_many({"user_id": user_id})
     # Delete documents from Supabase
     await delete_user_documents_supabase(supabase_admin, user_id)
     await delete_user_chats_supabase(supabase_admin, { user_id)
