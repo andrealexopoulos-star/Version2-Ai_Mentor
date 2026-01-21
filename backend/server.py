@@ -4631,68 +4631,74 @@ async def delete_analysis(analysis_id: str, current_user: dict = Depends(get_cur
 
 @api_router.post("/documents", response_model=DocumentResponse)
 async def create_document(document: DocumentCreate, current_user: dict = Depends(get_current_user)):
-    now = datetime.now(timezone.utc).isoformat()
-    doc_id = str(uuid.uuid4())
-    
-    doc = {
-        "id": doc_id,
+    """Create a new document - SUPABASE VERSION"""
+    doc_data = {
         "user_id": current_user["id"],
         "title": document.title,
         "document_type": document.document_type,
         "content": document.content,
-        "tags": document.tags,
-        "created_at": now,
-        "updated_at": now
+        "tags": document.tags
     }
     
-    await db.documents.insert_one(doc)
-    return DocumentResponse(**{k: v for k, v in doc.items() if k != "_id"})
+    created_doc = await create_document_supabase(supabase_admin, doc_data)
+    
+    if not created_doc:
+        raise HTTPException(status_code=500, detail="Failed to create document")
+    
+    return DocumentResponse(**created_doc)
 
 @api_router.get("/documents", response_model=List[DocumentResponse])
 async def get_documents(document_type: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    query = {"user_id": current_user["id"]}
-    if document_type:
-        query["document_type"] = document_type
-    
-    docs = await db.documents.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    """Get user's documents - SUPABASE VERSION"""
+    docs = await get_user_documents_supabase(
+        supabase_admin,
+        current_user["id"],
+        document_type=document_type,
+        limit=100
+    )
     return docs
 
 @api_router.get("/documents/{doc_id}", response_model=DocumentResponse)
 async def get_document(doc_id: str, current_user: dict = Depends(get_current_user)):
-    doc = await db.documents.find_one(
-        {"id": doc_id, "user_id": current_user["id"]},
-        {"_id": 0}
-    )
-    if not doc:
+    """Get a specific document - SUPABASE VERSION"""
+    doc = await get_document_by_id_supabase(supabase_admin, doc_id)
+    
+    if not doc or doc.get("user_id") != current_user["id"]:
         raise HTTPException(status_code=404, detail="Document not found")
+    
     return doc
 
 @api_router.put("/documents/{doc_id}", response_model=DocumentResponse)
 async def update_document(doc_id: str, document: DocumentCreate, current_user: dict = Depends(get_current_user)):
-    now = datetime.now(timezone.utc).isoformat()
+    """Update a document - SUPABASE VERSION"""
+    # Verify ownership
+    existing_doc = await get_document_by_id_supabase(supabase_admin, doc_id)
     
-    result = await db.documents.update_one(
-        {"id": doc_id, "user_id": current_user["id"]},
-        {"$set": {
-            "title": document.title,
-            "document_type": document.document_type,
-            "content": document.content,
-            "tags": document.tags,
-            "updated_at": now
-        }}
-    )
-    
-    if result.matched_count == 0:
+    if not existing_doc or existing_doc.get("user_id") != current_user["id"]:
         raise HTTPException(status_code=404, detail="Document not found")
     
-    doc = await db.documents.find_one({"id": doc_id}, {"_id": 0})
-    return doc
+    updates = {
+        "title": document.title,
+        "document_type": document.document_type,
+        "content": document.content,
+        "tags": document.tags
+    }
+    
+    updated_doc = await update_document_supabase(supabase_admin, doc_id, updates)
+    
+    if not updated_doc:
+        raise HTTPException(status_code=500, detail="Failed to update document")
+    
+    return updated_doc
 
 @api_router.delete("/documents/{doc_id}")
 async def delete_document(doc_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.documents.delete_one({"id": doc_id, "user_id": current_user["id"]})
-    if result.deleted_count == 0:
+    """Delete a document - SUPABASE VERSION"""
+    success = await delete_document_supabase(supabase_admin, doc_id, current_user["id"])
+    
+    if not success:
         raise HTTPException(status_code=404, detail="Document not found")
+    
     return {"message": "Document deleted"}
 
 # ==================== SOP GENERATOR ====================
