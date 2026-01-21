@@ -713,6 +713,183 @@ class StrategicAdvisorAPITester:
                 200
             )
 
+    def test_supabase_auth_endpoints(self):
+        """Test Supabase authentication endpoints"""
+        print("\n🔍 Testing Supabase Auth Endpoints...")
+        
+        # Test /api/auth/supabase/me endpoint
+        success, response = self.run_test(
+            "Supabase Auth Me",
+            "GET",
+            "auth/supabase/me",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            if 'user' in response:
+                self.log_test("Supabase Auth Me - User Field Present", True, "")
+                user = response['user']
+                
+                # Verify user has required fields
+                required_fields = ['id', 'email']
+                missing = [f for f in required_fields if f not in user]
+                if not missing:
+                    self.log_test("Supabase Auth Me - Required Fields", True, "")
+                else:
+                    self.log_test("Supabase Auth Me - Required Fields", False, f"Missing: {missing}")
+            else:
+                self.log_test("Supabase Auth Me - User Field Present", False, "Missing 'user' field")
+        
+        # Test /api/auth/check-profile endpoint
+        success, response = self.run_test(
+            "Check Profile Endpoint",
+            "GET",
+            "auth/check-profile",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            expected_fields = ['profile_exists', 'needs_onboarding', 'user']
+            missing = [f for f in expected_fields if f not in response]
+            if not missing:
+                self.log_test("Check Profile - Response Structure", True, "")
+            else:
+                self.log_test("Check Profile - Response Structure", False, f"Missing: {missing}")
+        
+        return success
+    
+    def test_outlook_integration_supabase(self):
+        """Test Outlook integration with Supabase storage"""
+        print("\n🔍 Testing Outlook Integration (Supabase)...")
+        
+        # Test /api/outlook/status endpoint
+        success, response = self.run_test(
+            "Outlook Status Endpoint",
+            "GET",
+            "outlook/status",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            expected_fields = ['connected', 'emails_synced']
+            missing = [f for f in expected_fields if f not in response]
+            if not missing:
+                self.log_test("Outlook Status - Response Structure", True, "")
+                
+                # Log connection status
+                connected = response.get('connected', False)
+                emails_count = response.get('emails_synced', 0)
+                self.log_test("Outlook Status - Connection Info", True, 
+                             f"Connected: {connected}, Emails: {emails_count}")
+                
+                # If connected, test email sync
+                if connected:
+                    self.test_outlook_email_sync()
+                else:
+                    self.log_test("Outlook Email Sync", True, "Skipped - Outlook not connected")
+            else:
+                self.log_test("Outlook Status - Response Structure", False, f"Missing: {missing}")
+        
+        return success
+    
+    def test_outlook_email_sync(self):
+        """Test Outlook email sync endpoint (only if Outlook connected)"""
+        print("\n🔍 Testing Outlook Email Sync...")
+        
+        # Test email sync with small batch
+        success, response = self.run_test(
+            "Outlook Email Sync",
+            "GET",
+            "outlook/emails/sync?folder=inbox&top=5",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            if 'status' in response and 'emails_synced' in response:
+                self.log_test("Email Sync - Response Structure", True, "")
+                
+                synced_count = response.get('emails_synced', 0)
+                self.log_test("Email Sync - Emails Synced", True, f"Synced: {synced_count} emails")
+            else:
+                self.log_test("Email Sync - Response Structure", False, "Missing required fields")
+        
+        return success
+    
+    def test_outlook_disconnect(self):
+        """Test Outlook disconnect endpoint"""
+        print("\n🔍 Testing Outlook Disconnect...")
+        
+        # First check if Outlook is connected
+        success, status_response = self.run_test(
+            "Check Outlook Status Before Disconnect",
+            "GET",
+            "outlook/status",
+            200
+        )
+        
+        if not success:
+            self.log_test("Outlook Disconnect Test", False, "Could not check Outlook status")
+            return False
+        
+        connected = status_response.get('connected', False)
+        
+        if not connected:
+            self.log_test("Outlook Disconnect", True, "Skipped - Outlook not connected")
+            return True
+        
+        # Test disconnect endpoint
+        success, response = self.run_test(
+            "Outlook Disconnect",
+            "POST",
+            "outlook/disconnect",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            expected_fields = ['success', 'message', 'deleted_emails', 'deleted_jobs']
+            missing = [f for f in expected_fields if f not in response]
+            if not missing:
+                self.log_test("Outlook Disconnect - Response Structure", True, "")
+                
+                deleted_emails = response.get('deleted_emails', 0)
+                deleted_jobs = response.get('deleted_jobs', 0)
+                self.log_test("Outlook Disconnect - Data Cleanup", True, 
+                             f"Deleted {deleted_emails} emails, {deleted_jobs} jobs")
+            else:
+                self.log_test("Outlook Disconnect - Response Structure", False, f"Missing: {missing}")
+        
+        return success
+    
+    def run_supabase_migration_tests(self):
+        """Run comprehensive Supabase migration tests"""
+        print("🚀 Starting Supabase Migration Validation Tests...")
+        print(f"Base URL: {self.base_url}")
+        
+        # Health checks
+        self.test_health_check()
+        
+        # Authentication flow (MongoDB - for getting token)
+        if not self.test_user_registration():
+            if not self.test_user_login():
+                print("❌ Authentication failed, stopping tests")
+                return self.generate_report()
+        
+        # Test Supabase auth endpoints
+        self.test_supabase_auth_endpoints()
+        
+        # Test Outlook integration with Supabase
+        self.test_outlook_integration_supabase()
+        
+        # Note: We don't test disconnect in automated tests to preserve user data
+        # self.test_outlook_disconnect()
+        
+        return self.generate_report()
+    
     def run_all_tests(self):
         """Run all tests"""
         print("🚀 Starting Strategic Advisor API Tests...")
