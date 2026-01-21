@@ -503,7 +503,7 @@ metadata:
 
 test_plan:
   current_focus:
-    []
+    - "Cognitive Core Migration to Supabase"
   stuck_tasks:
     []
   test_all: false
