@@ -2100,12 +2100,13 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
         # If user exists in MongoDB, they already completed onboarding - no need to do it again
         if legacy_user_exists:
             needs_onboarding = False
+            has_company_info = True  # They have it in MongoDB
         else:
             # New Supabase-only user: check if they have company info
             has_company_info = bool(user_profile.get("company_name"))
             needs_onboarding = not has_company_info
         
-        logger.info(f"Profile check for {email}: exists=True, needs_onboarding={needs_onboarding}, has_company={has_company_info}, has_business_profile={business_profile_exists}")
+        logger.info(f"Profile check for {email}: exists=True, needs_onboarding={needs_onboarding}, legacy_user={legacy_user_exists}, has_company={has_company_info}")
         
         return {
             "profile_exists": True,
