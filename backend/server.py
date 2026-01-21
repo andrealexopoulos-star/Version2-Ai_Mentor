@@ -3378,26 +3378,23 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
 @api_router.post("/email/analyze-priority")
 async def analyze_email_priority(current_user: dict = Depends(get_current_user)):
     """
-    AI-powered email prioritization based on business goals.
+    AI-powered email prioritization based on business goals - SUPABASE VERSION
     Analyzes recent emails and provides strategic priority rankings.
     """
     user_id = current_user["id"]
     
-    # Get business profile for context
+    # Get business profile for context (still MongoDB for now - will migrate later)
     profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
     business_goals = profile.get("short_term_goals", "") if profile else ""
     business_challenges = profile.get("main_challenges", "") if profile else ""
     
-    # Get recent unread emails (or all recent)
-    recent_emails = await db.outlook_emails.find(
-        {"user_id": user_id},
-        {"_id": 0, "subject": 1, "from_address": 1, "from_name": 1, "body_preview": 1, "received_date": 1, "is_read": 1, "id": 1}
-    ).sort("received_date", -1).limit(50).to_list(50)
+    # Get recent emails from Supabase
+    recent_emails = await get_user_emails_supabase(supabase_admin, user_id, limit=50)
     
     if not recent_emails:
         return {"message": "No emails to analyze. Please sync your Outlook first."}
     
-    # Get email intelligence for relationship context
+    # Get email intelligence for relationship context (still MongoDB for now)
     email_intel = await db.email_intelligence.find_one({"user_id": user_id}, {"_id": 0})
     top_clients = email_intel.get("top_clients", []) if email_intel else []
     high_value_contacts = [c.get("email") for c in top_clients if c.get("relationship_strength") == "high"]
