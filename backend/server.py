@@ -3378,7 +3378,7 @@ class ConversationRename(BaseModel):
 @api_router.get("/soundboard/conversations")
 async def get_soundboard_conversations(current_user: dict = Depends(get_current_user)):
     """Get all soundboard conversations for user"""
-    conversations = await db.soundboard_conversations.find(
+    conversations = await supabase_admin.table("soundboard_conversations").select("*").eq("user_id", current_user["id"]).execute() # 
         {"user_id": current_user["id"]},
         {"_id": 0, "id": 1, "title": 1, "updated_at": 1, "created_at": 1}
     ).sort("updated_at", -1).limit(50).to_list(50)
@@ -3602,7 +3602,7 @@ async def rename_soundboard_conversation(
 @api_router.delete("/soundboard/conversations/{conversation_id}")
 async def delete_soundboard_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a conversation"""
-    result = await db.soundboard_conversations.delete_one(
+    result = await supabase_admin.table("soundboard_conversations").delete().eq("session_id", 
         {"id": conversation_id, "user_id": current_user["id"]}
     )
     
@@ -4206,7 +4206,7 @@ async def get_analyses(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/analyses/{analysis_id}", response_model=AnalysisResponse)
 async def get_analysis(analysis_id: str, current_user: dict = Depends(get_current_user)):
-    analysis = await db.analyses.find_one(
+    analysis = await get_user_analyses_supabase(supabase_admin, 
         {"id": analysis_id, "user_id": current_user["id"]},
         {"_id": 0}
     )
@@ -4216,7 +4216,7 @@ async def get_analysis(analysis_id: str, current_user: dict = Depends(get_curren
 
 @api_router.delete("/analyses/{analysis_id}")
 async def delete_analysis(analysis_id: str, current_user: dict = Depends(get_current_user)):
-    result = await db.analyses.delete_one({"id": analysis_id, "user_id": current_user["id"]})
+    result = await supabase_admin.table("analyses").delete().eq("id", {"id": analysis_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Analysis not found")
     return {"message": "Analysis deleted"}
@@ -4311,7 +4311,7 @@ async def generate_sop(request: dict, current_user: dict = Depends(get_current_u
     # Get uploaded document content if provided
     document_context = ""
     if uploaded_file_id:
-        uploaded_doc = await db.data_files.find_one(
+        uploaded_doc = await get_user_data_files_supabase(supabase_admin, 
             {"user_id": user_id, "id": uploaded_file_id},
             {"_id": 0, "filename": 1, "extracted_text": 1}
         )
@@ -5017,7 +5017,7 @@ async def get_data_files(category: Optional[str] = None, current_user: dict = De
 @api_router.get("/data-center/files/{file_id}")
 async def get_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
     """Get a specific file details"""
-    file = await db.data_files.find_one(
+    file = await get_user_data_files_supabase(supabase_admin, 
         {"id": file_id, "user_id": current_user["id"]},
         {"_id": 0, "file_content": 0}
     )
@@ -5028,7 +5028,7 @@ async def get_data_file(file_id: str, current_user: dict = Depends(get_current_u
 @api_router.get("/data-center/files/{file_id}/download")
 async def download_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
     """Download a file"""
-    file = await db.data_files.find_one(
+    file = await get_user_data_files_supabase(supabase_admin, 
         {"id": file_id, "user_id": current_user["id"]}
     )
     if not file:
@@ -5043,7 +5043,7 @@ async def download_data_file(file_id: str, current_user: dict = Depends(get_curr
 @api_router.delete("/data-center/files/{file_id}")
 async def delete_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a file from data center"""
-    result = await db.data_files.delete_one(
+    result = await supabase_admin.table("data_files").delete().eq("id", 
         {"id": file_id, "user_id": current_user["id"]}
     )
     if result.deleted_count == 0:
@@ -6432,7 +6432,7 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
         raise HTTPException(status_code=404, detail="User not found")
     
     # Clean up user data
-    await db.analyses.delete_many({"user_id": user_id})
+    await supabase_admin.table("analyses").delete().eq("user_id", {"user_id": user_id})
     await delete_user_documents_supabase(supabase_admin, user_id)
     await delete_user_chats_supabase(supabase_admin, user_id)
     
