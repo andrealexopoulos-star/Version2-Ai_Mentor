@@ -3396,11 +3396,7 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
             "synced_at": datetime.now(timezone.utc).isoformat()
         }
         
-        await db.calendar_intelligence.update_one(
-            {"user_id": current_user["id"]},
-            {"$set": calendar_intel},
-            upsert=True
-        )
+        await update_calendar_intelligence_supabase(supabase_admin, current_user["id"], calendar_intel)
     
     return {
         "status": "synced",
