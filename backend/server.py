@@ -5344,10 +5344,7 @@ async def build_advisor_context(user_id: str) -> dict:
         {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
     
-    web_sources = await get_web_sources_supabase(supabase_admin, user_id) # 
-        {"user_id": user_id},
-        {"_id": 0, "title": 1, "url": 1, "snippet": 1}
-    ).sort("created_at", -1).limit(5).to_list(5)
+    web_sources = await get_web_sources_supabase(supabase_admin, user_id)
     
     sops = await get_sops_supabase(supabase_admin, user_id)
     
