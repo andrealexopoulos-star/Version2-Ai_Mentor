@@ -1,0 +1,174 @@
+{
+  "test_date": "2026-01-21T21:04:23.679726",
+  "summary": {
+    "total_tests": 15,
+    "working": 2,
+    "auth_required": 13,
+    "errors": 0
+  },
+  "findings": {
+    "auth_system": "Migrated to Supabase",
+    "mongodb_references": "27 references identified by troubleshoot agent",
+    "expected_failures": [
+      "db.soundboard_conversations",
+      "db.chat_history",
+      "db.business_profiles_versioned",
+      "db.data_files",
+      "db.analyses",
+      "db.users (in some code paths)"
+    ]
+  },
+  "all_results": [
+    {
+      "endpoint": "GET /api/health",
+      "status_code": 200,
+      "expected_status": 200,
+      "response": {
+        "status": "healthy"
+      },
+      "notes": "Basic health check - should always work",
+      "timestamp": "2026-01-21T21:04:23.103622"
+    },
+    {
+      "endpoint": "GET /api/",
+      "status_code": 200,
+      "expected_status": 200,
+      "response": {
+        "message": "Strategic Advisor API",
+        "version": "1.0.0"
+      },
+      "notes": "Root API endpoint - should return API info",
+      "timestamp": "2026-01-21T21:04:23.137989"
+    },
+    {
+      "endpoint": "GET /api/auth/supabase/me",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Should return 403 without token (auth migrated to Supabase)",
+      "timestamp": "2026-01-21T21:04:23.180584"
+    },
+    {
+      "endpoint": "GET /api/outlook/status",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Requires authentication - may have MongoDB references",
+      "timestamp": "2026-01-21T21:04:23.218595"
+    },
+    {
+      "endpoint": "POST /api/soundboard/chat",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.soundboard_conversations - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.266003"
+    },
+    {
+      "endpoint": "GET /api/soundboard/conversations",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.soundboard_conversations - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.304839"
+    },
+    {
+      "endpoint": "POST /api/chat",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.chat_history, db.analyses - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.340965"
+    },
+    {
+      "endpoint": "GET /api/chat/history",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.chat_history - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.380958"
+    },
+    {
+      "endpoint": "GET /api/business-profile",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.business_profiles_versioned - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.420719"
+    },
+    {
+      "endpoint": "PUT /api/business-profile",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.business_profiles_versioned - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.457238"
+    },
+    {
+      "endpoint": "GET /api/data-center/files",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.data_files - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.492874"
+    },
+    {
+      "endpoint": "GET /api/data-center/stats",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "Uses db.data_files - would return 500 if authenticated",
+      "timestamp": "2026-01-21T21:04:23.527398"
+    },
+    {
+      "endpoint": "GET /api/analyses",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "May use MongoDB references",
+      "timestamp": "2026-01-21T21:04:23.563974"
+    },
+    {
+      "endpoint": "GET /api/documents",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "May use MongoDB references",
+      "timestamp": "2026-01-21T21:04:23.641581"
+    },
+    {
+      "endpoint": "GET /api/dashboard/stats",
+      "status_code": 403,
+      "expected_status": 403,
+      "response": {
+        "detail": "Not authenticated"
+      },
+      "notes": "May use MongoDB references",
+      "timestamp": "2026-01-21T21:04:23.678938"
+    }
+  ]
+}
