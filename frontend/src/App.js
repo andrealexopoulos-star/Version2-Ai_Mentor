@@ -1,6 +1,5 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SupabaseAuthProvider, useSupabaseAuth } from "./context/SupabaseAuthContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -39,14 +38,9 @@ import EmailInbox from "./pages/EmailInbox";
 import CalendarView from "./pages/CalendarView";
 import MySoundBoard from "./pages/MySoundBoard";
 
-// Protected Route Component - Updated to support both MongoDB and Supabase auth
+// Protected Route Component - Supabase Auth Only
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { user: mongoUser, loading: mongoLoading, isAdmin } = useAuth();
-  const { user: supabaseUser, session: supabaseSession, loading: supabaseLoading } = useSupabaseAuth();
-
-  const loading = mongoLoading || supabaseLoading;
-  const user = supabaseUser || mongoUser; // Prefer Supabase user
-  const isAuthenticated = user || supabaseSession; // Check session as fallback
+  const { user, session, loading } = useSupabaseAuth();
 
   if (loading) {
     return (
@@ -56,12 +50,15 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     );
   }
 
+  const isAuthenticated = user || session;
+
   if (!isAuthenticated) {
     return <Navigate to="/login-supabase" replace />;
   }
 
-  if (adminOnly && !isAdmin()) {
-    return <Navigate to="/dashboard" replace />;
+  // Check admin status if required
+  if (adminOnly && user && !user.is_master_account) {
+    return <Navigate to="/advisor" replace />;
   }
 
   return children;
