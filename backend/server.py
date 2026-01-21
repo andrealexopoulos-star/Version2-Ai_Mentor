@@ -46,6 +46,29 @@ from supabase_document_helpers import (
     delete_user_documents_supabase
 )
 
+# Import intelligence & support helpers
+from supabase_intelligence_helpers import (
+    get_email_intelligence_supabase,
+    update_email_intelligence_supabase,
+    get_calendar_intelligence_supabase,
+    update_calendar_intelligence_supabase,
+    get_priority_analysis_supabase,
+    update_priority_analysis_supabase,
+    create_chat_message_supabase,
+    get_chat_history_supabase,
+    delete_user_chats_supabase,
+    get_soundboard_conversation_supabase,
+    update_soundboard_conversation_supabase,
+    create_soundboard_conversation_supabase,
+    create_data_file_supabase,
+    get_user_data_files_supabase,
+    count_user_data_files_supabase,
+    create_analysis_supabase,
+    get_user_analyses_supabase,
+    get_business_profile_supabase,
+    update_business_profile_supabase
+)
+
 # Import Cognitive Core - MongoDB version (STABLE)
 from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
 from supabase_client import init_supabase
