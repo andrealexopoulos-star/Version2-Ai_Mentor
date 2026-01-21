@@ -4050,9 +4050,7 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
         "completed_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await update_onboarding_supabase(supabase_admin, user_id, completion_data),
-        upsert=True
-    )
+    await update_onboarding_supabase(supabase_admin, user_id, completion_data)
     
     return {"status": "completed"}
 
