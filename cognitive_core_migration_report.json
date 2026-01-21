@@ -1,0 +1,61 @@
+{
+  "test_suite": "Cognitive Core Supabase Migration",
+  "timestamp": "2026-01-21T05:42:57.624612",
+  "total_tests": 8,
+  "passed": 3,
+  "failed": 5,
+  "success_rate": "37.5%",
+  "critical_failures": [
+    "Cognitive Core AI Features"
+  ],
+  "results": [
+    {
+      "test": "Backend Health Endpoint",
+      "passed": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-21T05:42:57.532473"
+    },
+    {
+      "test": "Backend Root Endpoint",
+      "passed": true,
+      "details": "Status: 200",
+      "timestamp": "2026-01-21T05:42:57.580866"
+    },
+    {
+      "test": "Backend Starts Without Errors",
+      "passed": true,
+      "details": "Backend is running and responding",
+      "timestamp": "2026-01-21T05:42:57.580880"
+    },
+    {
+      "test": "User Registration",
+      "passed": false,
+      "details": "Status: 404",
+      "timestamp": "2026-01-21T05:42:57.623725"
+    },
+    {
+      "test": "Outlook Integration",
+      "passed": false,
+      "details": "No auth token available",
+      "timestamp": "2026-01-21T05:42:57.624519"
+    },
+    {
+      "test": "Cognitive Core AI Features",
+      "passed": false,
+      "details": "No auth token available",
+      "timestamp": "2026-01-21T05:42:57.624533"
+    },
+    {
+      "test": "Email/Calendar/Documents",
+      "passed": false,
+      "details": "No auth token available",
+      "timestamp": "2026-01-21T05:42:57.624541"
+    },
+    {
+      "test": "Regression Check",
+      "passed": false,
+      "details": "No auth token available",
+      "timestamp": "2026-01-21T05:42:57.624551"
+    }
+  ]
+}
