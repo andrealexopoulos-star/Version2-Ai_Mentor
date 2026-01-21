@@ -865,28 +865,288 @@ class StrategicAdvisorAPITester:
         
         return success
     
+    def test_cognitive_core_supabase(self):
+        """Test Cognitive Core migration to Supabase - CRITICAL"""
+        print("\n🔍 Testing Cognitive Core (Supabase Migration)...")
+        
+        # Test 1: Business profile update should trigger cognitive_core.observe()
+        profile_data = {
+            "business_name": "Test Cognitive Business",
+            "industry": "M",  # Professional Services
+            "business_type": "Company (Pty Ltd)",
+            "target_country": "Australia",
+            "main_challenges": "Testing cognitive core integration"
+        }
+        
+        success, response = self.run_test(
+            "Cognitive Core - Business Profile Update",
+            "PUT",
+            "business-profile",
+            200,
+            data=profile_data
+        )
+        
+        if success:
+            self.log_test("Cognitive Core - Profile Update No Errors", True, "Business profile updated successfully")
+        else:
+            self.log_test("Cognitive Core - Profile Update No Errors", False, "Business profile update failed")
+        
+        # Test 2: Chat endpoint (uses cognitive core)
+        chat_data = {
+            "message": "What should I focus on for my business?",
+            "context_type": "advisor"
+        }
+        
+        success, response = self.run_test(
+            "Cognitive Core - Chat with Advisor Context",
+            "POST",
+            "chat",
+            200,
+            data=chat_data
+        )
+        
+        if success:
+            if 'response' in response and 'session_id' in response:
+                self.log_test("Cognitive Core - Chat Response Structure", True, "Chat returned valid response")
+            else:
+                self.log_test("Cognitive Core - Chat Response Structure", False, f"Missing fields in response: {response.keys()}")
+        
+        # Test 3: Analysis endpoint (uses cognitive core for personalization)
+        analysis_data = {
+            "title": "Cognitive Core Test Analysis",
+            "analysis_type": "business_analysis",
+            "business_context": "Testing cognitive core integration with analysis"
+        }
+        
+        success, response = self.run_test(
+            "Cognitive Core - Analysis Creation",
+            "POST",
+            "analyses",
+            200,
+            data=analysis_data
+        )
+        
+        if success:
+            if 'id' in response and 'analysis' in response:
+                self.log_test("Cognitive Core - Analysis No FK Errors", True, "Analysis created successfully")
+            else:
+                self.log_test("Cognitive Core - Analysis No FK Errors", False, "Analysis response incomplete")
+        
+        return success
+    
+    def test_document_creation_supabase(self):
+        """Test document creation with Supabase (was failing before)"""
+        print("\n🔍 Testing Document Creation (Supabase)...")
+        
+        doc_data = {
+            "title": "Supabase Migration Test Document",
+            "document_type": "SOP",
+            "content": "# Test Document\n\nTesting document creation after Supabase migration.",
+            "tags": ["test", "supabase", "migration"]
+        }
+        
+        success, response = self.run_test(
+            "Document Creation - No FK Errors",
+            "POST",
+            "documents",
+            200,
+            data=doc_data
+        )
+        
+        if success:
+            if 'id' in response and 'user_id' in response:
+                self.log_test("Document Creation - Response Structure", True, f"Document ID: {response.get('id')}")
+                return response.get('id')
+            else:
+                self.log_test("Document Creation - Response Structure", False, "Missing required fields")
+                return None
+        
+        return None
+    
+    def test_chat_history_supabase(self):
+        """Test chat history (needed context_type column)"""
+        print("\n🔍 Testing Chat History (Supabase)...")
+        
+        # First create a chat message
+        chat_data = {
+            "message": "Test message for chat history",
+            "context_type": "general"
+        }
+        
+        success, response = self.run_test(
+            "Chat History - Create Message",
+            "POST",
+            "chat",
+            200,
+            data=chat_data
+        )
+        
+        if not success:
+            self.log_test("Chat History - Setup Failed", False, "Could not create chat message")
+            return False
+        
+        # Now retrieve chat history
+        success, response = self.run_test(
+            "Chat History - Retrieve History",
+            "GET",
+            "chat/history",
+            200
+        )
+        
+        if success:
+            if isinstance(response, list):
+                self.log_test("Chat History - No Schema Errors", True, f"Retrieved {len(response)} messages")
+            else:
+                self.log_test("Chat History - No Schema Errors", False, f"Unexpected response type: {type(response)}")
+        
+        return success
+    
+    def test_email_intelligence_supabase(self):
+        """Test email intelligence retrieval"""
+        print("\n🔍 Testing Email Intelligence (Supabase)...")
+        
+        success, response = self.run_test(
+            "Email Intelligence - Retrieve",
+            "GET",
+            "intelligence/emails",
+            200
+        )
+        
+        if success:
+            # Response should be a dict with intelligence data or empty state
+            if isinstance(response, dict):
+                self.log_test("Email Intelligence - Response Structure", True, "Valid response structure")
+            else:
+                self.log_test("Email Intelligence - Response Structure", False, f"Unexpected type: {type(response)}")
+        
+        return success
+    
+    def test_calendar_intelligence_supabase(self):
+        """Test calendar intelligence retrieval"""
+        print("\n🔍 Testing Calendar Intelligence (Supabase)...")
+        
+        success, response = self.run_test(
+            "Calendar Intelligence - Retrieve",
+            "GET",
+            "intelligence/calendar",
+            200
+        )
+        
+        if success:
+            if isinstance(response, dict):
+                self.log_test("Calendar Intelligence - Response Structure", True, "Valid response structure")
+            else:
+                self.log_test("Calendar Intelligence - Response Structure", False, f"Unexpected type: {type(response)}")
+        
+        return success
+    
+    def test_priority_analysis_supabase(self):
+        """Test priority analysis"""
+        print("\n🔍 Testing Priority Analysis (Supabase)...")
+        
+        success, response = self.run_test(
+            "Priority Analysis - Retrieve",
+            "GET",
+            "intelligence/priority",
+            200
+        )
+        
+        if success:
+            if isinstance(response, dict):
+                self.log_test("Priority Analysis - Response Structure", True, "Valid response structure")
+            else:
+                self.log_test("Priority Analysis - Response Structure", False, f"Unexpected type: {type(response)}")
+        
+        return success
+    
+    def test_complete_regression(self):
+        """Test all critical endpoints for 500 errors"""
+        print("\n🔍 Running Complete Regression Test...")
+        
+        critical_endpoints = [
+            ("GET", "health", 200),
+            ("GET", "auth/me", 200),
+            ("GET", "business-profile", 200),
+            ("GET", "documents", 200),
+            ("GET", "analyses", 200),
+            ("GET", "chat/history", 200),
+            ("GET", "chat/sessions", 200),
+            ("GET", "dashboard/stats", 200),
+            ("GET", "outlook/status", 200),
+            ("GET", "intelligence/emails", 200),
+            ("GET", "intelligence/calendar", 200),
+            ("GET", "intelligence/priority", 200)
+        ]
+        
+        all_passed = True
+        for method, endpoint, expected_status in critical_endpoints:
+            success, response = self.run_test(
+                f"Regression - {method} /{endpoint}",
+                method,
+                endpoint,
+                expected_status
+            )
+            if not success:
+                all_passed = False
+        
+        if all_passed:
+            self.log_test("Complete Regression - No 500 Errors", True, "All critical endpoints working")
+        else:
+            self.log_test("Complete Regression - No 500 Errors", False, "Some endpoints returned errors")
+        
+        return all_passed
+    
     def run_supabase_migration_tests(self):
         """Run comprehensive Supabase migration tests"""
-        print("🚀 Starting Supabase Migration Validation Tests...")
+        print("🚀 Starting FINAL SUPABASE MIGRATION VALIDATION...")
         print(f"Base URL: {self.base_url}")
+        print("\n" + "="*80)
+        print("TESTING SCOPE: Complete Supabase Migration")
+        print("="*80)
         
         # Health checks
         self.test_health_check()
         
         # Authentication flow (MongoDB - for getting token)
+        print("\n📋 PHASE 1: Authentication & User Management")
         if not self.test_user_registration():
             if not self.test_user_login():
                 print("❌ Authentication failed, stopping tests")
                 return self.generate_report()
         
+        self.test_auth_me()
+        
         # Test Supabase auth endpoints
         self.test_supabase_auth_endpoints()
         
-        # Test Outlook integration with Supabase
+        # CRITICAL: Cognitive Core Testing
+        print("\n📋 PHASE 2: Cognitive Core (CRITICAL - Just Migrated)")
+        self.test_cognitive_core_supabase()
+        
+        # Document System
+        print("\n📋 PHASE 3: Documents System")
+        doc_id = self.test_document_creation_supabase()
+        if doc_id:
+            # Test document retrieval
+            self.run_test("Document Retrieval", "GET", f"documents/{doc_id}", 200)
+        
+        # Chat History
+        print("\n📋 PHASE 4: Chat History (context_type column)")
+        self.test_chat_history_supabase()
+        
+        # Outlook Integration
+        print("\n📋 PHASE 5: Outlook Integration")
         self.test_outlook_integration_supabase()
         
-        # Note: We don't test disconnect in automated tests to preserve user data
-        # self.test_outlook_disconnect()
+        # Intelligence Collections
+        print("\n📋 PHASE 6: Intelligence Collections")
+        self.test_email_intelligence_supabase()
+        self.test_calendar_intelligence_supabase()
+        self.test_priority_analysis_supabase()
+        
+        # Complete Regression Test
+        print("\n📋 PHASE 7: Complete Regression Test")
+        self.test_complete_regression()
         
         return self.generate_report()
     
