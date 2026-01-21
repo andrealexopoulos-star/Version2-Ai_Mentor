@@ -19,6 +19,19 @@ import httpx
 from authlib.integrations.starlette_client import OAuth
 from urllib.parse import quote
 
+# Import email/calendar helpers
+from supabase_email_helpers import (
+    store_email_supabase,
+    get_user_emails_supabase,
+    count_user_emails_supabase,
+    delete_user_emails_supabase,
+    create_sync_job_supabase,
+    get_sync_job_supabase,
+    update_sync_job_supabase,
+    delete_user_sync_jobs_supabase,
+    find_user_sync_job_supabase
+)
+
 # Import Cognitive Core - MongoDB version (STABLE)
 from cognitive_core import CognitiveCore, init_cognitive_core, get_cognitive_core
 from supabase_client import init_supabase
