@@ -6870,7 +6870,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     
     analysis_count = await db.analyses.count_documents({"user_id": user_id})
     document_count = await db.documents.count_documents({"user_id": user_id})
-    chat_sessions = await db.chat_history.distinct("session_id", { user_id)
+    chat_sessions = await db.chat_history.distinct("session_id", {"user_id": user_id})
     
     recent_analyses = await db.analyses.find(
         {"user_id": user_id}, {"_id": 0}
