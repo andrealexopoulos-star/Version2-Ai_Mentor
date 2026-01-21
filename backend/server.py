@@ -5351,12 +5351,8 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     if user_updates:
         await db.users.update_one({"id": user_id}, {"$set": user_updates})
     
-    # Update legacy profile (for backward compatibility)
-    await db.business_profiles.update_one(
-        {"user_id": user_id},
-        {"$set": profile_data},
-        upsert=True
-    )
+    # Update business profile in Supabase
+    await update_business_profile_supabase(supabase_admin, user_id, profile_data)
     
     # Create new versioned profile
     await create_profile_version(
