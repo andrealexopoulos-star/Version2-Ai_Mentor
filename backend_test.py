@@ -80,46 +80,39 @@ class StrategicAdvisorAPITester:
         self.run_test("Root Endpoint", "GET", "", 200)
 
     def test_user_registration(self):
-        """Test user registration"""
-        print("\n🔍 Testing User Registration...")
+        """Test user registration with Supabase"""
+        print("\n🔍 Testing User Registration (Supabase)...")
         
         # Test with valid data - use unique email
         unique_id = str(uuid.uuid4())[:8]
         user_data = {
-            "name": "Test User",
             "email": f"test{unique_id}@example.com",
-            "password": "testpass123",
-            "business_name": "Test Business",
+            "password": "testpass123456",  # Supabase requires 6+ chars
+            "full_name": "Test User",
+            "company_name": "Test Business",
             "industry": "Technology"
         }
         
         success, response = self.run_test(
-            "User Registration",
+            "User Registration (Supabase)",
             "POST",
-            "auth/register",
+            "auth/supabase/signup",
             200,
             data=user_data
         )
         
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            self.user_id = response['user']['id']
-            
-            # Verify subscription_tier is present and defaults to 'free'
-            user_info = response.get('user', {})
-            subscription_tier = user_info.get('subscription_tier')
-            if subscription_tier == 'free':
-                self.log_test("Registration - Default Free Tier", True, "")
+        if success:
+            # Check for session with access_token
+            session = response.get('session', {})
+            if session and session.get('access_token'):
+                self.token = session['access_token']
+                user_info = response.get('user', {})
+                self.user_id = user_info.get('id')
+                self.log_test("Registration - Token Received", True, "")
+                return True
             else:
-                self.log_test("Registration - Default Free Tier", False, f"Expected 'free', got '{subscription_tier}'")
-            
-            # Check if this user is admin (first user becomes admin)
-            if user_info.get('role') == 'admin':
-                self.admin_token = self.token
-                self.admin_user_id = self.user_id
-                self.log_test("Registration - Admin User Setup", True, "First user is admin")
-            
-            return True
+                self.log_test("Registration - Token Received", False, "No access_token in response")
+                return False
         return False
 
     def test_user_login(self):
