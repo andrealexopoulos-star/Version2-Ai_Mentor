@@ -51,8 +51,6 @@ const focusAreas = [
 
 const Advisor = () => {
   const { user } = useSupabaseAuth();
-  const { user: supabaseUser, session } = useSupabaseAuth();
-  const user = supabaseUser || user; // Prefer Supabase user
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
