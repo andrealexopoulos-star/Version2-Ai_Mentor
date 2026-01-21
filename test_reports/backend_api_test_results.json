@@ -1,34 +1,40 @@
 {
-  "summary": "Backend API testing completed - 2/4 tests passed (50.0%)",
-  "total_tests": 4,
-  "passed_tests": 2,
+  "summary": "Backend API testing completed - 3/5 tests passed (60.0%)",
+  "total_tests": 5,
+  "passed_tests": 3,
   "failed_tests": 2,
-  "success_rate": "50.0%",
+  "success_rate": "60.0%",
   "test_details": [
     {
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T07:00:08.860519"
+      "timestamp": "2026-01-21T07:00:41.921834"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T07:00:08.905304"
+      "timestamp": "2026-01-21T07:00:41.967360"
     },
     {
       "test_name": "User Registration (Supabase)",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-21T07:00:46.910788"
+    },
+    {
+      "test_name": "Registration - Token Received",
       "success": false,
-      "details": "Status: 520, Expected: 200, Response: {'detail': 'Failed to create user: Email address \"testb1567db1@example.com\" is invalid'}",
-      "timestamp": "2026-01-21T07:00:10.893265"
+      "details": "No access_token in response",
+      "timestamp": "2026-01-21T07:00:46.911598"
     },
     {
       "test_name": "Login Test User Registration (Supabase)",
       "success": false,
-      "details": "Status: 520, Expected: 200, Response: {'detail': 'Failed to create user: Email address \"logintestcf92d294@example.com\" is invalid'}",
-      "timestamp": "2026-01-21T07:00:11.529981"
+      "details": "Status: 520, Expected: 200, Response: Web server returned an unknown error\n",
+      "timestamp": "2026-01-21T07:00:46.968485"
     }
   ],
-  "timestamp": "2026-01-21T07:00:11.530674"
+  "timestamp": "2026-01-21T07:00:46.969314"
 }
