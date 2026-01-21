@@ -38,7 +38,6 @@ from supabase_client import init_supabase
 
 # Initialize Supabase after imports
 supabase_admin = init_supabase()
-from supabase_client import supabase_admin
 
 import base64
 import io
