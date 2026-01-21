@@ -3202,11 +3202,11 @@ async def refresh_outlook_token(user_id: str, refresh_token: str):
 
 @api_router.get("/outlook/status")
 async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
-    """Check if user has connected their Outlook account - HYBRID SUPPORT"""
+    """Check if user has connected their Outlook account - SUPABASE VERSION"""
     user_id = current_user["id"]
     
     try:
-        # Use hybrid helper to get tokens
+        # Get tokens from Supabase
         tokens = await get_outlook_tokens(user_id)
         
         if tokens:
@@ -3217,20 +3217,28 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             else:
                 is_valid = True
             
-            # Count synced emails
-            emails_count = await db.outlook_emails.count_documents({"user_id": user_id})
+            # Count synced emails from Supabase
+            emails_count = await count_user_emails_supabase(supabase_admin, user_id)
             
             return {
                 "connected": True,
-                "connected_at": None,  # TODO: Add to microsoft_tokens table
-                "connected_email": tokens.get("microsoft_user_id"),
-                "connected_name": None,  # TODO: Store name in microsoft_tokens
+                "connected_email": tokens.get("microsoft_email"),
+                "connected_name": tokens.get("microsoft_name"),
                 "emails_synced": emails_count,
-                "user_email": current_user.get("email")
+                "user_email": current_user.get("email"),
+                "token_valid": is_valid
             }
         
         return {
             "connected": False,
+            "emails_synced": 0
+        }
+    except Exception as e:
+        logger.error(f"Error checking Outlook status: {e}")
+        return {
+            "connected": False,
+            "emails_synced": 0
+        }
             "connected_at": None,
             "connected_email": None,
             "connected_name": None,
