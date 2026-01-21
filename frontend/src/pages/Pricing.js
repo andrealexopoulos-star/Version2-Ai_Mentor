@@ -334,7 +334,7 @@ const Pricing = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/register-supabase')}
               className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 h-12 rounded-lg"
             >
               Get Started Free
@@ -342,7 +342,7 @@ const Pricing = () => {
             </Button>
             <Button 
               variant="outline"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login-supabase')}
               className="border-white/30 text-white hover:bg-white/10 font-semibold px-8 h-12 rounded-lg"
             >
               Talk to Sales
