@@ -1,40 +1,46 @@
 {
-  "summary": "Backend API testing completed - 3/5 tests passed (60.0%)",
-  "total_tests": 5,
-  "passed_tests": 3,
+  "summary": "Backend API testing completed - 4/6 tests passed (66.7%)",
+  "total_tests": 6,
+  "passed_tests": 4,
   "failed_tests": 2,
-  "success_rate": "60.0%",
+  "success_rate": "66.7%",
   "test_details": [
     {
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T07:00:41.921834"
+      "timestamp": "2026-01-21T07:12:32.659840"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T07:00:41.967360"
+      "timestamp": "2026-01-21T07:12:32.699508"
     },
     {
       "test_name": "User Registration (Supabase)",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-21T07:00:46.910788"
+      "timestamp": "2026-01-21T07:12:37.441687"
     },
     {
       "test_name": "Registration - Token Received",
       "success": false,
       "details": "No access_token in response",
-      "timestamp": "2026-01-21T07:00:46.911598"
+      "timestamp": "2026-01-21T07:12:37.442428"
     },
     {
       "test_name": "Login Test User Registration (Supabase)",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-01-21T07:12:43.015128"
+    },
+    {
+      "test_name": "User Login (Supabase)",
       "success": false,
-      "details": "Status: 520, Expected: 200, Response: Web server returned an unknown error\n",
-      "timestamp": "2026-01-21T07:00:46.968485"
+      "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid email or password'}",
+      "timestamp": "2026-01-21T07:12:43.418366"
     }
   ],
-  "timestamp": "2026-01-21T07:00:46.969314"
+  "timestamp": "2026-01-21T07:12:43.419014"
 }
