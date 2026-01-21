@@ -2818,26 +2818,19 @@ async def sync_outlook_emails(
     """Basic email sync - use /outlook/comprehensive-sync for full analysis"""
     user_id = current_user["id"]
     
-    # Get user's Outlook token
-    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    # Get user's Outlook token from Supabase
+    tokens = await get_outlook_tokens(user_id)
     
-    if not user_doc.get("outlook_access_token"):
+    if not tokens:
         raise HTTPException(status_code=400, detail="Outlook not connected. Please connect first.")
     
-    # Check if token expired
-    token_expires = user_doc.get("outlook_token_expires_at")
-    if token_expires and datetime.fromisoformat(token_expires) < datetime.now(timezone.utc):
-        # Refresh token
-        await refresh_outlook_token(user_id, user_doc.get("outlook_refresh_token"))
-        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
-    
-    access_token = user_doc.get("outlook_access_token")
+    access_token = tokens.get("access_token")
     
     # Fetch emails from Microsoft Graph
     headers = {"Authorization": f"Bearer {access_token}"}
     graph_url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder}/messages"
     params = {
-        "$select": "subject,from,toRecipients,receivedDateTime,bodyPreview,body,isRead",
+        "$select": "subject,from,toRecipients,receivedDateTime,bodyPreview,body,isRead,importance,categories,hasAttachments",
         "$top": top,
         "$orderby": "receivedDateTime desc"
     }
@@ -2850,11 +2843,10 @@ async def sync_outlook_emails(
         
         emails_data = response.json()
     
-    # Store emails for AI context
+    # Store emails in Supabase
     synced_count = 0
     for email in emails_data.get("value", []):
         email_doc = {
-            "id": str(uuid.uuid4()),
             "user_id": user_id,
             "graph_message_id": email.get("id"),
             "subject": email.get("subject", ""),
@@ -2864,17 +2856,17 @@ async def sync_outlook_emails(
             "body_preview": email.get("bodyPreview", ""),
             "body_content": email.get("body", {}).get("content", "")[:5000],
             "is_read": email.get("isRead", False),
+            "importance": email.get("importance"),
+            "categories": email.get("categories", []),
+            "has_attachments": email.get("hasAttachments", False),
             "folder": folder,
             "synced_at": datetime.now(timezone.utc).isoformat()
         }
         
-        # Upsert (avoid duplicates)
-        await db.outlook_emails.update_one(
-            {"user_id": user_id, "graph_message_id": email.get("id")},
-            {"$set": email_doc},
-            upsert=True
-        )
-        synced_count += 1
+        # Store in Supabase (upsert to avoid duplicates)
+        success = await store_email_supabase(supabase_admin, email_doc)
+        if success:
+            synced_count += 1
     
     return {
         "status": "synced",
