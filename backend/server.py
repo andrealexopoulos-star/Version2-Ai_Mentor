@@ -1570,12 +1570,12 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
             material_blind_spots.append("Email communication patterns")
         
         # Check if calendar is connected
-        calendar_events = await db.calendar_events.count_documents({"user_id": user_id})
+        calendar_events = await db.calendar_events.count_documents({ user_id)
         if calendar_events == 0:
             integration_blind_spots.append("Calendar behaviour (no calendar data)")
         
         # Check if documents are uploaded
-        docs_count = await db.business_documents.count_documents({"user_id": user_id}) if "business_documents" in await db.list_collection_names() else 0
+        docs_count = await db.business_documents.count_documents({ user_id) if "business_documents" in await db.list_collection_names() else 0
         if docs_count == 0:
             integration_blind_spots.append("Business documents and SOPs")
         
@@ -4598,7 +4598,7 @@ Be specific to their situation. Reference actual business details."""
         "raw_response": ai_response,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.analyses.insert_one(analysis_doc)
+    await create_analysis_supabase(supabase_admin, analysis_doc)
     
     return AnalysisResponse(
         id=analysis_id,
@@ -5403,7 +5403,7 @@ async def upload_data_file(
         "created_at": now
     }
     
-    await db.data_files.insert_one(file_doc)
+    await create_data_file_supabase(supabase_admin, file_doc)
     
     return {
         "id": file_id,
@@ -5478,7 +5478,7 @@ async def get_data_categories(current_user: dict = Depends(get_current_user)):
 @api_router.get("/data-center/stats")
 async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
     """Get data center statistics"""
-    total_files = await db.data_files.count_documents({"user_id": current_user["id"]})
+    total_files = await count_user_data_files_supabase(supabase_admin, "user_id": current_user["id"]})
     
     # Total size
     pipeline = [
@@ -6646,19 +6646,19 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
     # === PLATFORM ENGAGEMENT (20 points) ===
     if user_id and db is not None:
         # Documents uploaded (5 points)
-        doc_count = await db.data_files.count_documents({"user_id": user_id})
+        doc_count = await count_user_data_files_supabase(supabase_admin,  user_id)
         score += min(5, doc_count * 1)  # 1 point per doc, max 5
         
         # AI advisor conversations (5 points)
-        chat_count = await db.chat_history.count_documents({"user_id": user_id})
+        chat_count = await db.chat_history.count_documents({ user_id)
         score += min(5, chat_count * 0.5)  # 0.5 points per chat, max 5
         
         # SOPs created (5 points)
-        sop_count = await db.sops.count_documents({"user_id": user_id}) if await db.sops.count_documents({}) else 0
+        sop_count = await db.sops.count_documents({ user_id) if await db.sops.count_documents({}) else 0
         score += min(5, sop_count * 2)  # 2 points per SOP, max 5
         
         # Analyses run (5 points)
-        analysis_count = await db.analyses.count_documents({"user_id": user_id})
+        analysis_count = await db.analyses.count_documents({ user_id)
         score += min(5, analysis_count * 1)  # 1 point per analysis, max 5
     
     # === BUSINESS DEPTH (25 points) ===
@@ -6764,15 +6764,15 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
             "confidence_summary": confidence,
             "version": versioned_profile.get("version"),
             "profile_id": versioned_profile.get("profile_id"),
-            "has_documents": await db.data_files.count_documents({"user_id": user_id}) > 0,
-            "document_count": await db.data_files.count_documents({"user_id": user_id}),
+            "has_documents": await count_user_data_files_supabase(supabase_admin,  user_id) > 0,
+            "document_count": await count_user_data_files_supabase(supabase_admin,  user_id),
             "onboarding_completed": (await db.onboarding.find_one({"user_id": user_id}, {"_id": 0}) or {}).get("completed", False)
         }
     
     # Fallback to legacy profile calculation
     profile = await get_business_profile_supabase(supabase_admin, user_id)
     onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
-    files_count = await db.data_files.count_documents({"user_id": user_id})
+    files_count = await count_user_data_files_supabase(supabase_admin,  user_id)
     
     completeness = calculate_profile_completeness(profile) if profile else 0
     business_score = await calculate_business_score(profile, onboarding, user_id) if profile else 0
@@ -6855,10 +6855,10 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
         raise HTTPException(status_code=404, detail="User not found")
     
     # Clean up user data
-    await db.analyses.delete_many({"user_id": user_id})
+    await db.analyses.delete_many({ user_id)
     # Delete documents from Supabase
     await delete_user_documents_supabase(supabase_admin, user_id)
-    await delete_user_chats_supabase(supabase_admin, {"user_id": user_id})
+    await delete_user_chats_supabase(supabase_admin, { user_id)
     
     return {"message": "User and all associated data deleted"}
 
@@ -6868,9 +6868,9 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     
-    analysis_count = await db.analyses.count_documents({"user_id": user_id})
-    document_count = await db.documents.count_documents({"user_id": user_id})
-    chat_sessions = await db.chat_history.distinct("session_id", {"user_id": user_id})
+    analysis_count = await db.analyses.count_documents({ user_id)
+    document_count = await db.documents.count_documents({ user_id)
+    chat_sessions = await db.chat_history.distinct("session_id", { user_id)
     
     recent_analyses = await db.analyses.find(
         {"user_id": user_id}, {"_id": 0}
@@ -6926,7 +6926,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
     user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
     if user_doc and user_doc.get("outlook_access_token"):
         data_signals["has_outlook"] = True
-        email_count = await db.outlook_emails.count_documents({"user_id": user_id})
+        email_count = await db.outlook_emails.count_documents({ user_id)
         data_signals["emails_synced"] = email_count
         
         # Check high priority emails
@@ -6936,7 +6936,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
             data_signals["email_priority_high"] = len(high_priority)
     
     # Check calendar
-    calendar_count = await db.calendar_events.count_documents({"user_id": user_id})
+    calendar_count = await db.calendar_events.count_documents({ user_id)
     if calendar_count > 0:
         data_signals["has_calendar"] = True
         data_signals["upcoming_meetings"] = calendar_count
