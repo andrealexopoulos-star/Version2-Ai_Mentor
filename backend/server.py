@@ -5333,7 +5333,7 @@ async def build_advisor_context(user_id: str) -> dict:
     """
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
     profile = await get_business_profile_supabase(supabase_admin, user_id)
-    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     
     # Recent activity for context
     recent_chats = await db.chat_history.find(
@@ -6075,7 +6075,7 @@ async def create_profile_version(
     
     # Calculate score
     # Get onboarding data
-    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     
     # Build temporary profile dict for scoring
     temp_profile = {**profile_data}
@@ -6348,7 +6348,7 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
     
     # Fallback to legacy profile calculation
     profile = await get_business_profile_supabase(supabase_admin, user_id)
-    onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
+    onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     files_count = await count_user_data_files_supabase(supabase_admin,  user_id)
     
     completeness = calculate_profile_completeness(profile) if profile else 0
