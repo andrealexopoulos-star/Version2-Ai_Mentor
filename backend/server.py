@@ -6816,7 +6816,7 @@ async def admin_get_users(admin: dict = Depends(get_admin_user)):
 async def admin_get_stats(admin: dict = Depends(get_admin_user)):
     user_count = await db.users.count_documents({})
     analysis_count = await db.analyses.count_documents({})
-    document_count = await db.documents.count_documents({})
+    document_count = await count_user_documents_supabase(supabase_admin, admin["id"]) # Temporary: count all needs admin access
     chat_count = await db.chat_history.count_documents({})
     
     # Recent activity
