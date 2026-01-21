@@ -3148,16 +3148,8 @@ async def generate_email_intelligence(user_id: str, emails_by_sender: dict, clie
         "analyzed_at": datetime.now(timezone.utc).isoformat()
     }
     
-    # Store intelligence summary
-    await db.email_intelligence.update_one(
-        {"user_id": user_id},
-        {"$set": {
-            "user_id": user_id,
-            **insights,
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }},
-        upsert=True
-    )
+    # Store intelligence summary in Supabase
+    await update_email_intelligence_supabase(supabase_admin, user_id, insights)
     
     return [insights]
 
