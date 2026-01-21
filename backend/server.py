@@ -791,7 +791,7 @@ async def get_business_context(user_id: str) -> dict:
     ).sort("created_at", -1).limit(20).to_list(20)
     
     # Get user info
-    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    user = await get_user_by_id(user_id) # Supabase
     
     return {
         "user": user,
@@ -3146,7 +3146,7 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
     
     # Get business context from Supabase
     profile = await get_business_profile_supabase(supabase_admin, user_id)
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    user = await get_user_by_id(user_id) # Supabase
     
     # Get communication history with this sender from Supabase
     sender = email.get("from_address", "")
@@ -5331,7 +5331,7 @@ async def build_advisor_context(user_id: str) -> dict:
     Build comprehensive context for Advisor Brain.
     This is the 'truth serum' - all evidence the AI needs to provide personalized advice.
     """
-    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    user = await get_user_by_id(user_id) # Supabase
     profile = await get_business_profile_supabase(supabase_admin, user_id)
     onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     
@@ -5758,7 +5758,7 @@ async def admin_set_subscription(user_id: str, update: SubscriptionUpdate, admin
         }}
     )
 
-    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    user = await get_user_by_id(user_id) # Supabase
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -5770,7 +5770,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
     mk = month_key(now)
 
     # Load user + profile
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    user = await get_user_by_id(current_user["id"]) # Supabase
     profile = await get_business_profile_supabase(supabase_admin, current_user["id"])
 
     tier = tier_from_user(user or {})
@@ -6419,7 +6419,7 @@ async def admin_update_user(user_id: str, update: AdminUserUpdate, admin: dict =
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     
-    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    user = await get_user_by_id(user_id) # Supabase
     return user
 
 @api_router.delete("/admin/users/{user_id}")
@@ -6499,7 +6499,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
         data_signals["profile_completeness"] = int((filled / len(fields)) * 100)
     
     # Check Outlook connection
-    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    user_doc = await get_user_by_id(user_id) # Supabase
     if user_doc and user_doc.get("outlook_access_token"):
         data_signals["has_outlook"] = True
         email_count = await db.outlook_emails.count_documents({"user_id": user_id})
