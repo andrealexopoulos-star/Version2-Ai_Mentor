@@ -168,17 +168,17 @@ class StrategicAdvisorAPITester:
         return False
 
     def test_auth_me(self):
-        """Test get current user"""
-        print("\n🔍 Testing Auth Me...")
-        success, response = self.run_test("Get Current User", "GET", "auth/me", 200)
+        """Test get current user with Supabase"""
+        print("\n🔍 Testing Auth Me (Supabase)...")
+        success, response = self.run_test("Get Current User (Supabase)", "GET", "auth/supabase/me", 200)
         
         if success:
-            # Verify subscription_tier is present
-            subscription_tier = response.get('subscription_tier')
-            if subscription_tier is not None:
-                self.log_test("Auth Me - Subscription Tier Present", True, f"Tier: {subscription_tier}")
+            # Verify user field is present
+            user = response.get('user')
+            if user and user.get('id') and user.get('email'):
+                self.log_test("Auth Me - User Data Present", True, f"User: {user.get('email')}")
             else:
-                self.log_test("Auth Me - Subscription Tier Present", False, "subscription_tier field missing")
+                self.log_test("Auth Me - User Data Present", False, "Missing user data")
         
         return success
 
