@@ -6858,7 +6858,8 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
     
     # Clean up user data
     await db.analyses.delete_many({"user_id": user_id})
-    await db.documents.delete_many({"user_id": user_id})
+    # Delete documents from Supabase
+    await delete_user_documents_supabase(supabase_admin, user_id)
     await db.chat_history.delete_many({"user_id": user_id})
     
     return {"message": "User and all associated data deleted"}
@@ -6943,7 +6944,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
         data_signals["upcoming_meetings"] = calendar_count
     
     # Check documents
-    doc_count = await db.documents.count_documents({"user_id": user_id})
+    doc_count = await count_user_documents_supabase(supabase_admin, user_id)
     if doc_count > 0:
         data_signals["has_documents"] = True
         data_signals["document_count"] = doc_count
