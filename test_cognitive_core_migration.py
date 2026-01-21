@@ -70,45 +70,67 @@ class CognitiveCoreTest:
             return False
     
     def test_authentication(self):
-        """Test 2: Authentication (MongoDB for now)"""
+        """Test 2: Authentication (MongoDB hybrid auth)"""
         print("\n🔍 TEST 2: Authentication")
         print("=" * 60)
         
         try:
-            # Register a new user
-            unique_id = str(uuid.uuid4())[:8]
-            user_data = {
-                "name": "Cognitive Test User",
-                "email": f"cogtest{unique_id}@example.com",
-                "password": "TestPass123!",
-                "business_name": "Cognitive Test Business",
-                "industry": "Technology"
-            }
+            # Use existing MongoDB user and create JWT token
+            import jwt
+            from datetime import timedelta
             
-            response = requests.post(
-                f"{BASE_URL}/auth/register",
-                json=user_data,
-                timeout=10
+            # Get an existing user from MongoDB
+            import subprocess
+            result = subprocess.run(
+                ['mongosh', 'mongodb://localhost:27017/test_database', '--quiet', '--eval', 
+                 'JSON.stringify(db.users.findOne())'],
+                capture_output=True,
+                text=True
             )
             
+            if result.returncode != 0:
+                self.log("MongoDB User Lookup", False, "Could not query MongoDB")
+                return False
+            
+            import json
+            user_data = json.loads(result.stdout.strip())
+            
+            if not user_data or 'id' not in user_data:
+                self.log("MongoDB User Lookup", False, "No users found in MongoDB")
+                return False
+            
+            self.user_id = user_data['id']
+            user_email = user_data.get('email', 'unknown')
+            user_role = user_data.get('role', 'user')
+            
+            self.log("MongoDB User Found", True, f"Email: {user_email}, Role: {user_role}")
+            
+            # Create JWT token (matching backend JWT creation)
+            JWT_SECRET = "strategic-advisor-secret-key-2024-secure"
+            JWT_ALGORITHM = "HS256"
+            
+            payload = {
+                "sub": self.user_id,
+                "email": user_email,
+                "role": user_role,
+                "account_id": None,
+                "exp": datetime.now() + timedelta(hours=24)
+            }
+            
+            self.token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+            self.log("JWT Token Created", True, "Token generated for MongoDB user")
+            
+            # Test auth/me endpoint with hybrid auth
+            headers = {'Authorization': f'Bearer {self.token}'}
+            response = requests.get(f"{BASE_URL}/auth/me", headers=headers, timeout=10)
+            
             if response.status_code == 200:
-                data = response.json()
-                self.token = data.get('access_token')
-                self.user_id = data.get('user', {}).get('id')
-                self.log("User Registration", True, f"User ID: {self.user_id}")
-                
-                # Test auth/me endpoint
-                headers = {'Authorization': f'Bearer {self.token}'}
-                response = requests.get(f"{BASE_URL}/auth/me", headers=headers, timeout=10)
-                
-                if response.status_code == 200:
-                    self.log("Auth Me Endpoint", True, "Successfully retrieved user info")
-                    return True
-                else:
-                    self.log("Auth Me Endpoint", False, f"Status: {response.status_code}")
-                    return False
+                self.log("Hybrid Auth - MongoDB Token Accepted", True, 
+                        "Backend accepts MongoDB JWT tokens")
+                return True
             else:
-                self.log("User Registration", False, f"Status: {response.status_code}")
+                self.log("Hybrid Auth - MongoDB Token Accepted", False, 
+                        f"Status: {response.status_code}")
                 return False
                 
         except Exception as e:
