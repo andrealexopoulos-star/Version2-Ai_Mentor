@@ -116,28 +116,28 @@ class StrategicAdvisorAPITester:
         return False
 
     def test_user_login(self):
-        """Test user login"""
-        print("\n🔍 Testing User Login...")
-        
-        # Now test regular login with existing user
-        login_data = {
-            "email": f"test{str(uuid.uuid4())[:8]}@example.com",
-            "password": "testpass123"
-        }
+        """Test user login with Supabase"""
+        print("\n🔍 Testing User Login (Supabase)...")
         
         # Register a new user for login test
+        unique_id = str(uuid.uuid4())[:8]
+        login_data = {
+            "email": f"logintest{unique_id}@example.com",
+            "password": "testpass123456"
+        }
+        
         reg_data = {
-            "name": "Login Test User",
             "email": login_data["email"],
             "password": login_data["password"],
-            "business_name": "Login Test Business",
+            "full_name": "Login Test User",
+            "company_name": "Login Test Business",
             "industry": "Technology"
         }
         
         reg_success, reg_response = self.run_test(
-            "Login Test User Registration",
+            "Login Test User Registration (Supabase)",
             "POST",
-            "auth/register",
+            "auth/supabase/signup",
             200,
             data=reg_data
         )
@@ -145,26 +145,26 @@ class StrategicAdvisorAPITester:
         if not reg_success:
             return False
         
+        # Now test login
         success, response = self.run_test(
-            "User Login",
+            "User Login (Supabase)",
             "POST",
-            "auth/login",
+            "auth/supabase/login",
             200,
             data=login_data
         )
         
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            self.user_id = response['user']['id']
-            
-            # Check if this user is admin (first user becomes admin)
-            user_info = response.get('user', {})
-            if user_info.get('role') == 'admin':
-                self.admin_token = self.token
-                self.admin_user_id = self.user_id
-                self.log_test("Admin User Setup", True, "First user is admin")
-            
-            return True
+        if success:
+            session = response.get('session', {})
+            if session and session.get('access_token'):
+                self.token = session['access_token']
+                user_info = response.get('user', {})
+                self.user_id = user_info.get('id')
+                self.log_test("Login - Token Received", True, "")
+                return True
+            else:
+                self.log_test("Login - Token Received", False, "No access_token in response")
+                return False
         return False
 
     def test_auth_me(self):
