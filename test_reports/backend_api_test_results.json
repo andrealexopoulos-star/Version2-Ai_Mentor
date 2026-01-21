@@ -1,100 +1,70 @@
 {
-  "summary": "Backend API testing completed - 14/15 tests passed (93.3%)",
-  "total_tests": 15,
-  "passed_tests": 14,
-  "failed_tests": 1,
-  "success_rate": "93.3%",
+  "summary": "Backend API testing completed - 8/10 tests passed (80.0%)",
+  "total_tests": 10,
+  "passed_tests": 8,
+  "failed_tests": 2,
+  "success_rate": "80.0%",
   "test_details": [
     {
       "test_name": "Health Check",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:57:02.361238"
+      "timestamp": "2026-01-21T03:59:53.567952"
     },
     {
       "test_name": "Root Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:57:02.410066"
+      "timestamp": "2026-01-21T03:59:53.611763"
     },
     {
       "test_name": "User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:57:02.717905"
+      "timestamp": "2026-01-21T03:59:53.906163"
     },
     {
       "test_name": "Registration - Default Free Tier",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:57:02.719192"
+      "timestamp": "2026-01-21T03:59:53.906856"
     },
     {
-      "test_name": "Get Current User",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-05T21:57:02.770960"
-    },
-    {
-      "test_name": "Auth Me - Subscription Tier Present",
-      "success": true,
-      "details": "Tier: free",
-      "timestamp": "2026-01-05T21:57:02.771716"
-    },
-    {
-      "test_name": "Setup Business Profile for Advisor Brain",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-05T21:57:02.838472"
-    },
-    {
-      "test_name": "Create Advisor Brain Analysis",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-05T21:57:24.227013"
-    },
-    {
-      "test_name": "Advisor Brain - ID Field Present",
-      "success": true,
-      "details": "ID: c2e1c862-a48e-4b78-8418-e38cc2e4ecb2",
-      "timestamp": "2026-01-05T21:57:24.227802"
-    },
-    {
-      "test_name": "Advisor Brain - Analysis Field Present",
-      "success": true,
-      "details": "Length: 4462 chars",
-      "timestamp": "2026-01-05T21:57:24.227821"
-    },
-    {
-      "test_name": "Advisor Brain - Insights Array Present",
-      "success": true,
-      "details": "Count: 0",
-      "timestamp": "2026-01-05T21:57:24.227894"
-    },
-    {
-      "test_name": "Advisor Brain - Insights Not Empty",
+      "test_name": "Supabase Auth Me",
       "success": false,
-      "details": "Insights array is empty",
-      "timestamp": "2026-01-05T21:57:24.227930"
+      "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid authentication token'}",
+      "timestamp": "2026-01-21T03:59:54.307412"
     },
     {
-      "test_name": "Advisor Brain - Created At Present",
+      "test_name": "Check Profile Endpoint",
+      "success": false,
+      "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid authentication token'}",
+      "timestamp": "2026-01-21T03:59:54.631614"
+    },
+    {
+      "test_name": "Outlook Status Endpoint",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:57:24.227938"
+      "timestamp": "2026-01-21T03:59:55.695576"
     },
     {
-      "test_name": "Advisor Brain - Uses Business Context",
-      "success": true,
-      "details": "Found terms: tech consulting, consulting, clients",
-      "timestamp": "2026-01-05T21:57:24.227952"
-    },
-    {
-      "test_name": "Delete Analysis",
+      "test_name": "Outlook Status - Response Structure",
       "success": true,
       "details": "",
-      "timestamp": "2026-01-05T21:57:24.281207"
+      "timestamp": "2026-01-21T03:59:55.696357"
+    },
+    {
+      "test_name": "Outlook Status - Connection Info",
+      "success": true,
+      "details": "Connected: False, Emails: 0",
+      "timestamp": "2026-01-21T03:59:55.696378"
+    },
+    {
+      "test_name": "Outlook Email Sync",
+      "success": true,
+      "details": "Skipped - Outlook not connected",
+      "timestamp": "2026-01-21T03:59:55.696382"
     }
   ],
-  "timestamp": "2026-01-05T21:57:24.281853"
+  "timestamp": "2026-01-21T03:59:55.696396"
 }
