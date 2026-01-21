@@ -190,6 +190,18 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: Complete auth system test passed (34/34 tests - 100% success rate). 1) Registration Flow: POST /api/auth/register with email 'reliableauth@test.com', password 'SecurePass123!', name 'Reliable Auth Test' returns access_token and user object ✅ 2) Login Flow: POST /api/auth/login with registered credentials returns access_token ✅ 3) Auth Me: GET /api/auth/me with token returns correct user data ✅ 4) Business Profile Save: PUT /api/business-profile with business_name:'Test Business', industry:'Technology', mission_statement:'To test data persistence', short_term_goals:'Verify saves work' returns 200 and saves all fields correctly ✅ 5) Business Profile Persistence: Verified data persists across 3 consecutive GET requests - all fields (business_name, industry, mission_statement, short_term_goals) remain intact ✅ 6) MongoDB Direct Verification: Confirmed profile document exists in database with all correct values ✅ 7) Score Calculation: GET /api/business-profile/scores returns completeness:24%, business_score:12% (both > 0 after profile save, confirming score calculation working) ✅ CRITICAL VERIFICATION: Data PERSISTS correctly across multiple GET requests and is confirmed in MongoDB - no data loss issues detected."
 
+  - task: "Cognitive Core Migration to Supabase"
+    implemented: true
+    working: false
+    file: "backend/server.py, backend/cognitive_core_supabase.py, backend/supabase_intelligence_helpers.py, backend/supabase_document_helpers.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL SCHEMA ISSUES DETECTED: Cognitive Core migration to Supabase has multiple schema mismatches and foreign key constraint violations. ISSUES FOUND: 1) ❌ Foreign Key Constraint - cognitive_profiles table references users table in Supabase, but MongoDB users don't exist in Supabase users table. Error: 'Key (user_id)=(6e17967b-320d-4027-b9cc-ed1c543ae7fb) is not present in table users' (code 23503). This prevents profile creation for existing MongoDB users. 2) ❌ Schema Cache Errors - Missing columns: 'context_type' in chat_history table (PGRST204), 'target_country' in business_profiles table (PGRST204), 'analysis_type' in analyses table (PGRST204). These indicate Supabase schema doesn't match code expectations. 3) ❌ Document Creation Failing - POST /api/documents returns 500 Internal Server Error due to foreign key constraint violation on documents table (user_id not in Supabase users table). 4) ❌ Missing Endpoints - /api/auth/register returns 404, /api/auth/me returns 404, /api/calendar/events returns 404. IMPACT: Frontend loads correctly with no console errors or 500 errors during page loads ✅, but AI features (Advisor, Intel, Soundboard) will fail when authenticated users try to use them. REQUIRED FIXES: 1) Create user synchronization mechanism between MongoDB and Supabase users table, 2) Add missing columns to Supabase tables (context_type, target_country, analysis_type), 3) Fix foreign key constraints or implement proper user migration, 4) Restore missing auth endpoints or update frontend to use new endpoints."
+
   - task: "Onboarding Wizard Frontend Complete Flow"
     implemented: true
     working: true
