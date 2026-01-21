@@ -5361,16 +5361,10 @@ async def build_advisor_context(user_id: str) -> dict:
         {"_id": 0, "title": 1, "url": 1, "snippet": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
     
-    sops = await get_sops_supabase(supabase_admin, current_user["id"]) # 
-        {"user_id": user_id},
-        {"_id": 0, "title": 1, "category": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(5).to_list(5)
+    sops = await get_sops_supabase(supabase_admin, user_id)
     
     # Outlook emails (if connected)
-    outlook_emails = await db.outlook_emails.find(
-        {"user_id": user_id},
-        {"_id": 0, "subject": 1, "from_name": 1, "from_address": 1, "received_date": 1, "body_preview": 1}
-    ).sort("received_date", -1).limit(10).to_list(10)
+    outlook_emails = await get_user_emails_supabase(supabase_admin, user_id, limit=10)
     
     # Email intelligence summary
     email_intel = await db.email_intelligence.find_one(
