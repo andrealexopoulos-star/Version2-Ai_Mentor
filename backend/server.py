@@ -2788,7 +2788,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
 
 
 async def start_comprehensive_sync_job(user_id: str, job_id: str):
-    """Start comprehensive sync as background task"""
+    """Start comprehensive sync as background task - SUPABASE VERSION"""
     job_doc = {
         "job_id": job_id,
         "user_id": user_id,
@@ -2796,7 +2796,7 @@ async def start_comprehensive_sync_job(user_id: str, job_id: str):
         "started_at": datetime.now(timezone.utc).isoformat(),
         "progress": {"folders_processed": 0, "emails_processed": 0, "insights_generated": 0}
     }
-    await db.outlook_sync_jobs.insert_one(job_doc)
+    await create_sync_job_supabase(supabase_admin, job_doc)
     
     await run_comprehensive_email_analysis(user_id, job_id)
 
@@ -2870,7 +2870,7 @@ async def sync_outlook_emails(
 @api_router.post("/outlook/comprehensive-sync")
 async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_user)):
     """
-    COMPREHENSIVE EMAIL ANALYSIS - 36 months across all folders
+    COMPREHENSIVE EMAIL ANALYSIS - 36 months across all folders - SUPABASE VERSION
     
     This analyzes your entire Outlook account to build a complete business intelligence profile:
     - All folders (Inbox, Sent Items, Deleted Items, custom folders)
@@ -2883,10 +2883,7 @@ async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_us
     user_id = current_user["id"]
     
     # Check if already running
-    existing_job = await db.outlook_sync_jobs.find_one(
-        {"user_id": user_id, "status": "running"},
-        {"_id": 0}
-    )
+    existing_job = await find_user_sync_job_supabase(supabase_admin, user_id, "running")
     
     if existing_job:
         return {
@@ -2895,7 +2892,7 @@ async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_us
             "message": "Comprehensive sync already in progress"
         }
     
-    # Create sync job
+    # Create sync job in Supabase
     job_id = str(uuid.uuid4())
     job_doc = {
         "job_id": job_id,
@@ -2908,7 +2905,7 @@ async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_us
             "insights_generated": 0
         }
     }
-    await db.outlook_sync_jobs.insert_one(job_doc)
+    await create_sync_job_supabase(supabase_admin, job_doc)
     
     # Start background sync
     import asyncio
