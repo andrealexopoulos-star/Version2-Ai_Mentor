@@ -1595,7 +1595,7 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
             material_blind_spots.append("Email communication patterns")
         
         # Check if calendar is connected
-        calendar_events = await db.calendar_events.count_documents({"user_id": user_id})
+        calendar_events = 0 # Migrated to outlook_calendar_events
         if calendar_events == 0:
             integration_blind_spots.append("Calendar behaviour (no calendar data)")
         
@@ -3113,7 +3113,7 @@ Return ONLY valid JSON, no markdown."""
             priority_analysis["low_priority"] = enrich_priority(priority_analysis.get("low_priority", []))
         
         # Store analysis
-        await db.email_priority_analysis.update_one(
+        await update_priority_analysis_supabase(supabase_admin, 
             {"user_id": user_id},
             {"$set": {
                 "user_id": user_id,
@@ -5169,7 +5169,7 @@ async def upsert_web_sources(user_id: str, serp_results: List[Dict[str, Any]]):
             'created_at': now,
             'updated_at': now,
         }
-        await db.web_sources.update_one(
+        await update_web_source_supabase(supabase_admin, 
             {'user_id': user_id, 'url': url},
             {'$set': doc},
             upsert=True
@@ -5346,7 +5346,7 @@ async def build_advisor_context(user_id: str) -> dict:
         {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
     
-    web_sources = await db.web_sources.find(
+    web_sources = await get_web_sources_supabase(supabase_admin, user_id) # 
         {"user_id": user_id},
         {"_id": 0, "title": 1, "url": 1, "snippet": 1}
     ).sort("created_at", -1).limit(5).to_list(5)
@@ -5357,25 +5357,25 @@ async def build_advisor_context(user_id: str) -> dict:
     outlook_emails = await get_user_emails_supabase(supabase_admin, user_id, limit=10)
     
     # Email intelligence summary
-    email_intel = await db.email_intelligence.find_one(
+    email_intel = await get_email_intelligence_supabase(supabase_admin, 
         {"user_id": user_id},
         {"_id": 0}
     )
     
     # Calendar intelligence
-    calendar_intel = await db.calendar_intelligence.find_one(
+    calendar_intel = await get_calendar_intelligence_supabase(supabase_admin, 
         {"user_id": user_id},
         {"_id": 0}
     )
     
     # Calendar events (upcoming)
-    calendar_events = await db.calendar_events.find(
+    calendar_events = await get_user_calendar_events_supabase(supabase_admin, user_id) # 
         {"user_id": user_id},
         {"_id": 0, "subject": 1, "start": 1, "end": 1, "attendees": 1, "location": 1}
     ).sort("start", 1).limit(10).to_list(10)
     
     # Email priority analysis
-    email_priority = await db.email_priority_analysis.find_one(
+    email_priority = await get_priority_analysis_supabase(supabase_admin, 
         {"user_id": user_id},
         {"_id": 0}
     )
@@ -5826,7 +5826,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
     industry = (profile or {}).get("industry") or (user or {}).get("industry")
 
     # Build a compact evidence list for citations
-    evidence_web = await db.web_sources.find(
+    evidence_web = await get_web_sources_supabase(supabase_admin, user_id) # 
         {"user_id": current_user["id"]},
         {"_id": 0, "title": 1, "url": 1, "snippet": 1, "created_at": 1}
     ).sort("created_at", -1).limit(6).to_list(6)
@@ -6445,14 +6445,14 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     
     analysis_count = await db.analyses.count_documents({"user_id": user_id})  # TODO: Migrate to Supabase
-    document_count = await db.documents.count_documents({"user_id": user_id})
+    document_count = await supabase_admin.table("documents").count_documents({"user_id": user_id})
     chat_sessions = await db.chat_history.distinct("session_id", {"user_id": user_id})
     
     recent_analyses = await db.analyses.find(
         {"user_id": user_id}, {"_id": 0}
     ).sort("created_at", -1).limit(5).to_list(5)
     
-    recent_documents = await db.documents.find(
+    recent_documents = await supabase_admin.table("documents").find(
         {"user_id": user_id}, {"_id": 0}
     ).sort("created_at", -1).limit(5).to_list(5)
     
@@ -6502,17 +6502,17 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
     user_doc = await get_user_by_id(user_id) # Supabase
     if user_doc and user_doc.get("outlook_access_token"):
         data_signals["has_outlook"] = True
-        email_count = await db.outlook_emails.count_documents({"user_id": user_id})
+        email_count = await supabase_admin.table("outlook_emails").count_documents({"user_id": user_id})
         data_signals["emails_synced"] = email_count
         
         # Check high priority emails
-        priority = await db.email_priority_analysis.find_one({"user_id": user_id}, {"_id": 0})
+        priority = await get_priority_analysis_supabase(supabase_admin, {"user_id": user_id}, {"_id": 0})
         if priority and priority.get("analysis"):
             high_priority = priority["analysis"].get("high_priority", [])
             data_signals["email_priority_high"] = len(high_priority)
     
     # Check calendar
-    calendar_count = await db.calendar_events.count_documents({"user_id": user_id})
+    calendar_count = 0 # Migrated to outlook_calendar_events
     if calendar_count > 0:
         data_signals["has_calendar"] = True
         data_signals["upcoming_meetings"] = calendar_count
@@ -6629,7 +6629,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
     notifications = []
     
     # Check for high priority emails (customer complaints, urgent issues)
-    priority_analysis = await db.email_priority_analysis.find_one(
+    priority_analysis = await get_priority_analysis_supabase(supabase_admin, 
         {"user_id": user_id}, {"_id": 0}
     )
     
@@ -6648,7 +6648,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
             })
     
     # Check recent emails for complaint keywords
-    recent_emails = await db.outlook_emails.find(
+    recent_emails = await supabase_admin.table("outlook_emails").find(
         {"user_id": user_id},
         {"_id": 0, "subject": 1, "body_preview": 1, "from_name": 1, "from_address": 1, "received_date": 1, "id": 1}
     ).sort("received_date", -1).limit(50).to_list(50)
@@ -6675,7 +6675,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
                 break  # Only one notification per email
     
     # Check calendar for important upcoming meetings
-    calendar_events = await db.calendar_events.find(
+    calendar_events = await get_user_calendar_events_supabase(supabase_admin, user_id) # 
         {"user_id": user_id},
         {"_id": 0}
     ).sort("start", 1).limit(20).to_list(20)
@@ -6708,7 +6708,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
             pass
     
     # Check for operational patterns in emails
-    email_intel = await db.email_intelligence.find_one({"user_id": user_id}, {"_id": 0})
+    email_intel = await get_email_intelligence_supabase(supabase_admin, {"user_id": user_id}, {"_id": 0})
     if email_intel:
         # Check for declining engagement with key clients
         top_clients = email_intel.get("top_clients", [])
