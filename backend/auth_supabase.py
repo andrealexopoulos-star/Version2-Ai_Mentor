@@ -93,7 +93,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         
     except Exception as e:
         error_str = str(e)
-        logger.error(f"Error creating user profile for {email}: {e}")
+        logger.error(f"❌ CRITICAL: Error creating user profile for {email}: {e}")
         
         # Handle duplicate key error - user already exists
         if "duplicate key" in error_str or "23505" in error_str or "unique constraint" in error_str:
@@ -102,16 +102,14 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             if existing_user:
                 return existing_user
         
-        # Last resort - create minimal profile from session data
-        logger.warning(f"Returning minimal profile for {email} due to error")
-        return {
-            "id": user_id,
-            "email": email,
-            "full_name": metadata.get("full_name") if metadata else email.split("@")[0],
-            "role": "user",
-            "subscription_tier": "free",
-            "is_master_account": email == "andre@thestrategysquad.com.au"
-        }
+        # CRITICAL FIX: Do NOT return in-memory profile
+        # This creates "phantom users" that break all FK constraints
+        # Instead: RETRY the insert or FAIL explicitly
+        logger.error(f"❌ CANNOT create user profile for {email} - failing explicitly")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to create user profile in database: {str(e)}"
+        )
 
 
 async def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
