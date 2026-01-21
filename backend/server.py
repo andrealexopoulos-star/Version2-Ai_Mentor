@@ -2920,18 +2920,20 @@ async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_us
 
 
 async def run_comprehensive_email_analysis(user_id: str, job_id: str):
-    """Background task: Comprehensive email analysis over 36 months"""
+    """Background task: Comprehensive email analysis over 36 months - SUPABASE VERSION"""
     try:
-        # Get user tokens
-        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
-        access_token = user_doc.get("outlook_access_token")
+        # Get user tokens from Supabase
+        tokens = await get_outlook_tokens(user_id)
         
-        if not access_token:
-            await db.outlook_sync_jobs.update_one(
-                {"job_id": job_id},
-                {"$set": {"status": "failed", "error": "No access token"}}
+        if not tokens or not tokens.get("access_token"):
+            await update_sync_job_supabase(
+                supabase_admin,
+                job_id,
+                {"status": "failed", "error_message": "No access token", "completed_at": datetime.now(timezone.utc).isoformat()}
             )
             return
+        
+        access_token = tokens["access_token"]
         
         # Calculate 36 months ago
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=36*30)
@@ -2996,9 +2998,8 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
                         "folder": folder_id
                     })
                 
-                # Store email
+                # Store email in Supabase
                 email_doc = {
-                    "id": str(uuid.uuid4()),
                     "user_id": user_id,
                     "graph_message_id": email.get("id"),
                     "subject": subject,
@@ -3009,23 +3010,21 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
                     "body_content": email.get("body", {}).get("content", "")[:5000],
                     "is_read": email.get("isRead", False),
                     "folder": folder_id,
-                    "is_external": is_external,
                     "synced_at": datetime.now(timezone.utc).isoformat()
                 }
                 
-                await db.outlook_emails.update_one(
-                    {"user_id": user_id, "graph_message_id": email.get("id")},
-                    {"$set": email_doc},
-                    upsert=True
-                )
+                await store_email_supabase(supabase_admin, email_doc)
             
-            # Update progress
-            await db.outlook_sync_jobs.update_one(
-                {"job_id": job_id},
-                {"$set": {
-                    "progress.folders_processed": len([f for f in target_folders if f]),
-                    "progress.emails_processed": total_emails
-                }}
+            # Update progress in Supabase
+            current_progress = {
+                "folders_processed": len([f for f in target_folders if f]),
+                "emails_processed": total_emails,
+                "insights_generated": 0
+            }
+            await update_sync_job_supabase(
+                supabase_admin,
+                job_id,
+                {"progress": current_progress}
             )
         
         # Generate business intelligence insights
@@ -3036,30 +3035,28 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
             total_emails
         )
         
-        # Mark job complete
-        await db.outlook_sync_jobs.update_one(
-            {"job_id": job_id},
-            {"$set": {
-                "status": "completed",
-                "completed_at": datetime.now(timezone.utc).isoformat(),
-                "progress": {
-                    "folders_processed": len(target_folders),
-                    "emails_processed": total_emails,
-                    "insights_generated": len(insights)
-                },
-                "insights": insights
-            }}
-        )
+        # Mark job complete in Supabase
+        final_update = {
+            "status": "completed",
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "progress": {
+                "folders_processed": len(target_folders),
+                "emails_processed": total_emails,
+                "insights_generated": len(insights)
+            }
+        }
+        await update_sync_job_supabase(supabase_admin, job_id, final_update)
         
     except Exception as e:
         logger.error(f"Comprehensive sync error: {e}")
-        await db.outlook_sync_jobs.update_one(
-            {"job_id": job_id},
-            {"$set": {
+        await update_sync_job_supabase(
+            supabase_admin,
+            job_id,
+            {
                 "status": "failed",
-                "error": str(e),
-                "failed_at": datetime.now(timezone.utc).isoformat()
-            }}
+                "error_message": str(e),
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }
         )
 
 
