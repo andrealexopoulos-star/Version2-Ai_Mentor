@@ -64,13 +64,9 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   return children;
 };
 
-// Public Route (redirect to dashboard if logged in) - Updated for Supabase
+// Public Route (redirect to advisor if logged in) - Supabase Auth Only
 const PublicRoute = ({ children }) => {
-  const { user: mongoUser, loading: mongoLoading } = useAuth();
-  const { user: supabaseUser, session: supabaseSession, loading: supabaseLoading } = useSupabaseAuth();
-
-  const loading = mongoLoading || supabaseLoading;
-  const isAuthenticated = supabaseUser || mongoUser || supabaseSession;
+  const { user, session, loading } = useSupabaseAuth();
 
   if (loading) {
     return (
@@ -80,8 +76,10 @@ const PublicRoute = ({ children }) => {
     );
   }
 
+  const isAuthenticated = user || session;
+
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/advisor" replace />;
   }
 
   return children;
