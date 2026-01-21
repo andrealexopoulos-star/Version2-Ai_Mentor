@@ -3175,11 +3175,8 @@ async def get_sync_status(job_id: str, current_user: dict = Depends(get_current_
 
 @api_router.get("/outlook/intelligence")
 async def get_email_intelligence(current_user: dict = Depends(get_current_user)):
-    """Get business intelligence extracted from emails"""
-    intelligence = await db.email_intelligence.find_one(
-        {"user_id": current_user["id"]},
-        {"_id": 0}
-    )
+    """Get business intelligence extracted from emails - SUPABASE VERSION"""
+    intelligence = await get_email_intelligence_supabase(supabase_admin, current_user["id"])
     
     if not intelligence:
         return {
@@ -3645,11 +3642,8 @@ Format as JSON:
 
 @api_router.get("/email/priority-inbox")
 async def get_priority_inbox(current_user: dict = Depends(get_current_user)):
-    """Get the latest email priority analysis"""
-    analysis = await db.email_priority_analysis.find_one(
-        {"user_id": current_user["id"]},
-        {"_id": 0}
-    )
+    """Get the latest email priority analysis - SUPABASE VERSION"""
+    analysis = await get_priority_analysis_supabase(supabase_admin, current_user["id"])
     
     if not analysis:
         return {"message": "No priority analysis available. Run /email/analyze-priority first."}
