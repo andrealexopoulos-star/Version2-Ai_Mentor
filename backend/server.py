@@ -757,7 +757,7 @@ def require_owner_or_admin(current_user: dict = Depends(get_current_user)):
 async def get_business_context(user_id: str) -> dict:
     """Get comprehensive business context for AI personalization"""
     # Get business profile
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     
     # Get recent data files (summaries)
     data_files = await db.data_files.find(
@@ -3416,7 +3416,7 @@ async def analyze_email_priority(current_user: dict = Depends(get_current_user))
     user_id = current_user["id"]
     
     # Get business profile for context (still MongoDB for now - will migrate later)
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     business_goals = profile.get("short_term_goals", "") if profile else ""
     business_challenges = profile.get("main_challenges", "") if profile else ""
     
@@ -3895,7 +3895,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     
     # Get basic user info
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "name": 1})
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     
     # Build final context
     user_context = f"""
@@ -4032,7 +4032,7 @@ async def sync_business_to_cognitive(current_user: dict = Depends(get_current_us
     user_id = current_user["id"]
     
     # Get business profile
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     
     if not profile:
         return {"status": "no_profile", "message": "No business profile found to sync"}
@@ -5072,7 +5072,7 @@ async def business_profile_autofill(req: BusinessProfileAutofillRequest, current
         website_text = await fetch_website_text(req.website_url)
         website_text = website_text[:8000]
 
-    existing_profile = await db.business_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    existing_profile = await get_business_profile_supabase(supabase_admin, current_user["id"])
 
     prompt = f"""You are a business analyst helping autofill a structured business profile.
 Return ONLY a valid JSON object with keys matching the profile schema.
@@ -5499,7 +5499,7 @@ async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
     categories = await get_data_categories(current_user)
     
     # Has business profile
-    profile = await db.business_profiles.find_one({"user_id": current_user["id"]})
+    profile = await get_business_profile_supabase(supabase_admin, current_user["id"])
     
     return {
         "total_files": total_files,
@@ -5753,7 +5753,7 @@ async def build_advisor_context(user_id: str) -> dict:
     This is the 'truth serum' - all evidence the AI needs to provide personalized advice.
     """
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
     
     # Recent activity for context
@@ -6198,7 +6198,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
 
     # Load user + profile
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
-    profile = await db.business_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, current_user["id"])
 
     tier = tier_from_user(user or {})
     base_limit = oac_monthly_limit_for_tier(tier)
@@ -6777,7 +6777,7 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
         }
     
     # Fallback to legacy profile calculation
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     onboarding = await db.onboarding.find_one({"user_id": user_id}, {"_id": 0})
     files_count = await db.data_files.count_documents({"user_id": user_id})
     
@@ -6921,7 +6921,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
     }
     
     # Check business profile
-    profile = await db.business_profiles.find_one({"user_id": user_id}, {"_id": 0})
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
     if profile:
         data_signals["has_profile"] = True
         # Calculate simple completeness
