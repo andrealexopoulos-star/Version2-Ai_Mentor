@@ -5802,10 +5802,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         }
 
     # Build context snippets
-    recent_chats = await db.chat_history.find(
-        {"user_id": current_user["id"]},
-        {"_id": 0, "message": 1, "response": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(8).to_list(8)
+    recent_chats = await get_chat_history_supabase(supabase_admin, current_user["id"], limit=8)
 
     recent_docs = await get_user_documents_supabase(
         supabase_admin,
