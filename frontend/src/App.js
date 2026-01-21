@@ -154,11 +154,9 @@ function App() {
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
         <SupabaseAuthProvider>
-          <AuthProvider>
-            <InstallPrompt />
-            <AppRoutes />
-            <Toaster position="top-right" richColors />
-          </AuthProvider>
+          <InstallPrompt />
+          <AppRoutes />
+          <Toaster position="top-right" richColors />
         </SupabaseAuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
