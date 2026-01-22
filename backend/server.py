@@ -2837,16 +2837,22 @@ async def refresh_outlook_token(user_id: str, refresh_token: str):
 async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
     """Check if user has connected their Outlook account - SUPABASE VERSION"""
     user_id = current_user["id"]
+    logger.info(f"🔍 Checking Outlook status for user_id: {user_id}")
     
     try:
         # Get tokens from Supabase
         tokens = await get_outlook_tokens(user_id)
+        logger.info(f"🔍 Tokens result: {tokens is not None}")
         
         if tokens:
             # Check if token is still valid
             if tokens.get("expires_at"):
-                expires_at = datetime.fromisoformat(tokens["expires_at"].replace('Z', '+00:00'))
-                is_valid = expires_at > datetime.now(timezone.utc)
+                try:
+                    expires_at = datetime.fromisoformat(tokens["expires_at"].replace('Z', '+00:00'))
+                    is_valid = expires_at > datetime.now(timezone.utc)
+                except Exception as e:
+                    logger.warning(f"Could not parse expires_at: {e}")
+                    is_valid = True
             else:
                 is_valid = True
             
@@ -2857,24 +2863,31 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             connected_email = tokens.get("microsoft_email") or tokens.get("connected_email")
             connected_name = tokens.get("microsoft_name") or tokens.get("connected_name")
             
+            logger.info(f"✅ Outlook connected for user {user_id}, emails: {emails_count}, email: {connected_email}")
+            
             return {
                 "connected": True,
                 "emails_synced": emails_count,
                 "user_email": current_user.get("email"),
                 "connected_email": connected_email,
                 "connected_name": connected_name,
-                "token_valid": is_valid
+                "token_valid": is_valid,
+                "source": tokens.get("source", "unknown")
             }
         
+        logger.info(f"❌ No Outlook tokens found for user {user_id}")
         return {
             "connected": False,
             "emails_synced": 0
         }
     except Exception as e:
-        logger.error(f"Error checking Outlook status: {e}")
+        logger.error(f"Error checking Outlook status for user {user_id}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return {
             "connected": False,
-            "emails_synced": 0
+            "emails_synced": 0,
+            "error": str(e)
         }
 
 
