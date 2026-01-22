@@ -11,7 +11,7 @@ import json
 import uuid
 from datetime import datetime
 
-BASE_URL = "https://auth-revival-11.preview.emergentagent.com/api"
+BASE_URL = "https://auth-upgrade-33.preview.emergentagent.com/api"
 
 class CognitiveCoreTest:
     def __init__(self):

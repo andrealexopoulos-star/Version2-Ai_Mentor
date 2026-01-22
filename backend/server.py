@@ -3387,7 +3387,10 @@ async def get_soundboard_conversations(current_user: dict = Depends(get_current_
 @api_router.get("/soundboard/conversations/{conversation_id}")
 async def get_soundboard_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
     """Get a specific conversation with messages"""
-    conversation = await get_soundboard_conversation_supabase(supabase_admin, session_id)
+    conversation = await db.soundboard_conversations.find_one(
+        {"id": conversation_id, "user_id": current_user["id"]},
+        {"_id": 0}
+    )
     
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -3406,7 +3409,10 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # Get or create conversation
     conversation = None
     if req.conversation_id:
-        conversation = await get_soundboard_conversation_supabase(supabase_admin, session_id)
+        conversation = await db.soundboard_conversations.find_one(
+            {"id": req.conversation_id, "user_id": user_id},
+            {"_id": 0}
+        )
     
     # Build message history for context
     messages_history = []
@@ -3542,12 +3548,25 @@ COGNITIVE CORE CONTEXT (USE THIS)
         
         if conversation:
             # Update existing conversation
-            await update_soundboard_conversation_supabase(supabase_admin, session_id, updates)
+            await db.soundboard_conversations.update_one(
+                {"id": req.conversation_id},
+                {
+                    "$push": {"messages": {"$each": new_messages}},
+                    "$set": {"updated_at": now}
+                }
+            )
             conversation_id = req.conversation_id
         else:
             # Create new conversation
             conversation_id = str(uuid.uuid4())
-            await create_soundboard_conversation_supabase(supabase_admin, conv_data)
+            await db.soundboard_conversations.insert_one({
+                "id": conversation_id,
+                "user_id": user_id,
+                "title": conversation_title or "New Conversation",
+                "messages": new_messages,
+                "created_at": now,
+                "updated_at": now
+            })
         
         return {
             "reply": response,
@@ -3567,7 +3586,9 @@ async def rename_soundboard_conversation(
     current_user: dict = Depends(get_current_user)
 ):
     """Rename a conversation"""
-    result = await update_soundboard_conversation_supabase(supabase_admin, session_id, updates).isoformat()}}
+    result = await db.soundboard_conversations.update_one(
+        {"id": conversation_id, "user_id": current_user["id"]},
+        {"$set": {"title": req.title, "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
     
     if result.matched_count == 0:

@@ -20,7 +20,7 @@
 ### PHASE 1: Setup & Connection (5 minutes)
 
 **Step 1: Login**
-1. Go to: https://auth-revival-11.preview.emergentagent.com/login-supabase
+1. Go to: https://auth-upgrade-33.preview.emergentagent.com/login-supabase
 2. Sign in with your real business account (Google or Microsoft)
 3. Verify you land on `/advisor` page
 
