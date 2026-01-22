@@ -39,6 +39,16 @@ import MySoundBoard from "./pages/MySoundBoard";
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { user, session, loading } = useSupabaseAuth();
 
+  // Debug logging for auth issues
+  useEffect(() => {
+    console.log('[ProtectedRoute] Auth state:', { 
+      loading, 
+      hasUser: !!user, 
+      hasSession: !!session,
+      sessionEmail: session?.user?.email 
+    });
+  }, [loading, user, session]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
@@ -50,6 +60,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   const isAuthenticated = user || session;
 
   if (!isAuthenticated) {
+    console.log('[ProtectedRoute] Not authenticated, redirecting to login');
     return <Navigate to="/login-supabase" replace />;
   }
 
