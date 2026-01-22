@@ -28,49 +28,56 @@ export const SupabaseAuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true; // Track mount state to prevent state updates after unmount
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return; // Don't update if component unmounted
+      
       setSession(session);
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user.id, session); // Pass session to avoid duplicate call
       } else {
         setLoading(false);
       }
+    }).catch((error) => {
+      if (!isMounted) return;
+      console.error('Error getting initial session:', error);
+      setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return; // Don't update if component unmounted
+      
       setSession(session);
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user.id, session); // Pass session to avoid duplicate call
       } else {
         setUser(null);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false; // Mark component as unmounted
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const fetchUserProfile = async (userId) => {
+  const fetchUserProfile = async (userId, existingSession) => {
     try {
-      // Don't query Supabase directly from frontend - use backend API instead
-      // This avoids RLS policy conflicts and centralizes user data access
-      // The fallback user from session is sufficient for auth/routing
-      
-      // For now, just create a user object from the session
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      if (currentSession) {
+      // Use passed session instead of fetching again (fixes AbortError race condition)
+      if (existingSession?.user) {
         const fallbackUser = {
-          id: currentSession.user.id,
-          email: currentSession.user.email,
-          full_name: currentSession.user.user_metadata?.full_name || currentSession.user.user_metadata?.name || currentSession.user.email,
-          company_name: currentSession.user.user_metadata?.company_name || null,
-          industry: currentSession.user.user_metadata?.industry || null,
-          role: currentSession.user.user_metadata?.role || 'user',
+          id: existingSession.user.id,
+          email: existingSession.user.email,
+          full_name: existingSession.user.user_metadata?.full_name || existingSession.user.user_metadata?.name || existingSession.user.email,
+          company_name: existingSession.user.user_metadata?.company_name || null,
+          industry: existingSession.user.user_metadata?.industry || null,
+          role: existingSession.user.user_metadata?.role || 'user',
           subscription_tier: 'free',
-          is_master_account: currentSession.user.email === 'andre@thestrategysquad.com.au'
+          is_master_account: existingSession.user.email === 'andre@thestrategysquad.com.au'
         };
         console.log('Using user data from session:', fallbackUser);
         setUser(fallbackUser);
