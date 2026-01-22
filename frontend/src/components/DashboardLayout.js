@@ -436,7 +436,11 @@ const DashboardLayout = ({ children }) => {
       {/* Main Content - Mobile Optimized */}
       <main 
         className="lg:ml-64 pt-14 sm:pt-16 min-h-screen"
-        style={{ background: 'var(--bg-secondary)' }}
+        style={{ 
+          background: 'var(--bg-secondary)',
+          position: 'relative',
+          zIndex: 1
+        }}
       >
         <div className="p-3 sm:p-4 md:p-6 lg:p-8">
           {children}
