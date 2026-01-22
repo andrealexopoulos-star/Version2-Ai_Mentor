@@ -9,10 +9,7 @@
     padding-bottom: env(safe-area-inset-bottom) !important;
   }
   
-  /* Prevent background scroll when sidebar open - but allow content to remain visible */
-  body.sidebar-open {
-    position: relative; /* Changed from overflow:hidden to prevent grey screen */
-  }
+  /* REMOVED body.sidebar-open overflow lock - was causing grey screen */
   
   /* Hide sidebar by default on mobile */
   .dashboard-sidebar {

@@ -3,17 +3,8 @@
 
 @media (max-width: 768px) {
   
-  /* ========================================
-     MAIN CONTAINER - Full Screen
-     ======================================== */
-  
-  .advisor-container,
-  [class*="advisor"] {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow-y: auto; /* Changed from overflow: hidden to allow scrolling */
-  }
+  /* REMOVED .advisor-container rules that were causing layout issues */
+  /* The Advisor page will use natural flex layout from Advisor.js instead */
   
   /* ========================================
      FOCUS AREA CARDS - Horizontal Scroll
