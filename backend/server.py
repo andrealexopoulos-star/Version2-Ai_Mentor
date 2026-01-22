@@ -2224,12 +2224,17 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
     Get Outlook tokens from outlook_oauth_tokens table (Supabase Edge Function)
     Falls back to m365_tokens for backward compatibility
     """
+    logger.info(f"🔍 Looking for Outlook tokens for user_id: {user_id}")
+    
+    # First try outlook_oauth_tokens (from Supabase Edge Function)
     try:
-        # First try outlook_oauth_tokens (from Supabase Edge Function)
         response = supabase_admin.table("outlook_oauth_tokens").select("*").eq("user_id", user_id).execute()
+        logger.info(f"🔍 outlook_oauth_tokens query result: {len(response.data) if response.data else 0} records")
         if response.data and len(response.data) > 0:
             token_data = response.data[0]
             logger.info(f"✅ Retrieved Outlook tokens from outlook_oauth_tokens for user {user_id}")
+            logger.info(f"   Token expires_at: {token_data.get('expires_at')}")
+            logger.info(f"   Account email: {token_data.get('account_email')}")
             return {
                 "access_token": token_data["access_token"],
                 "refresh_token": token_data.get("refresh_token"),
@@ -2239,10 +2244,13 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
             }
     except Exception as e:
         logger.warning(f"Could not query outlook_oauth_tokens: {e}")
+        import traceback
+        logger.warning(traceback.format_exc())
     
     # Fallback to m365_tokens for backward compatibility
     try:
         response = supabase_admin.table("m365_tokens").select("*").eq("user_id", user_id).execute()
+        logger.info(f"🔍 m365_tokens query result: {len(response.data) if response.data else 0} records")
         if response.data and len(response.data) > 0:
             token_data = response.data[0]
             logger.info(f"✅ Retrieved Outlook tokens from m365_tokens for user {user_id}")
@@ -2255,6 +2263,7 @@ async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Error getting m365_tokens for user {user_id}: {e}")
     
+    logger.warning(f"❌ No Outlook tokens found in any table for user {user_id}")
     return None
 
 
