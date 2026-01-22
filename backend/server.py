@@ -6428,16 +6428,16 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     
     analysis_count = await db.analyses.count_documents({"user_id": user_id})  # TODO: Migrate to Supabase
-    document_count = await supabase_admin.table("documents").count_documents({"user_id": user_id})
+    document_count = await count_user_documents_supabase(supabase_admin, user_id)
     chat_sessions = await db.chat_history.distinct("session_id", {"user_id": user_id})
     
     recent_analyses = await db.analyses.find(
         {"user_id": user_id}, {"_id": 0}
     ).sort("created_at", -1).limit(5).to_list(5)
     
-    recent_documents = await supabase_admin.table("documents").find(
-        {"user_id": user_id}, {"_id": 0}
-    ).sort("created_at", -1).limit(5).to_list(5)
+    # Get recent documents using Supabase
+    recent_docs_result = supabase_admin.table("documents").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
+    recent_documents = recent_docs_result.data if recent_docs_result.data else []
     
     return {
         "total_analyses": analysis_count,
@@ -6485,7 +6485,9 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
     user_doc = await get_user_by_id(user_id) # Supabase
     if user_doc and user_doc.get("outlook_access_token"):
         data_signals["has_outlook"] = True
-        email_count = await supabase_admin.table("outlook_emails").count_documents({"user_id": user_id})
+        # Count emails using Supabase
+        email_result = supabase_admin.table("outlook_emails").select("id", count="exact").eq("user_id", user_id).execute()
+        email_count = email_result.count if hasattr(email_result, 'count') else 0
         data_signals["emails_synced"] = email_count
         
         # Check high priority emails
