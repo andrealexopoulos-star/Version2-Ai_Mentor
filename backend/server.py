@@ -4533,10 +4533,7 @@ async def get_business_profile(current_user: dict = Depends(get_current_user)):
         return flattened
     
     # Fallback to legacy profile
-    profile = await get_business_profile_supabase(supabase_admin, 
-        {"user_id": current_user["id"]},
-        {"_id": 0}
-    )
+    profile = await get_business_profile_supabase(supabase_admin, current_user["id"])
     if not profile:
         # Return default empty profile
         return {
