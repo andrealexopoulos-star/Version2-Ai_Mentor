@@ -42,30 +42,32 @@ const AuthCallbackSupabase = () => {
         if (accessToken) {
           console.log('✅ Access token found in URL');
           
-          // Wait for Supabase to process the auth
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const { data, error } = await supabase.auth.getSession();
-          
-          console.log('Session check:', {
-            hasSession: !!data.session,
-            userId: data.session?.user?.id,
-            email: data.session?.user?.email,
-            error: error?.message
+          // CRITICAL: Let Supabase process the tokens from URL first
+          // detectSessionInUrl: true means Supabase will automatically extract and store tokens
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
           });
           
-          if (error) {
-            console.error('❌ Auth callback error:', error);
-            setError(error.message);
-            setTimeout(() => navigate('/login-supabase?error=auth_failed'), 2000);
+          console.log('Session creation result:', {
+            hasSession: !!sessionData.session,
+            userId: sessionData.session?.user?.id,
+            email: sessionData.session?.user?.email,
+            error: sessionError?.message
+          });
+          
+          if (sessionError) {
+            console.error('❌ Failed to create session:', sessionError);
+            setError(sessionError.message);
+            setTimeout(() => navigate('/login-supabase?error=session_failed'), 2000);
             return;
           }
 
-          if (data.session) {
-            console.log('✅ Session confirmed! User:', data.session.user.email);
+          if (sessionData.session) {
+            console.log('✅ Session created and stored! User:', sessionData.session.user.email);
             
-            // Wait for session to fully propagate (especially for Microsoft)
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Give React context time to pick up the new session
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             // Call backend API to check if user needs onboarding
             // This is more reliable than direct Supabase query because:
@@ -77,7 +79,7 @@ const AuthCallbackSupabase = () => {
               const response = await fetch(`${BACKEND_URL}/api/auth/check-profile`, {
                 method: 'GET',
                 headers: {
-                  'Authorization': `Bearer ${data.session.access_token}`,
+                  'Authorization': `Bearer ${sessionData.session.access_token}`,
                   'Content-Type': 'application/json'
                 }
               });
