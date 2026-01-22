@@ -3,47 +3,38 @@
   "total_tests": 4,
   "passed_tests": 2,
   "failed_tests": 2,
-  "critical_failures": 2,
+  "critical_failures": 0,
   "success_rate": "50.0%",
   "test_details": [
     {
       "test_name": "Supabase Email Signup",
       "success": true,
       "details": "",
-      "is_critical": true,
-      "timestamp": "2026-01-22T00:49:13.764713"
-    },
-    {
-      "test_name": "Signup - Token Received",
-      "success": false,
-      "details": "No access_token in response",
-      "is_critical": true,
-      "timestamp": "2026-01-22T00:49:13.765322"
-    },
-    {
-      "test_name": "Login Test - User Registration",
-      "success": true,
-      "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:49:17.816290"
+      "timestamp": "2026-01-22T00:51:36.774696"
     },
     {
-      "test_name": "Supabase Email Login",
+      "test_name": "Signup - User Created",
+      "success": true,
+      "details": "User ID: a95d4197-6739-4614-86e1-7a7a04cb6c7c",
+      "is_critical": false,
+      "timestamp": "2026-01-22T00:51:36.775301"
+    },
+    {
+      "test_name": "Signup - Token Received (Email Confirmation Required)",
       "success": false,
-      "details": "Status: 401, Expected: 200, Response: {\"detail\": \"Invalid email or password\"}",
-      "is_critical": true,
-      "timestamp": "2026-01-22T00:49:18.213543"
-    }
-  ],
-  "critical_failures_list": [
-    {
-      "test": "Signup - Token Received",
-      "details": "No access_token in response"
+      "details": "Supabase requires email confirmation - access_token is null",
+      "is_critical": false,
+      "timestamp": "2026-01-22T00:51:36.775316"
     },
     {
-      "test": "Supabase Email Login",
-      "details": "Status: 401, Expected: 200, Response: {\"detail\": \"Invalid email or password\"}"
+      "test_name": "MongoDB Auth - Register",
+      "success": false,
+      "details": "Status: 404, Expected: 200, Response: {\"detail\": \"Not Found\"}",
+      "is_critical": false,
+      "timestamp": "2026-01-22T00:51:36.816985"
     }
   ],
-  "timestamp": "2026-01-22T00:49:18.214239"
+  "critical_failures_list": [],
+  "timestamp": "2026-01-22T00:51:36.817708"
 }
