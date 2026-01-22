@@ -363,6 +363,30 @@ const Integrations = () => {
     }
   };
 
+  const handleSyncEmails = async () => {
+    setSyncing(true);
+    try {
+      toast.info('Syncing emails from Outlook...', { duration: 3000 });
+      const response = await apiClient.get('/outlook/emails/sync');
+      console.log('📧 Sync response:', response.data);
+      
+      if (response.data.emails_synced > 0) {
+        toast.success(`Successfully synced ${response.data.emails_synced} emails!`);
+      } else {
+        toast.info('No new emails to sync');
+      }
+      
+      // Refresh status
+      await checkOutlookStatus();
+    } catch (error) {
+      console.error('Sync error:', error);
+      const errorMsg = error.response?.data?.detail || error.message;
+      toast.error('Failed to sync emails: ' + errorMsg);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const closeModal = () => setShowModal(null);
 
   return (
