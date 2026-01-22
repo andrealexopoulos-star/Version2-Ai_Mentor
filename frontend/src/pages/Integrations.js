@@ -58,6 +58,26 @@ const Integrations = () => {
         console.log('🔄 Reconciling Outlook status with backend...');
         checkOutlookStatus();
       }, 2000);
+      
+      // AUTO-SYNC: Trigger email sync after OAuth completion
+      setTimeout(async () => {
+        console.log('📧 Auto-triggering email sync after OAuth...');
+        try {
+          toast.info('Starting email sync...', { duration: 3000 });
+          const syncResponse = await apiClient.post('/outlook/emails/sync');
+          console.log('📧 Sync response:', syncResponse.data);
+          if (syncResponse.data.emails_synced > 0) {
+            toast.success(`Synced ${syncResponse.data.emails_synced} emails!`);
+            // Refresh status to show updated count
+            checkOutlookStatus();
+          } else {
+            toast.info('Email sync started - this may take a moment');
+          }
+        } catch (syncError) {
+          console.error('Email sync error:', syncError);
+          // Don't show error toast - sync might just take time
+        }
+      }, 3000);
     } else if (outlookError) {
       const errorMessages = {
         'auth_failed': 'Failed to authenticate with Microsoft. Please try again.',
