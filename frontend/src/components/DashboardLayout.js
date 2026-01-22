@@ -371,14 +371,15 @@ const DashboardLayout = ({ children }) => {
         </div>
       </header>
 
-      {/* Sidebar - Mobile Optimized - HIGHEST Z-INDEX */}
+      {/* Sidebar - Mobile Optimized - MUST BE ABOVE BACKDROP */}
       <aside 
-        className={`fixed top-14 sm:top-16 left-0 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] w-64 sm:w-72 z-50 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-14 sm:top-16 left-0 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] w-64 sm:w-72 transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ 
-          background: '#FFFFFF',  /* Force white background - var might be grey */
-          boxShadow: sidebarOpen ? '4px 0 16px rgba(0,0,0,0.3)' : 'none'
+          background: '#FFFFFF',
+          boxShadow: sidebarOpen ? '4px 0 16px rgba(0,0,0,0.3)' : 'none',
+          zIndex: 999  /* CRITICAL: Must be above backdrop */
         }}
       >
         <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto h-full">
@@ -427,12 +428,13 @@ const DashboardLayout = ({ children }) => {
         </nav>
       </aside>
 
-      {/* Mobile Overlay - Backdrop - BETWEEN CONTENT AND SIDEBAR */}
+      {/* Mobile Overlay - Backdrop - BELOW SIDEBAR */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
+          style={{ zIndex: 998 }}  /* Below sidebar (999) but above content */
         />
       )}
 
