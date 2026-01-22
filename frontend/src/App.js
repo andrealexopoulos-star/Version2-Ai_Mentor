@@ -34,6 +34,7 @@ import OutlookTest from "./pages/OutlookTest";
 import EmailInbox from "./pages/EmailInbox";
 import CalendarView from "./pages/CalendarView";
 import MySoundBoard from "./pages/MySoundBoard";
+import AuthDebug from "./pages/AuthDebug";
 
 // Protected Route Component - Supabase Auth Only
 const ProtectedRoute = ({ children, adminOnly = false }) => {
