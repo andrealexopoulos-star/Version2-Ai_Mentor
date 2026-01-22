@@ -99,9 +99,9 @@ const AuthCallbackSupabase = () => {
                   navigate('/onboarding', { replace: true });
                 }, 500);
               } else {
-                console.log('🚀 User profile complete, redirecting to /advisor...');
+                console.log('🚀 User profile complete, redirecting to /dashboard...');
                 setTimeout(() => {
-                  navigate('/advisor', { replace: true });
+                  navigate('/dashboard', { replace: true });
                 }, 500);
               }
             } catch (profileCheckError) {
