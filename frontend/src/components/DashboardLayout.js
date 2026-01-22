@@ -137,10 +137,11 @@ const DashboardLayout = ({ children }) => {
     >
       {/* Top Navigation Bar - Mobile Optimized */}
       <header 
-        className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-4"
+        className="fixed top-0 left-0 right-0 h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-4"
         style={{ 
           background: 'var(--bg-primary)', 
-          borderBottom: '1px solid var(--border-light)'
+          borderBottom: '1px solid var(--border-light)',
+          zIndex: 1000  /* Above sidebar and backdrop */
         }}
       >
         {/* Left: Mobile Menu + Logo */}
