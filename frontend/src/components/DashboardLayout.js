@@ -387,8 +387,7 @@ const DashboardLayout = ({ children }) => {
               return (
                 <div key={index} className="pt-6 pb-2">
                   <span 
-                    className="px-3 text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--text-muted)' }}
+                    className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-600"
                   >
                     {item.label}
                   </span>
@@ -406,20 +405,24 @@ const DashboardLayout = ({ children }) => {
                   navigate(item.path);
                   setSidebarOpen(false);
                 }}
-                className={`sidebar-item w-full ${isActive(item.path) ? 'active' : ''}`}
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(item.path) 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                style={{ minHeight: '48px' }}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-5 h-5 flex-shrink-0" />
                 <span className="flex-1 text-left">{item.label}</span>
                 {showNotificationBadge && (
                   <span 
-                    className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full"
-                    style={{ background: notifications.high > 0 ? '#EF4444' : '#F59E0B' }}
+                    className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-red-500"
                   >
                     {notifications.total > 9 ? '•' : notifications.total}
                   </span>
                 )}
                 {item.isNew && !showNotificationBadge && (
-                  <span className="badge-new">New</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-600">New</span>
                 )}
               </button>
             );
