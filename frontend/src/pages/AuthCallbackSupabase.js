@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../context/SupabaseAuthContext';
+import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Loader2 } from 'lucide-react';
 
 const AuthCallbackSupabase = () => {
   const navigate = useNavigate();
+  const { refreshSession } = useSupabaseAuth();
   const [error, setError] = useState(null);
+  const [status, setStatus] = useState('Processing...');
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
         console.log('=== AUTH CALLBACK STARTED ===');
         console.log('Current URL:', window.location.href);
+        setStatus('Extracting tokens...');
         
         // Microsoft/Azure sends tokens in query params, Google sends in hash
         // Check BOTH locations
@@ -31,6 +34,7 @@ const AuthCallbackSupabase = () => {
           hashParams: window.location.hash,
           queryParams: window.location.search
         });
+        
         // Handle OAuth errors
         if (errorCode) {
           console.error('❌ OAuth error:', errorCode, errorDescription);
@@ -41,9 +45,9 @@ const AuthCallbackSupabase = () => {
 
         if (accessToken) {
           console.log('✅ Access token found in URL');
+          setStatus('Creating session...');
           
-          // CRITICAL: Let Supabase process the tokens from URL first
-          // detectSessionInUrl: true means Supabase will automatically extract and store tokens
+          // Set the session with Supabase
           const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
@@ -64,16 +68,34 @@ const AuthCallbackSupabase = () => {
           }
 
           if (sessionData.session) {
-            console.log('✅ Session created and stored! User:', sessionData.session.user.email);
+            console.log('✅ Session created! User:', sessionData.session.user.email);
+            setStatus('Verifying session...');
             
-            // Give React context time to pick up the new session
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // CRITICAL: Force refresh the auth context to pick up the new session
+            if (refreshSession) {
+              await refreshSession();
+            }
             
-            // Call backend API to check if user needs onboarding
-            // This is more reliable than direct Supabase query because:
-            // 1. Backend ensures profile is created
-            // 2. Backend checks for business profile completion
-            // 3. Handles both new and existing users correctly
+            // Wait for session to propagate
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Verify session is actually set
+            const { data: verifyData } = await supabase.auth.getSession();
+            console.log('Session verification:', {
+              hasSession: !!verifyData.session,
+              email: verifyData.session?.user?.email
+            });
+            
+            if (!verifyData.session) {
+              console.error('❌ Session not persisted after setSession');
+              setError('Session failed to persist');
+              setTimeout(() => navigate('/login-supabase?error=session_not_persisted'), 2000);
+              return;
+            }
+            
+            setStatus('Checking profile...');
+            
+            // Check if user needs onboarding
             try {
               const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
               const response = await fetch(`${BACKEND_URL}/api/auth/check-profile`, {
@@ -86,31 +108,30 @@ const AuthCallbackSupabase = () => {
               
               if (!response.ok) {
                 console.error('❌ Profile check failed:', response.status);
-                // Fallback: assume new user if check fails
-                console.log('Fallback: redirecting to onboarding');
-                setTimeout(() => navigate('/onboarding', { replace: true }), 500);
+                // For new OAuth users, skip onboarding and go to advisor
+                console.log('Redirecting to advisor (profile check failed)');
+                setStatus('Redirecting...');
+                navigate('/advisor', { replace: true });
                 return;
               }
               
               const profileData = await response.json();
               console.log('📋 Profile check result:', profileData);
               
+              setStatus('Redirecting...');
+              
               if (profileData.needs_onboarding) {
-                console.log('🎯 User needs onboarding, redirecting...');
-                setTimeout(() => {
-                  navigate('/onboarding', { replace: true });
-                }, 500);
+                console.log('🎯 User needs onboarding');
+                navigate('/onboarding', { replace: true });
               } else {
-                console.log('🚀 User profile complete, redirecting to /dashboard...');
-                setTimeout(() => {
-                  navigate('/dashboard', { replace: true });
-                }, 500);
+                console.log('🚀 User profile complete, going to advisor');
+                navigate('/advisor', { replace: true });
               }
             } catch (profileCheckError) {
               console.error('❌ Error checking profile:', profileCheckError);
-              // Fallback: try to load advisor, let ProtectedRoute handle auth
-              console.log('Fallback: redirecting to advisor');
-              setTimeout(() => navigate('/advisor', { replace: true }), 500);
+              // Fallback: go directly to advisor
+              setStatus('Redirecting...');
+              navigate('/advisor', { replace: true });
             }
           } else {
             console.log('❌ No session despite access token');
@@ -119,6 +140,7 @@ const AuthCallbackSupabase = () => {
           }
         } else {
           console.log('No tokens in URL, checking for existing session...');
+          setStatus('Checking existing session...');
           const { data, error } = await supabase.auth.getSession();
           
           if (error || !data.session) {
@@ -137,7 +159,7 @@ const AuthCallbackSupabase = () => {
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, refreshSession]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
