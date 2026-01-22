@@ -377,7 +377,7 @@ const DashboardLayout = ({ children }) => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ 
-          background: 'var(--bg-primary)', 
+          background: '#FFFFFF',  /* Force white background - var might be grey */
           boxShadow: sidebarOpen ? '4px 0 16px rgba(0,0,0,0.3)' : 'none'
         }}
       >
