@@ -1,0 +1,49 @@
+{
+  "summary": "BIQC Platform testing completed - 2/4 tests passed (50.0%)",
+  "total_tests": 4,
+  "passed_tests": 2,
+  "failed_tests": 2,
+  "critical_failures": 2,
+  "success_rate": "50.0%",
+  "test_details": [
+    {
+      "test_name": "Supabase Email Signup",
+      "success": true,
+      "details": "",
+      "is_critical": true,
+      "timestamp": "2026-01-22T00:49:13.764713"
+    },
+    {
+      "test_name": "Signup - Token Received",
+      "success": false,
+      "details": "No access_token in response",
+      "is_critical": true,
+      "timestamp": "2026-01-22T00:49:13.765322"
+    },
+    {
+      "test_name": "Login Test - User Registration",
+      "success": true,
+      "details": "",
+      "is_critical": false,
+      "timestamp": "2026-01-22T00:49:17.816290"
+    },
+    {
+      "test_name": "Supabase Email Login",
+      "success": false,
+      "details": "Status: 401, Expected: 200, Response: {\"detail\": \"Invalid email or password\"}",
+      "is_critical": true,
+      "timestamp": "2026-01-22T00:49:18.213543"
+    }
+  ],
+  "critical_failures_list": [
+    {
+      "test": "Signup - Token Received",
+      "details": "No access_token in response"
+    },
+    {
+      "test": "Supabase Email Login",
+      "details": "Status: 401, Expected: 200, Response: {\"detail\": \"Invalid email or password\"}"
+    }
+  ],
+  "timestamp": "2026-01-22T00:49:18.214239"
+}
