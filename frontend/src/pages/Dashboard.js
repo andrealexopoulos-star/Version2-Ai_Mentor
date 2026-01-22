@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { 
   MessageSquare, FileText, 
   ArrowRight, Loader2,
   CheckCircle2, Circle, Plug, Building2, FolderOpen, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-
-
 
 const Dashboard = () => {
   const navigate = useNavigate();
