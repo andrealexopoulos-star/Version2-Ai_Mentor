@@ -306,16 +306,20 @@ const Advisor = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
-                className="flex-1 min-h-[56px] max-h-[200px] resize-none bg-gray-50 border-gray-200 rounded-2xl px-4 py-3 focus:bg-white"
+                className="flex-1 min-h-[48px] max-h-[200px] resize-none bg-gray-50 border-gray-200 rounded-2xl px-4 py-3 focus:bg-white"
                 style={{ 
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  fontSize: '15px'
+                  fontSize: '16px' // Prevents iOS zoom
                 }}
               />
               <Button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="h-[56px] px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-sm"
+                className="h-12 sm:h-14 px-4 sm:px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-sm touch-manipulation"
+                style={{
+                  minWidth: '48px',
+                  minHeight: '48px'
+                }}
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
