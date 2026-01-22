@@ -301,18 +301,15 @@ const Integrations = () => {
         return;
       }
 
-      // Call backend API to get OAuth URL
-      // Backend validates user via Supabase token and generates secure OAuth URL
-      const response = await apiClient.get('/auth/outlook/login');
+      // Use Supabase Edge Function for Outlook OAuth
+      // The Edge Function handles the Microsoft OAuth flow
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const outlookAuthUrl = `${supabaseUrl}/functions/v1/outlook-auth/start?state=${session.access_token}`;
       
-      if (!response.data || !response.data.auth_url) {
-        throw new Error('No auth URL returned from backend');
-      }
+      console.log('Redirecting to Microsoft Outlook OAuth via Supabase Edge Function');
       
-      console.log('Redirecting to Microsoft Outlook OAuth');
-      
-      // Redirect to Microsoft OAuth consent screen
-      window.location.href = response.data.auth_url;
+      // Redirect to Supabase Edge Function which initiates Microsoft OAuth
+      window.location.href = outlookAuthUrl;
       
     } catch (error) {
       console.error('Outlook connection error:', error);
