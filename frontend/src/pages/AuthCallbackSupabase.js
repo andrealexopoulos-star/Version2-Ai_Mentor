@@ -169,7 +169,7 @@ const AuthCallbackSupabase = () => {
           Completing sign in...
         </h2>
         <p className="text-gray-600">
-          Please wait while we authenticate you
+          {status}
         </p>
         {error && (
           <p className="text-red-600 mt-4 text-sm">
