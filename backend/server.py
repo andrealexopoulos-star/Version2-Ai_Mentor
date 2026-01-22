@@ -2221,10 +2221,27 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 
 async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
     """
-    Get Outlook tokens from m365_tokens table (standardized)
+    Get Outlook tokens from outlook_oauth_tokens table (Supabase Edge Function)
+    Falls back to m365_tokens for backward compatibility
     """
     try:
-        # Query m365_tokens table
+        # First try outlook_oauth_tokens (from Supabase Edge Function)
+        response = supabase_admin.table("outlook_oauth_tokens").select("*").eq("user_id", user_id).execute()
+        if response.data and len(response.data) > 0:
+            token_data = response.data[0]
+            logger.info(f"✅ Retrieved Outlook tokens from outlook_oauth_tokens for user {user_id}")
+            return {
+                "access_token": token_data["access_token"],
+                "refresh_token": token_data.get("refresh_token"),
+                "expires_at": token_data.get("expires_at"),
+                "microsoft_email": token_data.get("account_email"),
+                "source": "outlook_oauth_tokens"
+            }
+    except Exception as e:
+        logger.warning(f"Could not query outlook_oauth_tokens: {e}")
+    
+    # Fallback to m365_tokens for backward compatibility
+    try:
         response = supabase_admin.table("m365_tokens").select("*").eq("user_id", user_id).execute()
         if response.data and len(response.data) > 0:
             token_data = response.data[0]
