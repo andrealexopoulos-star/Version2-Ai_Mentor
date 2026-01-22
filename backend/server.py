@@ -6608,9 +6608,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
     notifications = []
     
     # Check for high priority emails (customer complaints, urgent issues)
-    priority_analysis = await get_priority_analysis_supabase(supabase_admin, 
-        {"user_id": user_id}, {"_id": 0}
-    )
+    priority_analysis = await get_priority_analysis_supabase(supabase_admin, user_id)
     
     if priority_analysis and priority_analysis.get("analysis"):
         high_priority = priority_analysis["analysis"].get("high_priority", [])
