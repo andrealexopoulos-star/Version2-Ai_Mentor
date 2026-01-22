@@ -24,7 +24,8 @@ const Integrations = () => {
     emails_synced: 0,
     connected_email: null,
     connected_name: null,
-    user_email: null
+    user_email: null,
+    needs_reconnect: false // Track if reconnection required
   });
 
   // Handle URL parameters from OAuth callback
@@ -78,7 +79,20 @@ const Integrations = () => {
     try {
       const response = await apiClient.get('/outlook/status');
       console.log('📊 Backend Outlook status:', response.data);
-      setOutlookStatus(response.data);
+      
+      // If backend says not connected but we have optimistic state, mark as needs_reconnect
+      if (!response.data.connected && outlookStatus.connected) {
+        console.log('⚠️ Backend reports disconnected - token may have expired');
+        setOutlookStatus({
+          ...response.data,
+          needs_reconnect: true
+        });
+      } else {
+        setOutlookStatus({
+          ...response.data,
+          needs_reconnect: false
+        });
+      }
     } catch (error) {
       console.log('⚠️ Could not fetch Outlook status - user may not be connected yet');
       // Don't overwrite optimistic state on error
@@ -456,9 +470,10 @@ const Integrations = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filteredIntegrations.map((integration) => {
             const isConnected = integration.id === 'outlook' && outlookStatus.connected;
+            const needsReconnect = integration.id === 'outlook' && outlookStatus.needs_reconnect;
             
             return (
-              <div key={integration.id} className={`integration-card ${isConnected ? 'border-2 border-green-500' : ''}`}>
+              <div key={integration.id} className={`integration-card ${isConnected ? 'border-2 border-green-500' : needsReconnect ? 'border-2 border-orange-400' : ''}`}>
               <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div 
                   className="integration-logo"
@@ -475,6 +490,12 @@ const Integrations = () => {
                       <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <span className="text-xs font-medium text-green-700">Connected</span>
+                      </div>
+                    )}
+                    {needsReconnect && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <span className="text-xs font-medium text-orange-700">Reconnect Required</span>
                       </div>
                     )}
                     {integration.popular && !isConnected && (
@@ -509,8 +530,12 @@ const Integrations = () => {
                 
                 <Button 
                   onClick={() => handleConnect(integration)}
-                  className={`text-xs sm:text-sm py-2 px-3 sm:px-4 ${isConnected ? 'btn-secondary' : integration.tier === 'free' ? 'btn-primary' : 'btn-secondary'}`}
-                  disabled={connecting === integration.id || isConnected}
+                  className={`text-xs sm:text-sm py-2 px-3 sm:px-4 ${
+                    isConnected ? 'btn-secondary' : 
+                    needsReconnect ? 'btn-warning' :
+                    integration.tier === 'free' ? 'btn-primary' : 'btn-secondary'
+                  }`}
+                  disabled={connecting === integration.id}
                 >
                   {isConnected ? (
                     <>
@@ -518,8 +543,13 @@ const Integrations = () => {
                       <span className="hidden sm:inline">Connected</span>
                       <span className="sm:hidden">✓</span>
                     </>
+                  ) : needsReconnect ? (
+                    <>
+                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                      <span>Reconnect</span>
+                    </>
                   ) : connecting === integration.id ? (
-                    <span className="animate-pulse">...</span>
+                    <span className="animate-pulse">Connecting...</span>
                   ) : (
                     integration.tier === 'free' ? 'Connect' : 'Upgrade'
                   )}
