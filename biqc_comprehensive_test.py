@@ -83,38 +83,36 @@ class BIQCPlatformTester:
     # ==================== AUTHENTICATION FLOW TESTS ====================
     
     def test_mongodb_auth_fallback(self):
-        """Use MongoDB auth to get a token for testing (hybrid auth support)"""
-        print("\n🔐 Using MongoDB Auth for Token (Hybrid Auth)...")
+        """Use pre-created confirmed test user for testing"""
+        print("\n🔐 Using Pre-Created Test User (Email Confirmed)...")
         
-        unique_id = str(uuid.uuid4())[:8]
-        user_data = {
-            "email": f"mongodb_test_{unique_id}@testdomain.com",
-            "password": "MongoTest123!",
-            "name": "MongoDB Test User",
-            "business_name": "MongoDB Test Business",
-            "industry": "Technology"
+        login_data = {
+            "email": "testing@biqc.demo",
+            "password": "TestPass123!"
         }
         
-        # Register with MongoDB auth
+        # Login with confirmed test user
         success, response = self.run_test(
-            "MongoDB Auth - Register",
+            "Test User Login",
             "POST",
-            "auth/register",
+            "auth/supabase/login",
             200,
-            data=user_data
+            data=login_data,
+            is_critical=True
         )
         
         if success:
-            self.token = response.get('access_token')
+            session = response.get('session', {})
+            self.token = session.get('access_token')
             user_info = response.get('user', {})
             self.user_id = user_info.get('id')
-            self.user_email = user_data['email']
+            self.user_email = login_data['email']
             
             if self.token:
-                self.log_test("MongoDB Auth - Token Received", True, f"User ID: {self.user_id}")
+                self.log_test("Test User - Token Received", True, f"User ID: {self.user_id}")
                 return True
             else:
-                self.log_test("MongoDB Auth - Token Received", False, "No access_token in response")
+                self.log_test("Test User - Token Received", False, "No access_token in response", is_critical=True)
                 return False
         
         return False
