@@ -290,10 +290,16 @@ const Advisor = () => {
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="border-t bg-white shadow-lg" style={{ borderColor: '#E5E7EB' }}>
-          <div className="max-w-4xl mx-auto px-6 py-6">
-            <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+        {/* Input Area - Fixed Bottom with Safe Area */}
+        <div 
+          className="border-t bg-white shadow-lg flex-shrink-0" 
+          style={{ 
+            borderColor: '#E5E7EB',
+            paddingBottom: 'max(1rem, env(safe-area-inset-bottom))'
+          }}
+        >
+          <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
+            <form onSubmit={handleSubmit} className="flex gap-2 sm:gap-3 items-end">
               <Textarea
                 ref={textareaRef}
                 value={input}
