@@ -471,6 +471,18 @@ const Integrations = () => {
                         <LogOut className="w-4 h-4" />
                       )}
                     </Button>
+                    <Button 
+                      onClick={handleSyncEmails}
+                      disabled={syncing}
+                      className="btn-primary text-sm py-1.5 px-3"
+                      title="Sync Emails Now"
+                    >
+                      {syncing ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}
