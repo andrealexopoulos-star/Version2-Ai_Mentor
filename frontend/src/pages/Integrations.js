@@ -35,14 +35,28 @@ const Integrations = () => {
     const connectedEmail = searchParams.get('connected_email');
 
     if (outlookConnected === 'true') {
+      console.log('✅ Outlook OAuth completed successfully - setting optimistic connected state');
+      
+      // OPTIMISTIC UPDATE: Immediately show as connected
+      setOutlookStatus(prev => ({
+        ...prev,
+        connected: true,
+        emails_synced: prev.emails_synced || 0
+      }));
+      
       const message = connectedEmail 
         ? `Microsoft Outlook (${decodeURIComponent(connectedEmail)}) connected successfully!`
         : 'Microsoft Outlook connected successfully!';
       toast.success(message + ' Your AI is now analyzing your emails.');
+      
       // Clear URL parameters
       setSearchParams({});
-      // Refresh status
-      checkOutlookStatus();
+      
+      // Background: Refresh actual status from backend to reconcile
+      setTimeout(() => {
+        console.log('🔄 Reconciling Outlook status with backend...');
+        checkOutlookStatus();
+      }, 2000);
     } else if (outlookError) {
       const errorMessages = {
         'auth_failed': 'Failed to authenticate with Microsoft. Please try again.',
@@ -63,9 +77,11 @@ const Integrations = () => {
   const checkOutlookStatus = async () => {
     try {
       const response = await apiClient.get('/outlook/status');
+      console.log('📊 Backend Outlook status:', response.data);
       setOutlookStatus(response.data);
     } catch (error) {
-      // Not connected yet
+      console.log('⚠️ Could not fetch Outlook status - user may not be connected yet');
+      // Don't overwrite optimistic state on error
     }
   };
 
