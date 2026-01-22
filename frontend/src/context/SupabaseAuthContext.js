@@ -248,6 +248,29 @@ export const SupabaseAuthProvider = ({ children }) => {
     }
   };
 
+  // Force refresh the session from Supabase
+  const refreshSession = async () => {
+    try {
+      console.log('[Auth] Forcing session refresh...');
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('[Auth] Session refresh error:', error);
+        return null;
+      }
+      if (data.session) {
+        console.log('[Auth] Session refreshed:', data.session.user?.email);
+        setSession(data.session);
+        if (data.session.user) {
+          await fetchUserProfile(data.session.user.id, data.session);
+        }
+      }
+      return data.session;
+    } catch (error) {
+      console.error('[Auth] Session refresh exception:', error);
+      return null;
+    }
+  };
+
   const value = {
     user,
     session,
@@ -256,6 +279,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     signIn,
     signInWithOAuth,
     signOut,
+    refreshSession,
     supabase
   };
 
