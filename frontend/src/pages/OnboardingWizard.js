@@ -43,7 +43,7 @@ const BUSINESS_STAGES = [
 
 const OnboardingWizard = () => {
   const navigate = useNavigate();
-  const { user } = useSupabaseAuth();
+  const { user, refreshSession } = useSupabaseAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [businessStage, setBusinessStage] = useState(null);
   const [loading, setLoading] = useState(true);
