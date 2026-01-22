@@ -654,12 +654,19 @@ class BIQCPlatformTester:
         print("PHASE 1: AUTHENTICATION FLOW")
         print("="*80)
         
-        if not self.test_supabase_email_signup():
-            print("⚠️ Email signup failed, trying login...")
-            if not self.test_supabase_email_login():
-                print("❌ CRITICAL: Both signup and login failed. Cannot proceed with authenticated tests.")
+        # Try Supabase signup first
+        supabase_signup_success = self.test_supabase_email_signup()
+        
+        # If Supabase signup doesn't provide token (email confirmation required),
+        # use MongoDB auth as fallback to get a token for testing other endpoints
+        if not self.token:
+            print("\n⚠️ Supabase email confirmation required. Using MongoDB auth for testing...")
+            if not self.test_mongodb_auth_fallback():
+                print("❌ CRITICAL: Could not obtain authentication token. Cannot proceed with authenticated tests.")
                 return self.generate_report()
         
+        # Test other auth flows
+        self.test_supabase_email_login()
         self.test_google_oauth_flow()
         self.test_microsoft_oauth_flow()
         self.test_token_validation()
