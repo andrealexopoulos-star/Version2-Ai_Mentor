@@ -351,7 +351,7 @@ const DashboardLayout = ({ children }) => {
               >
                 <Zap className="w-4 h-4 mr-2" /> Upgrade Plan
               </DropdownMenuItem>
-              {isAdmin() && (
+              {user?.role === 'admin' && (
                 <DropdownMenuItem 
                   onClick={() => navigate('/admin')} 
                   className="cursor-pointer py-2.5"
