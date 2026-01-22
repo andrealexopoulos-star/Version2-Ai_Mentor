@@ -26,29 +26,59 @@ export const SupabaseAuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     let isMounted = true; // Track mount state to prevent state updates after unmount
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return; // Don't update if component unmounted
-      
-      setSession(session);
-      if (session?.user) {
-        fetchUserProfile(session.user.id, session); // Pass session to avoid duplicate call
-      } else {
+    const initializeAuth = async () => {
+      try {
+        console.log('[Auth] Initializing auth state...');
+        
+        // Get initial session with retry for mobile browsers
+        let retries = 3;
+        let sessionData = null;
+        
+        while (retries > 0 && !sessionData) {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            console.error('[Auth] Error getting session:', error);
+            retries--;
+            if (retries > 0) {
+              await new Promise(r => setTimeout(r, 500)); // Wait 500ms before retry
+            }
+          } else {
+            sessionData = data;
+          }
+        }
+        
+        if (!isMounted) return;
+        
+        const currentSession = sessionData?.session;
+        console.log('[Auth] Initial session:', currentSession ? `User: ${currentSession.user?.email}` : 'No session');
+        
+        setSession(currentSession);
+        if (currentSession?.user) {
+          fetchUserProfile(currentSession.user.id, currentSession);
+        } else {
+          setLoading(false);
+        }
+        setInitialized(true);
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('[Auth] Initialization error:', error);
         setLoading(false);
+        setInitialized(true);
       }
-    }).catch((error) => {
-      if (!isMounted) return;
-      console.error('Error getting initial session:', error);
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return; // Don't update if component unmounted
+      
+      console.log('[Auth] Auth state changed:', event, session ? `User: ${session.user?.email}` : 'No session');
       
       setSession(session);
       if (session?.user) {
