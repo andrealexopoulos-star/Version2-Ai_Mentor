@@ -130,9 +130,9 @@ const OnboardingWizard = () => {
       // Mark onboarding as complete
       await apiClient.post('/onboarding/complete');
       
-      // Refresh MongoDB user if using MongoDB auth
-      if (user && refreshUser) {
-        await refreshUser();
+      // Refresh user session to get updated profile
+      if (refreshSession) {
+        await refreshSession();
       }
       
       toast.success('🎉 Profile completed! Welcome to Strategy Squad');
