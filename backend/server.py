@@ -2889,9 +2889,18 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Outlook is not connected")
     
     try:
-        # Delete tokens from Supabase m365_tokens table
-        supabase_admin.table("m365_tokens").delete().eq("user_id", user_id).execute()
-        logger.info(f"Deleted Outlook tokens for user {user_id}")
+        # Delete tokens from both tables (Edge Function uses outlook_oauth_tokens, legacy uses m365_tokens)
+        try:
+            supabase_admin.table("outlook_oauth_tokens").delete().eq("user_id", user_id).execute()
+            logger.info(f"Deleted Outlook tokens from outlook_oauth_tokens for user {user_id}")
+        except Exception as e:
+            logger.warning(f"Could not delete from outlook_oauth_tokens: {e}")
+        
+        try:
+            supabase_admin.table("m365_tokens").delete().eq("user_id", user_id).execute()
+            logger.info(f"Deleted Outlook tokens from m365_tokens for user {user_id}")
+        except Exception as e:
+            logger.warning(f"Could not delete from m365_tokens: {e}")
         
         # Delete all synced emails from Supabase
         deleted_emails = await delete_user_emails_supabase(supabase_admin, user_id)
