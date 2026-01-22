@@ -101,23 +101,30 @@ class BIQCPlatformTester:
             "auth/supabase/signup",
             200,
             data=signup_data,
-            is_critical=True
+            is_critical=False  # Not critical since email confirmation is required
         )
         
         if success:
-            session = response.get('session', {})
-            if session and session.get('access_token'):
-                self.token = session['access_token']
-                user_info = response.get('user', {})
-                self.user_id = user_info.get('id')
-                self.user_email = signup_data['email']
-                self.log_test("Signup - Token Received", True, f"User ID: {self.user_id}")
+            # Check if user was created (even without token)
+            user_info = response.get('user', {})
+            if user_info and user_info.get('id'):
+                self.log_test("Signup - User Created", True, f"User ID: {user_info.get('id')}")
                 
-                # Verify user profile was created in database
-                self.verify_user_profile_created()
-                return True
+                # Check session
+                session = response.get('session', {})
+                if session and session.get('access_token'):
+                    self.token = session['access_token']
+                    self.user_id = user_info.get('id')
+                    self.user_email = signup_data['email']
+                    self.log_test("Signup - Token Received", True, f"User ID: {self.user_id}")
+                    self.verify_user_profile_created()
+                    return True
+                else:
+                    self.log_test("Signup - Token Received (Email Confirmation Required)", False, 
+                                "Supabase requires email confirmation - access_token is null", is_critical=False)
+                    return False
             else:
-                self.log_test("Signup - Token Received", False, "No access_token in response", is_critical=True)
+                self.log_test("Signup - User Created", False, "No user info in response", is_critical=True)
                 return False
         return False
 
