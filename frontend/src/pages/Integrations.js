@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   Plug, Check, ExternalLink, Search, X,
   Lock, ArrowRight, Zap, AlertCircle, CheckCircle2,
-  LogOut, ShieldAlert
+  LogOut, ShieldAlert, RefreshCw
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
