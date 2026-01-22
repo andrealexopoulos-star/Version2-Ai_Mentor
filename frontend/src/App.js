@@ -106,6 +106,7 @@ function AppRoutes() {
       <Route path="/login-supabase" element={<LoginSupabase />} />
       <Route path="/register-supabase" element={<RegisterSupabase />} />
       <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
+      <Route path="/auth-debug" element={<AuthDebug />} />
       
       {/* Legacy routes - redirect to Supabase */}
       <Route path="/login" element={<Navigate to="/login-supabase" replace />} />
