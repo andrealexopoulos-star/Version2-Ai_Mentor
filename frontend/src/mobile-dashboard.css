@@ -12,8 +12,7 @@
   /* Prevent background scroll when sidebar open */
   body.sidebar-open {
     overflow: hidden !important;
-    position: fixed !important;
-    width: 100% !important;
+    /* Removed position: fixed - causes grey screen and layout issues */
   }
   
   /* Hide sidebar by default on mobile */
