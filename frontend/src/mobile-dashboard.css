@@ -11,24 +11,9 @@
   
   /* REMOVED body.sidebar-open overflow lock - was causing grey screen */
   
-  /* Hide sidebar by default on mobile */
-  .dashboard-sidebar {
-    position: fixed !important;
-    left: -280px !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: 280px !important;
-    z-index: 100 !important;
-    transition: left 0.3s ease !important;
-    background: white !important;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1) !important;
-    overflow-y: auto !important;
-  }
+  /* REMOVED .dashboard-sidebar rules - conflicts with Tailwind translate classes in DashboardLayout.js */
+  /* Sidebar positioning now controlled by Tailwind utilities: translate-x-0 / -translate-x-full */
   
-  /* Show sidebar when open class added */
-  .dashboard-sidebar.open {
-    left: 0 !important;
-  }
   
   /* Overlay backdrop when sidebar open */
   .sidebar-backdrop {
