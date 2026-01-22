@@ -6488,7 +6488,7 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
         data_signals["emails_synced"] = email_count
         
         # Check high priority emails
-        priority = await get_priority_analysis_supabase(supabase_admin, {"user_id": user_id}, {"_id": 0})
+        priority = await get_priority_analysis_supabase(supabase_admin, user_id)
         if priority and priority.get("analysis"):
             high_priority = priority["analysis"].get("high_priority", [])
             data_signals["email_priority_high"] = len(high_priority)
