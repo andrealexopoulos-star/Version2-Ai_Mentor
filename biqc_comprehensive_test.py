@@ -656,9 +656,9 @@ class BIQCPlatformTester:
         supabase_signup_success = self.test_supabase_email_signup()
         
         # If Supabase signup doesn't provide token (email confirmation required),
-        # use MongoDB auth as fallback to get a token for testing other endpoints
+        # use pre-created confirmed test user to get a token for testing other endpoints
         if not self.token:
-            print("\n⚠️ Supabase email confirmation required. Using MongoDB auth for testing...")
+            print("\n⚠️ Supabase email confirmation required. Using pre-created test user...")
             if not self.test_mongodb_auth_fallback():
                 print("❌ CRITICAL: Could not obtain authentication token. Cannot proceed with authenticated tests.")
                 return self.generate_report()
