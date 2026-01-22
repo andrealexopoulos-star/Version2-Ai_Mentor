@@ -1,288 +1,290 @@
 {
-  "summary": "BIQC Platform testing completed - 28/37 tests passed (75.7%)",
-  "total_tests": 37,
-  "passed_tests": 28,
-  "failed_tests": 9,
-  "critical_failures": 4,
-  "success_rate": "75.7%",
+  "summary": "BIQC Platform testing completed - 33/39 tests passed (84.6%)",
+  "total_tests": 39,
+  "passed_tests": 33,
+  "failed_tests": 6,
+  "critical_failures": 1,
+  "success_rate": "84.6%",
   "test_details": [
     {
       "test_name": "Supabase Email Signup",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:56:56.993949"
+      "timestamp": "2026-01-22T00:58:29.016656"
     },
     {
       "test_name": "Signup - User Created",
       "success": true,
-      "details": "User ID: 613967e6-837b-4bc2-85a8-2e7e92a4918f",
+      "details": "User ID: 28fb98c6-f5aa-4d8d-89ae-9782e3bcb9a1",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:56:56.994584"
+      "timestamp": "2026-01-22T00:58:29.017265"
     },
     {
       "test_name": "Signup - Token Received (Email Confirmation Required)",
       "success": false,
       "details": "Supabase requires email confirmation - access_token is null",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:56:56.994598"
+      "timestamp": "2026-01-22T00:58:29.017281"
     },
     {
       "test_name": "Test User Login",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:56:57.764871"
+      "timestamp": "2026-01-22T00:58:29.741809"
     },
     {
       "test_name": "Test User - Token Received",
       "success": true,
       "details": "User ID: 388adf82-5d76-427f-aee1-7637d1fa17f1",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:56:57.765541"
+      "timestamp": "2026-01-22T00:58:29.742464"
     },
     {
       "test_name": "Login Test - User Registration",
       "success": false,
       "details": "Status: 520, Expected: 200, Response: {\"detail\": \"Failed to create user profile in database: {'message': 'new row violates row-level security policy for table \\\"users\\\"', 'code': '42501', 'hint': None, 'details': None}\"}",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:01.447720"
+      "timestamp": "2026-01-22T00:58:33.522781"
     },
     {
       "test_name": "Login Test - Setup Failed",
       "success": false,
       "details": "Could not create test user",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:01.448339"
+      "timestamp": "2026-01-22T00:58:33.523410"
     },
     {
       "test_name": "Google OAuth - Get Auth URL",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:01.491050"
+      "timestamp": "2026-01-22T00:58:33.581446"
     },
     {
       "test_name": "Google OAuth - Valid Auth URL",
       "success": false,
       "details": "Invalid URL: https://uxyqpdfftxpkzeppqtvk.supabase.co/auth/v1/authorize?provider=google",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:01.491711"
+      "timestamp": "2026-01-22T00:58:33.582084"
     },
     {
       "test_name": "Microsoft OAuth - Get Auth URL",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:01.529325"
+      "timestamp": "2026-01-22T00:58:33.622979"
     },
     {
       "test_name": "Microsoft OAuth - Valid Auth URL",
       "success": false,
       "details": "Invalid URL: https://uxyqpdfftxpkzeppqtvk.supabase.co/auth/v1/authorize?provider=azure",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:01.529993"
+      "timestamp": "2026-01-22T00:58:33.623627"
     },
     {
       "test_name": "Token Validation - Valid Token",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:02.109261"
+      "timestamp": "2026-01-22T00:58:34.257570"
     },
     {
       "test_name": "Token Validation - Invalid Token Rejected",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:02.473024"
+      "timestamp": "2026-01-22T00:58:34.564318"
     },
     {
       "test_name": "Token Validation - Security Working",
       "success": true,
       "details": "Invalid tokens properly rejected",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:02.473766"
+      "timestamp": "2026-01-22T00:58:34.565052"
     },
     {
       "test_name": "Advisor Chat - Send Message",
-      "success": false,
-      "details": "Status: 520, Expected: 200, Response: Internal Server Error",
+      "success": true,
+      "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:04.983330"
+      "timestamp": "2026-01-22T00:58:47.979408"
+    },
+    {
+      "test_name": "Advisor Chat - Response Structure Valid",
+      "success": true,
+      "details": "Session: 388adf82-5d76-427f-aee1-7637d1fa17f1_fc72108e-b48c-4e84-9c95-d13f42fc0781",
+      "is_critical": false,
+      "timestamp": "2026-01-22T00:58:47.980035"
+    },
+    {
+      "test_name": "Advisor Chat - Response Content Valid",
+      "success": true,
+      "details": "Length: 1633 chars",
+      "is_critical": false,
+      "timestamp": "2026-01-22T00:58:47.980052"
     },
     {
       "test_name": "Chat History - Retrieve",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:05.875405"
+      "timestamp": "2026-01-22T00:58:48.893933"
     },
     {
       "test_name": "Chat History - Response Type Valid",
       "success": true,
-      "details": "Retrieved 0 messages",
+      "details": "Retrieved 1 messages",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:05.876121"
+      "timestamp": "2026-01-22T00:58:48.894650"
     },
     {
       "test_name": "Dashboard Stats - Retrieve",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:06.982786"
+      "timestamp": "2026-01-22T00:58:49.997417"
     },
     {
       "test_name": "Dashboard Stats - Fields Present",
       "success": true,
       "details": "Found: total_documents, total_analyses",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:06.983462"
+      "timestamp": "2026-01-22T00:58:49.998120"
     },
     {
       "test_name": "Onboarding Status - Retrieve",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:07.809593"
+      "timestamp": "2026-01-22T00:58:50.842325"
     },
     {
       "test_name": "Onboarding Status - Fields Present",
       "success": true,
       "details": "Completed: False, Step: 0",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:07.810338"
+      "timestamp": "2026-01-22T00:58:50.843009"
     },
     {
       "test_name": "Outlook Status - Check Connection",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:08.685872"
+      "timestamp": "2026-01-22T00:58:51.714507"
     },
     {
       "test_name": "Outlook Status - Response Structure Valid",
       "success": true,
       "details": "Connected: False, Emails: 0",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:08.686548"
+      "timestamp": "2026-01-22T00:58:51.715233"
     },
     {
       "test_name": "Outlook Status - Data Types Valid",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:08.686563"
+      "timestamp": "2026-01-22T00:58:51.715251"
     },
     {
       "test_name": "Document Upload - Create Document",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:09.540837"
+      "timestamp": "2026-01-22T00:58:52.563550"
     },
     {
       "test_name": "Document Upload - Response Structure Valid",
       "success": true,
-      "details": "Document ID: 2c4f2454-6f45-4c6e-b6dc-2748ab04b369",
+      "details": "Document ID: ef073493-f09e-4079-baac-3e7d562ee276",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:09.541582"
+      "timestamp": "2026-01-22T00:58:52.564256"
     },
     {
       "test_name": "Document Retrieval - Get Document",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:10.406027"
+      "timestamp": "2026-01-22T00:58:53.422101"
     },
     {
       "test_name": "Document Retrieval - ID Matches",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:10.406688"
+      "timestamp": "2026-01-22T00:58:53.422907"
     },
     {
       "test_name": "Business Profile - Get Profile",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:11.029290"
+      "timestamp": "2026-01-22T00:58:54.028147"
     },
     {
       "test_name": "Business Profile - Update Profile",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:12.722193"
+      "timestamp": "2026-01-22T00:58:55.693184"
     },
     {
       "test_name": "Business Profile - business_type Updated",
       "success": false,
       "details": "Expected Company (Pty Ltd), got None",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:12.722861"
+      "timestamp": "2026-01-22T00:58:55.693875"
     },
     {
       "test_name": "Database - Supabase Connectivity",
       "success": true,
       "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:13.280799"
+      "timestamp": "2026-01-22T00:58:56.283763"
     },
     {
       "test_name": "Database - Supabase Working",
       "success": true,
       "details": "User profile retrieved successfully",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:13.281432"
+      "timestamp": "2026-01-22T00:58:56.284511"
     },
     {
       "test_name": "Cognitive Core - Accessibility Test",
-      "success": false,
-      "details": "Status: 520, Expected: 200, Response: Internal Server Error",
+      "success": true,
+      "details": "",
       "is_critical": true,
-      "timestamp": "2026-01-22T00:57:15.705334"
+      "timestamp": "2026-01-22T00:59:10.410857"
     },
     {
       "test_name": "Cognitive Core - Accessible",
-      "success": false,
-      "details": "Chat endpoint failed (cognitive core may be inaccessible)",
-      "is_critical": true,
-      "timestamp": "2026-01-22T00:57:15.706432"
+      "success": true,
+      "details": "Chat endpoint working (uses cognitive core)",
+      "is_critical": false,
+      "timestamp": "2026-01-22T00:59:10.411494"
     },
     {
       "test_name": "Hybrid Auth - Supabase Token",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:16.303625"
+      "timestamp": "2026-01-22T00:59:11.016199"
     },
     {
       "test_name": "Hybrid Auth - Supabase Token Working",
       "success": true,
       "details": "",
       "is_critical": false,
-      "timestamp": "2026-01-22T00:57:16.304284"
+      "timestamp": "2026-01-22T00:59:11.016873"
     }
   ],
   "critical_failures_list": [
     {
       "test": "Login Test - Setup Failed",
       "details": "Could not create test user"
-    },
-    {
-      "test": "Advisor Chat - Send Message",
-      "details": "Status: 520, Expected: 200, Response: Internal Server Error"
-    },
-    {
-      "test": "Cognitive Core - Accessibility Test",
-      "details": "Status: 520, Expected: 200, Response: Internal Server Error"
-    },
-    {
-      "test": "Cognitive Core - Accessible",
-      "details": "Chat endpoint failed (cognitive core may be inaccessible)"
     }
   ],
-  "timestamp": "2026-01-22T00:57:16.304475"
+  "timestamp": "2026-01-22T00:59:11.017086"
 }

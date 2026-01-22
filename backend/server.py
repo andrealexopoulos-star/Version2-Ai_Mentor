@@ -5352,10 +5352,7 @@ async def build_advisor_context(user_id: str) -> dict:
     email_intel = await get_email_intelligence_supabase(supabase_admin, user_id)
     
     # Calendar intelligence
-    calendar_intel = await get_calendar_intelligence_supabase(supabase_admin, 
-        {"user_id": user_id},
-        {"_id": 0}
-    )
+    calendar_intel = await get_calendar_intelligence_supabase(supabase_admin, user_id)
     
     # Calendar events (upcoming)
     calendar_events = await get_user_calendar_events_supabase(supabase_admin, user_id)
