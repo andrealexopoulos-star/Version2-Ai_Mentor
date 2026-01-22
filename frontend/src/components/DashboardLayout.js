@@ -372,18 +372,16 @@ const DashboardLayout = ({ children }) => {
         </div>
       </header>
 
-      {/* Sidebar - Mobile Optimized - MUST BE ABOVE BACKDROP */}
+      {/* Sidebar - TESTING WITHOUT BACKDROP FIRST */}
       <aside 
-        className={`fixed top-14 sm:top-16 left-0 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] w-64 sm:w-72 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-14 sm:top-16 left-0 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] w-64 sm:w-72 bg-white shadow-2xl transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ 
-          background: '#FFFFFF',
-          boxShadow: sidebarOpen ? '4px 0 16px rgba(0,0,0,0.3)' : 'none',
-          zIndex: 999  /* CRITICAL: Must be above backdrop */
+          zIndex: 999
         }}
       >
-        <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto h-full">
+        <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto h-full bg-white">
           {navItems.map((item, index) => {
             if (item.type === 'divider') {
               return (
