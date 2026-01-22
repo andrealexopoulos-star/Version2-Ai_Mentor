@@ -424,22 +424,23 @@ const DashboardLayout = ({ children }) => {
         </nav>
       </aside>
 
-      {/* Mobile Overlay - Backdrop */}
+      {/* Mobile Overlay - Backdrop - BELOW CONTENT */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/40 z-30 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/20 z-20 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
+          style={{ backdropFilter: 'none' }}
         />
       )}
 
-      {/* Main Content - Mobile Optimized */}
+      {/* Main Content - Mobile Optimized - ABOVE BACKDROP */}
       <main 
         className="lg:ml-64 pt-14 sm:pt-16 min-h-screen"
         style={{ 
           background: 'var(--bg-secondary)',
           position: 'relative',
-          zIndex: 1
+          zIndex: 25
         }}
       >
         <div className="p-3 sm:p-4 md:p-6 lg:p-8">
