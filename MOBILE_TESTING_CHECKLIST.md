@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://auth-upgrade-33.preview.emergentagent.com
+**Test URL:** https://advisor-chat-1.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://auth-upgrade-33.preview.emergentagent.com/advisor
+- [ ] Navigate to https://advisor-chat-1.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://auth-upgrade-33.preview.emergentagent.com/
+**Landing:** https://advisor-chat-1.preview.emergentagent.com/
 
-**Login:** https://auth-upgrade-33.preview.emergentagent.com/login-supabase
+**Login:** https://advisor-chat-1.preview.emergentagent.com/login-supabase
 
-**Register:** https://auth-upgrade-33.preview.emergentagent.com/register-supabase
+**Register:** https://advisor-chat-1.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://auth-upgrade-33.preview.emergentagent.com/pricing
+**Pricing:** https://advisor-chat-1.preview.emergentagent.com/pricing
 
-**Terms:** https://auth-upgrade-33.preview.emergentagent.com/terms
+**Terms:** https://advisor-chat-1.preview.emergentagent.com/terms
 
-**Advisor:** https://auth-upgrade-33.preview.emergentagent.com/advisor
+**Advisor:** https://advisor-chat-1.preview.emergentagent.com/advisor
 
 ---
 
