@@ -19,6 +19,7 @@ const Integrations = () => {
   const [showModal, setShowModal] = useState(null);
   const [connecting, setConnecting] = useState(null);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [outlookStatus, setOutlookStatus] = useState({ 
     connected: false, 
     emails_synced: 0,
