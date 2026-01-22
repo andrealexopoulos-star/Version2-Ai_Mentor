@@ -2827,10 +2827,16 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             # Count synced emails from Supabase
             emails_count = await count_user_emails_supabase(supabase_admin, user_id)
             
+            # Get connected email info from m365_tokens if available
+            connected_email = tokens.get("microsoft_email") or tokens.get("connected_email")
+            connected_name = tokens.get("microsoft_name") or tokens.get("connected_name")
+            
             return {
                 "connected": True,
                 "emails_synced": emails_count,
                 "user_email": current_user.get("email"),
+                "connected_email": connected_email,
+                "connected_name": connected_name,
                 "token_valid": is_valid
             }
         
