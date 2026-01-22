@@ -64,7 +64,7 @@ const Integrations = () => {
         console.log('📧 Auto-triggering email sync after OAuth...');
         try {
           toast.info('Starting email sync...', { duration: 3000 });
-          const syncResponse = await apiClient.post('/outlook/emails/sync');
+          const syncResponse = await apiClient.get('/outlook/emails/sync');
           console.log('📧 Sync response:', syncResponse.data);
           if (syncResponse.data.emails_synced > 0) {
             toast.success(`Synced ${syncResponse.data.emails_synced} emails!`);
