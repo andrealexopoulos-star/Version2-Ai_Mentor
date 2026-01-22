@@ -145,20 +145,8 @@ button, a, input, select, textarea {
    DASHBOARD/ADVISOR - Mobile App-Like
    ======================================== */
 @media (max-width: 640px) {
-  /* Sidebar - Hidden by default on mobile */
-  aside, .sidebar, [class*="sidebar"] {
-    position: fixed !important;
-    left: -100% !important;
-    top: 0 !important;
-    height: 100vh !important;
-    width: 280px !important;
-    z-index: 50 !important;
-    transition: left 0.3s ease !important;
-  }
-  
-  aside.open, .sidebar.open {
-    left: 0 !important;
-  }
+  /* REMOVED aside/sidebar forcing - conflicts with DashboardLayout Tailwind classes */
+  /* Sidebar positioning now controlled by DashboardLayout.js translate utilities */
   
   /* Main content - Full width on mobile */
   main, .main-content {
