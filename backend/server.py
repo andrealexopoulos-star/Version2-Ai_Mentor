@@ -156,6 +156,15 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 app = FastAPI(title="Strategic Advisor API")
 
+# CRITICAL: Add CORS middleware FIRST, before any routers
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Add session middleware for OAuth
 app.add_middleware(SessionMiddleware, secret_key=os.environ['JWT_SECRET_KEY'])
 
@@ -6780,13 +6789,8 @@ if OPENAI_API_KEY:
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS middleware already added at app initialization (line ~160)
+# Removed duplicate CORS configuration from here
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
