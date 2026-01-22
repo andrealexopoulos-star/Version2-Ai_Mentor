@@ -6687,7 +6687,7 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
             pass
     
     # Check for operational patterns in emails
-    email_intel = await get_email_intelligence_supabase(supabase_admin, {"user_id": user_id}, {"_id": 0})
+    email_intel = await get_email_intelligence_supabase(supabase_admin, user_id)
     if email_intel:
         # Check for declining engagement with key clients
         top_clients = email_intel.get("top_clients", [])
