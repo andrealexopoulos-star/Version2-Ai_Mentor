@@ -139,18 +139,22 @@ const Advisor = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
-        {/* Header */}
-        <div className="border-b" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
-          <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>MyAdvisor</h1>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your Chief Business Advisor</p>
+      <div className="flex flex-col h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]">
+        {/* Header - Mobile Optimized */}
+        <div className="border-b flex-shrink-0" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
+          <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-serif truncate" style={{ color: 'var(--text-primary)' }}>MyAdvisor</h1>
+              <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Your Chief Business Advisor</p>
             </div>
             {messages.length > 0 && (
-              <Button onClick={handleNewSession} variant="outline" className="btn-secondary">
-                <RotateCcw className="w-4 h-4 mr-2" />
-                New Session
+              <Button 
+                onClick={handleNewSession} 
+                variant="outline" 
+                className="btn-secondary flex-shrink-0 h-9 sm:h-10 px-3 sm:px-4 text-sm touch-manipulation"
+              >
+                <RotateCcw className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">New Session</span>
               </Button>
             )}
           </div>
