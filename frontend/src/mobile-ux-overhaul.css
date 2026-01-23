@@ -1,0 +1,580 @@
+/**
+ * BIQC Mobile UX Overhaul
+ * World-class mobile experience - Touch-first, calm, clear, premium
+ * Breakpoint: <= 768px (mobile)
+ * 
+ * Design Principles:
+ * - Minimum tap target: 44px × 44px
+ * - Generous spacing: 16-24px
+ * - Clear visual hierarchy
+ * - Touch-optimized interactions
+ * - Calm, premium feel
+ */
+
+@media (max-width: 768px) {
+  
+  /* ============================================
+     GLOBAL MOBILE FOUNDATION
+     ============================================ */
+  
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    /* Safe area for iOS notch and gesture bars */
+    padding-top: env(safe-area-inset-top, 0) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0) !important;
+    /* Prevent body scroll when menu open */
+    overflow-x: hidden;
+  }
+  
+  body.sidebar-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+  }
+  
+  /* ============================================
+     TOP NAVIGATION BAR
+     ============================================ */
+  
+  /* Improve header spacing and tap targets */
+  header {
+    /* Better padding for touch */
+    padding: 12px 16px !important;
+    height: 56px !important; /* Standard mobile header */
+    gap: 12px !important;
+  }
+  
+  /* Hamburger menu button - larger, clearer tap target */
+  header button[aria-label*="menu"] {
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 12px !important;
+    margin-left: -4px !important; /* Align to edge */
+    border-radius: 12px !important;
+  }
+  
+  header button[aria-label*="menu"]:active {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  /* Logo - adjust for mobile */
+  header .flex.items-center.gap-2 {
+    gap: 8px !important;
+  }
+  
+  header .w-8 {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  /* Right side action buttons - better spacing */
+  header > div:last-child {
+    gap: 4px !important;
+  }
+  
+  header > div:last-child button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 10px !important;
+  }
+  
+  /* ============================================
+     NAVIGATION DRAWER (SIDEBAR)
+     ============================================ */
+  
+  /* Lighter, more intentional sidebar */
+  aside {
+    width: 280px !important; /* Slightly narrower, less heavy */
+    max-width: 85vw !important; /* Don't take entire screen */
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  /* Navigation items - better touch targets and spacing */
+  aside nav {
+    padding: 16px 12px !important;
+  }
+  
+  aside nav button {
+    min-height: 52px !important; /* Larger tap target */
+    padding: 14px 16px !important;
+    margin-bottom: 4px !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Nav dividers - subtle and clear */
+  aside nav > div[class*="pt-6"] {
+    padding-top: 20px !important;
+    padding-bottom: 8px !important;
+    margin-top: 4px !important;
+  }
+  
+  aside nav > div[class*="pt-6"] span {
+    padding-left: 16px !important;
+    font-size: 11px !important;
+    letter-spacing: 0.8px !important;
+    opacity: 0.6;
+  }
+  
+  /* Backdrop - smooth and intentional */
+  body.sidebar-open::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    animation: fadeIn 0.2s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  /* Close gesture area - tap anywhere to close */
+  aside + div[class*="fixed inset-0"] {
+    cursor: pointer;
+  }
+  
+  /* ============================================
+     MAIN CONTENT AREA
+     ============================================ */
+  
+  main {
+    padding-top: 56px !important; /* Match new header height */
+    min-height: 100vh !important;
+  }
+  
+  /* Content containers - generous padding */
+  main > div,
+  main > div > div {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  
+  /* Max-width containers - better mobile centering */
+  .max-w-3xl,
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  /* ============================================
+     CARDS & CONTENT BLOCKS
+     ============================================ */
+  
+  /* Main content cards - better spacing and readability */
+  [class*="rounded-2xl"],
+  [class*="rounded-xl"] {
+    padding: 20px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* "Here's What Matters Right Now" card - generous spacing */
+  main div[class*="p-8"].rounded-2xl {
+    padding: 24px 20px !important;
+  }
+  
+  /* Card headings - clear hierarchy */
+  main div[class*="p-8"].rounded-2xl p:first-child {
+    font-size: 10px !important;
+    letter-spacing: 1.2px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  /* Card main text - comfortable reading */
+  main div[class*="p-8"].rounded-2xl p[class*="text-2xl"] {
+    font-size: 22px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 12px !important;
+  }
+  
+  /* Card secondary text */
+  main div[class*="p-8"].rounded-2xl p[class*="text-base"] {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Focus area cards - touch-friendly */
+  button[class*="focus-area"],
+  .focus-area-card {
+    min-height: 60px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+  }
+  
+  /* ============================================
+     CHAT / ADVISOR INTERFACE
+     ============================================ */
+  
+  /* Chat page header - lighter */
+  [class*="border-b"] > div[class*="max-w"] {
+    padding: 16px 20px !important;
+  }
+  
+  [class*="border-b"] h1 {
+    font-size: 20px !important;
+  }
+  
+  [class*="border-b"] p {
+    font-size: 13px !important;
+    margin-top: 2px !important;
+  }
+  
+  /* Messages area - comfortable scrolling */
+  .flex-1.overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  .flex-1.overflow-y-auto > div {
+    padding: 20px 16px !important;
+  }
+  
+  /* ============================================
+     CHAT INPUT AREA (CRITICAL UX)
+     ============================================ */
+  
+  /* Input container - light, natural, sticky */
+  div[class*="border-t"][class*="bg-white"][class*="shadow-lg"] {
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08) !important;
+    border-top: 1px solid #E5E7EB !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0)) !important;
+  }
+  
+  div[class*="border-t"] > div[class*="max-w"] {
+    padding: 12px 16px !important;
+  }
+  
+  /* Input form - better alignment */
+  form[class*="flex gap"] {
+    gap: 10px !important;
+    align-items: flex-end !important;
+  }
+  
+  /* Textarea - lighter, more natural */
+  textarea[placeholder*="message"],
+  textarea[placeholder*="Message"] {
+    min-height: 44px !important;
+    max-height: 120px !important;
+    padding: 12px 16px !important;
+    font-size: 16px !important; /* Prevent iOS zoom */
+    line-height: 1.4 !important;
+    border-radius: 12px !important;
+    border: 1px solid #E5E7EB !important;
+    background: #F9FAFB !important;
+    resize: none !important;
+  }
+  
+  textarea[placeholder*="message"]:focus,
+  textarea[placeholder*="Message"]:focus {
+    background: white !important;
+    border-color: #3B82F6 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  }
+  
+  /* Send button - lighter, properly sized */
+  form button[type="submit"] {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important; /* Prevent oversizing */
+    width: 44px !important; /* Fixed width, no expansion */
+    padding: 10px !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+  }
+  
+  /* Helper text - subtle */
+  form + p {
+    font-size: 11px !important;
+    margin-top: 8px !important;
+    opacity: 0.5;
+  }
+  
+  /* ============================================
+     BUTTONS & INTERACTIVE ELEMENTS
+     ============================================ */
+  
+  /* All buttons - proper touch targets */
+  button,
+  a[role="button"],
+  [role="button"] {
+    min-height: 44px !important;
+    touch-action: manipulation;
+  }
+  
+  /* Primary buttons */
+  .btn-primary,
+  button[class*="bg-blue"] {
+    min-height: 48px !important;
+    padding: 12px 20px !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+  }
+  
+  /* Secondary buttons */
+  .btn-secondary,
+  button[variant="outline"] {
+    min-height: 44px !important;
+    padding: 10px 16px !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Icon buttons */
+  button > svg:only-child {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  
+  /* ============================================
+     FORMS & INPUTS
+     ============================================ */
+  
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  select {
+    min-height: 48px !important;
+    padding: 12px 16px !important;
+    font-size: 16px !important; /* Prevent iOS zoom */
+    border-radius: 10px !important;
+  }
+  
+  label {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    margin-bottom: 6px !important;
+    display: block;
+  }
+  
+  /* ============================================
+     TYPOGRAPHY MOBILE HIERARCHY
+     ============================================ */
+  
+  /* Page titles */
+  h1 {
+    font-size: 24px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 8px !important;
+  }
+  
+  /* Section headers */
+  h2 {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 12px !important;
+  }
+  
+  /* Subsection headers */
+  h3 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 8px !important;
+  }
+  
+  /* Body text */
+  p {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Small text */
+  .text-sm,
+  small {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Tiny text */
+  .text-xs {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* ============================================
+     SPACING & RHYTHM
+     ============================================ */
+  
+  /* Consistent vertical spacing */
+  .space-y-6 > * + * {
+    margin-top: 20px !important;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 16px !important;
+  }
+  
+  .space-y-3 > * + * {
+    margin-top: 12px !important;
+  }
+  
+  .space-y-2 > * + * {
+    margin-top: 8px !important;
+  }
+  
+  /* Consistent horizontal spacing */
+  .gap-4 {
+    gap: 16px !important;
+  }
+  
+  .gap-3 {
+    gap: 12px !important;
+  }
+  
+  .gap-2 {
+    gap: 8px !important;
+  }
+  
+  /* ============================================
+     SCROLL BEHAVIOR
+     ============================================ */
+  
+  /* Smooth, native scroll */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Remove scroll momentum where not needed */
+  aside,
+  header {
+    -webkit-overflow-scrolling: auto;
+  }
+  
+  /* ============================================
+     VISUAL POLISH
+     ============================================ */
+  
+  /* Softer shadows for mobile */
+  [class*="shadow-xl"] {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  [class*="shadow-lg"] {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  /* Smoother transitions */
+  button,
+  a,
+  [role="button"] {
+    transition: all 0.15s ease-out !important;
+  }
+  
+  /* Active states - visual feedback */
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+  
+  /* ============================================
+     LANDSCAPE MODE ADJUSTMENTS
+     ============================================ */
+  
+  @media (max-height: 500px) and (orientation: landscape) {
+    /* Reduce vertical padding in landscape */
+    header {
+      height: 48px !important;
+      padding: 8px 16px !important;
+    }
+    
+    main {
+      padding-top: 48px !important;
+    }
+    
+    aside {
+      width: 240px !important;
+    }
+    
+    [class*="p-8"].rounded-2xl {
+      padding: 16px !important;
+    }
+    
+    textarea[placeholder*="message"] {
+      max-height: 80px !important;
+    }
+  }
+  
+  /* ============================================
+     SMALL DEVICES (<= 375px)
+     ============================================ */
+  
+  @media (max-width: 375px) {
+    /* Even more compact for small phones */
+    header {
+      padding: 10px 12px !important;
+    }
+    
+    aside {
+      width: 260px !important;
+      max-width: 90vw !important;
+    }
+    
+    .max-w-3xl,
+    .max-w-4xl,
+    .max-w-5xl,
+    .max-w-6xl {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+    }
+    
+    [class*="p-8"].rounded-2xl {
+      padding: 18px 16px !important;
+    }
+    
+    h1 {
+      font-size: 22px !important;
+    }
+    
+    h2 {
+      font-size: 17px !important;
+    }
+  }
+  
+  /* ============================================
+     ACCESSIBILITY ENHANCEMENTS
+     ============================================ */
+  
+  /* Focus visible for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid #3B82F6 !important;
+    outline-offset: 2px !important;
+  }
+  
+  /* Better contrast for disabled states */
+  button:disabled,
+  [disabled] {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+  }
+  
+  /* Prevent text selection on buttons */
+  button,
+  [role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* ============================================
+   DESKTOP (> 768px) - NO CHANGES
+   ============================================ */
+
+@media (min-width: 769px) {
+  /* All above mobile styles are ignored on desktop */
+  /* Desktop uses existing Tailwind classes without override */
+}
