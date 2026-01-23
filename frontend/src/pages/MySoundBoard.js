@@ -163,7 +163,7 @@ const MySoundBoard = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="flex min-h-[calc(100vh-4rem)] overflow-hidden">
         {/* Sidebar */}
         <div 
           className={`${sidebarOpen ? 'w-72' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r overflow-hidden`}
