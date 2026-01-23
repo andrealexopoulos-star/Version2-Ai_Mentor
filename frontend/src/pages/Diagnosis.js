@@ -392,19 +392,30 @@ const Diagnosis = () => {
           </Button>
         </div>
 
-        {/* Confidence indicator */}
-        {assessment?.confidence && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-            assessment.confidence === 'strong' ? 'bg-green-50 text-green-700' :
-            assessment.confidence === 'moderate' ? 'bg-blue-50 text-blue-700' :
-            'bg-gray-50 text-gray-600'
-          }`}>
-            <AlertCircle className="w-4 h-4" />
-            <span>
-              {assessment.confidence === 'strong' && `Strong signal detection from ${assessment.totalSignals} communications`}
-              {assessment.confidence === 'moderate' && `Moderate signals detected — analysis improving with more data`}
-              {assessment.confidence === 'building' && `Connect Outlook or add business context to strengthen analysis`}
-            </span>
+        {/* Confidence indicator + Uncertainty note */}
+        {assessment && (
+          <div className="space-y-2">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+              assessment.confidence === 'High' ? 'bg-green-50 text-green-700' :
+              assessment.confidence === 'Medium' ? 'bg-blue-50 text-blue-700' :
+              'bg-amber-50 text-amber-700'
+            }`}>
+              <AlertCircle className="w-4 h-4" />
+              <span>
+                {assessment.confidence === 'High' && `High confidence — Clear patterns detected across ${assessment.totalSignals} communications`}
+                {assessment.confidence === 'Medium' && `Medium confidence — Some patterns visible, analysis strengthening`}
+                {assessment.confidence === 'Limited' && `Limited confidence — Insufficient data for definitive diagnosis`}
+              </span>
+            </div>
+            
+            {/* Explicit uncertainty statement when confidence is limited */}
+            {assessment.uncertaintyNote && (
+              <div className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
+                <p className="text-xs text-gray-600 italic">
+                  {assessment.uncertaintyNote}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
