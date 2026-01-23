@@ -262,6 +262,9 @@ const EmailInbox = () => {
   const ReplySuggestionsModal = () => {
     if (!replySuggestions) return null;
     
+    // Handle both new format (suggested_reply/advisor_rationale) and legacy format (replies array)
+    const hasNewFormat = replySuggestions.suggested_reply !== undefined;
+    
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
         <div 
@@ -272,14 +275,27 @@ const EmailInbox = () => {
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
-                  AI Reply Suggestions
+                  {hasNewFormat ? 'BIQC Suggested Reply' : 'AI Reply Suggestions'}
                 </h2>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Re: {replySuggestions.original_subject}
-                </p>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  From: {replySuggestions.from}
-                </p>
+                {replySuggestions.priority_level && (
+                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 ${
+                    replySuggestions.priority_level === 'high' ? 'bg-red-100 text-red-700' :
+                    replySuggestions.priority_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    {replySuggestions.priority_level.toUpperCase()} PRIORITY
+                  </span>
+                )}
+                {replySuggestions.original_subject && (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Re: {replySuggestions.original_subject}
+                  </p>
+                )}
+                {replySuggestions.from && (
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    From: {replySuggestions.from}
+                  </p>
+                )}
               </div>
               <button 
                 onClick={() => {
@@ -294,68 +310,131 @@ const EmailInbox = () => {
           </div>
           
           <div className="p-6 space-y-6">
-            {replySuggestions.context_insight && (
-              <div 
-                className="p-4 rounded-xl"
-                style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-blue-500" />
-                  <span className="font-medium text-blue-600">Strategic Insight</span>
+            {/* NEW FORMAT: suggested_reply + advisor_rationale */}
+            {hasNewFormat && (
+              <>
+                {/* Advisor Rationale */}
+                {replySuggestions.advisor_rationale && (
+                  <div 
+                    className="p-4 rounded-xl"
+                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-4 h-4 text-blue-500" />
+                      <span className="font-medium text-blue-600">BIQC Advisor Rationale</span>
+                    </div>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {replySuggestions.advisor_rationale}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Suggested Reply */}
+                <div 
+                  className="p-5 rounded-xl border"
+                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        Suggested Reply
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="btn-primary"
+                      onClick={() => copyToClipboard(replySuggestions.suggested_reply)}
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                  
+                  <div 
+                    className="p-4 rounded-lg whitespace-pre-wrap text-sm"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  >
+                    {replySuggestions.suggested_reply || 'No reply generated'}
+                  </div>
                 </div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {replySuggestions.context_insight}
-                </p>
-              </div>
+              </>
+            )}
+
+            {/* LEGACY FORMAT: context_insight + replies array */}
+            {!hasNewFormat && (
+              <>
+                {replySuggestions.context_insight && (
+                  <div 
+                    className="p-4 rounded-xl"
+                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-4 h-4 text-blue-500" />
+                      <span className="font-medium text-blue-600">Strategic Insight</span>
+                    </div>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {replySuggestions.context_insight}
+                    </p>
+                  </div>
+                )}
+                
+                {replySuggestions.replies?.map((reply, idx) => (
+                  <div 
+                    key={idx}
+                    className="p-5 rounded-xl border"
+                    style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {reply.style === 'direct' && <Zap className="w-4 h-4 text-yellow-500" />}
+                        {reply.style === 'relationship' && <User className="w-4 h-4 text-pink-500" />}
+                        {reply.style === 'strategic' && <Target className="w-4 h-4 text-purple-500" />}
+                        <span className="font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
+                          {reply.style === 'direct' ? 'Direct & Efficient' : 
+                           reply.style === 'relationship' ? 'Relationship-Building' : 
+                           'Strategic Positioning'}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="btn-primary"
+                        onClick={() => copyToClipboard(reply.body)}
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    
+                    {reply.subject && reply.subject !== `Re: ${replySuggestions.original_subject}` && (
+                      <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+                        <span className="font-medium">Subject:</span> {reply.subject}
+                      </p>
+                    )}
+                    
+                    <div 
+                      className="p-4 rounded-lg mb-3 whitespace-pre-wrap text-sm"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                    >
+                      {reply.body}
+                    </div>
+                    
+                    {reply.strategic_note && (
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        <span className="font-medium">💡 Why this works:</span> {reply.strategic_note}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </>
             )}
             
-            {replySuggestions.replies?.map((reply, idx) => (
-              <div 
-                key={idx}
-                className="p-5 rounded-xl border"
-                style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {reply.style === 'direct' && <Zap className="w-4 h-4 text-yellow-500" />}
-                    {reply.style === 'relationship' && <User className="w-4 h-4 text-pink-500" />}
-                    {reply.style === 'strategic' && <Target className="w-4 h-4 text-purple-500" />}
-                    <span className="font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
-                      {reply.style === 'direct' ? 'Direct & Efficient' : 
-                       reply.style === 'relationship' ? 'Relationship-Building' : 
-                       'Strategic Positioning'}
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="btn-primary"
-                    onClick={() => copyToClipboard(reply.body)}
-                  >
-                    <Copy className="w-3 h-3 mr-1" />
-                    Copy
-                  </Button>
-                </div>
-                
-                {reply.subject && reply.subject !== `Re: ${replySuggestions.original_subject}` && (
-                  <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-                    <span className="font-medium">Subject:</span> {reply.subject}
-                  </p>
-                )}
-                
-                <div 
-                  className="p-4 rounded-lg mb-3 whitespace-pre-wrap text-sm"
-                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                >
-                  {reply.body}
-                </div>
-                
-                {reply.strategic_note && (
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span className="font-medium">💡 Why this works:</span> {reply.strategic_note}
-                  </p>
-                )}
+            {/* Fallback if no content */}
+            {!hasNewFormat && !replySuggestions.replies?.length && (
+              <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
+                No reply suggestions available
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
