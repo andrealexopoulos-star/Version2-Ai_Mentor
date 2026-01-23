@@ -123,44 +123,70 @@
   
   /* ============================================
      NAVIGATION DRAWER (SIDEBAR)
+     MOBILE-FIRST: Light, obvious, confident
      ============================================ */
   
   /* Lighter, more intentional sidebar */
   aside {
-    width: 280px !important; /* Slightly narrower, less heavy */
-    max-width: 85vw !important; /* Don't take entire screen */
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15) !important;
+    width: 85vw !important; /* Take most of screen, but not all */
+    max-width: 320px !important; /* Cap on larger phones */
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.25) !important;
+    /* Ensure smooth animation */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   
-  /* Navigation items - better touch targets and spacing */
+  /* Navigation items - OBVIOUS and SAFE TO TAP */
   aside nav {
-    padding: 16px 12px !important;
+    padding: 20px 16px !important;
+    padding-bottom: 60px !important; /* Extra bottom space */
   }
   
   aside nav button {
-    min-height: 52px !important; /* Larger tap target */
-    padding: 14px 16px !important;
-    margin-bottom: 4px !important;
-    border-radius: 10px !important;
-    font-size: 15px !important;
+    min-height: 56px !important; /* Even larger for confidence */
+    padding: 16px 18px !important;
+    margin-bottom: 6px !important;
+    border-radius: 12px !important;
+    font-size: 16px !important; /* Easy to read */
     font-weight: 500 !important;
+    /* Make interaction obvious */
+    transition: all 0.15s ease-out !important;
   }
   
-  /* Nav dividers - subtle and clear */
+  aside nav button:active {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+  
+  /* Active nav item - OBVIOUS */
+  aside nav button[class*="bg-blue"] {
+    /* Stronger active state */
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+  }
+  
+  /* Nav dividers - clear sections */
   aside nav > div[class*="pt-6"] {
-    padding-top: 20px !important;
-    padding-bottom: 8px !important;
-    margin-top: 4px !important;
+    padding-top: 24px !important;
+    padding-bottom: 10px !important;
+    margin-top: 8px !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  
+  aside nav > div[class*="pt-6"]:first-child {
+    border-top: none !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
   }
   
   aside nav > div[class*="pt-6"] span {
-    padding-left: 16px !important;
+    padding-left: 18px !important;
     font-size: 11px !important;
-    letter-spacing: 0.8px !important;
-    opacity: 0.6;
+    letter-spacing: 1px !important;
+    opacity: 0.5;
+    text-transform: uppercase;
+    font-weight: 600;
   }
   
-  /* Backdrop - smooth and intentional */
+  /* Backdrop - obvious and smooth */
   body.sidebar-open::before {
     content: '';
     position: fixed;
@@ -168,19 +194,26 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6); /* Darker for more focus */
     z-index: 998;
-    animation: fadeIn 0.2s ease-out;
+    animation: fadeIn 0.25s ease-out;
   }
   
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { 
+      opacity: 0;
+      backdrop-filter: blur(0px);
+    }
+    to { 
+      opacity: 1;
+      backdrop-filter: blur(4px);
+    }
   }
   
-  /* Close gesture area - tap anywhere to close */
+  /* Close gesture - make it obvious this dismisses */
   aside + div[class*="fixed inset-0"] {
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
   
   /* ============================================
