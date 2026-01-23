@@ -246,6 +246,10 @@ class ChatRequest(BaseModel):
     message: str
     context_type: Optional[str] = "general"
     session_id: Optional[str] = None
+    # Metadata for proactive messages (Advisory Intelligence Contract)
+    trigger_source: Optional[str] = None
+    focus_area: Optional[str] = None
+    confidence_level: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
