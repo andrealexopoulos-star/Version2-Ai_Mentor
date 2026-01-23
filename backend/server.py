@@ -32,7 +32,8 @@ from supabase_email_helpers import (
     find_user_sync_job_supabase,
     store_calendar_events_batch_supabase,
     delete_user_calendar_events_supabase,
-    get_user_calendar_events_supabase
+    get_user_calendar_events_supabase,
+    find_email_by_id_supabase
 )
 
 # Import document helpers
