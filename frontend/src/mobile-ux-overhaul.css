@@ -1,14 +1,22 @@
 /**
  * BIQC Mobile UX Overhaul
- * World-class mobile experience - Touch-first, calm, clear, premium
- * Breakpoint: <= 768px (mobile)
+ * MOBILE-FIRST, NOT RESPONSIVE DESKTOP
+ * 
+ * Authority: Mobile experience > Desktop experience
+ * If desktop thinking degrades mobile, mobile wins.
  * 
  * Design Principles:
- * - Minimum tap target: 44px × 44px
- * - Generous spacing: 16-24px
- * - Clear visual hierarchy
- * - Touch-optimized interactions
- * - Calm, premium feel
+ * - Calm: Room to breathe, not overwhelming
+ * - Confident: Clear what to do next
+ * - Safe to tap: Obvious, generous touch targets
+ * - Native-feeling: Like a real mobile app, not squeezed web
+ * - Easy to think: One thing at a time, clear hierarchy
+ * 
+ * User must NEVER feel:
+ * - Unsure what to do
+ * - Afraid to tap
+ * - Overwhelmed by options
+ * - Like using squeezed desktop
  */
 
 @media (max-width: 768px) {
