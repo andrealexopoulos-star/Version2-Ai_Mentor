@@ -3218,17 +3218,12 @@ Return ONLY valid JSON, no markdown."""
             priority_analysis["medium_priority"] = enrich_priority(priority_analysis.get("medium_priority", []))
             priority_analysis["low_priority"] = enrich_priority(priority_analysis.get("low_priority", []))
         
-        # Store analysis
-        await update_priority_analysis_supabase(supabase_admin, 
-            {"user_id": user_id},
-            {"$set": {
-                "user_id": user_id,
-                "analysis": priority_analysis,
-                "emails_analyzed": len(recent_emails),
-                "analyzed_at": datetime.now(timezone.utc).isoformat()
-            }},
-            upsert=True
-        )
+        # Store analysis in Supabase
+        analysis_data = {
+            "analysis": priority_analysis,
+            "emails_analyzed": len(recent_emails),
+        }
+        await update_priority_analysis_supabase(supabase_admin, user_id, analysis_data)
         
         return priority_analysis
         
