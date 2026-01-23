@@ -276,13 +276,18 @@ const Diagnosis = () => {
     }
   };
 
-  // Separate active and available areas
+  // Separate active and available areas based on diagnoses
+  const getDiagnosisForId = (id) => assessment?.diagnoses?.find(d => d.id === id);
   const activeCategoryList = Object.entries(businessCategories).filter(([id]) => activeAreas.includes(id));
   const availableCategoryList = Object.entries(businessCategories).filter(([id]) => !activeAreas.includes(id));
 
   const CategoryCard = ({ id, config, isActive }) => {
     const Icon = config.icon;
-    const detected = assessment?.detected?.find(d => d.id === id);
+    const diagnosis = getDiagnosisForId(id);
+    
+    // Contract: must have evidence_summary to display
+    const hasEvidence = diagnosis && diagnosis.evidence_summary;
+    const isLimitedConfidence = diagnosis?.confidence_level === 'Limited';
     
     return (
       <button
@@ -298,19 +303,45 @@ const Diagnosis = () => {
             <Icon className={`w-4 h-4 ${isActive ? 'text-white' : config.color}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className={`font-semibold text-sm ${isActive ? 'text-white' : 'text-gray-900'}`}>
                 {config.label}
               </span>
-              {detected && (
+              {/* Urgency badge - only show if we have diagnosis */}
+              {diagnosis && (
                 <span className={`text-xs px-1.5 py-0.5 rounded ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700'
+                  isActive ? 'bg-white/20 text-white' : 
+                  diagnosis.urgency === 'High' ? 'bg-red-100 text-red-700' :
+                  diagnosis.urgency === 'Medium' ? 'bg-amber-100 text-amber-700' :
+                  'bg-gray-100 text-gray-600'
                 }`}>
-                  {detected.count} signals
+                  {diagnosis.urgency}
+                </span>
+              )}
+              {/* Confidence badge */}
+              {diagnosis && (
+                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                  isActive ? 'bg-white/10 text-white/80' :
+                  diagnosis.confidence_level === 'High' ? 'bg-green-50 text-green-600' :
+                  diagnosis.confidence_level === 'Medium' ? 'bg-blue-50 text-blue-600' :
+                  'bg-gray-50 text-gray-500'
+                }`}>
+                  {diagnosis.confidence_level} confidence
                 </span>
               )}
             </div>
-            <p className={`text-xs mt-1 leading-relaxed ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
+            
+            {/* Evidence summary - REQUIRED by contract */}
+            {hasEvidence && (
+              <p className={`text-xs mt-1.5 leading-relaxed ${
+                isActive ? 'text-white/80' : 'text-gray-600'
+              } ${isLimitedConfidence ? 'italic' : ''}`}>
+                {diagnosis.evidence_summary}
+              </p>
+            )}
+            
+            {/* Why this matters - secondary info */}
+            <p className={`text-xs mt-1 ${isActive ? 'text-white/60' : 'text-gray-400'}`}>
               {config.why}
             </p>
           </div>
