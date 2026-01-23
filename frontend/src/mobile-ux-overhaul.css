@@ -218,72 +218,103 @@
   
   /* ============================================
      MAIN CONTENT AREA
+     MOBILE-FIRST: Generous, easy to scan
      ============================================ */
   
   main {
-    padding-top: 56px !important; /* Match new header height */
+    padding-top: 60px !important; /* Match new header height */
     min-height: 100vh !important;
+    /* Mobile-native transitions */
+    transition: transform 0.3s ease-out;
   }
   
-  /* Content containers - generous padding */
+  /* Content containers - GENEROUS padding */
   main > div,
   main > div > div {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-  
-  /* Max-width containers - better mobile centering */
-  .max-w-3xl,
-  .max-w-4xl,
-  .max-w-5xl,
-  .max-w-6xl {
     padding-left: 20px !important;
     padding-right: 20px !important;
   }
   
+  /* Max-width containers - breathing room on mobile */
+  .max-w-3xl,
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl {
+    max-width: 100% !important; /* Use full mobile width */
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  
   /* ============================================
      CARDS & CONTENT BLOCKS
+     MOBILE-FIRST: Generous spacing, easy to scan
      ============================================ */
   
-  /* Main content cards - better spacing and readability */
+  /* Main content cards - ROOM TO BREATHE */
   [class*="rounded-2xl"],
   [class*="rounded-xl"] {
-    padding: 20px !important;
-    margin-bottom: 16px !important;
+    padding: 24px !important;
+    margin-bottom: 20px !important;
+    /* Softer corners for mobile */
+    border-radius: 16px !important;
   }
   
-  /* "Here's What Matters Right Now" card - generous spacing */
-  main div[class*="p-8"].rounded-2xl {
-    padding: 24px 20px !important;
+  /* "Here's What Matters Right Now" card - GENEROUS */
+  main div[class*="p-8"].rounded-2xl,
+  main div[class*="p-8"][class*="rounded"] {
+    padding: 28px 24px !important;
+    margin-bottom: 24px !important;
   }
   
-  /* Card headings - clear hierarchy */
-  main div[class*="p-8"].rounded-2xl p:first-child {
+  /* Card headings - CLEAR hierarchy */
+  main div[class*="p-8"].rounded-2xl p:first-child,
+  main div[class*="p-8"][class*="rounded"] p:first-child {
     font-size: 10px !important;
-    letter-spacing: 1.2px !important;
-    margin-bottom: 12px !important;
+    letter-spacing: 1.5px !important;
+    margin-bottom: 14px !important;
+    opacity: 0.6;
   }
   
-  /* Card main text - comfortable reading */
-  main div[class*="p-8"].rounded-2xl p[class*="text-2xl"] {
-    font-size: 22px !important;
-    line-height: 1.4 !important;
-    margin-bottom: 12px !important;
+  /* Card main text - COMFORTABLE reading */
+  main div[class*="p-8"].rounded-2xl p[class*="text-2xl"],
+  main div[class*="p-8"].rounded-2xl p[class*="text-3xl"] {
+    font-size: 24px !important;
+    line-height: 1.35 !important;
+    margin-bottom: 14px !important;
+    font-weight: 600 !important;
   }
   
-  /* Card secondary text */
-  main div[class*="p-8"].rounded-2xl p[class*="text-base"] {
-    font-size: 15px !important;
-    line-height: 1.5 !important;
+  /* Card secondary text - easy to read */
+  main div[class*="p-8"].rounded-2xl p[class*="text-base"],
+  main div[class*="p-8"][class*="rounded"] p[class*="text-base"] {
+    font-size: 16px !important;
+    line-height: 1.55 !important;
+    opacity: 0.85;
   }
   
-  /* Focus area cards - touch-friendly */
+  /* Focus area cards - TOUCH-FRIENDLY and OBVIOUS */
   button[class*="focus-area"],
-  .focus-area-card {
-    min-height: 60px !important;
-    padding: 16px !important;
-    margin-bottom: 12px !important;
-    border-radius: 12px !important;
+  .focus-area-card,
+  main button[class*="text-left"][class*="rounded-xl"] {
+    min-height: 72px !important; /* Larger for easy tap */
+    padding: 18px !important;
+    margin-bottom: 14px !important;
+    border-radius: 14px !important;
+    /* Make interaction clear */
+    transition: all 0.2s ease-out !important;
+    border-width: 2px !important;
+  }
+  
+  main button[class*="text-left"]:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  /* Grid layouts - SINGLE COLUMN on mobile for clarity */
+  main .grid[class*="md:grid-cols-2"],
+  main .grid[class*="grid-cols-2"] {
+    grid-template-columns: 1fr !important; /* Force single column */
+    gap: 14px !important;
   }
   
   /* ============================================
