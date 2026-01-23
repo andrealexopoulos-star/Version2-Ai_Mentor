@@ -91,7 +91,12 @@ const DashboardLayout = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [darkMode]);
 
+  // FEATURE FLAG: Disable notifications polling for PoC demo
+  const ENABLE_NOTIFICATIONS_POLLING = false;
+
   useEffect(() => {
+    if (!ENABLE_NOTIFICATIONS_POLLING) return;
+    
     fetchNotifications();
     // Refresh notifications every 5 minutes
     const interval = setInterval(fetchNotifications, 300000);
@@ -99,13 +104,14 @@ const DashboardLayout = ({ children }) => {
   }, []);
 
   const fetchNotifications = async () => {
+    if (!ENABLE_NOTIFICATIONS_POLLING) return;
+    
     try {
       const response = await apiClient.get('/notifications/alerts');
       setNotifications(response.data.summary || { total: 0, high: 0 });
       setNotificationsList(response.data.notifications || []);
     } catch {
       // Silently fail - notifications are non-critical for PoC
-      // Will show 0 notifications if endpoint unavailable
     }
   };
 
