@@ -148,6 +148,7 @@ const isDiagnosisValid = (diagnosis) => {
 };
 
 const Diagnosis = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [assessment, setAssessment] = useState(null);
@@ -156,6 +157,21 @@ const Diagnosis = () => {
   useEffect(() => {
     loadAssessment();
   }, []);
+
+  // Navigate to Advisor with proactive trigger
+  const goToAdvisorWithTrigger = (areaId) => {
+    const diagnosis = assessment?.diagnoses?.find(d => d.id === areaId);
+    if (!diagnosis) return;
+    
+    const config = businessCategories[areaId];
+    const params = new URLSearchParams({
+      trigger_source: 'Diagnosis',
+      focus_area: config?.label || diagnosis.focus_area,
+      confidence: diagnosis.confidence_level
+    });
+    
+    navigate(`/advisor?${params.toString()}`);
+  };
 
   const loadAssessment = async () => {
     try {
