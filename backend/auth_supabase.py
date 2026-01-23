@@ -37,27 +37,74 @@ class OAuthResponse(BaseModel):
 async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
     """
     Create user profile in PostgreSQL and initialize Cognitive Core
-    ALWAYS succeeds - creates or returns existing
+    ALWAYS uses the auth.users ID as the source of truth
     """
     try:
-        # First check if user already exists by email (handles duplicates gracefully)
-        existing_user = await get_user_by_email(email)
-        if existing_user:
-            logger.info(f"User with email {email} already exists, returning existing profile")
-            # If user has different ID, update to new OAuth ID
-            if existing_user.get("id") != user_id:
-                try:
-                    # Update cognitive profile first (foreign key)
-                    supabase_admin.table("cognitive_profiles").update({"user_id": user_id}).eq("user_id", existing_user["id"]).execute()
-                    # Then update user ID
-                    supabase_admin.table("users").update({"id": user_id}).eq("email", email).execute()
-                    existing_user["id"] = user_id
-                    logger.info(f"✅ Updated user ID from {existing_user['id']} to {user_id}")
-                except Exception as update_error:
-                    logger.warning(f"Could not update user ID, using existing: {update_error}")
-            return existing_user
+        # First check if user already exists by ID (correct way)
+        existing_by_id = await get_user_by_id(user_id)
+        if existing_by_id:
+            logger.info(f"User with ID {user_id} already exists, returning existing profile")
+            return existing_by_id
         
-        # Create new user record
+        # Check if user exists by email with DIFFERENT ID (migration/duplicate case)
+        existing_by_email = await get_user_by_email(email)
+        if existing_by_email:
+            old_id = existing_by_email.get("id")
+            if old_id != user_id:
+                logger.info(f"Found existing user by email {email} with different ID, merging accounts")
+                logger.info(f"  Old ID: {old_id}")
+                logger.info(f"  New ID (auth.users): {user_id}")
+                
+                try:
+                    # Update all foreign key references FIRST
+                    tables_to_update = [
+                        "cognitive_profiles",
+                        "chat_history", 
+                        "onboarding",
+                        "business_profiles",
+                        "outlook_oauth_tokens",
+                        "outlook_emails"
+                    ]
+                    
+                    for table in tables_to_update:
+                        try:
+                            supabase_admin.table(table).update({"user_id": user_id}).eq("user_id", old_id).execute()
+                            logger.info(f"✅ Updated {table} user_id")
+                        except Exception as table_error:
+                            logger.warning(f"Could not update {table}: {table_error}")
+                    
+                    # Delete old user record
+                    supabase_admin.table("users").delete().eq("id", old_id).execute()
+                    logger.info(f"✅ Deleted old user record {old_id}")
+                    
+                    # Create new user record with correct ID
+                    user_data = {
+                        "id": user_id,
+                        "email": email,
+                        "full_name": existing_by_email.get("full_name") or (metadata.get("full_name") if metadata else None),
+                        "company_name": existing_by_email.get("company_name") or (metadata.get("company_name") if metadata else None),
+                        "industry": existing_by_email.get("industry") or (metadata.get("industry") if metadata else None),
+                        "role": existing_by_email.get("role") or "user",
+                        "subscription_tier": existing_by_email.get("subscription_tier") or "free",
+                        "is_master_account": email == "andre@thestrategysquad.com.au",
+                        "created_at": existing_by_email.get("created_at") or datetime.utcnow().isoformat(),
+                        "updated_at": datetime.utcnow().isoformat()
+                    }
+                    
+                    user_response = supabase_admin.table("users").insert(user_data).execute()
+                    if user_response.data:
+                        logger.info(f"✅ Created merged user profile with correct ID {user_id}")
+                        return user_response.data[0]
+                        
+                except Exception as merge_error:
+                    logger.error(f"❌ Account merge failed: {merge_error}")
+                    # Return the existing record even if merge failed
+                    return existing_by_email
+            else:
+                # Same ID, just return existing
+                return existing_by_email
+        
+        # No existing user - create new
         user_data = {
             "id": user_id,
             "email": email,
@@ -86,9 +133,12 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             "last_updated": datetime.utcnow().isoformat()
         }
         
-        supabase_admin.table("cognitive_profiles").insert(cognitive_data).execute()
+        try:
+            supabase_admin.table("cognitive_profiles").insert(cognitive_data).execute()
+        except Exception as cog_error:
+            logger.warning(f"Could not create cognitive profile: {cog_error}")
         
-        logger.info(f"✅ Created user profile and cognitive core for {email}")
+        logger.info(f"✅ Created NEW user profile for {email} with ID {user_id}")
         return user_response.data[0]
         
     except Exception as e:
