@@ -748,10 +748,44 @@
 }
 
 /* ============================================
+   TABLET / MEDIUM SCREENS (640px - 768px)
+   Responsive adjustments for tablets
+   ============================================ */
+
+@media (min-width: 640px) and (max-width: 768px) {
+  /* Sidebar - slightly narrower on tablet */
+  aside {
+    width: 280px !important;
+    max-width: 45vw !important;
+  }
+  
+  /* Content - use more width */
+  .max-w-3xl,
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl {
+    max-width: 90% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  
+  /* Slightly larger fonts */
+  h1 {
+    font-size: 26px !important;
+  }
+  
+  /* Better grid support */
+  main .grid[class*="md:grid-cols-2"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+
+/* ============================================
    DESKTOP (> 768px) - NO CHANGES
    ============================================ */
 
 @media (min-width: 769px) {
-  /* All above mobile styles are ignored on desktop */
+  /* All above mobile/tablet styles are ignored on desktop */
   /* Desktop uses existing Tailwind classes without override */
 }
