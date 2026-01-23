@@ -3235,95 +3235,164 @@ Return ONLY valid JSON, no markdown."""
 @api_router.post("/email/suggest-reply/{email_id}")
 async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_current_user)):
     """
-    Generate strategic reply suggestions for a specific email - SUPABASE VERSION
+    Generate BIQC-style decisive reply suggestion for a specific email.
+    Returns suggested_reply (to send) and advisor_rationale (why BIQC recommends this).
     """
     user_id = current_user["id"]
     
-    # Get the email from Supabase
-    email = await find_email_by_id_supabase(supabase_admin, email_id)
-    
-    if not email or email.get("user_id") != user_id:
-        raise HTTPException(status_code=404, detail="Email not found")
-    
-    # Get business context from Supabase
-    profile = await get_business_profile_supabase(supabase_admin, user_id)
-    user = await get_user_by_id(user_id) # Supabase
-    
-    # Get communication history with this sender from Supabase
-    sender = email.get("from_address", "")
-    all_emails = await get_user_emails_supabase(supabase_admin, user_id, limit=100)
-    history = [e for e in all_emails if e.get("from_address") == sender][:5]
-    
-    history_context = "\n".join([f"- {h.get('subject')}: {h.get('body_preview', '')[:100]}" for h in history])
-    
-    reply_prompt = f"""You are helping a business owner craft a strategic reply to an email.
+    try:
+        # 1. Get the email from outlook_emails
+        email = await find_email_by_id_supabase(supabase_admin, email_id)
+        
+        if not email or email.get("user_id") != user_id:
+            raise HTTPException(status_code=404, detail="Email not found")
+        
+        # 2. Get the most recent priority analysis
+        priority_analysis = await get_priority_analysis_supabase(supabase_admin, user_id)
+        
+        # 3. Find this email in priority analysis to get BIQC reasoning
+        priority_context = None
+        priority_level = "medium"
+        why_reasoning = ""
+        action_intent = ""
+        
+        if priority_analysis and priority_analysis.get("analysis"):
+            analysis = priority_analysis["analysis"]
+            email_graph_id = email.get("graph_message_id") or email.get("message_id")
+            email_subject = email.get("subject", "").lower().strip()
+            email_from = email.get("from_address", "").lower().strip()
+            
+            # Search through priority levels
+            for level in ["high_priority", "medium_priority", "low_priority"]:
+                items = analysis.get(level, [])
+                for item in items:
+                    # Match by graph_message_id (preferred)
+                    if email_graph_id and item.get("id") == email_graph_id:
+                        priority_context = item
+                        priority_level = level.replace("_priority", "")
+                        break
+                    # Fallback: match by subject + from
+                    item_subject = item.get("subject", "").lower().strip()
+                    item_from = item.get("from", "").lower().strip()
+                    if item_subject == email_subject and item_from in email_from:
+                        priority_context = item
+                        priority_level = level.replace("_priority", "")
+                        break
+                if priority_context:
+                    break
+            
+            # Extract reasoning if found
+            if priority_context:
+                why_reasoning = priority_context.get("why", "")
+                action_intent = priority_context.get("action", "")
+        
+        # 4. Get business profile for context
+        profile = await get_business_profile_supabase(supabase_admin, user_id)
+        user = await get_user_by_id(user_id)
+        user_name = user.get("full_name") or user.get("name") or "Business Owner"
+        business_name = ""
+        if profile:
+            business_name = profile.get("business_name", "")
+        if not business_name and user:
+            business_name = user.get("company_name", "")
+        
+        # 5. Build the BIQC reply generation prompt
+        reply_prompt = f"""You are BIQC, the trusted strategic advisor for a senior business operator.
 
-BUSINESS OWNER: {user.get('name', 'Business Owner')}
-BUSINESS: {profile.get('business_name', user.get('business_name', 'Their business')) if profile else user.get('business_name', 'Their business')}
-COMMUNICATION STYLE: {profile.get('communication_style', 'Professional and friendly') if profile else 'Professional and friendly'}
+SENDER: {email.get('from_name', '')} <{email.get('from_address', '')}>
+SUBJECT: {email.get('subject', 'No subject')}
+RECEIVED: {email.get('received_date', '')}
 
-EMAIL TO REPLY TO:
-From: {email.get('from_name', email.get('from_address', 'Unknown'))}
-Subject: {email.get('subject', 'No subject')}
-Content: {email.get('body_content', email.get('body_preview', ''))[:2000]}
+EMAIL CONTENT:
+{email.get('body_content', email.get('body_preview', ''))[:3000]}
 
-RECENT HISTORY WITH THIS CONTACT:
-{history_context if history_context else 'No previous history'}
+---
+BIQC PRIORITY ASSESSMENT:
+- Priority Level: {priority_level.upper()}
+- Why flagged: {why_reasoning or 'Standard business correspondence'}
+- Suggested action: {action_intent or 'Respond appropriately'}
 
-Generate 3 reply options with different tones/approaches:
+OWNER CONTEXT:
+- Name: {user_name}
+- Business: {business_name or 'Business operator'}
 
-1. DIRECT & EFFICIENT - Get to the point quickly
-2. RELATIONSHIP-BUILDING - Warm, builds rapport
-3. STRATEGIC - Positions for future opportunity
+---
+GENERATE A REPLY that the owner can send. Follow these MANDATORY rules:
 
-For each, provide:
-- A suggested subject line (if reply changes topic)
-- The full reply text (ready to send)
-- Strategic note (why this approach)
+HARD RULES (MUST FOLLOW):
+1. NO polite filler phrases. BANNED phrases include:
+   - "Thank you for reaching out"
+   - "I hope you are well"
+   - "Please let me know if you have any questions"
+   - "Kind regards" / "Best regards" / "Warm regards"
+   - "I appreciate your"
+   - "Looking forward to"
+2. Write in FIRST PERSON ("I will", "I've reviewed", "I can confirm")
+3. MAXIMUM 2-4 sentences
+4. Must move situation FORWARD with a decision, commitment, or next step
+5. Reference time or consequence ("today", "by Friday", "next week", "otherwise")
 
-Format as JSON:
+STYLE:
+- Sound like a senior operator, not customer support
+- Clear, calm, decisive
+- No marketing speak or over-explanation
+- Direct but not rude
+
+Return ONLY valid JSON in this exact format:
 {{
-    "replies": [
-        {{
-            "style": "direct",
-            "subject": "Re: ...",
-            "body": "Full reply text...",
-            "strategic_note": "Why this works..."
-        }}
-    ],
-    "context_insight": "What this email tells us about the relationship/opportunity"
+  "suggested_reply": "The actual reply text the user would send (2-4 sentences, no greeting/closing)",
+  "advisor_rationale": "2-3 sentences explaining: why this email matters, what risk/opportunity exists, what outcome this reply optimizes for"
 }}"""
 
-    try:
+        # 6. Generate with LLM
         chat = LlmChat(
             api_key=EMERGENT_KEY,
-            session_id=f"reply_suggest_{user_id}_{email_id}",
-            system_message="You are an expert business communication strategist. Generate professional, effective email replies."
+            session_id=f"biqc_reply_{user_id}_{email_id}",
+            system_message="You are BIQC, a decisive business intelligence advisor. Generate concise, action-oriented email replies that sound like a real executive wrote them. Never use generic pleasantries."
         )
         chat.with_model("openai", AI_MODEL)
         
         response = await chat.send_message(UserMessage(text=reply_prompt))
         
+        # 7. Parse response
         import json
+        result = None
         try:
-            suggestions = json.loads(response.strip())
+            # Try direct parse
+            result = json.loads(response.strip())
         except:
+            # Try to extract JSON from response
             import re
             json_match = re.search(r'\{[\s\S]*\}', response)
             if json_match:
-                suggestions = json.loads(json_match.group())
-            else:
-                suggestions = {"error": "Could not parse response", "raw_response": response[:1000]}
+                try:
+                    result = json.loads(json_match.group())
+                except:
+                    pass
+        
+        if not result or "suggested_reply" not in result:
+            # Fallback: create structured response from raw text
+            result = {
+                "suggested_reply": response.strip()[:500],
+                "advisor_rationale": f"This is a {priority_level} priority email. {why_reasoning}"
+            }
+        
+        logger.info(f"✅ Generated BIQC reply for email {email_id}")
         
         return {
+            "suggested_reply": result.get("suggested_reply", ""),
+            "advisor_rationale": result.get("advisor_rationale", ""),
             "email_id": email_id,
-            "original_subject": email.get("subject"),
-            "from": email.get("from_name") or email.get("from_address"),
-            **suggestions
+            "priority_level": priority_level,
+            "matched_by": "graph_id" if priority_context and priority_context.get("id") == email.get("graph_message_id") else "subject_from" if priority_context else "none"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Reply suggestion error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Suggestion failed: {str(e)}")
 
 
