@@ -202,36 +202,58 @@ const Diagnosis = () => {
         }
       });
       
-      // Get top detected areas
-      const sorted = Object.entries(patterns)
-        .filter(([_, count]) => count > 0)
-        .sort((a, b) => b[1] - a[1]);
+      // Create diagnoses using contract
+      const diagnoses = Object.entries(patterns)
+        .map(([id, count]) => createDiagnosis(id, count, allEmails.length, businessCategories[id]))
+        .filter(isDiagnosisValid); // Only include valid diagnoses
       
-      const detected = sorted.slice(0, 3).map(([id, count]) => ({
-        id,
-        count,
-        urgency: count > 3 ? 'high' : count > 1 ? 'medium' : 'low'
-      }));
+      // Sort by signal count, then urgency
+      const urgencyOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+      diagnoses.sort((a, b) => {
+        if (b.signal_count !== a.signal_count) return b.signal_count - a.signal_count;
+        return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+      });
       
-      // Set initial active areas from detection
-      if (detected.length > 0 && activeAreas.length === 0) {
-        setActiveAreas(detected.map(d => d.id));
+      // Set initial active areas from top diagnoses with signals
+      const topWithSignals = diagnoses.filter(d => d.signal_count > 0).slice(0, 3);
+      if (topWithSignals.length > 0 && activeAreas.length === 0) {
+        setActiveAreas(topWithSignals.map(d => d.id));
+      }
+      
+      // Calculate overall confidence
+      let overallConfidence = 'Limited';
+      if (allEmails.length >= 10 && topWithSignals.length >= 2) {
+        overallConfidence = 'High';
+      } else if (allEmails.length >= 5 || topWithSignals.length >= 1) {
+        overallConfidence = 'Medium';
       }
       
       setAssessment({
-        detected,
+        diagnoses,
         totalSignals: allEmails.length,
         generated_at: new Date().toISOString(),
-        confidence: detected.length > 2 ? 'strong' : detected.length > 0 ? 'moderate' : 'building'
+        confidence: overallConfidence,
+        uncertaintyNote: overallConfidence === 'Limited' 
+          ? 'BIQC has limited visibility into your business. Connect more data sources for clearer diagnosis.'
+          : null
       });
       
     } catch (error) {
       console.log('Assessment from emails not available');
+      // When no data, explicitly state uncertainty
       setAssessment({
-        detected: [],
+        diagnoses: Object.entries(businessCategories).map(([id, config]) => ({
+          focus_area: config.label,
+          id,
+          urgency: 'Low',
+          evidence_summary: `Awaiting data to assess ${config.signalClass}.`,
+          confidence_level: 'Limited',
+          signal_count: 0
+        })),
         totalSignals: 0,
         generated_at: new Date().toISOString(),
-        confidence: 'building'
+        confidence: 'Limited',
+        uncertaintyNote: 'BIQC cannot identify clear signals without connected data sources. These areas are proposed for consideration, not diagnosed.'
       });
     } finally {
       setLoading(false);
