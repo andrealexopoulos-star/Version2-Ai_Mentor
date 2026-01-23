@@ -103,8 +103,9 @@ const DashboardLayout = ({ children }) => {
       const response = await apiClient.get('/notifications/alerts');
       setNotifications(response.data.summary || { total: 0, high: 0 });
       setNotificationsList(response.data.notifications || []);
-    } catch (error) {
-      console.error('Failed to fetch notifications');
+    } catch {
+      // Silently fail - notifications are non-critical for PoC
+      // Will show 0 notifications if endpoint unavailable
     }
   };
 
