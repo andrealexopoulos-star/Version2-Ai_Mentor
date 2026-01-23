@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent } from '../components/ui/card';
@@ -49,20 +50,131 @@ const focusAreas = [
   }
 ];
 
+// Proactivity Gate: validate trigger before auto-speaking
+const validateProactiveTrigger = (trigger) => {
+  if (!trigger) return null;
+  
+  // Must have trigger_source and confidence_level
+  if (!trigger.trigger_source || !trigger.confidence_level) return null;
+  
+  // trigger_source must be valid
+  if (!['Diagnosis', 'Inbox'].includes(trigger.trigger_source)) return null;
+  
+  // confidence_level must be valid
+  if (!['High', 'Medium', 'Limited'].includes(trigger.confidence_level)) return null;
+  
+  return trigger;
+};
+
 const Advisor = () => {
   const { user } = useSupabaseAuth();
+  const [searchParams] = useSearchParams();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [showFocusAreas, setShowFocusAreas] = useState(true);
   const [focus, setFocus] = useState(null);
+  const [proactiveTrigger, setProactiveTrigger] = useState(null);
+  const [hasSpoken, setHasSpoken] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
+  // Check for proactive trigger on mount
   useEffect(() => {
+    const checkProactiveTrigger = () => {
+      // Check URL params for Diagnosis trigger
+      const focusArea = searchParams.get('focus_area');
+      const triggerSource = searchParams.get('trigger_source');
+      const confidence = searchParams.get('confidence');
+      
+      if (focusArea && triggerSource === 'Diagnosis') {
+        const trigger = validateProactiveTrigger({
+          trigger_source: 'Diagnosis',
+          focus_area: focusArea,
+          confidence_level: confidence || 'Medium'
+        });
+        
+        if (trigger) {
+          setProactiveTrigger(trigger);
+          setShowFocusAreas(false);
+          return;
+        }
+      }
+      
+      // No valid trigger - load silently
+      setProactiveTrigger(null);
+    };
+    
+    checkProactiveTrigger();
     fetchFocus();
-  }, []);
+  }, [searchParams]);
+
+  // Proactive message generation (only if valid trigger exists)
+  useEffect(() => {
+    const generateProactiveMessage = async () => {
+      // Gate check: must have valid trigger and not already spoken
+      if (!proactiveTrigger || hasSpoken || messages.length > 0) return;
+      
+      // Additional validation
+      const validTrigger = validateProactiveTrigger(proactiveTrigger);
+      if (!validTrigger) return;
+      
+      setHasSpoken(true);
+      setLoading(true);
+      
+      try {
+        // Build context-aware proactive prompt
+        const contextPrompt = buildProactivePrompt(validTrigger);
+        
+        const response = await apiClient.post('/chat', {
+          message: contextPrompt,
+          context_type: 'proactive',
+          metadata: {
+            trigger_source: validTrigger.trigger_source,
+            confidence_level: validTrigger.confidence_level,
+            focus_area: validTrigger.focus_area
+          }
+        });
+        
+        // Add assistant's proactive message
+        setMessages([{
+          role: 'assistant',
+          content: response.data.response,
+          metadata: {
+            trigger_source: validTrigger.trigger_source,
+            confidence_level: validTrigger.confidence_level
+          }
+        }]);
+        
+        setSessionId(response.data.session_id);
+      } catch (error) {
+        console.error('Proactive message failed:', error);
+        // Fail silently - don't show error, just let user interact naturally
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    generateProactiveMessage();
+  }, [proactiveTrigger, hasSpoken, messages.length]);
+
+  // Build proactive prompt based on trigger
+  const buildProactivePrompt = (trigger) => {
+    if (trigger.trigger_source === 'Diagnosis') {
+      return `[PROACTIVE CONTEXT: User arrived from Business Diagnosis. Focus area: ${trigger.focus_area}. Confidence: ${trigger.confidence_level}.]
+      
+Provide a brief, direct observation about their ${trigger.focus_area} focus area. Do NOT ask "How can I help?" or similar. Make one specific observation or surface one consideration they may not have thought of. Be concise (2-3 sentences max).`;
+    }
+    
+    if (trigger.trigger_source === 'Inbox') {
+      return `[PROACTIVE CONTEXT: User has high-priority emails requiring attention. Confidence: ${trigger.confidence_level}.]
+      
+Acknowledge you've noticed activity in their inbox that may need attention. Do NOT ask "How can I help?" - instead, offer one specific observation. Be concise.`;
+    }
+    
+    return '';
+  };
 
   const fetchFocus = async () => {
     try {
