@@ -116,16 +116,14 @@ const DashboardLayout = ({ children }) => {
   };
 
   const navItems = [
-    { type: 'divider', label: 'Advisory Team' },
-    { icon: Target, label: 'MyIntel', path: '/intel-centre', showBadge: true },
+    { type: 'divider', label: 'Business Intelligence' },
+    { icon: Stethoscope, label: 'Business Diagnosis', path: '/diagnosis', showBadge: true },
     { icon: MessageSquare, label: 'MyAdvisor', path: '/advisor', showBadge: true },
     { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
-    { type: 'divider', label: 'Agent IQ Builder' },
-    { icon: Building2, label: 'Business Profile Builder', path: '/business-profile' },
+    { type: 'divider', label: 'Setup' },
+    { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
-    { icon: Database, label: 'Data Centre', path: '/data-center' },
-    { icon: FileText, label: 'Documents & SOP', path: '/documents' },
-    { type: 'divider', label: '' },
+    { type: 'divider', label: 'Communications' },
     { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
   ];
