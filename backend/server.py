@@ -974,7 +974,20 @@ def build_business_knowledge_context(business_context: dict) -> str:
 
 from biqc_constitution_prompt import get_constitution_prompt
 
-def get_system_prompt(context_type: str, user_data: dict = None, business_knowledge: str = None) -> str:
+def get_system_prompt(context_type: str, user_data: dict = None, business_knowledge: str = None, metadata: dict = None) -> str:
+    """
+    Generate system prompt based on context type.
+    
+    Args:
+        context_type: Type of conversation (general, proactive, intel, soundboard, etc.)
+        user_data: User profile data
+        business_knowledge: Comprehensive business knowledge string
+        metadata: Additional metadata for proactive messages (trigger_source, focus_area, confidence_level)
+    """
+    # Initialize metadata if not provided
+    if metadata is None:
+        metadata = {}
+    
     # Build personalized context from user profile
     user_context = ""
     if user_data:
