@@ -361,6 +361,20 @@ const Diagnosis = () => {
             <p className={`text-xs mt-1 ${isActive ? 'text-white/60' : 'text-gray-400'}`}>
               {config.why}
             </p>
+            
+            {/* Discuss with Advisor button - only for active areas with signals */}
+            {isActive && diagnosis?.signal_count > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToAdvisorWithTrigger(id);
+                }}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition-colors"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Discuss with Advisor
+              </button>
+            )}
           </div>
           <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
             isActive ? 'bg-white border-white' : 'border-gray-300'
