@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
-import '../mobile-dashboard.css';
-import '../mobile-header-fixes.css';
+import '../mobile-ux-overhaul.css';
 import {
   DropdownMenu,
   DropdownMenuContent,
