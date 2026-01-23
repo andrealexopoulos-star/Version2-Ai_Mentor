@@ -35,58 +35,90 @@
     padding-bottom: env(safe-area-inset-bottom, 0) !important;
     /* Prevent body scroll when menu open */
     overflow-x: hidden;
+    /* Mobile-native font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   body.sidebar-open {
     overflow: hidden !important;
     position: fixed !important;
     width: 100% !important;
+    height: 100vh !important;
+  }
+  
+  /* MOBILE-FIRST: Hide desktop complexity */
+  .hidden-mobile,
+  [class*="desktop-only"],
+  [class*="hidden"][class*="sm:block"]:not(.sm\:block) {
+    display: none !important;
   }
   
   /* ============================================
      TOP NAVIGATION BAR
+     MOBILE-FIRST: Clear, obvious, safe to use
      ============================================ */
   
   /* Improve header spacing and tap targets */
   header {
     /* Better padding for touch */
-    padding: 12px 16px !important;
-    height: 56px !important; /* Standard mobile header */
-    gap: 12px !important;
+    padding: 14px 16px !important;
+    height: 60px !important; /* Taller for safety */
+    gap: 16px !important; /* More breathing room */
+    /* Ensure it's always on top */
+    z-index: 1000 !important;
   }
   
-  /* Hamburger menu button - larger, clearer tap target */
+  /* Hamburger menu button - OBVIOUS and SAFE */
   header button[aria-label*="menu"] {
-    min-width: 48px !important;
-    min-height: 48px !important;
-    padding: 12px !important;
-    margin-left: -4px !important; /* Align to edge */
-    border-radius: 12px !important;
+    min-width: 52px !important; /* Even larger */
+    min-height: 52px !important;
+    padding: 14px !important;
+    margin-left: -6px !important; /* Align to true edge */
+    border-radius: 14px !important;
+    /* Make it obvious this is interactive */
+    background: rgba(0, 0, 0, 0.02) !important;
   }
   
   header button[aria-label*="menu"]:active {
-    background: rgba(0, 0, 0, 0.05) !important;
+    background: rgba(0, 0, 0, 0.08) !important;
+    transform: scale(0.95);
   }
   
-  /* Logo - adjust for mobile */
+  /* Logo - mobile-appropriate size */
   header .flex.items-center.gap-2 {
-    gap: 8px !important;
+    gap: 10px !important;
   }
   
   header .w-8 {
-    width: 36px !important;
-    height: 36px !important;
+    width: 40px !important;
+    height: 40px !important;
   }
   
-  /* Right side action buttons - better spacing */
+  /* Brand text - hide on very small screens */
+  @media (max-width: 360px) {
+    header span[class*="font-semibold"][class*="text-"] {
+      display: none !important;
+    }
+  }
+  
+  /* Right side action buttons - ONLY ESSENTIAL */
   header > div:last-child {
-    gap: 4px !important;
+    gap: 8px !important;
   }
   
   header > div:last-child button {
-    min-width: 44px !important;
-    min-height: 44px !important;
-    padding: 10px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+  
+  /* Hide non-essential header items on mobile */
+  header button[title*="Mode"],
+  header button[aria-label*="Notifications"] {
+    /* These are desktop conveniences, not mobile essentials */
+    opacity: 0.6;
   }
   
   /* ============================================
