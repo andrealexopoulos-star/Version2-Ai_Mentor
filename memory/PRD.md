@@ -1,111 +1,94 @@
-# The Strategy Squad - Product Requirements Document
+# BIQC (Business IQ Centre) - Product Requirements Document
 
 ## Original Problem Statement
-Transform "The Strategy Squad" application into a hyper-personalized, "virtually human-like" AI business advisor with:
-- Per-User Cognitive Core (persistent intelligence layer)
-- Three distinct AI agents with enforced output shapes
-- Smart multi-step onboarding questionnaire
-- Business Profile Completeness and dynamic Business Score
-- Deep integration with business tools (priority: Microsoft Outlook)
-- Priority Inbox, Calendar Intelligence, ChatGPT-style chat interface
-- Voice Chat functionality (video-call-like experience)
+Migrate BIQC application from MongoDB to Supabase (PostgreSQL) and stabilize for investor demo. Primary goal: fully functional advisor chat, seamless mobile UX, and working Outlook integration with Priority Inbox.
 
-## Agent Constitution v1.0
-
-### Three Agents (Fixed, Non-Negotiable):
-1. **MyIntel** - Surfaces intelligence (Headline → Fact → Implication)
-2. **MyAdvisor** - Directs action (Situation → Decision → Next step)  
-3. **MySoundboard** - Thinking partner (Observation → Question)
-
-### Cognitive Core (Per-User):
-Four layers of persistent user understanding:
-- Layer 1: Immutable Reality Model
-- Layer 2: Behavioural Truth Model
-- Layer 3: Delivery Preference Model
-- Layer 4: Consequence & Outcome Memory
-
----
+## Architecture
+- **Frontend**: React + Tailwind CSS + Shadcn UI
+- **Backend**: FastAPI (Python)
+- **Database**: Supabase (PostgreSQL)
+- **Auth**: Supabase Auth (Google/Microsoft OAuth, Email/Password)
+- **AI**: OpenAI GPT via Emergent LLM Key
+- **Email**: Microsoft Graph API via Supabase Edge Function
 
 ## What's Been Implemented
 
-### Completed Features ✅
-- [x] User authentication (email/password + Google OAuth)
-- [x] Business profile management with completeness scoring
-- [x] Microsoft Outlook OAuth integration (FIXED - Jan 10, 2025)
-- [x] AI-powered chat (MySoundBoard, Chief Business Advisor personas)
-- [x] Navigation restructure (Advisory Team, Agent IQ Builder)
-- [x] Smart notifications system (backend + UI badges)
-- [x] Dashboard Focus AI feature
-- [x] Voice Chat with OpenAI Realtime API (Jan 10, 2025)
-- [x] Mobile responsive design improvements (Jan 10, 2025)
-- [x] **Per-User Cognitive Core (Jan 10, 2025)**
-- [x] **MySoundboard Agent Constitution compliance (Jan 10, 2025)**
+### Session: January 23, 2025
 
-### Cognitive Core Implementation (Jan 10, 2025) ✅
-- [x] Four-layer persistent user profile
-- [x] Passive continuous learning
-- [x] Integration with MySoundboard
-- [x] Business profile sync to reality model
-- [x] Observation recording API
+#### ✅ COMPLETED
+1. **Auth Redirect Loop** - Fixed by proper session handling and user ID sync
+2. **Azure Client ID** - Restored correct ID: `5d6e3cbb-cd88-4694-aa19-9b7115666866`
+3. **Outlook OAuth Flow** - Now uses Supabase Edge Function correctly
+4. **User ID Sync** - Fixed duplicate user ID issue between auth.users and public.users
+5. **RLS Policies** - Added service_role policies for all critical tables
+6. **Priority Inbox Analysis** - Fixed MongoDB-style function call to Supabase
+7. **Notification Polling** - Disabled via feature flag for demo (no console noise)
+8. **Manifest Icons** - Created logo192.png and logo512.png
+9. **Suggest Reply Feature** - BIQC-style decisive replies with advisor rationale
+10. **Reply Modal UI** - Updated to render new response format
 
----
+#### 🔧 KEY FIXES APPLIED
+- `/app/backend/auth_supabase.py` - User profile creation with ID migration
+- `/app/backend/server.py` - Priority analysis write fix, Suggest Reply endpoint
+- `/app/frontend/src/pages/EmailInbox.js` - Reply modal rendering
+- `/app/frontend/src/components/DashboardLayout.js` - Notification polling disabled
+- `/app/frontend/public/logo192.png` & `logo512.png` - PWA icons created
+
+## Database Schema (Supabase)
+
+### Key Tables
+- `users` - User profiles (synced with auth.users)
+- `outlook_oauth_tokens` - Microsoft OAuth tokens (from Edge Function)
+- `outlook_emails` - Synced emails from Outlook
+- `email_priority_analysis` - BIQC priority analysis results
+- `onboarding` - User onboarding status
+- `chat_history` - Advisor chat history
+- `cognitive_profiles` - BIQC cognitive core data
+- `business_profiles` - User business information
+
+### Required RLS Policies
+```sql
+CREATE POLICY "Service role full access" ON public.users FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON public.outlook_oauth_tokens FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON public.outlook_emails FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON public.onboarding FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO service_role USING (true) WITH CHECK (true);
+```
 
 ## Prioritized Backlog
 
-### P0 - Critical
-- [ ] MyAdvisor Cognitive Core + Agent Constitution compliance
-- [ ] MyIntel Cognitive Core + Agent Constitution compliance
-- [ ] Notification state machine implementation
-- [ ] Email Intelligence backend implementation
-- [ ] Calendar Intelligence backend implementation
+### P0 - DONE ✅
+- [x] Auth redirect loop
+- [x] Outlook OAuth connection
+- [x] Priority Inbox display
+- [x] Suggest Reply feature
+- [x] Console error cleanup for demo
 
-### P1 - High Priority
-- [ ] Business Profile immutable versioned API frontend update
-- [ ] Custom voice chat persona for MySoundBoard
+### P1 - HIGH PRIORITY
+- [ ] Email sync verification (ensure emails populate after OAuth)
+- [ ] New user signup flow testing
+- [ ] Google Calendar integration
+- [ ] Gmail integration
 
-### P2 - Medium Priority
-- [ ] Dark/light mode toggle fix
-- [ ] Placeholder integration buttons "Coming Soon" state
+### P2 - MEDIUM PRIORITY
+- [ ] Theme toggle fix
+- [ ] Password reset flow
+- [ ] 2FA implementation
+- [ ] Notifications endpoint fix (currently disabled)
 
-### P3 - Low Priority / Future
-- [ ] Settings & Billing Section
-- [ ] User Seat Management & Invite Flow
-- [ ] Feature Gating for subscription tiers
-- [ ] WhatsApp, SMS, HubSpot, Xero, LinkedIn integrations
-- [ ] PDF Export
+### P3 - BACKLOG
+- [ ] Serper.dev integration for live data
+- [ ] Backend refactoring (break down server.py)
+- [ ] BIQC meta-layer (beliefs, decisions, drift tracking)
+- [ ] CRM integrations (HubSpot, Salesforce, Xero)
 
----
+## Key URLs
+- **App**: https://advisor-chat-1.preview.emergentagent.com
+- **Supabase**: https://uxyqpdfftxpkzeppqtvk.supabase.co
 
-## Technical Architecture
-
-### Backend
-- FastAPI (Python)
-- MongoDB
-- **Cognitive Core** - Per-user intelligence layer
-- OpenAI GPT-4o via Emergent LLM Key
-- OpenAI Realtime Voice API (direct key)
-- Microsoft Graph API for Outlook
-
-### Frontend
-- React
-- Shadcn/UI components
-- Tailwind CSS
-- WebRTC for voice chat
-
-### Key Files
-- `/app/backend/cognitive_core.py` - Per-User Cognitive Core
-- `/app/backend/server.py` - Main API with agent endpoints
-- `/app/frontend/src/pages/MySoundBoard.js` - Chat interface
-- `/app/frontend/src/components/VoiceChat.js` - Voice chat component
+## Credentials
+- **Test Account**: (create via Microsoft OAuth)
+- **Azure Client ID**: `5d6e3cbb-cd88-4694-aa19-9b7115666866`
 
 ---
-
-## 3rd Party Integrations
-- OpenAI GPT-4o (Emergent LLM Key) - Text chat
-- OpenAI Realtime Voice API (User key) - Voice chat
-- Microsoft Graph API (User credentials) - Outlook
-- Serper.dev for web search (User API Key)
-
----
-
-*Last Updated: January 10, 2025*
+*Last Updated: January 23, 2025*
