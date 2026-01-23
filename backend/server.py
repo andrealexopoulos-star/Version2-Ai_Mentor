@@ -2163,7 +2163,7 @@ INTERNAL DIRECTIVE: Operate with maximum conservatism.
 Do not assume. Ask before advising. Reduce certainty significantly."""
 
 
-async def get_ai_response(message: str, context_type: str, session_id: str, user_id: str = None, user_data: dict = None, use_advanced: bool = False, user_access_token: str = None) -> str:
+async def get_ai_response(message: str, context_type: str, session_id: str, user_id: str = None, user_data: dict = None, use_advanced: bool = False, user_access_token: str = None, metadata: dict = None) -> str:
     """
     Generate AI response with BIQC Constitution enforcement
     MANDATORY: Calls intelligence-snapshot Edge Function before generating advice
