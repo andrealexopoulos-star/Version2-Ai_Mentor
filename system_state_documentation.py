@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 
 class SystemStateDocumentation:
-    def __init__(self, base_url="https://advisor-chat-1.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://business-iq-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.results = []
         

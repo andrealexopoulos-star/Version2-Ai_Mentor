@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://advisor-chat-1.preview.emergentagent.com/api"
+BASE_URL = "https://business-iq-1.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "onboard@test.com"
 TEST_USER_PASSWORD = "Test123!"
 TEST_USER_NAME = "Onboard Tester"

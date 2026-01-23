@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://advisor-chat-1.preview.emergentagent.com/advisor
+## For: https://business-iq-1.preview.emergentagent.com/advisor
 
 ---
 
