@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { 
   Loader2, RefreshCw, TrendingUp, AlertCircle,
   Check, DollarSign, Users, Briefcase,
   Clock, Shield, Lightbulb, Zap, Target,
-  UserMinus, LineChart, Cog, Scale
+  UserMinus, LineChart, Cog, Scale, MessageSquare
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
