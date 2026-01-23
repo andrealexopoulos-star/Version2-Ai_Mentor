@@ -122,9 +122,14 @@ const DashboardLayout = ({ children }) => {
     { type: 'divider', label: 'Setup' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
+    { icon: Database, label: 'Data Center', path: '/data-center' },
     { type: 'divider', label: 'Communications' },
     { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
+    { type: 'divider', label: 'Tools' },
+    { icon: BarChart3, label: 'Analysis', path: '/analysis' },
+    { icon: FileText, label: 'Documents', path: '/documents' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
   const handleLogout = () => {
