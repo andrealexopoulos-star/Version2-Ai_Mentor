@@ -240,9 +240,9 @@
   .max-w-4xl,
   .max-w-5xl,
   .max-w-6xl {
-    max-width: 100% !important; /* Use full mobile width */
-    padding-left: 24px !important;
-    padding-right: 24px !important;
+    width: 100% !important; /* Use full width on mobile */
+    padding-left: 20px !important;
+    padding-right: 20px !important;
   }
   
   /* ============================================
