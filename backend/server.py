@@ -4405,13 +4405,23 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
         communication_style
     )
     
+    # Build metadata for proactive messages (Advisory Intelligence Contract)
+    metadata = None
+    if request.context_type == "proactive":
+        metadata = {
+            "trigger_source": request.trigger_source,
+            "focus_area": request.focus_area,
+            "confidence_level": request.confidence_level
+        }
+    
     response = await get_ai_response(
         enhanced_message,
         request.context_type or "general",
         session_id,
         user_id=user_id,
         user_data={"name": current_user.get("name"), "business_name": profile.get("business_name")},
-        use_advanced=False
+        use_advanced=False,
+        metadata=metadata
     )
     
     # Store chat history
