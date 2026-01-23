@@ -19,7 +19,8 @@ const businessCategories = {
     bgActive: 'bg-indigo-600',
     bgAvailable: 'bg-indigo-50',
     border: 'border-indigo-200',
-    why: 'Whether your current direction is producing expected outcomes or drifting from core objectives.'
+    why: 'Whether your current direction is producing expected outcomes or drifting from core objectives.',
+    signalClass: 'strategic communications'
   },
   revenue: { 
     label: 'Revenue Momentum', 
@@ -28,7 +29,8 @@ const businessCategories = {
     bgActive: 'bg-emerald-600',
     bgAvailable: 'bg-emerald-50',
     border: 'border-emerald-200',
-    why: 'Sales velocity, pipeline health, and whether revenue growth matches effort invested.'
+    why: 'Sales velocity, pipeline health, and whether revenue growth matches effort invested.',
+    signalClass: 'sales and pipeline activity'
   },
   finance: { 
     label: 'Cash Flow & Financial Risk', 
@@ -37,7 +39,8 @@ const businessCategories = {
     bgActive: 'bg-green-600',
     bgAvailable: 'bg-green-50',
     border: 'border-green-200',
-    why: 'Liquidity position, payment obligations, and financial commitments that affect runway.'
+    why: 'Liquidity position, payment obligations, and financial commitments that affect runway.',
+    signalClass: 'financial correspondence'
   },
   operations: { 
     label: 'Operations & Delivery', 
@@ -46,7 +49,8 @@ const businessCategories = {
     bgActive: 'bg-blue-600',
     bgAvailable: 'bg-blue-50',
     border: 'border-blue-200',
-    why: 'Execution quality, delivery timelines, and operational bottlenecks affecting output.'
+    why: 'Execution quality, delivery timelines, and operational bottlenecks affecting output.',
+    signalClass: 'deadline and delivery patterns'
   },
   retention: { 
     label: 'People Retention & Capacity', 
@@ -55,7 +59,8 @@ const businessCategories = {
     bgActive: 'bg-purple-600',
     bgAvailable: 'bg-purple-50',
     border: 'border-purple-200',
-    why: 'Team stability, workload distribution, and capacity to deliver current commitments.'
+    why: 'Team stability, workload distribution, and capacity to deliver current commitments.',
+    signalClass: 'team and resource discussions'
   },
   peoplerisk: { 
     label: 'People Risk', 
@@ -64,7 +69,8 @@ const businessCategories = {
     bgActive: 'bg-rose-600',
     bgAvailable: 'bg-rose-50',
     border: 'border-rose-200',
-    why: 'Key person dependencies, succession gaps, and team vulnerabilities that create exposure.'
+    why: 'Key person dependencies, succession gaps, and team vulnerabilities that create exposure.',
+    signalClass: 'personnel change indicators'
   },
   customer: { 
     label: 'Customer Relationships', 
@@ -73,7 +79,8 @@ const businessCategories = {
     bgActive: 'bg-pink-600',
     bgAvailable: 'bg-pink-50',
     border: 'border-pink-200',
-    why: 'Client satisfaction signals, relationship health, and retention indicators.'
+    why: 'Client satisfaction signals, relationship health, and retention indicators.',
+    signalClass: 'client interaction patterns'
   },
   technology: { 
     label: 'Systems & Technology Risk', 
@@ -82,7 +89,8 @@ const businessCategories = {
     bgActive: 'bg-cyan-600',
     bgAvailable: 'bg-cyan-50',
     border: 'border-cyan-200',
-    why: 'Technical debt, system reliability, and infrastructure that could limit growth.'
+    why: 'Technical debt, system reliability, and infrastructure that could limit growth.',
+    signalClass: 'system and technical communications'
   },
   compliance: { 
     label: 'Risk & Compliance', 
@@ -91,8 +99,51 @@ const businessCategories = {
     bgActive: 'bg-amber-600',
     bgAvailable: 'bg-amber-50',
     border: 'border-amber-200',
-    why: 'Regulatory obligations, contractual risks, and compliance gaps requiring attention.'
+    why: 'Regulatory obligations, contractual risks, and compliance gaps requiring attention.',
+    signalClass: 'regulatory and legal correspondence'
   }
+};
+
+// Diagnosis contract: every area must have these fields
+const createDiagnosis = (id, count, totalSignals, config) => {
+  // Determine urgency based on signal density
+  let urgency = 'Low';
+  if (count >= 5) urgency = 'High';
+  else if (count >= 2) urgency = 'Medium';
+  
+  // Determine confidence based on total data available
+  let confidence_level = 'Limited';
+  if (totalSignals >= 10 && count >= 3) confidence_level = 'High';
+  else if (totalSignals >= 5 && count >= 1) confidence_level = 'Medium';
+  
+  // Build evidence summary - MUST reference signal class, NOT generic
+  let evidence_summary = '';
+  if (count > 0) {
+    evidence_summary = `Detected in ${config.signalClass} across recent communications.`;
+  } else {
+    evidence_summary = `No clear signals detected in ${config.signalClass}.`;
+  }
+  
+  return {
+    focus_area: config.label,
+    id,
+    urgency,
+    evidence_summary,
+    confidence_level,
+    signal_count: count
+  };
+};
+
+// Validate diagnosis meets contract
+const isDiagnosisValid = (diagnosis) => {
+  if (!diagnosis.focus_area) return false;
+  if (!['High', 'Medium', 'Low'].includes(diagnosis.urgency)) return false;
+  if (!diagnosis.evidence_summary || diagnosis.evidence_summary.length < 10) return false;
+  if (!['High', 'Medium', 'Limited'].includes(diagnosis.confidence_level)) return false;
+  // Check for banned generic phrases
+  const banned = ['based on AI', 'advanced analysis', 'machine learning', 'our algorithms'];
+  if (banned.some(phrase => diagnosis.evidence_summary.toLowerCase().includes(phrase))) return false;
+  return true;
 };
 
 const Diagnosis = () => {
