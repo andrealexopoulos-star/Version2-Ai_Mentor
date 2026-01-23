@@ -2,70 +2,96 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { 
-  Loader2, RefreshCw, Target, TrendingUp, AlertCircle,
-  ChevronRight, Check, Plus, DollarSign, Users, Briefcase,
-  BarChart3, Clock, Shield, Lightbulb, Zap
+  Loader2, RefreshCw, TrendingUp, AlertCircle,
+  Check, DollarSign, Users, Briefcase,
+  Clock, Shield, Lightbulb, Zap, Target,
+  UserMinus, LineChart, Cog, Scale
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
 
-// Business areas with icons and evidence patterns
-const businessAreas = {
-  finance: { 
-    label: 'Cash Flow & Finance', 
-    icon: DollarSign,
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200'
+// Expanded business categories with BIQC-style explanations
+const businessCategories = {
+  strategy: { 
+    label: 'Strategy Effectiveness', 
+    icon: Target,
+    color: 'text-indigo-600',
+    bgActive: 'bg-indigo-600',
+    bgAvailable: 'bg-indigo-50',
+    border: 'border-indigo-200',
+    why: 'Whether your current direction is producing expected outcomes or drifting from core objectives.'
   },
   revenue: { 
-    label: 'Revenue & Sales', 
+    label: 'Revenue Momentum', 
     icon: TrendingUp,
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    border: 'border-blue-200'
+    color: 'text-emerald-600',
+    bgActive: 'bg-emerald-600',
+    bgAvailable: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    why: 'Sales velocity, pipeline health, and whether revenue growth matches effort invested.'
+  },
+  finance: { 
+    label: 'Cash Flow & Financial Risk', 
+    icon: DollarSign,
+    color: 'text-green-600',
+    bgActive: 'bg-green-600',
+    bgAvailable: 'bg-green-50',
+    border: 'border-green-200',
+    why: 'Liquidity position, payment obligations, and financial commitments that affect runway.'
   },
   operations: { 
     label: 'Operations & Delivery', 
     icon: Briefcase,
-    color: 'text-purple-600',
-    bg: 'bg-purple-50',
-    border: 'border-purple-200'
+    color: 'text-blue-600',
+    bgActive: 'bg-blue-600',
+    bgAvailable: 'bg-blue-50',
+    border: 'border-blue-200',
+    why: 'Execution quality, delivery timelines, and operational bottlenecks affecting output.'
   },
-  team: { 
-    label: 'Team & Capacity', 
+  retention: { 
+    label: 'People Retention & Capacity', 
     icon: Users,
-    color: 'text-orange-600',
-    bg: 'bg-orange-50',
-    border: 'border-orange-200'
+    color: 'text-purple-600',
+    bgActive: 'bg-purple-600',
+    bgAvailable: 'bg-purple-50',
+    border: 'border-purple-200',
+    why: 'Team stability, workload distribution, and capacity to deliver current commitments.'
+  },
+  peoplerisk: { 
+    label: 'People Risk', 
+    icon: UserMinus,
+    color: 'text-rose-600',
+    bgActive: 'bg-rose-600',
+    bgAvailable: 'bg-rose-50',
+    border: 'border-rose-200',
+    why: 'Key person dependencies, succession gaps, and team vulnerabilities that create exposure.'
   },
   customer: { 
     label: 'Customer Relationships', 
-    icon: Target,
+    icon: LineChart,
     color: 'text-pink-600',
-    bg: 'bg-pink-50',
-    border: 'border-pink-200'
-  },
-  strategy: { 
-    label: 'Strategy & Direction', 
-    icon: Lightbulb,
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
-    border: 'border-amber-200'
+    bgActive: 'bg-pink-600',
+    bgAvailable: 'bg-pink-50',
+    border: 'border-pink-200',
+    why: 'Client satisfaction signals, relationship health, and retention indicators.'
   },
   technology: { 
-    label: 'Systems & Technology', 
-    icon: Zap,
+    label: 'Systems & Technology Risk', 
+    icon: Cog,
     color: 'text-cyan-600',
-    bg: 'bg-cyan-50',
-    border: 'border-cyan-200'
+    bgActive: 'bg-cyan-600',
+    bgAvailable: 'bg-cyan-50',
+    border: 'border-cyan-200',
+    why: 'Technical debt, system reliability, and infrastructure that could limit growth.'
   },
-  risk: { 
+  compliance: { 
     label: 'Risk & Compliance', 
-    icon: Shield,
-    color: 'text-red-600',
-    bg: 'bg-red-50',
-    border: 'border-red-200'
+    icon: Scale,
+    color: 'text-amber-600',
+    bgActive: 'bg-amber-600',
+    bgAvailable: 'bg-amber-50',
+    border: 'border-amber-200',
+    why: 'Regulatory obligations, contractual risks, and compliance gaps requiring attention.'
   }
 };
 
@@ -73,250 +99,155 @@ const Diagnosis = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [assessment, setAssessment] = useState(null);
-  const [urgencyFilter, setUrgencyFilter] = useState('all');
-  const [focusedAreas, setFocusedAreas] = useState([]);
-  const [showAreaPicker, setShowAreaPicker] = useState(false);
+  const [activeAreas, setActiveAreas] = useState([]);
 
-  // Auto-load assessment on mount
   useEffect(() => {
     loadAssessment();
   }, []);
 
   const loadAssessment = async () => {
     try {
-      const response = await apiClient.get('/business/assessment');
-      setAssessment(response.data);
+      // Try to get email-based assessment
+      const priorityResponse = await apiClient.get('/email/priority-inbox');
+      const analysis = priorityResponse.data?.analysis || {};
+      
+      // Infer focus areas from patterns
+      const highPriority = analysis.high_priority || [];
+      const mediumPriority = analysis.medium_priority || [];
+      const allEmails = [...highPriority, ...mediumPriority];
+      
+      const patterns = {};
+      Object.keys(businessCategories).forEach(key => patterns[key] = 0);
+      
+      allEmails.forEach(email => {
+        const text = `${email.subject || ''} ${email.why || ''} ${email.action || ''}`.toLowerCase();
+        
+        if (text.includes('payment') || text.includes('invoice') || text.includes('finance') || text.includes('overdue') || text.includes('budget')) {
+          patterns.finance++;
+        }
+        if (text.includes('sale') || text.includes('deal') || text.includes('proposal') || text.includes('revenue') || text.includes('pipeline')) {
+          patterns.revenue++;
+        }
+        if (text.includes('deadline') || text.includes('delivery') || text.includes('project') || text.includes('timeline') || text.includes('delay')) {
+          patterns.operations++;
+        }
+        if (text.includes('team') || text.includes('staff') || text.includes('hire') || text.includes('capacity') || text.includes('resource')) {
+          patterns.retention++;
+        }
+        if (text.includes('resign') || text.includes('leave') || text.includes('notice') || text.includes('replacement')) {
+          patterns.peoplerisk++;
+        }
+        if (text.includes('client') || text.includes('customer') || text.includes('feedback') || text.includes('complaint') || text.includes('renewal')) {
+          patterns.customer++;
+        }
+        if (text.includes('system') || text.includes('software') || text.includes('outage') || text.includes('bug') || text.includes('tech')) {
+          patterns.technology++;
+        }
+        if (text.includes('compliance') || text.includes('legal') || text.includes('audit') || text.includes('regulation') || text.includes('contract')) {
+          patterns.compliance++;
+        }
+        if (text.includes('strategy') || text.includes('direction') || text.includes('goal') || text.includes('plan') || text.includes('objective')) {
+          patterns.strategy++;
+        }
+      });
+      
+      // Get top detected areas
+      const sorted = Object.entries(patterns)
+        .filter(([_, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1]);
+      
+      const detected = sorted.slice(0, 3).map(([id, count]) => ({
+        id,
+        count,
+        urgency: count > 3 ? 'high' : count > 1 ? 'medium' : 'low'
+      }));
+      
+      // Set initial active areas from detection
+      if (detected.length > 0 && activeAreas.length === 0) {
+        setActiveAreas(detected.map(d => d.id));
+      }
+      
+      setAssessment({
+        detected,
+        totalSignals: allEmails.length,
+        generated_at: new Date().toISOString(),
+        confidence: detected.length > 2 ? 'strong' : detected.length > 0 ? 'moderate' : 'building'
+      });
+      
     } catch (error) {
-      // Generate fallback assessment from available data
-      console.log('Assessment endpoint not available, using fallback');
-      await generateFallbackAssessment();
+      console.log('Assessment from emails not available');
+      setAssessment({
+        detected: [],
+        totalSignals: 0,
+        generated_at: new Date().toISOString(),
+        confidence: 'building'
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const generateFallbackAssessment = async () => {
-    try {
-      // Try to get email priority data to infer assessment
-      const priorityResponse = await apiClient.get('/email/priority-inbox');
-      const analysis = priorityResponse.data?.analysis || {};
-      
-      // Infer focus areas from email patterns
-      const inferredAreas = [];
-      
-      // Check high priority emails for patterns
-      const highPriority = analysis.high_priority || [];
-      const mediumPriority = analysis.medium_priority || [];
-      
-      // Simple pattern detection
-      const allEmails = [...highPriority, ...mediumPriority];
-      const patterns = {
-        finance: 0,
-        revenue: 0,
-        operations: 0,
-        team: 0,
-        customer: 0
-      };
-      
-      allEmails.forEach(email => {
-        const text = `${email.subject || ''} ${email.why || ''} ${email.action || ''}`.toLowerCase();
-        if (text.includes('payment') || text.includes('invoice') || text.includes('finance') || text.includes('overdue')) {
-          patterns.finance++;
-        }
-        if (text.includes('sale') || text.includes('deal') || text.includes('proposal') || text.includes('quote')) {
-          patterns.revenue++;
-        }
-        if (text.includes('deadline') || text.includes('delivery') || text.includes('project') || text.includes('timeline')) {
-          patterns.operations++;
-        }
-        if (text.includes('team') || text.includes('staff') || text.includes('meeting') || text.includes('resource')) {
-          patterns.team++;
-        }
-        if (text.includes('client') || text.includes('customer') || text.includes('feedback') || text.includes('support')) {
-          patterns.customer++;
-        }
-      });
-      
-      // Sort by frequency and take top 3
-      const sorted = Object.entries(patterns)
-        .filter(([_, count]) => count > 0)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
-      
-      if (sorted.length > 0) {
-        inferredAreas.push({
-          id: sorted[0][0],
-          urgency: highPriority.length > 3 ? 'high' : 'medium',
-          why: `Detected ${sorted[0][1]} related communications requiring attention in recent emails.`,
-          evidence: `Based on analysis of ${allEmails.length} prioritized emails.`
-        });
-      }
-      
-      if (sorted.length > 1) {
-        inferredAreas.push({
-          id: sorted[1][0],
-          urgency: 'medium',
-          why: `Secondary pattern detected with ${sorted[1][1]} related items flagged.`,
-          evidence: 'Recurring theme in business communications.'
-        });
-      }
-      
-      if (sorted.length > 2) {
-        inferredAreas.push({
-          id: sorted[2][0],
-          urgency: 'low',
-          why: `Emerging area with ${sorted[2][1]} signals detected.`,
-          evidence: 'Worth monitoring for developing patterns.'
-        });
-      }
-      
-      // Fallback if no patterns detected
-      if (inferredAreas.length === 0) {
-        inferredAreas.push({
-          id: 'operations',
-          urgency: 'medium',
-          why: 'Standard operational focus recommended while gathering more business intelligence.',
-          evidence: 'Connect more data sources to enable deeper analysis.'
-        });
-      }
-      
-      setAssessment({
-        primary: inferredAreas[0] || null,
-        secondary: inferredAreas.slice(1),
-        generated_at: new Date().toISOString(),
-        confidence: inferredAreas.length > 1 ? 'moderate' : 'limited',
-        data_sources: ['Email communications', 'Priority analysis']
-      });
-      
-    } catch (error) {
-      console.error('Fallback assessment failed:', error);
-      // Ultimate fallback
-      setAssessment({
-        primary: {
-          id: 'strategy',
-          urgency: 'medium',
-          why: 'Initial assessment pending. Connect your business tools to enable BIQC analysis.',
-          evidence: 'Awaiting data from connected integrations.'
-        },
-        secondary: [],
-        generated_at: new Date().toISOString(),
-        confidence: 'pending',
-        data_sources: []
-      });
-    }
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
-    toast.info('Reassessing your business...');
+    toast.info('Refreshing assessment...');
     await loadAssessment();
     toast.success('Assessment updated');
   };
 
-  const handleFocusArea = (areaId) => {
-    if (focusedAreas.includes(areaId)) {
-      setFocusedAreas(focusedAreas.filter(a => a !== areaId));
-      toast.info('Focus removed');
+  const toggleArea = (areaId) => {
+    if (activeAreas.includes(areaId)) {
+      setActiveAreas(activeAreas.filter(a => a !== areaId));
     } else {
-      setFocusedAreas([...focusedAreas, areaId]);
-      toast.success('Added to focus areas');
+      setActiveAreas([...activeAreas, areaId]);
     }
   };
 
-  const handleAddSecondaryArea = (areaId) => {
-    if (!focusedAreas.includes(areaId)) {
-      setFocusedAreas([...focusedAreas, areaId]);
-      toast.success(`Added ${businessAreas[areaId]?.label || areaId} to focus`);
-    }
-    setShowAreaPicker(false);
-  };
+  // Separate active and available areas
+  const activeCategoryList = Object.entries(businessCategories).filter(([id]) => activeAreas.includes(id));
+  const availableCategoryList = Object.entries(businessCategories).filter(([id]) => !activeAreas.includes(id));
 
-  // Filter areas by urgency
-  const getFilteredAreas = () => {
-    if (!assessment) return [];
-    
-    const allAreas = [
-      assessment.primary,
-      ...(assessment.secondary || [])
-    ].filter(Boolean);
-    
-    if (urgencyFilter === 'all') return allAreas;
-    return allAreas.filter(area => area.urgency === urgencyFilter);
-  };
-
-  const filteredAreas = getFilteredAreas();
-
-  const AreaCard = ({ area, isPrimary = false }) => {
-    const config = businessAreas[area.id] || businessAreas.strategy;
+  const CategoryCard = ({ id, config, isActive }) => {
     const Icon = config.icon;
-    const isFocused = focusedAreas.includes(area.id);
+    const detected = assessment?.detected?.find(d => d.id === id);
     
     return (
-      <div 
-        className={`relative p-5 rounded-xl border-2 transition-all ${
-          isPrimary ? 'border-l-4' : ''
-        } ${config.border} ${isFocused ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
-        style={{ background: 'var(--bg-card)' }}
+      <button
+        onClick={() => toggleArea(id)}
+        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+          isActive 
+            ? `${config.bgActive} border-transparent text-white shadow-lg` 
+            : `bg-white ${config.border} hover:border-opacity-60`
+        }`}
       >
-        {/* Urgency indicator */}
-        <div className="absolute top-4 right-4">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            area.urgency === 'high' ? 'bg-red-100 text-red-800' :
-            area.urgency === 'medium' ? 'bg-amber-100 text-amber-800' :
-            'bg-green-100 text-green-800'
+        <div className="flex items-start gap-3">
+          <div className={`p-2 rounded-lg ${isActive ? 'bg-white/20' : config.bgAvailable}`}>
+            <Icon className={`w-4 h-4 ${isActive ? 'text-white' : config.color}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={`font-semibold text-sm ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                {config.label}
+              </span>
+              {detected && (
+                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {detected.count} signals
+                </span>
+              )}
+            </div>
+            <p className={`text-xs mt-1 leading-relaxed ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
+              {config.why}
+            </p>
+          </div>
+          <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+            isActive ? 'bg-white border-white' : 'border-gray-300'
           }`}>
-            {area.urgency === 'high' ? '● High' : area.urgency === 'medium' ? '● Medium' : '● Low'}
-          </span>
-        </div>
-        
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-3">
-          <div className={`p-2.5 rounded-lg ${config.bg}`}>
-            <Icon className={`w-5 h-5 ${config.color}`} />
-          </div>
-          <div className="flex-1 pr-20">
-            {isPrimary && (
-              <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Primary Focus</span>
-            )}
-            <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {config.label}
-            </h3>
+            {isActive && <Check className="w-3 h-3 text-gray-800" />}
           </div>
         </div>
-        
-        {/* Why explanation */}
-        <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--text-secondary)' }}>
-          {area.why}
-        </p>
-        
-        {/* Evidence */}
-        {area.evidence && (
-          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-            <span className="font-medium">Evidence:</span> {area.evidence}
-          </p>
-        )}
-        
-        {/* Action */}
-        <Button
-          variant={isFocused ? "default" : "outline"}
-          size="sm"
-          onClick={() => handleFocusArea(area.id)}
-          className={isFocused ? 'bg-blue-600 text-white' : ''}
-        >
-          {isFocused ? (
-            <>
-              <Check className="w-3.5 h-3.5 mr-1.5" />
-              Focused
-            </>
-          ) : (
-            <>
-              <Target className="w-3.5 h-3.5 mr-1.5" />
-              Focus on this
-            </>
-          )}
-        </Button>
-      </div>
+      </button>
     );
   };
 
@@ -325,11 +256,9 @@ const Diagnosis = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-            <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Analyzing your business...</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              BIQC is reviewing your communications and data
-            </p>
+            <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-gray-400" />
+            <p className="font-medium text-gray-900">Analyzing your business signals...</p>
+            <p className="text-sm mt-1 text-gray-500">BIQC is reviewing patterns in your data</p>
           </div>
         </div>
       </DashboardLayout>
@@ -338,20 +267,14 @@ const Diagnosis = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8 animate-fade-in" data-testid="diagnosis-page">
+      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in" data-testid="diagnosis-page">
         
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
-              Business Assessment
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {assessment?.generated_at ? (
-                `Last updated ${new Date(assessment.generated_at).toLocaleString()}`
-              ) : (
-                'Real-time analysis of your business priorities'
-              )}
+            <h1 className="text-2xl font-bold text-gray-900">Business Diagnosis</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Select areas to focus your advisory intelligence on
             </p>
           </div>
           <Button
@@ -359,130 +282,70 @@ const Diagnosis = () => {
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-1.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
 
-        {/* Urgency Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>View:</span>
-          <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-            {['all', 'high', 'medium', 'low'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setUrgencyFilter(filter)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  urgencyFilter === filter
-                    ? 'bg-white shadow-sm'
-                    : 'hover:bg-white/50'
-                }`}
-                style={{ 
-                  color: urgencyFilter === filter ? 'var(--text-primary)' : 'var(--text-muted)'
-                }}
-              >
-                {filter === 'all' ? 'All' : 
-                 filter === 'high' ? '🔴 High' :
-                 filter === 'medium' ? '🟡 Medium' : '🟢 Low'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Assessment Cards */}
-        <div className="space-y-4">
-          {filteredAreas.length > 0 ? (
-            filteredAreas.map((area, idx) => (
-              <AreaCard 
-                key={area.id} 
-                area={area} 
-                isPrimary={idx === 0 && urgencyFilter === 'all'} 
-              />
-            ))
-          ) : (
-            <div 
-              className="text-center py-12 rounded-xl border"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
-            >
-              <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-              <p style={{ color: 'var(--text-secondary)' }}>
-                No {urgencyFilter} urgency items detected
-              </p>
-              <button 
-                onClick={() => setUrgencyFilter('all')}
-                className="text-sm text-blue-600 hover:underline mt-2"
-              >
-                View all areas
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Something Else Action */}
-        <div 
-          className="p-5 rounded-xl border"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                Something else on your mind?
-              </h3>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                Add another area to your focus if BIQC hasn't surfaced it yet
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowAreaPicker(!showAreaPicker)}
-            >
-              <Plus className="w-4 h-4 mr-1.5" />
-              Add area
-            </Button>
-          </div>
-          
-          {/* Area Picker */}
-          {showAreaPicker && (
-            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-light)' }}>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {Object.entries(businessAreas).map(([id, config]) => {
-                  const Icon = config.icon;
-                  const isAlreadyFocused = focusedAreas.includes(id);
-                  const isInAssessment = [assessment?.primary?.id, ...(assessment?.secondary?.map(s => s.id) || [])].includes(id);
-                  
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => handleAddSecondaryArea(id)}
-                      disabled={isAlreadyFocused || isInAssessment}
-                      className={`p-3 rounded-lg border text-left transition-all ${
-                        isAlreadyFocused || isInAssessment
-                          ? 'opacity-50 cursor-not-allowed'
-                          : 'hover:border-blue-300 hover:bg-blue-50/50'
-                      }`}
-                      style={{ borderColor: 'var(--border-light)' }}
-                    >
-                      <Icon className={`w-4 h-4 mb-1.5 ${config.color}`} />
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {config.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Confidence indicator */}
         {assessment?.confidence && (
-          <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-            Assessment confidence: {assessment.confidence} · 
-            Data sources: {assessment.data_sources?.join(', ') || 'None connected'}
-          </p>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+            assessment.confidence === 'strong' ? 'bg-green-50 text-green-700' :
+            assessment.confidence === 'moderate' ? 'bg-blue-50 text-blue-700' :
+            'bg-gray-50 text-gray-600'
+          }`}>
+            <AlertCircle className="w-4 h-4" />
+            <span>
+              {assessment.confidence === 'strong' && `Strong signal detection from ${assessment.totalSignals} communications`}
+              {assessment.confidence === 'moderate' && `Moderate signals detected — analysis improving with more data`}
+              {assessment.confidence === 'building' && `Connect Outlook or add business context to strengthen analysis`}
+            </span>
+          </div>
         )}
+
+        {/* Active Focus Areas */}
+        {activeCategoryList.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Active Focus Areas
+              </h2>
+              <span className="text-xs text-gray-400">Click to remove</span>
+            </div>
+            <div className="space-y-2">
+              {activeCategoryList.map(([id, config]) => (
+                <CategoryCard key={id} id={id} config={config} isActive={true} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Available Areas */}
+        {availableCategoryList.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Available Areas
+              </h2>
+              <span className="text-xs text-gray-400">Click to add</span>
+            </div>
+            <div className="space-y-2">
+              {availableCategoryList.map(([id, config]) => (
+                <CategoryCard key={id} id={id} config={config} isActive={false} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="pt-4 border-t border-gray-100">
+          <p className="text-xs text-center text-gray-400">
+            Last updated: {assessment?.generated_at ? new Date(assessment.generated_at).toLocaleString() : 'Just now'}
+          </p>
+        </div>
       </div>
     </DashboardLayout>
   );
