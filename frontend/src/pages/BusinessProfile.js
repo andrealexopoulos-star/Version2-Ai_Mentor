@@ -33,24 +33,30 @@ const BusinessProfile = () => {
   const [scores, setScores] = useState({ completeness: 0, strength: 0 });
   const [activeTab, setActiveTab] = useState('basics');
 
-  // Get user subscription tier - master accounts get full access
+  // DEFENSIVE: Get user subscription tier with fallbacks
   const userTier = user?.subscription_tier || 'free';
   const isMasterAccount = user?.is_master_account === true || user?.features?.all_access === true;
   const isPaidUser = isMasterAccount || !['free', 'trial'].includes(userTier.toLowerCase());
   const isEnterprise = isMasterAccount || userTier.toLowerCase() === 'enterprise';
 
   useEffect(() => {
-    fetchProfile();
-    fetchScores();
-  }, []);
+    // DEFENSIVE: Only fetch if we have basic auth
+    if (user?.id) {
+      fetchProfile();
+      fetchScores();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   const fetchProfile = async () => {
     try {
       const response = await apiClient.get('/business-profile');
       setProfile(response.data || {});
     } catch (error) {
+      // DEFENSIVE: Fail gracefully
+      console.error('Failed to load profile:', error);
       toast.error('Failed to load profile');
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -59,8 +65,9 @@ const BusinessProfile = () => {
   const fetchScores = async () => {
     try {
       const response = await apiClient.get('/business-profile/scores');
-      setScores(response.data);
+      setScores(response.data || { completeness: 0, strength: 0 });
     } catch (error) {
+      // DEFENSIVE: Silent fail on scores
       console.error('Failed to fetch scores:', error);
     }
   };
