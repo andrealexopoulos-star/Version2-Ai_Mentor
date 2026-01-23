@@ -251,7 +251,7 @@ Acknowledge you've noticed activity in their inbox that may need attention. Do N
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]">
+      <div className="flex flex-col min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)]">
         {/* Header - Mobile Optimized */}
         <div className="border-b flex-shrink-0" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
           <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
