@@ -46,7 +46,7 @@ const GmailTest = () => {
       console.log('📧 Calling Edge Function: gmail_test');
 
       // Call the Edge Function
-      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_test`;
+      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
       console.log('Edge Function URL:', edgeFunctionUrl);
 
       const response = await fetch(edgeFunctionUrl, {
