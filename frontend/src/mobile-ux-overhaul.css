@@ -135,32 +135,10 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   
-  /* Navigation items - OBVIOUS and SAFE TO TAP */
+  /* Navigation container */
   aside nav {
     padding: 20px 16px !important;
     padding-bottom: 60px !important; /* Extra bottom space */
-  }
-  
-  aside nav button {
-    min-height: 56px !important; /* Even larger for confidence */
-    padding: 16px 18px !important;
-    margin-bottom: 6px !important;
-    border-radius: 12px !important;
-    font-size: 16px !important; /* Easy to read */
-    font-weight: 500 !important;
-    /* Make interaction obvious */
-    transition: all 0.15s ease-out !important;
-  }
-  
-  aside nav button:active {
-    transform: scale(0.97);
-    opacity: 0.8;
-  }
-  
-  /* Active nav item - OBVIOUS */
-  aside nav button[class*="bg-blue"] {
-    /* Stronger active state */
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
   }
   
   /* Nav dividers - clear sections */
@@ -177,14 +155,7 @@
     margin-top: 0 !important;
   }
   
-  aside nav > div[class*="pt-6"] span {
-    padding-left: 18px !important;
-    font-size: 11px !important;
-    letter-spacing: 1px !important;
-    opacity: 0.5;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
+  /* Note: Nav button styles moved to executive-refinement.css to avoid conflicts */
   
   /* Backdrop - obvious and smooth */
   body.sidebar-open::before {
