@@ -11,31 +11,31 @@ const Landing = () => {
     {
       icon: Brain,
       title: 'Personalised AI That Knows YOUR Business',
-      description: 'Upload your documents, fill your profile, and watch our AI become your dedicated business advisor. Tailored strategies based on YOUR data, not generic templates.',
+      description: 'Tailored strategies based on YOUR data, not generic templates.',
       span: 'md:col-span-2'
     },
     {
       icon: Zap,
       title: 'Instant Business Diagnosis',
-      description: 'Find bottlenecks and get actionable fixes in minutes, not months.',
+      description: 'Find bottlenecks and get actionable fixes in minutes.',
       span: 'md:col-span-1'
     },
     {
       icon: FileText,
       title: 'SOPs On Demand',
-      description: 'Generate professional documentation for any process automatically.',
+      description: 'Generate professional documentation for any process.',
       span: 'md:col-span-1'
     },
     {
       icon: Target,
       title: 'Market Intelligence',
-      description: 'Know your competition. Find your competitive edge with AI-powered analysis.',
+      description: 'Know your competition. Find your competitive edge.',
       span: 'md:col-span-1'
     },
     {
       icon: TrendingUp,
       title: 'Growth Roadmaps',
-      description: 'Strategic action plans tailored to your unique business reality.',
+      description: 'Strategic action plans for your business.',
       span: 'md:col-span-1'
     }
   ];
