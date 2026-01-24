@@ -100,7 +100,7 @@ const Dashboard = () => {
     },
     {
       title: 'Connect Integrations',
-      description: 'Link your CRM, accounting, and marketing tools',
+      description: 'Link your tools for deeper insights',
       icon: Plug,
       path: '/integrations',
       color: '#7C3AED',
@@ -108,7 +108,7 @@ const Dashboard = () => {
     },
     {
       title: 'Generate Your First SOP',
-      description: 'Create standard operating procedures for your business',
+      description: 'Create standard operating procedures',
       icon: FileText,
       path: '/sop-generator',
       color: '#FF9500',
