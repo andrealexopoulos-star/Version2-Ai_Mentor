@@ -1,0 +1,87 @@
+/**
+ * URL CONFIGURATION - SINGLE SOURCE OF TRUTH
+ * 
+ * This module provides fork-safe URL resolution across the entire application.
+ * ALL URL construction MUST use these functions to ensure fork independence.
+ * 
+ * CRITICAL: Never hardcode preview URLs anywhere in the codebase.
+ */
+
+/**
+ * Get the canonical base URL for this application instance
+ * This is fork-safe and automatically adapts to any preview environment
+ */
+export const getAppBaseUrl = () => {
+  // In production, this would be the deployed domain
+  // In preview/fork environments, this is the current origin
+  return window.location.origin;
+};
+
+/**
+ * Get the backend API base URL
+ * Prioritizes REACT_APP_BACKEND_URL env var, falls back to current origin
+ */
+export const getBackendUrl = () => {
+  return process.env.REACT_APP_BACKEND_URL || getAppBaseUrl();
+};
+
+/**
+ * Get the full API endpoint URL
+ */
+export const getApiBaseUrl = () => {
+  return `${getBackendUrl()}/api`;
+};
+
+/**
+ * Get OAuth redirect URL for Supabase authentication
+ */
+export const getOAuthRedirectUrl = () => {
+  return `${getAppBaseUrl()}/auth/callback`;
+};
+
+/**
+ * Get Supabase configuration
+ */
+export const getSupabaseConfig = () => {
+  return {
+    url: process.env.REACT_APP_SUPABASE_URL,
+    anonKey: process.env.REACT_APP_SUPABASE_ANON_KEY
+  };
+};
+
+/**
+ * URL validation - ensures no legacy URLs are being used
+ */
+export const isLegacyUrl = (url) => {
+  const legacyPatterns = [
+    /advisor-chat-\d+/,
+    /business-iq-\d+/
+  ];
+  
+  return legacyPatterns.some(pattern => pattern.test(url));
+};
+
+/**
+ * Assert that a URL is not a legacy fork URL
+ * Throws error in development to catch hardcoded URLs early
+ */
+export const assertNotLegacyUrl = (url) => {
+  if (isLegacyUrl(url)) {
+    const error = `LEGACY URL DETECTED: ${url}. Use getAppBaseUrl() instead of hardcoding.`;
+    console.error(error);
+    if (process.env.NODE_ENV === 'development') {
+      throw new Error(error);
+    }
+  }
+};
+
+// Export URL configuration object for convenience
+export const URL_CONFIG = {
+  APP_BASE: getAppBaseUrl(),
+  BACKEND: getBackendUrl(),
+  API: getApiBaseUrl(),
+  OAUTH_REDIRECT: getOAuthRedirectUrl(),
+  SUPABASE: getSupabaseConfig()
+};
+
+export default URL_CONFIG;
