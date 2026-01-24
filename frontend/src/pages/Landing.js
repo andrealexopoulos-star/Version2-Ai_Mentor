@@ -69,14 +69,14 @@ const Landing = () => {
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/25">
-              <Zap className="w-5 h-5 text-white" />
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/25">
+              <Zap className="w-4 h-4 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-xl text-slate-900">BIQC</span>
-              <span className="text-[10px] text-gray-500 -mt-1 hidden sm:block">powered by The Strategy Squad</span>
+              <span className="font-bold text-base text-slate-900">BIQC</span>
+              <span className="text-[8px] text-gray-500 -mt-0.5 hidden sm:block">powered by The Strategy Squad</span>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-8">
@@ -92,13 +92,6 @@ const Landing = () => {
               data-testid="nav-login-btn"
             >
               Log In
-            </Button>
-            <Button 
-              onClick={() => navigate('/register-supabase')}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25"
-              data-testid="nav-register-btn"
-            >
-              Start Free
             </Button>
           </div>
         </div>
