@@ -38,13 +38,15 @@
     /* Mobile-native font rendering */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Better touch scrolling */
+    -webkit-overflow-scrolling: touch;
   }
   
   body.sidebar-open {
     overflow: hidden !important;
-    position: fixed !important;
+    /* Removed position: fixed - was causing scroll freeze */
+    /* On iOS, overflow: hidden is sufficient to prevent scroll */
     width: 100% !important;
-    height: 100vh !important;
   }
   
   /* MOBILE-FIRST: Hide desktop complexity */
