@@ -178,7 +178,7 @@ const EmailInbox = () => {
               {email.subject || 'No Subject'}
             </h4>
             <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-medium" style={{ color: 'var(--accent-primary)' }}>Why:</span> {email.reason}
+              {email.reason}
             </p>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
               <span className="font-medium">Action:</span> {email.suggested_action}
