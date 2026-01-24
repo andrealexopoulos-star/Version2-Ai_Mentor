@@ -124,6 +124,7 @@ function AppRoutes() {
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
       <Route path="/intel-centre" element={<ProtectedRoute><IntelCentre /></ProtectedRoute>} />
       <Route path="/outlook-test" element={<ProtectedRoute><OutlookTest /></ProtectedRoute>} />
+      <Route path="/gmail-test" element={<ProtectedRoute><GmailTest /></ProtectedRoute>} />
       <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
       <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
       <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
