@@ -589,7 +589,7 @@ const DataCenter = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete File</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this file? The AI will no longer have access to this information.
+              Delete this file? The AI will no longer have access to this information.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
