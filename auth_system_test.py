@@ -12,7 +12,7 @@ from pymongo import MongoClient
 import os
 
 class AuthSystemTester:
-    def __init__(self, base_url="https://business-iq-1.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://mobile-auth-app-5.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None

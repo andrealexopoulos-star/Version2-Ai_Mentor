@@ -20,7 +20,7 @@
 ### PHASE 1: Setup & Connection (5 minutes)
 
 **Step 1: Login**
-1. Go to: https://business-iq-1.preview.emergentagent.com/login-supabase
+1. Go to: https://mobile-auth-app-5.preview.emergentagent.com/login-supabase
 2. Sign in with your real business account (Google or Microsoft)
 3. Verify you land on `/advisor` page
 

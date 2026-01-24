@@ -1,94 +1,89 @@
-<analysis>**original_problem_statement**: The user's primary goal is to stabilize the BIQC (Business IQ Centre) application for an investor demo. This session focused on fixing critical bugs and implementing core features according to a series of explicit, non-negotiable contracts provided by the user.
+<analysis>**original_problem_statement**: The user's goal is to stabilize the BIQC (Business IQ Centre) application. The session began with a plan to fix bugs and implement core AI features, but quickly pivoted to address a series of urgent, user-driven requests focused on UI/UX, mobile-first refinement, and fixing a persistent, critical authentication loop.
 
-Key tasks completed and requested were:
--   Fixing a broken Outlook integration, including OAuth redirect issues and email sync failures.
--   Resolving a persistent authentication redirect loop for new and existing users.
--   Fixing the root cause of duplicate user records being created, which was causing data integrity and foreign key constraint violations.
--   Implementing a Suggested Reply feature with a specific AI personality and response structure.
--   Overhauling the Business Diagnosis page to be a proactive, assessment-first UI, removing old form-based inputs.
--   Implementing a Proactivity Gate and an Advisory Intelligence Contract to govern when and how the MyAdvisor AI communicates with the user, ensuring all proactive messages are justified and follow a strict format.
+The core requests included:
+-   Initially, completing the MyAdvisor Advisory Intelligence Contract.
+-   Fixing multiple UI runtime crashes, particularly a recurring  error.
+-   Performing several major, iterative passes on the mobile UI/UX to make it feel like a world-class, executive-grade application, which involved creating multiple new CSS files and refining layouts, spacing, and typography.
+-   Adding missing pages to the main navigation menu.
+-   Investigating and fixing a fundamental Microsoft OAuth signup failure, which was traced to a database race condition and incorrect Supabase SQL triggers.
+-   Fixing a mobile scroll-freeze issue.
+-   Diagnosing a regression where the OAuth flow and Outlook sync, which were previously working, are now broken due to a URL mismatch in the forked environment.
+-   Creating a detailed backlog of future work based on user feedback.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a React/FastAPI stack using Supabase for the database and authentication. The major stability issues from the previous session (CORS, auth loops) were largely resolved, but new, deeper issues were uncovered and fixed in this session.
+The application is a React/FastAPI stack using Supabase for the database and authentication. The agent has performed extensive UI/UX and mobile-first refinements, creating several new CSS files (, ) to improve the look and feel. Several frontend runtime crashes have been fixed.
 
-The application now uses a Supabase Edge Function (managed by the user) for Outlook OAuth. The backend has been updated to handle this new flow. The data integrity issue causing duplicate user IDs has been patched in the backend code, but a full database-level fix is pending. Core features like Suggested Reply, Priority Inbox, and Business Diagnosis have been implemented or significantly refactored to meet the user's detailed contract specifications. The UI for these features is in place, though the Diagnosis page currently uses mock data.
+However, the application's core functionality is blocked by a critical, recurring authentication issue. The Microsoft OAuth signup and login flow is broken. The root causes have been identified as a combination of:
+1.  A URL mismatch between the current preview environment and the URLs configured in the user's Supabase/Azure settings.
+2.  A persistent database-level race condition where a user's profile in  is not created correctly after signup, which requires a specific SQL trigger to fix.
+
+The agent has provided the user with the necessary SQL commands and a guide to update their external URL configurations, but these fixes are either incomplete or have not been successfully applied by the user.
 
 **Last working item**:
--   Last item agent was working: Implementing the MyAdvisor Advisory Intelligence Contract. This contract dictates the rules for all proactive AI messages, requiring them to have a context anchor, a diagnostic observation, an implication, and advisory pathways. The agent was modifying the central  function in  to support this, adding a  context type and updating the function signature to accept .
+-   Last item agent was working: Investigating and resolving a regression where the Microsoft OAuth redirect flow and Outlook email sync are failing. The user reported these were working correctly in a previous fork. The  was engaged and concluded the root cause is a URL mismatch. The Supabase auth settings are likely still pointing to an old preview URL () instead of the current one (). The agent was about to proceed with the recommended fix.
 -   Status: **IN PROGRESS**
 -   Agent Testing Done: N
--   Which testing method agent to use? backend testing agent. The next agent needs to complete the implementation by ensuring the main  endpoint correctly passes the required  to  when a proactive message is triggered. This can be tested via  to the chat endpoint.
--   User Testing Done: N
+-   Which testing method agent to use? **Frontend testing agent**. This issue requires a full end-to-end browser-based test to validate the OAuth redirect flow, which  or other backend tools cannot perform.
+-   User Testing Done: N (User reported the failure)
 
 **All Pending/In progress Issue list**:
--   Issue 1: Complete the MyAdvisor Advisory Intelligence Contract (P0)
--   Issue 2: Implement a database trigger to prevent duplicate user creation (P0)
--   Issue 3: The new user signup and onboarding flow is fragile (P1)
--   Issue 4: The Business Diagnosis page uses mock data (P1)
--   Issue 5: The  endpoint is broken (P2)
--   Issue 6: Non-functional theme toggle button (P2)
+-   Issue 1: Fix OAuth redirect loop and Outlook sync failure regression (P0)
+-   Issue 2: Finalize the fix for new user signup DB error (P0)
+-   Issue 3: The Business Diagnosis page uses mock data (P1)
+-   Issue 4: The  endpoint is broken (P2)
+-   Issue 5: Non-functional theme toggle button (P2)
+-   Issue 6: Complete the MyAdvisor Advisory Intelligence Contract (P2)
 
 **Issues Detail**:
--   **Issue 1: Complete the MyAdvisor Advisory Intelligence Contract**
-    -   Attempted fixes: The agent updated the  function signature in  and added the logic for the  context type.
+-   **Issue 1: Fix OAuth redirect loop and Outlook sync failure regression**
+    -   Attempted fixes: The  was called and identified the root cause: The current preview URL does not match the **Site URL** and **Redirect URIs** configured in the user's Supabase project and Azure AD App Registration.
     -   Next debug checklist:
-        1.  Locate the call to  within the  endpoint in .
-        2.  Update the call to pass the new  argument, which should contain , , and .
-        3.  Test the  endpoint with a proactive trigger to ensure the correct system prompt is generated.
-    -   Why fix this issue and what will be achieved with the fix? This is a mission-critical feature for the user, defining the core behavior of the AI advisor.
-    -   Status: IN PROGRESS
-    -   Is recurring issue? N
-    -   Should Test frontend/backend/both after fix? Backend.
+        1.  Follow the 's explicit plan from message #621.
+        2.  Provide the user with a clear, step-by-step guide to update the URLs in their external Supabase and Azure dashboards to match the current fork's URL. The current frontend URL is what they need to use.
+        3.  Emphasize that this is an external configuration change that only the user can perform.
+        4.  Once the user confirms the change, perform a full end-to-end signup and login test.
+    -   Why fix this issue and what will be achieved with the fix? This is a **critical blocker**. No authentication or authenticated feature can be used or tested until this is resolved.
+    -   Status: **IN PROGRESS**
+    -   Is recurring issue? Y
+    -   Should Test frontend/backend/both after fix? Frontend
+    -   Blocked on other issue: User action is required to update external configurations.
+
+-   **Issue 2: Finalize the fix for new user signup DB error**
+    -   Attempted fixes: The agent provided multiple versions of the  SQL trigger. The  diagnosed the root cause as a race condition where RLS policies are checked before the user profile is created. Corrected SQL commands were provided to the user. The user reported it didsnt work.
+    -   Next debug checklist:
+        1.  Re-provide the user with the final, secure SQL commands from message #608. These create the trigger function and fix the RLS policies.
+        2.  Instruct the user to run these commands in their Supabase SQL Editor.
+        3.  Test the new user signup flow end-to-end after user confirmation.
+    -   Why fix this issue and what will be achieved with the fix? This will permanently solve the data integrity problem that has caused numerous auth loops and data sync failures.
+    -   Status: **BLOCKED** (on user executing SQL)
+    -   Is recurring issue? Y
+    -   Should Test frontend/backend/both after fix? Both
     -   Blocked on other issue: None.
 
--   **Issue 2: Implement a database trigger to prevent duplicate user creation**
-    -   Attempted fixes: The agent patched the  function in  as a temporary fix. The root cause is a race condition or logic flaw where a user record exists in  but not , leading to the creation of a new, incorrect record in .
-    -   Next debug checklist:
-        1.  Create a new SQL function in Supabase that syncs the  table with  on insert.
-        2.  Create a trigger that calls this function after a new user is inserted into . The user provided a document with a long-term fix plan at .
-    -   Why fix this issue and what will be achieved with the fix? This will permanently solve the data integrity problem that has caused numerous auth loops and data sync failures, which have been the biggest source of user frustration.
-    -   Status: NOT STARTED
-    -   Is recurring issue? Y
-    -   Should Test frontend/backend/both after fix? Both (requires a full new user signup test).
-    -   Blocked on other issue: None.
-
--   **Issue 3: The new user signup and onboarding flow is fragile**
-    -   Attempted fixes: The agent fixed several race conditions and RLS policy issues. However, the auth loop has recurred, indicating the flow is not robust.
-    -   Next debug checklist:
-        1.  After implementing the database trigger (Issue 2), perform a full end-to-end test.
-        2.  Register a brand-new user via Microsoft OAuth.
-        3.  Verify the user is correctly guided through the  wizard without being looped back to login.
-        4.  Verify the session persists after the onboarding is complete.
-    -   Why fix this issue and what will be achieved with the fix? A working signup flow is essential for any user-facing application.
-    -   Status: NOT STARTED
-    -   Is recurring issue? Y
-    -   Should Test frontend/backend/both after fix? Both.
-    -   Blocked on other issue: Issue 2.
-
--   **Issue 4: The Business Diagnosis page uses mock data**
-    -   Attempted fixes: None. The focus was on implementing the UI/UX contract.
-    -   Next debug checklist:
-        1.  Create a new backend endpoint (e.g., ) that generates the diagnosis data (focus area, urgency, evidence, confidence).
-        2.  Connect the  page to this new endpoint instead of using the hardcoded  function.
+-   **Issue 3: The Business Diagnosis page uses mock data**
+    -   Attempted fixes: None.
+    -   Next debug checklist: Create a backend endpoint (e.g., ) and connect the  frontend to it.
     -   Why fix this issue and what will be achieved with the fix? This will make the Diagnosis feature functional and data-driven.
     -   Status: NOT STARTED
     -   Is recurring issue? N
-    -   Should Test frontend/backend/both after fix? Both.
+    -   Should Test frontend/backend/both after fix? Both
     -   Blocked on other issue: None.
 
 **In progress Task List**:
--   **Task 1: Complete the MyAdvisor Advisory Intelligence Contract implementation**
-    -   Where to resume: Modify the  endpoint in  to pass  to the  function.
-    -   What will be achieved with this? The AI advisor will begin to follow its core behavioral contract, a critical requirement for the user.
+-   **Task 1: Resolve OAuth and Outlook Sync Regression**
+    -   Where to resume: Guide the user to update their Supabase and Azure configuration with the current application URL, as diagnosed by the .
+    -   What will be achieved with this? This will unblock all authentication flows, allowing users to sign up, log in, and use the application.
     -   Status: IN PROGRESS
-    -   Should Test frontend/backend/both after fix? Backend.
-    -   Blocked on something: None.
+    -   Should Test frontend/backend/both after fix? Frontend
+    -   Blocked on something: User action to modify external service configurations.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks (P1):**
     -   Implement Google Calendar & Gmail integration.
+    -   Implement continuous/scheduled email sync.
+    -   Implement Data coverage awareness logic and UI indicators (Observing, Learning, Incomplete).
     -   Implement Security Hardening (Password Reset, 2FA).
 -   **Future Tasks (P2):**
     -   Integrate Serper.dev to pull live external data.
@@ -96,124 +91,136 @@ The application now uses a Supabase Edge Function (managed by the user) for Outl
     -   Implement the BIQC meta-layer (tracking beliefs, decision outcomes).
 
 **Completed work in this session**
--   **Outlook Integration & Auth:**
-    -   Fixed Outlook OAuth by switching the flow to a user-managed Supabase Edge Function.
-    -   Diagnosed and fixed email sync failures caused by user ID mismatches and foreign key violations.
-    -   Added manual and automatic email sync triggers on the  page.
--   **Data Integrity & Stability:**
-    -   Patched the backend to prevent the creation of duplicate users in .
-    -   Provided the user with SQL scripts to fix existing data inconsistencies between  and .
-    -   Resolved a recurring authentication loop by fixing Supabase RLS policies that blocked new user profile creation.
-    -   Fixed a JS crash on the  page.
--   **Core Feature Implementation (per user contracts):**
-    -   Fixed the  endpoint and updated the  modal to correctly render the AI's Suggested Reply and Advisor Rationale.
-    -   Completely rewrote the  page to implement a new proactive UI/UX, including add/remove focus area logic.
-    -   Implemented a Proactivity Gate in  to ensure the AI only speaks when it has a valid trigger from another part of the app.
--   **Noise Reduction:**
-    -   Disabled frontend polling for the broken  endpoint to clean up console errors for the demo.
-    -   Created missing  and  files to fix PWA manifest errors.
+-   **Extensive UI/UX & Mobile-First Refinement:**
+    -   Fixed multiple runtime crashes by adding missing  imports.
+    -   Fixed mobile viewport and scrolling issues.
+    -   Conducted multiple mobile-first UX/UI refinement passes via , , and .
+    -   Refined copy across the app for a more concise, executive-grade tone.
+    -   Addressed browser and service worker caching issues causing stale code to be served.
+-   **Feature Enhancements:**
+    -   Added a Complete Onboarding section to the  page.
+    -   Added missing pages (Data Center, Analysis, etc.) to the navigation menu in .
+-   **Initial MyAdvisor Contract Implementation:** Updated backend models and endpoints in  to handle proactive chat metadata.
+-   **Documentation & Analysis:** Created numerous markdown documents for platform snapshots, bug reports, user guides, and backlogs.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Broken Notifications Endpoint**
-    -   Debug checklist: The error is in . The frontend polling was disabled in  as a temporary fix. The backend logic needs to be fixed.
+    -   Debug checklist: The  endpoint is broken. Frontend polling was disabled in  as a workaround. The backend logic needs to be fixed.
     -   Why to solve this issue and what will be achieved with this? To make the notifications feature functional.
-    -   Should Test frontend/backend/both after fix: Backend.
-    -   Is recurring issue? Y (mentioned in initial handoff).
+    -   Should Test frontend/backend/both after fix: Backend
+    -   Is recurring issue? Y
 -   **Issue 2: Non-functional Theme Toggle**
-    -   Debug checklist: Check the  handler in .
+    -   Debug checklist: The  handler in  is not implemented.
     -   Why to solve this issue and what will be achieved with this? Minor UI polish.
-    -   Should Test frontend/backend/both after fix: Frontend.
-    -   Is recurring issue? N.
+    -   Should Test frontend/backend/both after fix: Frontend
+    -   Is recurring issue? N
 
 **Known issue recurrence from previous fork**
 -   **Issue recurrence in previous fork**: Authentication redirect loop.
--   **Recurrence count**: 2+
--   **Status**: RESOLVED (but fragile). The issue recurred in this session due to RLS policies and user data integrity problems. While the immediate causes were fixed, the underlying fragility of the signup/login flow remains a risk.
+-   **Recurrence count**: 3+
+-   **Status**: **IN PROGRESS**. The issue is active. Its root causes are the database race condition (requiring the SQL trigger) and the OAuth redirect URL mismatch. Both are being addressed but are not yet resolved.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frontend**: React, Tailwind CSS, Shadcn UI
+-   **Frontend**: React, Tailwind CSS
 -   **Backend**: FastAPI
 -   **Database**: Supabase (PostgreSQL)
--   **Authentication**: Supabase Auth (OAuth with Microsoft)
--   **External Services**: Supabase Edge Functions (Deno/TypeScript) for handling Outlook OAuth callbacks.
+-   **Authentication**: Supabase Auth (OAuth with Microsoft). This is the most fragile part of the application.
+-   **Core Architectural Problem**: A race condition between user creation in  and profile creation in  causes cascading authentication failures. The definitive solution is a database trigger, which is pending user action.
 
 **key DB schema**
--   **auth.users**: Supabase's built-in auth table. {uid=0(root) gid=0(root) groups=0(root), , ...}
--   **public.users**: The application's user profile table. {uid=0(root) gid=0(root) groups=0(root) (fk->auth.users.id), , ...}
--   **CRITICAL INTEGRITY ISSUE**: The application logic was creating  records with uid=0(root) gid=0(root) groups=0(root) values that did **not** match the corresponding , causing widespread foreign key violations. This has been the root cause of many bugs.
--   **outlook_oauth_tokens**: Stores Microsoft Graph API tokens. {, , , ...}
--   **outlook_emails**: Stores synced user emails.
--   **email_priority_analysis**: Stores the results of the AI priority analysis.
+-   **auth.users**: Supabase's built-in auth table.
+-   **public.users**: The application's user profile table.
+-   **CRITICAL INTEGRITY ISSUE**: A race condition prevents  from being populated reliably on new user signup, causing foreign key violations and auth failures downstream.
 
 **changes in tech stack**
--   The architecture for Outlook OAuth was changed from being handled by the FastAPI backend to being handled by a **Supabase Edge Function**, written in Deno/TypeScript, which is managed by the user externally.
+-   None.
 
 **All files of reference**
--   : Contains most of the application's business logic, including the newly implemented suggest reply contract and the in-progress advisory contract.
--   : Contains the patched  function to prevent data integrity issues.
--   : The new, proactive Business Diagnosis UI.
--   : Contains the proactivity gate logic.
--   : Contains the frontend logic for initiating the Supabase Edge Function OAuth flow.
--   : A plan created by the agent for a permanent database-level fix for the duplicate user ID issue.
+-   : The application monolith.
+-   : The heart of the auth logic and a frequent source of issues.
+-   : Contains navigation and responsive layout logic.
+-   : Modified to fix caching issues.
+-   , : New CSS files driving the UI refinements.
+-   , : Key documents for the user.
 
 **Areas that need refactoring**:
--   The authentication and session management flow across , , and  is very fragile and prone to race conditions. It needs a comprehensive review to make it robust.
--    remains a large monolith and should be broken down into a more modular structure.
+-   The CSS architecture has become fragmented with multiple override files (, ). These should be consolidated into a single, coherent styling system.
+-   The authentication flow is extremely fragile and needs a comprehensive review and simplification once the underlying database and URL issues are permanently resolved.
 
 **key api endpoints**
--   : Rewritten to provide structured AI replies.
--   : Manually triggered from the frontend to sync emails.
--   : The user-managed Supabase Edge Function that handles the Microsoft OAuth callback. This is not part of the codebase in .
+-   : Frontend route that handles the OAuth redirect from Supabase.
+-   : Manually triggered email sync.
+-   : Manually triggered background job for deep email history sync.
 
 **Critical Info for New Agent**
--   **Follow user contracts precisely.** The user provides detailed, non-negotiable laser prompts for P0 features. These must be implemented exactly as specified.
--   **The root of all evil is the user ID mismatch.** A data integrity issue between Supabase's  and the app's  tables has caused almost every major bug in this session (auth loops, sync failures). A backend patch is in place, but the permanent database trigger fix from  should be prioritized.
--   **Outlook OAuth is handled by an external Supabase Edge Function.** The agent cannot edit this code. The user provides it and updates it manually. All backend/frontend work must be compatible with this external function's behavior (e.g., the tables it writes to).
--   **The user's trust is low due to recurring bugs.** Prioritize stability, thorough testing, and clear explanations to rebuild confidence. Avoid introducing new features until the existing ones are rock-solid.
+-   **The OAuth flow is the #1 Blocker.** The application is unusable for new or existing users until this is fixed. The root cause is an external configuration mismatch. You must guide the user to update their Supabase Site URL and Azure AD Redirect URIs to match the current fork's URL. Do not attempt to fix this in code alone.
+-   **The Database Trigger is the #2 Blocker.** The recurring signup failures will not stop until the user correctly implements the SQL trigger to sync  and . You will likely need to re-provide the correct SQL commands and guide the user to execute them in their Supabase dashboard.
+-   **User trust is low due to recurring auth issues.** Prioritize fixing authentication completely and verifying it works before moving to any other feature. Explain the distinction between code fixes and required user actions on external services (Supabase/Azure).
+-   **Browser Caching is a recurring problem.** If you deploy a fix and the user reports it's not working, your first step should be to instruct them to perform a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to bypass stale cached assets.
 
 **documents and test reports created in this job**
--   /app/BACKLOG.md
--   /app/LONG_TERM_DATABASE_FIX.md
+-   /app/ADVISORY_CONTRACT_IMPLEMENTATION.md
+-   /app/test_advisory_contract.py
+-   /app/test_advisory_contract_curl.sh
+-   /app/STEP_1_COMPLETE.md
+-   /app/UI_STABILITY_FIX_COMPLETE.md
+-   /app/MOBILE_UX_OVERHAUL_COMPLETE.md
+-   /app/MOBILE_FIRST_AUTHORITY_RESET.md
+-   /app/RUNTIME_STABILITY_FIX_COMPLETE.md
+-   /app/PLATFORM_SNAPSHOT_BASELINE.md
+-   /app/PAGE_COVERAGE_TEST_RESULTS.md
+-   /app/BUSINESSPROFILE_BUG_FIX_VERIFICATION.md
+-   /app/OAUTH_URL_CONSTRAINT_DOCUMENTATION.md
+-   /app/SUPABASE_OAUTH_UPDATE_GUIDE.md
+-   /app/RESPONSIVE_LAYOUT_FIX_COMPLETE.md
+-   /app/landing-mobile-ux.css
+-   /app/LANDING_MOBILE_UX_COMPLETE.md
+-   /app/executive-refinement.css
+-   /app/EMAIL_INTELLIGENCE_ANALYSIS.md
+-   /app/COMPREHENSIVE_BACKLOG.md
+-   /app/OAUTH_SIGNUP_FIX_GUIDE.md
+-   /app/COMPREHENSIVE_MOBILE_AUDIT_COMPLETE.md
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asks for the long-term fix for the duplicate user ID issue.
-2.  **Agent**: Creates  and asks the user to apply the database trigger.
-3.  **User**: Shows a SQL error trying to fix the data manually.
-4.  **Agent**: Provides corrected SQL to handle the duplicate email constraint.
-5.  **User**: (New Prompt) P0 Bug - Priority Inbox analysis is failing with an  error.
-6.  **Agent**: Fixes the  call in  and confirms the fix with the user.
-7.  **User**: (New Prompt) P0 Cleanup - Silence the noisy notification errors in the console.
-8.  **Agent**: Disables the notification polling in .
-9.  **User**: (New Prompt) P0 Cleanup - Fix the missing manifest icon error.
-10. **Agent**: Creates placeholder PNGs and confirms the notification polling is disabled.
+1.  **User:** Asks for the SQL commands to fix the database trigger. (Agent provides them)
+2.  **User:** Reports the SQL didsnt work.
+3.  **User:** Provides feedback from a Supabase agent about a security flaw () in the  function. (Agent provides corrected SQL)
+4.  **User:** Provides feedback about another security flaw in . (Agent provides more corrected SQL)
+5.  **User:** Asks agent to review callbacks and auth, or find and fix the issues. (Agent diagnoses a critical DB error)
+6.  **User:** Reports mobile scroll freezes when opening the menu. (Agent implements a CSS fix)
+7.  **User:** Reports the same URL error is happening on signup and that Outlook sync is also broken, noting it all worked in the last fork. (Agent starts investigation)
+8.  **User:** proceed (Signals agent to continue after the troubleshoot agent's analysis).
+9.  **User:** Provides screenshot of landing page banner/logo being too large and asks to remove one of the CTAs. (Agent implements the change)
+10. **User:** Provides a complex Living Interface prompt, then retracts it and provides a refined, more practical prompt focused on honest, status-aware design. (Agent acknowledges and creates a backlog)
 
 **Project Health Check:**
 -   **Broken**:
-    -   New user signup flow (highly fragile, prone to loops).
+    -   New user signup and login flow (OAuth redirect loop).
+    -   Outlook email sync (blocked by auth failure).
     -   Backend notifications endpoint ().
 -   **Mocked**:
-    -   The  page UI is complete, but it uses hardcoded mock data for the assessment. It is not connected to a backend endpoint.
+    -   The  page UI is complete, but it uses hardcoded mock data.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o**: Used for all AI generation features.
--   **Supabase (PostgreSQL & Auth)**: Primary database and auth provider.
--   **Supabase Edge Functions (Deno)**: Handles the Microsoft Outlook OAuth callback flow. This is a critical component managed by the user outside the workspace.
--   **Microsoft Graph (Outlook)**: For email integration.
+-   **OpenAI GPT-4o**: Used for AI generation features.
+-   **Supabase (PostgreSQL & Auth)**: Primary database and auth provider. This is the source of the main blocking issues.
+-   **Microsoft Graph (Outlook)**: For email integration, currently broken due to auth failure.
+-   **Supabase Edge Functions (Deno)**: Handles the Microsoft Outlook OAuth callback flow (managed by user externally).
 
 **Testing status**
--   Testing agent used: YES, the  was used multiple times to diagnose complex issues like RLS policies and onboarding errors.
+-   Testing agent used: YES,  was used extensively to diagnose auth, CSS, and caching issues.  was used once for a UI audit.
 -   Troubleshoot agent used: YES
 -   Test files created: []
--   Known regressions: The authentication redirect loop for new users is a recurring regression.
+-   Known regressions: The entire OAuth/Authentication flow is a major regression from a previous fork.
 
 **Credentials to test flow:**
--   **Note**: The user has been deleting and creating users to fix data issues. The standard  user may not exist. The first priority should be to stabilize the signup flow so a reliable test user can be created.
+-   Unstable. The primary task is to stabilize the signup and login flow to create a reliable test user. Do not rely on any existing credentials.
 
 **What agent forgot to execute**
--   The agent did not implement the database trigger outlined in , which is the permanent solution to the data integrity issues.
--   The agent did not connect the  page to a live backend endpoint; it currently relies on mock data.
--   The agent did not fix the root cause of the failing  endpoint, only disabled the frontend polling as a temporary measure.
--   The minor, non-functional theme toggle button was never addressed.</analysis>
+-   The original high-priority task, Complete the MyAdvisor Advisory Intelligence Contract, was started but then superseded by urgent stability fixes and never fully completed or verified by the user.
+-   The broken  endpoint was never fixed at the root cause.
+-   The non-functional theme toggle was never addressed.
+-   The  page was never connected to a live backend endpoint.</analysis>

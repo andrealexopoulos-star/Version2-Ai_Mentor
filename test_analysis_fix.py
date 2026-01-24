@@ -9,7 +9,7 @@ import json
 import sys
 from datetime import datetime
 
-BASE_URL = "https://business-iq-1.preview.emergentagent.com/api"
+BASE_URL = "https://mobile-auth-app-5.preview.emergentagent.com/api"
 
 def print_section(title):
     print(f"\n{'='*60}")
