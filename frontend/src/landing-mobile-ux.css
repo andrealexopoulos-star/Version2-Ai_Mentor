@@ -92,7 +92,7 @@
   
   /* Hero container - better spacing */
   section:first-of-type {
-    padding-top: 80px !important; /* Room below fixed header */
+    padding-top: 68px !important; /* Adjusted for smaller header */
     padding-bottom: 48px !important;
     padding-left: 20px !important;
     padding-right: 20px !important;
