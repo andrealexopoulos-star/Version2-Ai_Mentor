@@ -30,10 +30,23 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true; // Track mount state to prevent state updates after unmount
+    let retryCount = 0; // Prevent infinite loops
+    const MAX_RETRIES = 3;
 
     const initializeAuth = async () => {
       try {
-        console.log('[Auth] Initializing auth state...');
+        // Prevent infinite retry loops
+        if (retryCount >= MAX_RETRIES) {
+          console.error('[Auth] Max retries reached, stopping initialization');
+          if (isMounted) {
+            setLoading(false);
+            setInitialized(true);
+          }
+          return;
+        }
+        
+        retryCount++;
+        console.log(`[Auth] Initializing auth state... (attempt ${retryCount}/${MAX_RETRIES})`);
         
         // Get initial session with retry for mobile browsers
         let retries = 3;
