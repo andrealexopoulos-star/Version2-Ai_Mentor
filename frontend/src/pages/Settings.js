@@ -137,6 +137,22 @@ const Settings = () => {
                     </div>
                   </div>
 
+                  {/* Onboarding Section */}
+                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
+                    <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Onboarding</h3>
+                    <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                      Complete your onboarding to help BIQC understand your business better.
+                    </p>
+                    <Button
+                      onClick={() => window.location.href = '/onboarding'}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <SettingsIcon className="w-4 h-4" />
+                      Complete Onboarding
+                    </Button>
+                  </div>
+
                   <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
                     <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Account Details</h3>
                     <div className="space-y-3">
