@@ -229,7 +229,7 @@ const SOPGenerator = () => {
                           </label>
                         </div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          Upload existing documents, templates, or processes. AI will use them to generate better SOPs.
+                          Upload existing documents or templates to improve generation quality.
                         </p>
                       </div>
                       
