@@ -108,10 +108,11 @@ const AuthCallbackSupabase = () => {
               
               if (!response.ok) {
                 console.error('❌ Profile check failed:', response.status);
-                // For new OAuth users, skip onboarding and go to advisor
-                console.log('Redirecting to advisor (profile check failed)');
-                setStatus('Redirecting...');
-                navigate('/advisor', { replace: true });
+                // Safe fallback: new OAuth users should go to onboarding by default
+                // This ensures they don't skip the important business profile setup
+                console.log('Profile check failed - redirecting to onboarding (safe default for new users)');
+                setStatus('Redirecting to onboarding...');
+                navigate('/onboarding', { replace: true });
                 return;
               }
               
