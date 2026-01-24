@@ -4,6 +4,7 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
 import '../mobile-ux-overhaul.css';
+import '../executive-refinement.css';
 import {
   DropdownMenu,
   DropdownMenuContent,

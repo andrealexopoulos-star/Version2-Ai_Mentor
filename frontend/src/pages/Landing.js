@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ArrowRight, Zap, Target, FileText, TrendingUp, Brain, Rocket, Check, Star, Shield, BarChart3, Sparkles } from 'lucide-react';
 import '../landing-mobile-ux.css';
+import '../executive-refinement.css';
 
 const Landing = () => {
   const navigate = useNavigate();
