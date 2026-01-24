@@ -228,8 +228,8 @@
     transition: transform 0.3s ease-out;
   }
   
-  /* Content containers - GENEROUS padding */
-  main > div {
+  /* Content containers - GENEROUS padding ONLY if page doesn't have padding */
+  main > div:not([class*="p-"]):not([class*="px-"]) {
     padding: 16px !important;
   }
   
