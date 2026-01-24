@@ -11,7 +11,7 @@ import json
 import uuid
 from datetime import datetime
 
-BASE_URL = "https://mobile-auth-app-5.preview.emergentagent.com/api"
+BASE_URL = "https://FORK_PREVIEW_URL_PLACEHOLDER/api"
 
 class CognitiveCoreTest:
     def __init__(self):

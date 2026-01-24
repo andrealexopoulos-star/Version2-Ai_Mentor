@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 
 class SystemStateDocumentation:
-    def __init__(self, base_url="https://mobile-auth-app-5.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://FORK_PREVIEW_URL_PLACEHOLDER/api"):
         self.base_url = base_url
         self.results = []
         

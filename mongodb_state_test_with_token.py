@@ -14,7 +14,7 @@ from datetime import datetime
 import sys
 
 class MongoDBBrokenStateTest:
-    def __init__(self, base_url="https://mobile-auth-app-5.preview.emergentagent.com/api", token=None):
+    def __init__(self, base_url="https://FORK_PREVIEW_URL_PLACEHOLDER/api", token=None):
         self.base_url = base_url
         self.token = token
         self.test_results = []

@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://mobile-auth-app-5.preview.emergentagent.com/api"
+BASE_URL = "https://FORK_PREVIEW_URL_PLACEHOLDER/api"
 TEST_USER_EMAIL = "onboard@test.com"
 TEST_USER_PASSWORD = "Test123!"
 TEST_USER_NAME = "Onboard Tester"
