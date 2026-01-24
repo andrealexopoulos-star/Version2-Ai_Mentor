@@ -122,11 +122,11 @@ const Landing = () => {
               
               <h1 className="font-semibold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-slate-900 leading-tight tracking-tight">
                 Your Personalised Business Soundboard —
-                <span className="text-blue-600"> Powered by AI, Built on Your Business Intelligence</span>
+                <span className="text-blue-600"> Built on Your Business Intelligence</span>
               </h1>
               
               <p className="text-base sm:text-lg lg:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal">
-                Introducing <strong className="text-slate-900 font-semibold">BIQC</strong> — the world's first Business IQ Centre that continuously learns your business and delivers sound, personalised advice.
+                <strong className="text-slate-900 font-semibold">BIQC</strong> continuously learns your business and delivers sound, personalised advice.
               </p>
               
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
