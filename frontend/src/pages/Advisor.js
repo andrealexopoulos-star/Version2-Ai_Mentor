@@ -8,7 +8,6 @@ import { apiClient } from '../lib/api';
 import { Send, Loader2, Target, TrendingUp, DollarSign, Zap, Users, RotateCcw } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
-import '../mobile-ux-overhaul.css';
 
 const focusAreas = [
   {
