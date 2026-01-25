@@ -547,6 +547,15 @@ const Integrations = () => {
         },
       });
 
+      // Check response status first
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Gmail test failed:', response.status, errorText);
+        toast.error(`Gmail test failed (${response.status})`);
+        setGmailStatus(prev => ({ ...prev, testing: false }));
+        return;
+      }
+
       const data = await response.json();
       console.log('📧 Gmail test result:', data);
 
@@ -576,7 +585,7 @@ const Integrations = () => {
       }
     } catch (error) {
       console.error('Gmail test error:', error);
-      toast.error('Failed to test Gmail connection');
+      toast.error('Failed to test Gmail connection: ' + error.message);
       setGmailStatus(prev => ({ ...prev, testing: false }));
     }
   };
