@@ -1,0 +1,341 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+
+interface GmailLabel {
+  id: string;
+  name: string;
+  type?: string;
+}
+
+interface SuccessResponse {
+  ok: true;
+  connected: true;
+  provider: "gmail";
+  inbox_type: "priority" | "standard";
+  labels_count: number;
+  remediation?: string;
+}
+
+interface DisconnectedResponse {
+  ok: true;
+  connected: false;
+  provider: "gmail";
+}
+
+interface ErrorResponse {
+  ok: false;
+  connected: false;
+  provider: "gmail";
+  error_stage: "auth" | "token" | "gmail_api";
+  error_message: string;
+}
+
+type ApiResponse = SuccessResponse | DisconnectedResponse | ErrorResponse;
+
+serve(async (req: Request): Promise<Response> => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    console.log("=== GMAIL PRODUCTION EDGE FUNCTION STARTED ===");
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error("❌ Missing or invalid Authorization header");
+      const response: ErrorResponse = {
+        ok: false,
+        connected: false,
+        provider: "gmail",
+        error_stage: "auth",
+        error_message: "Missing Authorization header",
+      };
+      return new Response(JSON.stringify(response), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseToken = authHeader.replace("Bearer ", "");
+    console.log("✅ Supabase JWT extracted");
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("❌ Missing Supabase environment variables");
+      const response: ErrorResponse = {
+        ok: false,
+        connected: false,
+        provider: "gmail",
+        error_stage: "auth",
+        error_message: "Edge Function configuration error",
+      };
+      return new Response(JSON.stringify(response), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(supabaseToken);
+
+    if (userError || !user) {
+      console.error("❌ Failed to verify user:", userError);
+      const response: ErrorResponse = {
+        ok: false,
+        connected: false,
+        provider: "gmail",
+        error_stage: "auth",
+        error_message: `Invalid or expired token: ${userError?.message || "Unknown"}`,
+      };
+      return new Response(JSON.stringify(response), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`✅ User verified: ${user.email} (${user.id})`);
+
+    const googleIdentity = user.identities?.find((identity) => identity.provider === "google");
+
+    if (!googleIdentity) {
+      console.error("❌ No Google identity found for user");
+      const response: DisconnectedResponse = {
+        ok: true,
+        connected: false,
+        provider: "gmail",
+      };
+      return new Response(JSON.stringify(response), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const providerToken = (googleIdentity as any).provider_token;
+    const providerRefreshToken = (googleIdentity as any).provider_refresh_token;
+
+    if (!providerToken) {
+      console.error("❌ Google access token not found in identity");
+      const response: DisconnectedResponse = {
+        ok: true,
+        connected: false,
+        provider: "gmail",
+      };
+      return new Response(JSON.stringify(response), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log("✅ Google tokens extracted from identity");
+    console.log(`  - Access token: ${providerToken ? "Present" : "Missing"}`);
+    console.log(`  - Refresh token: ${providerRefreshToken ? "Present" : "Missing"}`);
+
+    let accessToken = providerToken;
+    const refreshToken = providerRefreshToken;
+
+    const callGmailApi = async (token: string): Promise<{ labels: GmailLabel[]; error?: string }> => {
+      try {
+        console.log("📧 Calling Gmail API...");
+        const gmailResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/labels", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!gmailResponse.ok) {
+          const errorText = await gmailResponse.text();
+          console.error(`❌ Gmail API error (${gmailResponse.status}):`, errorText);
+          return { labels: [], error: `Gmail API returned ${gmailResponse.status}: ${errorText}` };
+        }
+
+        const data = await gmailResponse.json();
+        console.log(`✅ Gmail API success - received ${data.labels?.length || 0} labels`);
+        return { labels: data.labels || [] };
+      } catch (error) {
+        console.error("❌ Gmail API call failed:", error);
+        return { labels: [], error: error.message };
+      }
+    };
+
+    let gmailResult = await callGmailApi(accessToken);
+
+    if (gmailResult.error && gmailResult.error.includes("401") && refreshToken) {
+      console.log("🔄 Access token expired, attempting refresh...");
+
+      const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID");
+      const googleClientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+
+      if (!googleClientId || !googleClientSecret) {
+        console.error("❌ Missing Google OAuth credentials for token refresh");
+        const response: ErrorResponse = {
+          ok: false,
+          connected: false,
+          provider: "gmail",
+          error_stage: "token",
+          error_message: "Cannot refresh token - missing credentials",
+        };
+        return new Response(JSON.stringify(response), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      try {
+        const refreshResponse = await fetch("https://oauth2.googleapis.com/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            client_id: googleClientId,
+            client_secret: googleClientSecret,
+            refresh_token: refreshToken,
+            grant_type: "refresh_token",
+          }).toString(),
+        });
+
+        if (!refreshResponse.ok) {
+          const errorText = await refreshResponse.text();
+          console.error("❌ Token refresh failed:", errorText);
+          const response: ErrorResponse = {
+            ok: false,
+            connected: false,
+            provider: "gmail",
+            error_stage: "token",
+            error_message: `Token refresh failed: ${errorText}`,
+          };
+          return new Response(JSON.stringify(response), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const refreshData = await refreshResponse.json();
+        accessToken = refreshData.access_token;
+        console.log("✅ Access token refreshed successfully");
+
+        gmailResult = await callGmailApi(accessToken);
+      } catch (refreshError) {
+        console.error("❌ Token refresh exception:", refreshError);
+        const response: ErrorResponse = {
+          ok: false,
+          connected: false,
+          provider: "gmail",
+          error_stage: "token",
+          error_message: `Token refresh failed: ${refreshError.message}`,
+        };
+        return new Response(JSON.stringify(response), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    if (gmailResult.error) {
+      console.error("❌ Gmail API failed after all retry attempts");
+      const response: ErrorResponse = {
+        ok: false,
+        connected: false,
+        provider: "gmail",
+        error_stage: "gmail_api",
+        error_message: gmailResult.error,
+      };
+      return new Response(JSON.stringify(response), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const labels = gmailResult.labels;
+
+    console.log("🔍 Detecting Priority Inbox...");
+    const hasCategoryPrimary = labels.some((label) => label.id === "CATEGORY_PERSONAL" || label.id === "CATEGORY_PRIMARY");
+    const hasImportant = labels.some((label) => label.id === "IMPORTANT");
+    const hasSocial = labels.some((label) => label.id === "CATEGORY_SOCIAL");
+    const hasPromotions = labels.some((label) => label.id === "CATEGORY_PROMOTIONS");
+
+    const priorityInboxEnabled = hasCategoryPrimary || (hasImportant && (hasSocial || hasPromotions));
+    const inboxType = priorityInboxEnabled ? "priority" : "standard";
+
+    console.log(`📊 Priority Inbox detection:`);
+    console.log(`  - CATEGORY_PRIMARY: ${hasCategoryPrimary}`);
+    console.log(`  - IMPORTANT: ${hasImportant}`);
+    console.log(`  - CATEGORY_SOCIAL: ${hasSocial}`);
+    console.log(`  - CATEGORY_PROMOTIONS: ${hasPromotions}`);
+    console.log(`  - Inbox Type: ${inboxType}`);
+
+    console.log("💾 Upserting gmail_connections...");
+
+    const connectionData = {
+      user_id: user.id,
+      email: user.email,
+      scopes: "https://www.googleapis.com/auth/gmail.readonly",
+      access_token: accessToken,
+      refresh_token: refreshToken || null,
+      token_expiry: new Date(Date.now() + 3600 * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: upsertError } = await supabase
+      .from("gmail_connections")
+      .upsert(connectionData, { onConflict: "user_id" });
+
+    if (upsertError) {
+      console.error("⚠️ Failed to upsert gmail_connections:", upsertError);
+    } else {
+      console.log("✅ gmail_connections upserted successfully");
+    }
+
+    const response: SuccessResponse = {
+      ok: true,
+      connected: true,
+      provider: "gmail",
+      inbox_type: inboxType,
+      labels_count: labels.length,
+    };
+
+    if (inboxType === "standard") {
+      response.remediation = "Enable Priority Inbox in Gmail settings";
+    }
+
+    console.log("✅ SUCCESS:", response);
+    console.log("=== GMAIL PRODUCTION EDGE FUNCTION COMPLETE ===");
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("❌ Unexpected error:", error);
+
+    const response: ErrorResponse = {
+      ok: false,
+      connected: false,
+      provider: "gmail",
+      error_stage: "gmail_api",
+      error_message: `Unexpected error: ${error.message}`,
+    };
+
+    return new Response(JSON.stringify(response), {
+      status: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json",
+      },
+    });
+  }
+});
