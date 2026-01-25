@@ -546,6 +546,68 @@ const EmailInbox = () => {
           </Button>
         </div>
 
+        {/* Provider Selector + Connection Status */}
+        <div className="card p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => setProvider('gmail')}
+                  className={provider === 'gmail' ? 'btn-primary' : 'btn-secondary'}
+                >
+                  Gmail
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setProvider('outlook')}
+                  className={provider === 'outlook' ? 'btn-primary' : 'btn-secondary'}
+                >
+                  Outlook
+                </Button>
+              </div>
+              
+              {checkingConnection ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--text-muted)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Checking connection...</span>
+                </div>
+              ) : connected ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-green-600">
+                    {connectedEmail ? `Connected: ${connectedEmail}` : 'Connected'}
+                  </span>
+                  {needsReconnect && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700">
+                      Reconnect needed
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Not connected</span>
+                </div>
+              )}
+            </div>
+            
+            {!connected && (
+              <Button onClick={handleConnect} className="btn-primary">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Connect {provider === 'gmail' ? 'Gmail' : 'Outlook'}
+              </Button>
+            )}
+            
+            {connected && needsReconnect && (
+              <Button onClick={handleConnect} className="btn-warning">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Reconnect {provider === 'gmail' ? 'Gmail' : 'Outlook'}
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Strategic Insights Banner */}
         {analysis.strategic_insights && (
           <div 
