@@ -2219,7 +2219,7 @@ Proceed directly with advice using this snapshot.
         
         # Use emergentintegrations for reliable AI access
         chat = LlmChat(
-            api_key=EMERGENT_KEY,
+            api_key=OPENAI_KEY,
             session_id=session_id,
             system_message=system_prompt
         )
@@ -3712,7 +3712,7 @@ Return ONLY valid JSON in this exact format:
 
         # 6. Generate with LLM
         chat = LlmChat(
-            api_key=EMERGENT_KEY,
+            api_key=OPENAI_KEY,
             session_id=f"biqc_reply_{user_id}_{email_id}",
             system_message="You are BIQC, a decisive business intelligence advisor. Generate concise, action-oriented email replies that sound like a real executive wrote them. Never use generic pleasantries."
         )
@@ -4046,7 +4046,7 @@ COGNITIVE CORE CONTEXT (USE THIS)
     
     try:
         chat = LlmChat(
-            api_key=EMERGENT_KEY,
+            api_key=OPENAI_KEY,
             session_id=f"soundboard_{user_id}_{req.conversation_id or 'new'}",
             system_message=system_message
         )
