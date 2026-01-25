@@ -110,10 +110,32 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`✅ User verified: ${user.email} (${user.id})`);
 
-    const googleIdentity = user.identities?.find((identity) => identity.provider === "google");
+    // Check gmail_connections table for stored tokens
+    console.log("🔍 Checking gmail_connections table for tokens...");
+    
+    const { data: gmailConnection, error: connectionError } = await supabase
+      .from("gmail_connections")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (!googleIdentity) {
-      console.error("❌ No Google identity found for user");
+    if (connectionError) {
+      console.error("❌ Error querying gmail_connections:", connectionError);
+      const response: ErrorResponse = {
+        ok: false,
+        connected: false,
+        provider: "gmail",
+        error_stage: "token",
+        error_message: `Database error: ${connectionError.message}`,
+      };
+      return new Response(JSON.stringify(response), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!gmailConnection) {
+      console.log("❌ No Gmail connection found in database");
       const response: DisconnectedResponse = {
         ok: true,
         connected: false,
@@ -125,11 +147,11 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const providerToken = (googleIdentity as any).provider_token;
-    const providerRefreshToken = (googleIdentity as any).provider_refresh_token;
+    const accessTokenFromDB = gmailConnection.access_token;
+    const refreshTokenFromDB = gmailConnection.refresh_token;
 
-    if (!providerToken) {
-      console.error("❌ Google access token not found in identity");
+    if (!accessTokenFromDB) {
+      console.error("❌ No access token in gmail_connections");
       const response: DisconnectedResponse = {
         ok: true,
         connected: false,
@@ -141,12 +163,12 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("✅ Google tokens extracted from identity");
-    console.log(`  - Access token: ${providerToken ? "Present" : "Missing"}`);
-    console.log(`  - Refresh token: ${providerRefreshToken ? "Present" : "Missing"}`);
+    console.log("✅ Gmail tokens retrieved from database");
+    console.log(`  - Access token: Present`);
+    console.log(`  - Refresh token: ${refreshTokenFromDB ? "Present" : "Missing"}`);
 
-    let accessToken = providerToken;
-    const refreshToken = providerRefreshToken;
+    let accessToken = accessTokenFromDB;
+    const refreshToken = refreshTokenFromDB;
 
     const callGmailApi = async (token: string): Promise<{ labels: GmailLabel[]; error?: string }> => {
       try {
