@@ -439,6 +439,140 @@ const Integrations = () => {
     }
   };
 
+  const handleGmailConnect = async () => {
+    setConnecting('gmail');
+    try {
+      // Get current Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.access_token) {
+        toast.error('Please log in to connect Gmail');
+        setConnecting(null);
+        return;
+      }
+
+      console.log('🔐 Initiating Gmail OAuth with required scopes...');
+
+      // Use Supabase OAuth to connect Gmail with Gmail API scopes
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/integrations?gmail_connected=true`,
+          scopes: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent' // Force consent to ensure refresh token
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Gmail OAuth error:', error);
+        toast.error('Failed to connect Gmail: ' + error.message);
+        setConnecting(null);
+      }
+      
+      // User will be redirected to Google OAuth, then back to /integrations
+    } catch (error) {
+      console.error('Gmail connection error:', error);
+      toast.error('Failed to connect Gmail. Please try again.');
+      setConnecting(null);
+    }
+  };
+
+  const handleGmailTest = async () => {
+    setGmailStatus(prev => ({ ...prev, testing: true }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.access_token) {
+        toast.error('Please log in to test Gmail connection');
+        setGmailStatus(prev => ({ ...prev, testing: false }));
+        return;
+      }
+
+      console.log('🧪 Testing Gmail connection via Edge Function...');
+      
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
+      
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      console.log('📧 Gmail test result:', data);
+
+      if (data.ok && data.connected) {
+        toast.success(`Gmail connected! Found ${data.labels_count} labels. Inbox: ${data.inbox_type || 'standard'}`);
+        setGmailStatus({
+          connected: true,
+          labels_count: data.labels_count || 0,
+          inbox_type: data.inbox_type || 'standard',
+          connected_email: session.user?.email || null,
+          needs_reconnect: false,
+          testing: false
+        });
+      } else if (data.ok && !data.connected) {
+        toast.info('Gmail is not connected. Click "Connect Gmail" to set up.');
+        setGmailStatus({
+          connected: false,
+          labels_count: 0,
+          inbox_type: null,
+          connected_email: null,
+          needs_reconnect: false,
+          testing: false
+        });
+      } else {
+        toast.error(`Gmail test failed: ${data.error_message || 'Unknown error'}`);
+        setGmailStatus(prev => ({ ...prev, testing: false }));
+      }
+    } catch (error) {
+      console.error('Gmail test error:', error);
+      toast.error('Failed to test Gmail connection');
+      setGmailStatus(prev => ({ ...prev, testing: false }));
+    }
+  };
+
+  const handleGmailDisconnect = async () => {
+    if (!window.confirm(`Are you sure you want to disconnect Gmail (${gmailStatus.connected_email})?\n\nThis will remove Gmail access from your account.`)) {
+      return;
+    }
+    
+    setDisconnecting(true);
+    try {
+      // Delete gmail_connections record
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        await supabase
+          .from('gmail_connections')
+          .delete()
+          .eq('user_id', user.id);
+        
+        toast.success('Gmail disconnected successfully');
+        setGmailStatus({
+          connected: false,
+          labels_count: 0,
+          inbox_type: null,
+          connected_email: null,
+          needs_reconnect: false,
+          testing: false
+        });
+      }
+    } catch (error) {
+      console.error('Gmail disconnect error:', error);
+      toast.error('Failed to disconnect Gmail: ' + (error.message || 'Unknown error'));
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   const handleSyncEmails = async () => {
     setSyncing(true);
     try {
