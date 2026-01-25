@@ -192,6 +192,21 @@ const Integrations = () => {
         },
       });
 
+      // Check if response is ok before parsing
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Gmail Edge Function error:', response.status, errorText);
+        setGmailStatus({
+          connected: false,
+          labels_count: 0,
+          inbox_type: null,
+          connected_email: null,
+          needs_reconnect: false,
+          testing: false
+        });
+        return;
+      }
+
       const data = await response.json();
       console.log('📊 Gmail Edge Function response:', data);
 
@@ -215,7 +230,7 @@ const Integrations = () => {
         });
       }
     } catch (error) {
-      console.log('⚠️ Could not fetch Gmail status:', error);
+      console.error('⚠️ Could not fetch Gmail status:', error);
       setGmailStatus({
         connected: false,
         labels_count: 0,
