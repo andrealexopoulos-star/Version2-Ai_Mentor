@@ -66,8 +66,9 @@ serve(async (req: Request): Promise<Response> => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
       console.error("❌ Missing Supabase environment variables");
       const response: ErrorResponse = {
         ok: false,
@@ -82,16 +83,20 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    // Anon client for user authentication
+    const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: { Authorization: authHeader },
       },
     });
 
+    // Service role client for database operations (bypasses RLS)
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(supabaseToken);
+    } = await supabaseAnon.auth.getUser(supabaseToken);
 
     if (userError || !user) {
       console.error("❌ Failed to verify user:", userError);
@@ -110,10 +115,10 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`✅ User verified: ${user.email} (${user.id})`);
 
-    // Check gmail_connections table for stored tokens
-    console.log("🔍 Checking gmail_connections table for tokens...");
+    // Check gmail_connections table for stored tokens using SERVICE ROLE (bypasses RLS)
+    console.log("🔍 Checking gmail_connections table for tokens (using service role)...");
     
-    const { data: gmailConnection, error: connectionError } = await supabase
+    const { data: gmailConnection, error: connectionError } = await supabaseService
       .from("gmail_connections")
       .select("*")
       .eq("user_id", user.id)
@@ -135,7 +140,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (!gmailConnection) {
-      console.log("❌ No Gmail connection found in database");
+      console.log("❌ No Gmail connection found in database for user:", user.id);
       const response: DisconnectedResponse = {
         ok: true,
         connected: false,
@@ -146,6 +151,12 @@ serve(async (req: Request): Promise<Response> => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Log retrieved data to prove success
+    console.log("✅ Gmail connection retrieved from database:");
+    console.log(`  - Email: ${gmailConnection.email}`);
+    console.log(`  - Token Expiry: ${gmailConnection.token_expiry}`);
+    console.log(`  - Scopes: ${gmailConnection.scopes}`);
 
     const accessTokenFromDB = gmailConnection.access_token;
     const refreshTokenFromDB = gmailConnection.refresh_token;
@@ -300,7 +311,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`  - CATEGORY_PROMOTIONS: ${hasPromotions}`);
     console.log(`  - Inbox Type: ${inboxType}`);
 
-    console.log("💾 Upserting gmail_connections...");
+    console.log("💾 Upserting gmail_connections using service role...");
 
     const connectionData = {
       user_id: user.id,
@@ -312,7 +323,7 @@ serve(async (req: Request): Promise<Response> => {
       updated_at: new Date().toISOString(),
     };
 
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await supabaseService
       .from("gmail_connections")
       .upsert(connectionData, { onConflict: "user_id" });
 
