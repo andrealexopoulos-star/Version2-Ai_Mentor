@@ -729,6 +729,71 @@ const Integrations = () => {
                   </div>
                 </div>
               )}
+              {gmailStatus.connected && (
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#EA4335' }}>
+                      <span className="text-white font-bold text-base sm:text-lg">GM</span>
+                    </div>
+                    <div className="flex-1 min-w-0 sm:hidden">
+                      <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Gmail</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-green-600">Connected</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0 hidden sm:block">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Gmail</h3>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Connected"></div>
+                    </div>
+                    {gmailStatus.connected_email && (
+                      <p className="text-sm font-medium mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {gmailStatus.connected_email}
+                      </p>
+                    )}
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                      {gmailStatus.labels_count} labels • {gmailStatus.inbox_type === 'priority' ? 'Priority Inbox' : 'Standard Inbox'}
+                    </p>
+                    {gmailStatus.inbox_type === 'standard' && (
+                      <div className="flex items-center gap-2 mt-2 p-2 rounded-lg" style={{ background: 'rgba(251, 191, 36, 0.1)' }}>
+                        <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <p className="text-xs text-amber-700">
+                          Priority Inbox is disabled in Gmail. BIQC recommendations may be reduced.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <Button 
+                      onClick={handleGmailDisconnect}
+                      disabled={disconnecting}
+                      className="btn-secondary text-sm py-1.5 px-3"
+                      title="Disconnect Gmail"
+                    >
+                      {disconnecting ? (
+                        <span className="animate-pulse">...</span>
+                      ) : (
+                        <LogOut className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button 
+                      onClick={handleGmailTest}
+                      disabled={gmailStatus.testing}
+                      className="btn-primary text-sm py-1.5 px-3"
+                      title="Test Gmail Connection"
+                    >
+                      {gmailStatus.testing ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
