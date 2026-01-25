@@ -3942,13 +3942,12 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     """Chat with MySoundBoard - Uses Cognitive Core for deep personalization"""
     user_id = current_user["id"]
     
-    # Get or create conversation
+    # Get or create conversation from Supabase
     conversation = None
     if req.conversation_id:
-        conversation = await db.soundboard_conversations.find_one(
-            {"id": req.conversation_id, "user_id": user_id},
-            {"_id": 0}
-        )
+        result = supabase_admin.table("soundboard_conversations").select("*").eq("id", req.conversation_id).eq("user_id", user_id).execute()
+        if result.data and len(result.data) > 0:
+            conversation = result.data[0]
     
     # Build message history for context
     messages_history = []
@@ -4025,13 +4024,15 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         if h.get("in_stress_period"):
             cognitive_context += "\n⚠️ User appears to be in a stress period. Soften tone."
     
-    # Get basic user info
-    user = await db.users.find_one({"id": user_id}, {"_id": 0, "name": 1})
+    # Get basic user info from Supabase
+    user_profile = await get_user_by_id(user_id)
     profile = await get_business_profile_supabase(supabase_admin, user_id)
+    
+    user_name = user_profile.get('full_name') if user_profile else current_user.get('full_name', 'Business Owner')
     
     # Build final context
     user_context = f"""
-USER: {user.get('name', 'Business Owner')}
+USER: {user_name}
 BUSINESS: {profile.get('business_name', 'Their business') if profile else 'Unknown'}
 PROFILE MATURITY: {core_context.get('profile_maturity', 'nascent')}
 
