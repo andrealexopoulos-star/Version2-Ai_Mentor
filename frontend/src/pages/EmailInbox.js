@@ -14,8 +14,11 @@ import DashboardLayout from '../components/DashboardLayout';
 
 const EmailInbox = () => {
   const navigate = useNavigate();
+  const [activeProvider, setActiveProvider] = useState(null); // 'gmail' or 'outlook' or null
+  const [gmailConnected, setGmailConnected] = useState(false);
   const [outlookConnected, setOutlookConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
+  const [connectedEmail, setConnectedEmail] = useState(null);
   const [priorityAnalysis, setPriorityAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
@@ -25,68 +28,129 @@ const EmailInbox = () => {
   const [expandedSection, setExpandedSection] = useState('high');
 
   useEffect(() => {
-    checkOutlookConnection();
+    checkConnections();
   }, []);
 
-  const checkOutlookConnection = async () => {
+  const checkConnections = async () => {
     try {
       setCheckingConnection(true);
       
-      // Get current user session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        setGmailConnected(false);
         setOutlookConnected(false);
         setCheckingConnection(false);
         return;
       }
 
-      // Query outlook_oauth_tokens table for current user
-      const { data, error } = await supabase
+      // Check Gmail connection
+      const { data: gmailData } = await supabase
+        .from('gmail_connections')
+        .select('email')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      // Check Outlook connection
+      const { data: outlookData } = await supabase
         .from('outlook_oauth_tokens')
-        .select('*')
+        .select('account_email')
         .eq('user_id', session.user.id)
         .eq('provider', 'microsoft')
-        .single();
+        .maybeSingle();
 
-      if (data && !error) {
-        // Token exists - Outlook is connected
-        setOutlookConnected(true);
-        // Proceed to fetch emails
-        fetchPriorityInbox();
+      const hasGmail = !!gmailData;
+      const hasOutlook = !!outlookData;
+
+      setGmailConnected(hasGmail);
+      setOutlookConnected(hasOutlook);
+
+      // Determine active provider (prefer Gmail if both connected)
+      if (hasGmail) {
+        setActiveProvider('gmail');
+        setConnectedEmail(gmailData.email);
+        fetchPriorityInbox('gmail');
+      } else if (hasOutlook) {
+        setActiveProvider('outlook');
+        setConnectedEmail(outlookData.account_email);
+        fetchPriorityInbox('outlook');
       } else {
-        // No connection - show connect CTA
-        setOutlookConnected(false);
+        setActiveProvider(null);
+        setLoading(false);
       }
       
     } catch (error) {
-      console.error('Error checking Outlook connection:', error);
+      console.error('Error checking connections:', error);
+      setGmailConnected(false);
       setOutlookConnected(false);
+      setActiveProvider(null);
     } finally {
       setCheckingConnection(false);
     }
   };
 
-  const handleConnectOutlook = () => {
-    // Redirect to integrations page to connect
+  const handleConnect = () => {
     navigate('/integrations');
   };
 
   useEffect(() => {
-    if (outlookConnected) {
-      fetchPriorityInbox();
+    if (activeProvider) {
+      fetchPriorityInbox(activeProvider);
     }
-  }, [outlookConnected]);
+  }, [activeProvider]);
 
-  const fetchPriorityInbox = async () => {
+  const fetchPriorityInbox = async (provider) => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/email/priority-inbox');
-      if (response.data && response.data.analysis) {
-        setPriorityAnalysis(response.data);
+      
+      if (provider === 'gmail') {
+        // Call Gmail Edge Function
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          setLoading(false);
+          return;
+        }
+
+        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+        const priorityUrl = `${supabaseUrl}/functions/v1/email_priority?provider=gmail`;
+        
+        const response = await fetch(priorityUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          console.error('Gmail priority analysis failed:', response.status);
+          setLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (data.ok) {
+          setPriorityAnalysis({
+            analysis: {
+              high_priority: data.high_priority || [],
+              medium_priority: data.medium_priority || [],
+              low_priority: data.low_priority || [],
+              strategic_insights: data.strategic_insights || ''
+            },
+            analyzed_at: new Date().toISOString()
+          });
+        }
+      } else if (provider === 'outlook') {
+        // Use Outlook backend endpoint
+        const response = await apiClient.get('/email/priority-inbox');
+        if (response.data && response.data.analysis) {
+          setPriorityAnalysis(response.data);
+        }
       }
     } catch (error) {
-      // No analysis yet
+      console.error('Priority inbox fetch error:', error);
     } finally {
       setLoading(false);
     }
@@ -96,9 +160,15 @@ const EmailInbox = () => {
     try {
       setAnalyzing(true);
       toast.info('Analyzing your inbox with AI... This may take a moment.');
-      const response = await apiClient.post('/email/analyze-priority');
-      setPriorityAnalysis({ analysis: response.data, analyzed_at: new Date().toISOString() });
-      toast.success('Inbox analyzed! Your emails are now prioritized.');
+      
+      if (activeProvider === 'gmail') {
+        await fetchPriorityInbox('gmail');
+        toast.success('Gmail inbox analyzed! Your emails are now prioritized.');
+      } else if (activeProvider === 'outlook') {
+        const response = await apiClient.post('/email/analyze-priority');
+        setPriorityAnalysis({ analysis: response.data, analyzed_at: new Date().toISOString() });
+        toast.success('Outlook inbox analyzed! Your emails are now prioritized.');
+      }
     } catch (error) {
       toast.error('Failed to analyze inbox: ' + (error.response?.data?.detail || error.message));
     } finally {
