@@ -42,6 +42,7 @@ const Integrations = () => {
     const outlookConnected = searchParams.get('outlook_connected');
     const outlookError = searchParams.get('outlook_error');
     const gmailConnected = searchParams.get('gmail_connected');
+    const gmailError = searchParams.get('gmail_error');
     const jobId = searchParams.get('job_id');
     const connectedEmail = searchParams.get('connected_email');
 
@@ -49,15 +50,29 @@ const Integrations = () => {
     if (gmailConnected === 'true') {
       console.log('✅ Gmail OAuth completed successfully');
       
-      toast.success('Gmail connected successfully! Verifying access...');
+      const message = connectedEmail 
+        ? `Gmail (${decodeURIComponent(connectedEmail)}) connected successfully!`
+        : 'Gmail connected successfully!';
+      toast.success(message + ' Verifying access...');
       
       // Clear URL parameters
       setSearchParams({});
       
-      // Verify connection with Edge Function
+      // Verify connection with Edge Function after brief delay
       setTimeout(() => {
         checkGmailStatus();
-      }, 1000);
+      }, 2000);
+    } else if (gmailError) {
+      const errorMessages = {
+        'auth_failed': 'Failed to authenticate with Google. Please try again.',
+        'invalid_state': 'Security validation failed. Please try again.',
+        'invalid_state_signature': 'Security signature mismatch. Please try connecting again.',
+        'token_exchange_failed': 'Failed to complete Google authentication. Please try again.',
+        'no_access_token': 'Failed to obtain Gmail access token. Please try again.',
+        'storage_failed': 'Failed to save Gmail connection. Please try again.',
+      };
+      toast.error(errorMessages[gmailError] || `Connection error: ${gmailError}`);
+      setSearchParams({});
     }
 
     if (outlookConnected === 'true') {
