@@ -147,6 +147,7 @@ JWT_EXPIRATION_HOURS = 24
 
 # AI Configuration - AGI Ready
 EMERGENT_KEY = os.environ.get('EMERGENT_LLM_KEY')
+OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
 
 # AGI-Ready Model Configuration  
 AI_MODEL = "gpt-4o"  # Latest model for regular chat
@@ -3541,7 +3542,7 @@ Return ONLY valid JSON, no markdown."""
 
     try:
         chat = LlmChat(
-            api_key=EMERGENT_KEY,
+            api_key=OPENAI_KEY,
             session_id=f"email_priority_{user_id}_{datetime.now().timestamp()}",
             system_message="You are a strategic business email analyst. Always respond with valid JSON only."
         )
@@ -4066,7 +4067,7 @@ COGNITIVE CORE CONTEXT (USE THIS)
             # Generate a title from the first message
             title_prompt = f"Generate a very short title (3-5 words max) for a conversation that starts with: '{req.message[:100]}'. Just the title, nothing else."
             title_chat = LlmChat(
-                api_key=EMERGENT_KEY,
+                api_key=OPENAI_KEY,
                 session_id=f"title_{user_id}_{datetime.now().timestamp()}",
                 system_message="Generate very short conversation titles. Just output the title, nothing else."
             )
