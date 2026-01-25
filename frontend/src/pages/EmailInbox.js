@@ -14,11 +14,8 @@ import DashboardLayout from '../components/DashboardLayout';
 
 const EmailInbox = () => {
   const navigate = useNavigate();
-  const [provider, setProvider] = useState('gmail'); // Default to Gmail
-  const [connected, setConnected] = useState(false);
+  const [outlookConnected, setOutlookConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
-  const [needsReconnect, setNeedsReconnect] = useState(false);
-  const [connectedEmail, setConnectedEmail] = useState(null);
   const [priorityAnalysis, setPriorityAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
@@ -28,122 +25,68 @@ const EmailInbox = () => {
   const [expandedSection, setExpandedSection] = useState('high');
 
   useEffect(() => {
-    checkIntegrationStatus();
-  }, [provider]);
+    checkOutlookConnection();
+  }, []);
 
-  const checkIntegrationStatus = async () => {
+  const checkOutlookConnection = async () => {
     try {
       setCheckingConnection(true);
       
+      // Get current user session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        setConnected(false);
+        setOutlookConnected(false);
         setCheckingConnection(false);
         return;
       }
 
-      // Call integration-status Edge Function
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const statusUrl = `${supabaseUrl}/functions/v1/integration-status?provider=${provider}`;
-      
-      const response = await fetch(statusUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Query outlook_oauth_tokens table for current user
+      const { data, error } = await supabase
+        .from('outlook_oauth_tokens')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('provider', 'microsoft')
+        .single();
 
-      if (!response.ok) {
-        console.error(`${provider} status check failed:`, response.status);
-        setConnected(false);
-        setCheckingConnection(false);
-        return;
-      }
-
-      const data = await response.json();
-      console.log(`📊 ${provider} status:`, data);
-
-      if (data.ok && data.connected) {
-        setConnected(true);
-        setNeedsReconnect(data.needs_reconnect || false);
-        setConnectedEmail(data.connected_email);
+      if (data && !error) {
+        // Token exists - Outlook is connected
+        setOutlookConnected(true);
+        // Proceed to fetch emails
         fetchPriorityInbox();
       } else {
-        setConnected(false);
+        // No connection - show connect CTA
+        setOutlookConnected(false);
       }
       
     } catch (error) {
-      console.error(`Error checking ${provider} connection:`, error);
-      setConnected(false);
+      console.error('Error checking Outlook connection:', error);
+      setOutlookConnected(false);
     } finally {
       setCheckingConnection(false);
     }
   };
 
-  const handleConnect = () => {
+  const handleConnectOutlook = () => {
+    // Redirect to integrations page to connect
     navigate('/integrations');
   };
 
   useEffect(() => {
-    if (connected) {
+    if (outlookConnected) {
       fetchPriorityInbox();
     }
-  }, [connected]);
+  }, [outlookConnected]);
 
   const fetchPriorityInbox = async () => {
     try {
       setLoading(true);
-      
-      if (provider === 'gmail') {
-        // Call Gmail-specific Edge Function
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          setLoading(false);
-          return;
-        }
-
-        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        const priorityUrl = `${supabaseUrl}/functions/v1/email_priority?provider=gmail`;
-        
-        const response = await fetch(priorityUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          console.error('Gmail priority analysis failed:', response.status);
-          setLoading(false);
-          return;
-        }
-
-        const data = await response.json();
-        
-        if (data.ok) {
-          setPriorityAnalysis({
-            analysis: {
-              high_priority: data.high_priority || [],
-              medium_priority: data.medium_priority || [],
-              low_priority: data.low_priority || [],
-              strategic_insights: data.strategic_insights || ''
-            },
-            analyzed_at: new Date().toISOString()
-          });
-        }
-      } else {
-        // Outlook - use existing backend endpoint
-        const response = await apiClient.get('/email/priority-inbox');
-        if (response.data && response.data.analysis) {
-          setPriorityAnalysis(response.data);
-        }
+      const response = await apiClient.get('/email/priority-inbox');
+      if (response.data && response.data.analysis) {
+        setPriorityAnalysis(response.data);
       }
     } catch (error) {
-      console.error('Priority inbox fetch error:', error);
+      // No analysis yet
     } finally {
       setLoading(false);
     }
@@ -153,17 +96,9 @@ const EmailInbox = () => {
     try {
       setAnalyzing(true);
       toast.info('Analyzing your inbox with AI... This may take a moment.');
-      
-      if (provider === 'gmail') {
-        // Call Gmail Edge Function for analysis
-        await fetchPriorityInbox();
-        toast.success('Gmail inbox analyzed! Your emails are now prioritized.');
-      } else {
-        // Outlook - use existing backend
-        const response = await apiClient.post('/email/analyze-priority');
-        setPriorityAnalysis({ analysis: response.data, analyzed_at: new Date().toISOString() });
-        toast.success('Outlook inbox analyzed! Your emails are now prioritized.');
-      }
+      const response = await apiClient.post('/email/analyze-priority');
+      setPriorityAnalysis({ analysis: response.data, analyzed_at: new Date().toISOString() });
+      toast.success('Inbox analyzed! Your emails are now prioritized.');
     } catch (error) {
       toast.error('Failed to analyze inbox: ' + (error.response?.data?.detail || error.message));
     } finally {
@@ -544,68 +479,6 @@ const EmailInbox = () => {
               </>
             )}
           </Button>
-        </div>
-
-        {/* Provider Selector + Connection Status */}
-        <div className="card p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => setProvider('gmail')}
-                  className={provider === 'gmail' ? 'btn-primary' : 'btn-secondary'}
-                >
-                  Gmail
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setProvider('outlook')}
-                  className={provider === 'outlook' ? 'btn-primary' : 'btn-secondary'}
-                >
-                  Outlook
-                </Button>
-              </div>
-              
-              {checkingConnection ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--text-muted)' }} />
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Checking connection...</span>
-                </div>
-              ) : connected ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-green-600">
-                    {connectedEmail ? `Connected: ${connectedEmail}` : 'Connected'}
-                  </span>
-                  {needsReconnect && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700">
-                      Reconnect needed
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Not connected</span>
-                </div>
-              )}
-            </div>
-            
-            {!connected && (
-              <Button onClick={handleConnect} className="btn-primary">
-                <ArrowRight className="w-4 h-4 mr-2" />
-                Connect {provider === 'gmail' ? 'Gmail' : 'Outlook'}
-              </Button>
-            )}
-            
-            {connected && needsReconnect && (
-              <Button onClick={handleConnect} className="btn-warning">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Reconnect {provider === 'gmail' ? 'Gmail' : 'Outlook'}
-              </Button>
-            )}
-          </div>
         </div>
 
         {/* Strategic Insights Banner */}
