@@ -233,6 +233,17 @@ const Integrations = () => {
       popular: true,
       isOutlook: true
     },
+    {
+      id: 'gmail',
+      name: 'Gmail',
+      description: 'Read emails for AI context and client intelligence',
+      category: 'communication',
+      logo: 'GM',
+      color: '#EA4335',
+      tier: 'free',
+      popular: true,
+      isGmail: true
+    },
     // CRM
     {
       id: 'hubspot',
