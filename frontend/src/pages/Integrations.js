@@ -129,6 +129,73 @@ const Integrations = () => {
     }
   };
 
+  const checkGmailStatus = async () => {
+    try {
+      console.log('📊 Checking Gmail status...');
+      
+      // Get current Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.access_token) {
+        console.log('⚠️ No active session - cannot check Gmail status');
+        setGmailStatus({
+          connected: false,
+          labels_count: 0,
+          inbox_type: null,
+          connected_email: null,
+          needs_reconnect: false,
+          testing: false
+        });
+        return;
+      }
+
+      // Call Edge Function to verify Gmail connection
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
+      
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      console.log('📊 Gmail Edge Function response:', data);
+
+      if (data.ok && data.connected) {
+        setGmailStatus({
+          connected: true,
+          labels_count: data.labels_count || 0,
+          inbox_type: data.inbox_type || 'standard',
+          connected_email: session.user?.email || null,
+          needs_reconnect: false,
+          testing: false
+        });
+      } else {
+        setGmailStatus({
+          connected: false,
+          labels_count: 0,
+          inbox_type: null,
+          connected_email: null,
+          needs_reconnect: false,
+          testing: false
+        });
+      }
+    } catch (error) {
+      console.log('⚠️ Could not fetch Gmail status:', error);
+      setGmailStatus({
+        connected: false,
+        labels_count: 0,
+        inbox_type: null,
+        connected_email: null,
+        needs_reconnect: false,
+        testing: false
+      });
+    }
+  };
+
   const categories = [
     { id: 'all', label: 'All' },
     { id: 'crm', label: 'CRM' },
