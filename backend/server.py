@@ -3922,14 +3922,13 @@ async def get_soundboard_conversations(current_user: dict = Depends(get_current_
 
 @api_router.get("/soundboard/conversations/{conversation_id}")
 async def get_soundboard_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a specific conversation with messages"""
-    conversation = await db.soundboard_conversations.find_one(
-        {"id": conversation_id, "user_id": current_user["id"]},
-        {"_id": 0}
-    )
+    """Get a specific conversation with messages - SUPABASE VERSION"""
+    result = supabase_admin.table("soundboard_conversations").select("*").eq("id", conversation_id).eq("user_id", current_user["id"]).execute()
     
-    if not conversation:
+    if not result.data or len(result.data) == 0:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    conversation = result.data[0]
     
     return {
         "conversation": conversation,
@@ -4122,13 +4121,13 @@ async def rename_soundboard_conversation(
     req: ConversationRename,
     current_user: dict = Depends(get_current_user)
 ):
-    """Rename a conversation"""
-    result = await db.soundboard_conversations.update_one(
-        {"id": conversation_id, "user_id": current_user["id"]},
-        {"$set": {"title": req.title, "updated_at": datetime.now(timezone.utc).isoformat()}}
-    )
+    """Rename a conversation - SUPABASE VERSION"""
+    result = supabase_admin.table("soundboard_conversations").update({
+        "title": req.title,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }).eq("id", conversation_id).eq("user_id", current_user["id"]).execute()
     
-    if result.matched_count == 0:
+    if not result.data or len(result.data) == 0:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
     return {"status": "renamed"}
