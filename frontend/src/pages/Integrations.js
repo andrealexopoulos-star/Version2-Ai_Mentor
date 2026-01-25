@@ -558,29 +558,19 @@ const Integrations = () => {
     
     setDisconnecting(true);
     try {
-      // Delete gmail_connections record
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        await supabase
-          .from('gmail_connections')
-          .delete()
-          .eq('user_id', user.id);
-        
-        toast.success('Gmail disconnected successfully');
-        setGmailStatus({
-          connected: false,
-          labels_count: 0,
-          inbox_type: null,
-          connected_email: null,
-          needs_reconnect: false,
-          testing: false
-        });
-      }
+      const response = await apiClient.post('/gmail/disconnect');
+      toast.success(response.data.message || 'Gmail disconnected successfully');
+      setGmailStatus({
+        connected: false,
+        labels_count: 0,
+        inbox_type: null,
+        connected_email: null,
+        needs_reconnect: false,
+        testing: false
+      });
     } catch (error) {
       console.error('Gmail disconnect error:', error);
-      toast.error('Failed to disconnect Gmail: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to disconnect Gmail: ' + (error.response?.data?.detail || error.message));
     } finally {
       setDisconnecting(false);
     }
