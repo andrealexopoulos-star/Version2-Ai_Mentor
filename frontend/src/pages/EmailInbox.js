@@ -44,20 +44,50 @@ const EmailInbox = () => {
         return;
       }
 
-      // Check Gmail connection
-      const { data: gmailData } = await supabase
-        .from('gmail_connections')
-        .select('email')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+      // Check Gmail connection via Edge Function (bypasses RLS)
+      let gmailData = null;
+      try {
+        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
+        
+        const gmailResponse = await fetch(edgeFunctionUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (gmailResponse.ok) {
+          const data = await gmailResponse.json();
+          console.log('📊 Gmail Edge Function response:', data);
+          
+          if (data.ok && data.connected) {
+            gmailData = { email: session.user?.email || data.connected_email };
+          }
+        } else {
+          console.error('Gmail Edge Function error:', gmailResponse.status);
+        }
+      } catch (gmailError) {
+        console.error('Gmail check error:', gmailError);
+      }
 
-      // Check Outlook connection
-      const { data: outlookData } = await supabase
-        .from('outlook_oauth_tokens')
-        .select('account_email')
-        .eq('user_id', session.user.id)
-        .eq('provider', 'microsoft')
-        .maybeSingle();
+      // Check Outlook connection (direct query works for Outlook)
+      let outlookData = null;
+      try {
+        const { data, error } = await supabase
+          .from('outlook_oauth_tokens')
+          .select('account_email')
+          .eq('user_id', session.user.id)
+          .eq('provider', 'microsoft')
+          .maybeSingle();
+        
+        if (data && !error) {
+          outlookData = data;
+        }
+      } catch (outlookError) {
+        console.error('Outlook check error:', outlookError);
+      }
 
       const hasGmail = !!gmailData;
       const hasOutlook = !!outlookData;
