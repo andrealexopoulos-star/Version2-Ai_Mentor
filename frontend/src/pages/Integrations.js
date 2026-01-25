@@ -651,7 +651,7 @@ const Integrations = () => {
         </div>
 
         {/* Connected Business Tools Section */}
-        {outlookStatus.connected && (
+        {(outlookStatus.connected || gmailStatus.connected) && (
           <div className="card p-4 sm:p-6" style={{ background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, var(--bg-card) 100%)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
