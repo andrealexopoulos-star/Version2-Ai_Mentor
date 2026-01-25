@@ -2485,6 +2485,229 @@ async def outlook_login(current_user: dict = Depends(get_current_user)):
     return {"auth_url": auth_url}
 
 
+@api_router.get("/auth/gmail/login")
+async def gmail_login(current_user: dict = Depends(get_current_user_supabase)):
+    """Initiate Google OAuth flow for Gmail - requires authenticated user"""
+    import hashlib
+    import hmac
+    
+    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/gmail/callback"
+    
+    # Gmail scopes - readonly access only
+    scopes = [
+        "openid",
+        "email",
+        "profile",
+        "https://www.googleapis.com/auth/gmail.readonly"
+    ]
+    scope = " ".join(scopes)
+    encoded_redirect = quote(redirect_uri, safe='')
+    encoded_scope = quote(scope, safe='')
+    
+    # Create a signed state parameter to prevent CSRF and tampering
+    # Format: gmail_auth_{user_id}_sig_{hmac_signature}
+    user_id = current_user['id']
+    signature = hmac.new(
+        JWT_SECRET.encode(),
+        f"gmail_auth_{user_id}".encode(),
+        hashlib.sha256
+    ).hexdigest()[:16]
+    
+    state = f"gmail_auth_{user_id}_sig_{signature}"
+    
+    logger.info(f"Gmail OAuth initiated for user: {current_user['email']} (ID: {user_id})")
+    
+    # Google OAuth URL with consent prompt to ensure refresh token
+    auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={GOOGLE_CLIENT_ID}&"
+        f"response_type=code&"
+        f"redirect_uri={encoded_redirect}&"
+        f"scope={encoded_scope}&"
+        f"state={state}&"
+        f"access_type=offline&"
+        f"prompt=consent"
+    )
+    
+    return {"auth_url": auth_url}
+
+
+@api_router.get("/auth/gmail/callback")
+async def gmail_callback(code: str, state: str = None, error: str = None, error_description: str = None):
+    """Handle Google OAuth callback and store tokens - SECURE IMPLEMENTATION"""
+    from fastapi.responses import RedirectResponse
+    import hashlib
+    import hmac
+    
+    frontend_url = os.environ['FRONTEND_URL']
+    
+    # Handle OAuth errors
+    if error:
+        logger.error(f"Gmail OAuth error: {error} - {error_description}")
+        return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error={error}")
+    
+    # Extract and validate state parameter
+    user_id = None
+    if state and state.startswith("gmail_auth_"):
+        state_parts = state.replace("gmail_auth_", "").split("_sig_")
+        if len(state_parts) != 2:
+            logger.error(f"Invalid state format: {state}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state")
+        
+        user_id = state_parts[0]
+        provided_signature = state_parts[1]
+        
+        # Verify signature
+        expected_signature = hmac.new(
+            JWT_SECRET.encode(),
+            f"gmail_auth_{user_id}".encode(),
+            hashlib.sha256
+        ).hexdigest()[:16]
+        
+        if not hmac.compare_digest(provided_signature, expected_signature):
+            logger.error(f"State signature mismatch for user: {user_id}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state_signature")
+        
+        logger.info(f"Gmail callback for verified user: {user_id}")
+    else:
+        logger.error(f"Invalid or missing state: {state}")
+        return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state")
+    
+    # Exchange code for tokens
+    token_url = "https://oauth2.googleapis.com/token"
+    
+    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/gmail/callback"
+    
+    payload = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code"
+    }
+    
+    logger.info(f"Gmail callback: exchanging code for tokens")
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=payload)
+        
+        if response.status_code != 200:
+            error_text = response.text
+            logger.error(f"Failed to exchange code for tokens: {error_text}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=token_exchange_failed")
+        
+        token_data = response.json()
+        access_token = token_data.get("access_token")
+        refresh_token = token_data.get("refresh_token")
+        expires_in = token_data.get("expires_in", 3600)
+        
+        if not access_token:
+            logger.error("No access token in response")
+            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=no_access_token")
+        
+        logger.info("✅ Successfully exchanged code for Gmail tokens")
+        
+        # Get user email from Google
+        google_email = None
+        google_name = None
+        try:
+            user_info_response = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if user_info_response.status_code == 200:
+                user_info = user_info_response.json()
+                google_email = user_info.get("email")
+                google_name = user_info.get("name")
+                logger.info(f"Gmail account: {google_email}")
+        except Exception as e:
+            logger.warning(f"Could not fetch Google user info: {e}")
+        
+        # Store tokens in Supabase gmail_connections table
+        try:
+            from datetime import datetime, timedelta
+            
+            token_expiry = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
+            
+            connection_data = {
+                "user_id": user_id,
+                "email": google_email,
+                "scopes": "https://www.googleapis.com/auth/gmail.readonly",
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_expiry": token_expiry,
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            result = supabase_admin.table("gmail_connections").upsert(
+                connection_data,
+                on_conflict="user_id"
+            ).execute()
+            
+            logger.info(f"✅ Gmail tokens stored for user {user_id}")
+            
+        except Exception as db_error:
+            logger.error(f"Failed to store Gmail tokens: {db_error}")
+            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=storage_failed")
+        
+        # Redirect back to integrations with success
+        redirect_url = f"{frontend_url}/integrations?gmail_connected=true"
+        if google_email:
+            redirect_url += f"&connected_email={quote(google_email)}"
+        
+        logger.info(f"✅ Gmail OAuth complete, redirecting to: {redirect_url}")
+        return RedirectResponse(url=redirect_url)
+
+
+@api_router.get("/gmail/status")
+async def gmail_status(current_user: dict = Depends(get_current_user_supabase)):
+    """Get Gmail connection status"""
+    try:
+        user_id = current_user["id"]
+        
+        # Check if user has Gmail connection
+        result = supabase_admin.table("gmail_connections").select("*").eq("user_id", user_id).execute()
+        
+        if not result.data or len(result.data) == 0:
+            return {
+                "connected": False,
+                "labels_count": 0,
+                "inbox_type": None,
+                "connected_email": None
+            }
+        
+        connection = result.data[0]
+        
+        return {
+            "connected": True,
+            "labels_count": 0,  # Will be updated by Edge Function test
+            "inbox_type": None,  # Will be updated by Edge Function test
+            "connected_email": connection.get("email")
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking Gmail status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/gmail/disconnect")
+async def gmail_disconnect(current_user: dict = Depends(get_current_user_supabase)):
+    """Disconnect Gmail and remove all stored tokens"""
+    try:
+        user_id = current_user["id"]
+        
+        # Delete Gmail connection
+        supabase_admin.table("gmail_connections").delete().eq("user_id", user_id).execute()
+        
+        logger.info(f"Gmail disconnected for user: {user_id}")
+        
+        return {"message": "Gmail disconnected successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error disconnecting Gmail: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.get("/auth/outlook/callback")
 async def outlook_callback(code: str, state: str = None, error: str = None, error_description: str = None):
     """Handle Microsoft OAuth callback and store tokens - SECURE IMPLEMENTATION"""
