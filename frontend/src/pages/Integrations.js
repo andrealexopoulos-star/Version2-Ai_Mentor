@@ -28,6 +28,14 @@ const Integrations = () => {
     user_email: null,
     needs_reconnect: false // Track if reconnection required
   });
+  const [gmailStatus, setGmailStatus] = useState({
+    connected: false,
+    labels_count: 0,
+    inbox_type: null, // 'priority' or 'standard'
+    connected_email: null,
+    needs_reconnect: false,
+    testing: false
+  });
 
   // Handle URL parameters from OAuth callback
   useEffect(() => {
