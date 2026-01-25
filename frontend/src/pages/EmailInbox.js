@@ -588,38 +588,6 @@ const EmailInbox = () => {
             </Button>
           </div>
         ) : null}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Inbox className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-              <span className="badge badge-primary">
-                <Sparkles className="w-3 h-3" />
-                AI-Powered
-              </span>
-            </div>
-            <h1 style={{ color: 'var(--text-primary)' }}>Priority Inbox</h1>
-            <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
-              AI-prioritized emails based on your business goals
-            </p>
-          </div>
-          
-          <Button
-            onClick={runPriorityAnalysis}
-            disabled={analyzing}
-            className="btn-primary"
-          >
-            {analyzing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Analyze Inbox
-              </>
-            )}
-          </Button>
-        </div>
 
         {/* Strategic Insights Banner */}
         {analysis.strategic_insights && (
