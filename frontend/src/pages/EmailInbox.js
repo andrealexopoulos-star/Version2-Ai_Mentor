@@ -516,8 +516,78 @@ const EmailInbox = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl animate-fade-in">
-        {/* Header */}
+        {/* Header with Active Provider Badge */}
         <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Inbox className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
+              <span className="badge badge-primary">
+                <Sparkles className="w-3 h-3" />
+                AI-Powered
+              </span>
+              {activeProvider && (
+                <span className="badge badge-secondary">
+                  {activeProvider === 'gmail' ? '📧 Gmail' : '📮 Outlook'}
+                </span>
+              )}
+            </div>
+            <h1 style={{ color: 'var(--text-primary)' }}>Priority Inbox</h1>
+            <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+              {activeProvider 
+                ? `AI-prioritized emails from ${activeProvider === 'gmail' ? 'Gmail' : 'Outlook'}`
+                : 'Connect an email provider to get started'}
+            </p>
+          </div>
+          
+          {activeProvider && (
+            <Button
+              onClick={runPriorityAnalysis}
+              disabled={analyzing}
+              className="btn-primary"
+            >
+              {analyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Analyze Inbox
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+
+        {/* Connection Status - Show if no provider connected */}
+        {checkingConnection ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+          </div>
+        ) : !activeProvider ? (
+          <div 
+            className="text-center py-16 rounded-2xl"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+          >
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'var(--bg-tertiary)' }}
+            >
+              <Mail className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+            </div>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              No Email Provider Connected
+            </h3>
+            <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
+              Connect Gmail or Outlook to enable AI-powered email prioritization
+            </p>
+            <Button onClick={handleConnect} className="btn-primary">
+              <ArrowRight className="w-4 h-4 mr-2" />
+              Connect Email Provider
+            </Button>
+          </div>
+        ) : null}
           <div>
             <div className="flex items-center gap-3 mb-2">
               <Inbox className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
