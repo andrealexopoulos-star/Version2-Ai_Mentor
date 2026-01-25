@@ -831,8 +831,10 @@ const Integrations = () => {
         {/* Integration Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filteredIntegrations.map((integration) => {
-            const isConnected = integration.id === 'outlook' && outlookStatus.connected;
-            const needsReconnect = integration.id === 'outlook' && outlookStatus.needs_reconnect;
+            const isConnected = (integration.id === 'outlook' && outlookStatus.connected) || 
+                               (integration.id === 'gmail' && gmailStatus.connected);
+            const needsReconnect = (integration.id === 'outlook' && outlookStatus.needs_reconnect) ||
+                                  (integration.id === 'gmail' && gmailStatus.needs_reconnect);
             
             return (
               <div key={integration.id} className={`integration-card ${isConnected ? 'border-2 border-green-500' : needsReconnect ? 'border-2 border-orange-400' : ''}`}>
