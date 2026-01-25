@@ -475,37 +475,17 @@ const Integrations = () => {
   const handleGmailConnect = async () => {
     setConnecting('gmail');
     try {
-      // Get current Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 Initiating Gmail OAuth via backend proxy...');
       
-      if (!session || !session.access_token) {
-        toast.error('Please log in to connect Gmail');
-        setConnecting(null);
-        return;
-      }
-
-      console.log('🔐 Initiating Gmail OAuth with required scopes...');
-
-      // Use Supabase OAuth to connect Gmail with Gmail API scopes
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/integrations?gmail_connected=true`,
-          scopes: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent' // Force consent to ensure refresh token
-          }
-        }
-      });
-
-      if (error) {
-        console.error('Gmail OAuth error:', error);
-        toast.error('Failed to connect Gmail: ' + error.message);
-        setConnecting(null);
-      }
+      // Call backend to get Gmail OAuth URL (same pattern as Outlook)
+      const response = await apiClient.get('/auth/gmail/login');
+      const authUrl = response.data.auth_url;
       
-      // User will be redirected to Google OAuth, then back to /integrations
+      console.log('Redirecting to Google OAuth via backend proxy');
+      
+      // Redirect to backend OAuth endpoint
+      window.location.href = authUrl;
+      
     } catch (error) {
       console.error('Gmail connection error:', error);
       toast.error('Failed to connect Gmail. Please try again.');
