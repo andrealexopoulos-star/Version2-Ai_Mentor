@@ -390,6 +390,12 @@ const Integrations = () => {
       return;
     }
     
+    // Special handling for Gmail
+    if (integration.isGmail || integration.id === 'gmail') {
+      handleGmailConnect();
+      return;
+    }
+    
     if (integration.tier === 'enterprise') {
       setShowModal({
         type: 'enterprise',
