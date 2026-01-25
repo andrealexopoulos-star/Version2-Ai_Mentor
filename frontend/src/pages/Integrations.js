@@ -41,8 +41,24 @@ const Integrations = () => {
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');
     const outlookError = searchParams.get('outlook_error');
+    const gmailConnected = searchParams.get('gmail_connected');
     const jobId = searchParams.get('job_id');
     const connectedEmail = searchParams.get('connected_email');
+
+    // Handle Gmail OAuth callback
+    if (gmailConnected === 'true') {
+      console.log('✅ Gmail OAuth completed successfully');
+      
+      toast.success('Gmail connected successfully! Verifying access...');
+      
+      // Clear URL parameters
+      setSearchParams({});
+      
+      // Verify connection with Edge Function
+      setTimeout(() => {
+        checkGmailStatus();
+      }, 1000);
+    }
 
     if (outlookConnected === 'true') {
       console.log('✅ Outlook OAuth completed successfully - setting optimistic connected state');
