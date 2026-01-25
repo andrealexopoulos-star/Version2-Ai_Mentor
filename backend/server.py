@@ -3914,7 +3914,7 @@ class ConversationRename(BaseModel):
 @api_router.get("/soundboard/conversations")
 async def get_soundboard_conversations(current_user: dict = Depends(get_current_user)):
     """Get all soundboard conversations for user - SUPABASE VERSION"""
-    result = await supabase_admin.table("soundboard_conversations").select("*").eq("user_id", current_user["id"]).order("updated_at", desc=True).limit(50).execute()
+    result = supabase_admin.table("soundboard_conversations").select("*").eq("user_id", current_user["id"]).order("updated_at", desc=True).limit(50).execute()
     conversations = result.data if result.data else []
     
     return {"conversations": conversations}
