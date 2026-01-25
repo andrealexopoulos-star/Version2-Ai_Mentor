@@ -102,6 +102,7 @@ const Integrations = () => {
 
   useEffect(() => {
     checkOutlookStatus();
+    checkGmailStatus();
   }, []);
 
   const checkOutlookStatus = async () => {
