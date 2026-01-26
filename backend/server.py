@@ -7311,6 +7311,40 @@ async def dismiss_notification(notification_id: str, current_user: dict = Depend
 
 # ==================== ROOT ====================
 
+
+# ==================== MERGE.DEV INTEGRATION ====================
+
+@api_router.post("/integrations/merge/link-token")
+async def create_merge_link_token(current_user: dict = Depends(get_current_user)):
+    """Generate Merge.dev link token for user"""
+    merge_api_key = os.environ.get("MERGE_API_KEY")
+    
+    if not merge_api_key:
+        raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
+    
+    user_id = current_user["id"]
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.merge.dev/api/integrations/create-link-token",
+            headers={
+                "Authorization": f"Bearer {merge_api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "end_user_origin_id": user_id,
+                "end_user_organization_name": "BIQC User Org",
+                "categories": ["accounting", "crm", "hris", "ats"]
+            }
+        )
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        
+        data = response.json()
+        return {"link_token": data.get("link_token")}
+
+
 @api_router.get("/")
 async def root():
     return {"message": "Strategic Advisor API", "version": "1.0.0"}
