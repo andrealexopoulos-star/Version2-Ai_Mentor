@@ -41,7 +41,7 @@ This is causing OAuth redirect failures because:
 
 **APP_BASE_URL (Single Source of Truth):**
 ```
-https://mobile-auth-app-5.preview.emergentagent.com
+https://biqc-fixer.preview.emergentagent.com
 ```
 
 **Propagation Map:**
@@ -77,7 +77,7 @@ https://mobile-auth-app-5.preview.emergentagent.com
 You MUST update `/app/backend/.env`:
 
 ```bash
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_ID=biqc-fixer
 ```
 
 **Source:** From `/app/memory/PRD.md` line 91
@@ -90,13 +90,13 @@ Navigate to: **Supabase Dashboard** → **Authentication** → **URL Configurati
 
 **Site URL:**
 ```
-https://mobile-auth-app-5.preview.emergentagent.com
+https://biqc-fixer.preview.emergentagent.com
 ```
 
 **Redirect URLs:** (Add all)
 ```
-https://mobile-auth-app-5.preview.emergentagent.com/auth/callback
-https://mobile-auth-app-5.preview.emergentagent.com/**
+https://biqc-fixer.preview.emergentagent.com/auth/callback
+https://biqc-fixer.preview.emergentagent.com/**
 ```
 
 ---

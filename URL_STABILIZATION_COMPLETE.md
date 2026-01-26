@@ -16,7 +16,7 @@
 
 ### 1. ✅ Azure Client ID Correction
 **Before:** `AZURE_CLIENT_ID=business-iq-1` (legacy fork name)  
-**After:** `AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866` (proper GUID)  
+**After:** `AZURE_CLIENT_ID=biqc-fixer` (proper GUID)  
 **File:** `/app/backend/.env`
 
 ### 2. ✅ Test File Decontamination
@@ -105,7 +105,7 @@ Status: ✅ CLEAN
 
 ```javascript
 // OLD (BROKEN):
-const apiUrl = "https://advisor-chat-1.preview.emergentagent.com/api"
+const apiUrl = "https://biqc-fixer.preview.emergentagent.com/api"
 
 // NEW (FORK-SAFE):
 import { getApiBaseUrl } from 'config/urls';
@@ -116,7 +116,7 @@ const apiUrl = getApiBaseUrl();  // Automatically adapts to current fork
 
 ```python
 # OLD (BROKEN):
-redirect_uri = "https://business-iq-1.preview.emergentagent.com/callback"
+redirect_uri = "https://biqc-fixer.preview.emergentagent.com/callback"
 
 # NEW (FORK-SAFE):
 from config.urls import get_oauth_redirect_uri
@@ -129,16 +129,16 @@ redirect_uri = get_oauth_redirect_uri('/callback')  # Uses BACKEND_URL env var
 
 ### Frontend (`/app/frontend/.env`)
 ```bash
-REACT_APP_BACKEND_URL=https://mobile-auth-app-5.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://biqc-fixer.preview.emergentagent.com
 REACT_APP_SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ### Backend (`/app/backend/.env`)
 ```bash
-BACKEND_URL=https://mobile-auth-app-5.preview.emergentagent.com
-FRONTEND_URL=https://mobile-auth-app-5.preview.emergentagent.com
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+BACKEND_URL=https://biqc-fixer.preview.emergentagent.com
+FRONTEND_URL=https://biqc-fixer.preview.emergentagent.com
+AZURE_CLIENT_ID=biqc-fixer
 AZURE_CLIENT_SECRET=o8S8Q~3.q3nakGJkPOSZ.WkcdA0xsdNJUZ8Y5aVb
 ```
 
@@ -154,13 +154,13 @@ Navigate to: **Authentication** → **URL Configuration**
 
 **Site URL:**
 ```
-https://mobile-auth-app-5.preview.emergentagent.com
+https://biqc-fixer.preview.emergentagent.com
 ```
 
 **Redirect URLs:**
 ```
-https://mobile-auth-app-5.preview.emergentagent.com/auth/callback
-https://mobile-auth-app-5.preview.emergentagent.com/**
+https://biqc-fixer.preview.emergentagent.com/auth/callback
+https://biqc-fixer.preview.emergentagent.com/**
 ```
 
 ### Azure AD App Registration (Already Correct)
@@ -179,7 +179,7 @@ https://uxyqpdfftxpkzeppqtvk.supabase.co/auth/v1/callback
 ### 1. OAuth Flow Test
 ```bash
 # User flow:
-1. Visit https://mobile-auth-app-5.preview.emergentagent.com
+1. Visit https://biqc-fixer.preview.emergentagent.com
 2. Click "Continue with Microsoft"
 3. Complete Microsoft login
 4. Verify redirect to /auth/callback

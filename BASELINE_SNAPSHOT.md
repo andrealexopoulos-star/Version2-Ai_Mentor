@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://mobile-auth-app-5.preview.emergentagent.com`
-- **Backend:** `https://mobile-auth-app-5.preview.emergentagent.com/api`
+- **Frontend:** `https://biqc-fixer.preview.emergentagent.com`
+- **Backend:** `https://biqc-fixer.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

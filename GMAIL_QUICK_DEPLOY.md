@@ -65,7 +65,7 @@ Add these:
 1. **Sign out** from your BIQC app (to pick up new Gmail scope)
 2. **Sign in** again with Google
 3. Google will show: "BIQC wants to access your Gmail" (approve this)
-4. Navigate to: `https://mobile-auth-app-5.preview.emergentagent.com/gmail-test`
+4. Navigate to: `https://biqc-fixer.preview.emergentagent.com/gmail-test`
 5. Click: **Test Gmail Connection**
 
 **Expected Result:**

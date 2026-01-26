@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://mobile-auth-app-5.preview.emergentagent.com
+**Test URL:** https://biqc-fixer.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://mobile-auth-app-5.preview.emergentagent.com/advisor
+- [ ] Navigate to https://biqc-fixer.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://mobile-auth-app-5.preview.emergentagent.com/
+**Landing:** https://biqc-fixer.preview.emergentagent.com/
 
-**Login:** https://mobile-auth-app-5.preview.emergentagent.com/login-supabase
+**Login:** https://biqc-fixer.preview.emergentagent.com/login-supabase
 
-**Register:** https://mobile-auth-app-5.preview.emergentagent.com/register-supabase
+**Register:** https://biqc-fixer.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://mobile-auth-app-5.preview.emergentagent.com/pricing
+**Pricing:** https://biqc-fixer.preview.emergentagent.com/pricing
 
-**Terms:** https://mobile-auth-app-5.preview.emergentagent.com/terms
+**Terms:** https://biqc-fixer.preview.emergentagent.com/terms
 
-**Advisor:** https://mobile-auth-app-5.preview.emergentagent.com/advisor
+**Advisor:** https://biqc-fixer.preview.emergentagent.com/advisor
 
 ---
 
