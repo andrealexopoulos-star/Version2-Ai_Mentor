@@ -726,7 +726,7 @@ const Integrations = () => {
     }
   };
 
-  // PHASE 2: Merge Link UI Integration (React Hook Pattern)
+  // PHASE 2: Merge Link UI Integration (React Hook Pattern - remove duplicate)
   const [openingMergeLink, setOpeningMergeLink] = useState(false);
   
   const openMergeLink = async () => {
