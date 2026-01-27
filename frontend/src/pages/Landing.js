@@ -51,16 +51,16 @@ const Landing = () => {
       name: 'Professional',
       price: '$29',
       period: '/mo',
-      description: 'Full Personalised AI Business Advisory',
-      features: ['Unlimited AI advisory chat', 'Complete business profile', 'Unlimited uploads', 'SOP & Action generators', 'Market analysis', 'Priority support'],
+      description: 'Full Personalised AI Business Intelligence',
+      features: ['Unlimited AI intelligence chat', 'Complete business profile', 'Unlimited uploads', 'SOP & Action generators', 'Market analysis', 'Priority support'],
       highlight: true
     },
     {
       name: 'Enterprise',
       price: '$99',
       period: '/mo',
-      description: 'Advanced Personalised Advisory for teams',
-      features: ['Everything in Pro', '10 team members', 'Admin dashboard', 'API access', 'Dedicated advisor'],
+      description: 'Advanced Intelligence Platform for teams',
+      features: ['Everything in Pro', '10 team members', 'Admin dashboard', 'API access', 'Dedicated support'],
       highlight: false
     }
   ];
