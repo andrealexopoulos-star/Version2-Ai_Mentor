@@ -875,6 +875,33 @@ const Integrations = () => {
           </div>
         )}
 
+        {/* Merge.dev Test Button (Development) */}
+        <div className="p-4 rounded-xl border-2 border-dashed" style={{ borderColor: 'var(--border-color)' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Merge.dev Integration Test</h3>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Test the backend link token endpoint</p>
+            </div>
+            <Button
+              onClick={testMergeLinkToken}
+              disabled={testingMerge}
+              className="btn-primary"
+            >
+              {testingMerge ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                  Testing...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Test Merge Link Token
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
