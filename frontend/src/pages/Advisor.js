@@ -253,8 +253,8 @@ Acknowledge you've noticed activity in their inbox that may need attention. Do N
         <div className="border-b flex-shrink-0" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
           <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-serif truncate" style={{ color: 'var(--text-primary)' }}>MyAdvisor</h1>
-              <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Your Chief Business Advisor</p>
+              <h1 className="text-xl sm:text-2xl font-serif truncate" style={{ color: 'var(--text-primary)' }}>BIQC Intelligence</h1>
+              <p className="text-xs sm:text-sm truncate" style={{ color: 'var(--text-muted)' }}>Evidence-backed intelligence for strategic decisions</p>
             </div>
             {messages.length > 0 && (
               <Button 
