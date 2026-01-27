@@ -789,29 +789,26 @@ const Integrations = () => {
       
       console.log('✅ Link token received:', link_token);
       
-      // Step 3: Set link token to trigger MergeLink component render
+      // Step 3: Set link token and trigger modal
       setMergeLinkToken(link_token);
-      setOpeningMergeLink(false);
-      console.log('✅ MergeLink component will render with token');
+      
+      // Step 4: Open modal after token is set
+      setTimeout(() => {
+        if (mergeLinkReady) {
+          openMergeLinkModal();
+          console.log('✅ Merge Link modal opened');
+        } else {
+          console.error('❌ Merge Link not ready');
+          toast.error('Merge Link not ready. Please try again.');
+        }
+        setOpeningMergeLink(false);
+      }, 100);
       
     } catch (error) {
       console.error('❌ Error opening Merge Link:', error);
       toast.error('Failed to open Merge Link');
       setOpeningMergeLink(false);
     }
-  };
-
-  // Merge Link callbacks
-  const handleMergeSuccess = (public_token) => {
-    console.log('✅ Merge onboarding success');
-    console.log('📦 Public Token:', public_token);
-    toast.success('Integration connected successfully!');
-    setMergeLinkToken(null); // Close modal
-  };
-
-  const handleMergeExit = () => {
-    console.log('ℹ️ Merge onboarding exited');
-    setMergeLinkToken(null); // Close modal
   };
 
 
