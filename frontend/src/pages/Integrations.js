@@ -641,6 +641,62 @@ const Integrations = () => {
 
   const closeModal = () => setShowModal(null);
 
+
+  // TEST: Merge.dev link token endpoint
+  const testMergeLinkToken = async () => {
+    try {
+      console.log('🔍 Testing Merge.dev link token endpoint...');
+      
+      // Get active Supabase session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('❌ No active session:', sessionError);
+        toast.error('Please log in to test Merge integration');
+        return;
+      }
+      
+      console.log('✅ Active session found');
+      
+      // Call backend endpoint with session token
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/link-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      console.log('📊 Response Status:', response.status);
+      console.log('📦 Response Data:', data);
+      
+      if (response.ok && data.link_token) {
+        console.log('✅ SUCCESS! Link token:', data.link_token);
+        toast.success('Merge.dev link token retrieved successfully!');
+      } else {
+        console.error('❌ Failed:', data);
+        toast.error(`Failed to get link token: ${data.detail || 'Unknown error'}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error calling Merge endpoint:', error);
+      toast.error('Error testing Merge integration');
+    }
+  };
+
+  // Call test on component mount for validation
+  useEffect(() => {
+    // Only run once on mount
+    const hasRun = sessionStorage.getItem('merge_test_run');
+    if (!hasRun) {
+      sessionStorage.setItem('merge_test_run', 'true');
+      testMergeLinkToken();
+    }
+  }, []);
+
+
   return (
     <DashboardLayout>
       <div className="space-y-6 sm:space-y-8 max-w-6xl animate-fade-in">
