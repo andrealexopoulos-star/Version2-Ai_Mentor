@@ -275,7 +275,7 @@ const Landing = () => {
               { 
                 num: '04', 
                 title: 'Start Getting Strategic Advice', 
-                desc: 'Chat with MyAdvisor, run business diagnoses, get strategic suggestions daily. Your AI mentor knows your business, your goals, your constraints — and guides you accordingly.',
+                desc: 'Chat with BIQC Intelligence, run business diagnoses, get strategic guidance daily. Your AI platform knows your business, your goals, your constraints — and provides evidence-backed intelligence accordingly.',
                 icon: '💡'
               },
               { 
@@ -327,7 +327,7 @@ const Landing = () => {
               Simple, transparent pricing
             </h2>
             <p className="text-slate-600 text-lg max-w-2xl mx-auto">
-              Start free with personalised AI advisory and scale as you grow. No hidden fees.
+              Start free with personalised AI intelligence and scale as you grow. No hidden fees.
             </p>
           </div>
 
