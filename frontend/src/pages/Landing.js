@@ -397,7 +397,7 @@ const Landing = () => {
           </h2>
           <p className="text-blue-100 text-xl mb-10 max-w-2xl mx-auto">
             Join hundreds of business owners who stopped guessing and started growing with 
-            their <strong>Personalised AI Business Advisor</strong>.
+            their <strong>Personalised AI Business Intelligence Platform</strong>.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
@@ -447,7 +447,7 @@ const Landing = () => {
               © 2025 The Strategy Squad Pty Ltd. All rights reserved.
             </p>
             <p className="text-slate-600 text-xs">
-              Personalised AI Business Advisory • General Information Only • Not Professional Advice
+              Personalised AI Business Intelligence • General Information Only • Not Professional Advice
             </p>
           </div>
         </div>
