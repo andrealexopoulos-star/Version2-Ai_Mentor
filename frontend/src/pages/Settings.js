@@ -184,7 +184,7 @@ const Settings = () => {
             <TabsContent value="preferences">
               <Card>
                 <CardHeader>
-                  <CardTitle>AI Advisor Preferences</CardTitle>
+                  <CardTitle>AI Intelligence Preferences</CardTitle>
                   <CardDescription>Customize how your AI intelligence system communicates and provides guidance</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
