@@ -7344,6 +7344,52 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
             error_detail = response.text
             logger.error(f"Merge.dev API error: Status {response.status_code}, Response: {error_detail}")
             raise HTTPException(status_code=response.status_code, detail=error_detail)
+
+
+@api_router.post("/integrations/merge/exchange-account-token")
+async def exchange_merge_account_token(
+    public_token: str = Form(...),
+    category: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Exchange Merge public_token for account_token and persist securely"""
+    merge_api_key = os.environ.get("MERGE_API_KEY")
+    
+    if not merge_api_key:
+        raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
+    
+    user_id = current_user["id"]
+    
+    # Exchange public_token for account_token
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://api.merge.dev/api/integrations/account-token/{public_token}",
+            headers={"Authorization": f"Bearer {merge_api_key}"}
+        )
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Failed to exchange token")
+        
+        data = response.json()
+        account_token = data.get("account_token")
+        integration_name = data.get("integration", {}).get("name", "unknown")
+        
+        if not account_token:
+            raise HTTPException(status_code=500, detail="No account_token in response")
+    
+    # Upsert into integration_accounts (one per user + category)
+    result = supabase_admin.table("integration_accounts").upsert({
+        "user_id": user_id,
+        "provider": integration_name,
+        "category": category,
+        "account_token": account_token
+    }, on_conflict="user_id,category").execute()
+    
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to store account_token")
+    
+    return {"success": True}
+
         
         data = response.json()
         return {"link_token": data.get("link_token")}
