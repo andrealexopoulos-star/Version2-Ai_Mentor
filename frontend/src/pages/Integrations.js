@@ -1268,6 +1268,16 @@ const Integrations = () => {
               </>
             )}
             
+
+      {/* Merge Link Component - Renders when linkToken is set */}
+      {mergeLinkToken && (
+        <MergeLink
+          linkToken={mergeLinkToken}
+          onSuccess={handleMergeSuccess}
+          onClose={handleMergeExit}
+        />
+      )}
+
             {showModal.type === 'coming-soon' && (
               <>
                 <div 
