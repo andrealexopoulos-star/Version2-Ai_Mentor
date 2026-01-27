@@ -28,16 +28,21 @@ const Dashboard = () => {
   const checkOnboarding = async () => {
     try {
       const response = await apiClient.get('/onboarding/status');
+      
+      // INTELLIGENCE GATE: Fail open on errors, show choice if incomplete
       if (!response.data.completed) {
-        navigate('/onboarding', { replace: true });
-        return;
+        // Don't force redirect - user can skip
+        // Show degraded intelligence mode banner instead
+        console.log('ℹ️ Onboarding incomplete - degraded intelligence mode active');
       }
+      
       setCheckingOnboarding(false);
       fetchStats();
       fetchFocus();
       checkOutlookStatus();
     } catch (error) {
-      console.error('Failed to check onboarding:', error);
+      // FAIL OPEN: If onboarding status unknown, allow access
+      console.log('⚠️ Onboarding status unknown - failing open');
       setCheckingOnboarding(false);
       fetchStats();
       fetchFocus();
