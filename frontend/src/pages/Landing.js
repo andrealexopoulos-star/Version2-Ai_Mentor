@@ -43,8 +43,8 @@ const Landing = () => {
       name: 'Starter',
       price: 'Free',
       period: '',
-      description: 'Get started with Personalised AI Advisory',
-      features: ['10 AI advisory messages/month', 'Basic business profile', '3 document uploads', 'Email support'],
+      description: 'Get started with Personalised AI Intelligence',
+      features: ['10 AI intelligence messages/month', 'Basic business profile', '3 document uploads', 'Email support'],
       highlight: false
     },
     {
