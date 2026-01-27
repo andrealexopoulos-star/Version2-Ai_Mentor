@@ -218,10 +218,10 @@ const LoginSupabase = () => {
         <div className="absolute inset-0 bg-grid-white/10"></div>
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <h2 className="text-4xl font-bold mb-6">
-            Your AI-Powered Business Advisor
+            Your AI-Powered Business Intelligence Platform
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-md">
-            Get personalized insights, strategic recommendations, and stay ahead with real-time intelligence.
+            Get personalized insights, strategic intelligence, and stay ahead with real-time business signals.
           </p>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -234,7 +234,7 @@ const LoginSupabase = () => {
               <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                 <Zap className="w-4 h-4" />
               </div>
-              <span className="text-lg">MyAdvisor - Strategic guidance</span>
+              <span className="text-lg">BIQC Intelligence - Strategic guidance</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
