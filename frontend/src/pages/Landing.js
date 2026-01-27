@@ -108,7 +108,7 @@ const Landing = () => {
             <div className="lg:col-span-7 space-y-6 lg:space-y-8 animate-fade-in">
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
                 <Sparkles className="w-4 h-4 text-blue-700" />
-                <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Advisory</span>
+                <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Intelligence</span>
               </div>
               
               <h1 className="font-semibold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-slate-900 leading-tight tracking-tight">
@@ -117,7 +117,7 @@ const Landing = () => {
               </h1>
               
               <p className="text-base sm:text-lg lg:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal">
-                <strong className="text-slate-900 font-semibold">BIQC</strong> continuously learns your business and delivers sound, personalised advice.
+                <strong className="text-slate-900 font-semibold">BIQC</strong> continuously learns your business and delivers sound, personalised intelligence.
               </p>
               
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
@@ -178,7 +178,7 @@ const Landing = () => {
                     </div>
                     <div>
                       <p className="font-semibold text-base text-slate-900 mb-0.5">24/7 Available</p>
-                      <p className="text-slate-600 text-xs">Strategic advice whenever you need it</p>
+                      <p className="text-slate-600 text-xs">Strategic intelligence whenever you need it</p>
                     </div>
                   </div>
                 </div>
