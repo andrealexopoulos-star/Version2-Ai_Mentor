@@ -770,34 +770,39 @@ const Integrations = () => {
       
       console.log('✅ Link token received:', link_token);
       
-      // Step 3: Check if MergeLink is available
-      if (typeof window.MergeLink === 'undefined') {
-        console.error('❌ MergeLink SDK not loaded');
-        toast.error('Merge Link failed to load (see console)');
+      // Step 3: Initialize and open Merge Link
+      console.log('✅ Initializing Merge Link...');
+      
+      try {
+        // Create Merge Link instance
+        const mergeLink = window.Merge.link({
+          linkToken: link_token,
+          onSuccess: (public_token) => {
+            console.log('✅ Merge Link Success!');
+            console.log('📦 Public Token:', public_token);
+            toast.success('Integration connected successfully!');
+            setOpeningMergeLink(false);
+          },
+          onExit: () => {
+            console.log('ℹ️ Merge Link exited by user');
+            setOpeningMergeLink(false);
+          },
+          onError: (error) => {
+            console.error('❌ Merge Link Error:', error);
+            toast.error('Integration error occurred');
+            setOpeningMergeLink(false);
+          }
+        });
+        
+        // Open the modal
+        mergeLink.openLink();
+        console.log('✅ Merge Link modal opened');
+        
+      } catch (error) {
+        console.error('❌ Failed to initialize Merge Link:', error);
+        toast.error('Failed to open Merge Link');
         setOpeningMergeLink(false);
-        return;
       }
-      
-      console.log('✅ Opening Merge Link modal...');
-      
-      // Step 4: Open Merge Link modal
-      window.MergeLink.openLink(link_token, {
-        onSuccess: (public_token) => {
-          console.log('✅ Merge Link Success!');
-          console.log('📦 Public Token:', public_token);
-          toast.success('Integration connected successfully!');
-          setOpeningMergeLink(false);
-        },
-        onExit: () => {
-          console.log('ℹ️ Merge Link exited by user');
-          setOpeningMergeLink(false);
-        },
-        onError: (error) => {
-          console.error('❌ Merge Link Error:', error);
-          toast.error('Integration error occurred');
-          setOpeningMergeLink(false);
-        }
-      });
       
     } catch (error) {
       console.error('❌ Error opening Merge Link:', error);
