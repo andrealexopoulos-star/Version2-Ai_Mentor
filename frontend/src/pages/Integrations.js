@@ -726,8 +726,7 @@ const Integrations = () => {
     }
   };
 
-  // PHASE 2: Merge Link UI Integration (React Component Pattern)
-  const [mergeLinkToken, setMergeLinkToken] = useState(null);
+  // PHASE 2: Merge Link UI Integration (React Hook Pattern)
   const [openingMergeLink, setOpeningMergeLink] = useState(false);
   
   const openMergeLink = async () => {
