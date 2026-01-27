@@ -10,7 +10,7 @@ import {
   LogOut, ShieldAlert, RefreshCw
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { MergeLink } from '@mergeapi/react-merge-link';
+import { useMergeLink } from '@mergeapi/react-merge-link';
 
 const Integrations = () => {
   const navigate = useNavigate();
@@ -21,6 +21,23 @@ const Integrations = () => {
   const [connecting, setConnecting] = useState(null);
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  
+  // Merge Link integration
+  const [mergeLinkToken, setMergeLinkToken] = useState(null);
+  const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
+    linkToken: mergeLinkToken,
+    onSuccess: (public_token) => {
+      console.log('✅ Merge onboarding success');
+      console.log('📦 Public Token:', public_token);
+      toast.success('Integration connected successfully!');
+      setMergeLinkToken(null);
+    },
+    onExit: () => {
+      console.log('ℹ️ Merge onboarding exited');
+      setMergeLinkToken(null);
+    }
+  });
+  
   const [outlookStatus, setOutlookStatus] = useState({ 
     connected: false, 
     emails_synced: 0,
