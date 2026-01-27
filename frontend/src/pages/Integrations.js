@@ -772,34 +772,10 @@ const Integrations = () => {
       
       console.log('✅ Link token received:', link_token);
       
-      // Step 3: Defensive check - ensure MergeLink SDK is loaded
-      if (typeof window.MergeLink === 'undefined') {
-        console.error('❌ MergeLink SDK not loaded - window.MergeLink is undefined');
-        toast.error('Merge Link SDK failed to load. Please refresh the page.');
-        setOpeningMergeLink(false);
-        return;
-      }
-      
-      console.log('✅ MergeLink SDK detected, opening modal...');
-      
-      // Step 4: Open Merge Link modal
-      window.MergeLink.openLink(link_token, {
-        onSuccess: (public_token) => {
-          console.log('✅ Merge Link Success!');
-          console.log('📦 Public Token:', public_token);
-          toast.success('Integration connected successfully!');
-          setOpeningMergeLink(false);
-        },
-        onExit: () => {
-          console.log('ℹ️ Merge Link exited by user');
-          setOpeningMergeLink(false);
-        },
-        onError: (error) => {
-          console.error('❌ Merge Link Error:', error);
-          toast.error('Integration error occurred');
-          setOpeningMergeLink(false);
-        }
-      });
+      // Step 3: Set link token to trigger MergeLink component render
+      setMergeLinkToken(link_token);
+      setOpeningMergeLink(false);
+      console.log('✅ MergeLink component will render with token');
       
     } catch (error) {
       console.error('❌ Error opening Merge Link:', error);
@@ -807,6 +783,20 @@ const Integrations = () => {
       setOpeningMergeLink(false);
     }
   };
+
+  // Merge Link callbacks
+  const handleMergeSuccess = (public_token) => {
+    console.log('✅ Merge onboarding success');
+    console.log('📦 Public Token:', public_token);
+    toast.success('Integration connected successfully!');
+    setMergeLinkToken(null); // Close modal
+  };
+
+  const handleMergeExit = () => {
+    console.log('ℹ️ Merge onboarding exited');
+    setMergeLinkToken(null); // Close modal
+  };
+
 
 
 
