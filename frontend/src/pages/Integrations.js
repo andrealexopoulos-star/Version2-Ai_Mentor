@@ -975,6 +975,73 @@ const Integrations = () => {
           </div>
         )}
 
+        {/* PHASE 2: Merge Unified Integrations */}
+        <div className="p-6 rounded-xl border-2" style={{ 
+          borderColor: 'var(--accent-primary)', 
+          background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%)'
+        }}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-primary)' }}>
+                  <Plug className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  Merge Unified Integrations
+                </h3>
+              </div>
+              <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                Connect to 200+ business tools through a single unified integration. 
+                Accounting, CRM, HRIS, and ATS platforms supported.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ 
+                  background: 'rgba(79, 70, 229, 0.1)', 
+                  color: 'var(--accent-primary)' 
+                }}>
+                  Accounting
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ 
+                  background: 'rgba(79, 70, 229, 0.1)', 
+                  color: 'var(--accent-primary)' 
+                }}>
+                  CRM
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ 
+                  background: 'rgba(79, 70, 229, 0.1)', 
+                  color: 'var(--accent-primary)' 
+                }}>
+                  HRIS
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ 
+                  background: 'rgba(79, 70, 229, 0.1)', 
+                  color: 'var(--accent-primary)' 
+                }}>
+                  ATS
+                </span>
+              </div>
+            </div>
+            <Button
+              onClick={openMergeLink}
+              disabled={openingMergeLink}
+              className="btn-primary"
+              style={{ minWidth: '160px' }}
+            >
+              {openingMergeLink ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                  Opening Merge...
+                </>
+              ) : (
+                <>
+                  <Plug className="w-4 h-4 mr-2" />
+                  Connect via Merge
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
         {/* Merge.dev Test Button (Development) */}
         <div className="p-4 rounded-xl border-2 border-dashed" style={{ borderColor: 'var(--border-color)' }}>
           <div className="flex items-center justify-between">
