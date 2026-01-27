@@ -180,6 +180,14 @@ const DashboardLayout = ({ children }) => {
       className="min-h-screen"
       style={{ background: 'var(--bg-secondary)' }}
     >
+      {/* Degraded Intelligence Banner - Shows when onboarding incomplete */}
+      {showDegradedBanner && (
+        <DegradedIntelligenceBanner
+          onComplete={handleCompleteOnboarding}
+          onDismiss={handleDismissBanner}
+        />
+      )}
+      
       {/* Top Navigation Bar - Mobile Optimized */}
       <header 
         className="fixed top-0 left-0 right-0 h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-4"
