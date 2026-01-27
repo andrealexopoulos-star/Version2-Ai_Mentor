@@ -36,9 +36,9 @@ const OpsAdvisoryCentre = () => {
             <Sparkles className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
             <span className="badge badge-primary">Daily Insights</span>
           </div>
-          <h1 style={{ color: 'var(--text-primary)' }}>Strategic Suggestions</h1>
+          <h1 style={{ color: 'var(--text-primary)' }}>Strategic Intelligence</h1>
           <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
-            Highly personalised strategic recommendations based on your profile and recent activity
+            Evidence-backed strategic intelligence based on your profile and recent activity
           </p>
         </div>
 
