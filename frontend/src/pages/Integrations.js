@@ -10,6 +10,7 @@ import {
   LogOut, ShieldAlert, RefreshCw
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { MergeLink } from '@mergeapi/react-merge-link';
 
 const Integrations = () => {
   const navigate = useNavigate();
@@ -708,7 +709,8 @@ const Integrations = () => {
     }
   };
 
-  // PHASE 2: Merge Link UI Integration
+  // PHASE 2: Merge Link UI Integration (React Component Pattern)
+  const [mergeLinkToken, setMergeLinkToken] = useState(null);
   const [openingMergeLink, setOpeningMergeLink] = useState(false);
   
   const openMergeLink = async () => {
