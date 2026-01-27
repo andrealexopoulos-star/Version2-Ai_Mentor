@@ -249,7 +249,7 @@ const Settings = () => {
                   </div>
 
                   <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <Label className="text-base mb-3 block">Preferred Advice Format</Label>
+                    <Label className="text-base mb-3 block">Preferred Guidance Format</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {[
                         'Action items & checklists',

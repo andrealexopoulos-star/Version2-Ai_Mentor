@@ -405,7 +405,7 @@ const Landing = () => {
               className="bg-white text-blue-600 hover:bg-blue-50 px-10 py-4 h-auto text-lg font-bold rounded-xl shadow-xl"
               data-testid="cta-register-btn"
             >
-              Get Your Personalised Advisor
+              Get Your Personalised Intelligence
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
