@@ -686,14 +686,25 @@ const Integrations = () => {
     }
   };
 
-  // Call test on component mount for validation
+  // Call test on component mount for validation (only when authenticated)
   useEffect(() => {
-    // Only run once on mount
-    const hasRun = sessionStorage.getItem('merge_test_run');
-    if (!hasRun) {
-      sessionStorage.setItem('merge_test_run', 'true');
-      testMergeLinkToken();
-    }
+    const runTest = async () => {
+      // Check if user is authenticated first
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('⏭️ Skipping Merge test - user not authenticated');
+        return;
+      }
+      
+      // Only run once per session
+      const hasRun = sessionStorage.getItem('merge_test_run');
+      if (!hasRun) {
+        sessionStorage.setItem('merge_test_run', 'true');
+        testMergeLinkToken();
+      }
+    };
+    
+    runTest();
   }, []);
 
 
