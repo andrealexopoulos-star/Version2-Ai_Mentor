@@ -26,10 +26,43 @@ const Integrations = () => {
   const [mergeLinkToken, setMergeLinkToken] = useState(null);
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
     linkToken: mergeLinkToken,
-    onSuccess: (public_token) => {
+    onSuccess: async (public_token, metadata) => {
       console.log('✅ Merge onboarding success');
-      console.log('📦 Public Token:', public_token);
-      toast.success('Integration connected successfully!');
+      const category = metadata?.category || 'accounting';
+      
+      try {
+        // Exchange public_token for account_token on backend
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session || !session.access_token) {
+          toast.error('Session expired. Please log in again.');
+          setMergeLinkToken(null);
+          return;
+        }
+        
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/exchange-account-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: new URLSearchParams({
+            public_token,
+            category
+          })
+        });
+        
+        if (response.ok) {
+          toast.success('Integration connected successfully!');
+        } else {
+          const error = await response.json();
+          toast.error(`Failed to save integration: ${error.detail || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error exchanging token:', error);
+        toast.error('Failed to save integration');
+      }
+      
       setMergeLinkToken(null);
     },
     onExit: () => {

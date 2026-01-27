@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS integration_accounts (
   provider TEXT NOT NULL,
   category TEXT NOT NULL,
   account_token TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, category)
 );
