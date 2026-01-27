@@ -7323,6 +7323,7 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
         raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
     
     user_id = current_user["id"]
+    user_email = current_user.get("email", "user@biqc.com")
     
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -7334,6 +7335,7 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
             json={
                 "end_user_origin_id": user_id,
                 "end_user_organization_name": "BIQC User Org",
+                "end_user_email_address": user_email,
                 "categories": ["accounting", "crm", "hris", "ats"]
             }
         )
