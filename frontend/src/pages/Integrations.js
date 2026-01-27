@@ -642,21 +642,41 @@ const Integrations = () => {
   const closeModal = () => setShowModal(null);
 
 
-  // TEST: Merge.dev link token endpoint
+  // TEST: Merge.dev link token endpoint (manual trigger only)
+  const [testingMerge, setTestingMerge] = useState(false);
+  
   const testMergeLinkToken = async () => {
     try {
+      setTestingMerge(true);
       console.log('🔍 Testing Merge.dev link token endpoint...');
       
-      // Get active Supabase session
+      // Get active Supabase session with explicit wait
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
-        console.error('❌ No active session:', sessionError);
-        toast.error('Please log in to test Merge integration');
+      // Guard: ensure session exists before proceeding
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        toast.error('Session error. Please log in again.');
+        setTestingMerge(false);
         return;
       }
       
-      console.log('✅ Active session found');
+      if (!session) {
+        console.error('❌ No active session found');
+        toast.error('Please log in to test Merge integration');
+        setTestingMerge(false);
+        return;
+      }
+      
+      // Guard: ensure access_token exists
+      if (!session.access_token) {
+        console.error('❌ No access token in session');
+        toast.error('Invalid session. Please log in again.');
+        setTestingMerge(false);
+        return;
+      }
+      
+      console.log('✅ Active session found with valid token');
       
       // Call backend endpoint with session token
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/link-token`, {
@@ -683,29 +703,10 @@ const Integrations = () => {
     } catch (error) {
       console.error('❌ Error calling Merge endpoint:', error);
       toast.error('Error testing Merge integration');
+    } finally {
+      setTestingMerge(false);
     }
   };
-
-  // Call test on component mount for validation (only when authenticated)
-  useEffect(() => {
-    const runTest = async () => {
-      // Check if user is authenticated first
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('⏭️ Skipping Merge test - user not authenticated');
-        return;
-      }
-      
-      // Only run once per session
-      const hasRun = sessionStorage.getItem('merge_test_run');
-      if (!hasRun) {
-        sessionStorage.setItem('merge_test_run', 'true');
-        testMergeLinkToken();
-      }
-    };
-    
-    runTest();
-  }, []);
 
 
   return (
