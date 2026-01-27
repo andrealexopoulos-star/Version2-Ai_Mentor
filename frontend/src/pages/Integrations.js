@@ -708,6 +708,106 @@ const Integrations = () => {
     }
   };
 
+  // PHASE 2: Merge Link UI Integration
+  const [openingMergeLink, setOpeningMergeLink] = useState(false);
+  
+  const openMergeLink = async () => {
+    try {
+      setOpeningMergeLink(true);
+      console.log('🔗 Opening Merge Link...');
+      
+      // Step 1: Get active Supabase session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        toast.error('Session error. Please log in again.');
+        setOpeningMergeLink(false);
+        return;
+      }
+      
+      if (!session) {
+        console.error('❌ No active session found');
+        toast.error('Please log in to connect integrations');
+        setOpeningMergeLink(false);
+        return;
+      }
+      
+      if (!session.access_token) {
+        console.error('❌ No access token in session');
+        toast.error('Invalid session. Please log in again.');
+        setOpeningMergeLink(false);
+        return;
+      }
+      
+      console.log('✅ Session validated, requesting link token...');
+      
+      // Step 2: Call backend to get link_token
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/link-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Backend error:', errorData);
+        toast.error(`Failed to get link token: ${errorData.detail || 'Unknown error'}`);
+        setOpeningMergeLink(false);
+        return;
+      }
+      
+      const { link_token } = await response.json();
+      
+      if (!link_token) {
+        console.error('❌ No link_token in response');
+        toast.error('Invalid response from server');
+        setOpeningMergeLink(false);
+        return;
+      }
+      
+      console.log('✅ Link token received:', link_token);
+      
+      // Step 3: Check if MergeLink is available
+      if (typeof window.MergeLink === 'undefined') {
+        console.error('❌ MergeLink SDK not loaded');
+        toast.error('Merge Link failed to load (see console)');
+        setOpeningMergeLink(false);
+        return;
+      }
+      
+      console.log('✅ Opening Merge Link modal...');
+      
+      // Step 4: Open Merge Link modal
+      window.MergeLink.openLink(link_token, {
+        onSuccess: (public_token) => {
+          console.log('✅ Merge Link Success!');
+          console.log('📦 Public Token:', public_token);
+          toast.success('Integration connected successfully!');
+          setOpeningMergeLink(false);
+        },
+        onExit: () => {
+          console.log('ℹ️ Merge Link exited by user');
+          setOpeningMergeLink(false);
+        },
+        onError: (error) => {
+          console.error('❌ Merge Link Error:', error);
+          toast.error('Integration error occurred');
+          setOpeningMergeLink(false);
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Error opening Merge Link:', error);
+      toast.error('Failed to open Merge Link');
+      setOpeningMergeLink(false);
+    }
+  };
+
+
+
 
   return (
     <DashboardLayout>
