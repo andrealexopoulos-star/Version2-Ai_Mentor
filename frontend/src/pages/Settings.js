@@ -185,7 +185,7 @@ const Settings = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>AI Advisor Preferences</CardTitle>
-                  <CardDescription>Customize how your AI advisor communicates and provides advice</CardDescription>
+                  <CardDescription>Customize how your AI intelligence system communicates and provides guidance</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
