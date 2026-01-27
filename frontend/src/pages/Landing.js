@@ -312,7 +312,7 @@ const Landing = () => {
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <p className="text-slate-400 text-sm mt-4">
-              Setup takes 15 minutes • Strategic advice starts immediately
+              Setup takes 15 minutes • Strategic intelligence starts immediately
             </p>
           </div>
         </div>
@@ -393,7 +393,7 @@ const Landing = () => {
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <Rocket className="w-16 h-16 mx-auto mb-8 text-blue-200" />
           <h2 className="font-bold text-3xl md:text-5xl text-white mb-6">
-            Ready for personalised business advice?
+            Ready for personalised business intelligence?
           </h2>
           <p className="text-blue-100 text-xl mb-10 max-w-2xl mx-auto">
             Join hundreds of business owners who stopped guessing and started growing with 
