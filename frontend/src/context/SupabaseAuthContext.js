@@ -115,7 +115,7 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (userId, existingSession) => {
     try {
-      // Use passed session instead of fetching again (fixes AbortError race condition)
+      // Use passed session instead of fetching again
       if (existingSession?.user) {
         const fallbackUser = {
           id: existingSession.user.id,
@@ -127,14 +127,48 @@ export const SupabaseAuthProvider = ({ children }) => {
           subscription_tier: 'free',
           is_master_account: existingSession.user.email === 'andre@thestrategysquad.com.au'
         };
-        console.log('Using user data from session:', fallbackUser);
+        console.log('[Auth] Using user data from session:', fallbackUser);
         setUser(fallbackUser);
+        
+        // TASK 2: Fetch and cache onboarding state on login
+        await fetchOnboardingState(userId);
       }
       
       setLoading(false);
     } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
+      console.error('[Auth] Error in fetchUserProfile:', error);
       setLoading(false);
+    }
+  };
+
+  // TASK 2: Fetch onboarding state once and cache
+  const fetchOnboardingState = async (userId) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding/status`, {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const state = {
+          completed: data.completed || false,
+          current_step: data.current_step || 0,
+          business_stage: data.business_stage || null,
+          status: data.completed ? 'completed' : data.current_step > 0 ? 'partial' : 'new'
+        };
+        console.log('[Auth] Onboarding state cached:', state);
+        setOnboardingState(state);
+      } else {
+        // TASK 4: Fail open on error
+        console.warn('[Auth] Failed to fetch onboarding state - failing open');
+        setOnboardingState({ status: 'unknown', completed: true }); // Treat as completed
+      }
+    } catch (error) {
+      // TASK 4: Fail open on cold start or network error
+      console.warn('[Auth] Onboarding fetch error - failing open:', error);
+      setOnboardingState({ status: 'unknown', completed: true });
     }
   };
 
