@@ -7472,7 +7472,9 @@ async def exchange_merge_account_token(
     category: str = Form(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Exchange Merge public_token for account_token and persist securely"""
+    """Exchange Merge public_token for account_token and persist (P0: workspace-scoped)"""
+    from workspace_helpers import get_user_account
+    
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
     if not merge_api_key:
@@ -7480,7 +7482,26 @@ async def exchange_merge_account_token(
         raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
     
     user_id = current_user["id"]
-    logger.info(f"🔄 Exchanging Merge token for user {user_id}, category: {category}")
+    user_email = current_user.get("email", "unknown")
+    
+    # P0 FIX: Get user's workspace
+    try:
+        account = await get_user_account(supabase_admin, user_id)
+        if not account:
+            logger.error(f"❌ User {user_id} has no workspace - cannot store integration")
+            raise HTTPException(status_code=400, detail="User workspace not initialized")
+        
+        account_id = account["id"]
+        account_name = account["name"]
+        
+        logger.info(f"🔄 Exchanging Merge token for workspace: {account_name} ({account_id})")
+        logger.info(f"   Requested by user: {user_email} ({user_id}), category: {category}")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get workspace: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get workspace")
     
     # Exchange public_token for account_token
     try:
@@ -7507,13 +7528,17 @@ async def exchange_merge_account_token(
             logger.info(f"📦 Merge API response: {data}")
             
             account_token = data.get("account_token")
-            integration_name = data.get("integration", {}).get("name", "unknown")
+            integration_info = data.get("integration", {})
+            integration_name = integration_info.get("name", "unknown")
+            merge_account_id = integration_info.get("id")  # P0 FIX: Extract Merge account ID
             
             if not account_token:
                 logger.error("❌ No account_token in Merge API response")
                 raise HTTPException(status_code=500, detail="No account_token in response")
             
             logger.info(f"✅ Received account_token for integration: {integration_name}")
+            if merge_account_id:
+                logger.info(f"✅ Merge account ID: {merge_account_id}")
     
     except httpx.HTTPError as e:
         logger.error(f"❌ HTTP error calling Merge API: {str(e)}")
@@ -7522,27 +7547,26 @@ async def exchange_merge_account_token(
         logger.error(f"❌ Unexpected error during token exchange: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
     
-    # Upsert into integration_accounts (one per user + category)
+    # P0 FIX: Store integration at workspace level (not user level)
     try:
-        logger.info(f"💾 Storing integration account: user={user_id}, provider={integration_name}, category={category}")
+        logger.info(f"💾 Storing integration for workspace: {account_name}")
+        logger.info(f"   provider={integration_name}, category={category}, connected_by={user_email}")
         
-        # Prepare the data to store
+        # P0 FIX: Store with account_id (workspace) + merge_account_id
         integration_data = {
-            "user_id": user_id,
+            "account_id": account_id,  # WORKSPACE ID (NEW)
+            "user_id": user_id,  # User who connected (for audit)
             "provider": integration_name,
             "category": category,
-            "account_token": account_token
+            "account_token": account_token,
+            "merge_account_id": merge_account_id,  # MERGE ACCOUNT ID (NEW)
+            "connected_at": datetime.now(timezone.utc).isoformat()
         }
         
-        # Add connected_at if the field exists (Supabase table may have it)
-        try:
-            integration_data["connected_at"] = datetime.now(timezone.utc).isoformat()
-        except:
-            pass  # Field might not exist in all environments
-        
+        # P0 FIX: Use workspace-level uniqueness constraint
         result = supabase_admin.table("integration_accounts").upsert(
             integration_data,
-            on_conflict="user_id,category"
+            on_conflict="account_id,category"  # Workspace + category (was user_id,category)
         ).execute()
         
         if not result.data:
