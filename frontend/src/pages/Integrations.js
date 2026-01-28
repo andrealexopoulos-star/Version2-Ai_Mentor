@@ -380,8 +380,9 @@ const Integrations = () => {
       category: 'crm',
       logo: 'HS',
       color: '#FF7A59',
-      tier: 'pro',
-      popular: true
+      tier: 'free',  // Changed from 'pro' - HubSpot connects via Merge.dev
+      popular: true,
+      viaMerge: true  // Indicates this integration uses Merge.dev
     },
     {
       id: 'salesforce',
