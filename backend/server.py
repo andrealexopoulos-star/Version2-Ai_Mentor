@@ -7384,6 +7384,9 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
             error_detail = response.text
             logger.error(f"Merge.dev API error: Status {response.status_code}, Response: {error_detail}")
             raise HTTPException(status_code=response.status_code, detail=error_detail)
+        
+        data = response.json()
+        return {"link_token": data.get("link_token")}
 
 
 @api_router.post("/integrations/merge/exchange-account-token")
@@ -7429,10 +7432,6 @@ async def exchange_merge_account_token(
         raise HTTPException(status_code=500, detail="Failed to store account_token")
     
     return {"success": True}
-
-        
-        data = response.json()
-        return {"link_token": data.get("link_token")}
 
 
 @api_router.get("/")
