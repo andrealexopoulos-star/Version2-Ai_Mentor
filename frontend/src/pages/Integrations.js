@@ -27,18 +27,22 @@ const Integrations = () => {
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
     linkToken: mergeLinkToken,
     onSuccess: async (public_token, metadata) => {
-      console.log('✅ Merge onboarding success');
+      console.log('✅ Merge onboarding success', { public_token, metadata });
       const category = metadata?.category || 'accounting';
+      const provider = metadata?.integration?.name || 'unknown';
       
       try {
         // Exchange public_token for account_token on backend
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session || !session.access_token) {
+          console.error('❌ No active session for token exchange');
           toast.error('Session expired. Please log in again.');
           setMergeLinkToken(null);
           return;
         }
+        
+        console.log('🔄 Exchanging token...', { category, provider });
         
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/exchange-account-token`, {
           method: 'POST',
@@ -52,21 +56,37 @@ const Integrations = () => {
           })
         });
         
+        console.log('📊 Exchange response status:', response.status);
+        
         if (response.ok) {
-          toast.success('Integration connected successfully!');
+          const result = await response.json();
+          console.log('✅ Token exchange successful:', result);
+          toast.success(`${provider} connected successfully!`);
         } else {
-          const error = await response.json();
-          toast.error(`Failed to save integration: ${error.detail || 'Unknown error'}`);
+          const errorText = await response.text();
+          console.error('❌ Token exchange failed:', response.status, errorText);
+          
+          try {
+            const error = JSON.parse(errorText);
+            toast.error(`Failed to connect ${provider}: ${error.detail || 'Unknown error'}`);
+          } catch {
+            toast.error(`Failed to connect ${provider}: Server error (${response.status})`);
+          }
         }
       } catch (error) {
-        console.error('Error exchanging token:', error);
-        toast.error('Failed to save integration');
+        console.error('❌ Error during token exchange:', error);
+        toast.error(`Failed to connect ${provider}: ${error.message}`);
       }
       
       setMergeLinkToken(null);
     },
-    onExit: () => {
-      console.log('ℹ️ Merge onboarding exited');
+    onExit: (error) => {
+      if (error) {
+        console.error('❌ Merge onboarding error:', error);
+        toast.error(`Connection failed: ${error.message || 'Unknown error'}`);
+      } else {
+        console.log('ℹ️ Merge onboarding exited by user');
+      }
       setMergeLinkToken(null);
     }
   });
