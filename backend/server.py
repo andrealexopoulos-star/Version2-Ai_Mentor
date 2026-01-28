@@ -7546,6 +7546,35 @@ async def exchange_merge_account_token(
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
+@api_router.get("/integrations/merge/connected")
+async def get_connected_merge_integrations(current_user: dict = Depends(get_current_user)):
+    """Get all connected Merge.dev integrations for the current user"""
+    try:
+        user_id = current_user["id"]
+        
+        # Fetch all integration_accounts for this user
+        result = supabase_admin.table("integration_accounts").select("*").eq("user_id", user_id).execute()
+        
+        integrations = {}
+        for record in result.data:
+            provider = record.get("provider", "unknown")
+            category = record.get("category", "unknown")
+            
+            integrations[provider] = {
+                "provider": provider,
+                "category": category,
+                "connected": True,
+                "connected_at": record.get("connected_at") or record.get("created_at")
+            }
+        
+        logger.info(f"✅ Found {len(integrations)} connected integrations for user {user_id}")
+        return {"integrations": integrations}
+        
+    except Exception as e:
+        logger.error(f"❌ Error fetching connected integrations: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.get("/")
 async def root():
     return {"message": "Strategic Advisor API", "version": "1.0.0"}
