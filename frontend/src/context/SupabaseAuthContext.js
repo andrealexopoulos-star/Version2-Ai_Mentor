@@ -148,15 +148,17 @@ export const SupabaseAuthProvider = ({ children }) => {
       const token = currentSession?.access_token;
       
       if (!token) {
-        console.warn('[Auth] No access token available for onboarding fetch');
+        console.warn('[Auth] No access token available for onboarding fetch - skipping');
         setOnboardingState({ status: 'unknown', completed: true });
         return;
       }
       
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding/status`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -169,14 +171,20 @@ export const SupabaseAuthProvider = ({ children }) => {
         };
         console.log('[Auth] Onboarding state cached:', state);
         setOnboardingState(state);
+      } else if (response.status === 401 || response.status === 403) {
+        // IMPORTANT: Don't let 401 from onboarding check log user out
+        // This is a non-critical endpoint - fail open silently
+        console.warn('[Auth] Onboarding check returned', response.status, '- failing open (treating as completed)');
+        setOnboardingState({ status: 'unknown', completed: true });
       } else {
-        // TASK 4: Fail open on error
+        // TASK 4: Fail open on other errors
         console.warn('[Auth] Failed to fetch onboarding state - failing open');
-        setOnboardingState({ status: 'unknown', completed: true }); // Treat as completed
+        setOnboardingState({ status: 'unknown', completed: true });
       }
     } catch (error) {
       // TASK 4: Fail open on cold start or network error
-      console.warn('[Auth] Onboarding fetch error - failing open:', error);
+      // IMPORTANT: Don't propagate error - this is non-critical
+      console.warn('[Auth] Onboarding fetch error - failing open (non-critical):', error.message);
       setOnboardingState({ status: 'unknown', completed: true });
     }
   };
