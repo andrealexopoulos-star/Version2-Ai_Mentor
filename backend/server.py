@@ -7397,7 +7397,9 @@ async def dismiss_notification(notification_id: str, current_user: dict = Depend
 
 @api_router.post("/integrations/merge/link-token")
 async def create_merge_link_token(current_user: dict = Depends(get_current_user)):
-    """Generate Merge.dev link token for user"""
+    """Generate Merge.dev link token for workspace (P0: workspace-scoped)"""
+    from workspace_helpers import get_or_create_user_account
+    
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
     if not merge_api_key:
@@ -7406,11 +7408,25 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
     
     user_id = current_user["id"]
     user_email = current_user.get("email", "user@biqc.com")
+    company_name = current_user.get("company_name")
     
-    logger.info(f"🔗 Creating Merge link token for user: {user_email} ({user_id})")
+    # P0 FIX: Get or create workspace for user
+    try:
+        account = await get_or_create_user_account(supabase_admin, user_id, user_email, company_name)
+        account_id = account["id"]
+        account_name = account["name"]
+        
+        logger.info(f"🔗 Creating Merge link token for workspace: {account_name} ({account_id})")
+        logger.info(f"   Requested by user: {user_email} ({user_id})")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get/create workspace: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to initialize workspace")
     
     try:
         async with httpx.AsyncClient() as client:
+            # P0 FIX: Send workspace_id as end_user_origin_id (NOT user_id)
+            # P0 FIX: Send workspace name as end_user_organization_name (NOT hardcoded)
             response = await client.post(
                 "https://api.merge.dev/api/integrations/create-link-token",
                 headers={
@@ -7418,8 +7434,8 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
                     "Content-Type": "application/json"
                 },
                 json={
-                    "end_user_origin_id": user_id,
-                    "end_user_organization_name": "BIQC User Org",
+                    "end_user_origin_id": account_id,  # WORKSPACE ID (was user_id)
+                    "end_user_organization_name": account_name,  # WORKSPACE NAME (was hardcoded)
                     "end_user_email_address": user_email,
                     "categories": ["accounting", "crm", "hris", "ats"]
                 }
@@ -7439,7 +7455,7 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
                 logger.error("❌ No link_token in Merge API response")
                 raise HTTPException(status_code=500, detail="No link_token in response")
             
-            logger.info(f"✅ Link token created successfully")
+            logger.info(f"✅ Link token created for workspace {account_name}")
             return {"link_token": link_token}
             
     except httpx.HTTPError as e:
