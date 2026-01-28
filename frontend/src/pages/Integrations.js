@@ -209,7 +209,20 @@ const Integrations = () => {
   useEffect(() => {
     checkOutlookStatus();
     checkGmailStatus();
+    checkMergeIntegrations();
   }, []);
+
+  const checkMergeIntegrations = async () => {
+    try {
+      const response = await apiClient.get('/integrations/merge/connected');
+      const integrations = response.data?.integrations || {};
+      console.log('📊 Connected Merge integrations:', integrations);
+      setMergeIntegrations(integrations);
+    } catch (error) {
+      console.warn('⚠️ Could not fetch Merge integrations:', error);
+      setMergeIntegrations({});
+    }
+  };
 
   const checkOutlookStatus = async () => {
     try {
