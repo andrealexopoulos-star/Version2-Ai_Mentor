@@ -1155,8 +1155,13 @@ const Integrations = () => {
         {/* Integration Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filteredIntegrations.map((integration) => {
+            // Check if this integration is connected via Merge.dev
+            const mergeConnected = mergeIntegrations[integration.id?.toLowerCase()] || 
+                                  mergeIntegrations[integration.name?.toLowerCase()];
+            
             const isConnected = (integration.id === 'outlook' && outlookStatus.connected) || 
-                               (integration.id === 'gmail' && gmailStatus.connected);
+                               (integration.id === 'gmail' && gmailStatus.connected) ||
+                               mergeConnected;
             const needsReconnect = (integration.id === 'outlook' && outlookStatus.needs_reconnect) ||
                                   (integration.id === 'gmail' && gmailStatus.needs_reconnect);
             
