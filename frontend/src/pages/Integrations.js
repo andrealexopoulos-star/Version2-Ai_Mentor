@@ -63,6 +63,9 @@ const Integrations = () => {
           const result = await response.json();
           console.log('✅ Token exchange successful:', result);
           toast.success(`${provider} connected successfully!`);
+          
+          // Refresh connected integrations list
+          await checkMergeIntegrations();
         } else {
           const errorText = await response.text();
           console.error('❌ Token exchange failed:', response.status, errorText);
