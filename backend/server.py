@@ -2744,22 +2744,35 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.error(f"Outlook OAuth error: {error} - {error_description}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error={error}")
     
-    # Extract and validate state parameter (contains user_id and verification hash)
+    # Extract and validate state parameter (contains user_id, returnTo, and verification hash)
+    # New format: outlook_auth_{user_id}_return_{returnTo}_sig_{signature}
     user_id = None
+    return_to = "/integrations"  # Default fallback
+    
     if state and state.startswith("outlook_auth_"):
-        # State format: outlook_auth_{user_id}_{hmac_signature}
+        # State format: outlook_auth_{user_id}_return_{returnTo}_sig_{hmac_signature}
         state_parts = state.replace("outlook_auth_", "").split("_sig_")
         if len(state_parts) != 2:
             logger.error(f"Invalid state format: {state}")
             return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
         
-        user_id = state_parts[0]
+        state_data = state_parts[0]
         provided_signature = state_parts[1]
+        
+        # Parse state_data to extract user_id and returnTo
+        # Format: {user_id}_return_{returnTo}
+        if "_return_" in state_data:
+            parts = state_data.split("_return_")
+            user_id = parts[0]
+            return_to = parts[1] if len(parts) > 1 else "/integrations"
+        else:
+            # Legacy format support: just user_id
+            user_id = state_data
         
         # Verify the signature to prevent tampering
         expected_signature = hmac.new(
             JWT_SECRET.encode(),
-            f"outlook_auth_{user_id}".encode(),
+            f"outlook_auth_{state_data}".encode(),
             hashlib.sha256
         ).hexdigest()[:16]
         
@@ -2767,7 +2780,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
             logger.error(f"State signature mismatch for user: {user_id}")
             return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state_signature")
         
-        logger.info(f"Outlook callback for verified user: {user_id}")
+        logger.info(f"Outlook callback for verified user: {user_id}, returnTo: {return_to}")
     else:
         logger.error(f"Invalid or missing state: {state}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
@@ -2854,7 +2867,14 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.warning(f"Failed to persist integration state (non-critical): {e}")
     
     logger.info(f"✅ Outlook integration successful for user {user_id}")
-    return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true")
+    
+    # Redirect back to specified path (or integrations) with success
+    redirect_url = f"{frontend_url}{return_to}?outlook_connected=true"
+    if microsoft_email:
+        redirect_url += f"&connected_email={quote(microsoft_email)}"
+    
+    logger.info(f"✅ Outlook OAuth complete, redirecting to: {redirect_url}")
+    return RedirectResponse(url=redirect_url)
 
 
 async def start_comprehensive_sync_job(user_id: str, job_id: str):
