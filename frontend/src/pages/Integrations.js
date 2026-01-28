@@ -525,6 +525,12 @@ const Integrations = () => {
       return;
     }
     
+    // Special handling for Merge.dev integrations (HubSpot, Salesforce, Xero, QuickBooks, etc.)
+    if (integration.viaMerge) {
+      openMergeLink();
+      return;
+    }
+    
     if (integration.tier === 'enterprise') {
       setShowModal({
         type: 'enterprise',
