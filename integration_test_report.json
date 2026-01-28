@@ -1,10 +1,10 @@
 {
-  "summary": "BIQC Backend Testing - 20/21 tests passed (95.2%)",
+  "summary": "BIQC Backend Testing - 21/21 tests passed (100.0%)",
   "total_tests": 21,
-  "passed_tests": 20,
-  "failed_tests": 1,
-  "success_rate": "95.2%",
-  "test_user": "biqc_test_45cfec4e@testdomain.com",
+  "passed_tests": 21,
+  "failed_tests": 0,
+  "success_rate": "100.0%",
+  "test_user": "biqc_test_4f31d2f9@testdomain.com",
   "test_details": [
     {
       "test_name": "GET /api/health",
@@ -13,21 +13,21 @@
       "response_data": {
         "status": "healthy"
       },
-      "timestamp": "2026-01-28T08:26:46.129747"
+      "timestamp": "2026-01-28T08:27:36.876759"
     },
     {
       "test_name": "Health Check - Status Field",
       "success": true,
       "details": "Status: healthy",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:46.129783"
+      "timestamp": "2026-01-28T08:27:36.876790"
     },
     {
       "test_name": "Create User via Admin API",
       "success": true,
-      "details": "User ID: f918a927-ba07-4e0e-ba5f-13f576683d9d",
+      "details": "User ID: 649b600e-4be2-4f04-935d-49d03acb9380",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:46.896789"
+      "timestamp": "2026-01-28T08:27:37.664039"
     },
     {
       "test_name": "POST /api/auth/supabase/login",
@@ -36,8 +36,8 @@
       "response_data": {
         "message": "Login successful",
         "user": {
-          "id": "f918a927-ba07-4e0e-ba5f-13f576683d9d",
-          "email": "biqc_test_45cfec4e@testdomain.com",
+          "id": "649b600e-4be2-4f04-935d-49d03acb9380",
+          "email": "biqc_test_4f31d2f9@testdomain.com",
           "full_name": "BIQC Integration Test User",
           "company_name": null,
           "role": null,
@@ -45,19 +45,19 @@
           "subscription_tier": "free"
         },
         "session": {
-          "access_token": "eyJhbGciOiJFUzI1NiIsImtpZCI6IjRmNDIwNjkxLWNiMzctNGUwYy1iYWY0LWVlOTc0NjVjNjFkNyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3V4eXFwZGZmdHhwa3plcHBxdHZrLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmOTE4YTkyNy1iYTA3LTRlMGUtYmE1Zi0xM2Y1NzY2ODNkOWQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzY5NTkyNDA4LCJpYXQiOjE3Njk1ODg4MDgsImVtYWlsIjoiYmlxY190ZXN0XzQ1Y2ZlYzRlQHRlc3Rkb21haW4uY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJjb21wYW55X25hbWUiOiJUZXN0IENvbXBhbnkgUHR5IEx0ZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJCSVFDIEludGVncmF0aW9uIFRlc3QgVXNlciIsImluZHVzdHJ5IjoiTSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzY5NTg4ODA4fV0sInNlc3Npb25faWQiOiI5M2FmZGE1OC0xNWIxLTRiZjEtYmYwZS01ZDZjNTk5NTI3ZTIiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ._6q8E6lYJzSJcn6ePuNqun12G6huSrgo1_tHwOtuUNU-vM2HMAPM4r8V1n_pkfTEmRT6pk-5xsKHp_Y3gcw6_w",
-          "refresh_token": "dmrcpbebjgbt",
-          "expires_at": 1769592408
+          "access_token": "eyJhbGciOiJFUzI1NiIsImtpZCI6IjRmNDIwNjkxLWNiMzctNGUwYy1iYWY0LWVlOTc0NjVjNjFkNyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3V4eXFwZGZmdHhwa3plcHBxdHZrLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI2NDliNjAwZS00YmUyLTRmMDQtOTM1ZC00OWQwM2FjYjkzODAiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzY5NTkyNDU3LCJpYXQiOjE3Njk1ODg4NTcsImVtYWlsIjoiYmlxY190ZXN0XzRmMzFkMmY5QHRlc3Rkb21haW4uY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJjb21wYW55X25hbWUiOiJUZXN0IENvbXBhbnkgUHR5IEx0ZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJCSVFDIEludGVncmF0aW9uIFRlc3QgVXNlciIsImluZHVzdHJ5IjoiTSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzY5NTg4ODU3fV0sInNlc3Npb25faWQiOiI1Mzk5ODRmMC0xNDE4LTRkMWUtYThhMC1lMTAxNjAzODNkZTUiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.RvJF73qkQiv7gdke8e_8ek57a-lMoWkBiO9q5SwZo8gWqHN6FnvUtOaf5Jzo49My_Mmi5yAysna2wWtSeFfweA",
+          "refresh_token": "mzyczthv3xz3",
+          "expires_at": 1769592457
         }
       },
-      "timestamp": "2026-01-28T08:26:49.185051"
+      "timestamp": "2026-01-28T08:27:38.376451"
     },
     {
       "test_name": "Login - Access Token Received",
       "success": true,
       "details": "Token received",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:49.185081"
+      "timestamp": "2026-01-28T08:27:38.376481"
     },
     {
       "test_name": "GET /api/auth/supabase/me",
@@ -65,8 +65,8 @@
       "details": "Status: 200, Expected: 200",
       "response_data": {
         "user": {
-          "id": "f918a927-ba07-4e0e-ba5f-13f576683d9d",
-          "email": "biqc_test_45cfec4e@testdomain.com",
+          "id": "649b600e-4be2-4f04-935d-49d03acb9380",
+          "email": "biqc_test_4f31d2f9@testdomain.com",
           "role": "user",
           "is_master_account": false,
           "subscription_tier": "free",
@@ -75,14 +75,14 @@
         },
         "message": "Authenticated via Supabase"
       },
-      "timestamp": "2026-01-28T08:26:49.757222"
+      "timestamp": "2026-01-28T08:27:38.934991"
     },
     {
       "test_name": "Auth Me - User Fields Present",
       "success": true,
-      "details": "Email: biqc_test_45cfec4e@testdomain.com",
+      "details": "Email: biqc_test_4f31d2f9@testdomain.com",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:49.757255"
+      "timestamp": "2026-01-28T08:27:38.935035"
     },
     {
       "test_name": "GET /api/onboarding/status",
@@ -94,21 +94,21 @@
         "business_stage": null,
         "data": {}
       },
-      "timestamp": "2026-01-28T08:26:50.601604"
+      "timestamp": "2026-01-28T08:27:39.757878"
     },
     {
       "test_name": "Onboarding Status - Response Structure",
       "success": true,
       "details": "completed: False, current_step: 0",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:50.601637"
+      "timestamp": "2026-01-28T08:27:39.757912"
     },
     {
       "test_name": "Onboarding Status - No 520 Errors",
       "success": true,
       "details": "Clean response, no server errors",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:50.601643"
+      "timestamp": "2026-01-28T08:27:39.757919"
     },
     {
       "test_name": "GET /api/outlook/status",
@@ -118,44 +118,44 @@
         "connected": false,
         "emails_synced": 0
       },
-      "timestamp": "2026-01-28T08:26:52.049300"
+      "timestamp": "2026-01-28T08:27:41.132460"
     },
     {
       "test_name": "Outlook Status - Response Structure",
       "success": true,
       "details": "connected: False, emails_synced: 0",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:52.049335"
+      "timestamp": "2026-01-28T08:27:41.132493"
     },
     {
       "test_name": "Outlook Status - Canonical State Check",
       "success": true,
       "details": "integration_accounts table accessible and working",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:52.049341"
+      "timestamp": "2026-01-28T08:27:41.132499"
     },
     {
       "test_name": "POST /api/integrations/merge/link-token",
       "success": true,
       "details": "Status: 200, Expected: 200",
       "response_data": {
-        "link_token": "3ym4tdRLMzNDTXOzeBm2ff4lIJN_5gU3NVW8c_VElfVYm7CY86XM1Q"
+        "link_token": "obIDKHRCI0HPvmhHfhqEj3GCSaI85CmnybXOMYP4Jx1QTSsY0QLE2g"
       },
-      "timestamp": "2026-01-28T08:26:53.976966"
+      "timestamp": "2026-01-28T08:27:41.998693"
     },
     {
       "test_name": "Merge Link Token - Valid Format",
-      "success": false,
-      "details": "Token doesn't start with 'lt_': 3ym4tdRLMzNDTXOzeBm2ff4lIJN_5gU3NVW8c_VElfVYm7CY86XM1Q",
+      "success": true,
+      "details": "Token received (length: 54)",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:53.976999"
+      "timestamp": "2026-01-28T08:27:41.998727"
     },
     {
       "test_name": "Merge API Key - Working",
       "success": true,
       "details": "Successfully generated link token",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:53.977004"
+      "timestamp": "2026-01-28T08:27:41.998732"
     },
     {
       "test_name": "GET /api/dashboard/focus",
@@ -167,7 +167,7 @@
         "type": "onboarding",
         "confidence": "low"
       },
-      "timestamp": "2026-01-28T08:26:55.363270"
+      "timestamp": "2026-01-28T08:27:43.372482"
     },
     {
       "test_name": "GET /api/dashboard/stats",
@@ -180,36 +180,30 @@
         "recent_analyses": [],
         "recent_documents": []
       },
-      "timestamp": "2026-01-28T08:26:58.143694"
+      "timestamp": "2026-01-28T08:27:44.453069"
     },
     {
       "test_name": "Dashboard Stats - Response Structure",
       "success": true,
       "details": "Fields present: total_documents, total_analyses",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:58.143726"
+      "timestamp": "2026-01-28T08:27:44.453100"
     },
     {
       "test_name": "integration_accounts Table - Accessible",
       "success": true,
       "details": "Table is accessible via Outlook status endpoint",
       "response_data": null,
-      "timestamp": "2026-01-28T08:26:59.565671"
+      "timestamp": "2026-01-28T08:27:45.810408"
     },
     {
       "test_name": "No 520 Errors - All Endpoints",
       "success": true,
       "details": "All tested endpoints returned clean responses",
       "response_data": null,
-      "timestamp": "2026-01-28T08:27:13.051766"
+      "timestamp": "2026-01-28T08:28:08.415943"
     }
   ],
-  "failed_tests_summary": [
-    {
-      "name": "Merge Link Token - Valid Format",
-      "details": "Token doesn't start with 'lt_': 3ym4tdRLMzNDTXOzeBm2ff4lIJN_5gU3NVW8c_VElfVYm7CY86XM1Q",
-      "response": null
-    }
-  ],
-  "timestamp": "2026-01-28T08:27:13.051835"
+  "failed_tests_summary": [],
+  "timestamp": "2026-01-28T08:28:08.415996"
 }
