@@ -7510,12 +7510,24 @@ async def exchange_merge_account_token(
     try:
         logger.info(f"💾 Storing integration account: user={user_id}, provider={integration_name}, category={category}")
         
-        result = supabase_admin.table("integration_accounts").upsert({
+        # Prepare the data to store
+        integration_data = {
             "user_id": user_id,
             "provider": integration_name,
             "category": category,
             "account_token": account_token
-        }, on_conflict="user_id,category").execute()
+        }
+        
+        # Add connected_at if the field exists (Supabase table may have it)
+        try:
+            integration_data["connected_at"] = datetime.now(timezone.utc).isoformat()
+        except:
+            pass  # Field might not exist in all environments
+        
+        result = supabase_admin.table("integration_accounts").upsert(
+            integration_data,
+            on_conflict="user_id,category"
+        ).execute()
         
         if not result.data:
             logger.error("❌ Failed to store account_token in Supabase")
