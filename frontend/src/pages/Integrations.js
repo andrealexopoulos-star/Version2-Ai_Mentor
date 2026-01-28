@@ -391,8 +391,9 @@ const Integrations = () => {
       category: 'crm',
       logo: 'SF',
       color: '#00A1E0',
-      tier: 'pro',
-      popular: true
+      tier: 'free',  // Changed from 'pro' - connects via Merge.dev
+      popular: true,
+      viaMerge: true
     },
     {
       id: 'pipedrive',
@@ -401,7 +402,8 @@ const Integrations = () => {
       category: 'crm',
       logo: 'PD',
       color: '#1A1A1A',
-      tier: 'pro'
+      tier: 'free',  // Changed from 'pro' - connects via Merge.dev
+      viaMerge: true
     },
     // Financial
     {
@@ -411,8 +413,9 @@ const Integrations = () => {
       category: 'financial',
       logo: 'XE',
       color: '#13B5EA',
-      tier: 'pro',
-      popular: true
+      tier: 'free',  // Changed from 'pro' - connects via Merge.dev
+      popular: true,
+      viaMerge: true
     },
     {
       id: 'quickbooks',
@@ -421,8 +424,9 @@ const Integrations = () => {
       category: 'financial',
       logo: 'QB',
       color: '#2CA01C',
-      tier: 'pro',
-      popular: true
+      tier: 'free',  // Changed from 'pro' - connects via Merge.dev
+      popular: true,
+      viaMerge: true
     },
     {
       id: 'myob',
