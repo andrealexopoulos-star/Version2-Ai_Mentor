@@ -7401,33 +7401,53 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
     if not merge_api_key:
+        logger.error("❌ MERGE_API_KEY not configured in environment")
         raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
     
     user_id = current_user["id"]
     user_email = current_user.get("email", "user@biqc.com")
     
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://api.merge.dev/api/integrations/create-link-token",
-            headers={
-                "Authorization": f"Bearer {merge_api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "end_user_origin_id": user_id,
-                "end_user_organization_name": "BIQC User Org",
-                "end_user_email_address": user_email,
-                "categories": ["accounting", "crm", "hris", "ats"]
-            }
-        )
-        
-        if response.status_code != 200:
-            error_detail = response.text
-            logger.error(f"Merge.dev API error: Status {response.status_code}, Response: {error_detail}")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
-        
-        data = response.json()
-        return {"link_token": data.get("link_token")}
+    logger.info(f"🔗 Creating Merge link token for user: {user_email} ({user_id})")
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.merge.dev/api/integrations/create-link-token",
+                headers={
+                    "Authorization": f"Bearer {merge_api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "end_user_origin_id": user_id,
+                    "end_user_organization_name": "BIQC User Org",
+                    "end_user_email_address": user_email,
+                    "categories": ["accounting", "crm", "hris", "ats"]
+                }
+            )
+            
+            logger.info(f"📊 Merge create-link-token response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                error_detail = response.text
+                logger.error(f"❌ Merge.dev API error: Status {response.status_code}, Response: {error_detail}")
+                raise HTTPException(status_code=response.status_code, detail=error_detail)
+            
+            data = response.json()
+            link_token = data.get("link_token")
+            
+            if not link_token:
+                logger.error("❌ No link_token in Merge API response")
+                raise HTTPException(status_code=500, detail="No link_token in response")
+            
+            logger.info(f"✅ Link token created successfully")
+            return {"link_token": link_token}
+            
+    except httpx.HTTPError as e:
+        logger.error(f"❌ HTTP error calling Merge API: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
+    except Exception as e:
+        logger.error(f"❌ Unexpected error creating link token: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Link token creation failed: {str(e)}")
 
 
 @api_router.post("/integrations/merge/exchange-account-token")
