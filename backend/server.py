@@ -7494,8 +7494,7 @@ async def exchange_merge_account_token(
             "user_id": user_id,
             "provider": integration_name,
             "category": category,
-            "account_token": account_token,
-            "connected_at": datetime.now(timezone.utc).isoformat()
+            "account_token": account_token
         }, on_conflict="user_id,category").execute()
         
         if not result.data:
