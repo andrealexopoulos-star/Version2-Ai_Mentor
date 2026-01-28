@@ -68,7 +68,7 @@ const OnboardingWizard = () => {
         }
         
         if (onboardingState.status === 'partial' && onboardingState.current_step) {
-          console.log('[Onboarding] Resuming from step:', onboarding State.current_step);
+          console.log('[Onboarding] Resuming from step:', onboardingState.current_step);
           setCurrentStep(onboardingState.current_step);
           setBusinessStage(onboardingState.business_stage);
         }
