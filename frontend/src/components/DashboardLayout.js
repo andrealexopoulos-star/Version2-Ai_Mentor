@@ -56,7 +56,7 @@ const DashboardLayout = ({ children }) => {
     setShowDegradedBanner(false);
   };
   
-  const handleCompleteLOnboarding = () => {
+  const handleCompleteOnboarding = () => {
     navigate('/onboarding');
   };
   
