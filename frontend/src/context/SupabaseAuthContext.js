@@ -130,11 +130,8 @@ export const SupabaseAuthProvider = ({ children }) => {
         console.log('[Auth] Using user data from session:', fallbackUser);
         setUser(fallbackUser);
         
-        // TASK 2: Temporarily disable automatic onboarding fetch to prevent logout loop
-        // await fetchOnboardingState(userId, existingSession);
-        
-        // Set default onboarding state to avoid blocking UX
-        setOnboardingState({ status: 'unknown', completed: true });
+        // TASK 2: Fetch and cache onboarding state on login - PROPERLY WITH AUTH
+        await fetchOnboardingState(userId, existingSession);
       }
       
       setLoading(false);
@@ -144,49 +141,25 @@ export const SupabaseAuthProvider = ({ children }) => {
     }
   };
 
-  // TASK 2: Fetch onboarding state once and cache
+  // TASK 2: Fetch onboarding state once and cache - USE APICLIENT FOR PROPER AUTH
   const fetchOnboardingState = async (userId, currentSession) => {
     try {
-      // Use passed session token to avoid closure issues
-      const token = currentSession?.access_token;
+      // Use apiClient which automatically adds Supabase token
+      const { apiClient } = await import('../lib/api');
       
-      if (!token) {
-        console.warn('[Auth] No access token available for onboarding fetch - skipping');
-        setOnboardingState({ status: 'unknown', completed: true });
-        return;
-      }
+      const response = await apiClient.get('/onboarding/status');
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding/status`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      const state = {
+        completed: response.data.completed || false,
+        current_step: response.data.current_step || 0,
+        business_stage: response.data.business_stage || null,
+        status: response.data.completed ? 'completed' : response.data.current_step > 0 ? 'partial' : 'new'
+      };
+      console.log('[Auth] Onboarding state cached:', state);
+      setOnboardingState(state);
       
-      if (response.ok) {
-        const data = await response.json();
-        const state = {
-          completed: data.completed || false,
-          current_step: data.current_step || 0,
-          business_stage: data.business_stage || null,
-          status: data.completed ? 'completed' : data.current_step > 0 ? 'partial' : 'new'
-        };
-        console.log('[Auth] Onboarding state cached:', state);
-        setOnboardingState(state);
-      } else if (response.status === 401 || response.status === 403) {
-        // IMPORTANT: Don't let 401 from onboarding check log user out
-        // This is a non-critical endpoint - fail open silently
-        console.warn('[Auth] Onboarding check returned', response.status, '- failing open (treating as completed)');
-        setOnboardingState({ status: 'unknown', completed: true });
-      } else {
-        // TASK 4: Fail open on other errors
-        console.warn('[Auth] Failed to fetch onboarding state - failing open');
-        setOnboardingState({ status: 'unknown', completed: true });
-      }
     } catch (error) {
-      // TASK 4: Fail open on cold start or network error
-      // IMPORTANT: Don't propagate error - this is non-critical
+      // Fail open on error but don't let it break auth
       console.warn('[Auth] Onboarding fetch error - failing open (non-critical):', error.message);
       setOnboardingState({ status: 'unknown', completed: true });
     }
