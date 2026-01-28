@@ -39,19 +39,21 @@ import GmailTest from "./pages/GmailTest";
 
 // Protected Route Component - Supabase Auth Only
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { user, session, loading } = useSupabaseAuth();
+  const { user, session, loading, authHydrated } = useSupabaseAuth();
 
-  // Debug logging for auth issues
+  // Debug logging
   useEffect(() => {
     console.log('[ProtectedRoute] Auth state:', { 
       loading, 
+      authHydrated,
       hasUser: !!user, 
       hasSession: !!session,
       sessionEmail: session?.user?.email 
     });
-  }, [loading, user, session]);
+  }, [loading, user, session, authHydrated]);
 
-  if (loading) {
+  // TASK 1: Wait for auth hydration before making routing decisions
+  if (loading || !authHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
         <div className="spinner" />
