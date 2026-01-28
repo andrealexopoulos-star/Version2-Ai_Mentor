@@ -27,20 +27,22 @@ export const SupabaseAuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [authHydrated, setAuthHydrated] = useState(false); // TASK 1: Explicit hydration flag
+  const [onboardingState, setOnboardingState] = useState(null); // TASK 2: Cached onboarding state
 
   useEffect(() => {
-    let isMounted = true; // Track mount state to prevent state updates after unmount
-    let retryCount = 0; // Prevent infinite loops
+    let isMounted = true;
+    let retryCount = 0;
     const MAX_RETRIES = 3;
 
     const initializeAuth = async () => {
       try {
-        // Prevent infinite retry loops
         if (retryCount >= MAX_RETRIES) {
           console.error('[Auth] Max retries reached, stopping initialization');
           if (isMounted) {
             setLoading(false);
             setInitialized(true);
+            setAuthHydrated(true); // Mark as hydrated even on failure
           }
           return;
         }
@@ -48,7 +50,7 @@ export const SupabaseAuthProvider = ({ children }) => {
         retryCount++;
         console.log(`[Auth] Initializing auth state... (attempt ${retryCount}/${MAX_RETRIES})`);
         
-        // Get initial session with retry for mobile browsers
+        // Get initial session with retry
         let retries = 3;
         let sessionData = null;
         
@@ -58,7 +60,7 @@ export const SupabaseAuthProvider = ({ children }) => {
             console.error('[Auth] Error getting session:', error);
             retries--;
             if (retries > 0) {
-              await new Promise(r => setTimeout(r, 500)); // Wait 500ms before retry
+              await new Promise(r => setTimeout(r, 500));
             }
           } else {
             sessionData = data;
@@ -72,16 +74,18 @@ export const SupabaseAuthProvider = ({ children }) => {
         
         setSession(currentSession);
         if (currentSession?.user) {
-          fetchUserProfile(currentSession.user.id, currentSession);
+          await fetchUserProfile(currentSession.user.id, currentSession);
         } else {
           setLoading(false);
         }
         setInitialized(true);
+        setAuthHydrated(true); // TASK 1: Mark auth as fully hydrated
       } catch (error) {
         if (!isMounted) return;
         console.error('[Auth] Initialization error:', error);
         setLoading(false);
         setInitialized(true);
+        setAuthHydrated(true); // TASK 1: Mark as hydrated even on error
       }
     };
 
@@ -89,15 +93,16 @@ export const SupabaseAuthProvider = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted) return; // Don't update if component unmounted
+      if (!isMounted) return;
       
       console.log('[Auth] Auth state changed:', event, session ? `User: ${session.user?.email}` : 'No session');
       
       setSession(session);
       if (session?.user) {
-        fetchUserProfile(session.user.id, session); // Pass session to avoid duplicate call
+        fetchUserProfile(session.user.id, session);
       } else {
         setUser(null);
+        setOnboardingState(null); // Clear onboarding state on logout
         setLoading(false);
       }
     });
