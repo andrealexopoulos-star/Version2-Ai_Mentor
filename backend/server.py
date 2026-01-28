@@ -7440,39 +7440,79 @@ async def exchange_merge_account_token(
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
     if not merge_api_key:
+        logger.error("❌ MERGE_API_KEY not configured in environment")
         raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
     
     user_id = current_user["id"]
+    logger.info(f"🔄 Exchanging Merge token for user {user_id}, category: {category}")
     
     # Exchange public_token for account_token
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"https://api.merge.dev/api/integrations/account-token/{public_token}",
-            headers={"Authorization": f"Bearer {merge_api_key}"}
-        )
-        
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="Failed to exchange token")
-        
-        data = response.json()
-        account_token = data.get("account_token")
-        integration_name = data.get("integration", {}).get("name", "unknown")
-        
-        if not account_token:
-            raise HTTPException(status_code=500, detail="No account_token in response")
+    try:
+        async with httpx.AsyncClient() as client:
+            exchange_url = f"https://api.merge.dev/api/integrations/account-token/{public_token}"
+            logger.info(f"📡 Calling Merge API: {exchange_url}")
+            
+            response = await client.get(
+                exchange_url,
+                headers={"Authorization": f"Bearer {merge_api_key}"}
+            )
+            
+            logger.info(f"📊 Merge API response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                error_text = response.text
+                logger.error(f"❌ Merge API error ({response.status_code}): {error_text}")
+                raise HTTPException(
+                    status_code=response.status_code, 
+                    detail=f"Merge API error: {error_text}"
+                )
+            
+            data = response.json()
+            logger.info(f"📦 Merge API response: {data}")
+            
+            account_token = data.get("account_token")
+            integration_name = data.get("integration", {}).get("name", "unknown")
+            
+            if not account_token:
+                logger.error("❌ No account_token in Merge API response")
+                raise HTTPException(status_code=500, detail="No account_token in response")
+            
+            logger.info(f"✅ Received account_token for integration: {integration_name}")
+    
+    except httpx.HTTPError as e:
+        logger.error(f"❌ HTTP error calling Merge API: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
+    except Exception as e:
+        logger.error(f"❌ Unexpected error during token exchange: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
     
     # Upsert into integration_accounts (one per user + category)
-    result = supabase_admin.table("integration_accounts").upsert({
-        "user_id": user_id,
-        "provider": integration_name,
-        "category": category,
-        "account_token": account_token
-    }, on_conflict="user_id,category").execute()
-    
-    if not result.data:
-        raise HTTPException(status_code=500, detail="Failed to store account_token")
-    
-    return {"success": True}
+    try:
+        logger.info(f"💾 Storing integration account: user={user_id}, provider={integration_name}, category={category}")
+        
+        result = supabase_admin.table("integration_accounts").upsert({
+            "user_id": user_id,
+            "provider": integration_name,
+            "category": category,
+            "account_token": account_token,
+            "connected_at": datetime.now(timezone.utc).isoformat()
+        }, on_conflict="user_id,category").execute()
+        
+        if not result.data:
+            logger.error("❌ Failed to store account_token in Supabase")
+            raise HTTPException(status_code=500, detail="Failed to store account_token")
+        
+        logger.info(f"✅ Integration account stored successfully: {result.data}")
+        
+        return {
+            "success": True,
+            "provider": integration_name,
+            "category": category
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Database error storing integration: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 @api_router.get("/")
