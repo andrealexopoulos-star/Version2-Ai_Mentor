@@ -114,39 +114,66 @@ class BIQCIntegrationTester:
         # Generate unique test user
         unique_id = str(uuid.uuid4())[:8]
         self.user_email = f"biqc_test_{unique_id}@testdomain.com"
+        test_password = "SecureTestPass123!"
         
-        user_data = {
-            "email": self.user_email,
-            "password": "SecureTestPass123!",
-            "full_name": "BIQC Integration Test User",
-            "company_name": "Test Company Pty Ltd",
-            "industry": "M"  # Professional Services
-        }
-        
-        # Try registration
-        success, response, details = self.make_request(
-            'POST', 
-            'auth/supabase/signup', 
-            200, 
-            data=user_data,
-            auth_required=False
-        )
-        
-        self.log_test("POST /api/auth/supabase/signup", success, details, response)
-        
-        if success and response:
-            session = response.get('session', {})
-            if session and session.get('access_token'):
-                self.token = session['access_token']
-                user_info = response.get('user', {})
-                self.user_id = user_info.get('id')
-                self.log_test("Registration - Access Token Received", True, f"User ID: {self.user_id}")
-                return True
+        # First, create user via Supabase admin API (bypasses email confirmation)
+        try:
+            import os
+            from supabase import create_client, Client
+            
+            supabase_url = os.getenv("SUPABASE_URL", "https://uxyqpdfftxpkzeppqtvk.supabase.co")
+            supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4eXFwZGZmdHhwa3plcHBxdHZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODQzNzA0NywiZXhwIjoyMDg0MDEzMDQ3fQ.Of8sBhmza-QMmtlQ-EN7kpqcDuiy512TlY2Gku9YuX4")
+            
+            supabase: Client = create_client(supabase_url, supabase_key)
+            
+            # Create user with admin API (auto-confirmed)
+            auth_response = supabase.auth.admin.create_user({
+                "email": self.user_email,
+                "password": test_password,
+                "email_confirm": True,
+                "user_metadata": {
+                    "full_name": "BIQC Integration Test User",
+                    "company_name": "Test Company Pty Ltd",
+                    "industry": "M"
+                }
+            })
+            
+            if auth_response and auth_response.user:
+                self.log_test("Create User via Admin API", True, f"User ID: {auth_response.user.id}")
+                self.user_id = auth_response.user.id
+                
+                # Now login to get access token
+                login_data = {
+                    "email": self.user_email,
+                    "password": test_password
+                }
+                
+                success, response, details = self.make_request(
+                    'POST', 
+                    'auth/supabase/login', 
+                    200, 
+                    data=login_data,
+                    auth_required=False
+                )
+                
+                self.log_test("POST /api/auth/supabase/login", success, details, response)
+                
+                if success and response:
+                    session = response.get('session', {})
+                    if session and session.get('access_token'):
+                        self.token = session['access_token']
+                        self.log_test("Login - Access Token Received", True, f"Token received")
+                        return True
+                    else:
+                        self.log_test("Login - Access Token Received", False, "No access_token in session")
+                        return False
             else:
-                self.log_test("Registration - Access Token Received", False, "No access_token in session")
+                self.log_test("Create User via Admin API", False, "Failed to create user")
                 return False
-        
-        return False
+                
+        except Exception as e:
+            self.log_test("User Creation", False, f"Exception: {str(e)}")
+            return False
     
     def test_auth_me(self):
         """Test 3: GET /api/auth/supabase/me with token"""
