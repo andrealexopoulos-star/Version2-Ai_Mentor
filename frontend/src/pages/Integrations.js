@@ -21,6 +21,7 @@ const Integrations = () => {
   const [connecting, setConnecting] = useState(null);
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [mergeIntegrations, setMergeIntegrations] = useState({});
   
   // Merge Link integration
   const [mergeLinkToken, setMergeLinkToken] = useState(null);
