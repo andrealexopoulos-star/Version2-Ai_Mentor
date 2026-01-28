@@ -43,7 +43,7 @@ const BUSINESS_STAGES = [
 
 const OnboardingWizard = () => {
   const navigate = useNavigate();
-  const { user, refreshSession } = useSupabaseAuth();
+  const { user, refreshSession, onboardingState } = useSupabaseAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [businessStage, setBusinessStage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,22 +53,48 @@ const OnboardingWizard = () => {
   useEffect(() => {
     checkOnboardingStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [onboardingState]);
 
   const checkOnboardingStatus = async () => {
     try {
+      // TASK 3: Use cached onboarding state if available
+      if (onboardingState) {
+        console.log('[Onboarding] Using cached state:', onboardingState);
+        
+        if (onboardingState.completed) {
+          console.log('[Onboarding] Already completed - redirecting to dashboard');
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+        
+        if (onboardingState.status === 'partial' && onboardingState.current_step) {
+          console.log('[Onboarding] Resuming from step:', onboarding State.current_step);
+          setCurrentStep(onboardingState.current_step);
+          setBusinessStage(onboardingState.business_stage);
+        }
+        
+        setLoading(false);
+        return;
+      }
+      
+      // Fallback: Fetch from backend if no cached state
       const res = await apiClient.get('/onboarding/status');
+      
       if (res.data.completed) {
-        // Already completed, redirect to dashboard
-        navigate('/dashboard');
-      } else if (res.data.current_step) {
-        // Resume from saved step
+        console.log('[Onboarding] Already completed - redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+      
+      if (res.data.current_step) {
+        console.log('[Onboarding] Resuming from step:', res.data.current_step);
         setCurrentStep(res.data.current_step);
         setBusinessStage(res.data.business_stage);
         setFormData(res.data.data || {});
       }
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      // TASK 4: Fail open - allow wizard to proceed
+      console.warn('[Onboarding] Failed to fetch status - allowing fresh start:', error);
     } finally {
       setLoading(false);
     }
