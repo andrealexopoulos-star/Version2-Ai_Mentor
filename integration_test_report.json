@@ -1,0 +1,61 @@
+{
+  "summary": "BIQC Backend Testing - 3/4 tests passed (75.0%)",
+  "total_tests": 4,
+  "passed_tests": 3,
+  "failed_tests": 1,
+  "success_rate": "75.0%",
+  "test_user": "biqc_test_30716fc1@testdomain.com",
+  "test_details": [
+    {
+      "test_name": "GET /api/health",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "response_data": {
+        "status": "healthy"
+      },
+      "timestamp": "2026-01-28T08:25:47.310635"
+    },
+    {
+      "test_name": "Health Check - Status Field",
+      "success": true,
+      "details": "Status: healthy",
+      "response_data": null,
+      "timestamp": "2026-01-28T08:25:47.310667"
+    },
+    {
+      "test_name": "POST /api/auth/supabase/signup",
+      "success": true,
+      "details": "Status: 200, Expected: 200",
+      "response_data": {
+        "message": "User created successfully",
+        "user": {
+          "id": "ddee8aff-7f45-4bcc-a941-dcd73c6dec94",
+          "email": "biqc_test_30716fc1@testdomain.com",
+          "full_name": "BIQC Integration Test User",
+          "company_name": null
+        },
+        "session": {
+          "access_token": null,
+          "refresh_token": null,
+          "expires_at": null
+        }
+      },
+      "timestamp": "2026-01-28T08:25:50.894884"
+    },
+    {
+      "test_name": "Registration - Access Token Received",
+      "success": false,
+      "details": "No access_token in session",
+      "response_data": null,
+      "timestamp": "2026-01-28T08:25:50.894920"
+    }
+  ],
+  "failed_tests_summary": [
+    {
+      "name": "Registration - Access Token Received",
+      "details": "No access_token in session",
+      "response": null
+    }
+  ],
+  "timestamp": "2026-01-28T08:25:50.894956"
+}
