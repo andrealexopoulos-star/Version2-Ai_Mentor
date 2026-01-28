@@ -7588,15 +7588,26 @@ async def exchange_merge_account_token(
 
 @api_router.get("/integrations/merge/connected")
 async def get_connected_merge_integrations(current_user: dict = Depends(get_current_user)):
-    """Get all connected Merge.dev integrations for the current user"""
+    """Get all connected Merge.dev integrations for the workspace (P0: workspace-scoped)"""
+    from workspace_helpers import get_user_account, get_account_integrations
+    
     try:
         user_id = current_user["id"]
         
-        # Fetch all integration_accounts for this user
-        result = supabase_admin.table("integration_accounts").select("*").eq("user_id", user_id).execute()
+        # P0 FIX: Get workspace for user
+        account = await get_user_account(supabase_admin, user_id)
+        if not account:
+            logger.warning(f"⚠️  User {user_id} has no workspace - returning empty integrations")
+            return {"integrations": {}}
+        
+        account_id = account["id"]
+        account_name = account["name"]
+        
+        # P0 FIX: Fetch integrations by workspace (not user)
+        integration_records = await get_account_integrations(supabase_admin, account_id)
         
         integrations = {}
-        for record in result.data:
+        for record in integration_records:
             provider = record.get("provider", "unknown")
             category = record.get("category", "unknown")
             
@@ -7604,10 +7615,13 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
                 "provider": provider,
                 "category": category,
                 "connected": True,
-                "connected_at": record.get("connected_at") or record.get("created_at")
+                "connected_at": record.get("connected_at") or record.get("created_at"),
+                "merge_account_id": record.get("merge_account_id"),  # P0: Include Merge account ID
+                "workspace_id": account_id,  # P0: Include workspace context
+                "workspace_name": account_name
             }
         
-        logger.info(f"✅ Found {len(integrations)} connected integrations for user {user_id}")
+        logger.info(f"✅ Found {len(integrations)} workspace integrations for {account_name} ({account_id})")
         return {"integrations": integrations}
         
     except Exception as e:
