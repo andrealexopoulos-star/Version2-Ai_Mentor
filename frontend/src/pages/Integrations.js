@@ -190,24 +190,34 @@ const Integrations = () => {
   const checkOutlookStatus = async () => {
     try {
       const response = await apiClient.get('/outlook/status');
-      console.log('📊 Backend Outlook status:', response.data);
+      console.log('📊 Canonical Outlook status:', response.data);
       
-      // If backend says not connected but we have optimistic state, mark as needs_reconnect
-      if (!response.data.connected && outlookStatus.connected) {
-        console.log('⚠️ Backend reports disconnected - token may have expired');
-        setOutlookStatus({
-          ...response.data,
-          needs_reconnect: true
-        });
-      } else {
-        setOutlookStatus({
-          ...response.data,
-          needs_reconnect: false
-        });
+      // TASK 2: Use database as canonical source, Edge Function failures don't flip state
+      if (response.data.degraded) {
+        // Edge Function/status check failed but don't change connected state
+        console.log('⚠️ Outlook status check degraded - maintaining last known state');
+        setOutlookStatus(prev => ({
+          ...prev,
+          health_check_failed: true
+        }));
+        return;
       }
+      
+      // Update state from canonical source
+      setOutlookStatus({
+        ...response.data,
+        needs_reconnect: false,
+        health_check_failed: false
+      });
+      
     } catch (error) {
-      console.log('⚠️ Could not fetch Outlook status - user may not be connected yet');
-      // Don't overwrite optimistic state on error
+      // TASK 5: Fail open - don't flip connection state on error
+      console.warn('⚠️ Outlook status check failed - failing open:', error);
+      // Maintain current state, just mark health check as unavailable
+      setOutlookStatus(prev => ({
+        ...prev,
+        health_check_failed: true
+      }));
     }
   };
 
