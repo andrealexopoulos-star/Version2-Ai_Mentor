@@ -130,8 +130,11 @@ export const SupabaseAuthProvider = ({ children }) => {
         console.log('[Auth] Using user data from session:', fallbackUser);
         setUser(fallbackUser);
         
-        // TASK 2: Fetch and cache onboarding state on login (pass session)
-        await fetchOnboardingState(userId, existingSession);
+        // TASK 2: Temporarily disable automatic onboarding fetch to prevent logout loop
+        // await fetchOnboardingState(userId, existingSession);
+        
+        // Set default onboarding state to avoid blocking UX
+        setOnboardingState({ status: 'unknown', completed: true });
       }
       
       setLoading(false);
