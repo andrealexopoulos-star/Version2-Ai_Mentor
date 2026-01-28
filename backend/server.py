@@ -2556,20 +2556,33 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error={error}")
     
     # Extract and validate state parameter
+    # New format: gmail_auth_{user_id}_return_{returnTo}_sig_{signature}
     user_id = None
+    return_to = "/integrations"  # Default fallback
+    
     if state and state.startswith("gmail_auth_"):
         state_parts = state.replace("gmail_auth_", "").split("_sig_")
         if len(state_parts) != 2:
             logger.error(f"Invalid state format: {state}")
             return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state")
         
-        user_id = state_parts[0]
+        state_data = state_parts[0]
         provided_signature = state_parts[1]
+        
+        # Parse state_data to extract user_id and returnTo
+        # Format: {user_id}_return_{returnTo}
+        if "_return_" in state_data:
+            parts = state_data.split("_return_")
+            user_id = parts[0]
+            return_to = parts[1] if len(parts) > 1 else "/integrations"
+        else:
+            # Legacy format support: just user_id
+            user_id = state_data
         
         # Verify signature
         expected_signature = hmac.new(
             JWT_SECRET.encode(),
-            f"gmail_auth_{user_id}".encode(),
+            f"gmail_auth_{state_data}".encode(),
             hashlib.sha256
         ).hexdigest()[:16]
         
@@ -2577,7 +2590,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
             logger.error(f"State signature mismatch for user: {user_id}")
             return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state_signature")
         
-        logger.info(f"Gmail callback for verified user: {user_id}")
+        logger.info(f"Gmail callback for verified user: {user_id}, returnTo: {return_to}")
     else:
         logger.error(f"Invalid or missing state: {state}")
         return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state")
@@ -2659,8 +2672,8 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
             logger.error(f"Failed to store Gmail tokens: {db_error}")
             return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=storage_failed")
         
-        # Redirect back to integrations with success
-        redirect_url = f"{frontend_url}/integrations?gmail_connected=true"
+        # Redirect back to specified path (or integrations) with success
+        redirect_url = f"{frontend_url}{return_to}?gmail_connected=true"
         if google_email:
             redirect_url += f"&connected_email={quote(google_email)}"
         
