@@ -129,9 +129,6 @@ export const SupabaseAuthProvider = ({ children }) => {
         };
         console.log('[Auth] Using user data from session:', fallbackUser);
         setUser(fallbackUser);
-        
-        // Don't fetch onboarding here - session not yet propagated to apiClient
-        // Will be fetched after auth is fully hydrated
       }
       
       setLoading(false);
@@ -140,36 +137,6 @@ export const SupabaseAuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  // TASK 2: Fetch onboarding state - ONLY AFTER AUTH IS FULLY HYDRATED
-  const fetchOnboardingState = async () => {
-    try {
-      const { apiClient } = await import('../lib/api');
-      
-      const response = await apiClient.get('/onboarding/status');
-      
-      const state = {
-        completed: response.data.completed || false,
-        current_step: response.data.current_step || 0,
-        business_stage: response.data.business_stage || null,
-        status: response.data.completed ? 'completed' : response.data.current_step > 0 ? 'partial' : 'new'
-      };
-      console.log('[Auth] Onboarding state cached:', state);
-      setOnboardingState(state);
-      
-    } catch (error) {
-      console.warn('[Auth] Onboarding fetch error - failing open:', error.message);
-      setOnboardingState({ status: 'unknown', completed: true });
-    }
-  };
-  
-  // Fetch onboarding state AFTER auth is fully initialized
-  useEffect(() => {
-    if (authHydrated && session && user) {
-      console.log('[Auth] Auth fully hydrated, fetching onboarding state...');
-      fetchOnboardingState();
-    }
-  }, [authHydrated, session, user]);
 
   const signUp = async (email, password, metadata = {}) => {
     try {

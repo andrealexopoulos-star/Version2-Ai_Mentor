@@ -36,17 +36,12 @@ apiClient.interceptors.request.use(async (config) => {
   return Promise.reject(error);
 });
 
-// Response interceptor - handle auth errors
+// Response interceptor - handle auth errors (DISABLED for stability)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid - clear and redirect to login
-      localStorage.removeItem('token');
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-        window.location.href = '/login-supabase';
-      }
-    }
+    // Don't auto-redirect on 401 - let components handle auth errors
+    // This prevents logout loops from non-critical API calls
     return Promise.reject(error);
   }
 );
