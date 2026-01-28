@@ -2819,6 +2819,19 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.error(f"Failed to store Outlook tokens for user {user_id}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=storage_failed")
     
+    # TASK 1: Persist canonical integration state
+    try:
+        supabase_admin.table("integration_accounts").upsert({
+            "user_id": user_id,
+            "provider": "outlook",
+            "category": "email",
+            "account_token": "connected",  # Token stored separately in outlook_oauth_tokens
+            "connected_at": datetime.now(timezone.utc).isoformat()
+        }, on_conflict="user_id,category").execute()
+        logger.info(f"✅ Outlook integration state persisted for user {user_id}")
+    except Exception as e:
+        logger.warning(f"Failed to persist integration state (non-critical): {e}")
+    
     logger.info(f"✅ Outlook integration successful for user {user_id}")
     return RedirectResponse(url=f"{frontend_url}/integrations?outlook_connected=true")
 
