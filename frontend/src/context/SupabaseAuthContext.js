@@ -142,11 +142,20 @@ export const SupabaseAuthProvider = ({ children }) => {
   };
 
   // TASK 2: Fetch onboarding state once and cache
-  const fetchOnboardingState = async (userId) => {
+  const fetchOnboardingState = async (userId, currentSession) => {
     try {
+      // Use passed session token to avoid closure issues
+      const token = currentSession?.access_token;
+      
+      if (!token) {
+        console.warn('[Auth] No access token available for onboarding fetch');
+        setOnboardingState({ status: 'unknown', completed: true });
+        return;
+      }
+      
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding/status`, {
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
