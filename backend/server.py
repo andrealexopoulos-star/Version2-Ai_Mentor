@@ -2444,8 +2444,9 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
 # ==================== MICROSOFT OUTLOOK INTEGRATION ====================
 
 @api_router.get("/auth/outlook/login")
-async def outlook_login(current_user: dict = Depends(get_current_user)):
+async def outlook_login(returnTo: str = "/integrations", current_user: dict = Depends(get_current_user)):
     """Initiate Microsoft OAuth flow for Outlook - requires authenticated user"""
+    from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
     
@@ -2457,18 +2458,20 @@ async def outlook_login(current_user: dict = Depends(get_current_user)):
     encoded_scope = quote(scope, safe='')
     
     # Create a signed state parameter to prevent CSRF and tampering
-    # Format: outlook_auth_{user_id}_sig_{hmac_signature}
+    # Include returnTo path in state for post-auth redirect
+    # Format: outlook_auth_{user_id}_return_{returnTo}_sig_{hmac_signature}
     user_id = current_user['id']
+    state_data = f"outlook_auth_{user_id}_return_{returnTo}"
     signature = hmac.new(
         JWT_SECRET.encode(),
-        f"outlook_auth_{user_id}".encode(),
+        state_data.encode(),
         hashlib.sha256
     ).hexdigest()[:16]  # Use first 16 chars for shorter URL
     
-    state = f"outlook_auth_{user_id}_sig_{signature}"
+    state = f"{state_data}_sig_{signature}"
     
     # Log the OAuth initiation for security audit
-    logger.info(f"Outlook OAuth initiated for user: {current_user['email']} (ID: {user_id})")
+    logger.info(f"Outlook OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
     
     # IMPORTANT: prompt=select_account forces Microsoft to show account picker
     # This prevents auto-selecting a cached/wrong account
@@ -2483,12 +2486,14 @@ async def outlook_login(current_user: dict = Depends(get_current_user)):
         f"prompt=select_account"
     )
     
-    return {"auth_url": auth_url}
+    # Direct browser redirect to OAuth provider
+    return RedirectResponse(url=auth_url, status_code=302)
 
 
 @api_router.get("/auth/gmail/login")
-async def gmail_login(current_user: dict = Depends(get_current_user_supabase)):
+async def gmail_login(returnTo: str = "/integrations", current_user: dict = Depends(get_current_user_supabase)):
     """Initiate Google OAuth flow for Gmail - requires authenticated user"""
+    from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
     
@@ -2506,17 +2511,19 @@ async def gmail_login(current_user: dict = Depends(get_current_user_supabase)):
     encoded_scope = quote(scope, safe='')
     
     # Create a signed state parameter to prevent CSRF and tampering
-    # Format: gmail_auth_{user_id}_sig_{hmac_signature}
+    # Include returnTo path in state for post-auth redirect
+    # Format: gmail_auth_{user_id}_return_{returnTo}_sig_{hmac_signature}
     user_id = current_user['id']
+    state_data = f"gmail_auth_{user_id}_return_{returnTo}"
     signature = hmac.new(
         JWT_SECRET.encode(),
-        f"gmail_auth_{user_id}".encode(),
+        state_data.encode(),
         hashlib.sha256
     ).hexdigest()[:16]
     
-    state = f"gmail_auth_{user_id}_sig_{signature}"
+    state = f"{state_data}_sig_{signature}"
     
-    logger.info(f"Gmail OAuth initiated for user: {current_user['email']} (ID: {user_id})")
+    logger.info(f"Gmail OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
     
     # Google OAuth URL with consent prompt to ensure refresh token
     auth_url = (
@@ -2530,7 +2537,8 @@ async def gmail_login(current_user: dict = Depends(get_current_user_supabase)):
         f"prompt=consent"
     )
     
-    return {"auth_url": auth_url}
+    # Direct browser redirect to OAuth provider
+    return RedirectResponse(url=auth_url, status_code=302)
 
 
 @api_router.get("/auth/gmail/callback")
