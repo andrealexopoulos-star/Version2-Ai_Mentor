@@ -510,33 +510,13 @@ const Integrations = () => {
     }
   };
 
-  const handleOutlookConnect = async () => {
+  const handleOutlookConnect = () => {
     setConnecting('outlook');
-    try {
-      // Get current Supabase session to ensure user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session || !session.access_token) {
-        toast.error('Please log in to connect Outlook');
-        setConnecting(null);
-        return;
-      }
-
-      // Use Supabase Edge Function for Outlook OAuth
-      // The Edge Function handles the Microsoft OAuth flow
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const outlookAuthUrl = `${supabaseUrl}/functions/v1/outlook-auth/start?state=${session.access_token}`;
-      
-      console.log('Redirecting to Microsoft Outlook OAuth via Supabase Edge Function');
-      
-      // Redirect to Supabase Edge Function which initiates Microsoft OAuth
-      window.location.href = outlookAuthUrl;
-      
-    } catch (error) {
-      console.error('Outlook connection error:', error);
-      toast.error('Failed to connect Outlook. Please try again.');
-      setConnecting(null);
-    }
+    console.log('🔐 Initiating Outlook OAuth via browser navigation...');
+    
+    // Direct browser navigation to backend OAuth endpoint
+    // This bypasses axios interceptor and allows backend to handle OAuth flow
+    window.location.assign(`${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?returnTo=/integrations`);
   };
 
   const handleOutlookDisconnect = async () => {
@@ -563,25 +543,13 @@ const Integrations = () => {
     }
   };
 
-  const handleGmailConnect = async () => {
+  const handleGmailConnect = () => {
     setConnecting('gmail');
-    try {
-      console.log('🔐 Initiating Gmail OAuth via backend proxy...');
-      
-      // Call backend to get Gmail OAuth URL (same pattern as Outlook)
-      const response = await apiClient.get('/auth/gmail/login');
-      const authUrl = response.data.auth_url;
-      
-      console.log('Redirecting to Google OAuth via backend proxy');
-      
-      // Redirect to backend OAuth endpoint
-      window.location.href = authUrl;
-      
-    } catch (error) {
-      console.error('Gmail connection error:', error);
-      toast.error('Failed to connect Gmail. Please try again.');
-      setConnecting(null);
-    }
+    console.log('🔐 Initiating Gmail OAuth via browser navigation...');
+    
+    // Direct browser navigation to backend OAuth endpoint
+    // This bypasses axios interceptor and allows backend to handle OAuth flow
+    window.location.assign(`${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?returnTo=/integrations`);
   };
 
   const handleGmailTest = async () => {
