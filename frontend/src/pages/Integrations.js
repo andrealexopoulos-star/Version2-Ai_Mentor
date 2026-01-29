@@ -229,8 +229,9 @@ const Integrations = () => {
       console.log('📊 Connected Merge integrations:', integrations);
       setMergeIntegrations(integrations);
     } catch (error) {
-      console.warn('⚠️ Could not fetch Merge integrations:', error);
-      setMergeIntegrations({});
+      console.warn('⚠️ Could not fetch Merge integrations - failing open:', error);
+      // FAIL OPEN: Keep existing Merge state on error
+      // Do NOT reset to empty object - preserve current connection state
     }
   };
 
