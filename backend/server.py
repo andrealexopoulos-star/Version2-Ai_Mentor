@@ -7437,9 +7437,7 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
                     "end_user_origin_id": account_id,  # WORKSPACE ID (was user_id)
                     "end_user_organization_name": account_name,  # WORKSPACE NAME (was hardcoded)
                     "end_user_email_address": user_email,
-                    "categories": ["accounting", "crm", "hris", "ats"],
-                    "should_create_magic_link_url": False,  # Disable magic link for OAuth
-                    "is_using_test_credentials": True  # Enable test mode for sandbox testing
+                    "categories": ["accounting", "crm", "hris", "ats"]
                 }
             )
             
