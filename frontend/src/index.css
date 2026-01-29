@@ -37,13 +37,13 @@
     
     /* Layout Heights - Critical for overlap prevention */
     --header-height: 3.5rem;
-    --banner-height: 64px;
+    --banner-height: 0px;
 }
 
 @media (min-width: 640px) {
     :root {
         --header-height: 4rem;
-        --banner-height: 72px;
+        --banner-height: 0px;
     }
 }
 
