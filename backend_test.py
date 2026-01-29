@@ -1477,6 +1477,8 @@ def main():
             report = tester.run_advisor_brain_test()
         elif sys.argv[1] == "--supabase":
             report = tester.run_supabase_migration_tests()
+        elif sys.argv[1] == "--hubspot-crm":
+            report = tester.run_hubspot_crm_tests()
         else:
             report = tester.run_all_tests()
     else:
