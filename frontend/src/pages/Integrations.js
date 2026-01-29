@@ -956,13 +956,13 @@ const Integrations = () => {
                           </>
                         )}
                         
-                        {mergeConnected && !selectedIntegration.isOutlook && !selectedIntegration.isGmail && (
+                        {connectionSource === 'merge' && !selectedIntegration.isOutlook && !selectedIntegration.isGmail && (
                           <div className="text-sm space-y-2">
                             <p style={{ color: 'var(--text-secondary)' }}>
-                              Integration Type: <strong>Merge.dev</strong>
+                              <strong>Connection Type:</strong> Merge.dev Unified API
                             </p>
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                              This integration is powered by Merge.dev's unified API platform.
+                              This integration is managed through Merge.dev's unified platform.
                             </p>
                           </div>
                         )}
