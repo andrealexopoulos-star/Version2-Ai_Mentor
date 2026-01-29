@@ -20,6 +20,8 @@ def generate_supabase_token():
     This uses the Supabase admin client to create a session
     """
     try:
+        import sys
+        sys.path.insert(0, '/app/backend')
         from supabase_client import init_supabase
         supabase = init_supabase()
         
@@ -63,6 +65,8 @@ def generate_supabase_token():
         
     except Exception as e:
         print(f"❌ Error generating token: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def test_crm_endpoint(endpoint, token, page_size=None):
