@@ -608,10 +608,12 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Priority Inbox Connection Detection"
     - "HubSpot Routes Through Merge.dev (Not Upgrade Modal)"
     - "Cognitive Core Migration to Supabase"
   stuck_tasks:
     - "Cognitive Core Migration to Supabase"
+    - "Priority Inbox Connection Detection"
   test_all: false
   test_priority: "high_first"
 
