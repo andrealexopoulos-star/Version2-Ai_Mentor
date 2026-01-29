@@ -1027,11 +1027,14 @@ const Integrations = () => {
                 </p>
 
                 {(() => {
-                  const mergeConnected = mergeIntegrations[selectedIntegration.id?.toLowerCase()] || 
-                                        mergeIntegrations[selectedIntegration.name?.toLowerCase()];
-                  const isConnected = (selectedIntegration.id === 'outlook' && outlookStatus.connected) || 
-                                     (selectedIntegration.id === 'gmail' && gmailStatus.connected) ||
-                                     mergeConnected;
+                  const connectionState = resolveIntegrationState(
+                    selectedIntegration,
+                    outlookStatus,
+                    gmailStatus,
+                    mergeIntegrations
+                  );
+                  const isConnected = connectionState.connected;
+                  const connectionSource = connectionState.source;
 
                   if (isConnected) {
                     return (
@@ -1041,7 +1044,7 @@ const Integrations = () => {
                           <span className="text-sm font-medium text-green-700">Connected</span>
                         </div>
                         
-                        {(selectedIntegration.id === 'outlook' || selectedIntegration.id === 'gmail') && (
+                        {connectionSource === 'edge' && (selectedIntegration.id === 'outlook' || selectedIntegration.id === 'gmail') && (
                           <Button
                             onClick={selectedIntegration.id === 'outlook' ? handleOutlookDisconnect : handleGmailDisconnect}
                             disabled={disconnecting}
