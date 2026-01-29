@@ -318,10 +318,9 @@ const Integrations = () => {
     }
   };
 
-  // Categories for navigation
+  // Categories for navigation (Email & Communication removed - handled via sidebar)
   const categories = [
     { id: 'crm', label: 'CRM', icon: '👥' },
-    { id: 'communication', label: 'Email & Communication', icon: '✉️' },
     { id: 'financial', label: 'Financial', icon: '💰' },
     { id: 'hris', label: 'HRIS', icon: '👔' },
     { id: 'ats', label: 'ATS', icon: '📋' },
