@@ -1089,6 +1089,242 @@ class StrategicAdvisorAPITester:
         
         return all_passed
     
+    def test_hubspot_crm_data_fetching(self):
+        """
+        Test HubSpot CRM data fetching via Merge.dev Unified API
+        Tests all 4 CRM endpoints: contacts, companies, deals, owners
+        """
+        print("\n🔍 Testing HubSpot CRM Data Fetching via Merge.dev...")
+        
+        # Test 1: GET /api/integrations/crm/contacts (default page_size=100)
+        success1, response1 = self.run_test(
+            "CRM Contacts - Default Page Size",
+            "GET",
+            "integrations/crm/contacts",
+            200
+        )
+        
+        if success1:
+            # Verify response structure
+            if 'results' in response1:
+                results = response1['results']
+                self.log_test("CRM Contacts - Results Array Present", True, f"Count: {len(results)}")
+                
+                # Verify pagination fields
+                if 'next' in response1:
+                    self.log_test("CRM Contacts - Pagination Fields Present", True, f"next: {response1.get('next')}")
+                else:
+                    self.log_test("CRM Contacts - Pagination Fields Present", False, "Missing 'next' field")
+                
+                # Verify actual data (check first contact if exists)
+                if len(results) > 0:
+                    first_contact = results[0]
+                    self.log_test("CRM Contacts - Contains Data", True, f"First contact ID: {first_contact.get('id', 'N/A')}")
+                    
+                    # Log sample data for verification
+                    print(f"\n📊 Sample Contact Data:")
+                    print(f"   ID: {first_contact.get('id')}")
+                    print(f"   First Name: {first_contact.get('first_name')}")
+                    print(f"   Last Name: {first_contact.get('last_name')}")
+                    print(f"   Email: {first_contact.get('email_addresses', [{}])[0] if first_contact.get('email_addresses') else 'N/A'}")
+                else:
+                    self.log_test("CRM Contacts - Contains Data", False, "No contacts returned (empty results)")
+            else:
+                self.log_test("CRM Contacts - Results Array Present", False, "Missing 'results' field")
+        
+        # Test 2: GET /api/integrations/crm/contacts?page_size=10
+        success2, response2 = self.run_test(
+            "CRM Contacts - Custom Page Size (10)",
+            "GET",
+            "integrations/crm/contacts?page_size=10",
+            200
+        )
+        
+        if success2:
+            results = response2.get('results', [])
+            if len(results) <= 10:
+                self.log_test("CRM Contacts - Page Size Respected", True, f"Returned {len(results)} records")
+            else:
+                self.log_test("CRM Contacts - Page Size Respected", False, f"Expected ≤10, got {len(results)}")
+        
+        # Test 3: GET /api/integrations/crm/companies
+        success3, response3 = self.run_test(
+            "CRM Companies - Fetch Data",
+            "GET",
+            "integrations/crm/companies",
+            200
+        )
+        
+        if success3:
+            if 'results' in response3:
+                results = response3['results']
+                self.log_test("CRM Companies - Results Array Present", True, f"Count: {len(results)}")
+                
+                if len(results) > 0:
+                    first_company = results[0]
+                    self.log_test("CRM Companies - Contains Data", True, f"First company ID: {first_company.get('id', 'N/A')}")
+                    
+                    print(f"\n🏢 Sample Company Data:")
+                    print(f"   ID: {first_company.get('id')}")
+                    print(f"   Name: {first_company.get('name')}")
+                else:
+                    self.log_test("CRM Companies - Contains Data", False, "No companies returned")
+            else:
+                self.log_test("CRM Companies - Results Array Present", False, "Missing 'results' field")
+        
+        # Test 4: GET /api/integrations/crm/deals
+        success4, response4 = self.run_test(
+            "CRM Deals - Fetch Data",
+            "GET",
+            "integrations/crm/deals",
+            200
+        )
+        
+        if success4:
+            if 'results' in response4:
+                results = response4['results']
+                self.log_test("CRM Deals - Results Array Present", True, f"Count: {len(results)}")
+                
+                if len(results) > 0:
+                    first_deal = results[0]
+                    self.log_test("CRM Deals - Contains Data", True, f"First deal ID: {first_deal.get('id', 'N/A')}")
+                    
+                    print(f"\n💼 Sample Deal Data:")
+                    print(f"   ID: {first_deal.get('id')}")
+                    print(f"   Name: {first_deal.get('name')}")
+                    print(f"   Amount: {first_deal.get('amount')}")
+                else:
+                    self.log_test("CRM Deals - Contains Data", False, "No deals returned")
+            else:
+                self.log_test("CRM Deals - Results Array Present", False, "Missing 'results' field")
+        
+        # Test 5: GET /api/integrations/crm/owners
+        success5, response5 = self.run_test(
+            "CRM Owners - Fetch Data",
+            "GET",
+            "integrations/crm/owners",
+            200
+        )
+        
+        if success5:
+            if 'results' in response5:
+                results = response5['results']
+                self.log_test("CRM Owners - Results Array Present", True, f"Count: {len(results)}")
+                
+                if len(results) > 0:
+                    first_owner = results[0]
+                    self.log_test("CRM Owners - Contains Data", True, f"First owner ID: {first_owner.get('id', 'N/A')}")
+                    
+                    print(f"\n👥 Sample Owner Data:")
+                    print(f"   ID: {first_owner.get('id')}")
+                    print(f"   Name: {first_owner.get('name')}")
+                    print(f"   Email: {first_owner.get('email')}")
+                else:
+                    self.log_test("CRM Owners - Contains Data", False, "No owners returned")
+            else:
+                self.log_test("CRM Owners - Results Array Present", False, "Missing 'results' field")
+        
+        # Test 6: Error scenario - Invalid auth token
+        print("\n🔍 Testing Error Scenarios...")
+        
+        # Save current token
+        original_token = self.token
+        
+        # Set invalid token
+        self.token = "invalid_token_12345"
+        
+        success6, response6 = self.run_test(
+            "CRM Contacts - Invalid Auth Token",
+            "GET",
+            "integrations/crm/contacts",
+            401  # Expect 401 Unauthorized
+        )
+        
+        if success6:
+            self.log_test("CRM - Invalid Token Handling", True, "Correctly returned 401 for invalid token")
+        else:
+            self.log_test("CRM - Invalid Token Handling", False, "Did not return 401 for invalid token")
+        
+        # Restore original token
+        self.token = original_token
+        
+        # Summary
+        all_endpoints_passed = success1 and success3 and success4 and success5
+        
+        if all_endpoints_passed:
+            self.log_test("HubSpot CRM Integration - All Endpoints Working", True, "All 4 CRM endpoints returned 200 OK with data")
+        else:
+            failed = []
+            if not success1: failed.append("contacts")
+            if not success3: failed.append("companies")
+            if not success4: failed.append("deals")
+            if not success5: failed.append("owners")
+            self.log_test("HubSpot CRM Integration - All Endpoints Working", False, f"Failed endpoints: {', '.join(failed)}")
+        
+        return all_endpoints_passed
+    
+    def run_hubspot_crm_tests(self):
+        """Run HubSpot CRM data fetching tests"""
+        print("🚀 Starting HubSpot CRM Data Fetching Tests via Merge.dev...")
+        print(f"Base URL: {self.base_url}")
+        print(f"Test User: andre@thestrategysquad.com.au")
+        print("\n" + "="*80)
+        print("TESTING SCOPE: HubSpot CRM Data via Merge.dev Unified API")
+        print("="*80)
+        
+        # Health check
+        self.test_health_check()
+        
+        # Authentication - Try to login as andre@thestrategysquad.com.au
+        print("\n📋 PHASE 1: Authentication")
+        print("Attempting to login as andre@thestrategysquad.com.au...")
+        
+        # Try Supabase login first
+        login_data = {
+            "email": "andre@thestrategysquad.com.au",
+            "password": "testpass123456"  # This will likely fail, but we'll try
+        }
+        
+        success, response = self.run_test(
+            "Login as andre@thestrategysquad.com.au (Supabase)",
+            "POST",
+            "auth/supabase/login",
+            200,
+            data=login_data
+        )
+        
+        if success:
+            session = response.get('session', {})
+            if session and session.get('access_token'):
+                self.token = session['access_token']
+                user_info = response.get('user', {})
+                self.user_id = user_info.get('id')
+                print(f"✅ Successfully logged in as {user_info.get('email')}")
+            else:
+                print("❌ Login failed - no access token in response")
+                print("⚠️  Cannot proceed with CRM tests without authentication")
+                return self.generate_report()
+        else:
+            print("❌ Login failed - user may not exist or password incorrect")
+            print("⚠️  Cannot proceed with CRM tests without authentication")
+            print("\n💡 MANUAL TESTING REQUIRED:")
+            print("   1. User andre@thestrategysquad.com.au must log in via UI")
+            print("   2. Navigate to /integrations page")
+            print("   3. Test CRM endpoints manually via browser console:")
+            print("      fetch('https://biqc-connect.preview.emergentagent.com/api/integrations/crm/contacts', {")
+            print("        headers: {'Authorization': 'Bearer ' + localStorage.getItem('supabase.auth.token')}")
+            print("      }).then(r => r.json()).then(console.log)")
+            return self.generate_report()
+        
+        # Test auth/me to verify token works
+        self.test_auth_me()
+        
+        # CRITICAL: HubSpot CRM Data Fetching Tests
+        print("\n📋 PHASE 2: HubSpot CRM Data Fetching (CRITICAL)")
+        self.test_hubspot_crm_data_fetching()
+        
+        return self.generate_report()
+    
     def run_supabase_migration_tests(self):
         """Run comprehensive Supabase migration tests"""
         print("🚀 Starting FINAL SUPABASE MIGRATION VALIDATION...")
