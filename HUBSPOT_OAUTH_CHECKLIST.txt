@@ -1,0 +1,129 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║  HUBSPOT CUSTOM OAUTH CONFIGURATION CHECKLIST                        ║
+║  Complete these steps in order                                       ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+PART A: HUBSPOT APP CONFIGURATION (app.hubspot.com)
+───────────────────────────────────────────────────────────────────────
+
+Step 1: Login to HubSpot
+  □ Navigate to https://app.hubspot.com
+  □ Login with admin credentials
+  
+Step 2: Access Private Apps
+  □ Click Settings (gear icon)
+  □ Navigate to Integrations → Private Apps
+  □ Find App ID: 29819397
+  
+Step 3: Add Redirect URI
+  □ Click "Auth" tab
+  □ Find "Redirect URLs" section
+  □ Click "Add redirect URL"
+  □ Enter: https://api.merge.dev/oauth/callback
+  □ Click "Add" or "Save"
+  □ Verify URL appears in list
+  
+Step 4: Configure Scopes
+  □ Click "Scopes" tab
+  □ Enable: crm.objects.contacts.read
+  □ Enable: crm.objects.companies.read
+  □ Enable: crm.objects.deals.read
+  □ Enable: crm.objects.owners.read
+  □ Enable: crm.objects.contacts.write
+  □ Enable: crm.objects.companies.write
+  □ Enable: crm.objects.deals.write
+  □ Enable: crm.objects.owners.write
+  □ Save changes
+  
+Step 5: Verify App Status
+  □ Ensure app status is "Active" (not disabled)
+  □ Client ID visible: 275da85b-1e52-4677-9fe7-5ce78800f8da
+
+
+PART B: MERGE.DEV CONFIGURATION (app.merge.dev)
+───────────────────────────────────────────────────────────────────────
+
+Step 6: Login to Merge
+  □ Navigate to https://app.merge.dev
+  □ Login with your Merge account
+  
+Step 7: Navigate to HubSpot Settings
+  □ Click "Integrations" in sidebar
+  □ Find "CRM" category
+  □ Click "HubSpot"
+  
+Step 8: Select Custom OAuth
+  □ Find OAuth configuration section
+  □ Select "Use Custom OAuth Application" (NOT Merge-managed)
+  
+Step 9: Enter Credentials
+  □ Client ID: 275da85b-1e52-4677-9fe7-5ce78800f8da
+  □ Client Secret: 6afd0d24-a5fc-409e-8811-84e12bcaf20e
+  □ Verify redirect URI: https://api.merge.dev/oauth/callback
+  
+Step 10: Enable & Save
+  □ Toggle integration to "Enabled"
+  □ Click "Save" or "Update"
+  □ Wait for success confirmation
+
+
+PART C: TEST IN BIQC
+───────────────────────────────────────────────────────────────────────
+
+Step 11: Open BIQC Integrations
+  □ Navigate to: https://biqc-connect.preview.emergentagent.com/integrations
+  □ Login as: andre@thestrategysquad.com.au (if not already logged in)
+  
+Step 12: Connect HubSpot
+  □ Find HubSpot card
+  □ Verify button says "Connect" (not "Upgrade")
+  □ Click "Connect" button
+  
+Step 13: Merge Modal Opens
+  □ Merge Link modal/iframe opens
+  □ Provider list appears
+  □ Find "HubSpot" in list
+  □ Click "HubSpot"
+  
+Step 14: Complete OAuth
+  □ HubSpot OAuth screen appears
+  □ Shows your app name or Merge branding
+  □ Select HubSpot portal (if you have multiple)
+  □ Click "Authorize" or "Connect"
+  
+Step 15: Verify Success
+  □ Browser redirects back to BIQC
+  □ Toast message: "HubSpot connected successfully!"
+  □ HubSpot appears in "Connected Tools" section
+  □ No error messages
+
+
+PART D: VERIFICATION
+───────────────────────────────────────────────────────────────────────
+
+Step 16: Run Verification Script
+  □ SSH/Terminal: python3 /app/verify_hubspot_connection.py
+  □ Expected: "✅ HUBSPOT CONNECTION SUCCESSFUL!"
+  
+Step 17: Check Database
+  □ HubSpot integration has workspace_id
+  □ HubSpot integration has merge_account_id
+  □ HubSpot integration has account_token
+  
+Step 18: Check Backend Logs
+  □ Logs show: "🔄 Exchanging Merge token for workspace..."
+  □ Logs show: "💾 Storing integration for workspace..."
+  □ Logs show: "✅ Integration account stored successfully"
+
+
+═══════════════════════════════════════════════════════════════════════
+COMPLETION CHECKLIST
+═══════════════════════════════════════════════════════════════════════
+
+□ Part A Complete (HubSpot app configured)
+□ Part B Complete (Merge dashboard configured)
+□ Part C Complete (Tested in BIQC)
+□ Part D Complete (Verified in database)
+
+IF ALL CHECKED → OAuth is stable, proceed to P1 (data fetching)
+IF ANY FAILED → Review error messages and check configuration
