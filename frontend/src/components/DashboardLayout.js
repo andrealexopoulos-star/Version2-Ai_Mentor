@@ -160,6 +160,7 @@ const DashboardLayout = ({ children }) => {
     { icon: Plug, label: 'Integrations', path: '/integrations' },
     { icon: Database, label: 'Data Center', path: '/data-center' },
     { type: 'divider', label: 'Communications' },
+    { icon: Mail, label: 'Connect Email Account', path: '/connect-email' },
     { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
     { type: 'divider', label: 'Tools' },
