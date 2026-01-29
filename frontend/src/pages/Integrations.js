@@ -12,6 +12,55 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import { useMergeLink } from '@mergeapi/react-merge-link';
 
+/**
+ * CANONICAL INTEGRATION STATE RESOLVER
+ * 
+ * Implements strict precedence rules for integration connection state:
+ * 
+ * EMAIL (Outlook / Gmail):
+ *   1. Direct Edge Function connections (PRIMARY)
+ *   2. Merge.dev email connections (SUPPRESSED if Edge exists)
+ * 
+ * CRM / FINANCE / HR / ATS:
+ *   1. Merge.dev connections ONLY
+ * 
+ * Returns: { connected: boolean, source: 'edge' | 'merge' | null }
+ */
+const resolveIntegrationState = (integration, outlookStatus, gmailStatus, mergeIntegrations) => {
+  const integrationId = integration.id?.toLowerCase();
+  const integrationName = integration.name?.toLowerCase();
+  
+  // EMAIL CATEGORY: Edge Functions take absolute precedence
+  if (integration.isOutlook || integrationId === 'outlook') {
+    if (outlookStatus.connected) {
+      return { connected: true, source: 'edge' };
+    }
+    // Do NOT check Merge for Outlook if Edge is the canonical source
+    return { connected: false, source: null };
+  }
+  
+  if (integration.isGmail || integrationId === 'gmail') {
+    if (gmailStatus.connected) {
+      return { connected: true, source: 'edge' };
+    }
+    // Do NOT check Merge for Gmail if Edge is the canonical source
+    return { connected: false, source: null };
+  }
+  
+  // CRM / FINANCE / HR / ATS: Merge.dev is the ONLY source
+  if (integration.viaMerge) {
+    const mergeConnected = mergeIntegrations[integrationId] || 
+                          mergeIntegrations[integrationName];
+    if (mergeConnected) {
+      return { connected: true, source: 'merge' };
+    }
+    return { connected: false, source: null };
+  }
+  
+  // Default: not connected
+  return { connected: false, source: null };
+};
+
 const Integrations = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
