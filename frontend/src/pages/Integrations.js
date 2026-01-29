@@ -462,9 +462,23 @@ const Integrations = () => {
     }, 1500);
   };
 
-  const handleOutlookConnect = () => {
+  const handleOutlookConnect = async () => {
     setConnecting('outlook');
-    window.location.assign(`${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?returnTo=/integrations`);
+    
+    // Get current session token
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || localStorage.getItem('token');
+    
+    if (!token) {
+      toast.error('Please log in to connect Outlook');
+      setConnecting(null);
+      return;
+    }
+    
+    // Pass token as query parameter (browser redirects can't send headers)
+    window.location.assign(
+      `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/integrations`
+    );
   };
 
   const handleOutlookDisconnect = async () => {
@@ -490,9 +504,23 @@ const Integrations = () => {
     }
   };
 
-  const handleGmailConnect = () => {
+  const handleGmailConnect = async () => {
     setConnecting('gmail');
-    window.location.assign(`${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?returnTo=/integrations`);
+    
+    // Get current session token
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || localStorage.getItem('token');
+    
+    if (!token) {
+      toast.error('Please log in to connect Gmail');
+      setConnecting(null);
+      return;
+    }
+    
+    // Pass token as query parameter (browser redirects can't send headers)
+    window.location.assign(
+      `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/integrations`
+    );
   };
 
   const handleGmailDisconnect = async () => {
