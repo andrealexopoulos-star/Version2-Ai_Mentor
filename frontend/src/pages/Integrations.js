@@ -241,7 +241,7 @@ const Integrations = () => {
       console.log('📊 Outlook status:', response.data);
       
       if (response.data.degraded) {
-        console.log('⚠️ Outlook status check degraded');
+        console.log('⚠️ Outlook status check degraded - maintaining current state');
         setOutlookStatus(prev => ({
           ...prev,
           health_check_failed: true
@@ -255,7 +255,8 @@ const Integrations = () => {
         health_check_failed: false
       });
     } catch (error) {
-      console.warn('⚠️ Outlook status check failed:', error);
+      console.warn('⚠️ Outlook status check failed - failing open, maintaining current state:', error);
+      // FAIL OPEN: Preserve current connection state on error
       setOutlookStatus(prev => ({
         ...prev,
         health_check_failed: true
