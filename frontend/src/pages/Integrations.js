@@ -419,8 +419,13 @@ const Integrations = () => {
     },
   ];
 
-  // Filter integrations by category
+  // Filter integrations by category (EXCLUDE email/communication - handled via sidebar)
   const filteredIntegrations = integrations.filter(integration => {
+    // Exclude email integrations (Outlook, Gmail) - these are managed via Communications menu
+    if (integration.category === 'communication') {
+      return false;
+    }
+    
     const matchesSearch = integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           integration.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === null || integration.category === selectedCategory;
