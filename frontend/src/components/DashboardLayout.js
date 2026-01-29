@@ -419,26 +419,11 @@ const DashboardLayout = ({ children }) => {
 
       {/* Degraded Intelligence Banner - Below header */}
       {showDegradedBanner && (
-        <div 
-          className="fixed left-0 right-0"
-          style={{ 
-            top: '3.5rem',
-            zIndex: 50
-          }}
-        >
-          <style>{`
-            @media (min-width: 640px) {
-              .banner-container {
-                top: 4rem !important;
-              }
-            }
-          `}</style>
-          <div className="banner-container">
-            <DegradedIntelligenceBanner
-              onComplete={handleCompleteOnboarding}
-              onDismiss={handleDismissBanner}
-            />
-          </div>
+        <div className="fixed left-0 right-0 top-14 sm:top-16 z-50">
+          <DegradedIntelligenceBanner
+            onComplete={handleCompleteOnboarding}
+            onDismiss={handleDismissBanner}
+          />
         </div>
       )}
 
@@ -446,12 +431,12 @@ const DashboardLayout = ({ children }) => {
       <aside 
         className={`fixed left-0 w-64 sm:w-72 bg-white shadow-2xl transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          showDegradedBanner 
+            ? 'top-[7.5rem] sm:top-32 h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-8rem)]' 
+            : 'top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]'
         }`}
-        style={{ 
-          top: showDegradedBanner ? '7.5rem' : '3.5rem',
-          height: showDegradedBanner ? 'calc(100vh - 7.5rem)' : 'calc(100vh - 3.5rem)',
-          zIndex: 999
-        }}
+        style={{ zIndex: 999 }}
       >
         <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto h-full bg-white">
           {navItems.map((item, index) => {
@@ -514,12 +499,15 @@ const DashboardLayout = ({ children }) => {
 
       {/* Main Content */}
       <main 
-        className="lg:ml-64 min-h-screen"
+        className={`lg:ml-64 min-h-screen ${
+          showDegradedBanner 
+            ? 'pt-[7.5rem] sm:pt-32' 
+            : 'pt-14 sm:pt-16'
+        }`}
         style={{ 
           background: 'var(--bg-secondary)',
           position: 'relative',
-          zIndex: 1,
-          paddingTop: showDegradedBanner ? '7.5rem' : '3.5rem'
+          zIndex: 1
         }}
       >
         {children}
