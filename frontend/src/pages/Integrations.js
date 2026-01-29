@@ -588,24 +588,29 @@ const Integrations = () => {
 
         {/* Top-Level Navigation Tabs */}
         <div className="border-b" style={{ borderColor: 'var(--border-light)' }}>
-          <div className="flex gap-0">
+          <div className="flex gap-2">
             <button
               onClick={() => {
                 setActiveTab('connected-apps');
                 setSelectedCategory(null);
                 setSelectedIntegration(null);
               }}
-              className={`px-6 py-3 text-sm font-medium transition-all duration-150 border-b-2 ${
+              className={`px-4 py-3 text-sm font-medium transition-all duration-150 rounded-t-lg relative ${
                 activeTab === 'connected-apps'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent hover:border-gray-300'
+                  ? 'text-blue-700'
+                  : 'hover:bg-gray-50'
               }`}
               style={{ 
                 color: activeTab === 'connected-apps' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                borderBottomColor: activeTab === 'connected-apps' ? 'var(--accent-primary)' : 'transparent'
+                background: activeTab === 'connected-apps' ? 'rgba(29, 78, 216, 0.08)' : 'transparent',
+                fontWeight: activeTab === 'connected-apps' ? '600' : '500'
               }}
             >
               Connected Apps
+              {activeTab === 'connected-apps' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" 
+                     style={{ background: 'var(--accent-primary)' }} />
+              )}
             </button>
             <button
               onClick={() => {
@@ -613,17 +618,22 @@ const Integrations = () => {
                 setSelectedCategory(null);
                 setSelectedIntegration(null);
               }}
-              className={`px-6 py-3 text-sm font-medium transition-all duration-150 border-b-2 ${
+              className={`px-4 py-3 text-sm font-medium transition-all duration-150 rounded-t-lg relative ${
                 activeTab === 'intelligence-sources'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent hover:border-gray-300'
+                  ? 'text-blue-700'
+                  : 'hover:bg-gray-50'
               }`}
               style={{ 
                 color: activeTab === 'intelligence-sources' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                borderBottomColor: activeTab === 'intelligence-sources' ? 'var(--accent-primary)' : 'transparent'
+                background: activeTab === 'intelligence-sources' ? 'rgba(29, 78, 216, 0.08)' : 'transparent',
+                fontWeight: activeTab === 'intelligence-sources' ? '600' : '500'
               }}
             >
               Intelligence Sources
+              {activeTab === 'intelligence-sources' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" 
+                     style={{ background: 'var(--accent-primary)' }} />
+              )}
             </button>
           </div>
         </div>
@@ -661,26 +671,33 @@ const Integrations = () => {
 
             {/* Mobile Category Selector */}
             <div className="lg:hidden">
-              <select
-                value={selectedCategory || ''}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value || null);
-                  setSelectedIntegration(null);
-                }}
-                className="w-full px-4 py-3 rounded-lg border text-sm"
-                style={{
-                  background: 'var(--bg-card)',
-                  borderColor: 'var(--border-light)',
-                  color: 'var(--text-primary)'
-                }}
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedCategory || ''}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value || null);
+                    setSelectedIntegration(null);
+                  }}
+                  className="w-full px-4 py-3.5 pr-10 rounded-xl border text-sm font-medium appearance-none"
+                  style={{
+                    background: 'var(--bg-card)',
+                    borderColor: selectedCategory ? 'var(--accent-primary)' : 'var(--border-light)',
+                    color: 'var(--text-primary)',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                  }}
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none rotate-90" 
+                  style={{ color: 'var(--text-muted)' }} 
+                />
+              </div>
             </div>
 
             {/* Right Panel - Content */}
@@ -712,11 +729,20 @@ const Integrations = () => {
                       <div
                         key={integration.id}
                         onClick={() => setSelectedIntegration(integration)}
-                        className="p-4 rounded-xl border cursor-pointer transition-all duration-120 hover:shadow-md hover:-translate-y-0.5"
+                        className="p-4 rounded-xl border cursor-pointer transition-all duration-120 active:scale-[0.98]"
                         style={{
                           background: 'var(--bg-card)',
                           borderColor: isConnected ? '#22c55e' : 'var(--border-light)',
-                          borderWidth: isConnected ? '2px' : '1px'
+                          borderWidth: isConnected ? '2px' : '1px',
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                          e.currentTarget.style.transform = 'translateY(0)';
                         }}
                       >
                         <div className="flex items-start gap-3">
@@ -735,10 +761,11 @@ const Integrations = () => {
                                 <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
                               )}
                             </div>
-                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                               {integration.description}
                             </p>
                           </div>
+                          <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                         </div>
                       </div>
                     );
