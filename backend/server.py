@@ -2915,7 +2915,15 @@ async def sync_outlook_emails(
     tokens = await get_outlook_tokens(user_id)
     
     if not tokens:
-        raise HTTPException(status_code=400, detail="Outlook not connected. Please connect first.")
+        logger.warning(f"❌ Outlook sync attempted but no tokens for user {user_id}")
+        raise HTTPException(
+            status_code=401, 
+            detail={
+                "code": "OUTLOOK_NOT_CONNECTED",
+                "message": "Outlook not connected. Please connect Outlook first.",
+                "action_required": "connect"
+            }
+        )
     
     access_token = tokens.get("access_token")
     expires_at_str = tokens.get("expires_at")
