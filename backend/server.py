@@ -3311,16 +3311,27 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             # Has tokens but no canonical record - migrate
             logger.info(f"⚠️ Found tokens without canonical record - migrating state")
             
+            from workspace_helpers import get_user_account
+            
             try:
-                supabase_admin.table("integration_accounts").upsert({
-                    "user_id": user_id,
-                    "provider": "outlook",
-                    "category": "email",
-                    "account_token": "connected",
-                    "connected_at": datetime.now(timezone.utc).isoformat()
-                }, on_conflict="user_id,category").execute()
+                # Get user's workspace/account for proper migration
+                account = await get_user_account(supabase_admin, user_id)
+                
+                if account:
+                    account_id = account["id"]
+                    supabase_admin.table("integration_accounts").upsert({
+                        "user_id": user_id,
+                        "account_id": account_id,
+                        "provider": "outlook",
+                        "category": "email",
+                        "account_token": "connected",
+                        "connected_at": datetime.now(timezone.utc).isoformat()
+                    }, on_conflict="account_id,category").execute()
+                    logger.info(f"✅ Migration successful: Outlook state persisted for workspace {account_id}")
+                else:
+                    logger.warning(f"⚠️ No workspace found for user {user_id} - cannot migrate")
             except Exception as e:
-                logger.warning(f"Failed to migrate integration state: {e}")
+                logger.error(f"❌ Failed to migrate integration state: {e}")
             
             emails_count = await count_user_emails_supabase(supabase_admin, user_id)
             connected_email = tokens.get("microsoft_email")
