@@ -7618,6 +7618,17 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
                 "category": category,
                 "connected": True,
                 "connected_at": record.get("connected_at") or record.get("created_at"),
+                "merge_account_id": record.get("merge_account_id"),
+                "workspace_id": account_id,
+                "workspace_name": account_name
+            }
+        
+        logger.info(f"✅ Found {len(integrations)} workspace integrations for {account_name} ({account_id})")
+        return {"integrations": integrations}
+        
+    except Exception as e:
+        logger.error(f"❌ Error fetching connected integrations: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== MERGE.DEV CRM DATA ACCESS ====================
