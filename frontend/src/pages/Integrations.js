@@ -1022,7 +1022,11 @@ const Integrations = () => {
       {/* Overlay for desktop detail panel */}
       {selectedIntegration && (
         <div
-          className="hidden lg:block fixed inset-0 bg-black/20 z-40 animate-fade-in"
+          className="hidden lg:block fixed inset-0 bg-black/20 animate-fade-in"
+          style={{ 
+            top: 'var(--header-height)',
+            zIndex: 40
+          }}
           onClick={() => setSelectedIntegration(null)}
         />
       )}
