@@ -269,14 +269,8 @@ const Integrations = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.access_token) {
-        setGmailStatus({
-          connected: false,
-          labels_count: 0,
-          inbox_type: null,
-          connected_email: null,
-          needs_reconnect: false,
-          testing: false
-        });
+        console.log('⚠️ No active session - cannot check Gmail status');
+        // FAIL OPEN: Preserve current state if no session
         return;
       }
 
@@ -292,14 +286,8 @@ const Integrations = () => {
       });
 
       if (!response.ok) {
-        setGmailStatus({
-          connected: false,
-          labels_count: 0,
-          inbox_type: null,
-          connected_email: null,
-          needs_reconnect: false,
-          testing: false
-        });
+        console.warn('⚠️ Gmail Edge Function check failed - failing open, maintaining current state');
+        // FAIL OPEN: Preserve current state on error
         return;
       }
 
@@ -325,15 +313,8 @@ const Integrations = () => {
         });
       }
     } catch (error) {
-      console.error('⚠️ Could not fetch Gmail status:', error);
-      setGmailStatus({
-        connected: false,
-        labels_count: 0,
-        inbox_type: null,
-        connected_email: null,
-        needs_reconnect: false,
-        testing: false
-      });
+      console.error('⚠️ Could not fetch Gmail status - failing open:', error);
+      // FAIL OPEN: Preserve current state on exception
     }
   };
 
