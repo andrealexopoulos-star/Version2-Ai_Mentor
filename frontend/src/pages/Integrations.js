@@ -432,8 +432,13 @@ const Integrations = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Get connected count using the resolver
+  // Get connected count using the resolver (EXCLUDE email integrations)
   const connectedCount = integrations.filter(int => {
+    // Exclude email category - managed separately via Communications menu
+    if (int.category === 'communication') {
+      return false;
+    }
+    
     const state = resolveIntegrationState(int, outlookStatus, gmailStatus, mergeIntegrations);
     return state.connected;
   }).length;
