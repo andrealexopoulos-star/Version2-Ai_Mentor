@@ -935,7 +935,7 @@ const Integrations = () => {
                           </>
                         )}
                         
-                        {selectedIntegration.id === 'gmail' && (
+                        {selectedIntegration.id === 'gmail' && connectionSource === 'edge' && (
                           <>
                             <div className="text-sm space-y-2">
                               <p style={{ color: 'var(--text-secondary)' }}>
