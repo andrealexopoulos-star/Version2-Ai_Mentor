@@ -420,9 +420,10 @@ const DashboardLayout = ({ children }) => {
       {/* Degraded Intelligence Banner - Below header */}
       {showDegradedBanner && (
         <div 
-          className="fixed left-0 right-0 z-50"
+          className="fixed left-0 right-0"
           style={{ 
-            top: 'var(--header-height, 3.5rem)'
+            top: '3.5rem',
+            zIndex: 50
           }}
         >
           <DegradedIntelligenceBanner
@@ -438,8 +439,8 @@ const DashboardLayout = ({ children }) => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ 
-          top: showDegradedBanner ? 'calc(var(--header-height, 3.5rem) + var(--banner-height, 64px))' : 'var(--header-height, 3.5rem)',
-          height: showDegradedBanner ? 'calc(100vh - var(--header-height, 3.5rem) - var(--banner-height, 64px))' : 'calc(100vh - var(--header-height, 3.5rem))',
+          top: showDegradedBanner ? '7.5rem' : '3.5rem',
+          height: showDegradedBanner ? 'calc(100vh - 7.5rem)' : 'calc(100vh - 3.5rem)',
           zIndex: 999
         }}
       >
@@ -509,7 +510,7 @@ const DashboardLayout = ({ children }) => {
           background: 'var(--bg-secondary)',
           position: 'relative',
           zIndex: 1,
-          paddingTop: showDegradedBanner ? 'calc(var(--header-height, 3.5rem) + var(--banner-height, 64px))' : 'var(--header-height, 3.5rem)'
+          paddingTop: showDegradedBanner ? '7.5rem' : '3.5rem'
         }}
       >
         {children}
