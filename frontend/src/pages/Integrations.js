@@ -766,11 +766,13 @@ const Integrations = () => {
                 /* Category Selected - Show Integration Cards */
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {filteredIntegrations.map((integration) => {
-                    const mergeConnected = mergeIntegrations[integration.id?.toLowerCase()] || 
-                                          mergeIntegrations[integration.name?.toLowerCase()];
-                    const isConnected = (integration.id === 'outlook' && outlookStatus.connected) || 
-                                       (integration.id === 'gmail' && gmailStatus.connected) ||
-                                       mergeConnected;
+                    const connectionState = resolveIntegrationState(
+                      integration, 
+                      outlookStatus, 
+                      gmailStatus, 
+                      mergeIntegrations
+                    );
+                    const isConnected = connectionState.connected;
 
                     return (
                       <div
