@@ -3357,36 +3357,10 @@ async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Di
     }
 
 
-async def refresh_outlook_token(user_id: str, refresh_token: str):
-    """Refresh Outlook access token"""
-    token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
-    
-    payload = {
-        "client_id": AZURE_CLIENT_ID,
-        "client_secret": AZURE_CLIENT_SECRET,
-        "refresh_token": refresh_token,
-        "grant_type": "refresh_token",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
-    }
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.post(token_url, data=payload)
-        
-        if response.status_code != 200:
-            raise HTTPException(status_code=401, detail="Failed to refresh Outlook token")
-        
-        token_data = response.json()
-    
-    # Update tokens
-    await db.users.update_one(
-        {"id": user_id},
-        {"$set": {
-            "outlook_access_token": token_data.get("access_token"),
-            "outlook_refresh_token": token_data.get("refresh_token"),
-            "outlook_token_expires_at": (datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))).isoformat()
-        }}
-    )
-
+# REMOVED: Legacy MongoDB token refresh function
+# This function used db.users (MongoDB) which is being phased out
+# Replaced by refresh_outlook_token_supabase() which uses Supabase
+# Original code preserved in git history if needed
 
 @api_router.get("/outlook/status")
 async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
