@@ -29,7 +29,7 @@ const Integrations = () => {
     linkToken: mergeLinkToken,
     onSuccess: async (public_token, metadata) => {
       console.log('✅ Merge onboarding success', { public_token, metadata });
-      const category = metadata?.category || 'accounting';
+      const category = metadata?.category || 'crm';  // Default to 'crm' instead of 'accounting'
       const provider = metadata?.integration?.name || 'unknown';
       
       try {
