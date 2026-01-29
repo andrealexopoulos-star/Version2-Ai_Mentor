@@ -7696,6 +7696,9 @@ async def get_crm_companies(
     
     Works with: HubSpot, Salesforce, Pipedrive, etc.
     """
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
     user_id = current_user["id"]
     
     account = await get_user_account(supabase_admin, user_id)
@@ -7745,6 +7748,9 @@ async def get_crm_deals(
     
     Works with: HubSpot, Salesforce, Pipedrive, etc.
     """
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
     user_id = current_user["id"]
     
     account = await get_user_account(supabase_admin, user_id)
@@ -7794,6 +7800,9 @@ async def get_crm_owners(
     
     Works with: HubSpot, Salesforce, Pipedrive, etc.
     """
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
     user_id = current_user["id"]
     
     account = await get_user_account(supabase_admin, user_id)
