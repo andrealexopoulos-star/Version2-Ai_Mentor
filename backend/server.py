@@ -2853,18 +2853,28 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         logger.error(f"Failed to store Outlook tokens for user {user_id}")
         return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=storage_failed")
     
-    # TASK 1: Persist canonical integration state
+    # TASK 1: Persist canonical integration state (workspace-scoped)
+    from workspace_helpers import get_user_account
+    
     try:
-        supabase_admin.table("integration_accounts").upsert({
-            "user_id": user_id,
-            "provider": "outlook",
-            "category": "email",
-            "account_token": "connected",  # Token stored separately in outlook_oauth_tokens
-            "connected_at": datetime.now(timezone.utc).isoformat()
-        }, on_conflict="user_id,category").execute()
-        logger.info(f"✅ Outlook integration state persisted for user {user_id}")
+        # Get user's workspace/account
+        account = await get_user_account(supabase_admin, user_id)
+        
+        if account:
+            account_id = account["id"]
+            supabase_admin.table("integration_accounts").upsert({
+                "user_id": user_id,
+                "account_id": account_id,
+                "provider": "outlook",
+                "category": "email",
+                "account_token": "connected",  # Token stored separately in outlook_oauth_tokens
+                "connected_at": datetime.now(timezone.utc).isoformat()
+            }, on_conflict="account_id,category").execute()
+            logger.info(f"✅ Outlook integration state persisted for workspace {account_id}")
+        else:
+            logger.warning(f"⚠️ No workspace found for user {user_id} - skipping integration state persistence")
     except Exception as e:
-        logger.warning(f"Failed to persist integration state (non-critical): {e}")
+        logger.error(f"❌ Failed to persist integration state: {e}")
     
     logger.info(f"✅ Outlook integration successful for user {user_id}")
     
