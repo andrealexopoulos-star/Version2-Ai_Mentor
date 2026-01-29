@@ -1,0 +1,342 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+import { supabase } from '../context/SupabaseAuthContext';
+import { apiClient } from '../lib/api';
+import { toast } from 'sonner';
+import { 
+  Mail, CheckCircle2, ArrowRight, Loader2, 
+  AlertCircle, Inbox, X
+} from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
+
+const ConnectEmail = () => {
+  const navigate = useNavigate();
+  const [connecting, setConnecting] = useState(null);
+  const [outlookStatus, setOutlookStatus] = useState({ connected: false });
+  const [gmailStatus, setGmailStatus] = useState({ connected: false });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkEmailConnections();
+  }, []);
+
+  const checkEmailConnections = async () => {
+    try {
+      setLoading(true);
+      
+      // Check Outlook status
+      try {
+        const outlookResponse = await apiClient.get('/outlook/status');
+        setOutlookStatus(outlookResponse.data);
+      } catch (error) {
+        console.warn('Outlook status check failed:', error);
+        setOutlookStatus({ connected: false });
+      }
+      
+      // Check Gmail status
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.access_token) {
+          const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+          const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
+          
+          const gmailResponse = await fetch(edgeFunctionUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (gmailResponse.ok) {
+            const data = await gmailResponse.json();
+            if (data.ok && data.connected) {
+              setGmailStatus({ 
+                connected: true, 
+                email: session.user?.email 
+              });
+            } else {
+              setGmailStatus({ connected: false });
+            }
+          } else {
+            setGmailStatus({ connected: false });
+          }
+        }
+      } catch (error) {
+        console.warn('Gmail status check failed:', error);
+        setGmailStatus({ connected: false });
+      }
+      
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOutlookConnect = async () => {
+    setConnecting('outlook');
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || localStorage.getItem('token');
+    
+    if (!token) {
+      toast.error('Please log in to connect Outlook');
+      setConnecting(null);
+      return;
+    }
+    
+    window.location.assign(
+      `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/connect-email`
+    );
+  };
+
+  const handleGmailConnect = async () => {
+    setConnecting('gmail');
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || localStorage.getItem('token');
+    
+    if (!token) {
+      toast.error('Please log in to connect Gmail');
+      setConnecting(null);
+      return;
+    }
+    
+    window.location.assign(
+      `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/connect-email`
+    );
+  };
+
+  const handleViewInbox = () => {
+    navigate('/email-inbox');
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-5xl mx-auto">
+        <div className="space-y-6">
+          {/* Header */}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              Connect Email Account
+            </h1>
+            <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
+              Connect your email to enable Priority Inbox and AI-powered email intelligence
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+            </div>
+          ) : (
+            <>
+              {/* Connected Status Banner */}
+              {(outlookStatus.connected || gmailStatus.connected) && (
+                <div className="p-4 rounded-xl border-2 border-green-500 bg-green-50">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-green-900">
+                        Email Account Connected
+                      </p>
+                      <p className="text-sm text-green-700">
+                        {outlookStatus.connected && `Connected to Outlook (${outlookStatus.connected_email})`}
+                        {gmailStatus.connected && `Connected to Gmail (${gmailStatus.email})`}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleViewInbox}
+                      className="btn-primary"
+                    >
+                      <Inbox className="w-4 h-4 mr-2" />
+                      View Inbox
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Provider Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Option 1: Microsoft Outlook */}
+                <div 
+                  className="p-6 rounded-xl border-2 cursor-pointer transition-all duration-150"
+                  style={{
+                    borderColor: outlookStatus.connected ? '#22c55e' : 'var(--border-light)',
+                    background: outlookStatus.connected ? 'rgba(34, 197, 94, 0.05)' : 'var(--bg-card)'
+                  }}
+                  onClick={!outlookStatus.connected ? handleOutlookConnect : undefined}
+                >
+                  <div className="flex items-start gap-4">
+                    <div 
+                      className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
+                      style={{ background: '#0078D4' }}
+                    >
+                      OL
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                          Microsoft Outlook
+                        </h3>
+                        {outlookStatus.connected && (
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        )}
+                      </div>
+                      <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                        Connect your Outlook email for AI-powered inbox prioritization and email intelligence
+                      </p>
+                      {outlookStatus.connected ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm font-medium text-green-700">Connected</span>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleOutlookConnect}
+                          disabled={connecting === 'outlook'}
+                          className="btn-primary w-full sm:w-auto"
+                        >
+                          {connecting === 'outlook' ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Connecting...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowRight className="w-4 h-4 mr-2" />
+                              Connect Outlook
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Option 2: Gmail */}
+                <div 
+                  className="p-6 rounded-xl border-2 cursor-pointer transition-all duration-150"
+                  style={{
+                    borderColor: gmailStatus.connected ? '#22c55e' : 'var(--border-light)',
+                    background: gmailStatus.connected ? 'rgba(34, 197, 94, 0.05)' : 'var(--bg-card)'
+                  }}
+                  onClick={!gmailStatus.connected ? handleGmailConnect : undefined}
+                >
+                  <div className="flex items-start gap-4">
+                    <div 
+                      className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
+                      style={{ background: '#EA4335' }}
+                    >
+                      GM
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                          Gmail
+                        </h3>
+                        {gmailStatus.connected && (
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        )}
+                      </div>
+                      <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                        Connect your Gmail account for AI-powered inbox prioritization and email intelligence
+                      </p>
+                      {gmailStatus.connected ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm font-medium text-green-700">Connected</span>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleGmailConnect}
+                          disabled={connecting === 'gmail'}
+                          className="btn-primary w-full sm:w-auto"
+                        >
+                          {connecting === 'gmail' ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Connecting...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowRight className="w-4 h-4 mr-2" />
+                              Connect Gmail
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Option 3: Other (Coming Soon) */}
+                <div 
+                  className="p-6 rounded-xl border-2 opacity-60"
+                  style={{
+                    borderColor: 'var(--border-light)',
+                    background: 'var(--bg-card)'
+                  }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div 
+                      className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
+                    >
+                      <Mail className="w-8 h-8" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                        Other Email Providers
+                      </h3>
+                      <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                        Additional email providers coming soon
+                      </p>
+                      <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+                        Coming Soon
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Panel */}
+              <div className="p-6 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent-primary)' }} />
+                  <div>
+                    <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                      Email Connection Information
+                    </h4>
+                    <ul className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
+                      <li>• Your email data is processed securely via Supabase Edge Functions</li>
+                      <li>• BIQC analyzes email patterns to provide intelligent business insights</li>
+                      <li>• You can disconnect your email at any time from Settings</li>
+                      <li>• Priority Inbox uses AI to identify your most important emails</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Action */}
+              {(outlookStatus.connected || gmailStatus.connected) && (
+                <div className="flex items-center justify-center gap-4 pt-4">
+                  <Button
+                    onClick={handleViewInbox}
+                    className="btn-primary"
+                  >
+                    <Inbox className="w-4 h-4 mr-2" />
+                    Go to Priority Inbox
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default ConnectEmail;
