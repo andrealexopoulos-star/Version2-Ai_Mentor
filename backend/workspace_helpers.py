@@ -119,3 +119,27 @@ async def get_account_integration_by_category(supabase_client: Client, account_i
         return result.data if result.data else None
     except Exception as e:
         return None
+
+
+async def get_merge_account_token(supabase_client: Client, account_id: str, category: str) -> Optional[str]:
+    """
+    Get Merge.dev Linked Account Token for a workspace and category.
+    
+    This token is used as X-Account-Token header for Merge Unified API calls.
+    
+    Args:
+        supabase_client: Supabase admin client
+        account_id: UUID of the workspace
+        category: Integration category (e.g., 'crm', 'accounting')
+        
+    Returns:
+        Merge Linked Account Token or None if not connected
+    """
+    integration = await get_account_integration_by_category(supabase_client, account_id, category)
+    
+    if not integration:
+        return None
+    
+    # Return the Merge linked account token
+    # This is stored in account_token field (from exchange-account-token endpoint)
+    return integration.get('account_token')
