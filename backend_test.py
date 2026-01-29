@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 class StrategicAdvisorAPITester:
-    def __init__(self, base_url="https://FORK_PREVIEW_URL_PLACEHOLDER/api"):
+    def __init__(self, base_url="https://biqc-connect.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
