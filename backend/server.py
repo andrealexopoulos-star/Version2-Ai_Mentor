@@ -3364,90 +3364,83 @@ async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Di
 
 @api_router.get("/outlook/status")
 async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
-    """Check if user has connected their Outlook account - CANONICAL STATE VERSION"""
+    """
+    Check if user has connected Outlook - CANONICAL STATE with token validation
+    Returns connected=true ONLY if valid tokens exist
+    """
     user_id = current_user["id"]
     logger.info(f"🔍 Checking Outlook status for user_id: {user_id}")
     
     try:
-        # TASK 1 & 2: Check canonical integration state FIRST
-        integration_response = supabase_admin.table("integration_accounts").select("*").eq("user_id", user_id).eq("category", "email").execute()
-        
-        has_integration_record = integration_response.data and len(integration_response.data) > 0
-        
-        if has_integration_record:
-            logger.info(f"✅ Canonical integration record found for user {user_id}")
-            
-            # Get tokens for additional metadata (email count, etc.)
-            tokens = await get_outlook_tokens(user_id)
-            emails_count = await count_user_emails_supabase(supabase_admin, user_id)
-            
-            connected_email = tokens.get("microsoft_email") if tokens else None
-            connected_name = tokens.get("microsoft_name") if tokens else None
-            
-            return {
-                "connected": True,  # CANONICAL: DB record = connected
-                "emails_synced": emails_count,
-                "user_email": current_user.get("email"),
-                "connected_email": connected_email,
-                "connected_name": connected_name,
-                "token_valid": True,
-                "source": "canonical_state"
-            }
-        
-        # Fallback: Check tokens table if no canonical record
+        # CANONICAL CHECK: Token existence and validity
         tokens = await get_outlook_tokens(user_id)
         
-        if tokens:
-            # Has tokens but no canonical record - migrate
-            logger.info(f"⚠️ Found tokens without canonical record - migrating state")
-            
-            from workspace_helpers import get_user_account
-            
-            try:
-                # Get user's workspace/account for proper migration
-                account = await get_user_account(supabase_admin, user_id)
-                
-                if account:
-                    account_id = account["id"]
-                    supabase_admin.table("integration_accounts").upsert({
-                        "user_id": user_id,
-                        "account_id": account_id,
-                        "provider": "outlook",
-                        "category": "email",
-                        "account_token": "connected",
-                        "connected_at": datetime.now(timezone.utc).isoformat()
-                    }, on_conflict="account_id,category").execute()
-                    logger.info(f"✅ Migration successful: Outlook state persisted for workspace {account_id}")
-                else:
-                    logger.warning(f"⚠️ No workspace found for user {user_id} - cannot migrate")
-            except Exception as e:
-                logger.error(f"❌ Failed to migrate integration state: {e}")
-            
-            emails_count = await count_user_emails_supabase(supabase_admin, user_id)
-            connected_email = tokens.get("microsoft_email")
-            connected_name = tokens.get("microsoft_name")
-            
+        if not tokens:
+            logger.info(f"❌ No Outlook tokens found for user {user_id}")
             return {
-                "connected": True,
-                "emails_synced": emails_count,
-                "user_email": current_user.get("email"),
-                "connected_email": connected_email,
-                "connected_name": connected_name,
-                "token_valid": True,
-                "source": "migrated_from_tokens"
+                "connected": False,
+                "emails_synced": 0,
+                "message": "Outlook not connected"
             }
         
-        logger.info(f"❌ No Outlook connection found for user {user_id}")
+        # Validate token has required fields
+        access_token = tokens.get("access_token")
+        refresh_token = tokens.get("refresh_token")
+        expires_at_str = tokens.get("expires_at")
+        
+        if not access_token or not refresh_token:
+            logger.warning(f"⚠️ Incomplete tokens for user {user_id}")
+            return {
+                "connected": False,
+                "emails_synced": 0,
+                "message": "Outlook tokens incomplete. Please reconnect."
+            }
+        
+        # Check token expiry
+        token_expired = False
+        token_needs_refresh = False
+        
+        if expires_at_str:
+            try:
+                expires_at = dateutil_parser.isoparse(expires_at_str)
+                now = datetime.now(timezone.utc)
+                
+                if expires_at <= now:
+                    token_expired = True
+                elif expires_at <= now + timedelta(minutes=5):
+                    token_needs_refresh = True
+            except Exception as e:
+                logger.warning(f"Could not parse expires_at: {e}")
+        
+        # Get email count and metadata
+        emails_count = await count_user_emails_supabase(supabase_admin, user_id)
+        connected_email = tokens.get("microsoft_email")
+        connected_name = tokens.get("microsoft_name")
+        
         return {
-            "connected": False,
-            "emails_synced": 0
+            "connected": True,
+            "emails_synced": emails_count,
+            "user_email": current_user.get("email"),
+            "connected_email": connected_email,
+            "connected_name": connected_name,
+            "token_expired": token_expired,
+            "token_needs_refresh": token_needs_refresh,
+            "expires_at": expires_at_str,
+            "source": "token_validated"
         }
         
     except Exception as e:
-        # TASK 5: Fail open - don't break UX on errors
         logger.error(f"Error checking Outlook status for user {user_id}: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        
+        # FAIL OPEN: Return degraded state instead of error
+        return {
+            "connected": False,
+            "emails_synced": 0,
+            "degraded": True,
+            "error": "Status check failed"
+        }
         
         # Return degraded state, not error
         return {
