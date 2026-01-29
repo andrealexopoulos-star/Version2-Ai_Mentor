@@ -2445,11 +2445,35 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
 # ==================== MICROSOFT OUTLOOK INTEGRATION ====================
 
 @api_router.get("/auth/outlook/login")
-async def outlook_login(returnTo: str = "/integrations", current_user: dict = Depends(get_current_user)):
-    """Initiate Microsoft OAuth flow for Outlook - requires authenticated user"""
+async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = None):
+    """
+    Initiate Microsoft OAuth flow for Outlook
+    Accepts authentication token as query parameter (for browser redirects)
+    """
     from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
+    
+    # Manual token validation (browser redirects can't send Authorization header)
+    current_user = None
+    
+    if token:
+        # Try Supabase token first
+        try:
+            from auth_supabase import get_user_by_id
+            payload = jwt.decode(token, options={"verify_signature": False})
+            user_id = payload.get("sub")
+            if user_id:
+                user_data = await get_user_by_id(user_id)
+                if user_data:
+                    current_user = user_data
+        except:
+            pass
+    
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
+    
+    user_id = current_user['id']
     
     redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
     
