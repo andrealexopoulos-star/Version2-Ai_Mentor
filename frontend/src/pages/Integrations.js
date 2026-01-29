@@ -445,13 +445,10 @@ const Integrations = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Get connected count
+  // Get connected count using the resolver
   const connectedCount = integrations.filter(int => {
-    if (int.id === 'outlook') return outlookStatus.connected;
-    if (int.id === 'gmail') return gmailStatus.connected;
-    const mergeConnected = mergeIntegrations[int.id?.toLowerCase()] || 
-                          mergeIntegrations[int.name?.toLowerCase()];
-    return mergeConnected;
+    const state = resolveIntegrationState(int, outlookStatus, gmailStatus, mergeIntegrations);
+    return state.connected;
   }).length;
 
   const handleConnect = (integration) => {
