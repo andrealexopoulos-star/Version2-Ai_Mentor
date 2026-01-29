@@ -7624,9 +7624,6 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
 # Authoritative pattern: All CRM access via Merge Unified API
 # BIQC never authenticates directly with HubSpot/Salesforce/etc.
 
-from merge_client import get_merge_client
-from workspace_helpers import get_user_account, get_merge_account_token
-
 
 @api_router.get("/integrations/crm/contacts")
 async def get_crm_contacts(
@@ -7640,6 +7637,9 @@ async def get_crm_contacts(
     Works with: HubSpot, Salesforce, Pipedrive, etc.
     All OAuth and tokens managed by Merge.dev
     """
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
     user_id = current_user["id"]
     
     # Get user's workspace
