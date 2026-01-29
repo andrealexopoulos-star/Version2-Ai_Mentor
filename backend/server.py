@@ -7618,6 +7618,220 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
                 "category": category,
                 "connected": True,
                 "connected_at": record.get("connected_at") or record.get("created_at"),
+
+
+# ==================== MERGE.DEV CRM DATA ACCESS ====================
+# Authoritative pattern: All CRM access via Merge Unified API
+# BIQC never authenticates directly with HubSpot/Salesforce/etc.
+
+from merge_client import get_merge_client
+from workspace_helpers import get_user_account, get_merge_account_token
+
+
+@api_router.get("/integrations/crm/contacts")
+async def get_crm_contacts(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get CRM contacts via Merge.dev (workspace-scoped)
+    
+    Works with: HubSpot, Salesforce, Pipedrive, etc.
+    All OAuth and tokens managed by Merge.dev
+    """
+    user_id = current_user["id"]
+    
+    # Get user's workspace
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(
+            status_code=400,
+            detail="User workspace not initialized"
+        )
+    
+    account_id = account["id"]
+    account_name = account["name"]
+    
+    # Get Merge account token for this workspace's CRM integration
+    account_token = await get_merge_account_token(supabase_admin, account_id, "crm")
+    
+    if not account_token:
+        logger.warning(f"⚠️  Workspace {account_name} has no CRM integration")
+        raise HTTPException(
+            status_code=409,
+            detail="IntegrationNotConnected: No CRM integration found for workspace. Please connect HubSpot, Salesforce, or another CRM."
+        )
+    
+    logger.info(f"📇 Fetching CRM contacts for workspace: {account_name}")
+    
+    # Call Merge Unified API
+    merge_client = get_merge_client()
+    
+    try:
+        data = await merge_client.get_contacts(
+            account_token=account_token,
+            cursor=cursor,
+            page_size=page_size
+        )
+        
+        logger.info(f"✅ Retrieved {len(data.get('results', []))} contacts")
+        return data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error fetching contacts: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/integrations/crm/companies")
+async def get_crm_companies(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get CRM companies via Merge.dev (workspace-scoped)
+    
+    Works with: HubSpot, Salesforce, Pipedrive, etc.
+    """
+    user_id = current_user["id"]
+    
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="User workspace not initialized")
+    
+    account_id = account["id"]
+    account_name = account["name"]
+    
+    account_token = await get_merge_account_token(supabase_admin, account_id, "crm")
+    
+    if not account_token:
+        raise HTTPException(
+            status_code=409,
+            detail="IntegrationNotConnected: No CRM integration connected"
+        )
+    
+    logger.info(f"🏢 Fetching CRM companies for workspace: {account_name}")
+    
+    merge_client = get_merge_client()
+    
+    try:
+        data = await merge_client.get_companies(
+            account_token=account_token,
+            cursor=cursor,
+            page_size=page_size
+        )
+        
+        logger.info(f"✅ Retrieved {len(data.get('results', []))} companies")
+        return data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error fetching companies: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/integrations/crm/deals")
+async def get_crm_deals(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get CRM deals/opportunities via Merge.dev (workspace-scoped)
+    
+    Works with: HubSpot, Salesforce, Pipedrive, etc.
+    """
+    user_id = current_user["id"]
+    
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="User workspace not initialized")
+    
+    account_id = account["id"]
+    account_name = account["name"]
+    
+    account_token = await get_merge_account_token(supabase_admin, account_id, "crm")
+    
+    if not account_token:
+        raise HTTPException(
+            status_code=409,
+            detail="IntegrationNotConnected: No CRM integration connected"
+        )
+    
+    logger.info(f"💼 Fetching CRM deals for workspace: {account_name}")
+    
+    merge_client = get_merge_client()
+    
+    try:
+        data = await merge_client.get_deals(
+            account_token=account_token,
+            cursor=cursor,
+            page_size=page_size
+        )
+        
+        logger.info(f"✅ Retrieved {len(data.get('results', []))} deals")
+        return data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error fetching deals: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/integrations/crm/owners")
+async def get_crm_owners(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get CRM users/owners via Merge.dev (workspace-scoped)
+    
+    Works with: HubSpot, Salesforce, Pipedrive, etc.
+    """
+    user_id = current_user["id"]
+    
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="User workspace not initialized")
+    
+    account_id = account["id"]
+    account_name = account["name"]
+    
+    account_token = await get_merge_account_token(supabase_admin, account_id, "crm")
+    
+    if not account_token:
+        raise HTTPException(
+            status_code=409,
+            detail="IntegrationNotConnected: No CRM integration connected"
+        )
+    
+    logger.info(f"👥 Fetching CRM owners for workspace: {account_name}")
+    
+    merge_client = get_merge_client()
+    
+    try:
+        data = await merge_client.get_users(
+            account_token=account_token,
+            cursor=cursor,
+            page_size=page_size
+        )
+        
+        logger.info(f"✅ Retrieved {len(data.get('results', []))} owners")
+        return data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error fetching owners: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
                 "merge_account_id": record.get("merge_account_id"),  # P0: Include Merge account ID
                 "workspace_id": account_id,  # P0: Include workspace context
                 "workspace_name": account_name
