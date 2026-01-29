@@ -426,10 +426,19 @@ const DashboardLayout = ({ children }) => {
             zIndex: 50
           }}
         >
-          <DegradedIntelligenceBanner
-            onComplete={handleCompleteOnboarding}
-            onDismiss={handleDismissBanner}
-          />
+          <style>{`
+            @media (min-width: 640px) {
+              .banner-container {
+                top: 4rem !important;
+              }
+            }
+          `}</style>
+          <div className="banner-container">
+            <DegradedIntelligenceBanner
+              onComplete={handleCompleteOnboarding}
+              onDismiss={handleDismissBanner}
+            />
+          </div>
         </div>
       )}
 
