@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
+from dateutil import parser as dateutil_parser
 import jwt
 import bcrypt
 from emergentintegrations.llm.chat import LlmChat, UserMessage
