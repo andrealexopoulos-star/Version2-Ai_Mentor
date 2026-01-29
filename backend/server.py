@@ -2924,8 +2924,7 @@ async def sync_outlook_emails(
     # FIX 3: Check token expiry and refresh if needed
     if expires_at_str and refresh_token:
         try:
-            from dateutil import parser
-            expires_at = parser.isoparse(expires_at_str)
+            expires_at = dateutil_parser.isoparse(expires_at_str)
             now = datetime.now(timezone.utc)
             
             # Refresh if expiring within 60 seconds
