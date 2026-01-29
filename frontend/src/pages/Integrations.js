@@ -564,27 +564,28 @@ const Integrations = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-            Integrations
-          </h1>
-          
-          {/* Ambient System Status */}
-          <div className="mt-3 flex items-center gap-2 text-sm transition-opacity duration-300" 
-               style={{ color: 'var(--text-muted)' }}>
-            <Sparkles className="w-4 h-4" style={{ color: 'var(--accent-primary)' }} />
-            <p className="animate-fade-in">
-              {connectedCount === 0 
-                ? 'BIQC is ready to learn. Connect your first system to begin intelligence gathering.'
-                : connectedCount === 1
-                ? 'BIQC is currently learning from 1 connected system. Add more sources to deepen intelligence.'
-                : `BIQC is learning from ${connectedCount} connected systems. Intelligence depth increasing.`
-              }
-            </p>
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
+        <div className="space-y-6 animate-fade-in">
+          {/* Header */}
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              Integrations
+            </h1>
+            
+            {/* Ambient System Status */}
+            <div className="mt-3 flex items-start gap-2 text-sm transition-opacity duration-300" 
+                 style={{ color: 'var(--text-muted)' }}>
+              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent-primary)' }} />
+              <p className="animate-fade-in leading-relaxed">
+                {connectedCount === 0 
+                  ? 'BIQC is ready to learn. Connect your first system to begin intelligence gathering.'
+                  : connectedCount === 1
+                  ? 'BIQC is currently learning from 1 connected system. Add more sources to deepen intelligence.'
+                  : `BIQC is learning from ${connectedCount} connected systems. Intelligence depth increasing.`
+                }
+              </p>
+            </div>
           </div>
-        </div>
 
         {/* Top-Level Navigation Tabs */}
         <div className="border-b" style={{ borderColor: 'var(--border-light)' }}>
@@ -786,7 +787,7 @@ const Integrations = () => {
               Intelligence Sources tab - Coming soon
             </p>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Detail Panel / Bottom Sheet */}
