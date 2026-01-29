@@ -2904,7 +2904,7 @@ async def start_comprehensive_sync_job(user_id: str, job_id: str):
 @api_router.get("/outlook/emails/sync")
 async def sync_outlook_emails(
     folder: str = "inbox",
-    top: int = 50,
+    top: int = 25,
     current_user: dict = Depends(get_current_user)
 ):
     """Basic email sync - use /outlook/comprehensive-sync for full analysis"""
@@ -2917,21 +2917,74 @@ async def sync_outlook_emails(
         raise HTTPException(status_code=400, detail="Outlook not connected. Please connect first.")
     
     access_token = tokens.get("access_token")
+    expires_at_str = tokens.get("expires_at")
+    refresh_token = tokens.get("refresh_token")
     
-    # Fetch emails from Microsoft Graph
+    # FIX 3: Check token expiry and refresh if needed
+    if expires_at_str and refresh_token:
+        try:
+            from dateutil import parser
+            expires_at = parser.isoparse(expires_at_str)
+            now = datetime.now(timezone.utc)
+            
+            # Refresh if expiring within 60 seconds
+            if expires_at <= now + timedelta(seconds=60):
+                logger.info(f"🔄 Token expiring soon, refreshing for user {user_id}")
+                try:
+                    new_tokens = await refresh_outlook_token_supabase(user_id, refresh_token)
+                    access_token = new_tokens["access_token"]
+                    logger.info(f"✅ Token refreshed successfully")
+                except Exception as refresh_error:
+                    logger.error(f"❌ Token refresh failed: {refresh_error}")
+                    raise HTTPException(
+                        status_code=401, 
+                        detail="Outlook token expired and refresh failed. Please reconnect Outlook."
+                    )
+        except Exception as e:
+            logger.warning(f"⚠️ Could not check token expiry: {e}")
+    
+    # FIX 1: Use well-known folder name (safe)
+    # FIX 2: Corrected params - safe fields, reduced top limit
     headers = {"Authorization": f"Bearer {access_token}"}
     graph_url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder}/messages"
     params = {
-        "$select": "subject,from,toRecipients,receivedDateTime,bodyPreview,body,isRead,importance,categories,hasAttachments",
+        "$select": "subject,from,receivedDateTime,bodyPreview,conversationId,internetMessageId",
         "$top": top,
         "$orderby": "receivedDateTime desc"
     }
     
+    # PRE-CHECK: Log outbound request (redact token)
+    logger.info(f"📤 Microsoft Graph Request:")
+    logger.info(f"   URL: {graph_url}")
+    logger.info(f"   Folder: {folder}")
+    logger.info(f"   Params: {params}")
+    logger.info(f"   Token present: {bool(access_token)}")
+    
     async with httpx.AsyncClient() as client:
         response = await client.get(graph_url, headers=headers, params=params)
         
+        # PRE-CHECK: Log exact Graph error if not 200
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail=f"Failed to fetch emails: {response.text}")
+            error_body = response.text
+            logger.error(f"❌ Microsoft Graph Error:")
+            logger.error(f"   Status: {response.status_code}")
+            logger.error(f"   Response Body: {error_body}")
+            
+            # Parse Graph error if JSON
+            try:
+                error_json = response.json()
+                error_code = error_json.get("error", {}).get("code", "Unknown")
+                error_message = error_json.get("error", {}).get("message", error_body)
+                logger.error(f"   Error Code: {error_code}")
+                logger.error(f"   Error Message: {error_message}")
+                
+                # Return structured error to UI
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Microsoft Graph error: {error_code} - {error_message}"
+                )
+            except:
+                raise HTTPException(status_code=400, detail=f"Failed to fetch emails: {error_body}")
         
         emails_data = response.json()
     
