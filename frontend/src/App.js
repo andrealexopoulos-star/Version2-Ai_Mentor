@@ -26,6 +26,7 @@ import BusinessProfile from "./pages/BusinessProfile";
 import OpsAdvisoryCentre from "./pages/OpsAdvisoryCentre";
 import Pricing from "./pages/Pricing";
 import Integrations from "./pages/Integrations";
+import ConnectEmail from "./pages/ConnectEmail";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import IntelCentre from "./pages/IntelCentre";
@@ -136,7 +137,7 @@ function AppRoutes() {
       <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
-      <Route path="/connect-email" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+      <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
       <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
       <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
