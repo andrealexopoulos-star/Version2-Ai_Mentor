@@ -7729,13 +7729,25 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
         for record in integration_records:
             provider = record.get("provider", "unknown")
             category = record.get("category", "unknown")
+            merge_account_id = record.get("merge_account_id")
+            
+            # FILTER: Exclude email category from Merge integrations
+            # Email handled by Supabase Edge Functions (Outlook/Gmail), not Merge
+            if category == "email":
+                logger.info(f"   Skipping {provider} (email category - not a Merge integration)")
+                continue
+            
+            # Only include integrations with merge_account_id (true Merge integrations)
+            if not merge_account_id:
+                logger.info(f"   Skipping {provider} (no merge_account_id - not a Merge integration)")
+                continue
             
             integrations[provider] = {
                 "provider": provider,
                 "category": category,
                 "connected": True,
                 "connected_at": record.get("connected_at") or record.get("created_at"),
-                "merge_account_id": record.get("merge_account_id"),
+                "merge_account_id": merge_account_id,
                 "workspace_id": account_id,
                 "workspace_name": account_name
             }
