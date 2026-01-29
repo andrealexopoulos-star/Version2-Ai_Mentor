@@ -3460,7 +3460,14 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
 
 @api_router.get("/outlook/debug-tokens")
 async def debug_outlook_tokens(current_user: dict = Depends(get_current_user)):
-    """Debug endpoint to check Outlook token storage - for troubleshooting"""
+    """
+    DEBUG ONLY: Inspect Outlook token state
+    Should be disabled in production
+    """
+    # Guard: Only allow in development
+    if os.environ.get("ENVIRONMENT", "development") == "production":
+        raise HTTPException(status_code=404, detail="Endpoint not available in production")
+    
     user_id = current_user["id"]
     debug_info = {
         "user_id": user_id,
