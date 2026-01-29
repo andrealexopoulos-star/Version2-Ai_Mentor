@@ -3294,6 +3294,69 @@ async def get_email_intelligence(current_user: dict = Depends(get_current_user))
     return intelligence
 
 
+async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Dict[str, str]:
+    """
+    Refresh Outlook access token and persist to Supabase
+    
+    Args:
+        user_id: User UUID
+        refresh_token: Microsoft refresh token
+        
+    Returns:
+        Dict with new access_token and expires_at
+        
+    Raises:
+        HTTPException if refresh fails
+    """
+    token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
+    
+    payload = {
+        "client_id": AZURE_CLIENT_ID,
+        "client_secret": AZURE_CLIENT_SECRET,
+        "refresh_token": refresh_token,
+        "grant_type": "refresh_token",
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
+    }
+    
+    logger.info(f"🔄 Refreshing Outlook token for user {user_id}")
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=payload)
+        
+        if response.status_code != 200:
+            error_text = response.text
+            logger.error(f"❌ Token refresh failed: {response.status_code} - {error_text}")
+            raise HTTPException(status_code=401, detail=f"Failed to refresh Outlook token: {error_text}")
+        
+        token_data = response.json()
+    
+    # Calculate new expiry
+    expires_in = token_data.get("expires_in", 3600)
+    new_expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
+    new_access_token = token_data["access_token"]
+    new_refresh_token = token_data.get("refresh_token", refresh_token)  # Microsoft may return new refresh token
+    
+    # Update tokens in Supabase (outlook_oauth_tokens table)
+    try:
+        supabase_admin.table("outlook_oauth_tokens").update({
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
+            "expires_at": new_expires_at,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).eq("user_id", user_id).execute()
+        
+        logger.info(f"✅ Token persisted to outlook_oauth_tokens, new expiry: {new_expires_at}")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to persist refreshed token: {e}")
+        # Token refresh succeeded but persistence failed - still return new token
+    
+    return {
+        "access_token": new_access_token,
+        "expires_at": new_expires_at
+    }
+
+
 async def refresh_outlook_token(user_id: str, refresh_token: str):
     """Refresh Outlook access token"""
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
