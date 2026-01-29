@@ -1,46 +1,28 @@
 {
-  "summary": "Backend API testing completed - 4/6 tests passed (66.7%)",
-  "total_tests": 6,
-  "passed_tests": 4,
-  "failed_tests": 2,
-  "success_rate": "66.7%",
+  "summary": "Backend API testing completed - 0/3 tests passed (0.0%)",
+  "total_tests": 3,
+  "passed_tests": 0,
+  "failed_tests": 3,
+  "success_rate": "0.0%",
   "test_details": [
     {
       "test_name": "Health Check",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T07:12:32.659840"
+      "success": false,
+      "details": "Exception: HTTPSConnectionPool(host='fork_preview_url_placeholder', port=443): Max retries exceeded with url: /api/health (Caused by NameResolutionError(\"HTTPSConnection(host='fork_preview_url_placeholder', port=443): Failed to resolve 'fork_preview_url_placeholder' ([Errno -2] Name or service not known)\"))",
+      "timestamp": "2026-01-29T09:38:52.959280"
     },
     {
       "test_name": "Root Endpoint",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T07:12:32.699508"
-    },
-    {
-      "test_name": "User Registration (Supabase)",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T07:12:37.441687"
-    },
-    {
-      "test_name": "Registration - Token Received",
       "success": false,
-      "details": "No access_token in response",
-      "timestamp": "2026-01-21T07:12:37.442428"
+      "details": "Exception: HTTPSConnectionPool(host='fork_preview_url_placeholder', port=443): Max retries exceeded with url: /api/ (Caused by NameResolutionError(\"HTTPSConnection(host='fork_preview_url_placeholder', port=443): Failed to resolve 'fork_preview_url_placeholder' ([Errno -2] Name or service not known)\"))",
+      "timestamp": "2026-01-29T09:38:52.961030"
     },
     {
-      "test_name": "Login Test User Registration (Supabase)",
-      "success": true,
-      "details": "",
-      "timestamp": "2026-01-21T07:12:43.015128"
-    },
-    {
-      "test_name": "User Login (Supabase)",
+      "test_name": "Login as andre@thestrategysquad.com.au (Supabase)",
       "success": false,
-      "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid email or password'}",
-      "timestamp": "2026-01-21T07:12:43.418366"
+      "details": "Exception: HTTPSConnectionPool(host='fork_preview_url_placeholder', port=443): Max retries exceeded with url: /api/auth/supabase/login (Caused by NameResolutionError(\"HTTPSConnection(host='fork_preview_url_placeholder', port=443): Failed to resolve 'fork_preview_url_placeholder' ([Errno -2] Name or service not known)\"))",
+      "timestamp": "2026-01-29T09:38:52.962585"
     }
   ],
-  "timestamp": "2026-01-21T07:12:43.419014"
+  "timestamp": "2026-01-29T09:38:52.962635"
 }
