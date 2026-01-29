@@ -1,7 +1,7 @@
 # SUPABASE OAUTH UPDATE GUIDE — business-iq-1 Fork
 
-**Current Fork URL:** `https://biqc-connect.preview.emergentagent.com`  
-**Previous URL:** `https://biqc-connect.preview.emergentagent.com`  
+**Current Fork URL:** `https://intel-pipeline.preview.emergentagent.com`  
+**Previous URL:** `https://intel-pipeline.preview.emergentagent.com`  
 **Task:** Update Supabase OAuth to work with current fork  
 **Status:** Awaiting user configuration
 
@@ -19,8 +19,8 @@
 4. Add the following URLs (keep existing ones):
 
 ```
-https://biqc-connect.preview.emergentagent.com/auth/callback
-https://biqc-connect.preview.emergentagent.com/**
+https://intel-pipeline.preview.emergentagent.com/auth/callback
+https://intel-pipeline.preview.emergentagent.com/**
 ```
 
 **Why both:**
@@ -33,12 +33,12 @@ In same **URL Configuration** section:
 
 **Site URL:** Change from:
 ```
-https://biqc-connect.preview.emergentagent.com
+https://intel-pipeline.preview.emergentagent.com
 ```
 
 To:
 ```
-https://biqc-connect.preview.emergentagent.com
+https://intel-pipeline.preview.emergentagent.com
 ```
 
 **Note:** You can keep both URLs active if you want to support both forks.
@@ -80,7 +80,7 @@ Review your Edge Function code for hardcoded URLs:
 **Look for:**
 ```typescript
 // Check if there are hardcoded redirects like:
-const redirectUrl = 'https://biqc-connect.preview.emergentagent.com/integrations';
+const redirectUrl = 'https://intel-pipeline.preview.emergentagent.com/integrations';
 
 // Or if it uses dynamic state parameter:
 const redirectUrl = state.redirect_url; // ✅ Good (no change needed)
@@ -116,12 +116,12 @@ const redirectUrl = state.redirect_url; // ✅ Good (no change needed)
 2. Go to: **Authentication** → **URL Configuration**
 3. Under **Redirect URLs**, add:
    ```
-   https://biqc-connect.preview.emergentagent.com/auth/callback
-   https://biqc-connect.preview.emergentagent.com/**
+   https://intel-pipeline.preview.emergentagent.com/auth/callback
+   https://intel-pipeline.preview.emergentagent.com/**
    ```
 4. Under **Site URL**, change to:
    ```
-   https://biqc-connect.preview.emergentagent.com
+   https://intel-pipeline.preview.emergentagent.com
    ```
 5. Click **Save**
 
@@ -142,7 +142,7 @@ const redirectUrl = state.redirect_url; // ✅ Good (no change needed)
 
 ### Step 3: Test OAuth Flow (3 minutes)
 
-1. Open: `https://biqc-connect.preview.emergentagent.com`
+1. Open: `https://intel-pipeline.preview.emergentagent.com`
 2. Click: **Sign in with Microsoft**
 3. Complete OAuth
 4. Should redirect back to: `business-iq-1/auth/callback` ✅
@@ -158,10 +158,10 @@ If your Edge Function needs updating, use this pattern:
 // ✅ GOOD: Dynamic redirect
 const redirectUrl = request.headers.get('referer') || 
                     state.frontend_url || 
-                    'https://biqc-connect.preview.emergentagent.com';
+                    'https://intel-pipeline.preview.emergentagent.com';
 
 // ❌ BAD: Hardcoded
-const redirectUrl = 'https://biqc-connect.preview.emergentagent.com';
+const redirectUrl = 'https://intel-pipeline.preview.emergentagent.com';
 ```
 
 ---
@@ -204,7 +204,7 @@ After updating Supabase:
 ## EXPECTED BEHAVIOR AFTER UPDATE
 
 ### ✅ Should Work:
-1. Navigate to: `https://biqc-connect.preview.emergentagent.com`
+1. Navigate to: `https://intel-pipeline.preview.emergentagent.com`
 2. Click: "Sign in with Microsoft"
 3. Redirect to: Microsoft login
 4. Redirect to: Supabase
@@ -221,10 +221,10 @@ After updating Supabase:
 ### If You Want to Support Both URLs:
 You can keep BOTH URLs in Supabase redirect list:
 ```
-https://biqc-connect.preview.emergentagent.com/auth/callback
-https://biqc-connect.preview.emergentagent.com/**
-https://biqc-connect.preview.emergentagent.com/auth/callback
-https://biqc-connect.preview.emergentagent.com/**
+https://intel-pipeline.preview.emergentagent.com/auth/callback
+https://intel-pipeline.preview.emergentagent.com/**
+https://intel-pipeline.preview.emergentagent.com/auth/callback
+https://intel-pipeline.preview.emergentagent.com/**
 ```
 
 This allows OAuth to work on both forks.

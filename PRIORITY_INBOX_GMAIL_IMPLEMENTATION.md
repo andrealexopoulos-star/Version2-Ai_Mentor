@@ -120,7 +120,7 @@
 
 ### **STEP 4: Test**
 
-1. Go to: `https://biqc-connect.preview.emergentagent.com/email-inbox`
+1. Go to: `https://intel-pipeline.preview.emergentagent.com/email-inbox`
 2. You should see Gmail/Outlook selector buttons
 3. Gmail should be selected by default
 4. Should show connection status

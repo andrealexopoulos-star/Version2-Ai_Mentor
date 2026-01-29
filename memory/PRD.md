@@ -83,7 +83,7 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 - [ ] CRM integrations (HubSpot, Salesforce, Xero)
 
 ## Key URLs
-- **App**: https://biqc-connect.preview.emergentagent.com
+- **App**: https://intel-pipeline.preview.emergentagent.com
 - **Supabase**: https://uxyqpdfftxpkzeppqtvk.supabase.co
 
 ## Credentials

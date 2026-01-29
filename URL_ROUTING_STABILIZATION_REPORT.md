@@ -41,7 +41,7 @@ This is causing OAuth redirect failures because:
 
 **APP_BASE_URL (Single Source of Truth):**
 ```
-https://biqc-connect.preview.emergentagent.com
+https://intel-pipeline.preview.emergentagent.com
 ```
 
 **Propagation Map:**
@@ -90,13 +90,13 @@ Navigate to: **Supabase Dashboard** → **Authentication** → **URL Configurati
 
 **Site URL:**
 ```
-https://biqc-connect.preview.emergentagent.com
+https://intel-pipeline.preview.emergentagent.com
 ```
 
 **Redirect URLs:** (Add all)
 ```
-https://biqc-connect.preview.emergentagent.com/auth/callback
-https://biqc-connect.preview.emergentagent.com/**
+https://intel-pipeline.preview.emergentagent.com/auth/callback
+https://intel-pipeline.preview.emergentagent.com/**
 ```
 
 ---

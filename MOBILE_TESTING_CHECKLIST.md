@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://biqc-connect.preview.emergentagent.com
+**Test URL:** https://intel-pipeline.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://biqc-connect.preview.emergentagent.com/advisor
+- [ ] Navigate to https://intel-pipeline.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://biqc-connect.preview.emergentagent.com/
+**Landing:** https://intel-pipeline.preview.emergentagent.com/
 
-**Login:** https://biqc-connect.preview.emergentagent.com/login-supabase
+**Login:** https://intel-pipeline.preview.emergentagent.com/login-supabase
 
-**Register:** https://biqc-connect.preview.emergentagent.com/register-supabase
+**Register:** https://intel-pipeline.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://biqc-connect.preview.emergentagent.com/pricing
+**Pricing:** https://intel-pipeline.preview.emergentagent.com/pricing
 
-**Terms:** https://biqc-connect.preview.emergentagent.com/terms
+**Terms:** https://intel-pipeline.preview.emergentagent.com/terms
 
-**Advisor:** https://biqc-connect.preview.emergentagent.com/advisor
+**Advisor:** https://intel-pipeline.preview.emergentagent.com/advisor
 
 ---
 
