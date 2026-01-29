@@ -7852,19 +7852,6 @@ async def get_crm_owners(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-                "merge_account_id": record.get("merge_account_id"),  # P0: Include Merge account ID
-                "workspace_id": account_id,  # P0: Include workspace context
-                "workspace_name": account_name
-            }
-        
-        logger.info(f"✅ Found {len(integrations)} workspace integrations for {account_name} ({account_id})")
-        return {"integrations": integrations}
-        
-    except Exception as e:
-        logger.error(f"❌ Error fetching connected integrations: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @api_router.get("/")
 async def root():
     return {"message": "Strategic Advisor API", "version": "1.0.0"}
