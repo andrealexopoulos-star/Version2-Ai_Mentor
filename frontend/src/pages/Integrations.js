@@ -787,6 +787,7 @@ const Integrations = () => {
               Intelligence Sources tab - Coming soon
             </p>
           </div>
+        )}
         </div>
       </div>
 
