@@ -887,11 +887,14 @@ const Integrations = () => {
               {/* Status & Actions */}
               <div className="flex-1 p-6 overflow-y-auto">
                 {(() => {
-                  const mergeConnected = mergeIntegrations[selectedIntegration.id?.toLowerCase()] || 
-                                        mergeIntegrations[selectedIntegration.name?.toLowerCase()];
-                  const isConnected = (selectedIntegration.id === 'outlook' && outlookStatus.connected) || 
-                                     (selectedIntegration.id === 'gmail' && gmailStatus.connected) ||
-                                     mergeConnected;
+                  const connectionState = resolveIntegrationState(
+                    selectedIntegration,
+                    outlookStatus,
+                    gmailStatus,
+                    mergeIntegrations
+                  );
+                  const isConnected = connectionState.connected;
+                  const connectionSource = connectionState.source;
 
                   if (isConnected) {
                     return (
@@ -901,7 +904,7 @@ const Integrations = () => {
                           <span className="text-sm font-medium text-green-700">Connected</span>
                         </div>
                         
-                        {selectedIntegration.id === 'outlook' && (
+                        {selectedIntegration.id === 'outlook' && connectionSource === 'edge' && (
                           <>
                             <div className="text-sm space-y-2">
                               <p style={{ color: 'var(--text-secondary)' }}>
