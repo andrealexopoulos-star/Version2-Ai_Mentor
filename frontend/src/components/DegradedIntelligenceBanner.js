@@ -11,32 +11,40 @@ import { BIQC_LANGUAGE } from '../constants/biqcLanguage';
 const DegradedIntelligenceBanner = ({ onComplete, onDismiss }) => {
   return (
     <div 
-      className="bg-amber-50 border-b border-amber-200 px-4 py-3"
+      className="px-4 py-3 sm:py-4"
+      style={{
+        background: '#F5F1E8',
+        borderBottom: '1px solid #E8DCC8'
+      }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-900">
-              {BIQC_LANGUAGE.ONBOARDING.DEGRADED_BANNER}
-            </p>
-            <button 
-              onClick={onComplete}
-              className="text-xs text-amber-700 hover:text-amber-900 underline"
-            >
-              {BIQC_LANGUAGE.ONBOARDING.DEGRADED_LINK}
-            </button>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#92400E' }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#78350F' }}>
+                {BIQC_LANGUAGE.ONBOARDING.DEGRADED_BANNER}
+              </p>
+              <button 
+                onClick={onComplete}
+                className="text-xs font-medium mt-1 hover:underline"
+                style={{ color: '#92400E' }}
+              >
+                {BIQC_LANGUAGE.ONBOARDING.DEGRADED_LINK}
+              </button>
+            </div>
           </div>
+          {onDismiss && (
+            <button 
+              onClick={onDismiss}
+              className="flex-shrink-0 p-1 rounded hover:bg-black/5 transition-colors self-start sm:self-auto"
+              aria-label="Dismiss"
+              style={{ color: '#92400E' }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        {onDismiss && (
-          <button 
-            onClick={onDismiss}
-            className="text-amber-600 hover:text-amber-800 flex-shrink-0"
-            aria-label="Dismiss"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
       </div>
     </div>
   );

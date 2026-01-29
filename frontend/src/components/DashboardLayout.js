@@ -180,21 +180,13 @@ const DashboardLayout = ({ children }) => {
       className="min-h-screen"
       style={{ background: 'var(--bg-secondary)' }}
     >
-      {/* Degraded Intelligence Banner - Shows when onboarding incomplete */}
-      {showDegradedBanner && (
-        <DegradedIntelligenceBanner
-          onComplete={handleCompleteOnboarding}
-          onDismiss={handleDismissBanner}
-        />
-      )}
-      
-      {/* Top Navigation Bar - Mobile Optimized */}
+      {/* Top Navigation Bar - Fixed at top */}
       <header 
         className="fixed top-0 left-0 right-0 h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-4"
         style={{ 
           background: 'var(--bg-primary)', 
           borderBottom: '1px solid var(--border-light)',
-          zIndex: 1000  /* Above sidebar and backdrop */
+          zIndex: 1000
         }}
       >
         {/* Left: Mobile Menu + Logo */}
@@ -425,12 +417,29 @@ const DashboardLayout = ({ children }) => {
         </div>
       </header>
 
-      {/* Sidebar - TESTING WITHOUT BACKDROP FIRST */}
+      {/* Degraded Intelligence Banner - Below header */}
+      {showDegradedBanner && (
+        <div 
+          className="fixed left-0 right-0 z-50"
+          style={{ 
+            top: 'var(--header-height, 3.5rem)'
+          }}
+        >
+          <DegradedIntelligenceBanner
+            onComplete={handleCompleteOnboarding}
+            onDismiss={handleDismissBanner}
+          />
+        </div>
+      )}
+
+      {/* Sidebar */}
       <aside 
-        className={`fixed top-14 sm:top-16 left-0 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] w-64 sm:w-72 bg-white shadow-2xl transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed left-0 w-64 sm:w-72 bg-white shadow-2xl transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ 
+          top: showDegradedBanner ? 'calc(var(--header-height, 3.5rem) + var(--banner-height, 64px))' : 'var(--header-height, 3.5rem)',
+          height: showDegradedBanner ? 'calc(100vh - var(--header-height, 3.5rem) - var(--banner-height, 64px))' : 'calc(100vh - var(--header-height, 3.5rem))',
           zIndex: 999
         }}
       >
@@ -493,13 +502,14 @@ const DashboardLayout = ({ children }) => {
         />
       )}
 
-      {/* Main Content - Mobile Optimized - ABOVE BACKDROP */}
+      {/* Main Content */}
       <main 
-        className="lg:ml-64 pt-14 sm:pt-16 min-h-screen"
+        className="lg:ml-64 min-h-screen"
         style={{ 
           background: 'var(--bg-secondary)',
           position: 'relative',
-          zIndex: 1
+          zIndex: 1,
+          paddingTop: showDegradedBanner ? 'calc(var(--header-height, 3.5rem) + var(--banner-height, 64px))' : 'var(--header-height, 3.5rem)'
         }}
       >
         {children}
