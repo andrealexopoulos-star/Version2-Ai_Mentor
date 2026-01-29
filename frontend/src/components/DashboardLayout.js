@@ -16,7 +16,7 @@ import {
   Target, FolderOpen, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Database, Building2,
   Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Inbox, Calendar,
-  Lightbulb, AlertCircle
+  Lightbulb, AlertCircle, Mail
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
