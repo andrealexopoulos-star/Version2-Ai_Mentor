@@ -794,16 +794,29 @@ const Integrations = () => {
       {selectedIntegration && (
         <>
           {/* Desktop - Right Side Panel */}
-          <div className="hidden lg:block fixed inset-y-0 right-0 w-96 shadow-2xl z-50 animate-slide-in-right"
-               style={{ background: 'var(--bg-card)' }}>
+          <div 
+            className="hidden lg:block fixed right-0 w-96 shadow-2xl animate-slide-in-right overflow-hidden"
+            style={{ 
+              background: 'var(--bg-card)',
+              top: 'var(--header-height)',
+              bottom: 0,
+              zIndex: 50
+            }}
+          >
             <div className="h-full flex flex-col">
               {/* Header */}
-              <div className="p-6 border-b" style={{ borderColor: 'var(--border-light)' }}>
+              <div className="p-6 border-b flex-shrink-0" style={{ borderColor: 'var(--border-light)' }}>
                 <button
                   onClick={() => setSelectedIntegration(null)}
-                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="absolute top-4 right-4 p-2 rounded-lg transition-colors"
+                  style={{ 
+                    background: 'transparent',
+                    color: 'var(--text-muted)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <X className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+                  <X className="w-5 h-5" />
                 </button>
                 
                 <div
@@ -891,9 +904,14 @@ const Integrations = () => {
                           </>
                         )}
                         
-                        {mergeConnected && (
-                          <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                            <p>Connected via Merge.dev</p>
+                        {mergeConnected && !selectedIntegration.isOutlook && !selectedIntegration.isGmail && (
+                          <div className="text-sm space-y-2">
+                            <p style={{ color: 'var(--text-secondary)' }}>
+                              Integration Type: <strong>Merge.dev</strong>
+                            </p>
+                            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                              This integration is powered by Merge.dev's unified API platform.
+                            </p>
                           </div>
                         )}
                       </div>
@@ -923,19 +941,24 @@ const Integrations = () => {
           </div>
 
           {/* Mobile - Bottom Sheet */}
-          <div className="lg:hidden fixed inset-0 bg-black/40 z-50 animate-fade-in"
-               onClick={() => setSelectedIntegration(null)}>
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/40 z-50 animate-fade-in"
+            onClick={() => setSelectedIntegration(null)}
+          >
             <div
-              className="absolute bottom-0 left-0 right-0 rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto animate-slide-up"
-              style={{ background: 'var(--bg-card)' }}
+              className="absolute bottom-0 left-0 right-0 rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+              style={{ 
+                background: 'var(--bg-card)',
+                maxHeight: '85vh'
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Swipe Indicator */}
-              <div className="pt-3 pb-2 flex justify-center">
+              <div className="pt-3 pb-2 flex justify-center flex-shrink-0">
                 <div className="w-12 h-1 rounded-full" style={{ background: 'var(--border-medium)' }} />
               </div>
 
-              <div className="p-6">
+              <div className="px-6 pb-6 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 32px)' }}>
                 <div
                   className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4"
                   style={{ background: selectedIntegration.color }}
