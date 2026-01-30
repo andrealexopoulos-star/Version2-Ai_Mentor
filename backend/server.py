@@ -2735,6 +2735,24 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
             logger.error(f"Failed to store Gmail tokens: {db_error}")
             return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=storage_failed")
         
+        # CANONICAL: Write to email_connections (single source of truth)
+        logger.info("💾 Writing to email_connections (canonical source)...")
+        try:
+            supabase_admin.table("email_connections").upsert({
+                "user_id": user_id,
+                "provider": "gmail",
+                "connected": True,
+                "connected_email": google_email,
+                "inbox_type": "standard",  # Will be updated by Edge Function on first check
+                "connected_at": datetime.now(timezone.utc).isoformat(),
+                "last_sync_at": datetime.now(timezone.utc).isoformat(),
+                "sync_status": "active"
+            }, on_conflict="user_id").execute()
+            logger.info("✅ email_connections upserted - Gmail is now the active provider")
+        except Exception as e:
+            logger.error(f"❌ Failed to upsert email_connections: {e}")
+            # Continue anyway - tokens are stored
+        
         # Redirect back to specified path (or integrations) with success
         redirect_url = f"{frontend_url}{return_to}?gmail_connected=true"
         if google_email:
