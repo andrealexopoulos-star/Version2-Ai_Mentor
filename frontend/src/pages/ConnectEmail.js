@@ -134,6 +134,37 @@ const ConnectEmail = () => {
     navigate('/email-inbox');
   };
 
+  const handleDisconnect = async (provider) => {
+    if (!window.confirm(`Disconnect ${provider === 'outlook' ? 'Outlook' : 'Gmail'}?`)) {
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Delete from email_connections
+      const { error } = await supabase
+        .from('email_connections')
+        .delete()
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Disconnect error:', error);
+        toast.error('Failed to disconnect');
+      } else {
+        toast.success(`${provider === 'outlook' ? 'Outlook' : 'Gmail'} disconnected`);
+        setOutlookStatus({ connected: false });
+        setGmailStatus({ connected: false });
+        // Refresh connection status
+        checkEmailConnections();
+      }
+    } catch (error) {
+      console.error('Disconnect error:', error);
+      toast.error('Failed to disconnect');
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-5xl mx-auto">
@@ -213,6 +244,14 @@ const ConnectEmail = () => {
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                           <span className="text-sm font-medium text-green-700">Connected</span>
+                          <Button
+                            onClick={() => handleDisconnect('outlook')}
+                            variant="outline"
+                            size="sm"
+                            className="ml-2"
+                          >
+                            Disconnect
+                          </Button>
                         </div>
                       ) : (
                         <Button
@@ -269,6 +308,14 @@ const ConnectEmail = () => {
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                           <span className="text-sm font-medium text-green-700">Connected</span>
+                          <Button
+                            onClick={() => handleDisconnect('gmail')}
+                            variant="outline"
+                            size="sm"
+                            className="ml-2"
+                          >
+                            Disconnect
+                          </Button>
                         </div>
                       ) : (
                         <Button
