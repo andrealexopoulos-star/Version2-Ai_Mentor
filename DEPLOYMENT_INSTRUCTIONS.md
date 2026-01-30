@@ -1,150 +1,313 @@
-# DEPLOYMENT INSTRUCTIONS - COPY/PASTE READY
+# 🚀 Email Integration - Deployment & Testing Instructions
 
-## STEP-BY-STEP DEPLOYMENT
+## 🔧 What Was Fixed
 
-### STEP 1: Deploy outlook-auth Edge Function
+### Root Cause Identified ✅
+The email connection state was not persisting because of an **OAuth Code Reuse Bug**:
 
-**Go to:** https://app.supabase.com/project/uxyqpdfftxpkzeppqtvk/functions
+**BROKEN FLOW** (before fix):
+1. Backend receives OAuth code from Microsoft/Google ✅
+2. Backend exchanges code for tokens ✅
+3. Backend sends **CODE** to Edge Function ❌
+4. Edge Function tries to exchange **same code** again ❌
+5. OAuth provider rejects (code already used) ❌
+6. Database write never happens ❌
 
-**Click:** "Deploy new function" or find existing `outlook-auth` and click it
-
-**Copy the entire outlook-auth code** (372 lines - shown in previous message)
-
-**Paste into editor**
-
-**Function name:** `outlook-auth`
-
-**Click:** "Deploy"
-
----
-
-### STEP 2: Deploy gmail_prod Edge Function
-
-**In same Supabase Functions page**
-
-**Find:** `gmail_prod` function (should already exist)
-
-**Click:** "Redeploy" or "Edit"
-
-**Copy the entire gmail_prod code** (398 lines - shown in previous message)
-
-**Paste into editor** (replace existing code)
-
-**Click:** "Deploy"
+**FIXED FLOW** (after fix):
+1. Backend receives OAuth code from Microsoft/Google ✅
+2. Backend exchanges code for tokens ✅
+3. Backend sends **TOKENS** to Edge Function ✅
+4. Edge Function writes tokens to database ✅
+5. Edge Function writes connection state to `email_connections` ✅
+6. UI shows "Connected" ✅
 
 ---
 
-### STEP 3: Verify Deployment
+## 📦 Files Modified
 
-**In Supabase Dashboard:**
+### Backend Changes
+- **`/app/backend/server.py`**:
+  - `outlook_callback()`: Now sends tokens (not code) with `action: "store_tokens"`
+  - `gmail_callback()`: Now sends tokens (not code) with `action: "store_tokens"`
 
-Functions page should show:
-- ✅ `outlook-auth` - Deployed
-- ✅ `gmail_prod` - Deployed
+### Edge Function Changes
+- **`/app/supabase_edge_functions/outlook-auth/index.ts`**: Added `store_tokens` action handler
+- **`/app/supabase_edge_functions/gmail_prod/index.ts`**: Added `store_tokens` action handler
+
+### New Documentation
+- **`/app/OAUTH_SETUP_GUIDE.md`**: Complete OAuth setup guide with exact redirect URLs
+- **`/app/DEPLOYMENT_INSTRUCTIONS.md`**: This file
 
 ---
 
-### STEP 4: Test outlook-auth
+## 📋 Pre-Deployment Checklist
 
-**Click:** outlook-auth → "Test" tab
+Before deploying Edge Functions, ensure:
 
-**Method:** POST
+- [ ] OAuth apps configured correctly (see `/app/OAUTH_SETUP_GUIDE.md`)
+- [ ] Backend OAuth credentials in `/app/backend/.env`:
+  - `AZURE_CLIENT_ID`
+  - `AZURE_CLIENT_SECRET`
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+- [ ] Database tables exist:
+  - `email_connections` (with RLS policies)
+  - `outlook_oauth_tokens`
+  - `gmail_connections`
 
-**Headers:** Click "Add header"
-- Key: `Authorization`
-- Value: `Bearer [paste-your-jwt-token-here]`
+---
 
-**Body:** `{}`
+## 🚀 Step 1: Deploy Updated Edge Functions
 
-**Click:** "Send Request"
+### Deploy `outlook-auth` Edge Function
 
-**Expected Response:**
-```json
-{
-  "ok": true,
-  "connected": false,
-  "provider": "outlook"
-}
+1. **Go to Supabase Dashboard**
+2. **Navigate to**: Edge Functions → outlook-auth
+3. **Replace the entire code** with the content from:
+   ```
+   /app/supabase_edge_functions/outlook-auth/index.ts
+   ```
+4. **Deploy the function**
+5. **Verify Secrets** are configured:
+   - `AZURE_CLIENT_ID`
+   - `AZURE_CLIENT_SECRET`
+   - `BACKEND_URL` = `https://inbox-sync-3.preview.emergentagent.com`
+   - `SUPABASE_URL` (should be auto-configured)
+   - `SUPABASE_SERVICE_ROLE_KEY` (should be auto-configured)
+   - `SUPABASE_ANON_KEY` (should be auto-configured)
+
+### Deploy `gmail_prod` Edge Function
+
+1. **Go to Supabase Dashboard**
+2. **Navigate to**: Edge Functions → gmail_prod
+3. **Replace the entire code** with the content from:
+   ```
+   /app/supabase_edge_functions/gmail_prod/index.ts
+   ```
+4. **Deploy the function**
+5. **Verify Secrets** are configured:
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `BACKEND_URL` = `https://inbox-sync-3.preview.emergentagent.com`
+   - `SUPABASE_URL` (should be auto-configured)
+   - `SUPABASE_SERVICE_ROLE_KEY` (should be auto-configured)
+   - `SUPABASE_ANON_KEY` (should be auto-configured)
+
+---
+
+## 🧪 Step 2: Test Outlook Connection
+
+### Test Flow:
+
+1. **Open the app**: Navigate to `/connect-email`
+2. **Click "Connect Outlook"**
+3. **Authorize the app** on Microsoft login page
+4. **Wait for redirect** back to `/connect-email?outlook_connected=true`
+5. **Check UI**: Should show "Connected to Outlook"
+
+### Debug if it fails:
+
+**Check Backend Logs**:
+```bash
+tail -f /var/log/supervisor/backend.out.log | grep -i outlook
 ```
-(Or connected: true if you have Outlook already connected)
 
-**Should NOT see:** 404 or CORS error
+Look for:
+- ✅ "Token exchange successful"
+- ✅ "Proxying tokens to outlook-auth Edge Function"
+- ✅ "Edge Function stored Outlook tokens successfully"
 
----
+**Check Supabase Edge Function Logs**:
+1. Go to Supabase Dashboard → Edge Functions → outlook-auth → Logs
+2. Look for:
+   - `[EDGE] store_tokens action`
+   - `[EDGE] ✅ Tokens written successfully`
+   - `[EDGE] ✅ Connection state written successfully`
 
-### STEP 5: Test in BIQC App
-
-1. Login to BIQC
-2. Navigate to: /connect-email
-3. Open console (F12)
-4. Click "Connect Outlook"
-5. **Expected in console:**
-   ```
-   📧 Email connect provider: outlook
-   🔍 Checking email_connections (canonical source)...
-   ✅ Active email provider: outlook
-   ```
-6. **NOT expected:**
-   - CORS errors
-   - Gmail references
-   - 404 errors
-
----
-
-### STEP 6: Verify Database
-
-**In Supabase SQL Editor:**
-
+**Check Database**:
 ```sql
-SELECT user_id, provider, connected, connected_email, inbox_type 
-FROM email_connections;
+-- Check connection state (this is what UI queries)
+SELECT * FROM email_connections WHERE user_id = 'YOUR_USER_ID';
+
+-- Check token storage
+SELECT user_id, account_email, expires_at 
+FROM outlook_oauth_tokens 
+WHERE user_id = 'YOUR_USER_ID';
 ```
 
-**Expected:** ONE row per user with active provider
+**Expected Result**: Both queries should return rows.
 
 ---
 
-## IF YOU DON'T HAVE SUPABASE CLI
+## 🧪 Step 3: Test Gmail Connection
 
-**All deployment can be done via Dashboard** (steps above)
+### Test Flow:
 
-No CLI needed!
+1. **First, disconnect Outlook** (if connected) - only one provider at a time
+2. **Open the app**: Navigate to `/connect-email`
+3. **Click "Connect Gmail"**
+4. **Authorize the app** on Google login page
+5. **Wait for redirect** back to `/connect-email?gmail_connected=true`
+6. **Check UI**: Should show "Connected to Gmail"
+
+### Debug if it fails:
+
+**Check Backend Logs**:
+```bash
+tail -f /var/log/supervisor/backend.out.log | grep -i gmail
+```
+
+Look for:
+- ✅ "Successfully exchanged code for Gmail tokens"
+- ✅ "Proxying tokens to gmail_prod Edge Function"
+- ✅ "Edge Function stored Gmail tokens successfully"
+
+**Check Supabase Edge Function Logs**:
+1. Go to Supabase Dashboard → Edge Functions → gmail_prod → Logs
+2. Look for:
+   - `[EDGE] store_tokens action`
+   - `[EDGE] ✅ Tokens written successfully`
+   - `[EDGE] ✅ Connection state written successfully`
+
+**Check Database**:
+```sql
+-- Check connection state (this is what UI queries)
+SELECT * FROM email_connections WHERE user_id = 'YOUR_USER_ID';
+
+-- Check token storage
+SELECT user_id, email, token_expiry 
+FROM gmail_connections 
+WHERE user_id = 'YOUR_USER_ID';
+```
+
+**Expected Result**: Both queries should return rows.
 
 ---
 
-## TROUBLESHOOTING
+## 🔍 Step 4: Verify Connection Persistence
 
-**If 404 persists:**
-- Ensure function name is exactly `outlook-auth` (no typos)
-- Ensure code starts with `import { serve }...`
-- Check Edge Function logs for errors
+### Test UI State Persistence:
 
-**If CORS persists:**
-- Verify corsHeaders are at top of code
-- Verify OPTIONS handler is before try block
-- Check browser console for specific CORS error
+1. **Refresh the page** (`/connect-email`)
+2. **UI should still show "Connected"** (not asking to connect again)
+3. **Click "View Inbox"** button
+4. **Should navigate to** `/email-inbox`
 
-**If "Not Found" in database:**
-- Ensure email_connections table exists
-- Run verification query above
-- Check RLS policies allow insert
+### Test Disconnect:
 
----
-
-## SUMMARY
-
-**What You're Deploying:**
-1. outlook-auth: 372 lines (with email_connections upsert)
-2. gmail_prod: 398 lines (with email_connections upsert)
-
-**Expected Result:**
-- ✅ No CORS errors
-- ✅ No 404 errors
-- ✅ Outlook connects successfully
-- ✅ Gmail connects successfully
-- ✅ Only ONE can be active at a time
-- ✅ email_connections table shows which provider is active
+1. **Click "Disconnect"** button for connected provider
+2. **Confirm the disconnect**
+3. **UI should show connection options** again
+4. **Database check**:
+   ```sql
+   SELECT * FROM email_connections WHERE user_id = 'YOUR_USER_ID';
+   ```
+   Should return no rows after disconnect.
 
 ---
 
-**ALL CODE IS READY - JUST COPY/PASTE INTO SUPABASE DASHBOARD!**
+## 📊 Step 5: Test Priority Inbox (Once Connected)
+
+### Prerequisites:
+- Outlook OR Gmail must be successfully connected
+- `email_priority` Edge Function should be deployed (future task)
+
+### Test Flow:
+1. Navigate to `/email-inbox`
+2. Should see emails from connected provider
+3. AI should prioritize emails based on business context
+
+**Note**: This feature is blocked until email connection is stable.
+
+---
+
+## 🐛 Common Issues & Solutions
+
+### Issue 1: "Edge Function invoked but no logs"
+
+**Cause**: Function not deployed or secrets missing
+
+**Fix**:
+1. Verify function is deployed in Supabase Dashboard
+2. Check all secrets are configured
+3. Redeploy the function
+
+### Issue 2: "Token write failed: permission denied"
+
+**Cause**: RLS policies blocking service role
+
+**Fix**:
+```sql
+-- Service role should bypass RLS, but verify:
+SELECT * FROM pg_policies WHERE tablename = 'email_connections';
+
+-- If needed, temporarily disable RLS for testing:
+ALTER TABLE email_connections DISABLE ROW LEVEL SECURITY;
+```
+
+### Issue 3: "Connection shows 'Connected' but no emails"
+
+**Cause**: Tokens stored but email sync not implemented
+
+**Fix**: This is expected for now. Email sync and Priority Inbox are the next tasks after connection is stable.
+
+### Issue 4: "Invalid redirect_uri error"
+
+**Cause**: OAuth app redirect URI doesn't match
+
+**Fix**: See `/app/OAUTH_SETUP_GUIDE.md` for exact redirect URIs to configure.
+
+---
+
+## ✅ Success Criteria
+
+### Outlook Connection Success:
+- ✅ UI shows "Connected to Outlook (user@example.com)"
+- ✅ `email_connections` table has a row with `provider = 'outlook'`
+- ✅ `outlook_oauth_tokens` table has access_token
+- ✅ Page refresh still shows "Connected"
+- ✅ Disconnect button works
+
+### Gmail Connection Success:
+- ✅ UI shows "Connected to Gmail (user@gmail.com)"
+- ✅ `email_connections` table has a row with `provider = 'gmail'`
+- ✅ `gmail_connections` table has access_token
+- ✅ Page refresh still shows "Connected"
+- ✅ Disconnect button works
+
+---
+
+## 📝 Next Steps After Email Connection Works
+
+1. **Test Priority Inbox**: Verify `email_priority` Edge Function works
+2. **Email Sync**: Implement background sync jobs
+3. **UI Polish**: Add loading states, better error messages
+4. **Token Refresh**: Implement automatic token refresh logic
+5. **Multi-Account**: Allow multiple email accounts per user (future)
+
+---
+
+## 📞 Need Help?
+
+If you encounter issues:
+
+1. **Check logs first**:
+   - Backend: `tail -f /var/log/supervisor/backend.out.log`
+   - Edge Functions: Supabase Dashboard → Logs
+
+2. **Verify database state**:
+   ```sql
+   SELECT * FROM email_connections;
+   SELECT * FROM outlook_oauth_tokens;
+   SELECT * FROM gmail_connections;
+   ```
+
+3. **Check OAuth configuration**: See `/app/OAUTH_SETUP_GUIDE.md`
+
+4. **Share specific error messages** with logs for debugging
+
+---
+
+**Last Updated**: December 2025  
+**Status**: ⚠️ AWAITING USER DEPLOYMENT OF EDGE FUNCTIONS  
+**Blocker**: User must deploy updated Edge Function code to Supabase before testing
