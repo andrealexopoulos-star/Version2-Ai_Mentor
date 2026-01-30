@@ -110,6 +110,7 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       console.log("[EDGE] Connection written successfully:", connData);
+      console.log("EMAIL_CONNECTION_SAVED", { user_id, provider: "outlook" });
       console.log("[EDGE] SUCCESS - Outlook connected for user:", user_id);
 
       return new Response(
