@@ -41,7 +41,7 @@ This is causing OAuth redirect failures because:
 
 **APP_BASE_URL (Single Source of Truth):**
 ```
-https://intel-pipeline.preview.emergentagent.com
+https://inbox-sync-3.preview.emergentagent.com
 ```
 
 **Propagation Map:**
@@ -90,13 +90,13 @@ Navigate to: **Supabase Dashboard** → **Authentication** → **URL Configurati
 
 **Site URL:**
 ```
-https://intel-pipeline.preview.emergentagent.com
+https://inbox-sync-3.preview.emergentagent.com
 ```
 
 **Redirect URLs:** (Add all)
 ```
-https://intel-pipeline.preview.emergentagent.com/auth/callback
-https://intel-pipeline.preview.emergentagent.com/**
+https://inbox-sync-3.preview.emergentagent.com/auth/callback
+https://inbox-sync-3.preview.emergentagent.com/**
 ```
 
 ---

@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://intel-pipeline.preview.emergentagent.com/advisor
+## For: https://inbox-sync-3.preview.emergentagent.com/advisor
 
 ---
 

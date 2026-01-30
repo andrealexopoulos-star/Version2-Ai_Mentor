@@ -122,7 +122,7 @@ Should show:
 ### Manual Test (User: andre.alexopoulos@gmail.com)
 
 1. **Login**
-   - Go to https://intel-pipeline.preview.emergentagent.com/login-supabase
+   - Go to https://inbox-sync-3.preview.emergentagent.com/login-supabase
    - Log in with Google
 
 2. **Connect Integration**

@@ -14,7 +14,7 @@ AZURE_CLIENT_ID=biqc-fixer  ← INVALID (not a GUID)
 
 **User confirmed correct value:**
 ```
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866 ✅
+AZURE_CLIENT_ID=inbox-sync-3 ✅
 ```
 
 **Impact:** All Outlook OAuth flows were failing because Microsoft rejected invalid Client ID.
@@ -32,7 +32,7 @@ AZURE_CLIENT_ID=biqc-fixer
 
 **After:**
 ```
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_ID=inbox-sync-3
 ```
 
 **Backend restarted:** ✅
