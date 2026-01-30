@@ -2901,15 +2901,19 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
     
     # Proxy to Edge Function for token storage
-    logger.info("📡 Proxying to outlook-auth Edge Function...")
+    logger.info("📡 Proxying tokens to outlook-auth Edge Function...")
     try:
         async with httpx.AsyncClient() as client:
             edge_response = await client.post(
                 f"{os.environ['SUPABASE_URL']}/functions/v1/outlook-auth",
                 json={
-                    "action": "process_callback",
-                    "code": code,
-                    "user_id": user_id
+                    "action": "store_tokens",
+                    "user_id": user_id,
+                    "access_token": token_data.get("access_token"),
+                    "refresh_token": token_data.get("refresh_token"),
+                    "expires_at": expires_at,
+                    "account_email": microsoft_email,
+                    "account_name": microsoft_name
                 },
                 headers={
                     "Authorization": f"Bearer {os.environ['SUPABASE_SERVICE_ROLE_KEY']}",
@@ -2922,7 +2926,8 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
                 logger.error(f"Edge Function failed: {edge_response.text}")
                 return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=processing_failed")
             
-            logger.info("✅ Edge Function processed Outlook OAuth successfully")
+            edge_result = edge_response.json()
+            logger.info(f"✅ Edge Function stored Outlook tokens successfully: {edge_result}")
     except Exception as e:
         logger.error(f"Failed to call Edge Function: {e}")
         return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=edge_function_failed")
