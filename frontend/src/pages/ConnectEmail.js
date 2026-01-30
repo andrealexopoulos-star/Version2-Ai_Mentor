@@ -110,6 +110,8 @@ const ConnectEmail = () => {
   const handleOutlookConnect = async () => {
     setConnecting('outlook');
     
+    console.log("📧 Email connect provider: outlook"); // LOGGING
+    
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token || localStorage.getItem('token');
     
@@ -119,13 +121,16 @@ const ConnectEmail = () => {
       return;
     }
     
+    // EXPLICIT: Pass provider parameter
     window.location.assign(
-      `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/connect-email`
+      `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/connect-email&provider=outlook`
     );
   };
 
   const handleGmailConnect = async () => {
     setConnecting('gmail');
+    
+    console.log("📧 Email connect provider: gmail"); // LOGGING
     
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token || localStorage.getItem('token');
@@ -136,8 +141,9 @@ const ConnectEmail = () => {
       return;
     }
     
+    // EXPLICIT: Pass provider parameter
     window.location.assign(
-      `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/connect-email`
+      `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/connect-email&provider=gmail`
     );
   };
 
