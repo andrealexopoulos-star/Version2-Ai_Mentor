@@ -42,68 +42,6 @@ const ConnectEmail = () => {
     }
   }, []);
 
-  const syncOutlookToEdgeFunction = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-      
-      console.log("Posting sync request to outlook-auth Edge Function");
-      
-      const response = await fetch(
-        `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/outlook-auth`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ action: 'sync_from_db', user_id: session.user.id })
-        }
-      );
-      
-      if (response.ok) {
-        console.log("✅ Outlook Edge Function sync successful");
-        // Refresh connection status
-        setTimeout(() => checkEmailConnections(), 1000);
-      } else {
-        console.error("Outlook Edge Function sync failed:", response.status);
-      }
-    } catch (error) {
-      console.error("Outlook sync error:", error);
-    }
-  };
-
-  const syncGmailToEdgeFunction = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-      
-      console.log("Posting sync request to gmail_prod Edge Function");
-      
-      const response = await fetch(
-        `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/gmail_prod`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ action: 'sync_from_db', user_id: session.user.id })
-        }
-      );
-      
-      if (response.ok) {
-        console.log("✅ Gmail Edge Function sync successful");
-        // Refresh connection status
-        setTimeout(() => checkEmailConnections(), 1000);
-      } else {
-        console.error("Gmail Edge Function sync failed:", response.status);
-      }
-    } catch (error) {
-      console.error("Gmail sync error:", error);
-    }
-  };
-
   const checkEmailConnections = async () => {
     try {
       setLoading(true);
