@@ -2743,10 +2743,8 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
                 "provider": "gmail",
                 "connected": True,
                 "connected_email": google_email,
-                "inbox_type": "standard",  # Will be updated by Edge Function on first check
-                "connected_at": datetime.now(timezone.utc).isoformat(),
-                "last_sync_at": datetime.now(timezone.utc).isoformat(),
-                "sync_status": "active"
+                "inbox_type": "standard",
+                "connected_at": datetime.now(timezone.utc).isoformat()
             }, on_conflict="user_id").execute()
             logger.info("✅ email_connections upserted - Gmail is now the active provider")
         except Exception as e:
@@ -2942,10 +2940,8 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
             "provider": "outlook",
             "connected": True,
             "connected_email": microsoft_email,
-            "inbox_type": "standard",  # Will be updated by Edge Function on first check
-            "connected_at": datetime.now(timezone.utc).isoformat(),
-            "last_sync_at": datetime.now(timezone.utc).isoformat(),
-            "sync_status": "active"
+            "inbox_type": "standard",
+            "connected_at": datetime.now(timezone.utc).isoformat()
         }, on_conflict="user_id").execute()
         logger.info("✅ email_connections upserted - Outlook is now the active provider")
     except Exception as e:

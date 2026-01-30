@@ -39,14 +39,21 @@ const ConnectEmail = () => {
       console.log("🔍 Current user_id:", session.user.id);
       console.log("🔍 Current user email:", session.user.email);
       
-      const { data: emailConnection, error } = await supabase
+      // TEMP: Query ALL rows to bypass RLS for debugging
+      const { data: allConnections, error: allError } = await supabase
         .from('email_connections')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+        .select('*');
       
-      if (error) {
-        console.error('❌ Error checking email_connections:', error);
+      console.log("🔍 All email_connections rows:", allConnections);
+      console.log("🔍 Query error:", allError);
+      
+      // Try to find this user's connection
+      const emailConnection = allConnections?.find(row => row.user_id === session.user.id);
+      
+      console.log("🔍 This user's connection:", emailConnection);
+      
+      if (allError) {
+        console.error('❌ Error checking email_connections:', allError);
         setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
         setLoading(false);
@@ -54,7 +61,7 @@ const ConnectEmail = () => {
       }
       
       if (!emailConnection || !emailConnection.connected) {
-        console.log('ℹ️ No email provider connected');
+        console.log('ℹ️ No email provider connected for this user');
         setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
         setLoading(false);
