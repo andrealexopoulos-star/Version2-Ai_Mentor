@@ -2445,7 +2445,7 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
 # ==================== MICROSOFT OUTLOOK INTEGRATION ====================
 
 @api_router.get("/auth/outlook/login")
-async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = None):
+async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = None, provider: Optional[str] = None):
     """
     Initiate Microsoft OAuth flow for Outlook
     Accepts authentication token as query parameter (for browser redirects)
@@ -2453,6 +2453,13 @@ async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = 
     from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
+    
+    # VALIDATION: Provider must be explicit
+    if not provider or provider != "outlook":
+        logger.error(f"❌ Invalid provider for Outlook endpoint: {provider}")
+        raise HTTPException(status_code=400, detail="Provider must be 'outlook' for this endpoint")
+    
+    logger.info(f"📧 Email connect provider: {provider}")  # LOGGING
     
     # Manual token validation (browser redirects can't send Authorization header)
     current_user = None
@@ -2516,7 +2523,7 @@ async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = 
 
 
 @api_router.get("/auth/gmail/login")
-async def gmail_login(returnTo: str = "/integrations", token: Optional[str] = None):
+async def gmail_login(returnTo: str = "/integrations", token: Optional[str] = None, provider: Optional[str] = None):
     """
     Initiate Google OAuth flow for Gmail
     Accepts authentication token as query parameter (for browser redirects)
@@ -2524,6 +2531,13 @@ async def gmail_login(returnTo: str = "/integrations", token: Optional[str] = No
     from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
+    
+    # VALIDATION: Provider must be explicit
+    if not provider or provider != "gmail":
+        logger.error(f"❌ Invalid provider for Gmail endpoint: {provider}")
+        raise HTTPException(status_code=400, detail="Provider must be 'gmail' for this endpoint")
+    
+    logger.info(f"📧 Email connect provider: {provider}")  # LOGGING
     
     # Manual token validation (browser redirects can't send Authorization header)
     current_user = None
