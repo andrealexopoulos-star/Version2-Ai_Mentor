@@ -2708,48 +2708,32 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         except Exception as e:
             logger.warning(f"Could not fetch Google user info: {e}")
         
-        # Store tokens in Supabase gmail_connections table
+        # Proxy to Edge Function for token storage
+        logger.info("📡 Proxying to gmail_prod Edge Function...")
         try:
-            from datetime import datetime, timedelta
-            
-            token_expiry = (datetime.now() + timedelta(seconds=expires_in)).isoformat()
-            
-            connection_data = {
-                "user_id": user_id,
-                "email": google_email,
-                "scopes": "https://www.googleapis.com/auth/gmail.readonly",
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "token_expiry": token_expiry,
-                "updated_at": datetime.now().isoformat()
-            }
-            
-            result = supabase_admin.table("gmail_connections").upsert(
-                connection_data,
-                on_conflict="user_id"
-            ).execute()
-            
-            logger.info(f"✅ Gmail tokens stored for user {user_id}")
-            
-        except Exception as db_error:
-            logger.error(f"Failed to store Gmail tokens: {db_error}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=storage_failed")
-        
-        # CANONICAL: Write to email_connections (single source of truth)
-        logger.info("💾 Writing to email_connections (canonical source)...")
-        try:
-            supabase_admin.table("email_connections").upsert({
-                "user_id": user_id,
-                "provider": "gmail",
-                "connected": True,
-                "connected_email": google_email,
-                "inbox_type": "standard",
-                "connected_at": datetime.now(timezone.utc).isoformat()
-            }, on_conflict="user_id").execute()
-            logger.info("✅ email_connections upserted - Gmail is now the active provider")
+            async with httpx.AsyncClient() as client:
+                edge_response = await client.post(
+                    f"{os.environ['SUPABASE_URL']}/functions/v1/gmail_prod",
+                    json={
+                        "action": "process_callback",
+                        "code": code,
+                        "user_id": user_id
+                    },
+                    headers={
+                        "Authorization": f"Bearer {os.environ['SUPABASE_SERVICE_ROLE_KEY']}",
+                        "Content-Type": "application/json"
+                    },
+                    timeout=30.0
+                )
+                
+                if edge_response.status_code != 200:
+                    logger.error(f"Edge Function failed: {edge_response.text}")
+                    return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=processing_failed")
+                
+                logger.info("✅ Edge Function processed Gmail OAuth successfully")
         except Exception as e:
-            logger.error(f"❌ Failed to upsert email_connections: {e}")
-            # Continue anyway - tokens are stored
+            logger.error(f"Failed to call Edge Function: {e}")
+            return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=edge_function_failed")
         
         # Redirect back to specified path (or integrations) with success
         redirect_url = f"{frontend_url}{return_to}?gmail_connected=true"
@@ -2811,7 +2795,7 @@ async def gmail_disconnect(current_user: dict = Depends(get_current_user_supabas
 
 @api_router.get("/auth/outlook/callback")
 async def outlook_callback(code: str, state: str = None, error: str = None, error_description: str = None):
-    """Handle Microsoft OAuth callback and store tokens - SECURE IMPLEMENTATION"""
+    """Proxy Microsoft OAuth callback to Supabase Edge Function"""
     from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
@@ -2916,37 +2900,32 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     expires_in = token_data.get("expires_in", 3600)
     expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
     
-    # Store tokens using helper
-    success = await store_outlook_tokens(
-        user_id=user_id,
-        access_token=access_token,
-        refresh_token=token_data.get("refresh_token"),
-        expires_at=expires_at,
-        microsoft_user_id=user_info.get("id"),
-        microsoft_email=microsoft_email,
-        microsoft_name=microsoft_name,
-        scope=token_data.get("scope")
-    )
-    
-    if not success:
-        logger.error(f"Failed to store Outlook tokens for user {user_id}")
-        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=storage_failed")
-    
-    # CANONICAL: Write to email_connections (single source of truth)
-    logger.info("💾 Writing to email_connections (canonical source)...")
+    # Proxy to Edge Function for token storage
+    logger.info("📡 Proxying to outlook-auth Edge Function...")
     try:
-        supabase_admin.table("email_connections").upsert({
-            "user_id": user_id,
-            "provider": "outlook",
-            "connected": True,
-            "connected_email": microsoft_email,
-            "inbox_type": "standard",
-            "connected_at": datetime.now(timezone.utc).isoformat()
-        }, on_conflict="user_id").execute()
-        logger.info("✅ email_connections upserted - Outlook is now the active provider")
+        async with httpx.AsyncClient() as client:
+            edge_response = await client.post(
+                f"{os.environ['SUPABASE_URL']}/functions/v1/outlook-auth",
+                json={
+                    "action": "process_callback",
+                    "code": code,
+                    "user_id": user_id
+                },
+                headers={
+                    "Authorization": f"Bearer {os.environ['SUPABASE_SERVICE_ROLE_KEY']}",
+                    "Content-Type": "application/json"
+                },
+                timeout=30.0
+            )
+            
+            if edge_response.status_code != 200:
+                logger.error(f"Edge Function failed: {edge_response.text}")
+                return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=processing_failed")
+            
+            logger.info("✅ Edge Function processed Outlook OAuth successfully")
     except Exception as e:
-        logger.error(f"❌ Failed to upsert email_connections: {e}")
-        # Continue anyway - tokens are stored
+        logger.error(f"Failed to call Edge Function: {e}")
+        return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=edge_function_failed")
     
     # TASK 1: Persist canonical integration state (workspace-scoped)
     from workspace_helpers import get_user_account
