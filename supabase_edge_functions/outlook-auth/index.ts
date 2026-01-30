@@ -11,7 +11,7 @@ interface SuccessResponse {
   connected: true;
   provider: "outlook";
   inbox_type: "focused" | "standard";
-  emails_synced?: number;
+  account_email?: string;
 }
 
 interface DisconnectedResponse {
@@ -34,10 +34,12 @@ serve(async (req: Request): Promise<Response> => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Content-Type": "application/json",
   };
 
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders, status: 200 });
   }
 
   try {
@@ -113,8 +115,8 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`✅ User verified: ${user.email} (${user.id})`);
 
-    // Check outlook_oauth_tokens table for stored tokens using SERVICE ROLE (bypasses RLS)
-    console.log("🔍 Checking outlook_oauth_tokens table for tokens (using service role)...");
+    // Check outlook_oauth_tokens table using SERVICE ROLE (bypasses RLS)
+    console.log("🔍 Checking outlook_oauth_tokens table (using service role)...");
     
     const { data: outlookConnection, error: connectionError } = await supabaseService
       .from("outlook_oauth_tokens")
@@ -150,7 +152,6 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Log retrieved data
     console.log("✅ Outlook connection retrieved from database:");
     console.log(`  - Email: ${outlookConnection.account_email}`);
     console.log(`  - Token Expiry: ${outlookConnection.expires_at}`);
@@ -178,7 +179,6 @@ serve(async (req: Request): Promise<Response> => {
     let accessToken = accessTokenFromDB;
     const refreshToken = refreshTokenFromDB;
 
-    // Function to call Microsoft Graph API
     const callGraphApi = async (token: string): Promise<{ folders: OutlookMailFolder[]; error?: string }> => {
       try {
         console.log("📧 Calling Microsoft Graph API...");
@@ -206,7 +206,6 @@ serve(async (req: Request): Promise<Response> => {
 
     let graphResult = await callGraphApi(accessToken);
 
-    // Refresh token if expired
     if (graphResult.error && graphResult.error.includes("401") && refreshToken) {
       console.log("🔄 Access token expired, attempting refresh...");
 
@@ -261,8 +260,8 @@ serve(async (req: Request): Promise<Response> => {
         accessToken = refreshData.access_token;
         console.log("✅ Access token refreshed successfully");
 
-        // Update database with new token
         const expiresAt = new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString();
+        
         await supabaseService
           .from("outlook_oauth_tokens")
           .update({
@@ -307,7 +306,6 @@ serve(async (req: Request): Promise<Response> => {
 
     const folders = graphResult.folders;
 
-    // Detect Focused Inbox
     console.log("🔍 Detecting Focused Inbox...");
     const folderNames = folders.map((folder) => folder.displayName);
     const hasFocused = folderNames.includes("Focused");
@@ -321,7 +319,6 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`  - Other folder: ${hasOther}`);
     console.log(`  - Inbox Type: ${inboxType}`);
 
-    // Update inbox_type in database
     console.log("💾 Updating outlook_oauth_tokens with inbox type...");
     
     const { error: updateError } = await supabaseService
@@ -343,6 +340,7 @@ serve(async (req: Request): Promise<Response> => {
       connected: true,
       provider: "outlook",
       inbox_type: inboxType,
+      account_email: outlookConnection.account_email,
     };
 
     console.log("✅ SUCCESS:", response);
@@ -372,3 +370,4 @@ serve(async (req: Request): Promise<Response> => {
     });
   }
 });
+
