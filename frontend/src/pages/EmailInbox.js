@@ -44,78 +44,55 @@ const EmailInbox = () => {
         return;
       }
 
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      // CANONICAL: Check email_connections table (single source of truth)
+      console.log("🔍 Checking email_connections (canonical source)...");
       
-      // Check Gmail connection via gmail_prod Edge Function
-      let gmailData = null;
-      try {
-        const gmailEdgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
-        
-        const gmailResponse = await fetch(gmailEdgeFunctionUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (gmailResponse.ok) {
-          const data = await gmailResponse.json();
-          console.log('📊 Gmail Edge Function response:', data);
-          
-          if (data.ok && data.connected) {
-            gmailData = { email: session.user?.email || data.connected_email };
-          }
-        } else {
-          console.error('Gmail Edge Function error:', gmailResponse.status);
-        }
-      } catch (gmailError) {
-        console.error('Gmail check error:', gmailError);
+      const { data: emailConnection, error } = await supabase
+        .from('email_connections')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('❌ Error checking email_connections:', error);
+        setGmailConnected(false);
+        setOutlookConnected(false);
+        setActiveProvider(null);
+        setLoading(false);
+        setCheckingConnection(false);
+        return;
       }
-
-      // Check Outlook connection via outlook-auth Edge Function (matches Gmail pattern)
-      let outlookData = null;
-      try {
-        const outlookEdgeFunctionUrl = `${supabaseUrl}/functions/v1/outlook-auth`;
-        
-        const outlookResponse = await fetch(outlookEdgeFunctionUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (outlookResponse.ok) {
-          const data = await outlookResponse.json();
-          console.log('📊 Outlook Edge Function response:', data);
-          
-          if (data.ok && data.connected) {
-            outlookData = { email: data.account_email || session.user?.email };
-          }
-        } else {
-          console.error('Outlook Edge Function error:', outlookResponse.status);
-        }
-      } catch (outlookError) {
-        console.error('Outlook check error:', outlookError);
+      
+      if (!emailConnection || !emailConnection.connected) {
+        console.log('ℹ️ No email provider connected');
+        setGmailConnected(false);
+        setOutlookConnected(false);
+        setActiveProvider(null);
+        setLoading(false);
+        setCheckingConnection(false);
+        return;
       }
-
-      const hasGmail = !!gmailData;
-      const hasOutlook = !!outlookData;
-
-      setGmailConnected(hasGmail);
-      setOutlookConnected(hasOutlook);
-
-      // Prefer Outlook if both connected (user's mandate: Outlook priority)
-      if (hasOutlook) {
+      
+      console.log(`✅ Active email provider: ${emailConnection.provider}`);
+      console.log(`✅ Connected email: ${emailConnection.connected_email}`);
+      console.log(`✅ Inbox type: ${emailConnection.inbox_type}`);
+      
+      // Set state based on canonical source
+      if (emailConnection.provider === 'outlook') {
+        setOutlookConnected(true);
+        setGmailConnected(false);
         setActiveProvider('outlook');
-        setConnectedEmail(outlookData.email);
+        setConnectedEmail(emailConnection.connected_email);
         fetchPriorityInbox('outlook');
-      } else if (hasGmail) {
+      } else if (emailConnection.provider === 'gmail') {
+        setGmailConnected(true);
+        setOutlookConnected(false);
         setActiveProvider('gmail');
-        setConnectedEmail(gmailData.email);
+        setConnectedEmail(emailConnection.connected_email);
         fetchPriorityInbox('gmail');
       } else {
+        setGmailConnected(false);
+        setOutlookConnected(false);
         setActiveProvider(null);
         setLoading(false);
       }

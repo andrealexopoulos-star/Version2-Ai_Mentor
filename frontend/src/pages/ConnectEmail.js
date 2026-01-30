@@ -34,72 +34,46 @@ const ConnectEmail = () => {
         return;
       }
       
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      // CANONICAL: Check email_connections table (single source of truth)
+      console.log("🔍 Checking email_connections (canonical source)...");
       
-      // Check Outlook via outlook-auth Edge Function (matches Gmail pattern)
-      try {
-        const outlookEdgeFunctionUrl = `${supabaseUrl}/functions/v1/outlook-auth`;
-        
-        const outlookResponse = await fetch(outlookEdgeFunctionUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (outlookResponse.ok) {
-          const data = await outlookResponse.json();
-          console.log('📊 Outlook Edge Function response:', data);
-          
-          if (data.ok && data.connected) {
-            setOutlookStatus({ 
-              connected: true, 
-              email: data.account_email || session.user?.email 
-            });
-          } else {
-            setOutlookStatus({ connected: false });
-          }
-        } else {
-          console.error('Outlook Edge Function error:', outlookResponse.status);
-          setOutlookStatus({ connected: false });
-        }
-      } catch (outlookError) {
-        console.error('Outlook check error:', outlookError);
+      const { data: emailConnection, error } = await supabase
+        .from('email_connections')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('❌ Error checking email_connections:', error);
         setOutlookStatus({ connected: false });
+        setGmailStatus({ connected: false });
+        setLoading(false);
+        return;
       }
       
-      // Check Gmail via gmail_prod Edge Function
-      try {
-        const gmailEdgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
-        
-        const gmailResponse = await fetch(gmailEdgeFunctionUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (gmailResponse.ok) {
-          const data = await gmailResponse.json();
-          console.log('📊 Gmail Edge Function response:', data);
-          
-          if (data.ok && data.connected) {
-            setGmailStatus({ 
-              connected: true, 
-              email: session.user?.email 
-            });
-          } else {
-            setGmailStatus({ connected: false });
-          }
-        } else {
-          console.error('Gmail Edge Function error:', gmailResponse.status);
-          setGmailStatus({ connected: false });
-        }
-      } catch (gmailError) {
-        console.error('Gmail check error:', gmailError);
+      if (!emailConnection || !emailConnection.connected) {
+        console.log('ℹ️ No email provider connected');
+        setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
+        setLoading(false);
+        return;
+      }
+      
+      console.log(`✅ Email provider: ${emailConnection.provider}`);
+      
+      // Set connection state based on canonical source
+      if (emailConnection.provider === 'outlook') {
+        setOutlookStatus({ 
+          connected: true, 
+          email: emailConnection.connected_email 
+        });
+        setGmailStatus({ connected: false });
+      } else if (emailConnection.provider === 'gmail') {
+        setGmailStatus({ 
+          connected: true, 
+          email: emailConnection.connected_email 
+        });
+        setOutlookStatus({ connected: false });
       }
       
     } finally {
