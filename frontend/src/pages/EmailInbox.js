@@ -44,17 +44,18 @@ const EmailInbox = () => {
         return;
       }
 
-      // CANONICAL: Check email_connections table (single source of truth)
-      console.log("🔍 Checking email_connections (canonical source)...");
+      // CANONICAL: Query email_connections ONLY
+      console.log("Querying email_connections for user:", session.user.id);
       
-      const { data: emailConnection, error } = await supabase
+      const { data: rows, error } = await supabase
         .from('email_connections')
         .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+        .eq('user_id', session.user.id);
+      
+      console.log("Query result:", { rows, error });
       
       if (error) {
-        console.error('❌ Error checking email_connections:', error);
+        console.error('Database query error:', error);
         setGmailConnected(false);
         setOutlookConnected(false);
         setActiveProvider(null);
@@ -63,8 +64,9 @@ const EmailInbox = () => {
         return;
       }
       
-      if (!emailConnection || !emailConnection.connected) {
-        console.log('ℹ️ No email provider connected');
+      // CANONICAL: rows.length > 0 means connected
+      if (!rows || rows.length === 0) {
+        console.log('No email provider connected');
         setGmailConnected(false);
         setOutlookConnected(false);
         setActiveProvider(null);
@@ -73,28 +75,22 @@ const EmailInbox = () => {
         return;
       }
       
-      console.log(`✅ Active email provider: ${emailConnection.provider}`);
-      console.log(`✅ Connected email: ${emailConnection.connected_email}`);
-      console.log(`✅ Inbox type: ${emailConnection.inbox_type}`);
+      const connection = rows[0];
+      console.log('Email connection found:', connection);
       
-      // Set state based on canonical source
-      if (emailConnection.provider === 'outlook') {
+      // Set state and fetch inbox
+      if (connection.provider === 'outlook') {
         setOutlookConnected(true);
         setGmailConnected(false);
         setActiveProvider('outlook');
-        setConnectedEmail(emailConnection.connected_email);
+        setConnectedEmail(connection.connected_email);
         fetchPriorityInbox('outlook');
-      } else if (emailConnection.provider === 'gmail') {
+      } else if (connection.provider === 'gmail') {
         setGmailConnected(true);
         setOutlookConnected(false);
         setActiveProvider('gmail');
-        setConnectedEmail(emailConnection.connected_email);
+        setConnectedEmail(connection.connected_email);
         fetchPriorityInbox('gmail');
-      } else {
-        setGmailConnected(false);
-        setOutlookConnected(false);
-        setActiveProvider(null);
-        setLoading(false);
       }
       
     } catch (error) {
