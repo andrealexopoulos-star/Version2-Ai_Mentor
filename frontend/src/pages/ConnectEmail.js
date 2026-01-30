@@ -25,47 +25,80 @@ const ConnectEmail = () => {
     try {
       setLoading(true);
       
-      // Check Outlook status
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        setOutlookStatus({ connected: false });
+        setGmailStatus({ connected: false });
+        setLoading(false);
+        return;
+      }
+      
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      
+      // Check Outlook via outlook-auth Edge Function (matches Gmail pattern)
       try {
-        const outlookResponse = await apiClient.get('/outlook/status');
-        setOutlookStatus(outlookResponse.data);
-      } catch (error) {
-        console.warn('Outlook status check failed:', error);
+        const outlookEdgeFunctionUrl = `${supabaseUrl}/functions/v1/outlook-auth`;
+        
+        const outlookResponse = await fetch(outlookEdgeFunctionUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (outlookResponse.ok) {
+          const data = await outlookResponse.json();
+          console.log('📊 Outlook Edge Function response:', data);
+          
+          if (data.ok && data.connected) {
+            setOutlookStatus({ 
+              connected: true, 
+              email: data.account_email || session.user?.email 
+            });
+          } else {
+            setOutlookStatus({ connected: false });
+          }
+        } else {
+          console.error('Outlook Edge Function error:', outlookResponse.status);
+          setOutlookStatus({ connected: false });
+        }
+      } catch (outlookError) {
+        console.error('Outlook check error:', outlookError);
         setOutlookStatus({ connected: false });
       }
       
-      // Check Gmail status
+      // Check Gmail via gmail_prod Edge Function
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const gmailEdgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
         
-        if (session?.access_token) {
-          const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-          const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
+        const gmailResponse = await fetch(gmailEdgeFunctionUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (gmailResponse.ok) {
+          const data = await gmailResponse.json();
+          console.log('📊 Gmail Edge Function response:', data);
           
-          const gmailResponse = await fetch(edgeFunctionUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (gmailResponse.ok) {
-            const data = await gmailResponse.json();
-            if (data.ok && data.connected) {
-              setGmailStatus({ 
-                connected: true, 
-                email: session.user?.email 
-              });
-            } else {
-              setGmailStatus({ connected: false });
-            }
+          if (data.ok && data.connected) {
+            setGmailStatus({ 
+              connected: true, 
+              email: session.user?.email 
+            });
           } else {
             setGmailStatus({ connected: false });
           }
+        } else {
+          console.error('Gmail Edge Function error:', gmailResponse.status);
+          setGmailStatus({ connected: false });
         }
-      } catch (error) {
-        console.warn('Gmail status check failed:', error);
+      } catch (gmailError) {
+        console.error('Gmail check error:', gmailError);
         setGmailStatus({ connected: false });
       }
       
