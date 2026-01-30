@@ -330,9 +330,33 @@ serve(async (req: Request): Promise<Response> => {
       .eq("user_id", user.id);
 
     if (updateError) {
-      console.error("⚠️ Failed to update inbox_type:", updateError);
+      console.log("⚠️ Failed to update inbox_type:", updateError);
     } else {
       console.log("✅ inbox_type updated successfully");
+    }
+
+    // CANONICAL: Write to email_connections (single source of truth)
+    console.log("💾 Upserting email_connections (canonical source)...");
+    
+    const { error: connectionError } = await supabaseService
+      .from("email_connections")
+      .upsert({
+        user_id: user.id,
+        provider: "outlook",
+        connected: true,
+        connected_email: outlookConnection.account_email,
+        inbox_type: inboxType,
+        connected_at: new Date().toISOString(),
+        last_sync_at: new Date().toISOString(),
+        sync_status: "active",
+      }, {
+        onConflict: "user_id"
+      });
+
+    if (connectionError) {
+      console.error("❌ Failed to upsert email_connections:", connectionError);
+    } else {
+      console.log("✅ email_connections upserted - Outlook is now the active provider");
     }
 
     const response: SuccessResponse = {
