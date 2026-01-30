@@ -27,7 +27,107 @@ serve(async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString(),
     });
 
-    // Handle OAuth callback
+    // Handle token storage (backend already exchanged code for tokens)
+    if (action === "store_tokens") {
+      const { user_id, access_token, refresh_token, expires_at, account_email, account_name } = body;
+
+      console.log("[EDGE] store_tokens action", {
+        user_id,
+        account_email,
+        has_access_token: !!access_token,
+        has_refresh_token: !!refresh_token,
+      });
+
+      if (!user_id || !access_token) {
+        console.error("[EDGE] Missing required fields", { user_id, has_access_token: !!access_token });
+        return new Response(JSON.stringify({ ok: false, error: "Missing user_id or access_token" }), {
+          status: 400,
+          headers: corsHeaders,
+        });
+      }
+
+      // Store tokens in gmail_connections
+      console.log("[EDGE] Writing to gmail_connections table...");
+      const { data: tokenData, error: tokenError } = await supabaseService
+        .from("gmail_connections")
+        .upsert(
+          {
+            user_id,
+            email: account_email,
+            access_token,
+            refresh_token,
+            token_expiry: expires_at,
+            scopes: "https://www.googleapis.com/auth/gmail.readonly",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        )
+        .select();
+
+      if (tokenError) {
+        console.error("[EDGE] Failed to write tokens:", tokenError);
+        return new Response(JSON.stringify({ ok: false, error: `Token write failed: ${tokenError.message}` }), {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
+
+      console.log("[EDGE] ✅ Tokens written successfully:", tokenData);
+
+      // Check inbox type by querying Gmail API
+      console.log("[EDGE] Checking inbox type...");
+      let inboxType = "standard";
+      try {
+        const gmailResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/labels", {
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+
+        if (gmailResponse.ok) {
+          const data = await gmailResponse.json();
+          const labels = data.labels || [];
+          const hasPriority = labels.some((l: any) => l.id === "CATEGORY_PRIMARY" || l.id === "IMPORTANT");
+          inboxType = hasPriority ? "priority" : "standard";
+          console.log("[EDGE] Inbox type detected:", inboxType);
+        }
+      } catch (e) {
+        console.error("[EDGE] Failed to check inbox type:", e);
+      }
+
+      // Write connection state to email_connections (CANONICAL TABLE)
+      console.log("[EDGE] Writing to email_connections table...");
+      const { data: connData, error: connError } = await supabaseService
+        .from("email_connections")
+        .upsert(
+          {
+            user_id,
+            provider: "gmail",
+            connected: true,
+            connected_email: account_email,
+            inbox_type: inboxType,
+            connected_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        )
+        .select();
+
+      if (connError) {
+        console.error("[EDGE] Failed to write connection state:", connError);
+        return new Response(JSON.stringify({ ok: false, error: `Connection write failed: ${connError.message}` }), {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
+
+      console.log("[EDGE] ✅ Connection state written successfully:", connData);
+
+      return new Response(JSON.stringify({ ok: true, connected: true }), {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // Handle OAuth callback (LEGACY - for backwards compatibility)
     if (action === "process_callback") {
       const { code, user_id } = body;
 

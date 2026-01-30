@@ -2708,16 +2708,23 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         except Exception as e:
             logger.warning(f"Could not fetch Google user info: {e}")
         
+        # Calculate token expiration
+        expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
+        
         # Proxy to Edge Function for token storage
-        logger.info("📡 Proxying to gmail_prod Edge Function...")
+        logger.info("📡 Proxying tokens to gmail_prod Edge Function...")
         try:
             async with httpx.AsyncClient() as client:
                 edge_response = await client.post(
                     f"{os.environ['SUPABASE_URL']}/functions/v1/gmail_prod",
                     json={
-                        "action": "process_callback",
-                        "code": code,
-                        "user_id": user_id
+                        "action": "store_tokens",
+                        "user_id": user_id,
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "expires_at": expires_at,
+                        "account_email": google_email,
+                        "account_name": google_name
                     },
                     headers={
                         "Authorization": f"Bearer {os.environ['SUPABASE_SERVICE_ROLE_KEY']}",
@@ -2730,7 +2737,8 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
                     logger.error(f"Edge Function failed: {edge_response.text}")
                     return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=processing_failed")
                 
-                logger.info("✅ Edge Function processed Gmail OAuth successfully")
+                edge_result = edge_response.json()
+                logger.info(f"✅ Edge Function stored Gmail tokens successfully: {edge_result}")
         except Exception as e:
             logger.error(f"Failed to call Edge Function: {e}")
             return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=edge_function_failed")
