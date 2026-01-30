@@ -26,17 +26,19 @@ const ConnectEmail = () => {
     const gmailConnected = urlParams.get('gmail_connected');
     
     if (outlookConnected === 'true') {
-      console.log("Outlook OAuth completed - triggering Edge Function sync");
-      syncOutlookToEdgeFunction();
+      console.log("Outlook OAuth completed - refreshing connection status");
       // Clean URL
       window.history.replaceState({}, '', '/connect-email');
+      // Refresh connection status after a brief delay
+      setTimeout(() => checkEmailConnections(), 1500);
     }
     
     if (gmailConnected === 'true') {
-      console.log("Gmail OAuth completed - triggering Edge Function sync");
-      syncGmailToEdgeFunction();
+      console.log("Gmail OAuth completed - refreshing connection status");
       // Clean URL
       window.history.replaceState({}, '', '/connect-email');
+      // Refresh connection status after a brief delay
+      setTimeout(() => checkEmailConnections(), 1500);
     }
   }, []);
 
