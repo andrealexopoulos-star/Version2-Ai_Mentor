@@ -157,10 +157,43 @@ const EmailInbox = () => {
           });
         }
       } else if (provider === 'outlook') {
-        // Use Outlook backend endpoint
-        const response = await apiClient.get('/email/priority-inbox');
-        if (response.data && response.data.analysis) {
-          setPriorityAnalysis(response.data);
+        // Call Outlook Edge Function
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          setLoading(false);
+          return;
+        }
+
+        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+        const priorityUrl = `${supabaseUrl}/functions/v1/email_priority?provider=outlook`;
+        
+        const response = await fetch(priorityUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          console.error('Outlook priority analysis failed:', response.status);
+          setLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (data.ok) {
+          setPriorityAnalysis({
+            analysis: {
+              high_priority: data.high_priority || [],
+              medium_priority: data.medium_priority || [],
+              low_priority: data.low_priority || [],
+              strategic_insights: data.strategic_insights || ''
+            },
+            analyzed_at: new Date().toISOString()
+          });
         }
       }
     } catch (error) {
@@ -175,14 +208,9 @@ const EmailInbox = () => {
       setAnalyzing(true);
       toast.info('Analyzing your inbox with AI... This may take a moment.');
       
-      if (activeProvider === 'gmail') {
-        await fetchPriorityInbox('gmail');
-        toast.success('Gmail inbox analyzed! Your emails are now prioritized.');
-      } else if (activeProvider === 'outlook') {
-        const response = await apiClient.post('/email/analyze-priority');
-        setPriorityAnalysis({ analysis: response.data, analyzed_at: new Date().toISOString() });
-        toast.success('Outlook inbox analyzed! Your emails are now prioritized.');
-      }
+      // Both Gmail and Outlook now use Edge Functions
+      await fetchPriorityInbox(activeProvider);
+      toast.success(`${activeProvider === 'gmail' ? 'Gmail' : 'Outlook'} inbox analyzed! Your emails are now prioritized.`);
     } catch (error) {
       toast.error('Failed to analyze inbox: ' + (error.response?.data?.detail || error.message));
     } finally {
