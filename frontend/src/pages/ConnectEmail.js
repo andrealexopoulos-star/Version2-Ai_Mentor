@@ -91,43 +91,111 @@ const ConnectEmail = () => {
   };
 
   const handleOutlookConnect = async () => {
-    setConnecting('outlook');
-    
-    console.log("📧 Email connect provider: outlook"); // LOGGING
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || localStorage.getItem('token');
-    
-    if (!token) {
-      toast.error('Please log in to connect Outlook');
+    try {
+      setConnecting('outlook');
+      
+      console.log("📧 Email connect provider: outlook");
+      
+      // Get session with error handling
+      let token;
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          throw new Error(`Session error: ${sessionError.message}`);
+        }
+        
+        if (session?.access_token) {
+          token = session.access_token;
+        } else {
+          // Try localStorage as fallback
+          try {
+            token = localStorage.getItem('token');
+          } catch (storageError) {
+            console.error("Storage access error:", storageError);
+            throw new Error("Cannot access browser storage. Please check browser settings.");
+          }
+        }
+      } catch (authError) {
+        console.error("Auth error:", authError);
+        toast.error(`Authentication error: ${authError.message}`);
+        setConnecting(null);
+        return;
+      }
+      
+      if (!token) {
+        toast.error('Please log in to connect Outlook');
+        setConnecting(null);
+        return;
+      }
+      
+      console.log("✅ Token obtained, redirecting to OAuth...");
+      
+      // EXPLICIT: Pass provider parameter
+      window.location.assign(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/connect-email&provider=outlook`
+      );
+      
+    } catch (error) {
+      console.error("Outlook connect error:", error);
+      toast.error(`Failed to connect: ${error.message}`);
       setConnecting(null);
-      return;
     }
-    
-    // EXPLICIT: Pass provider parameter
-    window.location.assign(
-      `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/connect-email&provider=outlook`
-    );
   };
 
   const handleGmailConnect = async () => {
-    setConnecting('gmail');
-    
-    console.log("📧 Email connect provider: gmail"); // LOGGING
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || localStorage.getItem('token');
-    
-    if (!token) {
-      toast.error('Please log in to connect Gmail');
+    try {
+      setConnecting('gmail');
+      
+      console.log("📧 Email connect provider: gmail");
+      
+      // Get session with error handling
+      let token;
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          throw new Error(`Session error: ${sessionError.message}`);
+        }
+        
+        if (session?.access_token) {
+          token = session.access_token;
+        } else {
+          // Try localStorage as fallback
+          try {
+            token = localStorage.getItem('token');
+          } catch (storageError) {
+            console.error("Storage access error:", storageError);
+            throw new Error("Cannot access browser storage. Please check browser settings.");
+          }
+        }
+      } catch (authError) {
+        console.error("Auth error:", authError);
+        toast.error(`Authentication error: ${authError.message}`);
+        setConnecting(null);
+        return;
+      }
+      
+      if (!token) {
+        toast.error('Please log in to connect Gmail');
+        setConnecting(null);
+        return;
+      }
+      
+      console.log("✅ Token obtained, redirecting to OAuth...");
+      
+      // EXPLICIT: Pass provider parameter
+      window.location.assign(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/connect-email&provider=gmail`
+      );
+      
+    } catch (error) {
+      console.error("Gmail connect error:", error);
+      toast.error(`Failed to connect: ${error.message}`);
       setConnecting(null);
-      return;
     }
-    
-    // EXPLICIT: Pass provider parameter
-    window.location.assign(
-      `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/connect-email&provider=gmail`
-    );
   };
 
   const handleViewInbox = () => {
