@@ -28,59 +28,54 @@ const ConnectEmail = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
+        console.log("No session - user not authenticated");
         setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
         setLoading(false);
         return;
       }
       
-      // CANONICAL: Check email_connections table (single source of truth)
-      console.log("🔍 Checking email_connections (canonical source)...");
-      console.log("🔍 Current user_id:", session.user.id);
-      console.log("🔍 Current user email:", session.user.email);
+      // CANONICAL: Query email_connections ONLY
+      console.log("Querying email_connections for user:", session.user.id);
       
-      // TEMP: Query ALL rows to bypass RLS for debugging
-      const { data: allConnections, error: allError } = await supabase
+      const { data: rows, error } = await supabase
         .from('email_connections')
-        .select('*');
+        .select('*')
+        .eq('user_id', session.user.id);
       
-      console.log("🔍 All email_connections rows:", allConnections);
-      console.log("🔍 Query error:", allError);
+      console.log("Query result:", { rows, error });
       
-      // Try to find this user's connection
-      const emailConnection = allConnections?.find(row => row.user_id === session.user.id);
-      
-      console.log("🔍 This user's connection:", emailConnection);
-      
-      if (allError) {
-        console.error('❌ Error checking email_connections:', allError);
+      if (error) {
+        console.error('Database query error:', error);
         setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
         setLoading(false);
         return;
       }
       
-      if (!emailConnection || !emailConnection.connected) {
-        console.log('ℹ️ No email provider connected for this user');
+      // CANONICAL: rows.length > 0 means connected
+      if (!rows || rows.length === 0) {
+        console.log('No email provider connected');
         setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
         setLoading(false);
         return;
       }
       
-      console.log(`✅ Email provider: ${emailConnection.provider}`);
+      const connection = rows[0];
+      console.log('Email connection found:', connection);
       
-      // Set connection state based on canonical source
-      if (emailConnection.provider === 'outlook') {
+      // Set state based on provider
+      if (connection.provider === 'outlook') {
         setOutlookStatus({ 
           connected: true, 
-          email: emailConnection.connected_email 
+          email: connection.connected_email 
         });
         setGmailStatus({ connected: false });
-      } else if (emailConnection.provider === 'gmail') {
+      } else if (connection.provider === 'gmail') {
         setGmailStatus({ 
           connected: true, 
-          email: emailConnection.connected_email 
+          email: connection.connected_email 
         });
         setOutlookStatus({ connected: false });
       }
