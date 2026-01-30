@@ -36,6 +36,8 @@ const ConnectEmail = () => {
       
       // CANONICAL: Check email_connections table (single source of truth)
       console.log("🔍 Checking email_connections (canonical source)...");
+      console.log("🔍 Current user_id:", session.user.id);
+      console.log("🔍 Current user email:", session.user.email);
       
       const { data: emailConnection, error } = await supabase
         .from('email_connections')
