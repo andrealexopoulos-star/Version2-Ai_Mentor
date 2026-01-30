@@ -44,13 +44,14 @@ const EmailInbox = () => {
         return;
       }
 
-      // Check Gmail connection via Edge Function (bypasses RLS)
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      
+      // Check Gmail connection via gmail_prod Edge Function
       let gmailData = null;
       try {
-        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
+        const gmailEdgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
         
-        const gmailResponse = await fetch(edgeFunctionUrl, {
+        const gmailResponse = await fetch(gmailEdgeFunctionUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -72,18 +73,28 @@ const EmailInbox = () => {
         console.error('Gmail check error:', gmailError);
       }
 
-      // Check Outlook connection (direct query works for Outlook)
+      // Check Outlook connection via outlook-auth Edge Function (matches Gmail pattern)
       let outlookData = null;
       try {
-        const { data, error } = await supabase
-          .from('outlook_oauth_tokens')
-          .select('account_email')
-          .eq('user_id', session.user.id)
-          .eq('provider', 'microsoft')
-          .maybeSingle();
+        const outlookEdgeFunctionUrl = `${supabaseUrl}/functions/v1/outlook-auth`;
         
-        if (data && !error) {
-          outlookData = data;
+        const outlookResponse = await fetch(outlookEdgeFunctionUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (outlookResponse.ok) {
+          const data = await outlookResponse.json();
+          console.log('📊 Outlook Edge Function response:', data);
+          
+          if (data.ok && data.connected) {
+            outlookData = { email: data.account_email || session.user?.email };
+          }
+        } else {
+          console.error('Outlook Edge Function error:', outlookResponse.status);
         }
       } catch (outlookError) {
         console.error('Outlook check error:', outlookError);
@@ -95,15 +106,15 @@ const EmailInbox = () => {
       setGmailConnected(hasGmail);
       setOutlookConnected(hasOutlook);
 
-      // Determine active provider (prefer Gmail if both connected)
-      if (hasGmail) {
+      // Prefer Outlook if both connected (user's mandate: Outlook priority)
+      if (hasOutlook) {
+        setActiveProvider('outlook');
+        setConnectedEmail(outlookData.email);
+        fetchPriorityInbox('outlook');
+      } else if (hasGmail) {
         setActiveProvider('gmail');
         setConnectedEmail(gmailData.email);
         fetchPriorityInbox('gmail');
-      } else if (hasOutlook) {
-        setActiveProvider('outlook');
-        setConnectedEmail(outlookData.account_email);
-        fetchPriorityInbox('outlook');
       } else {
         setActiveProvider(null);
         setLoading(false);
