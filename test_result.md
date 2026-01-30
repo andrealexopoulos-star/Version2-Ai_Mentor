@@ -620,6 +620,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Gmail Console References Investigation - Outlook Edge Function Not Used"
     - "Priority Inbox Connection Detection"
     - "HubSpot Routes Through Merge.dev (Not Upgrade Modal)"
     - "Cognitive Core Migration to Supabase"
