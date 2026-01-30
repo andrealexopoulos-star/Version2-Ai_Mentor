@@ -333,6 +333,30 @@ serve(async (req: Request): Promise<Response> => {
       console.log("✅ gmail_connections upserted successfully");
     }
 
+    // CANONICAL: Write to email_connections (single source of truth)
+    console.log("💾 Upserting email_connections (canonical source)...");
+    
+    const { error: canonicalError } = await supabaseService
+      .from("email_connections")
+      .upsert({
+        user_id: user.id,
+        provider: "gmail",
+        connected: true,
+        connected_email: user.email,
+        inbox_type: inboxType === "priority" ? "priority" : "standard",
+        connected_at: new Date().toISOString(),
+        last_sync_at: new Date().toISOString(),
+        sync_status: "active",
+      }, {
+        onConflict: "user_id"
+      });
+
+    if (canonicalError) {
+      console.error("❌ Failed to upsert email_connections:", canonicalError);
+    } else {
+      console.log("✅ email_connections upserted - Gmail is now the active provider");
+    }
+
     const response: SuccessResponse = {
       ok: true,
       connected: true,
