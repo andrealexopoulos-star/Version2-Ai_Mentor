@@ -59,6 +59,7 @@ const DashboardLayout = ({ children }) => {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+  const [showDegradedBanner, setShowDegradedBanner] = useState(false);
 
   // Persist sidebar collapsed state
   useEffect(() => {
