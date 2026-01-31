@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
-import DegradedIntelligenceBanner from './DegradedIntelligenceBanner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,49 +15,13 @@ import {
   Target, FolderOpen, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Database, Building2,
   Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Inbox, Calendar,
-  Lightbulb, AlertCircle, Mail
+  Lightbulb, AlertCircle, Mail, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useSupabaseAuth();
-  const [onboardingComplete, setOnboardingComplete] = useState(true);
-  const [showDegradedBanner, setShowDegradedBanner] = useState(false);
-  
-  // Check onboarding status on mount
-  useEffect(() => {
-    const checkOnboarding = async () => {
-      try {
-        const response = await apiClient.get('/onboarding/status');
-        const completed = response.data?.completed || false;
-        setOnboardingComplete(completed);
-        
-        if (!completed) {
-          // Show degraded intelligence banner
-          const dismissed = localStorage.getItem('degraded_banner_dismissed');
-          if (!dismissed) {
-            setShowDegradedBanner(true);
-          }
-        }
-      } catch (error) {
-        // Fail open - assume complete if error
-        console.log('⚠️ Onboarding status check failed - failing open');
-        setOnboardingComplete(true);
-      }
-    };
-    
-    checkOnboarding();
-  }, []);
-  
-  const handleDismissBanner = () => {
-    localStorage.setItem('degraded_banner_dismissed', 'true');
-    setShowDegradedBanner(false);
-  };
-  
-  const handleCompleteOnboarding = () => {
-    navigate('/onboarding');
-  };
   
   const logout = async () => {
     try {
