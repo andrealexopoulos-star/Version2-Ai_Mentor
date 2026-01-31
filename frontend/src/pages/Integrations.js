@@ -68,7 +68,7 @@ const Integrations = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('connected-apps'); // 'connected-apps' or 'intelligence-sources'
+  const [activeTab, setActiveTab] = useState('connected-apps'); // 'connected-apps' or 'data-connections'
   const [selectedCategory, setSelectedCategory] = useState(null); // null = no category selected
   const [selectedIntegration, setSelectedIntegration] = useState(null); // For detail panel
   const [connecting, setConnecting] = useState(null);
@@ -701,7 +701,7 @@ const Integrations = () => {
             </button>
             <button
               onClick={() => {
-                setActiveTab('intelligence-sources');
+                setActiveTab('data-connections');
                 setSelectedCategory(null);
                 setSelectedIntegration(null);
               }}
