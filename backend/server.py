@@ -2588,7 +2588,7 @@ async def gmail_login(returnTo: str = "/integrations", token: Optional[str] = No
     
     logger.info(f"Gmail OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
     
-    # Google OAuth URL with consent prompt to ensure refresh token
+    # Google OAuth URL with select_account prompt for account picker
     auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth?"
         f"client_id={GOOGLE_CLIENT_ID}&"
@@ -2597,7 +2597,7 @@ async def gmail_login(returnTo: str = "/integrations", token: Optional[str] = No
         f"scope={encoded_scope}&"
         f"state={state}&"
         f"access_type=offline&"
-        f"prompt=consent"
+        f"prompt=select_account"
     )
     
     # Direct browser redirect to OAuth provider
