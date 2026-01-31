@@ -75,6 +75,7 @@ const Advisor = () => {
   const [focus, setFocus] = useState(null);
   const [proactiveTrigger, setProactiveTrigger] = useState(null);
   const [hasSpoken, setHasSpoken] = useState(false);
+  const [insights, setInsights] = useState([]);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
