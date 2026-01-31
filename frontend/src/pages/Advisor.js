@@ -211,15 +211,11 @@ Acknowledge you've noticed activity in their inbox that may need attention. Do N
     }
   };
 
-  const scrollToBottom = () => {
+  useEffect(() => {
     // Only scroll if there are messages (not on initial load)
     if (messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  };
-
-  useEffect(() => {
-    scrollToBottom();
   }, [messages]);
 
   const handleFocusAreaSelect = async (area) => {
