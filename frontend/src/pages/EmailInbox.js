@@ -104,7 +104,7 @@ const EmailInbox = () => {
   };
 
   const handleConnect = () => {
-    navigate('/integrations');
+    navigate('/connect-email');
   };
 
   useEffect(() => {
