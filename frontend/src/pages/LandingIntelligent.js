@@ -132,7 +132,7 @@ const LandingIntelligent = () => {
           </h2>
           <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto text-left sm:text-center">
             <p>
-              You make decisions using fragmented data, gut feel, and generic business advice that doesn't know your reality.
+              You make decisions using fragmented data, gut feel, and generic business advice that doesn&apos;t know your reality.
             </p>
             <p>
               Tools give you features. Templates give you frameworks. Generic AI gives you responses.
@@ -189,7 +189,7 @@ const LandingIntelligent = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Surfaces what matters</h3>
-                    <p className="text-sm text-slate-600">Filters noise, highlights signals you'd otherwise miss</p>
+                    <p className="text-sm text-slate-600">Filters noise, highlights signals you&apos;d otherwise miss</p>
                   </div>
                 </div>
 
@@ -379,7 +379,7 @@ const LandingIntelligent = () => {
             Intelligence you can trust
           </h2>
           <p className="text-lg sm:text-xl text-slate-300 leading-relaxed">
-            BIQC doesn't guess. It learns your business, recognizes patterns, and provides guidance grounded in your reality.
+            BIQC doesn&apos;t guess. It learns your business, recognizes patterns, and provides guidance grounded in your reality.
           </p>
           <div className="pt-4">
             <Button
