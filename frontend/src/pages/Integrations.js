@@ -866,14 +866,112 @@ const Integrations = () => {
         )}
 
         {activeTab === 'data-connections' && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                 style={{ background: 'var(--bg-tertiary)' }}>
-              <Sparkles className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+                Connected Data Sources
+              </h2>
+              <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+                All connected integrations providing data to BIQC
+              </p>
             </div>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Data Connections - All connected integrations appear here
-            </p>
+
+            {/* Email Connections */}
+            {(outlookStatus.connected || gmailStatus.connected) && (
+              <div>
+                <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
+                  Email Providers
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {outlookStatus.connected && (
+                    <div className="p-4 rounded-xl border-2 border-green-500" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-[#0078D4] flex items-center justify-center text-white font-bold">
+                          OL
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Microsoft Outlook</span>
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          </div>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{outlookStatus.connected_email || 'Connected'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {gmailStatus.connected && (
+                    <div className="p-4 rounded-xl border-2 border-green-500" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-[#EA4335] flex items-center justify-center text-white font-bold">
+                          GM
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Gmail</span>
+                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          </div>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{gmailStatus.connected_email || 'Connected'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Merge Integrations (CRM, Finance, etc.) */}
+            {Object.keys(mergeIntegrations).length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
+                  Business Systems
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(mergeIntegrations).map(([key, integration]) => {
+                    const integrationConfig = integrations.find(i => 
+                      i.name.toLowerCase() === key.toLowerCase() || 
+                      i.id.toLowerCase() === key.toLowerCase()
+                    );
+                    
+                    return (
+                      <div key={key} className="p-4 rounded-xl border-2 border-green-500" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                        <div className="flex items-center gap-3">
+                          {integrationConfig && (
+                            <div 
+                              className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold"
+                              style={{ background: integrationConfig.color }}
+                            >
+                              {integrationConfig.logo}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{key}</span>
+                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            </div>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              {integration.category} • Connected via Merge.dev
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!outlookStatus.connected && !gmailStatus.connected && Object.keys(mergeIntegrations).length === 0 && (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                     style={{ background: 'var(--bg-tertiary)' }}>
+                  <Sparkles className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  No data connections yet. Connect integrations from the Connected Apps tab.
+                </p>
+              </div>
+            )}
           </div>
         )}
         </div>
