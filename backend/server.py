@@ -7735,7 +7735,7 @@ async def exchange_merge_account_token(
             account_token = data.get("account_token")
             integration_info = data.get("integration", {})
             integration_name = integration_info.get("name", "unknown")
-            merge_account_id = integration_info.get("id")  # P0 FIX: Extract Merge account ID
+            merge_account_id = data.get("id")  # FIX: ID is at root level, not in integration object
             
             if not account_token:
                 logger.error("❌ No account_token in Merge API response")
@@ -7744,6 +7744,8 @@ async def exchange_merge_account_token(
             logger.info(f"✅ Received account_token for integration: {integration_name}")
             if merge_account_id:
                 logger.info(f"✅ Merge account ID: {merge_account_id}")
+            else:
+                logger.warning(f"⚠️ No merge_account_id in response - this may cause issues")
     
     except httpx.HTTPError as e:
         logger.error(f"❌ HTTP error calling Merge API: {str(e)}")
