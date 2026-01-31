@@ -219,10 +219,10 @@ const LandingIntelligent = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4">
-              How BIQC Thinks
+              Operating model
             </h2>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Intelligence is a process, not a response
+              Intelligence synthesis, not keyword matching
             </p>
           </div>
 
@@ -232,9 +232,9 @@ const LandingIntelligent = () => {
               <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center">
                 <Zap className="w-6 h-6 text-blue-400" />
               </div>
-              <h3 className="text-xl font-semibold">Inputs</h3>
+              <h3 className="text-xl font-semibold">Data inputs</h3>
               <p className="text-slate-300 leading-relaxed">
-                Email patterns, CRM data, calendar behavior, communication signals, and business profile.
+                Email traffic patterns, calendar density, CRM velocity, communication sentiment, payment behavior, and operational signals.
               </p>
             </div>
 
@@ -248,9 +248,9 @@ const LandingIntelligent = () => {
               <div className="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
                 <Brain className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-xl font-semibold">Understanding</h3>
+              <h3 className="text-xl font-semibold">Intelligence synthesis</h3>
               <p className="text-slate-300 leading-relaxed">
-                Pattern recognition, context synthesis, decision velocity tracking, and behavioral modeling.
+                Pattern recognition, behavioral modeling, constraint mapping, decision velocity tracking, and risk correlation analysis.
               </p>
             </div>
 
@@ -264,9 +264,9 @@ const LandingIntelligent = () => {
               <div className="w-12 h-12 bg-emerald-600/20 rounded-xl flex items-center justify-center">
                 <Target className="w-6 h-6 text-emerald-400" />
               </div>
-              <h3 className="text-xl font-semibold">Advisory Output</h3>
+              <h3 className="text-xl font-semibold">Advisory output</h3>
               <p className="text-slate-300 leading-relaxed">
-                Specific insights, prioritized actions, and strategic guidance tailored to your situation.
+                Decision support, risk alerts, operational insights, and strategic recommendations specific to your business structure.
               </p>
             </div>
           </div>
