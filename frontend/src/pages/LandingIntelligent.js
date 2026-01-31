@@ -11,34 +11,38 @@ const LandingIntelligent = () => {
 
   const capabilities = [
     {
-      outcome: "Decisions backed by your actual business data",
-      detail: "BIQC integrates with your email, CRM, and calendar to understand what's actually happening"
+      outcome: "Decision velocity without recklessness",
+      detail: "Intelligence delivery synchronized to your decision cadence. Clarity when it matters, silence when it doesn't."
     },
     {
-      outcome: "Strategic clarity when you're overwhelmed",
-      detail: "Surface what matters, filter what doesn't, based on your business reality"
+      outcome: "Operational risk detection before impact",
+      detail: "Pattern recognition across email, calendar, and CRM. Surfaces execution risks weeks before they materialize."
     },
     {
-      outcome: "Advice that remembers your context",
-      detail: "Every conversation builds on what BIQC has learned about how you operate"
+      outcome: "Cash flow clarity grounded in payment behavior",
+      detail: "Not projections. Actual client payment patterns, invoice timing, and collection velocity from your integrated data."
+    },
+    {
+      outcome: "Execution alignment across team and commitments",
+      detail: "Identifies capacity mismatches, timeline drift, and resource bottlenecks from calendar and communication patterns."
     }
   ];
 
   const howItWorks = [
     {
       number: "01",
-      title: "Connect your business data",
-      description: "Email, CRM, calendar. BIQC integrates with systems you already use."
+      title: "Integration",
+      description: "Connects to existing systems: email, CRM, calendar. OAuth-secured, read-only access with user-controlled revocation."
     },
     {
       number: "02",
-      title: "BIQC builds understanding",
-      description: "Continuous learning from communications, patterns, and business signals."
+      title: "Intelligence build",
+      description: "Continuous analysis of communication patterns, decision velocity, operational signals, and execution behavior."
     },
     {
       number: "03",
-      title: "Intelligence, on demand",
-      description: "Ask questions. Make decisions. BIQC provides context-aware guidance."
+      title: "Advisory delivery",
+      description: "On-demand intelligence when decisions are required. Context-aware guidance grounded in your business operating model."
     }
   ];
 
