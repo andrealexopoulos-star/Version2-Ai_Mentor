@@ -273,6 +273,102 @@ const LandingIntelligent = () => {
         </div>
       </section>
 
+
+      {/* Security & Trust */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-white border-y border-slate-200">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 mb-4">
+              Built for operational security
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Your data, your control, your compliance requirements
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                Workspace data isolation
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Each business operates in an isolated workspace. No data sharing across organizations. Row-level security enforced at database layer.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                OAuth via trusted providers
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Authentication through Microsoft, Google, and established identity providers. No password storage. Industry-standard OAuth 2.0 flows.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                Least-privilege access model
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Read-only integration access. BIQC observes and advises — it does not write to your systems. No data modification capability.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                User-controlled revocation
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Disconnect integrations at any time from settings. Immediate access termination. Data retention policies user-configurable.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                Audit-ready activity logging
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                All data access logged with timestamps, user context, and operation type. Compliance-friendly audit trails maintained.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                Encryption at rest and in transit
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                TLS 1.3 for all connections. Database encryption enabled. Integration tokens stored with encryption at rest via Supabase security infrastructure.
+              </p>
+            </div>
+          </div>
+
+          {/* Key Differentiators */}
+          <div className="mt-12 pt-12 border-t border-slate-200">
+            <p className="text-xs uppercase tracking-wide text-slate-500 mb-4 text-center">Key Differentiators</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="font-semibold text-slate-900 mb-1">Not a chatbot</p>
+                <p className="text-xs text-slate-600">Persistent intelligence model, not conversational interface</p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 mb-1">Not generic AI</p>
+                <p className="text-xs text-slate-600">Specialized for business operations, not general knowledge</p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 mb-1">Not a dashboard</p>
+                <p className="text-xs text-slate-600">Advisory intelligence, not data visualization</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Capabilities - Framed as Outcomes */}
       <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
