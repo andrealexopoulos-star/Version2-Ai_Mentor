@@ -186,38 +186,42 @@ const LandingIntelligent = () => {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 border border-slate-200">
-              <div className="space-y-6">
+            <div className="bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-3xl p-8 sm:p-10 relative overflow-hidden">
+              <div className="space-y-6 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="w-5 h-5 text-white" />
+                  <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-600/20">
+                    <MessageSquare className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Continuous learning</h3>
-                    <p className="text-sm text-slate-600">Builds understanding from communications, data patterns, and decision history</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Continuous learning</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Builds understanding from communications, data patterns, and decision history</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Target className="w-5 h-5 text-white" />
+                  <div className="w-11 h-11 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-600/20">
+                    <Target className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Signal detection</h3>
-                    <p className="text-sm text-slate-600">Surfaces operational patterns, risks, and opportunities you&apos;d otherwise miss</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Signal detection</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Surfaces operational patterns, risks, and opportunities you&apos;d otherwise miss</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <BarChart3 className="w-5 h-5 text-white" />
+                  <div className="w-11 h-11 bg-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-600/20">
+                    <BarChart3 className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Context-aware guidance</h3>
-                    <p className="text-sm text-slate-600">Advisory output tailored to your business structure and constraints</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Context-aware guidance</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Advisory output tailored to your business structure and constraints</p>
                   </div>
                 </div>
               </div>
+
+              {/* Subtle accent */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-blue-300 opacity-10 blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-300 opacity-10 blur-3xl"></div>
             </div>
           </div>
         </div>
@@ -390,21 +394,21 @@ const LandingIntelligent = () => {
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {capabilities.map((cap, index) => (
               <div 
                 key={index}
-                className="p-6 rounded-xl border border-slate-200 bg-white hover:border-blue-300 hover:shadow-md transition-all"
+                className="p-6 sm:p-7 rounded-2xl bg-white hover:shadow-lg transition-shadow border border-slate-100"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-4 h-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">
                       {cap.outcome}
                     </h3>
-                    <p className="text-slate-600 leading-relaxed">
+                    <p className="text-slate-600 leading-relaxed text-base">
                       {cap.detail}
                     </p>
                   </div>
