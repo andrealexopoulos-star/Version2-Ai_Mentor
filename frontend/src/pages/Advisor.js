@@ -105,6 +105,33 @@ const Advisor = () => {
       setProactiveTrigger(null);
     };
     
+
+  // Fetch insights from backend (existing data only)
+  useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        // Fetch existing intelligence snapshot
+        const response = await apiClient.get('/dashboard/intelligence-snapshot');
+        const insightData = response.data;
+        
+        // Extract insights if they exist
+        const extractedInsights = [];
+        if (insightData?.insights) {
+          extractedInsights.push(...insightData.insights);
+        }
+        if (insightData?.observations) {
+          extractedInsights.push(...insightData.observations);
+        }
+        
+        setInsights(extractedInsights);
+      } catch (error) {
+        // No insights available - display nothing (constitutional requirement)
+        setInsights([]);
+      }
+    };
+    
+    fetchInsights();
+  }, []);
     checkProactiveTrigger();
     fetchFocus();
   }, [searchParams]);
@@ -311,6 +338,22 @@ Acknowledge you've noticed activity in their inbox that may need attention. Do N
                     </p>
                   )}
                 </div>
+
+                {/* BIQc Insights - Typing Animation */}
+                {insights.length > 0 && (
+                  <div 
+                    className="px-6 py-4 rounded-xl border"
+                    style={{
+                      background: 'var(--bg-card)',
+                      borderColor: 'var(--border-light)'
+                    }}
+                  >
+                    <p className="text-xs font-medium uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
+                      BIQc Insights
+                    </p>
+                    <TypingInsights insights={insights} />
+                  </div>
+                )}
 
                 {/* Focus Areas */}
                 <div>
