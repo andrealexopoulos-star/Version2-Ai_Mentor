@@ -374,10 +374,10 @@ const LandingIntelligent = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 mb-4">
-              What BIQC delivers
+              Intelligence outcomes
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Intelligence outcomes, not features
+              What operational intelligence delivers
             </p>
           </div>
 
@@ -438,36 +438,36 @@ const LandingIntelligent = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 mb-4">
-              Built for operators and decision-makers
+              For operators making decisions under constraint
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              If you run a business, make strategic decisions, or need to think clearly under pressure — BIQC is for you.
+              Founders, executives, and strategic advisors who need intelligence depth without complexity overhead
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Founders & Business Owners</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Business operators (10-200 employees)</h3>
               <p className="text-slate-600 text-sm">
-                Running the business while making strategy decisions. Need clarity, not more complexity.
+                Managing execution velocity, capacity constraints, and operational complexity. Need intelligence synthesis, not more data.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Executives & Operators</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Executive decision-makers</h3>
               <p className="text-slate-600 text-sm">
-                Managing multiple priorities. Need intelligence that cuts through noise.
+                Operating under information overload. Require signal extraction from noise, not additional reporting layers.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Strategic Advisors</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Strategic advisors & consultants</h3>
               <p className="text-slate-600 text-sm">
-                Guiding clients with real data, not assumptions. Need intelligence depth fast.
+                Require rapid business intelligence depth across client portfolios. Need operational context without manual analysis overhead.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Growth-Stage Leaders</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Growth-stage leadership teams</h3>
               <p className="text-slate-600 text-sm">
-                Scaling operations while maintaining strategic clarity. Need to move fast without breaking things.
+                Scaling operations while maintaining execution quality. Require alignment visibility across team capacity, customer commitments, and resource allocation.
               </p>
             </div>
           </div>
@@ -478,10 +478,10 @@ const LandingIntelligent = () => {
       <section className="py-20 sm:py-28 px-4 sm:px-6 bg-slate-900 text-white">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight">
-            Intelligence you can trust
+            Intelligence infrastructure for operators
           </h2>
           <p className="text-lg sm:text-xl text-slate-300 leading-relaxed">
-            BIQC doesn&apos;t guess. It learns your business, recognizes patterns, and provides guidance grounded in your reality.
+            BIQC operates as a persistent intelligence layer. It understands your business structure, tracks execution patterns, and provides advisory guidance grounded in operational reality.
           </p>
           <div className="pt-4">
             <Button
