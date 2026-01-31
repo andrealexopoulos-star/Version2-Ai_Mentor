@@ -12,18 +12,18 @@ const IntelligenceSimulation = () => {
   const [isComplete, setIsComplete] = useState(false);
   const timeoutRef = useRef(null);
 
-  // Intelligence progression - BIQC reasoning pattern
+  // Intelligence progression - realistic operational insight
   const lines = [
-    "Analyzing business signals...",
-    "Revenue growing 22% quarter-on-quarter.",
-    "Cash reserves declining despite revenue growth.",
-    "Payment terms extended to close deals faster.",
-    "This is not a revenue problem.",
-    "Growth is outpacing cash collection velocity.",
-    "Recommended focus: Restructure payment terms, not new sales."
+    "Analyzing integrated data sources...",
+    "Email volume +40% over 14 days. Calendar density unchanged.",
+    "Client response time degrading. Team capacity static.",
+    "Therefore: Demand is outpacing delivery capacity.",
+    "Risk: Quality degradation or client churn within 30-45 days.",
+    "Recommended focus: Capacity expansion or demand throttling.",
+    "Decision required: Scale team or adjust sales pipeline velocity."
   ];
 
-  const pauses = [1400, 1300, 1600, 1400, 1600, 1800, 2400];
+  const pauses = [1400, 1600, 1700, 1800, 1900, 2000, 2200];
 
   useEffect(() => {
     if (currentLineIndex >= lines.length) {
