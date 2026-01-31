@@ -78,6 +78,12 @@ body {
     color: var(--text-primary);
     font-size: 15px;
     line-height: 1.6;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    min-height: 100vh;
+}
 }
 
 /* Premium Typography - Mobile First */
