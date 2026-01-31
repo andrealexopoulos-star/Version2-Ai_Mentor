@@ -483,6 +483,58 @@ const LandingIntelligent = () => {
         </div>
       </section>
 
+
+      {/* Proof of Intelligence */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-gradient-to-br from-blue-50 to-slate-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-3">
+              What makes BIQC intelligent
+            </h2>
+            <p className="text-slate-600">Operational pattern recognition, not keyword matching</p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-start gap-4 p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-1.5">Detects operational strain before failure</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Correlates email volume trends, calendar density patterns, and response time degradation to identify capacity mismatches 2-4 weeks before client churn or quality collapse occurs.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center flex-shrink-0">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-1.5">Correlates financial behavior with execution reality</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Maps client payment cycle extension to sales pipeline velocity and team utilization rates — identifying cash timing pressure caused by operational decisions, not market conditions.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center flex-shrink-0">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-1.5">Recommends based on constraint mapping</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Guidance accounts for team capacity limits, cash position, client commitment timelines, and decision velocity patterns — not generic best practices disconnected from your operating constraints.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
       {/* Closing Statement */}
       <section className="py-20 sm:py-28 px-4 sm:px-6 bg-slate-900 text-white">
         <div className="max-w-3xl mx-auto text-center space-y-8">
