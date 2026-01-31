@@ -60,6 +60,11 @@ const DashboardLayout = ({ children }) => {
     return localStorage.getItem('theme') === 'dark';
   });
 
+  // Persist sidebar collapsed state
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
+
   // Mobile: Lock scroll when sidebar open
   useEffect(() => {
     if (sidebarOpen) {
