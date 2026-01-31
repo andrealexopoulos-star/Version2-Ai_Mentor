@@ -49,6 +49,17 @@ const DashboardLayout = ({ children }) => {
       window.location.href = '/';
     }
   };
+
+  const handleCompleteOnboarding = () => {
+    setShowDegradedBanner(false);
+    localStorage.setItem('onboarding-completed', 'true');
+  };
+
+  const handleDismissBanner = () => {
+    setShowDegradedBanner(false);
+    localStorage.setItem('banner-dismissed', 'true');
+  };
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar-collapsed') === 'true';
