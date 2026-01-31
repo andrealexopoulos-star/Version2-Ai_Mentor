@@ -160,10 +160,10 @@ const LandingIntelligent = () => {
               
               <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed">
                 <p>
-                  BIQC is not a chatbot. It's not a dashboard. It's not another tool.
+                  BIQC is not a chatbot. It&apos;s not a dashboard. It&apos;s not another tool.
                 </p>
                 <p>
-                  It's a persistent intelligence system that learns your business reality, recognizes patterns you miss, and provides advisory guidance when you need it.
+                  It&apos;s a persistent intelligence system that learns your business reality, recognizes patterns you miss, and provides advisory guidance when you need it.
                 </p>
                 <p className="font-medium text-slate-900">
                   Think of it as having a senior advisor who knows your business intimately and is available whenever you need to think through a decision.
