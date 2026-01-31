@@ -153,7 +153,7 @@ const DashboardLayout = ({ children }) => {
   const navItems = [
     { type: 'divider', label: 'Business Intelligence' },
     { icon: Stethoscope, label: 'Business Diagnosis', path: '/diagnosis', showBadge: true },
-    { icon: MessageSquare, label: 'BIQC Intelligence', path: '/advisor', showBadge: true },
+    { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
     { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'Setup' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
