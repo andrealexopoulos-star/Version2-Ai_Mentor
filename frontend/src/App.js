@@ -8,6 +8,7 @@ import InstallPrompt from './components/InstallPrompt';
 
 // Pages
 import Landing from "./pages/Landing";
+import LandingIntelligent from "./pages/LandingIntelligent";
 import LoginSupabase from "./pages/LoginSupabase";
 import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
@@ -102,7 +103,8 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes - Landing page accessible to everyone */}
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<LandingIntelligent />} />
+      <Route path="/landing-original" element={<Landing />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       
