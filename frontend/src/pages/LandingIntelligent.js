@@ -77,13 +77,13 @@ const LandingIntelligent = () => {
             <div className="space-y-6 sm:space-y-8">
               <div className="space-y-4">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-tight tracking-tight">
-                  Your business,
+                  Intelligence that knows
                   <br />
-                  <span className="text-blue-600">understood continuously</span>
+                  <span className="text-blue-600">how your business operates</span>
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-xl">
-                  BIQC is a personalised AI advisory system that learns how your business operates and helps you make better decisions.
+                  BIQC is a continuous intelligence layer for business operators. It learns your business reality, recognizes patterns in execution, and provides advisory guidance when decisions matter.
                 </p>
               </div>
 
@@ -128,17 +128,17 @@ const LandingIntelligent = () => {
       <section className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-50">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900">
-            Most business decisions lack intelligence
+            Business decisions require intelligence, not generic responses
           </h2>
           <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto text-left sm:text-center">
             <p>
-              You make decisions using fragmented data, gut feel, and generic business advice that doesn&apos;t know your reality.
+              Most tools give you data. Some give you answers. Neither gives you intelligence.
             </p>
             <p>
-              Tools give you features. Templates give you frameworks. Generic AI gives you responses.
+              Intelligence requires understanding how your business operates, what patterns exist in your execution, and what signals matter in your specific context.
             </p>
             <p className="font-medium text-slate-900">
-              BIQC gives you intelligence — personalised, continuous, and grounded in your business.
+              BIQC builds a persistent model of your business reality and advises from that foundation.
             </p>
           </div>
         </div>
@@ -155,18 +155,20 @@ const LandingIntelligent = () => {
               </div>
               
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 leading-tight">
-                An intelligence layer for your business
+                A persistent intelligence layer,
+                <br className="hidden sm:block" />
+                not a tool
               </h2>
               
               <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed">
                 <p>
-                  BIQC is not a chatbot. It&apos;s not a dashboard. It&apos;s not another tool.
+                  BIQC operates as a continuous intelligence system that understands your business structure, decision patterns, and operational constraints.
                 </p>
                 <p>
-                  It&apos;s a persistent intelligence system that learns your business reality, recognizes patterns you miss, and provides advisory guidance when you need it.
+                  It integrates with existing systems you already use — email, CRM, calendar — to build and maintain a live model of your business reality.
                 </p>
                 <p className="font-medium text-slate-900">
-                  Think of it as having a senior advisor who knows your business intimately and is available whenever you need to think through a decision.
+                  When you need to make a decision, BIQC provides advisory guidance grounded in what it knows about how you operate.
                 </p>
               </div>
             </div>
@@ -178,8 +180,8 @@ const LandingIntelligent = () => {
                     <MessageSquare className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Learns continuously</h3>
-                    <p className="text-sm text-slate-600">From your communications, data, and decision patterns</p>
+                    <h3 className="font-semibold text-slate-900 mb-1">Continuous learning</h3>
+                    <p className="text-sm text-slate-600">Builds understanding from communications, data patterns, and decision history</p>
                   </div>
                 </div>
 
@@ -188,8 +190,8 @@ const LandingIntelligent = () => {
                     <Target className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Surfaces what matters</h3>
-                    <p className="text-sm text-slate-600">Filters noise, highlights signals you&apos;d otherwise miss</p>
+                    <h3 className="font-semibold text-slate-900 mb-1">Signal detection</h3>
+                    <p className="text-sm text-slate-600">Surfaces operational patterns, risks, and opportunities you&apos;d otherwise miss</p>
                   </div>
                 </div>
 
@@ -198,8 +200,8 @@ const LandingIntelligent = () => {
                     <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Advises with context</h3>
-                    <p className="text-sm text-slate-600">Every insight is grounded in your business reality</p>
+                    <h3 className="font-semibold text-slate-900 mb-1">Context-aware guidance</h3>
+                    <p className="text-sm text-slate-600">Advisory output tailored to your business structure and constraints</p>
                   </div>
                 </div>
               </div>
