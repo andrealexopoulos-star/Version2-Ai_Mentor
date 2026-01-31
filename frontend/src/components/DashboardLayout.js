@@ -50,6 +50,9 @@ const DashboardLayout = ({ children }) => {
     }
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  });
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationsList, setNotificationsList] = useState([]);
