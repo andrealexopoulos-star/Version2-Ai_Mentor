@@ -98,16 +98,16 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-6 relative">
+      <section className="pt-16 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 to-white" />
         <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[150px] opacity-50" />
         
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center">
             {/* Main Content */}
-            <div className="lg:col-span-7 space-y-6 lg:space-y-8 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
-                <Sparkles className="w-4 h-4 text-blue-700" />
+            <div className="lg:col-span-7 space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-100 border border-blue-200 rounded-full">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-700" />
                 <span className="text-xs sm:text-sm font-semibold text-blue-800">Personalised AI Business Intelligence</span>
               </div>
               
@@ -120,10 +120,10 @@ const Landing = () => {
                 <strong className="text-slate-900 font-semibold">BIQC</strong> continuously learns your business and delivers sound, personalised intelligence.
               </p>
               
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-1 sm:pt-2">
                 <Button 
                   onClick={() => navigate('/register-supabase')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 sm:px-8 py-4 sm:py-4 lg:py-4 h-14 sm:h-auto rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 sm:px-8 py-3.5 sm:py-4 lg:py-4 h-12 sm:h-14 rounded-xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 text-base sm:text-lg w-full sm:w-auto"
                   data-testid="hero-cta-btn"
                 >
                   Start For Free
