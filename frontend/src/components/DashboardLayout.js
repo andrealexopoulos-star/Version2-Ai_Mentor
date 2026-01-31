@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
-import DegradedIntelligenceBanner from './DegradedIntelligenceBanner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +11,9 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { 
-  LayoutDashboard, MessageSquare, BarChart3, FileText, 
-  Target, FolderOpen, Settings, LogOut, Menu, X,
-  ChevronDown, Shield, User, Stethoscope, Database, Building2,
-  Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Inbox, Calendar,
+  MessageSquare, Settings, LogOut, Menu, X,
+  ChevronDown, Shield, User, Stethoscope, Building2,
+  Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Calendar,
   Lightbulb, AlertCircle, Mail, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
@@ -50,17 +48,7 @@ const DashboardLayout = ({ children }) => {
       window.location.href = '/';
     }
   };
-
-  const handleCompleteOnboarding = () => {
-    setShowDegradedBanner(false);
-    localStorage.setItem('onboarding-completed', 'true');
-  };
-
-  const handleDismissBanner = () => {
-    setShowDegradedBanner(false);
-    localStorage.setItem('banner-dismissed', 'true');
-  };
-
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar-collapsed') === 'true';
@@ -71,7 +59,6 @@ const DashboardLayout = ({ children }) => {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
-  const [showDegradedBanner, setShowDegradedBanner] = useState(false);
 
   // Persist sidebar collapsed state
   useEffect(() => {
@@ -155,6 +142,10 @@ const DashboardLayout = ({ children }) => {
   };
 
   const isActive = (path) => location.pathname === path;
+
+  // Calculate sidebar width
+  const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
+  const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
   return (
     <div 
@@ -398,37 +389,38 @@ const DashboardLayout = ({ children }) => {
         </div>
       </header>
 
-      {/* Degraded Intelligence Banner - Below header */}
-      {showDegradedBanner && (
-        <div className="fixed left-0 right-0 top-14 sm:top-16 z-50">
-          <DegradedIntelligenceBanner
-            onComplete={handleCompleteOnboarding}
-            onDismiss={handleDismissBanner}
-          />
-        </div>
-      )}
-
-      {/* Sidebar */}
+      {/* Sidebar - Desktop: collapsible, Mobile: overlay */}
       <aside 
-        className={`fixed left-0 w-64 sm:w-72 bg-white shadow-2xl transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed left-0 bg-white shadow-2xl transition-all duration-300 ${sidebarWidth} ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${
-          showDegradedBanner 
-            ? 'top-[7.5rem] sm:top-32 h-[calc(100vh-7.5rem)] sm:h-[calc(100vh-8rem)]' 
-            : 'top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]'
-        }`}
+        } lg:translate-x-0 top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]`}
         style={{ zIndex: 999 }}
       >
+        {/* Desktop: Collapse Toggle */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 bg-white rounded-full shadow-md items-center justify-center hover:bg-gray-50 transition-colors"
+          style={{ border: '1px solid var(--border-light)' }}
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+
         <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto h-full bg-white">
           {navItems.map((item, index) => {
             if (item.type === 'divider') {
               return (
                 <div key={index} className="pt-6 pb-2">
-                  <span 
-                    className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-600"
-                  >
-                    {item.label}
-                  </span>
+                  {!sidebarCollapsed && (
+                    <span 
+                      className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-600"
+                    >
+                      {item.label}
+                    </span>
+                  )}
+                  {sidebarCollapsed && (
+                    <div className="h-px bg-gray-200 mx-2" />
+                  )}
                 </div>
               );
             }
@@ -443,24 +435,31 @@ const DashboardLayout = ({ children }) => {
                   navigate(item.path);
                   setSidebarOpen(false);
                 }}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} w-full ${sidebarCollapsed ? 'px-2' : 'px-4'} py-3 rounded-lg text-sm font-medium transition-colors ${
                   isActive(item.path) 
                     ? 'bg-blue-600 text-white' 
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 style={{ minHeight: '48px' }}
+                title={sidebarCollapsed ? item.label : undefined}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {showNotificationBadge && (
-                  <span 
-                    className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-red-500"
-                  >
-                    {notifications.total > 9 ? '•' : notifications.total}
-                  </span>
+                {!sidebarCollapsed && (
+                  <>
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {showNotificationBadge && (
+                      <span 
+                        className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-red-500"
+                      >
+                        {notifications.total > 9 ? '•' : notifications.total}
+                      </span>
+                    )}
+                  </>
                 )}
-                {item.isNew && !showNotificationBadge && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-600">New</span>
+                {sidebarCollapsed && showNotificationBadge && (
+                  <span 
+                    className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"
+                  />
                 )}
               </button>
             );
@@ -474,29 +473,23 @@ const DashboardLayout = ({ children }) => {
           className="fixed inset-0 bg-black/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
-          style={{ zIndex: 998 }}  /* Below sidebar (999) but above content */
+          style={{ zIndex: 998 }}
         />
       )}
 
       {/* Main Content */}
       <main 
-        className={`lg:ml-64 ${
-          showDegradedBanner 
-            ? 'pt-[7.5rem] sm:pt-32' 
-            : 'pt-14 sm:pt-16'
-        }`}
+        className={`${sidebarMargin} pt-14 sm:pt-16 transition-all duration-300`}
         style={{ 
           background: 'var(--bg-secondary)',
           position: 'relative',
           zIndex: 1,
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch'
+          minHeight: '100vh'
         }}
       >
-        {children}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+          {children}
+        </div>
       </main>
     </div>
   );
