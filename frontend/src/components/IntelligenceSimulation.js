@@ -10,41 +10,51 @@ const IntelligenceSimulation = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [displayText, setDisplayText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const timeoutRef = useRef(null);
 
   // Intelligence progression - actual BIQC reasoning pattern
   const steps = [
     {
       text: "Analyzing business signals...",
-      pause: 1200,
+      pause: 1400,
       type: "system"
     },
     {
-      text: "Revenue growing 22% but cash reserves declining.",
-      pause: 1800,
+      text: "Revenue growing 22% quarter-on-quarter.",
+      pause: 1200,
       type: "observation"
     },
     {
-      text: "Client acquisition strong. Payment terms extended to win deals.",
+      text: "Cash reserves declining despite revenue growth.",
       pause: 1600,
       type: "observation"
     },
     {
-      text: "This isn't a revenue problem.",
-      pause: 1400,
-      type: "understanding",
-      emphasis: true
+      text: "Payment terms extended to close deals faster.",
+      pause: 1800,
+      type: "observation",
+      editMoment: true  // This step will be refined
     },
     {
-      text: "Growth is outpacing collection velocity. Cash timing mismatch creating pressure.",
+      text: "Payment terms extended — sacrificing cash timing to win deals.",
       pause: 2000,
+      type: "observation"
+    },
+    {
+      text: "This is not a revenue problem.",
+      pause: 1600,
+      type: "understanding"
+    },
+    {
+      text: "Growth is outpacing cash collection velocity.",
+      pause: 2200,
       type: "insight"
     },
     {
-      text: "Recommended focus: Payment terms restructure, not new sales.",
-      pause: 2200,
-      type: "recommendation",
-      final: true
+      text: "Recommended focus: Restructure payment terms, not new sales.",
+      pause: 2400,
+      type: "recommendation"
     }
   ];
 
@@ -55,78 +65,167 @@ const IntelligenceSimulation = () => {
     }
 
     const step = steps[currentStep];
-    const chars = step.text.split('');
-    let charIndex = 0;
+    
+    // Handle edit/refine moment (delete and retype)
+    if (step.editMoment && !isDeleting) {
+      const chars = step.text.split('');
+      let charIndex = 0;
 
-    const typeCharacter = () => {
-      if (charIndex < chars.length) {
-        setDisplayText(prev => prev + chars[charIndex]);
-        charIndex++;
-        // Human-like typing cadence (40-60ms per character)
-        timeoutRef.current = setTimeout(typeCharacter, 45 + Math.random() * 15);
-      } else {
-        // Typing complete - pause before next step
-        timeoutRef.current = setTimeout(() => {
-          setDisplayText(prev => prev + '\n\n');
-          setCurrentStep(prev => prev + 1);
-        }, step.pause);
-      }
-    };
+      const typeCharacter = () => {
+        if (charIndex < chars.length) {
+          setDisplayText(prev => (prev || '') + chars[charIndex]);
+          charIndex++;
+          timeoutRef.current = setTimeout(typeCharacter, 50 + Math.random() * 20);
+        } else {
+          // Typed complete - pause, then delete for refinement
+          timeoutRef.current = setTimeout(() => {
+            setIsDeleting(true);
+            deleteAndRefine();
+          }, 800);
+        }
+      };
 
-    typeCharacter();
+      const deleteAndRefine = () => {
+        const deleteChar = () => {
+          setDisplayText(prev => {
+            const current = prev || '';
+            if (current.length > 0) {
+              return current.slice(0, -1);
+            }
+            // Deletion complete - move to refined version
+            setIsDeleting(false);
+            setCurrentStep(prev => prev + 1);
+            return '';
+          });
+        };
+
+        const deleteInterval = setInterval(() => {
+          setDisplayText(prev => {
+            const current = prev || '';
+            if (current.split('\n\n').pop().length > 0) {
+              const lines = current.split('\n\n');
+              const lastLine = lines[lines.length - 1];
+              lines[lines.length - 1] = lastLine.slice(0, -1);
+              return lines.join('\n\n');
+            } else {
+              clearInterval(deleteInterval);
+              setIsDeleting(false);
+              setCurrentStep(prev => prev + 1);
+              return current;
+            }
+          });
+        }, 30);
+
+        timeoutRef.current = deleteInterval;
+      };
+
+      typeCharacter();
+    } else {
+      // Normal typing (no edit moment)
+      const chars = step.text.split('');
+      let charIndex = 0;
+
+      const typeCharacter = () => {
+        if (charIndex < chars.length) {
+          setDisplayText(prev => (prev || '') + chars[charIndex]);
+          charIndex++;
+          timeoutRef.current = setTimeout(typeCharacter, 50 + Math.random() * 20);
+        } else {
+          // Typing complete - pause before next step
+          timeoutRef.current = setTimeout(() => {
+            setDisplayText(prev => (prev || '') + '\n\n');
+            setCurrentStep(prev => prev + 1);
+          }, step.pause);
+        }
+      };
+
+      typeCharacter();
+    }
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        clearInterval(timeoutRef.current);
       }
     };
-  }, [currentStep]);
+  }, [currentStep, isDeleting]);
 
   return (
     <div className="relative">
       <div 
-        className="rounded-2xl border p-8 sm:p-10 bg-slate-900/95 backdrop-blur-sm shadow-2xl"
+        className="rounded-2xl border border-slate-700 bg-slate-900/95 backdrop-blur-sm shadow-2xl overflow-hidden"
         style={{
-          minHeight: '400px',
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+          minHeight: '420px'
         }}
       >
         {/* Terminal-style header */}
-        <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-700">
+        <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-700 bg-slate-800/50">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
             <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
             <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
           </div>
-          <span className="text-xs text-slate-400 ml-2">BIQC Intelligence Engine</span>
+          <span className="text-xs text-slate-400 ml-2 font-medium">BIQC Intelligence Engine</span>
         </div>
 
-        {/* Typed content */}
-        <div className="space-y-4">
-          <pre 
-            className="text-sm leading-relaxed whitespace-pre-wrap"
+        {/* Typed content - with proper padding to prevent clipping */}
+        <div className="px-6 sm:px-8 py-6 sm:py-8 pb-8">
+          <div 
+            className="text-sm leading-relaxed"
             style={{
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
               color: '#e2e8f0',
-              fontFamily: 'inherit'
+              lineHeight: '1.7',
+              fontSize: '14px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
+              maxWidth: '100%',
+              overflowWrap: 'break-word',
+              paddingBottom: '8px'  // Prevent descender clipping
             }}
           >
-            {displayText}
-            {!isComplete && <span className="inline-block w-2 h-4 ml-1 bg-blue-400 animate-pulse" />}
-          </pre>
+            {displayText || ''}
+            {!isComplete && (
+              <span 
+                className="inline-block ml-1 bg-blue-400 animate-pulse" 
+                style={{
+                  width: '8px',
+                  height: '16px',
+                  verticalAlign: 'text-bottom'
+                }}
+              />
+            )}
+          </div>
         </div>
 
         {/* Completion state */}
         {isComplete && (
-          <div className="mt-8 pt-6 border-t border-slate-700 animate-fade-in">
-            <p className="text-xs text-slate-400 italic">
-              This is how BIQC thinks. Continuously. About your business.
-            </p>
+          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+            <div className="pt-6 border-t border-slate-700 animate-fade-in">
+              <p 
+                className="text-xs italic"
+                style={{
+                  color: '#94a3b8',
+                  lineHeight: '1.6'
+                }}
+              >
+                This is how BIQC thinks. Continuously. About your business.
+              </p>
+            </div>
           </div>
         )}
       </div>
 
       {/* Subtle glow effect */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 blur-xl -z-10"></div>
+      <div 
+        className="absolute inset-0 rounded-2xl -z-10 opacity-40"
+        style={{
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15))',
+          filter: 'blur(40px)'
+        }}
+      ></div>
     </div>
   );
 };
