@@ -22,7 +22,6 @@ const TypingInsights = ({ insights = [] }) => {
   useEffect(() => {
     // Abort if no valid insights
     if (validInsights.length === 0) {
-      setDisplayText('');
       return;
     }
 
