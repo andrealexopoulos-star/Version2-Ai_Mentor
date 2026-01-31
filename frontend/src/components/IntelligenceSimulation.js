@@ -10,7 +10,6 @@ const IntelligenceSimulation = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [displayText, setDisplayText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const timeoutRef = useRef(null);
 
   // Intelligence progression - actual BIQC reasoning pattern
@@ -65,90 +64,37 @@ const IntelligenceSimulation = () => {
     }
 
     const step = steps[currentStep];
-    
-    // Handle edit/refine moment (delete and retype)
-    if (step.editMoment && !isDeleting) {
-      const chars = step.text.split('');
-      let charIndex = 0;
+    const chars = step.text.split('');
+    let charIndex = 0;
 
-      const typeCharacter = () => {
-        if (charIndex < chars.length) {
-          setDisplayText(prev => (prev || '') + chars[charIndex]);
-          charIndex++;
-          timeoutRef.current = setTimeout(typeCharacter, 50 + Math.random() * 20);
-        } else {
-          // Typed complete - pause, then delete for refinement
-          timeoutRef.current = setTimeout(() => {
-            setIsDeleting(true);
-            deleteAndRefine();
-          }, 800);
-        }
-      };
-
-      const deleteAndRefine = () => {
-        const deleteChar = () => {
+    const typeCharacter = () => {
+      if (charIndex < chars.length) {
+        setDisplayText(prev => {
+          const current = prev === null || prev === undefined ? '' : prev;
+          return current + chars[charIndex];
+        });
+        charIndex++;
+        timeoutRef.current = setTimeout(typeCharacter, 50 + Math.random() * 20);
+      } else {
+        // Typing complete - pause before next step
+        timeoutRef.current = setTimeout(() => {
           setDisplayText(prev => {
-            const current = prev || '';
-            if (current.length > 0) {
-              return current.slice(0, -1);
-            }
-            // Deletion complete - move to refined version
-            setIsDeleting(false);
-            setCurrentStep(prev => prev + 1);
-            return '';
+            const current = prev === null || prev === undefined ? '' : prev;
+            return current + '\n\n';
           });
-        };
+          setCurrentStep(prev => prev + 1);
+        }, step.pause);
+      }
+    };
 
-        const deleteInterval = setInterval(() => {
-          setDisplayText(prev => {
-            const current = prev || '';
-            if (current.split('\n\n').pop().length > 0) {
-              const lines = current.split('\n\n');
-              const lastLine = lines[lines.length - 1];
-              lines[lines.length - 1] = lastLine.slice(0, -1);
-              return lines.join('\n\n');
-            } else {
-              clearInterval(deleteInterval);
-              setIsDeleting(false);
-              setCurrentStep(prev => prev + 1);
-              return current;
-            }
-          });
-        }, 30);
-
-        timeoutRef.current = deleteInterval;
-      };
-
-      typeCharacter();
-    } else {
-      // Normal typing (no edit moment)
-      const chars = step.text.split('');
-      let charIndex = 0;
-
-      const typeCharacter = () => {
-        if (charIndex < chars.length) {
-          setDisplayText(prev => (prev || '') + chars[charIndex]);
-          charIndex++;
-          timeoutRef.current = setTimeout(typeCharacter, 50 + Math.random() * 20);
-        } else {
-          // Typing complete - pause before next step
-          timeoutRef.current = setTimeout(() => {
-            setDisplayText(prev => (prev || '') + '\n\n');
-            setCurrentStep(prev => prev + 1);
-          }, step.pause);
-        }
-      };
-
-      typeCharacter();
-    }
+    typeCharacter();
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
-        clearInterval(timeoutRef.current);
       }
     };
-  }, [currentStep, isDeleting]);
+  }, [currentStep]);
 
   return (
     <div className="relative">
