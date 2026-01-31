@@ -27,12 +27,12 @@ const IntelligenceSimulation = () => {
 
   useEffect(() => {
     if (currentLineIndex >= lines.length) {
-      setIsComplete(true);
-      return;
+      // Use timeout to avoid setState in effect body
+      const completeTimeout = setTimeout(() => setIsComplete(true), 0);
+      return () => clearTimeout(completeTimeout);
     }
 
     const currentLine = lines[currentLineIndex];
-    const currentDisplayLine = displayLines[currentLineIndex] || '';
 
     if (currentCharIndex < currentLine.length) {
       // Type next character
@@ -55,7 +55,7 @@ const IntelligenceSimulation = () => {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [currentLineIndex, currentCharIndex, displayLines]);
+  }, [currentLineIndex, currentCharIndex, displayLines, lines, pauses]);
 
   return (
     <div className="relative">
