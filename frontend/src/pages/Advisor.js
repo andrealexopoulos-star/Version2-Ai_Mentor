@@ -105,6 +105,9 @@ const Advisor = () => {
       setProactiveTrigger(null);
     };
     
+    checkProactiveTrigger();
+    fetchFocus();
+  }, [searchParams]);
 
   // Fetch insights from backend (existing data only)
   useEffect(() => {
@@ -132,9 +135,6 @@ const Advisor = () => {
     
     fetchInsights();
   }, []);
-    checkProactiveTrigger();
-    fetchFocus();
-  }, [searchParams]);
 
   // Proactive message generation (only if valid trigger exists)
   useEffect(() => {
