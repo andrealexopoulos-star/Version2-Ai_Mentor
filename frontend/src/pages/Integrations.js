@@ -48,9 +48,12 @@ const resolveIntegrationState = (integration, outlookStatus, gmailStatus, mergeI
   }
   
   // CRM / FINANCE / HR / ATS: Merge.dev is the ONLY source
-  if (integration.viaMerge) {
+  if (integration.viaMerge || integration.category === 'crm' || integration.category === 'financial' || integration.category === 'hris' || integration.category === 'ats') {
+    // Check both lowercase and original case
     const mergeConnected = mergeIntegrations[integrationId] || 
-                          mergeIntegrations[integrationName];
+                          mergeIntegrations[integrationName] ||
+                          mergeIntegrations[integration.name] ||
+                          mergeIntegrations[integration.id];
     if (mergeConnected) {
       return { connected: true, source: 'merge' };
     }
