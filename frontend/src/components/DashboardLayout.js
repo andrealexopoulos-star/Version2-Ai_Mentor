@@ -122,21 +122,17 @@ const DashboardLayout = ({ children }) => {
   };
 
   const navItems = [
-    { type: 'divider', label: 'Business Intelligence' },
-    { icon: Stethoscope, label: 'Business Diagnosis', path: '/diagnosis', showBadge: true },
+    { type: 'divider', label: 'BUSINESS INTELLIGENCE QUOTIENT CENTRE' },
     { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
-    { icon: Lightbulb, label: 'MySoundBoard', path: '/soundboard' },
-    { type: 'divider', label: 'Setup' },
+    { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
+    { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis', showBadge: true },
+    { type: 'divider', label: 'IQ BUILDER' },
+    { icon: User, label: 'User Profile', path: '/settings' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
-    { icon: Database, label: 'Data Center', path: '/data-center' },
-    { type: 'divider', label: 'Communications' },
-    { icon: Mail, label: 'Connect Email Account', path: '/connect-email' },
-    { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
+    { icon: Mail, label: 'Email', path: '/connect-email' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { type: 'divider', label: 'Tools' },
-    { icon: BarChart3, label: 'Analysis', path: '/analysis' },
-    { icon: FileText, label: 'Documents', path: '/documents' },
+    { type: 'divider', label: 'SETTINGS' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
