@@ -321,7 +321,7 @@ Acknowledge you've noticed activity in their inbox that may need attention. Do N
                   }}
                 >
                   <p className="text-xs font-medium uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>
-                    Here's What Matters Right Now
+                    Here&apos;s What Matters Right Now
                   </p>
                   <p 
                     className="text-2xl md:text-3xl font-serif leading-snug mb-3"
