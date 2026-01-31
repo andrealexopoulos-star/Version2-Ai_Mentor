@@ -288,7 +288,7 @@ const DashboardLayout = ({ children }) => {
                     <Bell className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
                     <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No notifications</p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                      We'll alert you when something needs attention
+                      We&apos;ll alert you when something needs attention
                     </p>
                   </div>
                 ) : (

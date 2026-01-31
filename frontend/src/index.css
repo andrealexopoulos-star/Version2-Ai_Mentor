@@ -84,6 +84,13 @@ body {
     position: relative;
     min-height: 100vh;
 }
+
+#root {
+    min-height: 100vh;
+    height: 100%;
+    overflow-x: hidden;
+    position: relative;
+}
 }
 
 /* Premium Typography - Mobile First */
