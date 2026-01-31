@@ -298,7 +298,7 @@ Acknowledge you've noticed activity in their inbox that may need attention. Do N
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-secondary)', WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-secondary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
           <div className="max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
             {/* AI Focus + Focus Area Cards - Show at start */}
             {showFocusAreas && messages.length === 0 && (

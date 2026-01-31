@@ -509,7 +509,9 @@ const DashboardLayout = ({ children }) => {
           background: 'var(--bg-secondary)',
           position: 'relative',
           zIndex: 1,
-          minHeight: '100vh',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch'
         }}

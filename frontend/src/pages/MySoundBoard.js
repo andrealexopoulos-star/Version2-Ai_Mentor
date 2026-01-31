@@ -317,7 +317,7 @@ const MySoundBoard = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="max-w-3xl mx-auto px-6 py-6">
               {messages.length === 0 ? (
                 <div className="text-center py-16">
