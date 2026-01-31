@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
+import DegradedIntelligenceBanner from './DegradedIntelligenceBanner';
 import {
   DropdownMenu,
   DropdownMenuContent,
