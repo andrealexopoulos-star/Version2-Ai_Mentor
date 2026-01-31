@@ -166,7 +166,7 @@ const MySoundBoard = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex min-h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="flex h-full">
         {/* Sidebar */}
         <div 
           className={`${sidebarOpen ? 'w-72' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r overflow-hidden`}
@@ -317,7 +317,7 @@ const MySoundBoard = () => {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-primary)' }}>
+          <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch' }}>
             <div className="max-w-3xl mx-auto px-6 py-6">
               {messages.length === 0 ? (
                 <div className="text-center py-16">
