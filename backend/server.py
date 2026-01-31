@@ -2505,8 +2505,8 @@ async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = 
     # Log the OAuth initiation for security audit
     logger.info(f"Outlook OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
     
-    # IMPORTANT: prompt=consent forces account picker AND re-consent
-    # This prevents auto-selecting a cached account
+    # IMPORTANT: prompt=select_account shows account picker
+    # This allows user to choose which Microsoft account to use
     auth_url = (
         f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/authorize?"
         f"client_id={AZURE_CLIENT_ID}&"
@@ -2515,7 +2515,7 @@ async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = 
         f"response_mode=query&"
         f"scope={encoded_scope}&"
         f"state={state}&"
-        f"prompt=consent"
+        f"prompt=select_account"
     )
     
     # Direct browser redirect to OAuth provider
