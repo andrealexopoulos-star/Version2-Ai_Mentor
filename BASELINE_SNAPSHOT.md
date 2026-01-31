@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://inbox-sync-3.preview.emergentagent.com`
-- **Backend:** `https://inbox-sync-3.preview.emergentagent.com/api`
+- **Frontend:** `https://biqc-auth-edge.preview.emergentagent.com`
+- **Backend:** `https://biqc-auth-edge.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

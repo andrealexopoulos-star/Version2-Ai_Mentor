@@ -9,7 +9,7 @@ Go to: **Supabase Dashboard → Authentication → URL Configuration**
 ## 📍 Site URL
 
 ```
-https://inbox-sync-3.preview.emergentagent.com
+https://biqc-auth-edge.preview.emergentagent.com
 ```
 
 **What it's for**: The main URL of your application
@@ -22,7 +22,7 @@ Add **ALL** of these to the "Redirect URLs" list:
 
 ### 1. Production Frontend
 ```
-https://inbox-sync-3.preview.emergentagent.com/**
+https://biqc-auth-edge.preview.emergentagent.com/**
 ```
 
 ### 2. Local Development (if needed)
@@ -32,15 +32,15 @@ http://localhost:3000/**
 
 ### 3. Specific Auth Callbacks
 ```
-https://inbox-sync-3.preview.emergentagent.com/auth/callback
+https://biqc-auth-edge.preview.emergentagent.com/auth/callback
 ```
 
 ```
-https://inbox-sync-3.preview.emergentagent.com/connect-email
+https://biqc-auth-edge.preview.emergentagent.com/connect-email
 ```
 
 ```
-https://inbox-sync-3.preview.emergentagent.com/integrations
+https://biqc-auth-edge.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -48,11 +48,11 @@ https://inbox-sync-3.preview.emergentagent.com/integrations
 ## 📋 Copy-Paste Format (one per line)
 
 ```
-https://inbox-sync-3.preview.emergentagent.com/**
+https://biqc-auth-edge.preview.emergentagent.com/**
 http://localhost:3000/**
-https://inbox-sync-3.preview.emergentagent.com/auth/callback
-https://inbox-sync-3.preview.emergentagent.com/connect-email
-https://inbox-sync-3.preview.emergentagent.com/integrations
+https://biqc-auth-edge.preview.emergentagent.com/auth/callback
+https://biqc-auth-edge.preview.emergentagent.com/connect-email
+https://biqc-auth-edge.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -62,9 +62,9 @@ https://inbox-sync-3.preview.emergentagent.com/integrations
 ### Additional Redirect URLs
 If you have other pages that use Supabase Auth:
 ```
-https://inbox-sync-3.preview.emergentagent.com/dashboard
-https://inbox-sync-3.preview.emergentagent.com/login
-https://inbox-sync-3.preview.emergentagent.com/signup
+https://biqc-auth-edge.preview.emergentagent.com/dashboard
+https://biqc-auth-edge.preview.emergentagent.com/login
+https://biqc-auth-edge.preview.emergentagent.com/signup
 ```
 
 ---
@@ -74,7 +74,7 @@ https://inbox-sync-3.preview.emergentagent.com/signup
 1. **Go to**: Supabase Dashboard
 2. **Click**: Authentication (left sidebar)
 3. **Click**: URL Configuration (tab at top)
-4. **Set Site URL**: `https://inbox-sync-3.preview.emergentagent.com`
+4. **Set Site URL**: `https://biqc-auth-edge.preview.emergentagent.com`
 5. **Add Redirect URLs**: Paste each URL from above (one per line)
 6. **Click**: Save
 
@@ -116,7 +116,7 @@ After configuration, test:
 
 **Cause**: Site URL doesn't match your domain
 
-**Fix**: Set Site URL to `https://inbox-sync-3.preview.emergentagent.com`
+**Fix**: Set Site URL to `https://biqc-auth-edge.preview.emergentagent.com`
 
 ---
 

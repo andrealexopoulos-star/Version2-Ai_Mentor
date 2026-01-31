@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://inbox-sync-3.preview.emergentagent.com
+**Test URL:** https://biqc-auth-edge.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://inbox-sync-3.preview.emergentagent.com/advisor
+- [ ] Navigate to https://biqc-auth-edge.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://inbox-sync-3.preview.emergentagent.com/
+**Landing:** https://biqc-auth-edge.preview.emergentagent.com/
 
-**Login:** https://inbox-sync-3.preview.emergentagent.com/login-supabase
+**Login:** https://biqc-auth-edge.preview.emergentagent.com/login-supabase
 
-**Register:** https://inbox-sync-3.preview.emergentagent.com/register-supabase
+**Register:** https://biqc-auth-edge.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://inbox-sync-3.preview.emergentagent.com/pricing
+**Pricing:** https://biqc-auth-edge.preview.emergentagent.com/pricing
 
-**Terms:** https://inbox-sync-3.preview.emergentagent.com/terms
+**Terms:** https://biqc-auth-edge.preview.emergentagent.com/terms
 
-**Advisor:** https://inbox-sync-3.preview.emergentagent.com/advisor
+**Advisor:** https://biqc-auth-edge.preview.emergentagent.com/advisor
 
 ---
 

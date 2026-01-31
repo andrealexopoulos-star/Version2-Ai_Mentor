@@ -4,7 +4,7 @@
 # Requires: Valid user authentication
 
 # Configuration
-API_URL="https://inbox-sync-3.preview.emergentagent.com/api"
+API_URL="https://biqc-auth-edge.preview.emergentagent.com/api"
 
 # Color codes for output
 GREEN='\033[0;32m'

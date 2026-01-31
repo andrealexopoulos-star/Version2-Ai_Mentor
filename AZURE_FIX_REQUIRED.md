@@ -57,7 +57,7 @@ Please provide me with these two values:
 
 **Example format** (yours will be different):
 ```
-AZURE_CLIENT_ID=a1b2c3d4-e5f6-7890-abcd-ef1234567890
+AZURE_CLIENT_ID=biqc-auth-edge
 AZURE_CLIENT_SECRET=AbC~XyZ123.randomCharactersHere456
 ```
 

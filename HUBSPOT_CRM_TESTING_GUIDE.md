@@ -45,7 +45,7 @@ The following has been verified by the testing agent:
 ## 📋 Manual Testing Steps
 
 ### Step 1: Log In
-1. Navigate to: https://inbox-sync-3.preview.emergentagent.com/login-supabase
+1. Navigate to: https://biqc-auth-edge.preview.emergentagent.com/login-supabase
 2. Click "Continue with Google"
 3. Sign in with: andre@thestrategysquad.com.au
 
@@ -60,7 +60,7 @@ Copy and paste each test command below into the browser console and press Enter.
 
 #### Test 1: Fetch Contacts (Default Page Size = 100)
 ```javascript
-fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/contacts', {
+fetch('https://biqc-auth-edge.preview.emergentagent.com/api/integrations/crm/contacts', {
   headers: {
     'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token
   }
@@ -90,7 +90,7 @@ fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/conta
 
 #### Test 2: Fetch Contacts (Custom Page Size = 10)
 ```javascript
-fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/contacts?page_size=10', {
+fetch('https://biqc-auth-edge.preview.emergentagent.com/api/integrations/crm/contacts?page_size=10', {
   headers: {
     'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token
   }
@@ -116,7 +116,7 @@ fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/conta
 
 #### Test 3: Fetch Companies
 ```javascript
-fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/companies', {
+fetch('https://biqc-auth-edge.preview.emergentagent.com/api/integrations/crm/companies', {
   headers: {
     'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token
   }
@@ -143,7 +143,7 @@ fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/compa
 
 #### Test 4: Fetch Deals
 ```javascript
-fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/deals', {
+fetch('https://biqc-auth-edge.preview.emergentagent.com/api/integrations/crm/deals', {
   headers: {
     'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token
   }
@@ -170,7 +170,7 @@ fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/deals
 
 #### Test 5: Fetch Owners
 ```javascript
-fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/owners', {
+fetch('https://biqc-auth-edge.preview.emergentagent.com/api/integrations/crm/owners', {
   headers: {
     'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token
   }
@@ -197,7 +197,7 @@ fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/owner
 
 #### Test 6: Error Handling (Invalid Token)
 ```javascript
-fetch('https://inbox-sync-3.preview.emergentagent.com/api/integrations/crm/contacts', {
+fetch('https://biqc-auth-edge.preview.emergentagent.com/api/integrations/crm/contacts', {
   headers: {
     'Authorization': 'Bearer invalid_token_12345'
   }
