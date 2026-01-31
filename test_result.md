@@ -632,6 +632,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Priority Inbox E2E Test - Gmail Connection"
     - "Gmail Console References Investigation - Outlook Edge Function Not Used"
     - "Priority Inbox Connection Detection"
     - "HubSpot Routes Through Merge.dev (Not Upgrade Modal)"
