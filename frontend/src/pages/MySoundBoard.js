@@ -224,7 +224,6 @@ const MySoundBoard = () => {
                             }}
                             className="flex-1 px-2 py-1 text-sm rounded"
                             style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                            autoFocus
                             onClick={(e) => e.stopPropagation()}
                           />
                           <button onClick={() => renameConversation(conv.id)} className="p-1">
@@ -329,10 +328,10 @@ const MySoundBoard = () => {
                     <MessageSquare className="w-8 h-8" style={{ color: 'var(--accent-primary)' }} />
                   </div>
                   <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                    What's on your mind?
+                    What&apos;s on your mind?
                   </h2>
                   <p className="max-w-md mx-auto mb-4" style={{ color: 'var(--text-muted)' }}>
-                    I'm here to help you think clearly. Share what's going on — a decision you're wrestling with, an idea forming, or something that's been stuck.
+                    I&apos;m here to help you think clearly. Share what&apos;s going on — a decision you&apos;re wrestling with, an idea forming, or something that&apos;s been stuck.
                   </p>
                   
                   {/* Voice Call CTA */}
