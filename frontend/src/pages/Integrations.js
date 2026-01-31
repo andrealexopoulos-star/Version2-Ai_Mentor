@@ -716,8 +716,8 @@ const Integrations = () => {
                 fontWeight: activeTab === 'intelligence-sources' ? '600' : '500'
               }}
             >
-              Intelligence Sources
-              {activeTab === 'intelligence-sources' && (
+              Data Connections
+              {activeTab === 'data-connections' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" 
                      style={{ background: 'var(--accent-primary)' }} />
               )}
@@ -865,14 +865,14 @@ const Integrations = () => {
           </div>
         )}
 
-        {activeTab === 'intelligence-sources' && (
+        {activeTab === 'data-connections' && (
           <div className="text-center py-16">
             <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
                  style={{ background: 'var(--bg-tertiary)' }}>
               <Sparkles className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
             </div>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Intelligence Sources tab - Coming soon
+              Data Connections - All connected integrations appear here
             </p>
           </div>
         )}
