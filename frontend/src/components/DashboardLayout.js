@@ -127,7 +127,6 @@ const DashboardLayout = ({ children }) => {
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
     { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis', showBadge: true },
     { type: 'divider', label: 'IQ BUILDER' },
-    { icon: User, label: 'User Profile', path: '/settings' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
     { icon: Mail, label: 'Email', path: '/connect-email' },
