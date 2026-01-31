@@ -129,12 +129,29 @@ const Integrations = () => {
       
       setMergeLinkToken(null);
     },
-    onExit: (error) => {
+    onExit: async (error) => {
       if (error) {
         console.error('❌ Merge onboarding error:', error);
         toast.error(`Connection failed: ${error.message || 'Unknown error'}`);
       } else {
-        console.log('ℹ️ Merge onboarding exited by user');
+        console.log('ℹ️ Merge onboarding exited - checking connection status...');
+        // FALLBACK: Check if connection succeeded even if onSuccess didn't fire
+        setTimeout(async () => {
+          try {
+            console.log('🔍 Checking Merge integrations after modal close...');
+            await checkMergeIntegrations();
+            const response = await apiClient.get('/integrations/merge/connected');
+            const integrations = response.data?.integrations || {};
+            
+            if (Object.keys(integrations).length > 0) {
+              console.log('✅ Integration detected after modal close:', integrations);
+              const connectedProvider = Object.keys(integrations)[0];
+              toast.success(`${connectedProvider} connected successfully!`);
+            }
+          } catch (err) {
+            console.error('Failed to verify connection:', err);
+          }
+        }, 2000);
       }
       setMergeLinkToken(null);
     }
