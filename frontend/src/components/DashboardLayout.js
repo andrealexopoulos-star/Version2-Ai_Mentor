@@ -500,7 +500,7 @@ const DashboardLayout = ({ children }) => {
 
       {/* Main Content */}
       <main 
-        className={`lg:ml-64 min-h-screen ${
+        className={`lg:ml-64 ${
           showDegradedBanner 
             ? 'pt-[7.5rem] sm:pt-32' 
             : 'pt-14 sm:pt-16'
@@ -508,7 +508,10 @@ const DashboardLayout = ({ children }) => {
         style={{ 
           background: 'var(--bg-secondary)',
           position: 'relative',
-          zIndex: 1
+          zIndex: 1,
+          minHeight: '100vh',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         {children}
