@@ -565,6 +565,13 @@ const LandingIntelligent = () => {
           <p className="text-sm text-slate-500">
             © 2026 BIQC - Business IQ Centre. Powered by The Strategy Squad.
           </p>
+
+
+      {/* Interactive Demo Modal */}
+      {showInteractiveDemo && (
+        <InteractiveDemoExpanded onClose={() => setShowInteractiveDemo(false)} />
+      )}
+
         </div>
       </footer>
     </div>
