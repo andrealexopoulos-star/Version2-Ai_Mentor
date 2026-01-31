@@ -1,13 +1,16 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import IntelligenceSimulation from '../components/IntelligenceSimulation';
+import InteractiveDemoExpanded from '../components/InteractiveDemoExpanded';
 import { 
   ArrowRight, Brain, Target, TrendingUp, 
-  MessageSquare, BarChart3, Zap, Check, ChevronRight
+  MessageSquare, BarChart3, Zap, Check, ChevronRight, Shield
 } from 'lucide-react';
 
 const LandingIntelligent = () => {
   const navigate = useNavigate();
+  const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
 
   const capabilities = [
     {
@@ -48,25 +51,31 @@ const LandingIntelligent = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+      {/* Navigation - Premium styling */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+              <Brain className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-sm sm:text-base text-slate-900">BIQC</span>
-              <span className="text-[8px] text-gray-500 -mt-0.5 hidden sm:block">Business IQ Centre</span>
+              <span className="font-bold text-lg text-slate-900 tracking-tight">BIQC</span>
+              <span className="text-[9px] text-slate-500 -mt-0.5 tracking-wide hidden sm:block">INTELLIGENCE LAYER</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
               onClick={() => navigate('/login-supabase')}
-              className="text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium text-sm px-3 py-1.5 sm:px-4 sm:py-2 h-8 sm:h-auto"
+              className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm px-4 py-2"
             >
               Log In
+            </Button>
+            <Button
+              onClick={() => navigate('/register-supabase')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2 rounded-lg shadow-md hover:shadow-lg transition-shadow hidden sm:inline-flex"
+            >
+              Start Free
             </Button>
           </div>
         </div>
@@ -94,15 +103,15 @@ const LandingIntelligent = () => {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button
                   onClick={() => navigate('/register-supabase')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-6 text-lg rounded-xl shadow-lg flex items-center justify-center gap-2"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-7 text-lg rounded-xl shadow-xl shadow-blue-600/25 hover:shadow-2xl transition-all flex items-center justify-center gap-2"
                 >
                   Start Free
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => document.getElementById('how-it-thinks')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="border-slate-300 text-slate-700 hover:bg-slate-50 font-medium px-8 py-6 text-lg rounded-xl"
+                  onClick={() => setShowInteractiveDemo(true)}
+                  className="border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-semibold px-10 py-7 text-lg rounded-xl transition-all"
                 >
                   See How BIQC Thinks
                 </Button>
