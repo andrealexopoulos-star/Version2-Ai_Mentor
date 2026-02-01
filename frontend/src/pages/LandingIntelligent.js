@@ -14,20 +14,20 @@ const LandingIntelligent = () => {
 
   const capabilities = [
     {
-      outcome: "Decision velocity without recklessness",
-      detail: "Intelligence delivery synchronized to your decision cadence. Clarity when it matters, silence when it doesn't."
+      outcome: "Less second-guessing",
+      detail: "BIQC watches what's happening and tells you what actually needs a decision versus what can wait."
     },
     {
-      outcome: "Operational risk detection before impact",
-      detail: "Pattern recognition across email, calendar, and CRM. Surfaces execution risks weeks before they materialize."
+      outcome: "Catch problems earlier",
+      detail: "Spots patterns before they become fires. Things that would normally slip through get flagged while they're still fixable."
     },
     {
-      outcome: "Cash flow clarity grounded in payment behavior",
-      detail: "Not projections. Actual client payment patterns, invoice timing, and collection velocity from your integrated data."
+      outcome: "Know where money's really going",
+      detail: "Sees who pays on time, who doesn't, and where cash flow pressure is building based on what's actually happening."
     },
     {
-      outcome: "Execution alignment across team and commitments",
-      detail: "Identifies capacity mismatches, timeline drift, and resource bottlenecks from calendar and communication patterns."
+      outcome: "Stop dropping commitments",
+      detail: "Notices when you're overcommitted or when deadlines are drifting before clients start calling."
     }
   ];
 
