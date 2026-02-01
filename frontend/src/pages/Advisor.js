@@ -72,6 +72,83 @@ const Advisor = () => {
     behaviouralReinforcement: false
   });
 
+  // Detect intelligence thresholds using existing data
+  useEffect(() => {
+    const detectThresholds = () => {
+      const thresholds = {
+        timeConsistency: false,
+        crossSourceReinforcement: false,
+        behaviouralReinforcement: false
+      };
+      
+      // THRESHOLD 1: TIME CONSISTENCY
+      // Check if integrations have been connected for meaningful duration
+      const now = new Date();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      
+      const integrationAges = [
+        integrationData.email.connectedAt,
+        integrationData.crm.connectedAt,
+        integrationData.accounting.connectedAt,
+        integrationData.calendar.connectedAt
+      ].filter(Boolean);
+      
+      if (integrationAges.length > 0) {
+        const oldestConnection = new Date(Math.min(...integrationAges.map(d => new Date(d).getTime())));
+        const ageMs = now - oldestConnection;
+        
+        // Time consistency threshold: integration active for > 24 hours
+        if (ageMs > oneDayMs) {
+          thresholds.timeConsistency = true;
+        }
+      }
+      
+      // THRESHOLD 2: CROSS-SOURCE REINFORCEMENT
+      // Detect when 2+ sources are connected
+      const connectedSources = [
+        integrationData.email.connected,
+        integrationData.calendar.connected,
+        integrationData.crm.connected,
+        integrationData.accounting.connected
+      ].filter(Boolean).length;
+      
+      if (connectedSources >= 2) {
+        thresholds.crossSourceReinforcement = true;
+      }
+      
+      // THRESHOLD 3: BEHAVIOURAL REINFORCEMENT
+      // Track focus area recurrence in localStorage
+      if (selectedFocus) {
+        const focusHistory = JSON.parse(localStorage.getItem('biqc_focus_history') || '[]');
+        const focusCount = focusHistory.filter(f => f.area === selectedFocus).length;
+        
+        // Behavioural reinforcement threshold: same focus selected 2+ times
+        if (focusCount >= 2) {
+          thresholds.behaviouralReinforcement = true;
+        }
+      }
+      
+      setIntelligenceState(thresholds);
+    };
+    
+    detectThresholds();
+  }, [integrationData, selectedFocus]);
+  
+  // Track focus area selections for behavioural reinforcement
+  useEffect(() => {
+    if (selectedFocus) {
+      const focusHistory = JSON.parse(localStorage.getItem('biqc_focus_history') || '[]');
+      focusHistory.push({
+        area: selectedFocus,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Keep last 50 selections only
+      const trimmed = focusHistory.slice(-50);
+      localStorage.setItem('biqc_focus_history', JSON.stringify(trimmed));
+    }
+  }, [selectedFocus]);
+
   // Fetch real integration status from Supabase with timestamps
   useEffect(() => {
     const fetchRealIntegrationStatus = async () => {
