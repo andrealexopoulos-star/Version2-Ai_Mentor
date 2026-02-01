@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import Diagnosis from '../pages/Diagnosis';
+import NarrativeTypewriter from '../components/NarrativeTypewriter';
 
 const focusAreas = [
   {
