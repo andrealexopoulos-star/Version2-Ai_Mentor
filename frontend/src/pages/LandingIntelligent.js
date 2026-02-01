@@ -34,18 +34,18 @@ const LandingIntelligent = () => {
   const howItWorks = [
     {
       number: "01",
-      title: "Integration",
-      description: "Connects to existing systems: email, CRM, calendar. OAuth-secured, read-only access with user-controlled revocation."
+      title: "Connect once",
+      description: "Link your email, calendar, or CRM. Takes two minutes. BIQC starts watching quietly in the background."
     },
     {
       number: "02",
-      title: "Intelligence build",
-      description: "Continuous analysis of communication patterns, decision velocity, operational signals, and execution behavior."
+      title: "It learns while you work",
+      description: "Observes conversations, meetings, and commitments. Picks up on what's normal for your business and what's changing."
     },
     {
       number: "03",
-      title: "Advisory delivery",
-      description: "On-demand intelligence when decisions are required. Context-aware guidance grounded in your business operating model."
+      title: "You check when you want",
+      description: "Open BIQC when you need clarity. It shows you what's worth paying attention to. No alerts, no noise."
     }
   ];
 
