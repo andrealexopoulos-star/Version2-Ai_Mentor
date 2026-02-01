@@ -495,6 +495,25 @@ const Diagnosis = ({ embedded = false }) => {
       </div>
     </DashboardLayout>
   );
+  
+  // Embedded mode: return content without DashboardLayout wrapper
+  const diagnosticContent = (
+    <div className="space-y-6">
+      {/* Rest of content will be moved here */}
+    </div>
+  );
+  
+  // If embedded, return just the content
+  if (embedded) {
+    return diagnosticContent;
+  }
+  
+  // If standalone, wrap in DashboardLayout
+  return (
+    <DashboardLayout>
+      {diagnosticContent}
+    </DashboardLayout>
+  );
 };
 
 export default Diagnosis;
