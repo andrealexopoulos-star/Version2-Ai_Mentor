@@ -231,6 +231,48 @@ const Advisor = () => {
     
     fetchRealIntegrationStatus();
   }, []);
+  
+  // Extract fast evidence from connected sources (Track A)
+  useEffect(() => {
+    const extractFastEvidence = async () => {
+      // Only run if integrations are connected
+      if (!integrationData.email.connected && !integrationData.calendar.connected && !integrationData.crm.connected) {
+        setFastInsights([]);
+        return;
+      }
+      
+      try {
+        // Extract evidence from each connected source
+        const emailEvidence = integrationData.email.connected 
+          ? await extractEmailEvidence(apiClient) 
+          : null;
+        
+        const calendarEvidence = integrationData.calendar.connected 
+          ? await extractCalendarEvidence(apiClient) 
+          : null;
+        
+        const crmEvidence = integrationData.crm.connected 
+          ? await extractCRMEvidence(apiClient) 
+          : null;
+        
+        // Generate provisional insights
+        const insights = generateFastInsight(
+          emailEvidence, 
+          calendarEvidence, 
+          crmEvidence,
+          selectedFocus
+        );
+        
+        setFastInsights(insights || []);
+        
+      } catch (error) {
+        console.error('Fast evidence extraction failed:', error);
+        setFastInsights([]);
+      }
+    };
+    
+    extractFastEvidence();
+  }, [integrationData, selectedFocus]);
 
   // Generate narrative based on REAL integration data and intelligence thresholds
   useEffect(() => {
