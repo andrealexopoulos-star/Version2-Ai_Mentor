@@ -10,6 +10,7 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import Diagnosis from '../pages/Diagnosis';
 import NarrativeTypewriter from '../components/NarrativeTypewriter';
+import { extractEmailEvidence, extractCalendarEvidence, extractCRMEvidence, generateFastInsight } from '../lib/fastEvidence';
 
 const focusAreas = [
   {
