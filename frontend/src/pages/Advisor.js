@@ -218,17 +218,18 @@ const Advisor = () => {
     fetchRealIntegrationStatus();
   }, []);
 
-  // Generate narrative based on REAL integration data
+  // Generate narrative based on REAL integration data and intelligence thresholds
   useEffect(() => {
     const generateNarrative = async () => {
       setNarrativeState(prev => ({ ...prev, loading: true }));
       
       try {
-        const { email, calendar, crm, dataPresent } = integrationData;
-        const connectedCount = [email.connected, calendar.connected, crm.connected].filter(Boolean).length;
+        const { email, calendar, crm, accounting, dataPresent } = integrationData;
+        const { timeConsistency, crossSourceReinforcement, behaviouralReinforcement } = intelligenceState;
+        const connectedCount = [email.connected, calendar.connected, crm.connected, accounting.connected].filter(Boolean).length;
         
         let narrative = '';
-        let confidence = 'limited visibility';
+        let confidence = 'minimal signal';
         
         // No integrations connected
         if (connectedCount === 0) {
@@ -247,14 +248,31 @@ const Advisor = () => {
         else if (connectedCount === 1) {
           if (email.connected) {
             if (activeTab === 'diagnosis') {
-              narrative = `${email.provider} integration active. Categories reflect language density across recent communications. Signal strength correlates with conversation volume in each domain.`;
+              if (timeConsistency) {
+                narrative = `${email.provider} integration has been active across time. Categories reflect language density in communications. Signal strength correlates with conversation volume.`;
+                confidence = 'pattern stabilising';
+              } else {
+                narrative = `${email.provider} integration active. Categories reflect language density across recent communications. Signal strength correlates with conversation volume in each domain.`;
+                confidence = 'early signal';
+              }
             } else if (selectedFocus) {
               const focusArea = focusAreas.find(f => f.id === selectedFocus);
-              narrative = `${focusArea?.title.toLowerCase()}—observing through email patterns. Participant dynamics and language frequency are registering. Context is still forming.`;
+              if (behaviouralReinforcement) {
+                narrative = `${focusArea?.title.toLowerCase()}—this focus has recurred. Email patterns show participant dynamics and language frequency in this domain. Consistency is emerging.`;
+                confidence = 'pattern stabilising';
+              } else {
+                narrative = `${focusArea?.title.toLowerCase()}—observing through email patterns. Participant dynamics and language frequency are registering. Context is still forming.`;
+                confidence = 'early signal';
+              }
             } else {
-              narrative = `${email.provider} active. Communication patterns are registering—participant frequency, language patterns, interaction density. Early signal is present.`;
+              if (timeConsistency) {
+                narrative = `${email.provider} active across time. Communication patterns are registering—participant frequency, language patterns, interaction density. Signal is stabilising.`;
+                confidence = 'pattern stabilising';
+              } else {
+                narrative = `${email.provider} active. Communication patterns are registering—participant frequency, language patterns, interaction density. Early signal is present.`;
+                confidence = 'early signal';
+              }
             }
-            confidence = 'early signal';
           } else if (calendar.connected) {
             if (activeTab === 'diagnosis') {
               narrative = "Calendar integration active. Time allocation patterns are visible. Email layer would add conversational context.";
@@ -272,29 +290,61 @@ const Advisor = () => {
               narrative = "CRM active. Customer relationship data is present. Operational context remains limited.";
             }
             confidence = 'partial signal';
+          } else if (accounting.connected) {
+            if (activeTab === 'diagnosis') {
+              narrative = "Accounting integration active. Financial transaction data is present. Email or CRM would add operational context.";
+            } else {
+              narrative = "Accounting active. Financial data is present. Email layer would reveal operational drivers.";
+            }
+            confidence = 'partial signal';
           }
         }
         
-        // Multiple integrations connected
+        // Multiple integrations connected - check for cross-source reinforcement
         else {
           if (activeTab === 'diagnosis') {
-            narrative = "Multiple sources active. Categories reflect signal density across integrated data. Color intensity indicates pattern consistency.";
-            confidence = 'signal forming';
+            if (crossSourceReinforcement && timeConsistency) {
+              narrative = "Multiple sources active across time. Categories reflect signal density across integrated data. Pattern consistency is no longer isolated.";
+              confidence = 'intelligence forming';
+            } else if (crossSourceReinforcement) {
+              narrative = "Multiple sources active. Categories reflect signal density across integrated data. Color intensity indicates pattern consistency.";
+              confidence = 'signal forming';
+            } else {
+              narrative = "Multiple sources active. Categories reflect signal density across integrated data. Color intensity indicates pattern consistency.";
+              confidence = 'signal forming';
+            }
           } else if (selectedFocus) {
             const focusArea = focusAreas.find(f => f.id === selectedFocus);
             const sources = [];
             if (email.connected) sources.push('email');
             if (calendar.connected) sources.push('calendar');
             if (crm.connected) sources.push('CRM');
-            narrative = `${focusArea?.title}—cross-referencing ${sources.join(' and ')}. Patterns are aligning across sources. Consistency is becoming detectable.`;
-            confidence = 'signal forming';
+            if (accounting.connected) sources.push('accounting');
+            
+            if (behaviouralReinforcement && crossSourceReinforcement) {
+              narrative = `${focusArea?.title}—this focus has recurred. Cross-referencing ${sources.join(', ')}. Patterns are aligning across sources. This is no longer isolated.`;
+              confidence = 'intelligence forming';
+            } else if (crossSourceReinforcement) {
+              narrative = `${focusArea?.title}—cross-referencing ${sources.join(', ')}. Patterns are aligning across sources. Consistency is becoming detectable.`;
+              confidence = 'signal forming';
+            } else {
+              narrative = `${focusArea?.title}—cross-referencing ${sources.join(', ')}. Patterns are aligning across sources. Consistency is becoming detectable.`;
+              confidence = 'signal forming';
+            }
           } else {
             const sources = [];
             if (email.connected) sources.push('email');
             if (calendar.connected) sources.push('calendar');
             if (crm.connected) sources.push('CRM');
-            narrative = `${sources.join(', ')} active. Cross-source patterns are forming. Signal density varies by domain.`;
-            confidence = 'signal forming';
+            if (accounting.connected) sources.push('accounting');
+            
+            if (crossSourceReinforcement && timeConsistency) {
+              narrative = `${sources.join(', ')} active across time. Cross-source patterns are forming. Signal density varies by domain. Consistency is emerging.`;
+              confidence = 'intelligence forming';
+            } else {
+              narrative = `${sources.join(', ')} active. Cross-source patterns are forming. Signal density varies by domain.`;
+              confidence = 'signal forming';
+            }
           }
         }
         
@@ -315,7 +365,7 @@ const Advisor = () => {
     };
     
     generateNarrative();
-  }, [integrationData, selectedFocus, activeTab]);
+  }, [integrationData, selectedFocus, activeTab, intelligenceState]);
 
   const handleFocusSelect = (focusId) => {
     setSelectedFocus(focusId);
