@@ -82,7 +82,8 @@ const Integrations = () => {
     linkToken: mergeLinkToken,
     onSuccess: async (public_token, metadata) => {
       console.log('✅ Merge onboarding success', { public_token, metadata });
-      const category = metadata?.category || 'crm';
+      // Extract category from Merge API response structure
+      const category = metadata?.integration?.categories?.[0] || metadata?.category || 'crm';
       const provider = metadata?.integration?.name || 'unknown';
       
       try {
