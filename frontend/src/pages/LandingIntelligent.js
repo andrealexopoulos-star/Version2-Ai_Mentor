@@ -230,10 +230,10 @@ const LandingIntelligent = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4">
-              Operating model
+              How it works
             </h2>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Intelligence synthesis, not keyword matching
+              Simple setup. Quiet observation. Clear insight when you need it.
             </p>
           </div>
 
