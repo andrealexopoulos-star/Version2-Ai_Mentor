@@ -449,36 +449,36 @@ const LandingIntelligent = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 mb-4">
-              For operators making decisions under constraint
+              Who this is for
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Founders, executives, and strategic advisors who need intelligence depth without complexity overhead
+              People running businesses who are tired of reacting
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Business operators (10-200 employees)</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Founders and owners</h3>
               <p className="text-slate-600 text-sm">
-                Managing execution velocity, capacity constraints, and operational complexity. Need intelligence synthesis, not more data.
+                You're making all the calls. You need to know what's actually urgent versus what just feels urgent.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Executive decision-makers</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Operators under pressure</h3>
               <p className="text-slate-600 text-sm">
-                Operating under information overload. Require signal extraction from noise, not additional reporting layers.
+                Too many balls in the air. You need something watching for what you're about to drop.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Strategic advisors & consultants</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">People stretched too thin</h3>
               <p className="text-slate-600 text-sm">
-                Require rapid business intelligence depth across client portfolios. Need operational context without manual analysis overhead.
+                You don't have time to analyze everything. You need someone—or something—doing that for you.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Growth-stage leadership teams</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Teams that keep missing things</h3>
               <p className="text-slate-600 text-sm">
-                Scaling operations while maintaining execution quality. Require alignment visibility across team capacity, customer commitments, and resource allocation.
+                Client issues surface late. Cash gets tight unexpectedly. Deadlines slip. You need earlier warning.
               </p>
             </div>
           </div>
