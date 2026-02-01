@@ -160,7 +160,7 @@ const LandingIntelligent = () => {
         </div>
       </section>
 
-      {/* What BIQC Is */}
+      {/* What BIQC Does */}
       <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -171,18 +171,18 @@ const LandingIntelligent = () => {
               </div>
               
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 leading-tight">
-                BIQC watches while you work
+                BIQC acts like an intelligence layer across your business
               </h2>
               
               <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed">
                 <p>
-                  You connect your email, calendar, and CRM once. After that, BIQC quietly observes what's happening day to day.
+                  BIQC sits across the tools you already use and builds an understanding of how your business actually operates day to day.
                 </p>
                 <p>
-                  It watches patterns. Who's reaching out. What keeps resurfacing. Where time's going. What's stalling.
+                  It notices: patterns that keep repeating, tensions between growth and capacity, early signs of risk before they become problems, opportunities that aren't obvious yet.
                 </p>
                 <p className="font-medium text-slate-900">
-                  When something actually needs your attention, BIQC surfaces it. Otherwise, it stays quiet.
+                  It doesn't flood you with information. It brings the right things to your attention — when they matter.
                 </p>
               </div>
             </div>
