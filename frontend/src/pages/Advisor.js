@@ -246,12 +246,12 @@ const Advisor = () => {
         // No integrations connected
         if (connectedCount === 0) {
           if (activeTab === 'diagnosis') {
-            narrative = "These categories become active as data sources connect. Currently no integrations are present. Signal will emerge as connections establish.";
+            narrative = "Nothing here yet. These areas light up when there's enough activity to form a view.";
           } else if (selectedFocus) {
             const focusArea = focusAreas.find(f => f.id === selectedFocus);
-            narrative = `${focusArea?.title} noted as area of interest. Visibility is minimal without connected data. Integration depth determines what becomes observable.`;
+            narrative = `${focusArea?.title} noted. Not enough happening yet to say anything meaningful about it.`;
           } else {
-            narrative = "Integration layer is dormant. Patterns surface when data sources connect and activity accumulates.";
+            narrative = "There isn't enough activity here yet for anything meaningful to take shape.";
           }
           confidence = 'minimal signal';
         }
@@ -261,52 +261,52 @@ const Advisor = () => {
           if (email.connected) {
             if (activeTab === 'diagnosis') {
               if (timeConsistency) {
-                narrative = `${email.provider} integration has been active across time. Categories reflect language density in communications. Signal strength correlates with conversation volume.`;
+                narrative = `${email.provider} has been connected for a while now. The way conversations are happening is becoming more consistent over time.`;
                 confidence = 'pattern stabilising';
               } else {
-                narrative = `${email.provider} integration active. Categories reflect language density across recent communications. Signal strength correlates with conversation volume in each domain.`;
+                narrative = `${email.provider} just connected. Early days—watching how conversations flow and who's involved.`;
                 confidence = 'early signal';
               }
             } else if (selectedFocus) {
               const focusArea = focusAreas.find(f => f.id === selectedFocus);
               if (behaviouralReinforcement) {
-                narrative = `${focusArea?.title.toLowerCase()}—this focus has recurred. Email patterns show participant dynamics and language frequency in this domain. Consistency is emerging.`;
+                narrative = `${focusArea?.title.toLowerCase()}—you keep coming back to this. Conversations around it are starting to show a consistent shape.`;
                 confidence = 'pattern stabilising';
               } else {
-                narrative = `${focusArea?.title.toLowerCase()}—observing through email patterns. Participant dynamics and language frequency are registering. Context is still forming.`;
+                narrative = `${focusArea?.title.toLowerCase()}. Too early to say much, but watching how this topic surfaces in your communications.`;
                 confidence = 'early signal';
               }
             } else {
               if (timeConsistency) {
-                narrative = `${email.provider} active across time. Communication patterns are registering—participant frequency, language patterns, interaction density. Signal is stabilising.`;
+                narrative = `${email.provider} connected. The way you communicate with people is starting to settle into a recognisable rhythm.`;
                 confidence = 'pattern stabilising';
               } else {
-                narrative = `${email.provider} active. Communication patterns are registering—participant frequency, language patterns, interaction density. Early signal is present.`;
+                narrative = `${email.provider} connected. Early days—watching conversations, frequency, who reaches out.`;
                 confidence = 'early signal';
               }
             }
           } else if (calendar.connected) {
             if (activeTab === 'diagnosis') {
-              narrative = "Calendar integration active. Time allocation patterns are visible. Email layer would add conversational context.";
+              narrative = "Calendar connected. Where time goes is visible, but there's no conversational layer yet.";
             } else if (selectedFocus) {
               const focusArea = focusAreas.find(f => f.id === selectedFocus);
-              narrative = `${focusArea?.title}—visible through time allocation. Commitment clusters are present. Conversational layer remains absent.`;
+              narrative = `${focusArea?.title}. Calendar shows where your time concentrates, but the why isn't visible yet.`;
             } else {
-              narrative = "Calendar active. Time allocation patterns show where attention concentrates. Conversational context is not yet present.";
+              narrative = "Calendar connected. Time allocation is visible. What's driving those commitments isn't.";
             }
             confidence = 'partial signal';
           } else if (crm.connected) {
             if (activeTab === 'diagnosis') {
-              narrative = "CRM integration active. Relationship data is present. Operational layers would deepen pattern visibility.";
+              narrative = "CRM connected. Customer relationships are visible. Operational detail would add depth.";
             } else {
-              narrative = "CRM active. Customer relationship data is present. Operational context remains limited.";
+              narrative = "CRM connected. Relationship layer is present. Operational layer is missing.";
             }
             confidence = 'partial signal';
           } else if (accounting.connected) {
             if (activeTab === 'diagnosis') {
-              narrative = "Accounting integration active. Financial transaction data is present. Email or CRM would add operational context.";
+              narrative = "Accounting connected. Financial movements are visible. Email or CRM would show what's behind them.";
             } else {
-              narrative = "Accounting active. Financial data is present. Email layer would reveal operational drivers.";
+              narrative = "Accounting connected. Money flow is visible. Operational context isn't.";
             }
             confidence = 'partial signal';
           }
@@ -316,13 +316,13 @@ const Advisor = () => {
         else {
           if (activeTab === 'diagnosis') {
             if (crossSourceReinforcement && timeConsistency) {
-              narrative = "Multiple sources active across time. Categories reflect signal density across integrated data. Pattern consistency is no longer isolated.";
+              narrative = "Several connections active over time. What's showing up in one area is starting to appear in others. This is no longer isolated.";
               confidence = 'intelligence forming';
             } else if (crossSourceReinforcement) {
-              narrative = "Multiple sources active. Categories reflect signal density across integrated data. Color intensity indicates pattern consistency.";
+              narrative = "Multiple connections present. Where things cluster across different areas is becoming visible.";
               confidence = 'signal forming';
             } else {
-              narrative = "Multiple sources active. Categories reflect signal density across integrated data. Color intensity indicates pattern consistency.";
+              narrative = "Multiple connections present. Where things cluster across different areas is becoming visible.";
               confidence = 'signal forming';
             }
           } else if (selectedFocus) {
@@ -330,31 +330,31 @@ const Advisor = () => {
             const sources = [];
             if (email.connected) sources.push('email');
             if (calendar.connected) sources.push('calendar');
-            if (crm.connected) sources.push('CRM');
-            if (accounting.connected) sources.push('accounting');
+            if (crm.connected) sources.push('customer relationships');
+            if (accounting.connected) sources.push('financials');
             
             if (behaviouralReinforcement && crossSourceReinforcement) {
-              narrative = `${focusArea?.title}—this focus has recurred. Cross-referencing ${sources.join(', ')}. Patterns are aligning across sources. This is no longer isolated.`;
+              narrative = `${focusArea?.title}—you keep returning here. What's showing up across ${sources.join(' and ')} is starting to align. This is no longer isolated.`;
               confidence = 'intelligence forming';
             } else if (crossSourceReinforcement) {
-              narrative = `${focusArea?.title}—cross-referencing ${sources.join(', ')}. Patterns are aligning across sources. Consistency is becoming detectable.`;
+              narrative = `${focusArea?.title}. Looking across ${sources.join(' and ')}—things are starting to line up in ways worth noticing.`;
               confidence = 'signal forming';
             } else {
-              narrative = `${focusArea?.title}—cross-referencing ${sources.join(', ')}. Patterns are aligning across sources. Consistency is becoming detectable.`;
+              narrative = `${focusArea?.title}. Looking across ${sources.join(' and ')}—things are starting to line up in ways worth noticing.`;
               confidence = 'signal forming';
             }
           } else {
             const sources = [];
             if (email.connected) sources.push('email');
             if (calendar.connected) sources.push('calendar');
-            if (crm.connected) sources.push('CRM');
-            if (accounting.connected) sources.push('accounting');
+            if (crm.connected) sources.push('relationships');
+            if (accounting.connected) sources.push('financials');
             
             if (crossSourceReinforcement && timeConsistency) {
-              narrative = `${sources.join(', ')} active across time. Cross-source patterns are forming. Signal density varies by domain. Consistency is emerging.`;
+              narrative = `${sources.join(', ')} connected over time. What's happening in one area is showing up in others. Consistency is starting to settle.`;
               confidence = 'intelligence forming';
             } else {
-              narrative = `${sources.join(', ')} active. Cross-source patterns are forming. Signal density varies by domain.`;
+              narrative = `${sources.join(', ')} connected. Where these overlap is becoming clearer.`;
               confidence = 'signal forming';
             }
           }
