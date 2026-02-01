@@ -322,7 +322,12 @@ const Advisor = () => {
               }
             } else {
               if (timeConsistency) {
-                narrative = `${email.provider} connected. The way you communicate with people is starting to settle into a recognisable rhythm.`;
+                // Add fast insight if available
+                if (fastInsights.length > 0) {
+                  narrative = `${email.provider} connected. ${fastInsights[0]}`;
+                } else {
+                  narrative = `${email.provider} connected. The way you communicate with people is starting to settle into a recognisable rhythm.`;
+                }
                 confidence = 'pattern stabilising';
               } else {
                 narrative = `${email.provider} connected. Early days—watching conversations, frequency, who reaches out.`;
