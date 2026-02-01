@@ -171,10 +171,18 @@ const MySoundBoard = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex h-full">
-        {/* Sidebar */}
+      <div className="flex h-full relative">
+        {/* Sidebar - Desktop: static, Mobile: overlay */}
         <div 
-          className={`${sidebarOpen ? 'w-72' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r overflow-hidden`}
+          className={`
+            ${isChatOpen ? 'translate-x-0' : '-translate-x-full'} 
+            lg:translate-x-0 
+            fixed lg:relative 
+            left-0 top-0 
+            w-72 h-full 
+            transition-transform duration-300 
+            flex-shrink-0 border-r overflow-hidden z-50 lg:z-auto
+          `}
           style={{ borderColor: 'var(--border-light)', background: 'var(--bg-secondary)' }}
         >
           <div className="w-72 h-full flex flex-col">
@@ -279,24 +287,34 @@ const MySoundBoard = () => {
 
         {/* Toggle Sidebar Button */}
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-r-lg"
+          onClick={() => isChatOpen ? closeAll() : openChat()}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-r-lg lg:block hidden"
           style={{ 
             background: 'var(--bg-card)', 
             border: '1px solid var(--border-light)',
             borderLeft: 'none',
-            left: sidebarOpen ? '288px' : '0'
+            left: isChatOpen ? '288px' : '0'
           }}
         >
-          {sidebarOpen ? (
+          {isChatOpen ? (
             <ChevronLeft className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           ) : (
             <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           )}
         </button>
+        
+        {/* Mobile: Backdrop overlay */}
+        {isChatOpen && (
+          <div 
+            className="fixed inset-0 bg-black/40 lg:hidden z-40"
+            onClick={closeAll}
+            aria-hidden="true"
+          />
+        )}
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 w-full lg:w-auto overflow-hidden"
+>
           {/* Header */}
           <div 
             className="px-6 py-4 border-b flex items-center justify-between"
