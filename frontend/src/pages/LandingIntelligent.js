@@ -290,10 +290,10 @@ const LandingIntelligent = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 mb-4">
-              Built for operational security
+              Your data stays yours
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Your data, your control, your compliance requirements
+              BIQC only sees what you explicitly connect. Nothing more.
             </p>
           </div>
 
