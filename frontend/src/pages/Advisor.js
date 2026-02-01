@@ -212,15 +212,10 @@ const Advisor = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              <p 
-                className="text-base leading-relaxed font-serif"
-                style={{ 
-                  color: 'var(--text-primary)',
-                  fontFamily: 'Georgia, Cambria, "Times New Roman", serif'
-                }}
-              >
-                {narrativeState.text}
-              </p>
+              <NarrativeTypewriter 
+                text={narrativeState.text}
+                trigger={`${activeTab}-${selectedFocus}-${Object.values(integrations).filter(Boolean).length}`}
+              />
               <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                 {narrativeState.confidence}
               </p>
