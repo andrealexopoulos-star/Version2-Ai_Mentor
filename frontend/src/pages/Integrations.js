@@ -674,16 +674,16 @@ const Integrations = () => {
             </div>
           </div>
 
-        {/* Top-Level Navigation Tabs */}
-        <div className="border-b" style={{ borderColor: 'var(--border-light)' }}>
-          <div className="flex gap-2">
+        {/* Top-Level Navigation Tabs - MOBILE SAFE */}
+        <div className="border-b overflow-x-auto" style={{ borderColor: 'var(--border-light)' }}>
+          <div className="flex gap-2 min-w-max">
             <button
               onClick={() => {
                 setActiveTab('connected-apps');
                 setSelectedCategory(null);
                 setSelectedIntegration(null);
               }}
-              className={`px-4 py-3 text-sm font-medium transition-all duration-150 rounded-t-lg relative ${
+              className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
                 activeTab === 'connected-apps'
                   ? 'text-blue-700'
                   : 'hover:bg-gray-50'
@@ -706,7 +706,7 @@ const Integrations = () => {
                 setSelectedCategory(null);
                 setSelectedIntegration(null);
               }}
-              className={`px-4 py-3 text-sm font-medium transition-all duration-150 rounded-t-lg relative ${
+              className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
                 activeTab === 'intelligence-sources'
                   ? 'text-blue-700'
                   : 'hover:bg-gray-50'
