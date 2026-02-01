@@ -185,9 +185,12 @@ export const extractCRMEvidence = async (apiClient) => {
 /**
  * Generate provisional insight from evidence
  * OBSERVATIONAL ONLY — no conclusions, no advice
+ * Each insight includes evidence_trace for developer verification
  */
 export const generateFastInsight = (emailEvidence, calendarEvidence, crmEvidence, focusArea) => {
   const insights = [];
+  const now = new Date();
+  const timeWindow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   
   // EMAIL INSIGHTS
   if (emailEvidence) {
@@ -199,22 +202,74 @@ export const generateFastInsight = (emailEvidence, calendarEvidence, crmEvidence
         .slice(0, 2)
         .map(([word]) => word);
       
-      insights.push(`Certain topics keep surfacing—${topTopics.join(', ')}—but conversations around them don't seem to conclude quickly.`);
+      insights.push({
+        text: `Certain topics keep surfacing—${topTopics.join(', ')}—but conversations around them don't seem to conclude quickly.`,
+        evidence_trace: {
+          insight_id: createInsightId('email', 'recurring_unresolved'),
+          source_types: ['email'],
+          evidence_counters: {
+            total_threads: emailEvidence.totalThreads,
+            recurring_topic_count: recurringTopicCount,
+            unresolved_count: emailEvidence.unresolvedCount
+          },
+          evidence_window: timeWindow,
+          confidence_bucket: recurringTopicCount >= 3 ? 'medium' : 'low',
+          hashed_subjects_sample: emailEvidence.hashedSubjects.slice(0, 5)
+        }
+      });
     }
     
     if (emailEvidence.unresolvedCount > emailEvidence.totalThreads * 0.6) {
-      insights.push("More threads are being initiated than resolved. Things are accumulating rather than closing.");
+      insights.push({
+        text: "More threads are being initiated than resolved. Things are accumulating rather than closing.",
+        evidence_trace: {
+          insight_id: createInsightId('email', 'accumulation'),
+          source_types: ['email'],
+          evidence_counters: {
+            total_threads: emailEvidence.totalThreads,
+            unresolved_count: emailEvidence.unresolvedCount,
+            unresolved_ratio: Math.round((emailEvidence.unresolvedCount / emailEvidence.totalThreads) * 100)
+          },
+          evidence_window: timeWindow,
+          confidence_bucket: emailEvidence.unresolvedCount > 10 ? 'medium' : 'low'
+        }
+      });
     }
   }
   
   // CALENDAR INSIGHTS
   if (calendarEvidence) {
     if (calendarEvidence.fragmentationScore > 2) {
-      insights.push("Time is fragmented. Meetings are happening frequently with little breathing room between them.");
+      insights.push({
+        text: "Time is fragmented. Meetings are happening frequently with little breathing room between them.",
+        evidence_trace: {
+          insight_id: createInsightId('calendar', 'fragmentation'),
+          source_types: ['calendar'],
+          evidence_counters: {
+            total_meetings: calendarEvidence.totalMeetings,
+            fragmentation_score: Math.round(calendarEvidence.fragmentationScore * 10) / 10,
+            recurring_count: calendarEvidence.recurringCount
+          },
+          evidence_window: timeWindow,
+          confidence_bucket: calendarEvidence.fragmentationScore > 3 ? 'medium' : 'low'
+        }
+      });
     }
     
     if (calendarEvidence.avgDuration > 90) {
-      insights.push("Meetings tend to run long. Time spent discussing appears disproportionate to decisions emerging.");
+      insights.push({
+        text: "Meetings tend to run long. Time spent discussing appears disproportionate to decisions emerging.",
+        evidence_trace: {
+          insight_id: createInsightId('calendar', 'duration'),
+          source_types: ['calendar'],
+          evidence_counters: {
+            total_meetings: calendarEvidence.totalMeetings,
+            avg_duration_minutes: calendarEvidence.avgDuration
+          },
+          evidence_window: timeWindow,
+          confidence_bucket: calendarEvidence.avgDuration > 120 ? 'medium' : 'low'
+        }
+      });
     }
   }
   
@@ -223,8 +278,34 @@ export const generateFastInsight = (emailEvidence, calendarEvidence, crmEvidence
     const stalledRatio = crmEvidence.stalledCount / crmEvidence.totalDeals;
     
     if (stalledRatio > 0.5) {
-      insights.push("Most deals in the pipeline haven't moved recently. Activity seems concentrated on a few, while others sit idle.");
+      insights.push({
+        text: "Most deals in the pipeline haven't moved recently. Activity seems concentrated on a few, while others sit idle.",
+        evidence_trace: {
+          insight_id: createInsightId('crm', 'stalled_deals'),
+          source_types: ['crm'],
+          evidence_counters: {
+            total_deals: crmEvidence.totalDeals,
+            stalled_count: crmEvidence.stalledCount,
+            active_count: crmEvidence.activeCount,
+            stalled_ratio_pct: Math.round(stalledRatio * 100)
+          },
+          evidence_window: timeWindow,
+          confidence_bucket: crmEvidence.totalDeals > 10 ? 'medium' : 'low'
+        }
+      });
     }
+  }
+  
+  // Developer trace logging (dev mode only)
+  if (process.env.NODE_ENV !== 'production' && insights.length > 0) {
+    console.debug('🔍 [TRACK A] Evidence Trace:', {
+      generated_at: now.toISOString(),
+      insight_count: insights.length,
+      insights: insights.map(i => ({
+        text_preview: i.text.substring(0, 50) + '...',
+        trace: i.evidence_trace
+      }))
+    });
   }
   
   // Return first 1-2 insights only (restrained)
