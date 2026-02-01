@@ -105,7 +105,7 @@ const LandingIntelligent = () => {
                   onClick={() => navigate('/register-supabase')}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-7 text-lg rounded-xl shadow-xl shadow-blue-600/25 hover:shadow-2xl transition-all flex items-center justify-center gap-2"
                 >
-                  Start Free
+                  Get clarity
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <Button
@@ -113,7 +113,7 @@ const LandingIntelligent = () => {
                   onClick={() => setShowInteractiveDemo(true)}
                   className="border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-semibold px-10 py-7 text-lg rounded-xl transition-all"
                 >
-                  See How BIQC Thinks
+                  See how it works
                 </Button>
               </div>
 
