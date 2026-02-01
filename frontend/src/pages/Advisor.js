@@ -265,6 +265,32 @@ const Advisor = () => {
         
         setFastInsights(insights || []);
         
+        // Developer-only evidence trace exposure
+        if (process.env.NODE_ENV !== 'production' && insights && insights.length > 0) {
+          window.__BIQC_EVIDENCE_TRACE__ = {
+            timestamp: new Date().toISOString(),
+            insights: insights,
+            raw_evidence: {
+              email: emailEvidence ? {
+                total_threads: emailEvidence.totalThreads,
+                unresolved_count: emailEvidence.unresolvedCount,
+                recurring_topic_count: Object.keys(emailEvidence.recurringTopics).length
+              } : null,
+              calendar: calendarEvidence ? {
+                total_meetings: calendarEvidence.totalMeetings,
+                avg_duration: calendarEvidence.avgDuration,
+                fragmentation: calendarEvidence.fragmentationScore
+              } : null,
+              crm: crmEvidence ? {
+                total_deals: crmEvidence.totalDeals,
+                stalled: crmEvidence.stalledCount,
+                active: crmEvidence.activeCount
+              } : null
+            }
+          };
+          console.debug('🔍 [BIQC DEV] Track A evidence trace available at window.__BIQC_EVIDENCE_TRACE__');
+        }
+        
       } catch (error) {
         console.error('Fast evidence extraction failed:', error);
         setFastInsights([]);
