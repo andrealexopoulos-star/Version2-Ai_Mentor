@@ -7737,11 +7737,18 @@ async def exchange_merge_account_token(
             integration_name = integration_info.get("name", "unknown")
             merge_account_id = data.get("id")  # FIX: ID is at root level, not in integration object
             
+            # VALIDATE CATEGORY from Merge API response
+            merge_categories = integration_info.get("categories", [])
+            validated_category = merge_categories[0] if merge_categories else category
+            if validated_category != category:
+                logger.warning(f"⚠️ Category mismatch detected: frontend='{category}', Merge API='{validated_category}' - using Merge's category")
+                category = validated_category
+            
             if not account_token:
                 logger.error("❌ No account_token in Merge API response")
                 raise HTTPException(status_code=500, detail="No account_token in response")
             
-            logger.info(f"✅ Received account_token for integration: {integration_name}")
+            logger.info(f"✅ Received account_token for integration: {integration_name} (category: {category})")
             if merge_account_id:
                 logger.info(f"✅ Merge account ID: {merge_account_id}")
             else:
