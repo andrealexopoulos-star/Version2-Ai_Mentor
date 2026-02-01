@@ -322,54 +322,14 @@ const MySoundBoard = () => {
               {messages.length === 0 ? (
                 <div className="text-center py-16">
                   <div 
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
                     style={{ background: 'var(--bg-tertiary)' }}
                   >
                     <MessageSquare className="w-8 h-8" style={{ color: 'var(--accent-primary)' }} />
                   </div>
-                  <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                    What&apos;s on your mind?
-                  </h2>
-                  <p className="max-w-md mx-auto mb-4" style={{ color: 'var(--text-muted)' }}>
-                    I&apos;m here to help you think clearly. Share what&apos;s going on — a decision you&apos;re wrestling with, an idea forming, or something that&apos;s been stuck.
-                  </p>
                   
-                  {/* Voice Call CTA */}
-                  <div 
-                    className="inline-flex items-center gap-3 px-5 py-3 rounded-xl mb-6 cursor-pointer hover:scale-105 transition-transform"
-                    style={{ background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05))', border: '1px solid rgba(34, 197, 94, 0.2)' }}
-                    onClick={() => setShowVoiceChat(true)}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
-                      <Video className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Prefer to talk?</p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Start a voice call with your advisor</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {[
-                      "I'm trying to decide...",
-                      "I keep thinking about...",
-                      "Something's not working with...",
-                      "I need to figure out..."
-                    ].map((prompt, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setInput(prompt)}
-                        className="px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
-                        style={{ 
-                          background: 'var(--bg-tertiary)', 
-                          color: 'var(--text-secondary)',
-                          border: '1px solid var(--border-light)'
-                        }}
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Silent empty state - no greeting, no prompt */}
+                  <div className="h-24"></div>
                 </div>
               ) : (
                 <div className="space-y-6">
