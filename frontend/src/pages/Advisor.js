@@ -129,6 +129,18 @@ const Advisor = () => {
       }
       
       setIntelligenceState(thresholds);
+      
+      // Persist to localStorage for Soundboard access
+      localStorage.setItem('biqc_intelligence_state', JSON.stringify({
+        thresholds,
+        integrations: {
+          email: integrationData.email.connected,
+          calendar: integrationData.calendar.connected,
+          crm: integrationData.crm.connected,
+          accounting: integrationData.accounting.connected
+        },
+        lastUpdated: new Date().toISOString()
+      }));
     };
     
     detectThresholds();
