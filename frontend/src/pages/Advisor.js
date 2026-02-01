@@ -272,7 +272,7 @@ const Advisor = () => {
             <div className="space-y-3">
               <NarrativeTypewriter 
                 text={narrativeState.text}
-                trigger={`${activeTab}-${selectedFocus}-${Object.values(integrations).filter(Boolean).length}`}
+                trigger={`${activeTab}-${selectedFocus}-${integrationData.email.connected}-${integrationData.calendar.connected}-${integrationData.crm.connected}`}
               />
               <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                 {narrativeState.confidence}
