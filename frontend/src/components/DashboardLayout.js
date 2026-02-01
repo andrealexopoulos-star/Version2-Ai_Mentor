@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
 import {
@@ -21,6 +22,7 @@ const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useSupabaseAuth();
+  const { isNavOpen, openNav, closeAll } = useMobileDrawer();
   
   const logout = async () => {
     try {
@@ -49,7 +51,6 @@ const DashboardLayout = ({ children }) => {
     }
   };
   
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar-collapsed') === 'true';
   });
@@ -65,31 +66,30 @@ const DashboardLayout = ({ children }) => {
     localStorage.setItem('sidebar-collapsed', sidebarCollapsed);
   }, [sidebarCollapsed]);
 
-  // Mobile: Lock scroll when sidebar open
+  // Mobile: Lock scroll when nav drawer open
   useEffect(() => {
-    if (sidebarOpen) {
+    if (isNavOpen) {
       document.body.classList.add('sidebar-open');
     } else {
       document.body.classList.remove('sidebar-open');
     }
     
-    // Cleanup on unmount
     return () => {
       document.body.classList.remove('sidebar-open');
     };
-  }, [sidebarOpen]);
+  }, [isNavOpen]);
 
-  // Mobile: Close sidebar on Escape key
+  // Mobile: Close nav on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && sidebarOpen) {
-        setSidebarOpen(false);
+      if (e.key === 'Escape' && isNavOpen) {
+        closeAll();
       }
     };
     
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [sidebarOpen]);
+  }, [isNavOpen, closeAll]);
 
   useEffect(() => {
     const theme = darkMode ? 'dark' : 'light';
@@ -162,12 +162,12 @@ const DashboardLayout = ({ children }) => {
         {/* Left: Mobile Menu + Logo */}
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            onClick={() => isNavOpen ? closeAll() : openNav()}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
             style={{ color: 'var(--text-secondary)' }}
-            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+            aria-label={isNavOpen ? 'Close menu' : 'Open menu'}
           >
-            {sidebarOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+            {isNavOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
           
           <div className="flex items-center gap-2 sm:gap-3">
@@ -390,7 +390,7 @@ const DashboardLayout = ({ children }) => {
       {/* Sidebar - Desktop: collapsible, Mobile: overlay */}
       <aside 
         className={`fixed left-0 bg-white shadow-2xl transition-all duration-300 ${sidebarWidth} ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          isNavOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]`}
         style={{ zIndex: 999 }}
       >
@@ -431,7 +431,7 @@ const DashboardLayout = ({ children }) => {
                 key={item.path}
                 onClick={() => {
                   navigate(item.path);
-                  setSidebarOpen(false);
+                  closeAll();
                 }}
                 className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} w-full ${sidebarCollapsed ? 'px-2' : 'px-4'} py-3 rounded-lg text-sm font-medium transition-colors ${
                   isActive(item.path) 
@@ -466,10 +466,10 @@ const DashboardLayout = ({ children }) => {
       </aside>
 
       {/* Mobile Overlay - Backdrop - BELOW SIDEBAR */}
-      {sidebarOpen && (
+      {isNavOpen && (
         <div 
           className="fixed inset-0 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={closeAll}
           aria-hidden="true"
           style={{ zIndex: 998 }}
         />
