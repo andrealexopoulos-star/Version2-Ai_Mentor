@@ -105,9 +105,6 @@ const MySoundBoard = () => {
             : c
         ));
       }
-            : c
-        ));
-      }
     } catch (error) {
       toast.error('Failed to send message');
       setMessages(prev => prev.slice(0, -1)); // Remove optimistic user message
