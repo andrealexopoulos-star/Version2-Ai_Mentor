@@ -150,9 +150,9 @@ const DashboardLayout = ({ children }) => {
       className="min-h-screen"
       style={{ background: 'var(--bg-secondary)' }}
     >
-      {/* Top Navigation Bar - Fixed at top */}
+      {/* Top Navigation Bar - Fixed at top - MOBILE OPTIMIZED */}
       <header 
-        className="fixed top-0 left-0 right-0 h-14 sm:h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-4"
+        className="fixed top-0 left-0 right-0 h-12 md:h-14 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-4"
         style={{ 
           background: 'var(--bg-primary)', 
           borderBottom: '1px solid var(--border-light)',
@@ -160,25 +160,25 @@ const DashboardLayout = ({ children }) => {
         }}
       >
         {/* Left: Mobile Menu + Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button 
             onClick={() => isNavOpen ? closeAll() : openNav()}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
             style={{ color: 'var(--text-secondary)' }}
             aria-label={isNavOpen ? 'Close menu' : 'Open menu'}
           >
-            {isNavOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+            {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2">
             <div 
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+              className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: 'var(--accent-primary)' }}
             >
-              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
             </div>
             <span 
-              className="font-semibold text-base sm:text-lg hidden sm:block"
+              className="font-semibold text-sm md:text-base hidden sm:block"
               style={{ color: 'var(--text-primary)' }}
             >
               Strategy Squad
@@ -326,19 +326,19 @@ const DashboardLayout = ({ children }) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button 
-                className="flex items-center gap-2 sm:gap-3 p-1.5 sm:pr-3 rounded-xl transition-colors touch-manipulation"
+                className="flex items-center gap-2 p-1 pr-2 md:pr-3 rounded-xl transition-colors touch-manipulation"
                 style={{ background: 'var(--bg-tertiary)' }}
                 aria-label="User menu"
               >
-                <div className="avatar w-8 h-8 sm:w-9 sm:h-9 text-sm sm:text-base">
+                <div className="avatar w-7 h-7 md:w-8 md:h-8 text-xs md:text-sm">
                   {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <p className="text-xs md:text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                     {user?.name?.split(' ')[0] || 'User'}
                   </p>
                 </div>
-                <ChevronDown className="w-4 h-4 hidden sm:block" style={{ color: 'var(--text-muted)' }} />
+                <ChevronDown className="w-3.5 h-3.5 md:w-4 md:h-4 hidden sm:block" style={{ color: 'var(--text-muted)' }} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 
@@ -391,7 +391,7 @@ const DashboardLayout = ({ children }) => {
       <aside 
         className={`fixed left-0 bg-white shadow-2xl transition-all duration-300 ${sidebarWidth} ${
           isNavOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)]`}
+        } lg:translate-x-0 top-12 md:top-14 h-[calc(100vh-3rem)] md:h-[calc(100vh-3.5rem)]`}
         style={{ zIndex: 999 }}
       >
         {/* Desktop: Collapse Toggle */}
@@ -477,7 +477,7 @@ const DashboardLayout = ({ children }) => {
 
       {/* Main Content */}
       <main 
-        className={`${sidebarMargin} pt-14 sm:pt-16 transition-all duration-300`}
+        className={`${sidebarMargin} pt-12 md:pt-14 transition-all duration-300`}
         style={{ 
           background: 'var(--bg-secondary)',
           position: 'relative',
@@ -485,7 +485,7 @@ const DashboardLayout = ({ children }) => {
           minHeight: '100vh'
         }}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+        <div className="px-4 py-4 md:px-6 md:py-6">
           {children}
         </div>
       </main>
