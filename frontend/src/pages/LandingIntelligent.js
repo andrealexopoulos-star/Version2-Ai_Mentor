@@ -90,13 +90,13 @@ const LandingIntelligent = () => {
             <div className="space-y-6 sm:space-y-8">
               <div className="space-y-4">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-tight tracking-tight">
-                  Intelligence that knows
+                  See what actually deserves
                   <br />
-                  <span className="text-blue-600">how your business operates</span>
+                  <span className="text-blue-600">your attention</span>
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-xl">
-                  BIQC is a continuous intelligence layer for business operators. It learns your business reality, recognizes patterns in execution, and provides advisory guidance when decisions matter.
+                  Running a business means being buried in decisions. BIQC watches what's happening and tells you what actually matters.
                 </p>
               </div>
 
