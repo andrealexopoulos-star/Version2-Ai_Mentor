@@ -387,24 +387,25 @@ const Diagnosis = ({ embedded = false }) => {
   };
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-gray-400" />
-            <p className="font-medium text-gray-900">Analyzing your business signals...</p>
-            <p className="text-sm mt-1 text-gray-500">BIQC is reviewing patterns in your data</p>
-          </div>
+    const loadingView = (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-gray-400" />
+          <p className="font-medium text-gray-900">Analyzing your business signals...</p>
+          <p className="text-sm mt-1 text-gray-500">BIQC is reviewing patterns in your data</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
+    
+    return embedded ? loadingView : <DashboardLayout>{loadingView}</DashboardLayout>;
   }
 
-  return (
-    <DashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in" data-testid="diagnosis-page">
-        
-        {/* Header */}
+  // Main diagnostic content
+  const diagnosticContent = (
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in" data-testid="diagnosis-page">
+      
+      {/* Header - only show in standalone mode */}
+      {!embedded && (
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Business Diagnosis</h1>
@@ -422,84 +423,77 @@ const Diagnosis = ({ embedded = false }) => {
             Refresh
           </Button>
         </div>
+      )}
 
-        {/* Confidence indicator + Uncertainty note */}
-        {assessment && (
-          <div className="space-y-2">
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-              assessment.confidence === 'High' ? 'bg-green-50 text-green-700' :
-              assessment.confidence === 'Medium' ? 'bg-blue-50 text-blue-700' :
-              'bg-amber-50 text-amber-700'
-            }`}>
-              <AlertCircle className="w-4 h-4" />
-              <span>
-                {assessment.confidence === 'High' && `High confidence — Clear patterns detected across ${assessment.totalSignals} communications`}
-                {assessment.confidence === 'Medium' && `Medium confidence — Some patterns visible, analysis strengthening`}
-                {assessment.confidence === 'Limited' && `Limited confidence — Insufficient data for definitive diagnosis`}
-              </span>
-            </div>
-            
-            {/* Explicit uncertainty statement when confidence is limited */}
-            {assessment.uncertaintyNote && (
-              <div className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
-                <p className="text-xs text-gray-600 italic">
-                  {assessment.uncertaintyNote}
-                </p>
-              </div>
-            )}
+      {/* Confidence indicator + Uncertainty note */}
+      {assessment && (
+        <div className="space-y-2">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+            assessment.confidence === 'High' ? 'bg-green-50 text-green-700' :
+            assessment.confidence === 'Medium' ? 'bg-blue-50 text-blue-700' :
+            'bg-amber-50 text-amber-700'
+          }`}>
+            <AlertCircle className="w-4 h-4" />
+            <span>
+              {assessment.confidence === 'High' && `High confidence — Clear patterns detected across ${assessment.totalSignals} communications`}
+              {assessment.confidence === 'Medium' && `Medium confidence — Some patterns visible, analysis strengthening`}
+              {assessment.confidence === 'Limited' && `Limited confidence — Insufficient data for definitive diagnosis`}
+            </span>
           </div>
-        )}
-
-        {/* Active Focus Areas */}
-        {activeCategoryList.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                Active Focus Areas
-              </h2>
-              <span className="text-xs text-gray-400">Click to remove</span>
+          
+          {/* Explicit uncertainty statement when confidence is limited */}
+          {assessment.uncertaintyNote && (
+            <div className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
+              <p className="text-xs text-gray-600 italic">
+                {assessment.uncertaintyNote}
+              </p>
             </div>
-            <div className="space-y-2">
-              {activeCategoryList.map(([id, config]) => (
-                <CategoryCard key={id} id={id} config={config} isActive={true} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Available Areas */}
-        {availableCategoryList.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                Available Areas
-              </h2>
-              <span className="text-xs text-gray-400">Click to add</span>
-            </div>
-            <div className="space-y-2">
-              {availableCategoryList.map(([id, config]) => (
-                <CategoryCard key={id} id={id} config={config} isActive={false} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="pt-4 border-t border-gray-100">
-          <p className="text-xs text-center text-gray-400">
-            Last updated: {assessment?.generated_at ? new Date(assessment.generated_at).toLocaleString() : 'Just now'}
-          </p>
+          )}
         </div>
+      )}
+
+      {/* Active Focus Areas */}
+      {activeCategoryList.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              Active Focus Areas
+            </h2>
+            <span className="text-xs text-gray-400">Click to remove</span>
+          </div>
+          <div className="space-y-2">
+            {activeCategoryList.map(([id, config]) => (
+              <CategoryCard key={id} id={id} config={config} isActive={true} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Available Areas */}
+      {availableCategoryList.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              Available Areas
+            </h2>
+            <span className="text-xs text-gray-400">Click to add</span>
+          </div>
+          <div className="space-y-2">
+            {availableCategoryList.map(([id, config]) => (
+              <CategoryCard key={id} id={id} config={config} isActive={false} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="pt-4 border-t border-gray-100">
+        <p className="text-xs text-center text-gray-400">
+          Last updated: {assessment?.generated_at ? new Date(assessment.generated_at).toLocaleString() : 'Just now'}
+        </p>
       </div>
-    </DashboardLayout>
-  );
-  
-  // Embedded mode: return content without DashboardLayout wrapper
-  const diagnosticContent = (
-    <div className="space-y-6">
-      {/* Rest of content will be moved here */}
     </div>
   );
   
