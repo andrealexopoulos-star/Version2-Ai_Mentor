@@ -541,10 +541,10 @@ const LandingIntelligent = () => {
       <section className="py-20 sm:py-28 px-4 sm:px-6 bg-slate-900 text-white">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight">
-            Intelligence infrastructure for operators
+            Let BIQC watch while you run the business
           </h2>
           <p className="text-lg sm:text-xl text-slate-300 leading-relaxed">
-            BIQC operates as a persistent intelligence layer. It understands your business structure, tracks execution patterns, and provides advisory guidance grounded in operational reality.
+            You don't need another tool to check. You need something watching for you. That's what BIQC does.
           </p>
           <div className="pt-4">
             <Button
