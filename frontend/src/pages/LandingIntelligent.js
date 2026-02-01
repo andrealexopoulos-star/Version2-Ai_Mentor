@@ -168,20 +168,18 @@ const LandingIntelligent = () => {
               </div>
               
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 leading-tight">
-                A persistent intelligence layer,
-                <br className="hidden sm:block" />
-                not a tool
+                BIQC watches while you work
               </h2>
               
               <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed">
                 <p>
-                  BIQC operates as a continuous intelligence system that understands your business structure, decision patterns, and operational constraints.
+                  You connect your email, calendar, and CRM once. After that, BIQC quietly observes what's happening day to day.
                 </p>
                 <p>
-                  It integrates with existing systems you already use — email, CRM, calendar — to build and maintain a live model of your business reality.
+                  It watches patterns. Who's reaching out. What keeps resurfacing. Where time's going. What's stalling.
                 </p>
                 <p className="font-medium text-slate-900">
-                  When you need to make a decision, BIQC provides advisory guidance grounded in what it knows about how you operate.
+                  When something actually needs your attention, BIQC surfaces it. Otherwise, it stays quiet.
                 </p>
               </div>
             </div>
