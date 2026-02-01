@@ -388,11 +388,8 @@ const LandingIntelligent = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 mb-4">
-              What this gets you
+              What BIQC does for you
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Less noise. More clarity.
-            </p>
           </div>
 
           <div className="space-y-5">
@@ -461,27 +458,15 @@ const LandingIntelligent = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Founders and owners</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Owners and leaders</h3>
               <p className="text-slate-600 text-sm">
-                You're making all the calls. You need to know what's actually urgent versus what just feels urgent.
+                Accountable for the entire business. Want to spot risk earlier, recognize opportunity sooner, achieve more without carrying everything themselves.
               </p>
             </div>
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Operators under pressure</h3>
+              <h3 className="font-semibold text-slate-900 mb-2">Looking for better judgement</h3>
               <p className="text-slate-600 text-sm">
-                Too many balls in the air. You need something watching for what you're about to drop.
-              </p>
-            </div>
-            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">People stretched too thin</h3>
-              <p className="text-slate-600 text-sm">
-                You don't have time to analyze everything. You need someone—or something—doing that for you.
-              </p>
-            </div>
-            <div className="p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-2">Teams that keep missing things</h3>
-              <p className="text-slate-600 text-sm">
-                Client issues surface late. Cash gets tight unexpectedly. Deadlines slip. You need earlier warning.
+                If you're looking for another tool, BIQC isn't it. If you want better judgement across the business, it is.
               </p>
             </div>
           </div>
@@ -543,11 +528,11 @@ const LandingIntelligent = () => {
       {/* Closing Statement */}
       <section className="py-20 sm:py-28 px-4 sm:px-6 bg-slate-900 text-white">
         <div className="max-w-3xl mx-auto text-center space-y-8">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight">
-            Let BIQC watch while you run the business
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight text-white">
+            Let BIQC help you stay ahead
           </h2>
           <p className="text-lg sm:text-xl text-slate-300 leading-relaxed">
-            You don't need another tool to check. You need something watching for you. That's what BIQC does.
+            Connect the systems you already rely on. Let BIQC build context across the business. Use it to stay oriented, spot what matters, and act with confidence.
           </p>
           <div className="pt-4">
             <Button
