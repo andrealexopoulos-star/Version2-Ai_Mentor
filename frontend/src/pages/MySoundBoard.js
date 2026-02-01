@@ -343,16 +343,16 @@ const MySoundBoard = () => {
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="max-w-3xl mx-auto px-6 py-6">
               {messages.length === 0 ? (
-                <div className="text-center py-16">
+                <div className="text-center py-12 px-4">
                   <div 
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
                     style={{ background: 'var(--bg-tertiary)' }}
                   >
-                    <MessageSquare className="w-8 h-8" style={{ color: 'var(--accent-primary)' }} />
+                    <MessageSquare className="w-7 h-7" style={{ color: 'var(--accent-primary)' }} />
                   </div>
-                  
-                  {/* Silent empty state - no greeting, no prompt */}
-                  <div className="h-24"></div>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Type a message below to start
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">
