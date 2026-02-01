@@ -147,7 +147,7 @@ const isDiagnosisValid = (diagnosis) => {
   return true;
 };
 
-const Diagnosis = () => {
+const Diagnosis = ({ embedded = false }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
