@@ -4191,6 +4191,7 @@ You are not a chatbot. You are a thinking partner who grows with this human."""
 class SoundboardChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
+    intelligence_context: Optional[Dict[str, Any]] = None
 
 
 class ConversationRename(BaseModel):
