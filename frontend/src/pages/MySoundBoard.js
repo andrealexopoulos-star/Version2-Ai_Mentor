@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
+import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import { 
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
@@ -10,13 +11,13 @@ import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
 
 const MySoundBoard = () => {
+  const { isChatOpen, openChat, closeAll } = useMobileDrawer();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [showVoiceChat, setShowVoiceChat] = useState(false);
