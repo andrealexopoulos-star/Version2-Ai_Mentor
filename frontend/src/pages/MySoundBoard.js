@@ -75,9 +75,13 @@ const MySoundBoard = () => {
     setLoading(true);
 
     try {
+      // Fetch current intelligence state from BIQC Insights
+      const intelligenceContext = JSON.parse(localStorage.getItem('biqc_intelligence_state') || '{}');
+      
       const response = await apiClient.post('/soundboard/chat', {
         message: userMessage,
-        conversation_id: activeConversation
+        conversation_id: activeConversation,
+        intelligence_context: intelligenceContext
       });
 
       const { reply, conversation_id, conversation_title } = response.data;
@@ -98,6 +102,9 @@ const MySoundBoard = () => {
         setConversations(prev => prev.map(c => 
           c.id === conversation_id 
             ? { ...c, updated_at: new Date().toISOString() }
+            : c
+        ));
+      }
             : c
         ));
       }
