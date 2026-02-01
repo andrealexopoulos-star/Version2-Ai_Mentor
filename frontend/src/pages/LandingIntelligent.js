@@ -491,9 +491,9 @@ const LandingIntelligent = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-3">
-              What makes BIQC intelligent
+              Why this helps
             </h2>
-            <p className="text-slate-600">Operational pattern recognition, not keyword matching</p>
+            <p className="text-slate-600">What you actually get day to day</p>
           </div>
 
           <div className="space-y-6">
