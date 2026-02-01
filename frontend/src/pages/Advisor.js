@@ -412,7 +412,8 @@ const Advisor = () => {
             if (behaviouralReinforcement && crossSourceReinforcement) {
               // Add fast insight if available
               if (fastInsights.length > 0) {
-                narrative = `${focusArea?.title}—you keep returning here. ${fastInsights[0]} This is no longer isolated.`;
+                const insightText = typeof fastInsights[0] === 'string' ? fastInsights[0] : fastInsights[0].text;
+                narrative = `${focusArea?.title}—you keep returning here. ${insightText} This is no longer isolated.`;
               } else {
                 narrative = `${focusArea?.title}—you keep returning here. What's showing up across ${sources.join(' and ')} is starting to align. This is no longer isolated.`;
               }
