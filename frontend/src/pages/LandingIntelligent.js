@@ -243,9 +243,9 @@ const LandingIntelligent = () => {
               <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center">
                 <Zap className="w-6 h-6 text-blue-400" />
               </div>
-              <h3 className="text-xl font-semibold">Data inputs</h3>
+              <h3 className="text-xl font-semibold">What's happening</h3>
               <p className="text-slate-300 leading-relaxed">
-                Email traffic patterns, calendar density, CRM velocity, communication sentiment, payment behavior, and operational signals.
+                Your email, calendar, and client conversations. The day-to-day of running the business.
               </p>
             </div>
 
@@ -259,9 +259,9 @@ const LandingIntelligent = () => {
               <div className="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
                 <Brain className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-xl font-semibold">Intelligence synthesis</h3>
+              <h3 className="text-xl font-semibold">What BIQC notices</h3>
               <p className="text-slate-300 leading-relaxed">
-                Pattern recognition, behavioral modeling, constraint mapping, decision velocity tracking, and risk correlation analysis.
+                What keeps coming up. What's being avoided. Where your time actually goes versus where you think it goes.
               </p>
             </div>
 
@@ -275,9 +275,9 @@ const LandingIntelligent = () => {
               <div className="w-12 h-12 bg-emerald-600/20 rounded-xl flex items-center justify-center">
                 <Target className="w-6 h-6 text-emerald-400" />
               </div>
-              <h3 className="text-xl font-semibold">Advisory output</h3>
+              <h3 className="text-xl font-semibold">What you see</h3>
               <p className="text-slate-300 leading-relaxed">
-                Decision support, risk alerts, operational insights, and strategic recommendations specific to your business structure.
+                A calm summary of what deserves attention. No dashboards. No alerts. Just clarity when you open it.
               </p>
             </div>
           </div>
