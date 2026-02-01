@@ -502,9 +502,9 @@ const LandingIntelligent = () => {
                 <Zap className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900 mb-1.5">Detects operational strain before failure</h3>
+                <h3 className="font-semibold text-slate-900 mb-1.5">Notices what you're too busy to see</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Correlates email volume trends, calendar density patterns, and response time degradation to identify capacity mismatches 2-4 weeks before client churn or quality collapse occurs.
+                  Certain clients always pay late. Same issues keep resurfacing in emails. Meetings keep getting rescheduled. You're moving too fast to connect these dots. BIQC isn't.
                 </p>
               </div>
             </div>
@@ -514,9 +514,9 @@ const LandingIntelligent = () => {
                 <Brain className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900 mb-1.5">Correlates financial behavior with execution reality</h3>
+                <h3 className="font-semibold text-slate-900 mb-1.5">Shows where money's actually tied up</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Maps client payment cycle extension to sales pipeline velocity and team utilization rates — identifying cash timing pressure caused by operational decisions, not market conditions.
+                  Cash flow doesn't break because revenue drops. It breaks because three clients all paid 30 days late and you didn't notice until the account ran dry. BIQC notices.
                 </p>
               </div>
             </div>
@@ -526,9 +526,9 @@ const LandingIntelligent = () => {
                 <Target className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900 mb-1.5">Recommends based on constraint mapping</h3>
+                <h3 className="font-semibold text-slate-900 mb-1.5">Helps you decide, not just report</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Guidance accounts for team capacity limits, cash position, client commitment timelines, and decision velocity patterns — not generic best practices disconnected from your operating constraints.
+                  Dashboards tell you what happened. BIQC tells you what's worth doing something about based on how your business actually works, not generic advice.
                 </p>
               </div>
             </div>
