@@ -125,7 +125,6 @@ const DashboardLayout = ({ children }) => {
     { type: 'divider', label: 'BUSINESS INTELLIGENCE QUOTIENT CENTRE' },
     { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
-    { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis', showBadge: true },
     { type: 'divider', label: 'IQ BUILDER' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
