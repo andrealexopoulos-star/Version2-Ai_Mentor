@@ -92,33 +92,52 @@ const Advisor = () => {
         let confidence = 'early signals';
         
         if (connectedCount === 0) {
-          // No integrations
-          narrative = "I'm listening, but I can't see much yet. Connect your email or calendar so I can start picking up patterns in how your business actually operates. The more I see, the clearer the picture becomes.";
-          confidence = 'early signals';
+          // No integrations - quiet acknowledgment
+          if (activeTab === 'diagnosis') {
+            narrative = "Not much to show yet. These categories measure what I can see across your email, calendar, and data. Right now, everything's grey because nothing's connected. Once you link your accounts, patterns start emerging here.";
+          } else if (selectedFocus) {
+            const focusArea = focusAreas.find(f => f.id === selectedFocus);
+            narrative = `You've picked ${focusArea?.title.toLowerCase()}, but I can't see anything yet. Connect your email or calendar first—that's where the signal lives.`;
+          } else {
+            narrative = "I'm here, but I can't see much. Connect your email or calendar so I can start reading what's actually happening in your business. Until then, I'm mostly guessing.";
+          }
+          confidence = 'limited visibility';
         } else if (connectedCount === 1) {
-          // One integration
-          if (integrations.email) {
-            narrative = "I'm watching your email flow. Starting to see some patterns in how you communicate and where pressure points might be building. Still early, but there's signal emerging.";
-          } else if (integrations.calendar) {
-            narrative = "I can see your calendar. Beginning to understand how you allocate time and where commitments cluster. Early indicators forming.";
+          // One integration - starting to see
+          if (activeTab === 'diagnosis') {
+            if (integrations.email) {
+              narrative = "I'm watching your email now. Some categories are lighting up based on language patterns in your recent messages. Red doesn't mean urgent—it means I'm seeing consistent signal there. Grey means nothing clear yet.";
+            } else if (integrations.calendar) {
+              narrative = "Your calendar's connected. I can see how time is allocated, but without email, I'm only getting half the picture. Patterns are forming around scheduling, but context is missing.";
+            }
+          } else if (selectedFocus) {
+            const focusArea = focusAreas.find(f => f.id === selectedFocus);
+            if (integrations.email) {
+              narrative = `Looking at ${focusArea?.title.toLowerCase()} through your email. Starting to pick up on language, urgency, who you're talking to. Still early, but there's signal forming.`;
+            } else {
+              narrative = `You want to talk about ${focusArea?.title.toLowerCase()}, but I only see your calendar right now. That tells me where your time goes, not what's actually happening. Email would help.`;
+            }
+          } else {
+            if (integrations.email) {
+              narrative = "Your email's connected. I'm watching conversations, tracking who reaches out and how often. Some patterns are emerging—pick a focus area above and I'll tell you what stands out.";
+            } else {
+              narrative = "I see your calendar. Time allocation is starting to reveal priorities, but I need email to understand what's driving those commitments.";
+            }
           }
           confidence = 'early signals';
-        } else if (connectedCount >= 2) {
-          // Multiple integrations
-          if (selectedFocus) {
+        } else {
+          // Multiple integrations - clearer picture
+          if (activeTab === 'diagnosis') {
+            narrative = "This view shows where signal density is highest. I'm cross-referencing your email with your calendar to detect patterns. Categories with stronger color have more consistent signal. This doesn't diagnose problems—it shows where attention is concentrated.";
+            confidence = 'diagnostic view';
+          } else if (selectedFocus) {
             const focusArea = focusAreas.find(f => f.id === selectedFocus);
-            narrative = `Looking at ${focusArea?.title.toLowerCase() || 'your focus area'}. The signals are starting to connect across your email and calendar. I'm seeing patterns that matter, but I need more context to be specific. What's changed recently that brought you here?`;
+            narrative = `${focusArea?.title} is your focus. I'm seeing patterns across both your email and calendar now. Conversations cluster around certain topics, meetings reflect those same themes. Still connecting dots, but signal's getting clearer.`;
             confidence = 'patterns forming';
           } else {
-            narrative = "I'm connecting what I see in your email with how your time is structured. Patterns are emerging. Pick a focus area below and I'll tell you what stands out.";
+            narrative = "Email and calendar are both connected now. I'm watching how communication flows and where your time actually goes. Pick a focus area and I'll surface what's worth paying attention to.";
             confidence = 'patterns forming';
           }
-        }
-        
-        // If diagnosis tab is active, adjust narrative
-        if (activeTab === 'diagnosis') {
-          narrative = "This is what I can measure right now. These categories light up based on signals in your communications, calendar, and connected data. Red means I'm seeing something that needs attention. Green means stability. Grey means I don't have enough signal yet.";
-          confidence = 'diagnostic view';
         }
         
         setNarrativeState({
@@ -130,7 +149,7 @@ const Advisor = () => {
       } catch (error) {
         console.error('Failed to generate narrative:', error);
         setNarrativeState({
-          text: "Something's not loading properly. Try refreshing the page.",
+          text: "Something's not loading. Try refreshing.",
           confidence: 'connection issue',
           loading: false
         });
