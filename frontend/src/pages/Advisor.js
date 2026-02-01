@@ -383,7 +383,12 @@ const Advisor = () => {
             if (accounting.connected) sources.push('financials');
             
             if (behaviouralReinforcement && crossSourceReinforcement) {
-              narrative = `${focusArea?.title}—you keep returning here. What's showing up across ${sources.join(' and ')} is starting to align. This is no longer isolated.`;
+              // Add fast insight if available
+              if (fastInsights.length > 0) {
+                narrative = `${focusArea?.title}—you keep returning here. ${fastInsights[0]} This is no longer isolated.`;
+              } else {
+                narrative = `${focusArea?.title}—you keep returning here. What's showing up across ${sources.join(' and ')} is starting to align. This is no longer isolated.`;
+              }
               confidence = 'intelligence forming';
             } else if (crossSourceReinforcement) {
               narrative = `${focusArea?.title}. Looking across ${sources.join(' and ')}—things are starting to line up in ways worth noticing.`;
