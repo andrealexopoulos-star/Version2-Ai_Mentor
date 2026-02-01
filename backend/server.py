@@ -4266,6 +4266,43 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # Build cognitive context for the prompt
     cognitive_context = ""
     
+    # INTELLIGENCE THRESHOLD CONTEXT (from BIQC Insights)
+    intelligence_ctx = req.intelligence_context or {}
+    thresholds = intelligence_ctx.get('thresholds', {})
+    integrations = intelligence_ctx.get('integrations', {})
+    
+    # Determine intelligence availability
+    threshold_met = (
+        thresholds.get('timeConsistency', False) or 
+        thresholds.get('crossSourceReinforcement', False) or 
+        thresholds.get('behaviouralReinforcement', False)
+    )
+    
+    if threshold_met:
+        cognitive_context += "\n═══ INTELLIGENCE STATE ═══"
+        cognitive_context += "\nPattern consistency detected. Thresholds met for deeper reasoning."
+        if thresholds.get('timeConsistency'):
+            cognitive_context += "\n- Time consistency: signals held across time"
+        if thresholds.get('crossSourceReinforcement'):
+            cognitive_context += "\n- Cross-source: multiple data sources align"
+        if thresholds.get('behaviouralReinforcement'):
+            cognitive_context += "\n- Behavioural: user focus has recurred"
+        cognitive_context += "\n\nYou may reason, challenge assumptions, and explore implications."
+        cognitive_context += "\nAvoid definitive advice. Guide thinking, don't direct action."
+    else:
+        cognitive_context += "\n═══ INTELLIGENCE STATE ═══"
+        cognitive_context += "\nThresholds NOT met. Signal is forming but not stabilised."
+        cognitive_context += "\n\nYou must ask clarifying questions to understand context."
+        cognitive_context += "\nDo NOT provide definitive observations or advice."
+        cognitive_context += "\nListen first. Build understanding."
+    
+    # Data visibility
+    connected_sources = [k for k, v in integrations.items() if v]
+    if connected_sources:
+        cognitive_context += f"\n\nConnected sources: {', '.join(connected_sources)}"
+    else:
+        cognitive_context += "\n\nNo data sources connected. Visibility is minimal."
+    
     # Reality constraints
     if core_context.get("reality"):
         r = core_context["reality"]
