@@ -72,6 +72,7 @@ const Advisor = () => {
     crossSourceReinforcement: false,
     behaviouralReinforcement: false
   });
+  const [fastInsights, setFastInsights] = useState([]);
 
   // Detect intelligence thresholds using existing data
   useEffect(() => {
