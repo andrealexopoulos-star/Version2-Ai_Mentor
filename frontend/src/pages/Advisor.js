@@ -137,64 +137,68 @@ const Advisor = () => {
         // No integrations connected
         if (connectedCount === 0) {
           if (activeTab === 'diagnosis') {
-            narrative = "These categories reflect patterns across connected data sources. Right now, I have a narrow view—no integrations are active. Once email or calendar connects, signal starts emerging.";
+            narrative = "These categories become active as data sources connect. Currently no integrations are present. Signal will emerge as connections establish.";
           } else if (selectedFocus) {
             const focusArea = focusAreas.find(f => f.id === selectedFocus);
-            narrative = `${focusArea?.title} is your focus. Without connected data, I'm operating with limited context. Email or calendar would give me visibility into what's actually happening.`;
+            narrative = `${focusArea?.title} noted as area of interest. Visibility is minimal without connected data. Integration depth determines what becomes observable.`;
           } else {
-            narrative = "Right now I have a narrow view. Connect email or calendar and I'll start identifying patterns in how your business operates day to day.";
+            narrative = "Integration layer is dormant. Patterns surface when data sources connect and activity accumulates.";
           }
-          confidence = 'limited visibility';
+          confidence = 'minimal signal';
         }
         
         // One integration connected
         else if (connectedCount === 1) {
           if (email.connected) {
             if (activeTab === 'diagnosis') {
-              narrative = `Email is connected (${email.provider}). Categories are reflecting language patterns across recent communications. Stronger signal appears where conversation density is highest.`;
+              narrative = `${email.provider} integration active. Categories reflect language density across recent communications. Signal strength correlates with conversation volume in each domain.`;
             } else if (selectedFocus) {
               const focusArea = focusAreas.find(f => f.id === selectedFocus);
-              narrative = `Looking at ${focusArea?.title.toLowerCase()} through email. I'm observing communication patterns—who's involved, language used, frequency. Still building context.`;
+              narrative = `${focusArea?.title.toLowerCase()}—observing through email patterns. Participant dynamics and language frequency are registering. Context is still forming.`;
             } else {
-              narrative = "Email is connected. I'm observing communication patterns—tracking participants, frequency, language. Pick a focus area and I'll surface what's registering.";
+              narrative = `${email.provider} active. Communication patterns are registering—participant frequency, language patterns, interaction density. Early signal is present.`;
             }
-            confidence = 'early signals';
+            confidence = 'early signal';
           } else if (calendar.connected) {
             if (activeTab === 'diagnosis') {
-              narrative = "Calendar is connected. Time allocation patterns are visible, but without email, I'm missing conversational context that would strengthen signal confidence.";
+              narrative = "Calendar integration active. Time allocation patterns are visible. Email layer would add conversational context.";
             } else if (selectedFocus) {
               const focusArea = focusAreas.find(f => f.id === selectedFocus);
-              narrative = `${focusArea?.title} selected. Calendar shows how time clusters, but email would reveal what's driving those commitments.`;
+              narrative = `${focusArea?.title}—visible through time allocation. Commitment clusters are present. Conversational layer remains absent.`;
             } else {
-              narrative = "Calendar is connected. Time allocation reveals where attention concentrates. Email would add conversational layer to complete the picture.";
+              narrative = "Calendar active. Time allocation patterns show where attention concentrates. Conversational context is not yet present.";
             }
-            confidence = 'partial visibility';
+            confidence = 'partial signal';
           } else if (crm.connected) {
             if (activeTab === 'diagnosis') {
-              narrative = "CRM integration is active. Customer relationship data is visible, though email and calendar would strengthen pattern detection.";
+              narrative = "CRM integration active. Relationship data is present. Operational layers would deepen pattern visibility.";
             } else {
-              narrative = "CRM is connected. Relationship data is present. Email or calendar would add operational context.";
+              narrative = "CRM active. Customer relationship data is present. Operational context remains limited.";
             }
-            confidence = 'partial visibility';
+            confidence = 'partial signal';
           }
         }
         
         // Multiple integrations connected
         else {
           if (activeTab === 'diagnosis') {
-            narrative = "Multiple data sources connected. Categories show where signal density is highest across communications, time allocation, and relationships. Stronger color means more consistent pattern.";
-            confidence = 'patterns forming';
+            narrative = "Multiple sources active. Categories reflect signal density across integrated data. Color intensity indicates pattern consistency.";
+            confidence = 'signal forming';
           } else if (selectedFocus) {
             const focusArea = focusAreas.find(f => f.id === selectedFocus);
-            narrative = `${focusArea?.title} is the focus. Cross-referencing email with ${calendar.connected ? 'calendar' : 'CRM data'}—conversations and commitments are starting to align in detectable ways.`;
-            confidence = 'patterns forming';
+            const sources = [];
+            if (email.connected) sources.push('email');
+            if (calendar.connected) sources.push('calendar');
+            if (crm.connected) sources.push('CRM');
+            narrative = `${focusArea?.title}—cross-referencing ${sources.join(' and ')}. Patterns are aligning across sources. Consistency is becoming detectable.`;
+            confidence = 'signal forming';
           } else {
             const sources = [];
             if (email.connected) sources.push('email');
             if (calendar.connected) sources.push('calendar');
             if (crm.connected) sources.push('CRM');
-            narrative = `${sources.join(' and ')} connected. Signal is cross-referencing across sources. Select a focus area to see what's emerging.`;
-            confidence = 'patterns forming';
+            narrative = `${sources.join(', ')} active. Cross-source patterns are forming. Signal density varies by domain.`;
+            confidence = 'signal forming';
           }
         }
         
@@ -207,8 +211,8 @@ const Advisor = () => {
       } catch (error) {
         console.error('Narrative generation failed:', error);
         setNarrativeState({
-          text: "Unable to load current state. Refresh to reconnect.",
-          confidence: 'connection issue',
+          text: "Connection interrupted. Refresh to restore.",
+          confidence: 'offline',
           loading: false
         });
       }
