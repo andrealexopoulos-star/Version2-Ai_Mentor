@@ -551,12 +551,12 @@ const LandingIntelligent = () => {
               onClick={() => navigate('/register-supabase')}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-6 text-lg rounded-xl shadow-lg"
             >
-              Start Free Today
+              Get started
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
           <p className="text-sm text-slate-400 pt-4">
-            Free to start. No credit card required. Intelligence from day one.
+            Free to start. No credit card. See what BIQC notices in your business.
           </p>
         </div>
       </section>

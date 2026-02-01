@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 
 /**
  * IntelligenceSimulation Component
- * Simulates BIQC analyzing a business scenario
- * NO undefined concatenation, NO clipping, executive feel
+ * Rotates leadership thoughts continuously
+ * NO BIQC mention, NO system language
  */
 const IntelligenceSimulation = () => {
   const [displayLines, setDisplayLines] = useState([]);
@@ -12,22 +12,22 @@ const IntelligenceSimulation = () => {
   const [isComplete, setIsComplete] = useState(false);
   const timeoutRef = useRef(null);
 
-  // Intelligence progression - realistic operational insight
+  // Leadership thoughts - rotate continuously
   const lines = [
-    "Analyzing integrated data sources...",
-    "Email volume +40% over 14 days. Calendar density unchanged.",
-    "Client response time degrading. Team capacity static.",
-    "Therefore: Demand is outpacing delivery capacity.",
-    "Risk: Quality degradation or client churn within 30-45 days.",
-    "Recommended focus: Capacity expansion or demand throttling.",
-    "Decision required: Scale team or adjust sales pipeline velocity."
+    "Something important is forming — you just haven't named it yet.",
+    "Growth feels good… until capacity starts to strain quietly.",
+    "Some decisions get delayed because the full picture isn't clear.",
+    "Risk rarely announces itself. It builds slowly.",
+    "Opportunities show up before they're obvious.",
+    "Being busy isn't the same as being in control.",
+    "Most problems are visible earlier — if someone's watching.",
+    "Staying ahead is about noticing patterns, not working harder."
   ];
 
-  const pauses = [1400, 1600, 1700, 1800, 1900, 2000, 2200];
+  const pauses = [1800, 1900, 1800, 1700, 1700, 1800, 1900, 2000];
 
   useEffect(() => {
     if (currentLineIndex >= lines.length) {
-      // Use timeout to avoid setState in effect body
       const completeTimeout = setTimeout(() => setIsComplete(true), 0);
       return () => clearTimeout(completeTimeout);
     }
@@ -35,7 +35,6 @@ const IntelligenceSimulation = () => {
     const currentLine = lines[currentLineIndex];
 
     if (currentCharIndex < currentLine.length) {
-      // Type next character
       timeoutRef.current = setTimeout(() => {
         const newDisplayLines = [...displayLines];
         newDisplayLines[currentLineIndex] = currentLine.slice(0, currentCharIndex + 1);
@@ -43,11 +42,10 @@ const IntelligenceSimulation = () => {
         setCurrentCharIndex(currentCharIndex + 1);
       }, 50 + Math.random() * 20);
     } else {
-      // Line complete - pause then move to next
       timeoutRef.current = setTimeout(() => {
         setCurrentLineIndex(currentLineIndex + 1);
         setCurrentCharIndex(0);
-      }, pauses[currentLineIndex] || 1500);
+      }, pauses[currentLineIndex] || 1800);
     }
 
     return () => {
@@ -65,79 +63,38 @@ const IntelligenceSimulation = () => {
           minHeight: '440px'
         }}
       >
-        {/* Terminal header */}
         <div className="flex items-center gap-2 px-6 py-4 border-b border-slate-700 bg-slate-800/50">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
             <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
             <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
           </div>
-          <span className="text-xs text-slate-400 ml-2 font-medium">BIQC Intelligence Engine</span>
+          <span className="text-xs text-slate-400 ml-2 font-medium">BIQC Intelligence</span>
         </div>
 
-        {/* Content area with proper padding to prevent clipping */}
         <div className="px-6 sm:px-8 py-6 sm:py-8">
           <div 
+            className="font-mono text-sm leading-relaxed min-h-[360px]"
             style={{
-              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-              fontSize: '14px',
-              lineHeight: '1.8',
-              color: '#e2e8f0',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale',
-              maxWidth: '100%',
-              overflowWrap: 'break-word',
-              paddingBottom: '12px',
-              minHeight: '280px'
+              paddingBottom: '2rem'
             }}
           >
             {displayLines.map((line, index) => (
-              <div key={index} style={{ marginBottom: index < displayLines.length - 1 ? '16px' : '0' }}>
+              <div key={index} className="mb-3 text-slate-300">
                 {line}
+                {index === currentLineIndex && currentCharIndex < lines[currentLineIndex].length && (
+                  <span className="inline-block w-2 h-4 bg-blue-500 ml-1 animate-pulse"></span>
+                )}
               </div>
             ))}
-            {!isComplete && (
-              <span 
-                className="inline-block ml-1 bg-blue-400 animate-pulse" 
-                style={{
-                  width: '8px',
-                  height: '18px',
-                  verticalAlign: 'text-bottom'
-                }}
-              />
+            {isComplete && (
+              <div className="mt-6 pt-6 border-t border-slate-700">
+                <p className="text-slate-500 text-xs">Analysis complete</p>
+              </div>
             )}
           </div>
         </div>
-
-        {/* Completion message */}
-        {isComplete && (
-          <div className="px-6 sm:px-8 pb-6 sm:pb-8">
-            <div className="pt-6 border-t border-slate-700">
-              <p 
-                className="text-xs italic"
-                style={{
-                  color: '#94a3b8',
-                  lineHeight: '1.6'
-                }}
-              >
-                This is how BIQC thinks. Continuously. About your business.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Glow effect */}
-      <div 
-        className="absolute inset-0 rounded-2xl -z-10"
-        style={{
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15))',
-          filter: 'blur(40px)',
-          opacity: 0.4
-        }}
-      ></div>
     </div>
   );
 };
