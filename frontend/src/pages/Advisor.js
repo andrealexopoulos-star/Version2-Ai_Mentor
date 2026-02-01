@@ -60,10 +60,16 @@ const Advisor = () => {
     loading: true
   });
   const [integrationData, setIntegrationData] = useState({
-    email: { connected: false, provider: null },
-    calendar: { connected: false },
-    crm: { connected: false },
+    email: { connected: false, provider: null, connectedAt: null },
+    calendar: { connected: false, connectedAt: null },
+    crm: { connected: false, connectedAt: null },
+    accounting: { connected: false, connectedAt: null },
     dataPresent: false
+  });
+  const [intelligenceState, setIntelligenceState] = useState({
+    timeConsistency: false,
+    crossSourceReinforcement: false,
+    behaviouralReinforcement: false
   });
 
   // Fetch real integration status from Supabase
