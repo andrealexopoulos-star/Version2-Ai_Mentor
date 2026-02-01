@@ -5,6 +5,26 @@
  */
 
 /**
+ * Create deterministic insight ID
+ */
+const createInsightId = (type, subtype) => {
+  return `track_a_${type}_${subtype}`;
+};
+
+/**
+ * Hash string to 6-char identifier (for subject anonymization)
+ */
+const hashString = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36).substring(0, 6);
+};
+
+/**
  * Extract lightweight email evidence
  * Does NOT parse email bodies
  * Focuses on: subjects, thread patterns, response latency
@@ -31,7 +51,8 @@ export const extractEmailEvidence = async (apiClient) => {
       totalThreads: allEmails.length,
       unresolvedCount: 0,
       recurringTopics: {},
-      avgThreadAge: 0
+      avgThreadAge: 0,
+      hashedSubjects: [] // For trace only
     };
     
     // Detect recurring subjects (simple keyword matching)
@@ -39,6 +60,9 @@ export const extractEmailEvidence = async (apiClient) => {
     allEmails.forEach(email => {
       const subject = (email.subject || '').toLowerCase();
       const words = subject.split(' ').filter(w => w.length > 4);
+      
+      // Store hashed subject for trace
+      evidence.hashedSubjects.push(hashString(subject));
       
       words.forEach(word => {
         subjectKeywords[word] = (subjectKeywords[word] || 0) + 1;
