@@ -141,17 +141,17 @@ const LandingIntelligent = () => {
       <section className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-50">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900">
-            Business decisions require intelligence, not generic responses
+            You're busy, but nothing feels clearer
           </h2>
           <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto text-left sm:text-center">
             <p>
-              Most tools give you data. Some give you answers. Neither gives you intelligence.
+              You're in meetings. You're answering emails. You're making decisions. But there's always this feeling that something's off, something's been missed, something needs attention and you can't quite pin it down.
             </p>
             <p>
-              Intelligence requires understanding how your business operates, what patterns exist in your execution, and what signals matter in your specific context.
+              It's not that you're not working. It's that you're reacting more than steering. By the time you notice a problem, it's already costing you.
             </p>
             <p className="font-medium text-slate-900">
-              BIQC builds a persistent model of your business reality and advises from that foundation.
+              The issue isn't effort. It's visibility.
             </p>
           </div>
         </div>
