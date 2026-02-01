@@ -14,20 +14,20 @@ const LandingIntelligent = () => {
 
   const capabilities = [
     {
-      outcome: "Less second-guessing",
-      detail: "BIQC watches what's happening and tells you what actually needs a decision versus what can wait."
+      outcome: "See issues and opportunities while there's still time to act",
+      detail: "Risk and opportunity rarely arrive as clear events. They build slowly: conversations that don't resolve, effort increasing without results, capacity stretching quietly, decisions being deferred. BIQC helps surface these shifts early, so you're not reacting once the cost is already locked in."
     },
     {
-      outcome: "Catch problems earlier",
-      detail: "Spots patterns before they become fires. Things that would normally slip through get flagged while they're still fixable."
+      outcome: "Stay across the business without being everywhere",
+      detail: "BIQC doesn't replace your judgement. It extends it. By holding context you don't have time to track, watching across multiple disciplines at once, and connecting signals that are easy to miss. BIQC helps you lead with more clarity and less effort."
     },
     {
-      outcome: "Know where money's really going",
-      detail: "Sees who pays on time, who doesn't, and where cash flow pressure is building based on what's actually happening."
+      outcome: "Fewer reactive decisions. Fewer late surprises. More deliberate control.",
+      detail: "Built for judgement, not dashboards. Dashboards show numbers. Reports explain the past. Chatbots answer questions. BIQC supports judgement. It builds awareness over time, across the whole business, and surfaces insight only when it crosses a threshold of relevance. That restraint is what makes it useful."
     },
     {
-      outcome: "Stop dropping commitments",
-      detail: "Notices when you're overcommitted or when deadlines are drifting before clients start calling."
+      outcome: "A place to reason with context already in place",
+      detail: "When something feels off — or when you're weighing a decision — BIQC gives you a way to think it through with awareness of the wider business. You can explore trade-offs, pressure-test assumptions, and understand implications across sales, operations, finance, and team — without starting from scratch."
     }
   ];
 
