@@ -66,18 +66,60 @@ const Advisor = () => {
     dataPresent: false
   });
 
-  // Fetch integrations status
+  // Fetch real integration status from Supabase
   useEffect(() => {
-    const fetchIntegrations = async () => {
+    const fetchRealIntegrationStatus = async () => {
       try {
-        const response = await apiClient.get('/integrations/status');
-        setIntegrations(response.data || {});
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.access_token) {
+          setIntegrationData({
+            email: { connected: false, provider: null },
+            calendar: { connected: false },
+            crm: { connected: false },
+            dataPresent: false
+          });
+          return;
+        }
+        
+        // Check email connection from email_connections table
+        const { data: emailRows } = await supabase
+          .from('email_connections')
+          .select('*')
+          .eq('user_id', session.user.id);
+        
+        const emailConnected = emailRows && emailRows.length > 0;
+        const emailProvider = emailConnected ? emailRows[0].provider : null;
+        
+        // Check for HubSpot/CRM integration from integration_accounts
+        const { data: integrationRows } = await supabase
+          .from('integration_accounts')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('category', 'crm');
+        
+        const crmConnected = integrationRows && integrationRows.length > 0;
+        
+        // Calendar check would go here (not implemented yet)
+        const calendarConnected = false;
+        
+        // Check if we have any actual data/signal
+        // This could be enhanced with actual message counts, etc.
+        const hasData = emailConnected; // Basic check for now
+        
+        setIntegrationData({
+          email: { connected: emailConnected, provider: emailProvider },
+          calendar: { connected: calendarConnected },
+          crm: { connected: crmConnected },
+          dataPresent: hasData
+        });
+        
       } catch (error) {
-        console.error('Failed to fetch integrations:', error);
+        console.error('Failed to fetch integration status:', error);
       }
     };
     
-    fetchIntegrations();
+    fetchRealIntegrationStatus();
   }, []);
 
   // Generate narrative based on context
