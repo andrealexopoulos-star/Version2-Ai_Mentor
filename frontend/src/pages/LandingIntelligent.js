@@ -191,8 +191,8 @@ const LandingIntelligent = () => {
                     <MessageSquare className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Continuous learning</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Builds understanding from communications, data patterns, and decision history</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Observes quietly</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Watches communications and commitments without interrupting your work</p>
                   </div>
                 </div>
 
@@ -201,8 +201,8 @@ const LandingIntelligent = () => {
                     <Target className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Signal detection</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Surfaces operational patterns, risks, and opportunities you&apos;d otherwise miss</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Notices patterns</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Picks up on what's recurring, what's stalling, what's being ignored</p>
                   </div>
                 </div>
 
@@ -211,8 +211,8 @@ const LandingIntelligent = () => {
                     <BarChart3 className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Context-aware guidance</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Advisory output tailored to your business structure and constraints</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Speaks when it matters</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Only surfaces what deserves your attention, not everything it sees</p>
                   </div>
                 </div>
               </div>
