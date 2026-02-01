@@ -59,10 +59,11 @@ const Advisor = () => {
     confidence: 'early signals',
     loading: true
   });
-  const [integrations, setIntegrations] = useState({
-    email: false,
-    calendar: false,
-    crm: false
+  const [integrationData, setIntegrationData] = useState({
+    email: { connected: false, provider: null },
+    calendar: { connected: false },
+    crm: { connected: false },
+    dataPresent: false
   });
 
   // Fetch integrations status
