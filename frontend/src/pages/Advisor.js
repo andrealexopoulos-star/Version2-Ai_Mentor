@@ -72,7 +72,7 @@ const Advisor = () => {
     behaviouralReinforcement: false
   });
 
-  // Fetch real integration status from Supabase
+  // Fetch real integration status from Supabase with timestamps
   useEffect(() => {
     const fetchRealIntegrationStatus = async () => {
       try {
@@ -80,9 +80,10 @@ const Advisor = () => {
         
         if (!session?.access_token) {
           setIntegrationData({
-            email: { connected: false, provider: null },
-            calendar: { connected: false },
-            crm: { connected: false },
+            email: { connected: false, provider: null, connectedAt: null },
+            calendar: { connected: false, connectedAt: null },
+            crm: { connected: false, connectedAt: null },
+            accounting: { connected: false, connectedAt: null },
             dataPresent: false
           });
           return;
@@ -96,27 +97,39 @@ const Advisor = () => {
         
         const emailConnected = emailRows && emailRows.length > 0;
         const emailProvider = emailConnected ? emailRows[0].provider : null;
+        const emailConnectedAt = emailConnected ? emailRows[0].connected_at : null;
         
-        // Check for HubSpot/CRM integration from integration_accounts
-        const { data: integrationRows } = await supabase
+        // Check for CRM integration from integration_accounts
+        const { data: crmRows } = await supabase
           .from('integration_accounts')
           .select('*')
           .eq('user_id', session.user.id)
           .eq('category', 'crm');
         
-        const crmConnected = integrationRows && integrationRows.length > 0;
+        const crmConnected = crmRows && crmRows.length > 0;
+        const crmConnectedAt = crmConnected ? crmRows[0].connected_at : null;
+        
+        // Check for Accounting integration (Xero)
+        const { data: accountingRows } = await supabase
+          .from('integration_accounts')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('category', 'accounting');
+        
+        const accountingConnected = accountingRows && accountingRows.length > 0;
+        const accountingConnectedAt = accountingConnected ? accountingRows[0].connected_at : null;
         
         // Calendar check would go here (not implemented yet)
         const calendarConnected = false;
         
         // Check if we have any actual data/signal
-        // This could be enhanced with actual message counts, etc.
-        const hasData = emailConnected; // Basic check for now
+        const hasData = emailConnected;
         
         setIntegrationData({
-          email: { connected: emailConnected, provider: emailProvider },
-          calendar: { connected: calendarConnected },
-          crm: { connected: crmConnected },
+          email: { connected: emailConnected, provider: emailProvider, connectedAt: emailConnectedAt },
+          calendar: { connected: calendarConnected, connectedAt: null },
+          crm: { connected: crmConnected, connectedAt: crmConnectedAt },
+          accounting: { connected: accountingConnected, connectedAt: accountingConnectedAt },
           dataPresent: hasData
         });
         
