@@ -361,19 +361,19 @@ const LandingIntelligent = () => {
 
           {/* Key Differentiators */}
           <div className="mt-12 pt-12 border-t border-slate-200">
-            <p className="text-xs uppercase tracking-wide text-slate-500 mb-4 text-center">Key Differentiators</p>
+            <h3 className="text-xs uppercase tracking-wide text-slate-500 mb-4 text-center">What makes this different</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               <div>
                 <p className="font-semibold text-slate-900 mb-1">Not a chatbot</p>
-                <p className="text-xs text-slate-600">Persistent intelligence model, not conversational interface</p>
+                <p className="text-xs text-slate-600">Doesn't wait for you to ask. Observes and surfaces.</p>
               </div>
               <div>
-                <p className="font-semibold text-slate-900 mb-1">Not generic AI</p>
-                <p className="text-xs text-slate-600">Specialized for business operations, not general knowledge</p>
+                <p className="font-semibold text-slate-900 mb-1">Not another tool</p>
+                <p className="text-xs text-slate-600">You don't check it constantly. Check it when you need clarity.</p>
               </div>
               <div>
                 <p className="font-semibold text-slate-900 mb-1">Not a dashboard</p>
-                <p className="text-xs text-slate-600">Advisory intelligence, not data visualization</p>
+                <p className="text-xs text-slate-600">No metrics. No charts. Just what matters right now.</p>
               </div>
             </div>
           </div>
