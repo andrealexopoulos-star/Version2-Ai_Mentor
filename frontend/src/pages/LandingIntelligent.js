@@ -90,13 +90,13 @@ const LandingIntelligent = () => {
             <div className="space-y-6 sm:space-y-8">
               <div className="space-y-4">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-tight tracking-tight">
-                  See what actually deserves
+                  Stay ahead of your business
                   <br />
-                  <span className="text-blue-600">your attention</span>
+                  <span className="text-blue-600">without running faster</span>
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-xl">
-                  Running a business means being buried in decisions. BIQC watches what's happening and tells you what actually matters.
+                  BIQC helps owners and leaders stay across what's really happening in their business. It brings the right things to your attention — risk, opportunity, and emerging patterns — so decisions don't rely on memory, instinct, or whatever you last checked.
                 </p>
               </div>
 
@@ -105,7 +105,7 @@ const LandingIntelligent = () => {
                   onClick={() => navigate('/register-supabase')}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-7 text-lg rounded-xl shadow-xl shadow-blue-600/25 hover:shadow-2xl transition-all flex items-center justify-center gap-2"
                 >
-                  Get clarity
+                  See how BIQC works
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <Button
@@ -137,21 +137,24 @@ const LandingIntelligent = () => {
         </div>
       </section>
 
-      {/* Problem Reframe */}
+      {/* The Leadership Reality */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-50">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900">
-            You're busy, but nothing feels clearer
-          </h2>
-          <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto text-left sm:text-center">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900">
+              The hardest part of running a business is seeing the whole picture
+            </h2>
+          </div>
+          
+          <div className="space-y-6 text-base sm:text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto">
             <p>
-              You're in meetings. You're answering emails. You're making decisions. But there's always this feeling that something's off, something's been missed, something needs attention and you can't quite pin it down.
+              As an owner or leader, you're responsible for everything: sales momentum, operational delivery, cash flow, team capacity, direction and risk.
             </p>
             <p>
-              It's not that you're not working. It's that you're reacting more than steering. By the time you notice a problem, it's already costing you.
+              But no single tool shows how these things interact. Important signals form quietly, across systems and over time.
             </p>
             <p className="font-medium text-slate-900">
-              The issue isn't effort. It's visibility.
+              Most leaders don't miss things because they're careless. They miss them because no one is watching the whole system.
             </p>
           </div>
         </div>
