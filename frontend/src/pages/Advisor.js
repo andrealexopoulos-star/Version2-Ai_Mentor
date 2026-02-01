@@ -350,7 +350,8 @@ const Advisor = () => {
               if (timeConsistency) {
                 // Add fast insight if available
                 if (fastInsights.length > 0) {
-                  narrative = `${email.provider} connected. ${fastInsights[0]}`;
+                  const insightText = typeof fastInsights[0] === 'string' ? fastInsights[0] : fastInsights[0].text;
+                  narrative = `${email.provider} connected. ${insightText}`;
                 } else {
                   narrative = `${email.provider} connected. The way you communicate with people is starting to settle into a recognisable rhythm.`;
                 }
