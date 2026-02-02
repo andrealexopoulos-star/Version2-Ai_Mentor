@@ -8162,6 +8162,7 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     from truth_engine import generate_cold_read
     from merge_client import get_merge_client
     from workspace_helpers import get_user_account
+    from watchtower_store import get_watchtower_store
     
     user_id = current_user["id"]
     
@@ -8179,7 +8180,7 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
         account_id=account_id,
         supabase_admin=supabase_admin,
         merge_client=get_merge_client(),
-        api_client=apiClient
+        watchtower_store=get_watchtower_store()
     )
     
     return {
@@ -8199,6 +8200,7 @@ async def get_watchtower_events(
     These are authoritative intelligence statements
     """
     from workspace_helpers import get_user_account
+    from watchtower_store import get_watchtower_store
     
     user_id = current_user["id"]
     
@@ -8209,19 +8211,12 @@ async def get_watchtower_events(
     account_id = account["id"]
     
     # Fetch watchtower events
-    query = supabase_admin.table("watchtower_events") \
-        .select("*") \
-        .eq("account_id", account_id) \
-        .order("created_at", desc=True)
-    
-    if status:
-        query = query.eq("status", status)
-    
-    result = query.execute()
+    watchtower = get_watchtower_store()
+    events = await watchtower.get_events(account_id, status=status)
     
     return {
-        "events": result.data or [],
-        "count": len(result.data) if result.data else 0
+        "events": events,
+        "count": len(events)
     }
 
 
@@ -8233,17 +8228,15 @@ async def handle_watchtower_event(
     """
     Mark a Watchtower event as handled
     """
+    from watchtower_store import get_watchtower_store
+    
     user_id = current_user["id"]
     
-    result = supabase_admin.table("watchtower_events").update({
-        "status": "handled",
-        "handled_at": datetime.now(timezone.utc).isoformat(),
-        "handled_by_user_id": user_id
-    }).eq("id", event_id).execute()
+    watchtower = get_watchtower_store()
+    success = await watchtower.handle_event(event_id, user_id)
     
     return {
-        "success": True,
-        "event": result.data[0] if result.data else None
+        "success": success
     }
 
 # Include router and middleware
