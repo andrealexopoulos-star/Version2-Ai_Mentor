@@ -317,13 +317,13 @@ const MySoundBoard = () => {
 >
           {/* Header */}
           <div 
-            className="px-4 md:px-6 py-2 md:py-4 border-b flex items-center justify-between gap-3"
+            className="px-4 md:px-6 py-2 md:py-4 border-b flex items-center justify-between gap-2"
             style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}
           >
             {/* Mobile: Hamburger to open chat list */}
             <button 
               onClick={openChat}
-              className="lg:hidden p-2 rounded-lg hover:bg-black/5"
+              className="lg:hidden p-1.5 rounded-lg hover:bg-black/5"
               aria-label="Open conversations"
             >
               <MessageSquare className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
@@ -338,15 +338,15 @@ const MySoundBoard = () => {
               </p>
             </div>
             
-            {/* Voice Call Button */}
-            <Button 
+            {/* Voice Call Button - Icon only on mobile */}
+            <button 
               onClick={() => setShowVoiceChat(true)}
-              className="bg-green-600 hover:bg-green-700 text-white gap-1.5 md:gap-2 px-3 md:px-4 py-2 text-sm flex-shrink-0"
+              className="bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 md:px-4 md:py-2 flex items-center gap-2 flex-shrink-0"
+              aria-label="Start voice call"
             >
-              <Video className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">Start Voice Call</span>
-              <span className="sm:hidden">Call</span>
-            </Button>
+              <Video className="w-5 h-5 md:w-4 md:h-4" />
+              <span className="hidden md:inline text-sm font-medium">Start Voice Call</span>
+            </button>
           </div>
 
           {/* Messages */}
