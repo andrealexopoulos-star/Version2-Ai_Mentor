@@ -90,7 +90,7 @@ const LandingIntelligent = () => {
             <div className="space-y-7 sm:space-y-9">
               <div className="space-y-5">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.15] tracking-tight">
-                  BIQc - Now You can be across everything always with insights and intelligence.
+                  BIQc - constant awareness across your entire business
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-slate-700 leading-relaxed max-w-xl font-medium">
