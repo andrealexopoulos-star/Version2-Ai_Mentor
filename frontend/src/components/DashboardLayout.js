@@ -482,7 +482,7 @@ const DashboardLayout = ({ children }) => {
           background: 'var(--bg-secondary)',
           position: 'relative',
           zIndex: 1,
-          minHeight: '100vh'
+          minHeight: '100dvh'
         }}
       >
         <div className="px-4 py-4 md:px-6 md:py-6">
