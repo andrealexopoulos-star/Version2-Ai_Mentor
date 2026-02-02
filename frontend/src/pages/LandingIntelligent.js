@@ -87,43 +87,47 @@ const LandingIntelligent = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             
             {/* Left: Messaging */}
-            <div className="space-y-6 sm:space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-tight tracking-tight">
-                  Stay ahead of your business
+            <div className="space-y-7 sm:space-y-9">
+              <div className="space-y-5">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.15] tracking-tight">
+                  Your business is running.
                   <br />
-                  <span className="text-blue-700 font-semibold">without running faster</span>
+                  <span className="text-slate-900">BIQC is watching it.</span>
                 </h1>
                 
-                <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-xl">
-                  BIQC helps owners and leaders stay across what's really happening in their business. It brings the right things to your attention — risk, opportunity, and emerging patterns — so decisions don't rely on memory, instinct, or whatever you last checked.
+                <p className="text-lg sm:text-xl text-slate-700 leading-relaxed max-w-xl font-medium">
+                  Conversations drift. Patterns repeat. Risk builds quietly. Revenue stalls for reasons no one names.
+                </p>
+                
+                <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+                  BIQC monitors your business like an intelligence system—across email, meetings, deals, and operations. It notices what forms before you see it. It surfaces what matters before it's urgent.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button
                   onClick={() => navigate('/register-supabase')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-7 text-lg rounded-xl shadow-xl shadow-blue-600/25 hover:shadow-2xl transition-all flex items-center justify-center gap-2"
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-10 py-6 text-base rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                 >
-                  See how BIQC works
+                  Start monitoring
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowInteractiveDemo(true)}
-                  className="border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-semibold px-10 py-7 text-lg rounded-xl transition-all"
+                  className="border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-medium px-10 py-6 text-base rounded-xl transition-all"
                 >
-                  See how it works
+                  See what it notices
                 </Button>
               </div>
 
-              <div className="flex items-center gap-6 text-sm text-slate-600 pt-2">
+              <div className="flex items-center gap-6 text-sm text-slate-500 pt-1">
                 <div className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-4 h-4 text-slate-400" />
                   <span>Free to start</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-4 h-4 text-slate-400" />
                   <span>No credit card</span>
                 </div>
               </div>
