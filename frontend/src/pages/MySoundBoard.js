@@ -11,7 +11,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
 
 const MySoundBoard = () => {
-  const { isChatOpen, openChat, closeAll } = useMobileDrawer();
+  const { isChatOpen, openChat, closeAll, activeDrawer } = useMobileDrawer();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
