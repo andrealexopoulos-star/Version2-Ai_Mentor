@@ -141,6 +141,11 @@ cognitive_core = init_cognitive_core(supabase_admin)
 logger = logging.getLogger(__name__)
 logger.info("🧠 Cognitive Core initialized with Supabase - Per-user intelligence active")
 
+# Initialize Watchtower Store
+from watchtower_store import init_watchtower_store
+watchtower_store = init_watchtower_store(db)
+logger.info("🎯 Watchtower Store initialized - Truth Engine ready")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
