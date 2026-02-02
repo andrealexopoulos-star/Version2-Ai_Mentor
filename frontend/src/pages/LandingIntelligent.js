@@ -56,18 +56,18 @@ const LandingIntelligent = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-              <Brain className="w-5 h-5 text-white" />
+              <span className="text-white font-bold text-xl">B</span>
             </div>
-            <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
               <span className="font-bold text-lg text-slate-900 tracking-tight">BIQC</span>
-              <span className="text-[9px] text-slate-500 -mt-0.5 tracking-wide hidden sm:block">INTELLIGENCE LAYER</span>
+              <span className="text-[10px] text-slate-500 tracking-wide hidden sm:inline">powered by The Strategy Squad</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
               onClick={() => navigate('/login-supabase')}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm px-4 py-2"
+              className="text-slate-800 hover:text-slate-900 hover:bg-slate-50 font-semibold text-sm px-4 py-2"
             >
               Log In
             </Button>
@@ -82,7 +82,7 @@ const LandingIntelligent = () => {
       </nav>
 
       {/* Hero Section - Interactive Intelligence */}
-      <section className="pt-20 sm:pt-28 pb-16 sm:pb-24 px-4 sm:px-6">
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             
