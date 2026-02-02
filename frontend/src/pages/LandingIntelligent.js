@@ -92,7 +92,7 @@ const LandingIntelligent = () => {
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 leading-tight tracking-tight">
                   Stay ahead of your business
                   <br />
-                  <span className="text-blue-600">without running faster</span>
+                  <span className="text-blue-700 font-semibold">without running faster</span>
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-xl">
