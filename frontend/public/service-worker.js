@@ -1,6 +1,6 @@
 /* BIQC Service Worker - PWA Offline Support */
 
-const CACHE_NAME = 'biqc-v2-20241223'; // Updated to force cache refresh
+const CACHE_NAME = 'biqc-v2-20250202-mobile-fixes'; // Updated to force cache refresh for mobile fixes
 const urlsToCache = [
   '/',
   '/static/css/main.css',
