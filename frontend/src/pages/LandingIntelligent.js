@@ -168,68 +168,64 @@ const LandingIntelligent = () => {
       </section>
 
       {/* What BIQC Does */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6">
+      <section className="py-20 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full">
-                <Brain className="w-4 h-4 text-blue-700" />
-                <span className="text-sm font-medium text-blue-900">Intelligence Layer</span>
+            <div className="space-y-7">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 rounded-full">
+                <Brain className="w-4 h-4 text-slate-700" />
+                <span className="text-sm font-semibold text-slate-800 tracking-wide">INTELLIGENCE LAYER</span>
               </div>
               
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 leading-tight">
-                BIQC acts like an intelligence layer across your business
+                BIQC monitors your business like a control system
               </h2>
               
-              <div className="space-y-4 text-base sm:text-lg text-slate-600 leading-relaxed">
+              <div className="space-y-5 text-base sm:text-lg text-slate-700 leading-relaxed">
                 <p>
-                  BIQC sits across the tools you already use and builds an understanding of how your business actually operates day to day.
+                  It sits across email, calendar, CRM, and operations. It observes conversations. It tracks commitments. It detects patterns you don't have time to see.
                 </p>
                 <p>
-                  It notices: patterns that keep repeating, tensions between growth and capacity, early signs of risk before they become problems, opportunities that aren't obvious yet.
+                  When something repeats, when risk forms, when capacity strains, when deals stall—BIQC notices.
                 </p>
-                <p className="font-medium text-slate-900">
-                  It doesn't flood you with information. It brings the right things to your attention — when they matter.
+                <p className="font-semibold text-slate-900 text-lg pt-1">
+                  It doesn't report everything. It surfaces what requires attention.
                 </p>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-3xl p-8 sm:p-10 relative overflow-hidden">
-              <div className="space-y-6 relative z-10">
+            <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl p-8 sm:p-10 relative overflow-hidden border border-slate-200">
+              <div className="space-y-7 relative z-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-600/20">
-                    <MessageSquare className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Observes quietly</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Watches communications and commitments without interrupting your work</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Monitors continuously</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Watches communications, meetings, and deals in real time</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-600/20">
-                    <Target className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Target className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Notices patterns</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Picks up on what's recurring, what's stalling, what's being ignored</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Detects patterns</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Identifies what's recurring, what's drifting, what's being deferred</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 bg-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-600/20">
-                    <BarChart3 className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Speaks when it matters</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Only surfaces what deserves your attention, not everything it sees</p>
+                    <h3 className="font-semibold text-slate-900 mb-1.5 text-base">Reports what matters</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">Surfaces only what crosses a threshold of relevance</p>
                   </div>
                 </div>
               </div>
-
-              {/* Subtle accent */}
-              <div className="absolute top-0 right-0 w-40 h-40 bg-blue-300 opacity-10 blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-300 opacity-10 blur-3xl"></div>
             </div>
           </div>
         </div>
