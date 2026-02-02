@@ -238,6 +238,98 @@ class MergeClient:
         )
 
 
+    # ==================== ACCOUNTING ENDPOINTS ====================
+    
+    async def get_invoices(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get invoices from accounting system (Xero, QuickBooks, etc.) via Merge.dev
+        
+        Returns:
+            {
+                "results": [...invoices...],
+                "next": "cursor_for_next_page",
+                "previous": null
+            }
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+        
+        return await self._make_request(
+            "GET",
+            "/accounting/v1/invoices",
+            account_token,
+            params=params
+        )
+    
+    async def get_payments(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get payments from accounting system via Merge.dev
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+        
+        return await self._make_request(
+            "GET",
+            "/accounting/v1/payments",
+            account_token,
+            params=params
+        )
+    
+    async def get_transactions(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get transactions from accounting system via Merge.dev
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+        
+        return await self._make_request(
+            "GET",
+            "/accounting/v1/transactions",
+            account_token,
+            params=params
+        )
+    
+    # ==================== CRM ACTIVITIES ====================
+    
+    async def get_notes(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get notes/activities from CRM via Merge.dev
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+        
+        return await self._make_request(
+            "GET",
+            "/crm/v1/notes",
+            account_token,
+            params=params
+        )
+
+
 # Singleton instance
 _merge_client: Optional[MergeClient] = None
 
