@@ -24,7 +24,7 @@ const IntelligenceSimulation = () => {
     "Growth trajectory maintained. Control mechanisms lagging."
   ];
 
-  const pauses = [1800, 1900, 1800, 1700, 1700, 1800, 1900, 2000];
+  const pauses = [2200, 2400, 2300, 2200, 2500, 2400, 2300, 2600];
 
   useEffect(() => {
     if (currentLineIndex >= lines.length) {
