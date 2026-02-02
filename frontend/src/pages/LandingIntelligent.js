@@ -94,7 +94,7 @@ const LandingIntelligent = () => {
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-slate-700 leading-relaxed max-w-xl font-medium">
-                  Conversations drift. Patterns repeat. Risk builds quietly. Revenue stalls for reasons no one names.
+                  BIQc continuously monitors activity across your business and surfaces what actually matters right now
                 </p>
                 
                 <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
