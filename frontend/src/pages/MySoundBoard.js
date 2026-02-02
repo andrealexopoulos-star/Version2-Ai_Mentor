@@ -320,11 +320,20 @@ const MySoundBoard = () => {
             className="px-4 md:px-6 py-2 md:py-4 border-b flex items-center justify-between gap-3"
             style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}
           >
+            {/* Mobile: Hamburger to open chat list */}
+            <button 
+              onClick={openChat}
+              className="lg:hidden p-2 rounded-lg hover:bg-black/5"
+              aria-label="Open conversations"
+            >
+              <MessageSquare className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+            </button>
+
             <div className="flex-1 min-w-0">
               <h1 className="text-lg md:text-xl font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
                 MySoundBoard
               </h1>
-              <p className="text-xs md:text-sm truncate" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs md:text-sm truncate hidden md:block" style={{ color: 'var(--text-muted)' }}>
                 Your thinking partner for clarity
               </p>
             </div>
