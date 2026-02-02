@@ -59,6 +59,7 @@ async def analyze_communications_domain(
         
         if ghosted_count >= 3:
             events.append({
+                "id": str(uuid4()),
                 "account_id": account_id,
                 "domain": "communications",
                 "type": "risk",
