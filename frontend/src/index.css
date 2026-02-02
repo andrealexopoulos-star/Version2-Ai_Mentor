@@ -69,6 +69,11 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
 body {
     margin: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
@@ -83,13 +88,64 @@ body {
     -webkit-overflow-scrolling: touch;
     position: relative;
     min-height: 100vh;
+    max-width: 100%;
 }
 
 #root {
     min-height: 100vh;
     height: 100%;
     overflow-x: hidden;
+    max-width: 100%;
     position: relative;
+}
+
+/* MOBILE P0 STABILISATION - SYSTEMATIC FIXES */
+@media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+        position: relative;
+    }
+    
+    body {
+        /* Replace 100vh with 100dvh for mobile */
+        min-height: 100dvh;
+    }
+    
+    #root {
+        /* Replace 100vh with 100dvh for mobile */
+        min-height: 100dvh;
+    }
+    
+    /* iOS Safe Area Support */
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Prevent horizontal overflow on all containers */
+    * {
+        max-width: 100%;
+    }
+    
+    /* Typography stability */
+    body {
+        line-height: 1.5;
+        -webkit-text-size-adjust: 100%;
+    }
+    
+    /* Touch target minimums */
+    button, a, input, textarea, select {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+    
+    /* Scroll lock when sidebar open */
+    body.sidebar-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+    }
 }
 
 /* Premium Typography - Mobile First */
