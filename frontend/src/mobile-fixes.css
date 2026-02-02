@@ -8,6 +8,15 @@
 
 @media (max-width: 768px) {
   /* ========================================
+     CRITICAL FIX: Landing Page Header Clearance
+     ======================================== */
+  
+  /* Ensure hero content starts below fixed navigation */
+  section[class*="pt-"] {
+    padding-top: clamp(160px, 25vh, 220px) !important;
+  }
+  
+  /* ========================================
      GLOBAL MOBILE INVARIANTS
      ======================================== */
   
