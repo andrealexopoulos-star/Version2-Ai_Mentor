@@ -36,7 +36,7 @@ Backend restarted ✅
 **Secret Name**: `BACKEND_URL`  
 **Secret Value**:
 ```
-https://biqc-auth-edge.preview.emergentagent.com
+https://biqc-advisor.preview.emergentagent.com
 ```
 
 ### After Updating Secrets
@@ -57,15 +57,15 @@ Client Secret VALUE: 3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
 ### Backend .env (Already Updated ✅)
 ```
 AZURE_TENANT_ID=af75a808f-8c78-46dd-bda8-faa925d316d9
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_ID=biqc-advisor
 AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
 ```
 
 ### Supabase Edge Function: outlook-auth (You Must Update)
 ```
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_ID=biqc-advisor
 AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
-BACKEND_URL=https://biqc-auth-edge.preview.emergentagent.com
+BACKEND_URL=https://biqc-advisor.preview.emergentagent.com
 ```
 
 ---

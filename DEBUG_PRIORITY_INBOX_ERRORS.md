@@ -40,7 +40,7 @@ From your screenshot:
 The access token has likely expired. You need to:
 
 1. **Disconnect Gmail**:
-   - Go to: https://biqc-auth-edge.preview.emergentagent.com/connect-email
+   - Go to: https://biqc-advisor.preview.emergentagent.com/connect-email
    - Click "Disconnect" on Gmail
 
 2. **Reconnect Gmail**:
@@ -49,7 +49,7 @@ The access token has likely expired. You need to:
    - This will store a fresh access token
 
 3. **Test Priority Inbox**:
-   - Go to: https://biqc-auth-edge.preview.emergentagent.com/email-inbox
+   - Go to: https://biqc-advisor.preview.emergentagent.com/email-inbox
    - Should now load successfully
 
 ---
@@ -136,7 +136,7 @@ Your application stores refresh tokens but doesn't automatically refresh them ye
 
 1. **Disconnect Gmail**:
    ```
-   https://biqc-auth-edge.preview.emergentagent.com/connect-email
+   https://biqc-advisor.preview.emergentagent.com/connect-email
    ```
    Click "Disconnect Gmail"
 
@@ -147,7 +147,7 @@ Your application stores refresh tokens but doesn't automatically refresh them ye
 
 3. **Go to Priority Inbox**:
    ```
-   https://biqc-auth-edge.preview.emergentagent.com/email-inbox
+   https://biqc-advisor.preview.emergentagent.com/email-inbox
    ```
 
 4. **Expected Result**:

@@ -1,150 +1,191 @@
-<analysis>**original_problem_statement**: The user's primary objective was to stabilize the BIQC application's email integrations (Outlook and Gmail) by migrating all authentication and processing logic to Supabase Edge Functions, fixing a long-standing and frustrating bug preventing connection state from persisting. Subsequent goals included fixing the HubSpot integration via Merge.dev, overhauling the public landing page to project intelligence and authority, and hardening the entire application for a stable, enterprise-grade mobile user experience.
+<analysis>**original_problem_statement**: The user initiated a series of prompts to perform a major overhaul of the application's UI/UX and narrative, focusing on creating a refined, intelligent advisor persona named BIQC. This involved:
+- Hardening the mobile UI to fix layout collisions and improve user experience.
+- Restructuring the BIQC Insights page to be a narrative-first experience with a typewriter effect.
+- Grounding the narrative in real data from integrations (email, calendar, CRM).
+- Implementing a listening-first Soundboard for user-initiated conversations.
+- Adding a Track A Fast Insights system to surface provisional intelligence based on metadata.
+- Completely rewriting the public landing page copy multiple times to align with a specific marketing message for SMB owners.
+- Debugging and fixing critical integration issues with Merge.dev (Xero/HubSpot conflict) and a persistent, multi-step failure with Azure/Outlook OAuth credentials.
+- A final sequence of prompts focused on a P0 mobile navigation bug, which was not successfully resolved.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is in a stable state with all major requested features and fixes implemented.
--   **Email Integrations (Outlook & Gmail)**: Now 100% driven by Supabase Edge Functions (, ). The core bug where the backend sent an expired OAuth code instead of tokens has been fixed. The connection state is correctly persisted in the canonical  table.
--   **Priority Inbox**: The  Edge Function is now unified, handling both Outlook and Gmail. It correctly identifies the active provider from the database, resolving a bug where it showed the wrong inbox.
--   **HubSpot Integration**: Fully connected and working via a production Merge.dev API key. A bug preventing the connection status from updating in the UI has been resolved.
--   **Landing Page**: A complete overhaul has been performed. The new page () features an intelligent typewriter-style hero section that simulates BIQC's thinking process, an interactive 3-step demo, and rewritten copy focused on authority, security, and differentiation.
--   **Mobile Experience**: All identified mobile scrolling and layout issues have been fixed. A comprehensive audit was performed on authenticated pages, ensuring a stable, readable, and enterprise-grade UI on mobile devices.
+The application has undergone significant frontend refactoring to align with the BIQC intelligent advisor concept. The landing page copy, BIQC Insights narrative, and Soundboard behavior have been completely rewritten. A client-side Fast Insights (Track A) system has been implemented to generate observational intelligence from integration metadata. A major bug with Merge.dev integration categories has been fixed. A persistent Azure OAuth credential issue was debugged, and the correct credentials were applied to the backend  file. However, a critical P0 mobile navigation bug remains unresolved, and a user-experience audit conducted by the agent revealed several other high-priority mobile UI defects.
 
 **Last working item**:
--   Last item agent was working: A comprehensive mobile UI stability audit and hardening across all authenticated pages. This involved fixing global CSS, layout wrappers, and component-level styles to eliminate all horizontal scrolling, ensure content readability, and provide a stable, predictable user experience on mobile viewports.
--   Status: **USER VERIFICATION PENDING**
--   Agent Testing Done: Y
--   Which testing method agent to use? Manual testing by user on their mobile device. The agent has used testing agents and screenshot tools to verify the fixes in simulated viewports.
+-   Last item agent was working: A comprehensive user-experience audit of the mobile application, acting as a QA lead to verify fixes from previous prompts (Prompt 1: Mobile Nav Collision, Prompt 2: Mobile UI Precision Hardening). The agent logged in as a user and visually inspected all primary pages on a mobile viewport.
+-   Status: **IN PROGRESS** (The audit itself is complete, but it generated a list of critical defects that are now the highest priority pending work.)
+-   Agent Testing Done: Y (The audit served as the test.)
+-   Which testing method agent to use? The next agent should use the **screenshot tool** extensively to verify the UI fixes for the issues identified in the audit.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Critical Row Level Security (RLS) policies have not been applied by the user. (P0)
+-   Issue 1: P0 Mobile Navigation Split-Screen Collision (P0 - BLOCKER)
+-   Issue 2: SoundBoard Header Dominance on Mobile (P1 - High)
+-   Issue 3: Connect Email Page Content is Boxed-in on Mobile (P2 - Medium)
+-   Issue 4: Supabase Edge Function Secrets for Azure OAuth May Be Stale (P2 - Medium)
 
 **Issues Detail**:
--   **Issue 1: Critical Row Level Security (RLS) policies not applied.**
-    -   **Description**: A security vulnerability was discovered where a user could see the email connections of another user. This is because RLS was not enabled on the , , and  tables.
-    -   **Attempted fixes**: The agent created a comprehensive SQL script () that enables RLS and creates the necessary policies to ensure users can only access their own data.
-    -   **Next debug checklist**: The user MUST execute the SQL script located at  in their Supabase project's SQL Editor.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical P0 security fix to guarantee data isolation and user privacy. Without it, the application is not safe for multiple users.
-    -   **Status**: **BLOCKED** (on user action)
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend (by logging in as two different users to confirm data isolation).
+-   **Issue 1: P0 Mobile Navigation Split-Screen Collision**
+    -   **Description**: On mobile viewports (≤ 768px), the main application navigation (hamburger menu) and the SoundBoard's chat list panel can be open simultaneously. This squeezes the main content into a narrow, unusable column, breaking the core layout. This was the primary objective of a previous prompt and remains unfixed.
+    -   **Attempted fixes**: The agent created a  to manage a global drawer state (, , ). However, the implementation in  was flawed, as its local logic still allows the chat panel to be visible when the main navigation is open.
+    -   **Next debug checklist**:
+        1.  In , modify the chat list sidebar's JSX.
+        2.  Ensure its visibility is controlled exclusively by the . It should only be visible on mobile if . It must be hidden if .
+        3.  The logic must enforce mutual exclusion: opening one drawer must programmatically close the other.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a P0 usability blocker for mobile. Fixing it will restore core navigation functionality on mobile devices.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on other issue**: None.
 
+-   **Issue 2: SoundBoard Header Dominance on Mobile**
+    -   **Description**: The header within the  page is excessively tall (~108px) on mobile, violating the design requirement for a calm, lightweight header. This is separate from the  header.
+    -   **Next debug checklist**:
+        1.  In , locate the header section.
+        2.  Reduce vertical padding (e.g.,  to  on mobile).
+        3.  Reduce the title font size on mobile (e.g.,  to ).
+        4.  Consider reducing the Start Voice Call button size or moving it for mobile viewports.
+    -   **Why fix this issue and what will be achieved with the fix?**: Aligns the UI with the user's explicit design requirements for a less intrusive mobile header, improving content visibility.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Frontend
+
+-   **Issue 3: Connect Email Page Content is Boxed-in on Mobile**
+    -   **Description**: On the  page, the content container has a fixed maximum width that makes it look boxed on mobile, instead of using the full available screen width with appropriate padding.
+    -   **Next debug checklist**:
+        1.  In , inspect the root content container.
+        2.  Remove or adjust any  utility classes that constrain the width on mobile.
+        3.  Ensure horizontal padding is consistently applied (e.g.,  for 16px).
+    -   **Why fix this issue and what will be achieved with the fix?**: Creates a more mobile-native feel and improves readability by utilizing available screen real estate.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Frontend
+
+-   **Issue 4: Supabase Edge Function Secrets for Azure OAuth May Be Stale**
+    -   **Description**: After a lengthy debug session, the correct Azure Client Secret was identified () and updated in the backend  file. However, the user was also instructed via a checklist () that they needed to update this secret in their Supabase project for the Edge Functions. It is unconfirmed if the user completed this step.
+    -   **Next debug checklist**: Remind the user to verify that the  in their Supabase project's Edge Function settings matches the value .
+    -   **Why fix this issue and what will be achieved with the fix?**: Ensures the entire Outlook OAuth flow works, as both the backend callback and the Edge Functions rely on the correct secret.
+    -   **Status**: USER VERIFICATION PENDING
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both (triggers the full OAuth flow)
+
 **In progress Task List**:
--   None.
+-   None separate from the issues listed above.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   Fix MySoundBoard feature. (P2)
-    -   Fix Outlook Calendar sync. (P2)
+    -   Fix Outlook Calendar sync (P2).
 -   **Future Tasks:**
-    -   Connect Business Diagnosis page to a live backend. (P3)
+    -   Connect Business Diagnosis page to a live backend (P3).
 
 **Completed work in this session**
--   **Email Integration Overhaul (FIXED)**: Stabilized Outlook & Gmail connections by moving all logic to Supabase Edge Functions and fixing the root cause of OAuth failures.
--   **Priority Inbox (FIXED)**: Migrated the Priority Inbox to be 100% Edge Function-based for both providers and fixed logic to correctly identify the active email account.
--   **HubSpot Integration (FIXED)**: Resolved Merge.dev test account limits by using a production key and fixed a backend bug that prevented the connection status from being stored and displayed correctly.
--   **Critical Security Vulnerability (FIX PROVIDED)**: Identified a major data leak due to missing RLS and provided the user with the necessary SQL script to fix it.
--   **Intelligent Landing Page (DONE)**: Designed and built a new, high-authority landing page from scratch, featuring an interactive typewriter simulation to showcase BIQC's intelligence.
--   **Landing Page Copy (DONE)**: Rewrote all landing page copy to focus on authority, security, and clear differentiation from generic AI tools.
--   **Mobile Scroll & UI Hardening (FIXED)**: Investigated and resolved all reported mobile scrolling and layout issues across the entire application, ensuring a stable, enterprise-grade mobile experience.
--   **OAuth Flow Improvement (DONE)**: Added  to both Google and Microsoft OAuth flows to allow users to choose their account instead of auto-logging in.
+-   **UI/UX Overhaul**:
+    -   Implemented a narrative-first BIQC Insights page with a typewriter effect and data-grounded content.
+    -   Created a listening-first Soundboard experience.
+    -   Rewrote the landing page copy multiple times to match a specific SMB-focused marketing message.
+-   **Feature Implementation**:
+    -   Created a Track A Fast Insights system for provisional intelligence.
+    -   Added a developer-only Evidence Trace for debugging Track A insights.
+-   **Bug Fixes**:
+    -   Resolved a critical Merge.dev bug causing Xero to overwrite HubSpot integration data.
+    -   Identified and corrected wrong Azure OAuth credentials (, , ) in the backend  file after extensive debugging.
+-   **Mobile Hardening (Partial)**:
+    -   Addressed several mobile UI defects related to spacing, tabs, and copy.
+    -   Attempted to fix a P0 mobile navigation collision by creating a shared React Context, though the implementation was incomplete.
+-   **Auditing & Reporting**:
+    -   Created multiple detailed reports and guides for the user (e.g., CPO report, data flow documentation, OAuth checklists).
+    -   Performed a comprehensive, first-person user-experience audit of the mobile app, which identified the currently pending high-priority issues.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI
--   **Frontend**: React, Tailwind CSS
--   **Database & Auth**: Supabase (PostgreSQL), with a heavy reliance on **Row Level Security (RLS)** for multi-tenancy.
--   **Serverless**: **Supabase Edge Functions (Deno/TypeScript)** are the core of the email integration architecture.
--   **Unified API**: **Merge.dev** for all CRM (HubSpot) integrations.
+-   **React Context API**: Used to create  for managing global UI state to prevent component collisions.
+-   **Responsive Design (Tailwind CSS)**: Extensive use of mobile-first and breakpoint-specific (, ) utility classes for UI hardening.
+-   **Client-Side Intelligence**: The Track A insights are generated entirely on the client in  by processing metadata from API calls, without involving a backend AI model.
+-   **State Persistence**: Use of  to provide continuity for intelligence thresholds and user focus between sessions.
+-   **OAuth 2.0 Debugging**: In-depth, step-by-step debugging of the Azure AD OAuth flow, tracing the issue from an incorrect  to a  mismatch, and finally to an incorrect  (Secret ID vs. Value).
 
 **key DB schema**
--   :  (Canonical source of truth)
--   : 
--   : 
--   :  (For Merge.dev integrations)
+-   No schema changes were made. The following tables were read from to ground the BIQC narrative:
+    -   
+    -   
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : **CRITICAL SCRIPT**. Contains the SQL commands the user must run to secure the application.
--   : OAuth and Merge.dev endpoints were fixed.
--   : The new, primary landing page.
--   , , : Core integration pages, all stable.
--   : Global styles were modified to fix mobile scrolling.
--   : The main app wrapper, modified to fix mobile scrolling.
--   All three Edge Function directories (): Code has been updated and is stable, but requires user deployment.
+-   : Manages the state for mobile navigation drawers to prevent overlap.
+-   : Contains a faulty implementation of the mobile drawer logic and a mobile header that needs fixing.
+-   : The main layout component, modified to use the drawer context.
+-   : Core of the BIQC Insights experience, contains all narrative generation logic.
+-   : Client-side logic for generating Fast Insights.
+-   : The public landing page with rewritten copy.
+-   : Contains the Azure OAuth callback and Merge.dev endpoints that were fixed.
+-   : A detailed report on the product for a C-level audience.
+-   : A guide for the user on where to update the Azure Client Secret.
 
 **Areas that need refactoring**:
--   None identified. The agent performed significant refactoring to stabilize the codebase.
+-   : The logic controlling the chat list sidebar must be refactored to correctly and exclusively use the  on mobile to fix the P0 nav collision bug.
 
 **key api endpoints**
--    & : Initiates OAuth flow.
--    & : Handles OAuth callback, exchanges code for tokens, and calls the respective Edge Function.
--   : Creates a link token for the Merge.dev frontend component.
--   : Exchanges a public token from Merge.dev for a storable account token.
--   Supabase Edge Functions are called directly from the frontend via .
+-   : The critical endpoint for the Azure OAuth flow. Debugging revealed it was failing due to an  error from Azure.
+-   : Updated to receive an  payload from the frontend.
+-   : Fixed to handle  vs  categories correctly.
+-   , , : Used as data sources for the client-side  library.
 
 **Critical Info for New Agent**
--   The user **MUST** run the SQL script at  to fix a critical security flaw. This is the highest priority. The application is not secure for multiple users until this is done.
--   All email integration logic now lives in Supabase Edge Functions. The backend only acts as an initial proxy for OAuth callbacks. This architecture should be maintained.
--   The user has deployed all the correct Edge Function code, so no further code deployment should be necessary for the existing email/priority inbox features.
+-   **The absolute P0 priority is to fix the mobile navigation collision.** The previous agent's attempt failed. The final audit report provides a clear debugging path in . Do not proceed to other tasks until this is resolved and verified with screenshots.
+-   **The Azure Client Secret () is correct in the backend  but may be incorrect in the Supabase Edge Function secrets.** This is pending user verification and could still be a source of Outlook connection failures.
+-   The application follows a dual-track intelligence model. All recent work has been on Track A, which is provisional, client-side intelligence. Do not persist this data or treat it as ground truth.
+-   The UI/UX prompts from the user are extremely specific. Adhere strictly to the constraints regarding language, posture, and scope. The landing page copy, in particular, has been through many revisions and should be considered locked.
 
 **documents and test reports created in this job**
--   
--   
--   
--   
--   
--   
--   
--   
--    from multiple testing agent runs.
+-   /app/POST_DEPLOYMENT_URL_UPDATE_GUIDE.md
+-   /app/COPY_PASTE_DEPLOYMENT_URLS.md
+-   /app/DEBUG_PRIORITY_INBOX_ERRORS.md
+-   /app/BIQC_INSIGHTS_DATA_FLOW.md
+-   /app/OUTLOOK_INTEGRATION_FACTUAL_STATUS.md
+-   /app/OUTLOOK_OAUTH_CHECKLIST.md
+-   /app/AZURE_SECRET_UPDATE_CHECKLIST.md
+-   /app/BIQC_CPO_PRODUCT_REPORT.md
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asks for a comprehensive mobile audit with test credentials. (DONE)
-2.  **Agent**: Acknowledges and performs the audit. (DONE)
-3.  **User**: Provides prompt to harden mobile UI for Advisor page. (DONE)
-4.  **Agent**: Acknowledges and implements mobile stability fixes. (DONE)
-5.  **User**: Reports mobile scrolling issues persist. (IN PROGRESS)
-6.  **Agent**: Investigates deeper and fixes global CSS and layout wrappers. (DONE)
-7.  **User**: Shares screenshot of a CSS syntax error. (IN PROGRESS)
-8.  **Agent**: Fixes the CSS syntax error. (DONE)
-9.  **User**: Provides prompt for a new Intelligent Landing Page. (DONE)
-10. **User**: Provides prompt to rewrite landing page copy for authority. (DONE)
-11. **User**: Provides prompt to add a signature interaction to the landing page. (DONE)
-12. **User**: Provides prompt to fix the typewriter demo's undefined and clipping bugs. (DONE)
+1.  **User**: Prompt 17 - Rewrites landing page copy for SMB clarity. (COMPLETED)
+2.  **User**: Prompt Stage 1 - Locks landing page message and narrative. (COMPLETED)
+3.  **User**: Provides the final, locked-in copy for the Stage 1 landing page. (COMPLETED)
+4.  **User**: Requests a minor font color change on the landing page. (COMPLETED)
+5.  **User**: Requests a comprehensive report on BIQC for a Chief Product Officer. (COMPLETED)
+6.  **User**: Prompt 1 (new sequence) - P0 fix for mobile navigation collision. (ATTEMPTED, FAILED)
+7.  **User**: Prompt 2 - Precision hardening of the mobile UI (headers, tabs, spacing). (ATTEMPTED, PARTIALLY FAILED)
+8.  **User**: Prompt 3 - Request for a full user-experience audit to verify the previous two prompts. (COMPLETED)
+9.  **User**: Signal to continue agent execution. (DONE)
+10. **Agent**: Delivers the final, detailed audit report identifying what is fixed, what is partially fixed, and what is still broken. This report now serves as the primary bug list for the next agent. (PENDING FIXES)
 
 **Project Health Check:**
--   **Fixed/Implemented**:
-    -   Email Integration (Outlook & Gmail)
-    -   Priority Inbox
-    -   HubSpot Integration
-    -   Mobile Scrolling & Layout
-    -   Intelligent Landing Page & Copy
--   **User Action Required**:
-    -   Row Level Security (RLS) policy application.
+-   **Broken**:
+    -   Mobile Navigation: The core mutual exclusion logic for sidebars is broken on . (P0)
+    -   SoundBoard Mobile Header: Layout is incorrect and visually dominant. (P1)
+    -   Connect Email Mobile Layout: Content is not full-width. (P2)
+-   **Mocked**: The Track A Fast Insights system is client-side logic processing metadata; it is not a true backend AI/ML model.
 
 **3rd Party Integrations**
--   **Supabase**: PostgreSQL DB, Auth, and Edge Functions. Core infrastructure.
--   **Microsoft Graph (Outlook)**: Email sync via Edge Function.
--   **Google (Gmail)**: Email sync via Edge Function.
--   **Merge.dev**: Unified API for HubSpot CRM integration. Now using a production key.
--   **OpenAI**: Mentioned for use in  but the final implementation uses simple logic. No active LLM calls are being made.
+-   **Supabase**: PostgreSQL DB, Auth, Edge Functions.
+-   **Microsoft Graph (Outlook)**: Email sync. OAuth credentials were a major source of bugs.
+-   **Google (Gmail)**: Email sync.
+-   **Merge.dev**: Unified API for HubSpot (CRM) and Xero (Accounting). A category bug was fixed.
 
 **Testing status**
--   Testing agent used after significant changes: YES (multiple times for mobile audit)
--   Troubleshoot agent used after agent stuck in loop: YES (to identify Edge Function and DB issues)
--   Test files created: None, testing was done via testing agents and manual verification.
--   Known regressions: None.
+-   Testing agent used after significant changes: NO (Recent work was verified via a manual audit)
+-   Troubleshoot agent used after agent stuck in loop: YES (Used to diagnose the Merge.dev and Azure integration issues)
+-   Test files created: []
+-   Known regressions: The mobile navigation collision is a persistent issue that has not been successfully resolved across multiple attempts.
 
 **Credentials to test flow:**
--   **User**: 
--   **Password**: 
+-   **User 1**:  / 
+-   **User 2 (for audit)**:  / 
 
 **What agent forgot to execute**
--   The agent initially missed the critical RLS security vulnerability but identified and provided a fix once the symptom (cross-user data visibility) was reported by the user. The primary pending item is ensuring the user applies this fix.</analysis>
+-   The agent failed to fully implement the fix for the P0 mobile navigation collision as requested in the final sequence of prompts. The agent's own audit confirmed that their implementation was flawed and the bug persists.</analysis>

@@ -10,7 +10,7 @@ Phase 2 adds the Merge Link UI modal integration.
 
 ### Prerequisites
 - [ ] User is logged in as andre.alexopoulos@gmail.com
-- [ ] Navigate to: https://biqc-auth-edge.preview.emergentagent.com/integrations
+- [ ] Navigate to: https://biqc-advisor.preview.emergentagent.com/integrations
 - [ ] Open browser console (F12 → Console tab)
 
 ---

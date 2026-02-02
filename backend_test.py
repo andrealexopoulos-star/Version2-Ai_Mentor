@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 class StrategicAdvisorAPITester:
-    def __init__(self, base_url="https://biqc-auth-edge.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://biqc-advisor.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
@@ -1311,7 +1311,7 @@ class StrategicAdvisorAPITester:
             print("   1. User andre@thestrategysquad.com.au must log in via UI")
             print("   2. Navigate to /integrations page")
             print("   3. Test CRM endpoints manually via browser console:")
-            print("      fetch('https://biqc-auth-edge.preview.emergentagent.com/api/integrations/crm/contacts', {")
+            print("      fetch('https://biqc-advisor.preview.emergentagent.com/api/integrations/crm/contacts', {")
             print("        headers: {'Authorization': 'Bearer ' + localStorage.getItem('supabase.auth.token')}")
             print("      }).then(r => r.json()).then(console.log)")
             return self.generate_report()

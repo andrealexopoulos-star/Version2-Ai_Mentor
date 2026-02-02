@@ -59,8 +59,8 @@ if (integration.isOutlook || integrationId === 'outlook') {
 **Current .env values** (verified via Python):
 ```
 AZURE_TENANT_ID=af75a808f-8c78-46dd-bda8-faa925d316d9
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
-AZURE_CLIENT_SECRET=2f5697f4-5a3a-4aca-893a-6a40334c579f
+AZURE_CLIENT_ID=biqc-advisor
+AZURE_CLIENT_SECRET=biqc-advisor
 ```
 
 **Match user screenshot**: YES ✅
@@ -132,7 +132,7 @@ Note: Shows `a75a808f` (missing 'f')
 4. Click: **Authentication** (left sidebar)
 5. Under **Web** platform redirects:
    - Click **"+ Add URI"**
-   - Paste: `https://biqc-auth-edge.preview.emergentagent.com/api/auth/outlook/callback`
+   - Paste: `https://biqc-advisor.preview.emergentagent.com/api/auth/outlook/callback`
    - Click **"Save"**
 6. Wait 2-3 minutes for propagation
 
