@@ -96,10 +96,6 @@ const LandingIntelligent = () => {
                 <p className="text-lg sm:text-xl text-slate-700 leading-relaxed max-w-xl font-medium">
                   BIQc continuously monitors activity across your business and surfaces what actually matters right now
                 </p>
-                
-                <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-                  BIQC monitors your business like an intelligence system—across email, meetings, deals, and operations. It notices what forms before you see it. It surfaces what matters before it's urgent.
-                </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
