@@ -89,7 +89,7 @@ const IntelligenceSimulation = () => {
             ))}
             {isComplete && (
               <div className="mt-6 pt-6 border-t border-slate-700">
-                <p className="text-slate-500 text-xs">Analysis complete</p>
+                <p className="text-slate-500 text-xs font-mono">Monitoring active</p>
               </div>
             )}
           </div>
