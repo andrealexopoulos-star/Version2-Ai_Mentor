@@ -176,7 +176,7 @@ const MySoundBoard = () => {
         <div 
           className={`
             ${isChatOpen ? 'translate-x-0' : '-translate-x-full'} 
-            lg:translate-x-0 
+            ${activeDrawer === 'nav' ? 'lg:translate-x-0 md:hidden' : 'lg:translate-x-0'}
             fixed lg:relative 
             left-0 top-0 
             w-72 h-full 
