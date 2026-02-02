@@ -82,7 +82,7 @@ const LandingIntelligent = () => {
       </nav>
 
       {/* Hero Section - Interactive Intelligence */}
-      <section className="pt-44 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6">
+      <section className="pt-52 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             
