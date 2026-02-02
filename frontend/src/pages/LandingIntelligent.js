@@ -94,7 +94,7 @@ const LandingIntelligent = () => {
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-slate-700 leading-relaxed max-w-xl font-medium">
-                  BIQc continuously monitors activity across your business and surfaces what actually matters right now
+                  BIQc continuously monitors your business activity and surfaces what actually matters right now
                 </p>
               </div>
 
