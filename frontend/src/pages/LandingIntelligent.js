@@ -142,23 +142,26 @@ const LandingIntelligent = () => {
       </section>
 
       {/* The Leadership Reality */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-50">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900">
-              The hardest part of running a business is seeing the whole picture
+      <section className="py-20 sm:py-28 px-4 sm:px-6 bg-slate-50">
+        <div className="max-w-4xl mx-auto space-y-10">
+          <div className="text-center space-y-5">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-900 leading-tight">
+              No one sees the whole system
             </h2>
           </div>
           
-          <div className="space-y-6 text-base sm:text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto">
+          <div className="space-y-5 text-base sm:text-lg text-slate-700 leading-relaxed max-w-3xl mx-auto">
             <p>
-              As an owner or leader, you're responsible for everything: sales momentum, operational delivery, cash flow, team capacity, direction and risk.
+              You're accountable for sales, operations, cash, capacity, and risk—but no single tool shows how they interact.
             </p>
             <p>
-              But no single tool shows how these things interact. Important signals form quietly, across systems and over time.
+              Important patterns form across systems. Conversations stall. Commitments slip. Opportunities pass before anyone connects them.
             </p>
-            <p className="font-medium text-slate-900">
-              Most leaders don't miss things because they're careless. They miss them because no one is watching the whole system.
+            <p className="font-semibold text-slate-900 text-lg sm:text-xl pt-2">
+              Leaders don't miss things because they're careless. They miss them because nothing is monitoring the system end-to-end.
+            </p>
+            <p className="text-slate-600 italic pt-2">
+              BIQC is.
             </p>
           </div>
         </div>
