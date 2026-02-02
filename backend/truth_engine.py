@@ -12,6 +12,7 @@ Fetches live data → Reasons → Emits Watchtower events → Done.
 import hashlib
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any
+from uuid import uuid4
 import logging
 
 logger = logging.getLogger(__name__)
