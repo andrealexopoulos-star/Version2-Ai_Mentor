@@ -12,16 +12,16 @@ const IntelligenceSimulation = () => {
   const [isComplete, setIsComplete] = useState(false);
   const timeoutRef = useRef(null);
 
-  // Leadership thoughts - rotate continuously
+  // Intelligence observations - live monitoring tone
   const lines = [
-    "Something important is forming — you just haven't named it yet.",
-    "Growth feels good… until capacity starts to strain quietly.",
-    "Some decisions get delayed because the full picture isn't clear.",
-    "Risk rarely announces itself. It builds slowly.",
-    "Opportunities show up before they're obvious.",
-    "Being busy isn't the same as being in control.",
-    "Most problems are visible earlier — if someone's watching.",
-    "Staying ahead is about noticing patterns, not working harder."
+    "Client response times increasing. Third occurrence this month.",
+    "Deal pipeline velocity slowing. Pattern detected across Q4.",
+    "Team meeting density up 40%. Execution time compressing.",
+    "Revenue forecast stable. Operational capacity not tracking.",
+    "Three recurring client issues. No systemic resolution attempted.",
+    "Cash conversion extending. Payment terms drifting beyond 45 days.",
+    "Strategic discussions deferred twice. Execution pressure rising.",
+    "Growth trajectory maintained. Control mechanisms lagging."
   ];
 
   const pauses = [1800, 1900, 1800, 1700, 1700, 1800, 1900, 2000];
