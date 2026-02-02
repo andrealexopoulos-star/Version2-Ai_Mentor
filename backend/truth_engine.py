@@ -438,7 +438,7 @@ async def generate_cold_read(
     account_id: str,
     supabase_admin: Any,
     merge_client: Any,
-    api_client: Any
+    watchtower_store: Any
 ) -> Dict[str, Any]:
     """
     ONE-SHOT COLD READ ANALYSIS
@@ -451,7 +451,7 @@ async def generate_cold_read(
         account_id: Workspace ID
         supabase_admin: Supabase admin client
         merge_client: Merge.dev client
-        api_client: Internal API client for email/calendar
+        watchtower_store: Watchtower events store
         
     Returns:
         {
@@ -482,25 +482,76 @@ async def generate_cold_read(
         
         integration_map = {row['category']: row for row in integrations.data}
         
+        # Get user_id for this account (needed for email API calls)
+        account_record = supabase_admin.table("accounts").select("*").eq("id", account_id).execute()
+        if not account_record.data:
+            logger.error(f"Account {account_id} not found")
+            return {"events_created": 0, "domains_analyzed": [], "status": "failed"}
+        
+        # Get any user from this account
+        users = supabase_admin.table("users").select("id").eq("account_id", account_id).limit(1).execute()
+        if not users.data:
+            logger.error(f"No users found for account {account_id}")
+            return {"events_created": 0, "domains_analyzed": [], "status": "failed"}
+        
+        user_id = users.data[0]['id']
+        
         # DOMAIN 1: COMMUNICATIONS (Email + Calendar)
         email_data = None
         calendar_data = None
         
         if 'email' in integration_map:
             try:
-                # Fetch from existing email priority inbox
-                response = await api_client.get('/email/priority-inbox')
-                email_data = response.data if hasattr(response, 'data') else response
-                logger.info("✅ Email data fetched for Cold Read")
+                # Fetch from email_priority_analysis collection (MongoDB)
+                # This is populated by existing email sync
+                from motor.motor_asyncio import AsyncIOMotorClient
+                mongo_url = os.environ.get('MONGO_URL')
+                mongo_client = AsyncIOMotorClient(mongo_url)
+                mongo_db = mongo_client[os.environ.get('DB_NAME')]
+                
+                # Get latest email analysis
+                email_analysis = await mongo_db.email_priority_analysis.find_one(
+                    {"user_id": user_id},
+                    sort=[("created_at", -1)]
+                )
+                
+                if email_analysis:
+                    email_data = email_analysis
+                    logger.info("✅ Email data fetched from analysis collection")
             except Exception as e:
                 logger.error(f"Email fetch failed: {e}")
         
-        # Fetch calendar (if connected)
-        # Note: Calendar might be separate or bundled with email
+        # Calendar events
         try:
-            response = await api_client.get('/outlook/calendar/events')
-            calendar_data = response.data if hasattr(response, 'data') else response
-            logger.info("✅ Calendar data fetched for Cold Read")
+            from motor.motor_asyncio import AsyncIOMotorClient
+            mongo_url = os.environ.get('MONGO_URL')
+            mongo_client = AsyncIOMotorClient(mongo_url)
+            mongo_db = mongo_client[os.environ.get('DB_NAME')]
+            
+            # Get recent calendar events (last 30 days)
+            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+            
+            events_cursor = mongo_db.calendar_events.find(
+                {
+                    "user_id": user_id,
+                    "start": {"$gte": thirty_days_ago.isoformat()}
+                },
+                {"_id": 0}
+            ).limit(200)
+            
+            events_list = await events_cursor.to_list(length=200)
+            
+            if events_list:
+                # Extract hour from start time
+                for event in events_list:
+                    try:
+                        start_time = datetime.fromisoformat(event['start'].replace('Z', '+00:00'))
+                        event['start_hour'] = start_time.hour
+                    except:
+                        event['start_hour'] = 12
+                
+                calendar_data = {"events": events_list}
+                logger.info(f"✅ Calendar data fetched: {len(events_list)} events")
         except Exception as e:
             logger.debug(f"Calendar fetch skipped: {e}")
         
@@ -524,7 +575,7 @@ async def generate_cold_read(
                         pass
                     
                     pipeline_events = await analyze_pipeline_domain_full(
-                        account_id, deals_data, notes_data, merge_client, crm_token
+                        account_id, deals_data, notes_data
                     )
                     all_events.extend(pipeline_events)
                     if pipeline_events:
@@ -563,10 +614,7 @@ async def generate_cold_read(
         if all_events:
             for event in all_events:
                 try:
-                    supabase_admin.table("watchtower_events").upsert(
-                        event,
-                        on_conflict="account_id,fingerprint"
-                    ).execute()
+                    await watchtower_store.create_event(event)
                 except Exception as e:
                     logger.error(f"Failed to persist event: {e}")
         
