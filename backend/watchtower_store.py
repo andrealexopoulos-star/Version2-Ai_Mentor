@@ -1,11 +1,11 @@
 """
-Watchtower Events - In-Memory Store (Supabase table pending)
+Watchtower Events - Supabase Store
 
-Temporary implementation until watchtower_events table is created in Supabase.
-Stores events in MongoDB as fallback.
+Authoritative intelligence events storage
 """
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
+from uuid import uuid4
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,14 +13,13 @@ logger = logging.getLogger(__name__)
 
 class WatchtowerStore:
     """
-    Temporary watchtower events store using MongoDB
+    Watchtower events store using Supabase
     
-    Will be replaced with Supabase watchtower_events table
+    Single source of truth for all BIQc intelligence statements
     """
     
-    def __init__(self, db):
-        self.db = db
-        self.collection = db.watchtower_events
+    def __init__(self, supabase_client):
+        self.supabase = supabase_client
     
     async def create_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -28,25 +27,30 @@ class WatchtowerStore:
         
         Uses fingerprint for deduplication
         """
-        # Add timestamp
-        event["created_at"] = event.get("created_at", datetime.now(timezone.utc).isoformat())
-        event["updated_at"] = datetime.now(timezone.utc).isoformat()
+        # Ensure ID exists
+        if 'id' not in event:
+            event['id'] = str(uuid4())
         
-        # Upsert by fingerprint
-        filter_query = {
-            "account_id": event["account_id"],
-            "fingerprint": event["fingerprint"]
-        }
+        # Add timestamps
+        if 'created_at' not in event:
+            event['created_at'] = datetime.now(timezone.utc).isoformat()
         
-        result = await self.collection.update_one(
-            filter_query,
-            {"$set": event},
-            upsert=True
-        )
+        event['updated_at'] = datetime.now(timezone.utc).isoformat()
         
-        logger.info(f"✅ Watchtower event persisted: {event['headline']}")
-        
-        return event
+        try:
+            # Upsert by account_id + fingerprint
+            result = self.supabase.table("watchtower_events").upsert(
+                event,
+                on_conflict="account_id,fingerprint"
+            ).execute()
+            
+            logger.info(f"✅ Watchtower event persisted: {event['headline']}")
+            
+            return result.data[0] if result.data else event
+            
+        except Exception as e:
+            logger.error(f"Failed to persist watchtower event: {e}")
+            raise
     
     async def get_events(
         self,
@@ -56,42 +60,40 @@ class WatchtowerStore:
         """
         Get watchtower events for workspace
         """
-        query = {"account_id": account_id}
+        query = self.supabase.table("watchtower_events") \
+            .select("*") \
+            .eq("account_id", account_id) \
+            .order("created_at", desc=True)
+        
         if status:
-            query["status"] = status
+            query = query.eq("status", status)
         
-        cursor = self.collection.find(query, {"_id": 0}).sort("created_at", -1)
-        events = await cursor.to_list(length=100)
+        result = query.execute()
         
-        return events
+        return result.data or []
     
     async def handle_event(self, event_id: str, user_id: str) -> bool:
         """
         Mark event as handled
         """
-        result = await self.collection.update_one(
-            {"id": event_id},
-            {
-                "$set": {
-                    "status": "handled",
-                    "handled_at": datetime.now(timezone.utc).isoformat(),
-                    "handled_by_user_id": user_id,
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }
-            }
-        )
+        result = self.supabase.table("watchtower_events").update({
+            "status": "handled",
+            "handled_at": datetime.now(timezone.utc).isoformat(),
+            "handled_by_user_id": user_id,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", event_id).execute()
         
-        return result.modified_count > 0
+        return len(result.data) > 0 if result.data else False
 
 
-# Singleton (will be initialized with MongoDB client)
+# Singleton
 _watchtower_store: Optional[WatchtowerStore] = None
 
 
-def init_watchtower_store(db):
-    """Initialize watchtower store with MongoDB client"""
+def init_watchtower_store(supabase_client):
+    """Initialize watchtower store with Supabase client"""
     global _watchtower_store
-    _watchtower_store = WatchtowerStore(db)
+    _watchtower_store = WatchtowerStore(supabase_client)
     return _watchtower_store
 
 
