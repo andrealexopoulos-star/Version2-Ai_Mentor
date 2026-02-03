@@ -141,10 +141,30 @@ async def analyze_email_relationship_patterns(
         recent_total = sum(recent_weeks)
         
         # Anomaly: Was communicating ≥threshold/week, now silent for threshold days
+        # ENHANCED: Validate with outbound attempts (Sent Items context)
         if avg_historical >= SILENCE_MIN_WEEKLY_EMAILS and recent_total == 0:
             last_seen_days = (now - data["last_seen"]).days if data["last_seen"] else 999
             
             if last_seen_days >= SILENCE_MIN_DAYS:
+                # Check for outbound attempts (Sent Items context)
+                # Query sent emails to this recipient
+                outbound_cursor = mongo_db.outlook_emails.find(
+                    {
+                        "user_id": user_id,
+                        "folder": "sent",
+                        "to_recipients": {"$elemMatch": {"$regex": sender, "$options": "i"}},
+                        "sent_date": {"$gte": (now - timedelta(days=last_seen_days)).isoformat()}
+                    },
+                    {"_id": 0, "id": 1, "sent_date": 1}
+                ).limit(10)
+                
+                outbound_attempts = await outbound_cursor.to_list(length=10)
+                outbound_count = len(outbound_attempts)
+                
+                # Signal strength: Silence + outbound attempts = Ghosting (stronger)
+                #                 Silence + no attempts = Quiet (weaker)
+                signal_strength = "ghosting_confirmed" if outbound_count >= 2 else "quiet_contact"
+                
                 # Get sender name for evidence
                 sender_name = next((e.get('from_name') for e in data["emails"] if e.get('from_name')), sender)
                 total_emails = len(data["emails"])
@@ -154,9 +174,9 @@ async def analyze_email_relationship_patterns(
                     "account_id": account_id,
                     "domain": "communications",
                     "type": "anomaly",
-                    "severity": "medium" if first_run else "high",
-                    "headline": f"Communication silence: {sender_name[:30]}",
-                    "statement": f"This contact historically sent {int(avg_historical)} emails per week over the past 3 months. No communication received in the last {last_seen_days} days. This represents a {int((last_seen_days / 7) / avg_historical * 100)}% drop from normal cadence.",
+                    "severity": "high" if (signal_strength == "ghosting_confirmed" and not first_run) else "medium",
+                    "headline": f"Communication silence: {sender_name[:30]}" + (" (unresponsive)" if outbound_count >= 2 else ""),
+                    "statement": f"This contact historically sent {int(avg_historical)} emails per week over the past 3 months. No communication received in the last {last_seen_days} days" + (f", despite {outbound_count} outbound attempts" if outbound_count > 0 else "") + f". This represents a {int((last_seen_days / 7) / avg_historical * 100)}% drop from normal cadence.",
                     "evidence_payload": {
                         "contact_email": sender[:50],
                         "contact_name": sender_name[:100],
@@ -164,12 +184,15 @@ async def analyze_email_relationship_patterns(
                         "silence_days": last_seen_days,
                         "total_historical_emails": total_emails,
                         "last_contact_date": data["last_seen"].isoformat() if data["last_seen"] else None,
+                        "outbound_attempt_count": outbound_count,
+                        "outbound_time_window_days": last_seen_days,
+                        "signal_strength": signal_strength,
                         "analysis_period_days": lookback_days,
                         "email_ids_sample": [e.get('id') for e in data["emails"][:5]],
                         "confidence": confidence_level,
                         "first_run": first_run
                     },
-                    "consequence_window": "Early signal — worth monitoring" if first_run else "Relationship risk — requires outreach within 7 days",
+                    "consequence_window": "Early signal — worth monitoring" if first_run else ("Relationship at risk — unresponsive despite outreach" if outbound_count >= 2 else "Relationship risk — requires outreach within 7 days"),
                     "source": "outlook_email_pattern_analysis",
                     "fingerprint": create_fingerprint("communications", "anomaly", f"silence_{sender[:20]}"),
                     "status": "active"
