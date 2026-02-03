@@ -2,7 +2,7 @@
 
 ## Your Production URL
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 ---
@@ -16,7 +16,7 @@ https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlad
 
 ### Redirect URI to Add (Copy-Paste):
 ```
-https://biqc-advisor.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-advisor-1.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 **Where to paste**: 
@@ -37,7 +37,7 @@ https://console.cloud.google.com/apis/credentials
 
 ### Authorized Redirect URI to Add (Copy-Paste):
 ```
-https://biqc-advisor.preview.emergentagent.com/api/auth/gmail/callback
+https://biqc-advisor-1.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 **Where to paste**:
@@ -57,29 +57,29 @@ Supabase Dashboard → Authentication → URL Configuration
 
 ### Site URL (Copy-Paste):
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 ### Redirect URLs - Add ALL of these (Copy-Paste one by one):
 
 ```
-https://biqc-advisor.preview.emergentagent.com/**
+https://biqc-advisor-1.preview.emergentagent.com/**
 ```
 
 ```
-https://biqc-advisor.preview.emergentagent.com/auth/callback
+https://biqc-advisor-1.preview.emergentagent.com/auth/callback
 ```
 
 ```
-https://biqc-advisor.preview.emergentagent.com/connect-email
+https://biqc-advisor-1.preview.emergentagent.com/connect-email
 ```
 
 ```
-https://biqc-advisor.preview.emergentagent.com/integrations
+https://biqc-advisor-1.preview.emergentagent.com/integrations
 ```
 
 ```
-https://biqc-advisor.preview.emergentagent.com/dashboard
+https://biqc-advisor-1.preview.emergentagent.com/dashboard
 ```
 
 ```
@@ -106,7 +106,7 @@ Add/Update these secrets:
 
 #### BACKEND_URL
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 #### AZURE_CLIENT_ID
@@ -130,7 +130,7 @@ Add/Update these secrets:
 
 #### BACKEND_URL
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 #### GOOGLE_CLIENT_ID
@@ -154,7 +154,7 @@ Add/Update this secret:
 
 #### BACKEND_URL
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 ---
@@ -167,7 +167,7 @@ Add/Update this secret:
 
 #### BACKEND_URL
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 ---
@@ -181,7 +181,7 @@ https://app.merge.dev/configuration/link
 
 ### Redirect URI (Copy-Paste):
 ```
-https://biqc-advisor.preview.emergentagent.com/integrations
+https://biqc-advisor-1.preview.emergentagent.com/integrations
 ```
 
 **Where to paste**:
@@ -197,27 +197,27 @@ https://biqc-advisor.preview.emergentagent.com/integrations
 
 ### Login Page
 ```
-https://biqc-advisor.preview.emergentagent.com/login
+https://biqc-advisor-1.preview.emergentagent.com/login
 ```
 
 ### Connect Email Page
 ```
-https://biqc-advisor.preview.emergentagent.com/connect-email
+https://biqc-advisor-1.preview.emergentagent.com/connect-email
 ```
 
 ### Email Inbox Page
 ```
-https://biqc-advisor.preview.emergentagent.com/email-inbox
+https://biqc-advisor-1.preview.emergentagent.com/email-inbox
 ```
 
 ### Integrations Page
 ```
-https://biqc-advisor.preview.emergentagent.com/integrations
+https://biqc-advisor-1.preview.emergentagent.com/integrations
 ```
 
 ### Dashboard
 ```
-https://biqc-advisor.preview.emergentagent.com/dashboard
+https://biqc-advisor-1.preview.emergentagent.com/dashboard
 ```
 
 ---
@@ -225,36 +225,36 @@ https://biqc-advisor.preview.emergentagent.com/dashboard
 ## 📋 QUICK CHECKLIST
 
 ### Microsoft Azure
-- [ ] Redirect URI added: `https://biqc-advisor.preview.emergentagent.com/api/auth/outlook/callback`
+- [ ] Redirect URI added: `https://biqc-advisor-1.preview.emergentagent.com/api/auth/outlook/callback`
 - [ ] Clicked "Save"
 
 ### Google Cloud Console
-- [ ] Redirect URI added: `https://biqc-advisor.preview.emergentagent.com/api/auth/gmail/callback`
+- [ ] Redirect URI added: `https://biqc-advisor-1.preview.emergentagent.com/api/auth/gmail/callback`
 - [ ] Clicked "SAVE"
 
 ### Supabase URL Configuration
-- [ ] Site URL set: `https://biqc-advisor.preview.emergentagent.com`
+- [ ] Site URL set: `https://biqc-advisor-1.preview.emergentagent.com`
 - [ ] All 6 redirect URLs added
 - [ ] Clicked "Save"
 
 ### Supabase Edge Functions - outlook-auth
-- [ ] BACKEND_URL: `https://biqc-advisor.preview.emergentagent.com`
+- [ ] BACKEND_URL: `https://biqc-advisor-1.preview.emergentagent.com`
 - [ ] AZURE_CLIENT_ID: [Your Azure ID]
 - [ ] AZURE_CLIENT_SECRET: [Your Azure Secret]
 
 ### Supabase Edge Functions - gmail_prod
-- [ ] BACKEND_URL: `https://biqc-advisor.preview.emergentagent.com`
+- [ ] BACKEND_URL: `https://biqc-advisor-1.preview.emergentagent.com`
 - [ ] GOOGLE_CLIENT_ID: [Your Google ID]
 - [ ] GOOGLE_CLIENT_SECRET: [Your Google Secret]
 
 ### Supabase Edge Functions - email_priority
-- [ ] BACKEND_URL: `https://biqc-advisor.preview.emergentagent.com`
+- [ ] BACKEND_URL: `https://biqc-advisor-1.preview.emergentagent.com`
 
 ### Supabase Edge Functions - integration-status
-- [ ] BACKEND_URL: `https://biqc-advisor.preview.emergentagent.com`
+- [ ] BACKEND_URL: `https://biqc-advisor-1.preview.emergentagent.com`
 
 ### Merge.dev
-- [ ] Redirect URI: `https://biqc-advisor.preview.emergentagent.com/integrations`
+- [ ] Redirect URI: `https://biqc-advisor-1.preview.emergentagent.com/integrations`
 - [ ] Clicked "Save"
 
 ---
@@ -262,17 +262,17 @@ https://biqc-advisor.preview.emergentagent.com/dashboard
 ## 🧪 VERIFICATION TESTS
 
 ### Test 1: Outlook Connection
-1. Go to: `https://biqc-advisor.preview.emergentagent.com/connect-email`
+1. Go to: `https://biqc-advisor-1.preview.emergentagent.com/connect-email`
 2. Click "Connect Outlook"
 3. ✅ Should authorize and redirect back successfully
 
 ### Test 2: Gmail Connection
-1. Go to: `https://biqc-advisor.preview.emergentagent.com/connect-email`
+1. Go to: `https://biqc-advisor-1.preview.emergentagent.com/connect-email`
 2. Click "Connect Gmail"
 3. ✅ Should authorize and redirect back successfully
 
 ### Test 3: HubSpot Integration
-1. Go to: `https://biqc-advisor.preview.emergentagent.com/integrations`
+1. Go to: `https://biqc-advisor-1.preview.emergentagent.com/integrations`
 2. Click "Connect HubSpot"
 3. ✅ Should complete Merge.dev flow successfully
 
@@ -287,17 +287,17 @@ https://biqc-advisor.preview.emergentagent.com/dashboard
 ## 🚨 TROUBLESHOOTING
 
 ### If Outlook fails with "invalid redirect_uri"
-- Double-check Azure redirect URI is EXACTLY: `https://biqc-advisor.preview.emergentagent.com/api/auth/outlook/callback`
+- Double-check Azure redirect URI is EXACTLY: `https://biqc-advisor-1.preview.emergentagent.com/api/auth/outlook/callback`
 - No trailing slash, no extra characters
 - Wait 2-3 minutes after saving (Azure propagation delay)
 
 ### If Gmail fails with "redirect_uri_mismatch"
-- Double-check Google redirect URI is EXACTLY: `https://biqc-advisor.preview.emergentagent.com/api/auth/gmail/callback`
+- Double-check Google redirect URI is EXACTLY: `https://biqc-advisor-1.preview.emergentagent.com/api/auth/gmail/callback`
 - Click SAVE in Google Cloud Console
 - Wait 1-2 minutes
 
 ### If Edge Functions return "Unauthorized"
-- Check that BACKEND_URL secret is set to: `https://biqc-advisor.preview.emergentagent.com`
+- Check that BACKEND_URL secret is set to: `https://biqc-advisor-1.preview.emergentagent.com`
 - Redeploy the Edge Function after updating secrets
 
 ---
@@ -313,6 +313,6 @@ https://biqc-advisor.preview.emergentagent.com/dashboard
 
 ---
 
-**Production URL**: https://biqc-advisor.preview.emergentagent.com  
+**Production URL**: https://biqc-advisor-1.preview.emergentagent.com  
 **Last Updated**: January 2025  
 **Ready to Deploy**: YES ✅

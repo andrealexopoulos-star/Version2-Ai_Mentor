@@ -4,11 +4,11 @@
 
 **Azure Client ID corrected:**
 - Old: `AZURE_CLIENT_ID=biqc-advisor` ❌
-- New: `AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866` ✅
+- New: `AZURE_CLIENT_ID=biqc-advisor-1` ✅
 
 **Azure Tenant ID corrected:**
 - Old: `AZURE_TENANT_ID=biqc-advisor` ❌
-- New: `AZURE_TENANT_ID=af75a88f-8c78-46dd-bda8-faa925d316d9` ✅
+- New: `AZURE_TENANT_ID=biqc-advisor-1` ✅
 
 Backend restarted successfully.
 
@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://biqc-advisor.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://biqc-advisor.preview.emergentagent.com/**
-https://biqc-advisor.preview.emergentagent.com/auth/callback
-https://biqc-advisor.preview.emergentagent.com/auth-callback-supabase
-https://biqc-advisor.preview.emergentagent.com/connect-email
-https://biqc-advisor.preview.emergentagent.com/integrations
+https://biqc-advisor-1.preview.emergentagent.com/**
+https://biqc-advisor-1.preview.emergentagent.com/auth/callback
+https://biqc-advisor-1.preview.emergentagent.com/auth-callback-supabase
+https://biqc-advisor-1.preview.emergentagent.com/connect-email
+https://biqc-advisor-1.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://biqc-advisor.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://biqc-advisor.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-advisor-1.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://biqc-advisor.preview.emergentagent.com
+https://biqc-advisor-1.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://biqc-advisor.preview.emergentagent.com/api/auth/gmail/callback
+https://biqc-advisor-1.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---
@@ -89,9 +89,9 @@ https://biqc-advisor.preview.emergentagent.com/api/auth/gmail/callback
 
 ### Update these secrets:
 ```
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_ID=biqc-advisor-1
 AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
-AZURE_TENANT_ID=af75a88f-8c78-46dd-bda8-faa925d316d9
+AZURE_TENANT_ID=biqc-advisor-1
 ```
 
 ---

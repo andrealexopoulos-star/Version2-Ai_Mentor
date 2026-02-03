@@ -29,8 +29,8 @@
 ```bash
 BACKEND_URL=https://beta.thestrategysquad.com
 FRONTEND_URL=https://beta.thestrategysquad.com
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
-AZURE_TENANT_ID=af75a88f-8c78-46dd-bda8-faa925d316d9
+AZURE_CLIENT_ID=biqc-advisor-1
+AZURE_TENANT_ID=biqc-advisor-1
 AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
 GOOGLE_CLIENT_ID=903194754324-ife21qnmrokplbcu2ck5afce0kjd6j10.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=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

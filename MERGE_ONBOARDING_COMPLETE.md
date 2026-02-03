@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://biqc-advisor.preview.emergentagent.com/login-supabase
+https://biqc-advisor-1.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://biqc-advisor.preview.emergentagent.com/integrations
+https://biqc-advisor-1.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

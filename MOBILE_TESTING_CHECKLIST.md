@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://biqc-advisor.preview.emergentagent.com
+**Test URL:** https://biqc-advisor-1.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://biqc-advisor.preview.emergentagent.com/advisor
+- [ ] Navigate to https://biqc-advisor-1.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://biqc-advisor.preview.emergentagent.com/
+**Landing:** https://biqc-advisor-1.preview.emergentagent.com/
 
-**Login:** https://biqc-advisor.preview.emergentagent.com/login-supabase
+**Login:** https://biqc-advisor-1.preview.emergentagent.com/login-supabase
 
-**Register:** https://biqc-advisor.preview.emergentagent.com/register-supabase
+**Register:** https://biqc-advisor-1.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://biqc-advisor.preview.emergentagent.com/pricing
+**Pricing:** https://biqc-advisor-1.preview.emergentagent.com/pricing
 
-**Terms:** https://biqc-advisor.preview.emergentagent.com/terms
+**Terms:** https://biqc-advisor-1.preview.emergentagent.com/terms
 
-**Advisor:** https://biqc-advisor.preview.emergentagent.com/advisor
+**Advisor:** https://biqc-advisor-1.preview.emergentagent.com/advisor
 
 ---
 

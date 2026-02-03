@@ -47,7 +47,7 @@
 **Step 2: Configure Authorized Redirect URIs**
 Add this EXACT URL:
 ```
-https://biqc-advisor.preview.emergentagent.com/api/auth/gmail/callback
+https://biqc-advisor-1.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 **Step 3: Configure OAuth Consent Screen**
@@ -117,7 +117,7 @@ After creating client:
 - [ ] Supported account types: **Accounts in any organizational directory and personal Microsoft accounts**
 - [ ] Redirect URI:
   - Platform: **Web**
-  - URI: `https://biqc-advisor.preview.emergentagent.com/api/auth/outlook/callback`
+  - URI: `https://biqc-advisor-1.preview.emergentagent.com/api/auth/outlook/callback`
 
 **Step 2: Create Client Secret**
 - [ ] Go to: App → Certificates & secrets → Client secrets
@@ -151,7 +151,7 @@ After creating client:
 
 **Step 5: Verify Redirect URI**
 - [ ] Go to: App → Authentication → Platform configurations → Web
-- [ ] Confirm redirect URI is: `https://biqc-advisor.preview.emergentagent.com/api/auth/outlook/callback`
+- [ ] Confirm redirect URI is: `https://biqc-advisor-1.preview.emergentagent.com/api/auth/outlook/callback`
 - [ ] Ensure "Access tokens" and "ID tokens" are NOT checked (using code flow)
 
 ---
@@ -202,8 +202,8 @@ Verify these tables exist:
 - [ ] `users` (with account_id column)
 
 **Step 5: URL Configuration**
-- [ ] Confirm Site URL: `https://biqc-advisor.preview.emergentagent.com`
-- [ ] Confirm Redirect URLs include: `https://biqc-advisor.preview.emergentagent.com/auth/callback`
+- [ ] Confirm Site URL: `https://biqc-advisor-1.preview.emergentagent.com`
+- [ ] Confirm Redirect URLs include: `https://biqc-advisor-1.preview.emergentagent.com/auth/callback`
 
 ---
 
@@ -249,8 +249,8 @@ Verify these tables exist:
 
 **From Logs/Environment:**
 
-✅ **Backend URL:** `https://biqc-advisor.preview.emergentagent.com`
-✅ **Frontend URL:** `https://biqc-advisor.preview.emergentagent.com`
+✅ **Backend URL:** `https://biqc-advisor-1.preview.emergentagent.com`
+✅ **Frontend URL:** `https://biqc-advisor-1.preview.emergentagent.com`
 ✅ **Supabase URL:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 ✅ **Merge API Key:** Present in environment
 
