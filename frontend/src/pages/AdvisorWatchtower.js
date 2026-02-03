@@ -57,36 +57,47 @@ const AdvisorWatchtower = () => {
   };
 
   const runColdRead = async () => {
-    // 3️⃣ VALIDATION GATING
-    if (!user?.id) {
-      console.error("Missing Context: user_id");
+    // 1. Session Guard
+    if (!user) {
+      console.error("⛔ Watchtower Abort: No user session");
       toast.error("Session error. Please refresh and try again.");
       return;
     }
 
-    if (!emailConnected) {
+    // 2. Connection Existence Guard
+    if (!emailConnected || !emailConnection) {
       toast.error('Connect your email first to run analysis');
       navigate('/connect-email');
       return;
     }
 
-    // 2️⃣ FIX THE SPINNER (Trust Guardrail)
+    // 3. Payload Construction (THE CRITICAL FIX)
+    // We strictly map emailConnection.id, NOT user.id
+    const payload = {
+      workspace_id: user?.account_id || user?.workspace_id,
+      email_connection_id: emailConnection?.id,
+      provider: emailConnection?.provider || 'outlook'
+    };
+
+    // 4. Data Integrity Guard
+    // Prevents sending bad requests to backend
+    if (!payload.workspace_id || !payload.email_connection_id) {
+      console.error("⛔ Watchtower Abort: Missing Business Context", payload);
+      toast.error("Intelligence context missing. Please refresh or reconnect Outlook.");
+      return;
+    }
+
+    // 5. Execution State Management
     setRunningAnalysis(true);
     toast.loading('Running Watchtower analysis...', { id: 'cold-read' });
 
     try {
-      // 1️⃣ FIX THE PAYLOAD
-      const payload = {
-        user_id: user.id,
-        email_connected: emailConnected
-      };
-      
       console.log("🧠 Cold Read payload being sent:", payload);
-      
+
       const response = await apiClient.post('/intelligence/cold-read', payload);
-      
       const result = response.data?.cold_read;
-      
+
+      // 6. Success Handling
       if (result?.events_created > 0) {
         toast.success(
           `Analysis complete: ${result.events_created} insight${result.events_created > 1 ? 's' : ''} detected`,
@@ -95,15 +106,18 @@ const AdvisorWatchtower = () => {
       } else {
         toast.info('Analysis complete: No new patterns detected', { id: 'cold-read' });
       }
-      
-      // Refresh events
+
+      // 7. Refresh View
       await fetchWatchtowerEvents();
-      
+
     } catch (error) {
       console.error("Cold read failed:", error);
-      const errorMsg = error.response?.data?.detail || "Unable to start analysis. Please try again.";
+      const errorMsg =
+        error?.response?.data?.detail ||
+        "Unable to start analysis. Please try again.";
       toast.error(errorMsg, { id: 'cold-read' });
     } finally {
+      // 8. Always Release Lock
       setRunningAnalysis(false);
     }
   };
