@@ -3222,12 +3222,13 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         client_communications = []
         
         # Process each folder
-        for folder_id in target_folders[:10]:  # Limit to 10 folders max
+        for folder_id, folder_config in target_folders.items():
             emails = await fetch_folder_emails_batch(
                 access_token,
                 folder_id,
                 cutoff_date,
-                max_emails=500  # 500 per folder
+                max_emails=500,  # 500 per folder
+                metadata_only=not folder_config["ingest_body"]
             )
             
             # Analyze emails
