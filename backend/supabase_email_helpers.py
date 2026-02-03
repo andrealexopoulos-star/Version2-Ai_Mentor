@@ -13,12 +13,13 @@ logger = logging.getLogger(__name__)
 # =============================================
 
 async def store_email_supabase(supabase_client, email_data: Dict[str, Any]) -> bool:
-    """Store email in Supabase outlook_emails table"""
+    """Store email in Supabase outlook_emails table (provider-agnostic)"""
     try:
-        # Upsert (insert or update)
+        # Upsert using provider-agnostic constraint
+        # Constraint: (account_id, provider, graph_message_id)
         result = supabase_client.table("outlook_emails").upsert(
             email_data,
-            on_conflict="user_id,graph_message_id"
+            on_conflict="account_id,provider,graph_message_id"
         ).execute()
         
         return bool(result.data)
