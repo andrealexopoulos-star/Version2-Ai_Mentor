@@ -9,4 +9,4 @@ Disallow: /business-profile
 Disallow: /data-center
 Disallow: /admin
 
-Sitemap: https://www.thestrategysquad.com.au/sitemap.xml
+Sitemap: https://beta.thestrategysquad.com/sitemap.xml
