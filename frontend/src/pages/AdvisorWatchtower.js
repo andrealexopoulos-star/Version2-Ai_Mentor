@@ -60,6 +60,8 @@ const AdvisorWatchtower = () => {
       setRunningAnalysis(true);
       toast.loading('Running Watchtower analysis...', { id: 'cold-read' });
       
+      console.log("🧠 Cold Read payload being sent:", {});
+      
       const response = await apiClient.post('/intelligence/cold-read');
       
       const result = response.data?.cold_read;
