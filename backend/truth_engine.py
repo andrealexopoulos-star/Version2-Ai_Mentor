@@ -187,9 +187,9 @@ async def analyze_email_relationship_patterns(
         if normalized and len(normalized) > 5:
             threads[normalized[:100]].append(email)
     
-    # Analyze threads with ≥5 messages spanning ≥14 days
+    # Analyze threads with ≥threshold messages spanning ≥threshold days
     for subject, thread_emails in threads.items():
-        if len(thread_emails) < 5:
+        if len(thread_emails) < CADENCE_MIN_MESSAGES:
             continue
         
         # Sort by received date
@@ -209,7 +209,7 @@ async def analyze_email_relationship_patterns(
         except:
             continue
         
-        if span_days < 14:
+        if span_days < CADENCE_MIN_SPAN_DAYS:
             continue
         
         # Calculate response time gaps (days between consecutive messages)
