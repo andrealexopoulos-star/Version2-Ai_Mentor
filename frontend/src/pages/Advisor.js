@@ -52,26 +52,17 @@ const focusAreas = [
 const Advisor = () => {
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('focus'); // 'focus' or 'diagnosis'
-  const [selectedFocus, setSelectedFocus] = useState(null);
-  const [narrativeState, setNarrativeState] = useState({
-    text: '',
-    confidence: 'early signals',
-    loading: true
-  });
+  
+  // Watchtower state
+  const [watchtowerEvents, setWatchtowerEvents] = useState([]);
+  const [loadingWatchtower, setLoadingWatchtower] = useState(true);
+  const [runningAnalysis, setRunningAnalysis] = useState(false);
+  
+  // Integration state
   const [integrationData, setIntegrationData] = useState({
-    email: { connected: false, provider: null, connectedAt: null },
-    calendar: { connected: false, connectedAt: null },
-    crm: { connected: false, connectedAt: null },
-    accounting: { connected: false, connectedAt: null },
-    dataPresent: false
+    email: { connected: false, provider: null },
+    hasData: false
   });
-  const [intelligenceState, setIntelligenceState] = useState({
-    timeConsistency: false,
-    crossSourceReinforcement: false,
-    behaviouralReinforcement: false
-  });
-  const [fastInsights, setFastInsights] = useState([]);
 
   // Detect intelligence thresholds using existing data
   useEffect(() => {
