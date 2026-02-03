@@ -3320,19 +3320,39 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         )
 
 
-async def fetch_folder_emails_batch(access_token: str, folder_id: str, cutoff_date: datetime, max_emails: int = 500):
-    """Fetch emails from a folder with date filtering"""
+async def fetch_folder_emails_batch(
+    access_token: str, 
+    folder_id: str, 
+    cutoff_date: datetime, 
+    max_emails: int = 500,
+    metadata_only: bool = False
+):
+    """
+    Fetch emails from a folder with date filtering
+    
+    Args:
+        metadata_only: If True, excludes body content (for Sent Items context)
+    """
     headers = {"Authorization": f"Bearer {access_token}"}
     
     # Format date for Graph API filter
     cutoff_str = cutoff_date.strftime("%Y-%m-%dT%H:%M:%SZ")
     
     graph_url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages"
+    
+    # PHASE 1 INGESTION: Metadata-only for Sent Items
+    if metadata_only:
+        # Sent Items: Context-only ingestion (no bodies)
+        select_fields = "id,conversationId,subject,toRecipients,sentDateTime,isRead"
+    else:
+        # Inbox: Full ingestion (existing)
+        select_fields = "id,subject,from,toRecipients,receivedDateTime,bodyPreview,body,isRead"
+    
     params = {
-        "$select": "id,subject,from,toRecipients,receivedDateTime,bodyPreview,body,isRead",
-        "$filter": f"receivedDateTime ge {cutoff_str}",
+        "$select": select_fields,
+        "$filter": f"receivedDateTime ge {cutoff_str}" if not metadata_only else f"sentDateTime ge {cutoff_str}",
         "$top": min(max_emails, 999),
-        "$orderby": "receivedDateTime desc"
+        "$orderby": "receivedDateTime desc" if not metadata_only else "sentDateTime desc"
     }
     
     async with httpx.AsyncClient(timeout=60) as client:
