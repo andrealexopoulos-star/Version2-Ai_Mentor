@@ -313,6 +313,86 @@ async def analyze_email_relationship_patterns(
                     "status": "active"
                 })
     
+    # === INSIGHT 4: AFTER-HOURS BURNOUT PATTERN (Sent Items Context) ===
+    # Detect: Emails sent outside standard business hours (11pm-5am pattern)
+    # Uses: Sent Items metadata ONLY
+    
+    # Query sent items from MongoDB/Supabase
+    sent_cursor = mongo_db.outlook_emails.find(
+        {
+            "user_id": user_id,
+            "folder": "sent",
+            "sent_date": {"$exists": True}
+        },
+        {
+            "_id": 0,
+            "id": 1,
+            "sent_date": 1,
+            "to_recipients": 1,
+            "subject": 1
+        }
+    ).limit(200)
+    
+    sent_emails = await sent_cursor.to_list(length=200)
+    
+    if len(sent_emails) >= 10:  # Need baseline
+        after_hours_sends = []
+        
+        for email in sent_emails:
+            sent_date_str = email.get('sent_date')
+            if not sent_date_str:
+                continue
+            
+            try:
+                sent_dt = datetime.fromisoformat(sent_date_str.replace('Z', '+00:00'))
+                hour = sent_dt.hour
+                
+                # After-hours: 11pm-5am (23:00-05:00)
+                if hour >= 23 or hour <= 5:
+                    after_hours_sends.append({
+                        "id": email.get('id'),
+                        "hour": hour,
+                        "date": sent_dt.isoformat(),
+                        "recipients_count": len(email.get('to_recipients', []))
+                    })
+            except:
+                continue
+        
+        # Detect pattern: ≥3 after-hours sends in last 30 days
+        thirty_days_ago = now - timedelta(days=30)
+        recent_after_hours = [s for s in after_hours_sends 
+                             if datetime.fromisoformat(s['date']) >= thirty_days_ago]
+        
+        if len(recent_after_hours) >= (2 if first_run else 3):
+            # Calculate percentage
+            recent_total = sum(1 for e in sent_emails 
+                             if datetime.fromisoformat(e.get('sent_date', '').replace('Z', '+00:00')) >= thirty_days_ago)
+            
+            after_hours_pct = int((len(recent_after_hours) / recent_total * 100)) if recent_total > 0 else 0
+            
+            events.append({
+                "id": str(uuid4()),
+                "account_id": account_id,
+                "domain": "communications",
+                "type": "drift",
+                "severity": "low",  # Always low (behavioral signal, not crisis)
+                "headline": f"{len(recent_after_hours)} emails sent after-hours",
+                "statement": f"{len(recent_after_hours)} emails were sent between 11pm and 5am in the last 30 days. This represents {after_hours_pct}% of total sent volume and may indicate workload pressure or timezone misalignment.",
+                "evidence_payload": {
+                    "after_hours_count": len(recent_after_hours),
+                    "total_sent_30_days": recent_total,
+                    "percentage": after_hours_pct,
+                    "hour_distribution": Counter([s['hour'] for s in recent_after_hours]),
+                    "sample_timestamps": [s['date'] for s in recent_after_hours[:5]],
+                    "confidence": confidence_level,
+                    "first_run": first_run
+                },
+                "consequence_window": "Emerging pattern — monitor for sustained after-hours activity" if first_run else "Workload pressure signal — assess capacity and boundaries",
+                "source": "outlook_sent_pattern_analysis",
+                "fingerprint": create_fingerprint("communications", "drift", "after_hours_burnout"),
+                "status": "active"
+            })
+    
     return events
 
 
