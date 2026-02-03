@@ -31,7 +31,8 @@ async def analyze_email_relationship_patterns(
     mongo_db: Any,
     user_id: str,
     account_id: str,
-    lookback_days: int = 90
+    lookback_days: int = 90,
+    first_run: bool = False
 ) -> List[Dict[str, Any]]:
     """
     WATCHTOWER INTELLIGENCE: Relationship Pattern Analysis
@@ -41,10 +42,34 @@ async def analyze_email_relationship_patterns(
     - Temporal anomalies (response cadence collapse)
     - Behavioural drift (communication pattern shifts)
     
-    Requires: ≥5 emails spanning ≥14 days
+    Args:
+        first_run: If True, uses adaptive (lower) thresholds for early signals
+    
+    Requires: ≥5 emails spanning ≥14 days (normal mode)
+             ≥3 emails spanning ≥7 days (first-run mode)
     NOT a keyword match. NOT a simple rule.
     """
     events = []
+    
+    # ADAPTIVE THRESHOLDS (first-run vs normal)
+    if first_run:
+        SILENCE_MIN_WEEKLY_EMAILS = 1      # vs 2 in normal
+        SILENCE_MIN_DAYS = 14              # vs 21 in normal
+        CADENCE_MIN_MESSAGES = 3           # vs 5 in normal
+        CADENCE_MIN_SPAN_DAYS = 7          # vs 14 in normal
+        CADENCE_SLOWDOWN_FACTOR = 2        # vs 3 in normal
+        UNREAD_MIN_COUNT = 2               # vs 3 in normal
+        UNREAD_MIN_DAYS = 7                # vs 14 in normal
+        confidence_level = "early_signal"
+    else:
+        SILENCE_MIN_WEEKLY_EMAILS = 2
+        SILENCE_MIN_DAYS = 21
+        CADENCE_MIN_MESSAGES = 5
+        CADENCE_MIN_SPAN_DAYS = 14
+        CADENCE_SLOWDOWN_FACTOR = 3
+        UNREAD_MIN_COUNT = 3
+        UNREAD_MIN_DAYS = 14
+        confidence_level = "moderate"
     
     # Query MongoDB outlook_emails (INDEXED on user_id as of PROMPT 1)
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
