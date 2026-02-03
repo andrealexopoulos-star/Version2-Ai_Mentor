@@ -8159,18 +8159,15 @@ if OPENAI_API_KEY:
 @api_router.post("/intelligence/cold-read")
 async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     """
-    ONE-SHOT COLD READ ANALYSIS
+    WATCHTOWER COLD READ - Hybrid Intelligence Bridge
     
-    Fetches live data from ALL connected systems
-    Analyzes each domain
-    Emits Watchtower events
-    
-    NOT a sync. NOT a mirror. A bounded analysis.
+    INPUT: MongoDB outlook_emails (read-only)
+    OUTPUT: Supabase watchtower_events (write-only)
+    INTELLIGENCE: Non-trivial relationship and temporal pattern detection
     """
     from truth_engine import generate_cold_read
-    from merge_client import get_merge_client
-    from workspace_helpers import get_user_account
     from watchtower_store import get_watchtower_store
+    from workspace_helpers import get_user_account
     
     user_id = current_user["id"]
     
@@ -8181,14 +8178,15 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     
     account_id = account["id"]
     
-    logger.info(f"🔍 Cold Read triggered for account {account_id}")
+    logger.info(f"🔍 Watchtower Cold Read triggered for account {account_id}, user {user_id}")
     
-    # Execute Cold Read
+    # Execute Cold Read (MongoDB → Supabase)
     result = await generate_cold_read(
         account_id=account_id,
-        supabase_admin=supabase_admin,
-        merge_client=get_merge_client(),
-        watchtower_store=get_watchtower_store()
+        user_id=user_id,
+        mongo_db=db,  # MongoDB instance
+        watchtower_store=get_watchtower_store(),
+        lookback_days=90
     )
     
     return {
