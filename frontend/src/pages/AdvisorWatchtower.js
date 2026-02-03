@@ -50,17 +50,27 @@ const AdvisorWatchtower = () => {
   };
 
   const runColdRead = async () => {
+    // 3️⃣ VALIDATION GATING
+    if (!user?.id) {
+      console.error("Missing Context: user_id");
+      toast.error("Session error. Please refresh and try again.");
+      return;
+    }
+
     if (!emailConnected) {
       toast.error('Connect your email first to run analysis');
       navigate('/connect-email');
       return;
     }
 
+    // 2️⃣ FIX THE SPINNER (Trust Guardrail)
+    setRunningAnalysis(true);
+    toast.loading('Running Watchtower analysis...', { id: 'cold-read' });
+
     try {
-      setRunningAnalysis(true);
-      toast.loading('Running Watchtower analysis...', { id: 'cold-read' });
-      
+      // 1️⃣ FIX THE PAYLOAD
       const payload = {
+        user_id: user.id,
         email_connected: emailConnected
       };
       
@@ -83,8 +93,9 @@ const AdvisorWatchtower = () => {
       await fetchWatchtowerEvents();
       
     } catch (error) {
-      console.error('Cold Read failed:', error);
-      toast.error('Analysis failed. Please try again.', { id: 'cold-read' });
+      console.error("Cold read failed:", error);
+      const errorMsg = error.response?.data?.detail || "Unable to start analysis. Please try again.";
+      toast.error(errorMsg, { id: 'cold-read' });
     } finally {
       setRunningAnalysis(false);
     }
