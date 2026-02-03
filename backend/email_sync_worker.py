@@ -1,28 +1,17 @@
 """
-Automated Email Sync Worker
-Continuously syncs emails for all Outlook-connected users every 60 seconds
+Automated Email Sync Worker - PROVIDER AGNOSTIC
+Continuously syncs emails for ALL connected email accounts (Outlook, Gmail, etc.)
 """
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 import os
 
-# Import Supabase client
 from supabase_client import init_supabase
-
-# Import sync helpers
-from supabase_email_helpers import (
-    create_sync_job_supabase,
-    find_user_sync_job_supabase,
-    update_sync_job_supabase,
-    store_email_supabase
-)
-
-# Import server functions
-import sys
-sys.path.append(os.path.dirname(__file__))
+from supabase_email_helpers import store_email_supabase
+from workspace_helpers import get_user_account
 
 load_dotenv()
 
@@ -32,46 +21,56 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Supabase
 supabase_admin = init_supabase()
 
 SYNC_INTERVAL_SECONDS = 60
-LOOKBACK_DAYS = 7  # Only sync last 7 days in background (not full 36 months)
+LOOKBACK_DAYS = 7
 
 
-async def get_outlook_connected_users() -> List[Dict[str, Any]]:
-    """Get all users who have Outlook connected (valid tokens)"""
+async def get_all_connected_accounts() -> List[Dict[str, Any]]:
+    """Get ALL connected email accounts (Outlook, Gmail) for ALL users"""
     try:
-        # Query outlook_oauth_tokens table for active tokens
-        response = supabase_admin.table("outlook_oauth_tokens").select("user_id, access_token, refresh_token, expires_at").execute()
+        # Query outlook_oauth_tokens table (contains both Outlook AND Gmail tokens)
+        response = supabase_admin.table("outlook_oauth_tokens").select(
+            "user_id, access_token, refresh_token, expires_at, provider, account_email"
+        ).execute()
         
         if not response.data:
-            logger.info("No Outlook-connected users found")
+            logger.info("No connected email accounts found")
             return []
         
-        active_users = []
+        active_accounts = []
         for token_record in response.data:
             user_id = token_record.get("user_id")
             access_token = token_record.get("access_token")
+            provider = token_record.get("provider", "outlook")  # Default to outlook for backward compat
+            
+            # Normalize provider names
+            if provider in ["microsoft", "azure"]:
+                provider = "outlook"
+            elif provider == "google":
+                provider = "gmail"
             
             if user_id and access_token:
-                active_users.append({
+                active_accounts.append({
                     "user_id": user_id,
                     "access_token": access_token,
                     "refresh_token": token_record.get("refresh_token"),
-                    "expires_at": token_record.get("expires_at")
+                    "expires_at": token_record.get("expires_at"),
+                    "provider": provider,
+                    "account_email": token_record.get("account_email")
                 })
         
-        logger.info(f"✅ Found {len(active_users)} Outlook-connected users")
-        return active_users
+        logger.info(f"✅ Found {len(active_accounts)} connected email accounts")
+        return active_accounts
         
     except Exception as e:
-        logger.error(f"Error fetching Outlook users: {e}")
+        logger.error(f"Error fetching connected accounts: {e}")
         return []
 
 
-async def fetch_recent_emails(access_token: str, folder: str, lookback_days: int = 7) -> List[Dict]:
-    """Fetch recent emails from a specific folder"""
+async def fetch_outlook_emails(access_token: str, folder: str, lookback_days: int = 7) -> List[Dict]:
+    """Fetch recent emails from Outlook/Microsoft Graph API"""
     import httpx
     
     try:
@@ -81,7 +80,7 @@ async def fetch_recent_emails(access_token: str, folder: str, lookback_days: int
         url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder}/messages"
         params = {
             "$filter": filter_query,
-            "$top": 100,  # Fetch last 100 emails per folder per sync
+            "$top": 100,
             "$orderby": "receivedDateTime desc"
         }
         
@@ -94,92 +93,224 @@ async def fetch_recent_emails(access_token: str, folder: str, lookback_days: int
                 data = response.json()
                 return data.get("value", [])
             else:
-                logger.error(f"Error fetching emails from {folder}: {response.status_code}")
+                logger.error(f"Error fetching Outlook emails from {folder}: {response.status_code}")
                 return []
                 
     except Exception as e:
-        logger.error(f"Exception fetching emails: {e}")
+        logger.error(f"Exception fetching Outlook emails: {e}")
         return []
 
 
-async def sync_user_emails(user_id: str, access_token: str):
-    """Sync emails for a single user (inbox + sent items)"""
+async def fetch_gmail_emails(access_token: str, label: str, lookback_days: int = 7) -> List[Dict]:
+    """Fetch recent emails from Gmail API"""
+    import httpx
+    
     try:
-        # Check if sync is already running for this user
-        existing_job = await find_user_sync_job_supabase(supabase_admin, user_id, "running")
-        if existing_job:
-            logger.info(f"⏭️  User {user_id[:8]}... already has sync running, skipping")
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+        # Gmail uses Unix timestamp for 'after' query
+        after_timestamp = int(cutoff_date.timestamp())
+        
+        # Map folder names to Gmail labels
+        label_map = {
+            "inbox": "INBOX",
+            "sentitems": "SENT"
+        }
+        gmail_label = label_map.get(label, "INBOX")
+        
+        # Get message IDs
+        list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+        params = {
+            "labelIds": gmail_label,
+            "q": f"after:{after_timestamp}",
+            "maxResults": 100
+        }
+        
+        headers = {"Authorization": f"Bearer {access_token}"}
+        
+        async with httpx.AsyncClient(timeout=30) as client:
+            list_response = await client.get(list_url, headers=headers, params=params)
+            
+            if list_response.status_code != 200:
+                logger.error(f"Error listing Gmail messages: {list_response.status_code}")
+                return []
+            
+            messages = list_response.json().get("messages", [])
+            if not messages:
+                return []
+            
+            # Fetch full message details (batch would be better for production)
+            full_messages = []
+            for msg in messages[:100]:  # Limit to 100
+                msg_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg['id']}"
+                msg_response = await client.get(msg_url, headers=headers)
+                
+                if msg_response.status_code == 200:
+                    full_messages.append(msg_response.json())
+            
+            return full_messages
+                
+    except Exception as e:
+        logger.error(f"Exception fetching Gmail emails: {e}")
+        return []
+
+
+async def sync_account_emails(account: Dict[str, Any]):
+    """Sync emails for a single connected account (provider-agnostic)"""
+    try:
+        user_id = account["user_id"]
+        provider = account["provider"]
+        access_token = account["access_token"]
+        account_email = account.get("account_email", "unknown")
+        
+        # Get account_id for tenant scope
+        user_account = await get_user_account(supabase_admin, user_id)
+        if not user_account:
+            logger.warning(f"⚠️ No workspace found for user {user_id[:8]}..., skipping")
             return
         
-        logger.info(f"🔄 Starting sync for user {user_id[:8]}...")
+        account_id = user_account["id"]
+        
+        logger.info(f"🔄 Syncing {provider} account: {account_email} (user {user_id[:8]}...)")
         
         synced_count = 0
         
         # Sync inbox
-        inbox_emails = await fetch_recent_emails(access_token, "inbox", LOOKBACK_DAYS)
+        if provider == "outlook":
+            inbox_emails = await fetch_outlook_emails(access_token, "inbox", LOOKBACK_DAYS)
+        elif provider == "gmail":
+            inbox_emails = await fetch_gmail_emails(access_token, "inbox", LOOKBACK_DAYS)
+        else:
+            logger.error(f"Unknown provider: {provider}")
+            return
+        
         for email in inbox_emails:
-            email_doc = {
+            email_doc = transform_email_to_storage(
+                email, user_id, account_id, provider, "inbox"
+            )
+            if email_doc:
+                await store_email_supabase(supabase_admin, email_doc)
+                synced_count += 1
+        
+        # Sync sent items
+        if provider == "outlook":
+            sent_emails = await fetch_outlook_emails(access_token, "sentitems", LOOKBACK_DAYS)
+        elif provider == "gmail":
+            sent_emails = await fetch_gmail_emails(access_token, "sentitems", LOOKBACK_DAYS)
+        else:
+            sent_emails = []
+        
+        for email in sent_emails:
+            email_doc = transform_email_to_storage(
+                email, user_id, account_id, provider, "sentitems"
+            )
+            if email_doc:
+                await store_email_supabase(supabase_admin, email_doc)
+                synced_count += 1
+        
+        logger.info(f"✅ {provider.upper()} {account_email}: synced {synced_count} emails")
+        
+    except Exception as e:
+        logger.error(f"❌ Error syncing account {account.get('account_email', 'unknown')}: {e}")
+
+
+def transform_email_to_storage(
+    email: Dict,
+    user_id: str,
+    account_id: str,
+    provider: str,
+    folder: str
+) -> Optional[Dict]:
+    """Transform provider-specific email format to unified storage format"""
+    try:
+        if provider == "outlook":
+            return {
                 "user_id": user_id,
+                "account_id": account_id,
+                "provider": provider,
                 "graph_message_id": email.get("id"),
+                "conversation_id": email.get("conversationId"),
                 "subject": email.get("subject", ""),
                 "from_address": email.get("from", {}).get("emailAddress", {}).get("address"),
                 "from_name": email.get("from", {}).get("emailAddress", {}).get("name"),
-                "received_date": email.get("receivedDateTime"),
+                "received_date": email.get("receivedDateTime") or email.get("sentDateTime"),
                 "body_preview": email.get("bodyPreview"),
                 "body_content": email.get("body", {}).get("content", "")[:5000],
                 "is_read": email.get("isRead", False),
-                "folder": "inbox",
-                "synced_at": datetime.now(timezone.utc).isoformat()
-            }
-            await store_email_supabase(supabase_admin, email_doc)
-            synced_count += 1
-        
-        # Sync sent items (metadata only for Watchtower)
-        sent_emails = await fetch_recent_emails(access_token, "sentitems", LOOKBACK_DAYS)
-        for email in sent_emails:
-            to_recipients = email.get("toRecipients", [])
-            recipient_addresses = [r.get("emailAddress", {}).get("address", "") for r in to_recipients]
-            
-            email_doc = {
-                "user_id": user_id,
-                "graph_message_id": email.get("id"),
-                "conversation_id": email.get("conversationId"),
-                "to_recipients": recipient_addresses,
-                "received_date": email.get("sentDateTime"),  # Use sentDateTime as received_date
-                "subject": email.get("subject", "")[:200],
-                "folder": "sentitems",  # Match RPC expectation
+                "folder": folder,
                 "synced_at": datetime.now(timezone.utc).isoformat(),
-                "metadata_only": True
+                "metadata_only": (folder == "sentitems")
             }
-            await store_email_supabase(supabase_admin, email_doc)
-            synced_count += 1
         
-        logger.info(f"✅ User {user_id[:8]}... synced {synced_count} emails")
+        elif provider == "gmail":
+            # Parse Gmail message format
+            headers = {h["name"]: h["value"] for h in email.get("payload", {}).get("headers", [])}
+            
+            return {
+                "user_id": user_id,
+                "account_id": account_id,
+                "provider": provider,
+                "graph_message_id": email.get("id"),
+                "conversation_id": email.get("threadId"),
+                "subject": headers.get("Subject", ""),
+                "from_address": extract_email_address(headers.get("From", "")),
+                "from_name": headers.get("From", ""),
+                "received_date": datetime.fromtimestamp(
+                    int(email.get("internalDate", 0)) / 1000,
+                    tz=timezone.utc
+                ).isoformat(),
+                "body_preview": email.get("snippet", ""),
+                "body_content": "",  # Would need to parse payload for full content
+                "is_read": "UNREAD" not in email.get("labelIds", []),
+                "folder": folder,
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+                "metadata_only": (folder == "sentitems")
+            }
+        
+        return None
         
     except Exception as e:
-        logger.error(f"❌ Error syncing user {user_id[:8]}...: {e}")
+        logger.error(f"Error transforming email: {e}")
+        return None
+
+
+def extract_email_address(from_string: str) -> str:
+    """Extract email address from 'Name <email>' format"""
+    import re
+    match = re.search(r'<(.+?)>', from_string)
+    if match:
+        return match.group(1)
+    return from_string
 
 
 async def sync_loop():
-    """Main sync loop - runs continuously"""
-    logger.info("🚀 Email Sync Worker Started")
+    """Main sync loop - runs continuously for ALL providers"""
+    logger.info("🚀 Email Sync Worker Started (Provider-Agnostic)")
     logger.info(f"📅 Sync Interval: {SYNC_INTERVAL_SECONDS} seconds")
     logger.info(f"📊 Lookback Window: {LOOKBACK_DAYS} days")
+    logger.info(f"🌐 Supported Providers: Outlook, Gmail")
     
     while True:
         try:
             logger.info("=" * 60)
             logger.info(f"🔄 Starting sync cycle at {datetime.now(timezone.utc).isoformat()}")
             
-            # Get all Outlook-connected users
-            users = await get_outlook_connected_users()
+            # Get all connected accounts (Outlook + Gmail)
+            accounts = await get_all_connected_accounts()
             
-            if not users:
-                logger.info("⏭️  No users to sync")
+            if not accounts:
+                logger.info("⏭️  No connected accounts to sync")
             else:
-                # Sync each user
-                for user in users:
-                    await sync_user_emails(user["user_id"], user["access_token"])
+                # Group by provider for logging
+                by_provider = {}
+                for acc in accounts:
+                    provider = acc["provider"]
+                    by_provider[provider] = by_provider.get(provider, 0) + 1
+                
+                logger.info(f"📊 Accounts by provider: {dict(by_provider)}")
+                
+                # Sync each account
+                for account in accounts:
+                    await sync_account_emails(account)
             
             logger.info(f"✅ Sync cycle complete. Sleeping {SYNC_INTERVAL_SECONDS}s...")
             logger.info("=" * 60)
@@ -187,10 +318,9 @@ async def sync_loop():
         except Exception as e:
             logger.error(f"❌ Error in sync loop: {e}")
         
-        # Wait before next sync
         await asyncio.sleep(SYNC_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":
-    logger.info("🎯 Initializing Automated Email Sync Worker...")
+    logger.info("🎯 Initializing Provider-Agnostic Email Sync Worker...")
     asyncio.run(sync_loop())
