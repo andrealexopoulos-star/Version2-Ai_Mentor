@@ -275,19 +275,19 @@ async def analyze_email_relationship_patterns(
                 unread_by_sender[sender].append(email)
     
     for sender, unread_emails in unread_by_sender.items():
-        if len(unread_emails) >= 3:
-            # Check if this is a recent pattern (all within last 14 days)
+        if len(unread_emails) >= UNREAD_MIN_COUNT:
+            # Check if this is a recent pattern (all within threshold days)
             recent_unreads = []
             for email in unread_emails:
                 try:
                     recv_date = datetime.fromisoformat(email.get('received_date', '').replace('Z', '+00:00'))
                     days_old = (now - recv_date).days
-                    if days_old <= 14:
+                    if days_old <= UNREAD_MIN_DAYS:
                         recent_unreads.append(email)
                 except:
                     continue
             
-            if len(recent_unreads) >= 3:
+            if len(recent_unreads) >= UNREAD_MIN_COUNT:
                 sender_name = next((e.get('from_name') for e in recent_unreads if e.get('from_name')), sender)
                 
                 events.append({
@@ -295,17 +295,19 @@ async def analyze_email_relationship_patterns(
                     "account_id": account_id,
                     "domain": "communications",
                     "type": "risk",
-                    "severity": "medium",
+                    "severity": "low" if first_run else "medium",
                     "headline": f"{len(recent_unreads)} unread from {sender_name[:30]}",
-                    "statement": f"{len(recent_unreads)} emails from this sender have not been opened in the last 14 days. This suggests either inbox overload or deprioritization of this contact.",
+                    "statement": f"{len(recent_unreads)} emails from this sender have not been opened in the last {UNREAD_MIN_DAYS} days. This suggests either inbox overload or deprioritization of this contact.",
                     "evidence_payload": {
                         "sender_email": sender[:50],
                         "sender_name": sender_name[:100],
                         "unread_count": len(recent_unreads),
                         "oldest_unread_days": max((datetime.now(timezone.utc) - datetime.fromisoformat(e.get('received_date', '').replace('Z', '+00:00'))).days for e in recent_unreads if e.get('received_date')),
-                        "email_ids": [e.get('id') for e in recent_unreads]
+                        "email_ids": [e.get('id') for e in recent_unreads],
+                        "confidence": confidence_level,
+                        "first_run": first_run
                     },
-                    "consequence_window": "Inbox attention deficit — potential missed critical information",
+                    "consequence_window": "Worth monitoring" if first_run else "Inbox attention deficit — potential missed critical information",
                     "source": "outlook_attention_analysis",
                     "fingerprint": create_fingerprint("communications", "risk", f"unread_{sender[:20]}"),
                     "status": "active"
