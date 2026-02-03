@@ -397,12 +397,13 @@ async def generate_cold_read(
                 except Exception as e:
                     logger.error(f"❌ Failed to persist event: {e}")
         
-        logger.info(f"🎯 COLD READ COMPLETE: {len(all_events)} events from {email_count} emails")
+        logger.info(f"🎯 COLD READ COMPLETE: {len(all_events)} events from {email_count} emails (first_run={first_run})")
         
         return {
             "events_created": len(all_events),
             "domains_analyzed": domains_analyzed,
             "email_count_analyzed": email_count,
+            "first_run_mode": first_run,
             "status": "complete" if all_events else "insufficient_data"
         }
         
