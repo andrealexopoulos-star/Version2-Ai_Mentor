@@ -3256,10 +3256,10 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
                         "graph_message_id": email.get("id"),
                         "conversation_id": conversation_id,
                         "to_recipients": recipient_addresses,
-                        "sent_date": sent_datetime,
+                        "received_date": sent_datetime,  # FIXED: Use received_date for RPC compatibility
                         "subject": email.get("subject", "")[:200],  # Limited subject for thread matching
                         "is_external": is_external,
-                        "folder": "sent",
+                        "folder": "sentitems",  # FIXED: Match RPC expectation (not "sent")
                         "synced_at": datetime.now(timezone.utc).isoformat(),
                         "metadata_only": True  # Flag for Watchtower context use
                     }
