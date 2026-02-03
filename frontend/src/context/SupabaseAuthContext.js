@@ -227,12 +227,12 @@ export const SupabaseAuthProvider = ({ children }) => {
           queryParams: {
             // Force account picker for Google
             ...(provider === 'google' && { 
-              prompt: 'consent', // Changed from 'select_account' to allow new signups
+              prompt: 'select_account consent', // BOTH: show account picker + request consent
               access_type: 'offline'
             }),
             // Force account picker and consent for Azure/Microsoft
             ...(provider === 'azure' && { 
-              prompt: 'consent' // Changed to allow new signups, not just sign-in
+              prompt: 'select_account consent' // BOTH: show account picker + request consent
             })
           }
         }
