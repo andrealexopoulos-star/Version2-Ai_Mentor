@@ -49,7 +49,6 @@ async def generate_cold_read(
             insights.append({
                 "id": str(uuid4()),
                 "account_id": account_id,
-                "user_id": user_id,
                 "type": "risk",
                 "domain": "communications",
                 "severity": "critical",
@@ -61,7 +60,6 @@ async def generate_cold_read(
                     "status": "Silent",
                     "sender_email": top_ghost['sender_email']
                 },
-                "confidence_level": "high",
                 "consequence_window": "Relationship at risk",
                 "source": "supabase_rpc_ghosting",
                 "fingerprint": f"ghost_{top_ghost['sender_email'][:20]}",
@@ -84,7 +82,6 @@ async def generate_cold_read(
             insights.append({
                 "id": str(uuid4()),
                 "account_id": account_id,
-                "user_id": user_id,
                 "type": "anomaly",
                 "domain": "operations",
                 "severity": "medium",
@@ -94,7 +91,6 @@ async def generate_cold_read(
                     "late_night_emails_7d": int(late_emails),
                     "threshold": 3
                 },
-                "confidence_level": "moderate",
                 "consequence_window": "Monitor for sustained pattern",
                 "source": "supabase_rpc_burnout",
                 "fingerprint": "burnout_pattern",
