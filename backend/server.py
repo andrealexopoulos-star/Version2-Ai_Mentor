@@ -8210,20 +8210,31 @@ async def get_watchtower_events(
     
     user_id = current_user["id"]
     
-    account = await get_user_account(supabase_admin, user_id)
-    if not account:
-        raise HTTPException(status_code=400, detail="Workspace not initialized")
-    
-    account_id = account["id"]
-    
-    # Fetch watchtower events
-    watchtower = get_watchtower_store()
-    events = await watchtower.get_events(account_id, status=status)
-    
-    return {
-        "events": events,
-        "count": len(events)
-    }
+    try:
+        account = await get_user_account(supabase_admin, user_id)
+        if not account:
+            logger.error(f"No workspace found for user {user_id}")
+            raise HTTPException(status_code=400, detail="Workspace not initialized. Contact support.")
+        
+        account_id = account["id"]
+        
+        # Fetch watchtower events
+        watchtower = get_watchtower_store()
+        events = await watchtower.get_events(account_id, status=status)
+        
+        logger.info(f"✅ Watchtower events fetched for workspace {account_id}: {len(events)} events")
+        
+        return {
+            "events": events,
+            "count": len(events)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Watchtower fetch failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch watchtower events: {str(e)}")
 
 
 @api_router.patch("/intelligence/watchtower/{event_id}/handle")
