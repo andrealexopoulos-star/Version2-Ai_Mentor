@@ -16,6 +16,7 @@ const AdvisorWatchtower = () => {
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [runningAnalysis, setRunningAnalysis] = useState(false);
   const [emailConnected, setEmailConnected] = useState(false);
+  const [emailConnection, setEmailConnection] = useState(null);
 
   // Check if email is connected
   useEffect(() => {
@@ -26,6 +27,12 @@ const AdvisorWatchtower = () => {
     try {
       const response = await apiClient.get('/outlook/status');
       setEmailConnected(response.data?.connected || false);
+      if (response.data?.connected) {
+        setEmailConnection({
+          id: response.data?.connection_id || user?.id,
+          provider: response.data?.provider || 'outlook'
+        });
+      }
     } catch (error) {
       console.error('Failed to check email status');
     }
