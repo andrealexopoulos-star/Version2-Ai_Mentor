@@ -59,14 +59,27 @@ const WatchtowerEvent = ({ event, onHandle }) => {
             <h3 className="font-semibold text-slate-900 text-base leading-tight">
               {event.headline}
             </h3>
-            <span className={`text-xs font-medium px-2 py-1 rounded ${config.bgColor} ${config.color} border ${config.borderColor} flex-shrink-0`}>
-              {event.severity.toUpperCase()}
-            </span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {event.evidence_payload?.first_run && (
+                <span className="text-xs font-medium px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                  EARLY SIGNAL
+                </span>
+              )}
+              <span className={`text-xs font-medium px-2 py-1 rounded ${config.bgColor} ${config.color} border ${config.borderColor}`}>
+                {event.severity.toUpperCase()}
+              </span>
+            </div>
           </div>
           
           <p className="text-sm text-slate-700 leading-relaxed mt-2">
             {event.statement}
           </p>
+          
+          {event.evidence_payload?.first_run && (
+            <p className="text-xs text-blue-600 mt-2 italic">
+              Watchtower is learning your normal patterns. Early signals help establish baseline.
+            </p>
+          )}
           
           {event.consequence_window && (
             <p className="text-xs text-slate-600 mt-2 italic">
