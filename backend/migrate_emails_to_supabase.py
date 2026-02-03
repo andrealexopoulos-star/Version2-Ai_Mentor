@@ -18,8 +18,7 @@ load_dotenv()
 async def migrate_emails_to_supabase():
     """
     One-time migration: MongoDB outlook_emails → Supabase outlook_emails
-    
-    Ensures RPCs have data to analyze
+    FILTERED: Only migrates emails for users that exist in Supabase
     """
     # Connect to MongoDB
     mongo_client = AsyncIOMotorClient(os.environ['MONGO_URL'])
@@ -28,23 +27,36 @@ async def migrate_emails_to_supabase():
     # Connect to Supabase
     supabase = init_supabase()
     
-    logger.info("🔄 Starting email migration from MongoDB to Supabase")
+    logger.info("🔄 Starting FILTERED email migration from MongoDB to Supabase")
+    
+    # Get all valid Supabase user IDs
+    supabase_users_result = supabase.table('users').select('id').execute()
+    valid_user_ids = {user['id'] for user in supabase_users_result.data}
+    logger.info(f"✅ Found {len(valid_user_ids)} active users in Supabase")
     
     # Fetch all emails from MongoDB
-    mongo_emails = await mongo_db.outlook_emails.find({}).to_list(None)
-    total_emails = len(mongo_emails)
+    all_mongo_emails = await mongo_db.outlook_emails.find({}).to_list(None)
+    total_emails = len(all_mongo_emails)
+    logger.info(f"📊 Found {total_emails} total emails in MongoDB")
     
-    logger.info(f"📊 Found {total_emails} emails in MongoDB")
+    # Filter: Only keep emails for users that exist in Supabase
+    mongo_emails = [email for email in all_mongo_emails if email.get('user_id') in valid_user_ids]
+    filtered_count = len(mongo_emails)
+    deleted_count = total_emails - filtered_count
     
-    if total_emails == 0:
-        logger.warning("⚠️ No emails to migrate")
+    logger.info(f"✅ Keeping {filtered_count} emails from active users")
+    logger.info(f"🗑️  Skipping {deleted_count} emails from non-existent users")
+    
+    if filtered_count == 0:
+        logger.warning("⚠️ No emails to migrate (all emails belong to deleted users)")
+        logger.info(f"💡 Consider triggering fresh sync for current users via /api/outlook/comprehensive-sync")
         return
     
     migrated_count = 0
     error_count = 0
     batch_size = 100
     
-    for i in range(0, total_emails, batch_size):
+    for i in range(0, filtered_count, batch_size):
         batch = mongo_emails[i:i+batch_size]
         batch_data = []
         
@@ -84,7 +96,7 @@ async def migrate_emails_to_supabase():
             ).execute()
             
             migrated_count += len(batch_data)
-            logger.info(f"✅ Migrated batch {i//batch_size + 1}: {migrated_count}/{total_emails} emails")
+            logger.info(f"✅ Migrated batch {i//batch_size + 1}: {migrated_count}/{filtered_count} emails")
             
         except Exception as e:
             error_count += len(batch_data)
@@ -94,9 +106,11 @@ async def migrate_emails_to_supabase():
 ╔════════════════════════════════════════╗
 ║      MIGRATION COMPLETE                ║
 ╠════════════════════════════════════════╣
-║  Total Emails:      {total_emails:>6}          ║
+║  Total in MongoDB:  {total_emails:>6}          ║
+║  Filtered (Active): {filtered_count:>6}          ║
 ║  Migrated:          {migrated_count:>6}          ║
 ║  Errors:            {error_count:>6}          ║
+║  Skipped (Orphans): {deleted_count:>6}          ║
 ╚════════════════════════════════════════╝
     """)
     
