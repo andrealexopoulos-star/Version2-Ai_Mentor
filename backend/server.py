@@ -8220,13 +8220,11 @@ if OPENAI_API_KEY:
 @api_router.post("/intelligence/cold-read")
 async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     """
-    WATCHTOWER COLD READ - Hybrid Intelligence Bridge
+    WATCHTOWER COLD READ - RPC-Based Intelligence
     
-    INPUT: MongoDB outlook_emails (read-only)
-    OUTPUT: Supabase watchtower_events (write-only)
-    INTELLIGENCE: Non-trivial relationship and temporal pattern detection
+    Uses Supabase server-side functions for performance
     """
-    from truth_engine import generate_cold_read
+    from truth_engine_rpc import generate_cold_read
     from watchtower_store import get_watchtower_store
     from workspace_helpers import get_user_account
     
@@ -8239,15 +8237,14 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     
     account_id = account["id"]
     
-    logger.info(f"🔍 Watchtower Cold Read triggered for account {account_id}, user {user_id}")
+    logger.info(f"🔍 Watchtower Cold Read (RPC) triggered for account {account_id}, user {user_id}")
     
-    # Execute Cold Read (MongoDB → Supabase)
+    # Execute Cold Read via RPCs
     result = await generate_cold_read(
-        account_id=account_id,
         user_id=user_id,
-        mongo_db=db,  # MongoDB instance
-        watchtower_store=get_watchtower_store(),
-        lookback_days=90
+        account_id=account_id,
+        supabase_admin=supabase_admin,
+        watchtower_store=get_watchtower_store()
     )
     
     return {
