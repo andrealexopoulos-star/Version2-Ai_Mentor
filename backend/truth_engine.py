@@ -140,11 +140,11 @@ async def analyze_email_relationship_patterns(
         recent_weeks = [data["periods"][w] for w in range(0, 4)]
         recent_total = sum(recent_weeks)
         
-        # Anomaly: Was communicating ≥2x/week, now silent for 3+ weeks
-        if avg_historical >= 2 and recent_total == 0:
+        # Anomaly: Was communicating ≥threshold/week, now silent for threshold days
+        if avg_historical >= SILENCE_MIN_WEEKLY_EMAILS and recent_total == 0:
             last_seen_days = (now - data["last_seen"]).days if data["last_seen"] else 999
             
-            if last_seen_days >= 21:  # 3 weeks silence
+            if last_seen_days >= SILENCE_MIN_DAYS:
                 # Get sender name for evidence
                 sender_name = next((e.get('from_name') for e in data["emails"] if e.get('from_name')), sender)
                 total_emails = len(data["emails"])
@@ -154,7 +154,7 @@ async def analyze_email_relationship_patterns(
                     "account_id": account_id,
                     "domain": "communications",
                     "type": "anomaly",
-                    "severity": "high",
+                    "severity": "medium" if first_run else "high",
                     "headline": f"Communication silence: {sender_name[:30]}",
                     "statement": f"This contact historically sent {int(avg_historical)} emails per week over the past 3 months. No communication received in the last {last_seen_days} days. This represents a {int((last_seen_days / 7) / avg_historical * 100)}% drop from normal cadence.",
                     "evidence_payload": {
@@ -165,9 +165,11 @@ async def analyze_email_relationship_patterns(
                         "total_historical_emails": total_emails,
                         "last_contact_date": data["last_seen"].isoformat() if data["last_seen"] else None,
                         "analysis_period_days": lookback_days,
-                        "email_ids_sample": [e.get('id') for e in data["emails"][:5]]
+                        "email_ids_sample": [e.get('id') for e in data["emails"][:5]],
+                        "confidence": confidence_level,
+                        "first_run": first_run
                     },
-                    "consequence_window": "Relationship risk — requires outreach within 7 days",
+                    "consequence_window": "Early signal — worth monitoring" if first_run else "Relationship risk — requires outreach within 7 days",
                     "source": "outlook_email_pattern_analysis",
                     "fingerprint": create_fingerprint("communications", "anomaly", f"silence_{sender[:20]}"),
                     "status": "active"
