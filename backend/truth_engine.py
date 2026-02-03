@@ -330,6 +330,8 @@ async def generate_cold_read(
     OUTPUT: Supabase watchtower_events (write-only)
     INTELLIGENCE: Multi-message pattern detection
     
+    FIRST-RUN MODE: Automatically uses adaptive thresholds when no events exist
+    
     Args:
         account_id: Workspace ID
         user_id: User ID for email query
@@ -342,6 +344,7 @@ async def generate_cold_read(
             "events_created": int,
             "domains_analyzed": List[str],
             "email_count_analyzed": int,
+            "first_run_mode": bool,
             "status": "complete" | "insufficient_data" | "failed"
         }
     """
@@ -351,13 +354,24 @@ async def generate_cold_read(
     domains_analyzed = []
     
     try:
+        # === FIRST-RUN DETECTION ===
+        # Check if this is the first analysis (no existing events)
+        existing_events = await watchtower_store.get_events(account_id, status=None)
+        first_run = len(existing_events) == 0
+        
+        if first_run:
+            logger.info("🎯 FIRST-RUN MODE ACTIVATED: Using adaptive thresholds for early signals")
+        else:
+            logger.info("📊 NORMAL MODE: Using standard thresholds")
+        
         # === COMMUNICATIONS DOMAIN: Email Intelligence ===
         
         email_events = await analyze_email_relationship_patterns(
             mongo_db=mongo_db,
             user_id=user_id,
             account_id=account_id,
-            lookback_days=lookback_days
+            lookback_days=lookback_days,
+            first_run=first_run
         )
         
         all_events.extend(email_events)
