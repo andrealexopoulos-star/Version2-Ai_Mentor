@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
+import { toast } from 'sonner';
 import { 
   TrendingUp, DollarSign, Zap, Users, Target,
-  RefreshCw, Loader2
+  RefreshCw, Loader2, Eye, AlertCircle
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import Diagnosis from '../pages/Diagnosis';
-import NarrativeTypewriter from '../components/NarrativeTypewriter';
-import { extractEmailEvidence, extractCalendarEvidence, extractCRMEvidence, generateFastInsight } from '../lib/fastEvidence';
+import WatchtowerEvent from '../components/WatchtowerEvent';
 
 const focusAreas = [
   {
