@@ -1,6 +1,6 @@
 /* BIQC Service Worker - PWA Offline Support */
 
-const CACHE_NAME = 'biqc-v2-20250202-mobile-fixes'; // Updated to force cache refresh for mobile fixes
+const CACHE_NAME = 'biqc-v3-20250202-beta-domain'; // Force cache refresh for beta.thestrategysquad.com
 const urlsToCache = [
   '/',
   '/static/css/main.css',
