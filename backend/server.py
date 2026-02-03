@@ -3200,14 +3200,21 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         
         all_folders = folders_data.get("value", [])
         
-        # Focus on key folders
-        target_folders = ["inbox", "sentitems", "deleteditems"]
+        # ========================================
+        # PHASE 1 INGESTION PROTOCOL
+        # ========================================
+        # INBOX: Full ingestion (existing)
+        # SENT ITEMS: Metadata-only (NEW - for Watchtower context)
+        # DELETED/ARCHIVE/CUSTOM: Excluded (blocked)
+        # ========================================
         
-        # Add custom folders
-        for folder in all_folders:
-            folder_name = folder.get("displayName", "").lower()
-            if folder_name not in ["inbox", "sent items", "deleted items", "drafts", "junk email"]:
-                target_folders.append(folder.get("id"))
+        target_folders = {
+            "inbox": {"ingest_body": True, "purpose": "primary"},
+            "sentitems": {"ingest_body": False, "purpose": "context_only"}
+        }
+        
+        # DO NOT add: deleteditems, archive, custom folders
+        # This is explicit scope limitation for Phase 1
         
         total_emails = 0
         emails_by_sender = {}
