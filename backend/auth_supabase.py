@@ -392,7 +392,7 @@ async def signin_with_email(request: SignInRequest):
 
 async def get_oauth_url(provider: str, redirect_to: str = None):
     """
-    Get OAuth URL for Google or Azure sign-in
+    Get OAuth URL for Google or Azure sign-in with account picker
     """
     try:
         if provider not in ["google", "azure"]:
@@ -403,7 +403,12 @@ async def get_oauth_url(provider: str, redirect_to: str = None):
             options["redirectTo"] = redirect_to
         
         # Supabase handles the OAuth flow automatically
+        # Add prompt=select_account to force account picker
         auth_url = f"{os.environ.get('SUPABASE_URL')}/auth/v1/authorize?provider={provider}"
+        
+        # CRITICAL: Add prompt=select_account to show account picker
+        # This prevents auto-login with cached credentials
+        auth_url += "&prompt=select_account"
         
         if redirect_to:
             auth_url += f"&redirect_to={redirect_to}"
