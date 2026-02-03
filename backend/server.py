@@ -4414,6 +4414,10 @@ COGNITIVE CORE CONTEXT (USE THIS)
         ]
         
         if conversation:
+            # ⚠️ WARNING: MongoDB write is DEPRECATED
+            # SOURCE OF TRUTH: Supabase soundboard_conversations table (line 4241)
+            # RISK: Dual-write inconsistency - reads from Supabase, writes to MongoDB
+            # TODO (MIGRATION): Remove this MongoDB write after verifying Supabase-only flow
             # Update existing conversation
             await db.soundboard_conversations.update_one(
                 {"id": req.conversation_id},
@@ -4424,6 +4428,10 @@ COGNITIVE CORE CONTEXT (USE THIS)
             )
             conversation_id = req.conversation_id
         else:
+            # ⚠️ WARNING: MongoDB write is DEPRECATED
+            # SOURCE OF TRUTH: Supabase soundboard_conversations table
+            # RISK: New conversations written to MongoDB will NOT appear in Supabase reads
+            # TODO (MIGRATION): Remove this MongoDB write
             # Create new conversation
             conversation_id = str(uuid.uuid4())
             await db.soundboard_conversations.insert_one({
