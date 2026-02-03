@@ -235,8 +235,8 @@ async def analyze_email_relationship_patterns(
         avg_early = sum(early_gaps) / len(early_gaps) if early_gaps else 0
         avg_recent = sum(recent_gaps) / len(recent_gaps) if recent_gaps else 0
         
-        # Anomaly: Recent response time 3x slower than early
-        if avg_early > 0 and avg_recent > avg_early * 3:
+        # Anomaly: Recent response time SLOWDOWN_FACTOR slower than early
+        if avg_early > 0 and avg_recent > avg_early * CADENCE_SLOWDOWN_FACTOR:
             degradation_pct = int((avg_recent / avg_early - 1) * 100)
             
             events.append({
@@ -244,7 +244,7 @@ async def analyze_email_relationship_patterns(
                 "account_id": account_id,
                 "domain": "communications",
                 "type": "drift",
-                "severity": "medium",
+                "severity": "low" if first_run else "medium",
                 "headline": f"Thread momentum collapse: {subject[:40]}...",
                 "statement": f"This conversation thread started with responses every {int(avg_early)} days. Recent responses are taking {int(avg_recent)} days—{degradation_pct}% slower. This indicates declining engagement or deprioritization over {span_days} days.",
                 "evidence_payload": {
@@ -254,9 +254,11 @@ async def analyze_email_relationship_patterns(
                     "early_response_avg_days": round(avg_early, 1),
                     "recent_response_avg_days": round(avg_recent, 1),
                     "degradation_percentage": degradation_pct,
-                    "email_ids": [e.get('id') for e in sorted_thread[:10]]
+                    "email_ids": [e.get('id') for e in sorted_thread[:10]],
+                    "confidence": confidence_level,
+                    "first_run": first_run
                 },
-                "consequence_window": "Thread at risk of stalling — intervention required",
+                "consequence_window": "Emerging pattern — worth monitoring" if first_run else "Thread at risk of stalling — intervention required",
                 "source": "outlook_thread_analysis",
                 "fingerprint": create_fingerprint("communications", "drift", f"cadence_{subject[:20]}"),
                 "status": "active"
