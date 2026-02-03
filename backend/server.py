@@ -3235,6 +3235,39 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
             for email in emails:
                 total_emails += 1
                 
+                # Determine if this is sent or received
+                is_sent_folder = (folder_id == "sentitems")
+                
+                if is_sent_folder:
+                    # SENT ITEMS: Metadata-only storage
+                    # Extract ONLY: recipients, timestamp, thread context
+                    to_recipients = email.get("toRecipients", [])
+                    recipient_addresses = [r.get("emailAddress", {}).get("address", "") for r in to_recipients]
+                    
+                    sent_datetime = email.get("sentDateTime", "")
+                    conversation_id = email.get("conversationId", "")
+                    
+                    # Determine if external
+                    is_external = any(not addr.endswith("@thestrategysquad.com") for addr in recipient_addresses if addr)
+                    
+                    # Store sent metadata for Watchtower context
+                    email_doc = {
+                        "user_id": user_id,
+                        "graph_message_id": email.get("id"),
+                        "conversation_id": conversation_id,
+                        "to_recipients": recipient_addresses,
+                        "sent_date": sent_datetime,
+                        "subject": email.get("subject", "")[:200],  # Limited subject for thread matching
+                        "is_external": is_external,
+                        "folder": "sent",
+                        "synced_at": datetime.now(timezone.utc).isoformat(),
+                        "metadata_only": True  # Flag for Watchtower context use
+                    }
+                    
+                    await store_email_supabase(supabase_admin, email_doc)
+                    continue  # Skip analysis for sent items
+                
+                # INBOX: Full ingestion (existing logic)
                 # Extract intelligence
                 sender = email.get("from", {}).get("emailAddress", {}).get("address", "")
                 subject = email.get("subject", "")
