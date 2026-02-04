@@ -773,7 +773,7 @@ async def get_current_account(current_user: dict = Depends(get_current_user)):
     account_id = current_user.get("account_id")
     if not account_id:
         raise HTTPException(status_code=400, detail="Account not configured")
-    account = await get_account_supabase(supabase_admin, {"id": account_id}, {"_id": 0})
+    account = await get_account_supabase(supabase_admin, {"id": account_id})
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     return account
