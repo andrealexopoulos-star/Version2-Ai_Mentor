@@ -4995,15 +4995,73 @@ async def save_onboarding_progress(
 
 @api_router.post("/onboarding/complete")
 async def complete_onboarding(current_user: dict = Depends(get_current_user)):
-    """Mark onboarding as completed - SUPABASE VERSION"""
+    """
+    Mark onboarding as completed - SUPABASE VERSION
+    TRIGGER: Create calibration schedule automatically
+    """
+    from workspace_helpers import get_user_account
+    
     user_id = current_user["id"]
     
+    # Get user's workspace/account
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="Workspace not initialized")
+    
+    account_id = account["id"]
+    
+    # Get business profile to link schedule
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
+    business_profile_id = profile.get("id") if profile else None
+    
+    if not business_profile_id:
+        logger.warning(f"No business profile found for user {user_id} - cannot create calibration schedule")
+    
+    # Mark onboarding complete
     completion_data = {
         "completed": True,
         "completed_at": datetime.now(timezone.utc).isoformat()
     }
     
     await update_onboarding_supabase(supabase_admin, user_id, completion_data)
+    
+    # FOUNDATION: Create calibration schedule (if profile exists)
+    if business_profile_id:
+        try:
+            now = datetime.now(timezone.utc)
+            next_weekly = now + timedelta(days=7)
+            next_quarterly = now + timedelta(days=90)
+            
+            schedule_data = {
+                "business_profile_id": business_profile_id,
+                "user_id": user_id,
+                "account_id": account_id,
+                "schedule_status": "active",
+                "weekly_pulse_enabled": True,
+                "quarterly_calibration_enabled": True,
+                "created_at": now.isoformat(),
+                "next_weekly_due_at": next_weekly.isoformat(),
+                "next_quarterly_due_at": next_quarterly.isoformat(),
+                "weekly_completion_count": 0,
+                "quarterly_completion_count": 0
+            }
+            
+            # UPSERT: Prevent duplicates if onboarding marked complete multiple times
+            result = supabase_admin.table("calibration_schedules").upsert(
+                schedule_data,
+                on_conflict="business_profile_id"
+            ).execute()
+            
+            if result.data:
+                logger.info(f"✅ Calibration schedule created for user {user_id}")
+                logger.info(f"   Next weekly: {next_weekly.isoformat()}")
+                logger.info(f"   Next quarterly: {next_quarterly.isoformat()}")
+            else:
+                logger.warning(f"⚠️ Calibration schedule upsert returned no data")
+                
+        except Exception as e:
+            # Non-blocking: Log error but don't fail onboarding completion
+            logger.error(f"❌ Failed to create calibration schedule: {e}")
     
     return {"status": "completed"}
 
