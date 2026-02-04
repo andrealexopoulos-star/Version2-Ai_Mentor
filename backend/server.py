@@ -799,11 +799,18 @@ async def get_business_context(user_id: str) -> dict:
     # Get business profile
     profile = await get_business_profile_supabase(supabase_admin, user_id)
     
-    # Get recent data files (summaries)
-    data_files = await db.data_files.find(
-        {"user_id": user_id},
-        {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
-    ).sort("created_at", -1).limit(20).to_list(20)
+    # Get recent data files (summaries) from Supabase
+    data_files_list = await get_user_data_files_supabase(supabase_admin, user_id)
+    # Convert to expected format
+    data_files = [
+        {
+            "filename": f.get("filename"),
+            "category": f.get("category"),
+            "description": f.get("description"),
+            "extracted_text": f.get("extracted_text")
+        }
+        for f in (data_files_list or [])[:20]
+    ]
     
     # Get user info
     user = await get_user_by_id(user_id) # Supabase
