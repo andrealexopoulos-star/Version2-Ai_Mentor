@@ -186,22 +186,6 @@ const DashboardLayout = ({ children }) => {
           </div>
         </div>
 
-        {/* Center: Search (Desktop Only) */}
-        <div className="hidden md:flex flex-1 max-w-md mx-4 lg:mx-8">
-          <div className="relative w-full">
-            <Search 
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-              style={{ color: 'var(--text-muted)' }}
-            />
-            <input
-              type="text"
-              placeholder="Search anything..."
-              className="input-premium pl-10 py-2.5 w-full"
-              style={{ background: 'var(--bg-tertiary)', border: 'none' }}
-            />
-          </div>
-        </div>
-
         {/* Right: Actions - Compact on Mobile */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <button
@@ -410,11 +394,11 @@ const DashboardLayout = ({ children }) => {
               return (
                 <div key={index} className="pt-6 pb-2">
                   {!sidebarCollapsed && (
-                    <span 
-                      className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-600"
+                    <div 
+                      className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-600 text-center"
                     >
                       {item.label}
-                    </span>
+                    </div>
                   )}
                   {sidebarCollapsed && (
                     <div className="h-px bg-gray-200 mx-2" />
