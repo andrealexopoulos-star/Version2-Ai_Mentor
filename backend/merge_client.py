@@ -197,6 +197,75 @@ class MergeClient:
             params=params
         )
     
+    # ==================== FILE STORAGE ENDPOINTS ====================
+    
+    async def get_files(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get files from File Storage (Google Drive, OneDrive, etc.) via Merge.dev
+        
+        Args:
+            account_token: Merge Linked Account Token
+            cursor: Pagination cursor
+            page_size: Number of files per page
+            
+        Returns:
+            {
+                "results": [...],
+                "next": "cursor_for_next_page"
+            }
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+        
+        return await self._make_request(
+            "GET",
+            "/filestorage/v1/files",
+            account_token,
+            params=params
+        )
+    
+    async def get_folders(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get folders from File Storage via Merge.dev
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+        
+        return await self._make_request(
+            "GET",
+            "/filestorage/v1/folders",
+            account_token,
+            params=params
+        )
+    
+    async def get_file_metadata(
+        self,
+        account_token: str,
+        file_id: str
+    ) -> Dict[str, Any]:
+        """
+        Get specific file metadata from File Storage
+        """
+        return await self._make_request(
+            "GET",
+            f"/filestorage/v1/files/{file_id}",
+            account_token
+        )
+    
+    # ==================== CRM ENDPOINTS ====================
+    
     async def get_deals(
         self,
         account_token: str,
