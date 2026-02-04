@@ -2319,25 +2319,21 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
                 "user": current_user
             }
         
-        # Check if user already exists in MongoDB (legacy users who completed onboarding before Supabase migration)
-        # These users should NOT go through onboarding again
-        legacy_user_exists = False
-        try:
-            mongo_user = await db.users.find_one({"email": email}, {"_id": 0})
-            if mongo_user:
-                legacy_user_exists = True
-                logger.info(f"Found legacy MongoDB user for {email}, skipping onboarding")
-        except Exception as e:
-            logger.debug(f"MongoDB check skipped: {e}")
+        # Check onboarding completion status (Supabase-only, MongoDB removed)
+        onboarding = await get_onboarding_supabase(supabase_admin, user_id)
         
-        # If user exists in MongoDB, they already completed onboarding - no need to do it again
-        if legacy_user_exists:
+        if onboarding and onboarding.get("completed"):
+            # User has completed onboarding
             needs_onboarding = False
-            has_company_info = True  # They have it in MongoDB
+            onboarding_status = "completed"
+        elif onboarding and onboarding.get("current_step"):
+            # User has started but not finished onboarding
+            needs_onboarding = True
+            onboarding_status = "in_progress"
         else:
-            # New Supabase-only user: check if they have company info
-            has_company_info = bool(user_profile.get("company_name"))
-            needs_onboarding = not has_company_info
+            # User has never started onboarding
+            needs_onboarding = True
+            onboarding_status = "not_started"
         
         logger.info(f"Profile check for {email}: exists=True, needs_onboarding={needs_onboarding}, legacy_user={legacy_user_exists}, has_company={has_company_info}")
         
