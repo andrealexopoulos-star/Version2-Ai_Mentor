@@ -501,7 +501,12 @@ const Integrations = () => {
     }
     
     if (integration.viaMerge) {
-      openMergeLink();
+      // KNOWLEDGE BASE (File Storage) uses separate category
+      if (integration.category === 'knowledge') {
+        openMergeLinkForFileStorage();
+      } else {
+        openMergeLink();
+      }
       return;
     }
     
