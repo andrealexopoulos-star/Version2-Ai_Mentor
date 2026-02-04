@@ -1747,11 +1747,15 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
         # Check integration data visibility
         integration_blind_spots = []
         
-        # Check if email is connected
-        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "outlook_access_token": 1})
-        if not user_doc or not user_doc.get("outlook_access_token"):
+        # Check if email is connected (Supabase - MongoDB removed)
+        try:
+            outlook_tokens = supabase_admin.table("outlook_oauth_tokens").select("user_id").eq("user_id", user_id).execute()
+            if not outlook_tokens.data or len(outlook_tokens.data) == 0:
+                integration_blind_spots.append("Email patterns (no inbox connected)")
+                material_blind_spots.append("Email communication patterns")
+        except Exception as e:
+            logger.debug(f"Outlook token check failed: {e}")
             integration_blind_spots.append("Email patterns (no inbox connected)")
-            material_blind_spots.append("Email communication patterns")
         
         # Check if calendar is connected
         calendar_events = 0 # Migrated to outlook_calendar_events
@@ -4471,35 +4475,37 @@ COGNITIVE CORE CONTEXT (USE THIS)
             {"role": "assistant", "content": response, "timestamp": now}
         ]
         
-        if conversation:
-            # ⚠️ WARNING: MongoDB write is DEPRECATED
-            # SOURCE OF TRUTH: Supabase soundboard_conversations table (line 4241)
-            # RISK: Dual-write inconsistency - reads from Supabase, writes to MongoDB
-            # TODO (MIGRATION): Remove this MongoDB write after verifying Supabase-only flow
+        # Store in Supabase (MongoDB removed - FIX APPLIED)
+        existing = await get_soundboard_conversation_supabase(supabase_admin, user_id, req.conversation_id)
+        
+        if existing:
             # Update existing conversation
-            await db.soundboard_conversations.update_one(
-                {"id": req.conversation_id},
+            current_messages = existing.get("messages", [])
+            updated_messages = current_messages + new_messages
+            
+            await update_soundboard_conversation_supabase(
+                supabase_admin,
+                req.conversation_id,
                 {
-                    "$push": {"messages": {"$each": new_messages}},
-                    "$set": {"updated_at": now}
+                    "messages": updated_messages,
+                    "updated_at": now
                 }
             )
             conversation_id = req.conversation_id
         else:
-            # ⚠️ WARNING: MongoDB write is DEPRECATED
-            # SOURCE OF TRUTH: Supabase soundboard_conversations table
-            # RISK: New conversations written to MongoDB will NOT appear in Supabase reads
-            # TODO (MIGRATION): Remove this MongoDB write
-            # Create new conversation
+            # Create new conversation in Supabase
             conversation_id = str(uuid.uuid4())
-            await db.soundboard_conversations.insert_one({
-                "id": conversation_id,
-                "user_id": user_id,
-                "title": conversation_title or "New Conversation",
-                "messages": new_messages,
-                "created_at": now,
-                "updated_at": now
-            })
+            await create_soundboard_conversation_supabase(
+                supabase_admin,
+                {
+                    "id": conversation_id,
+                    "user_id": user_id,
+                    "title": conversation_title or "New Conversation",
+                    "messages": new_messages,
+                    "created_at": now,
+                    "updated_at": now
+                }
+            )
         
         return {
             "reply": response,
@@ -4830,10 +4836,16 @@ async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(req
     if owner_domain and invite_domain and owner_domain != invite_domain:
         raise HTTPException(status_code=400, detail="Invited user must use the same email domain as the account")
 
-    # Create invited user with temp password
-    existing = await db.users.find_one({"email": req.email.lower().strip()}, {"_id": 0})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already exists")
+    # Check if email already exists in Supabase (MongoDB removed)
+    try:
+        existing_user = supabase_admin.table("users").select("id, email").eq("email", req.email.lower().strip()).execute()
+        if existing_user.data and len(existing_user.data) > 0:
+            raise HTTPException(status_code=400, detail="Email already exists")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking existing user: {e}")
+        # Continue - allow creation attempt
 
     now = datetime.now(timezone.utc)
     token = uuid.uuid4().hex
@@ -5970,13 +5982,20 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     
     # Update user's basic info
     user_updates = {}
+    # Update user info in Supabase (MongoDB removed - FIX APPLIED)
+    user_updates = {}
     if profile.business_name:
-        user_updates["business_name"] = profile.business_name
+        user_updates["company_name"] = profile.business_name
     if profile.industry:
         user_updates["industry"] = profile.industry
     
     if user_updates:
-        await db.users.update_one({"id": user_id}, {"$set": user_updates})
+        try:
+            supabase_admin.table("users").update(user_updates).eq("id", user_id).execute()
+            logger.info(f"✅ User profile updated in Supabase for {user_id}")
+        except Exception as e:
+            logger.error(f"Failed to update Supabase user: {e}")
+            # Non-blocking - continue with business profile update
     
     # Update business profile in Supabase
     await update_business_profile_supabase(supabase_admin, user_id, profile_data)
@@ -6778,14 +6797,19 @@ async def admin_set_subscription(user_id: str, update: SubscriptionUpdate, admin
         raise HTTPException(status_code=400, detail="Invalid subscription tier")
 
     now = datetime.now(timezone.utc)
-    await db.users.update_one(
-        {"id": user_id},
-        {"$set": {
+    
+    # Update Supabase users table (MongoDB removed - FIX APPLIED)
+    try:
+        supabase_admin.table("users").update({
             "subscription_tier": tier,
             "subscription_started_at": now.isoformat(),
             "updated_at": now.isoformat()
-        }}
-    )
+        }).eq("id", user_id).execute()
+        
+        logger.info(f"✅ Subscription updated in Supabase for {user_id}: {tier}")
+    except Exception as e:
+        logger.error(f"Failed to update subscription in Supabase: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update subscription")
 
     user = await get_user_by_id(user_id) # Supabase
     if not user:
