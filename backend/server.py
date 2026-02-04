@@ -4997,27 +4997,59 @@ async def save_onboarding_progress(
 async def complete_onboarding(current_user: dict = Depends(get_current_user)):
     """
     Mark onboarding as completed - SUPABASE VERSION
-    TRIGGER: Create calibration schedule automatically
+    TRIGGERS:
+    1. Create Parent Account (if first completion)
+    2. Link user as owner
+    3. Link business profile to account
+    4. Create calibration schedule
     """
-    from workspace_helpers import get_user_account
+    from workspace_helpers import get_or_create_user_account
     
     user_id = current_user["id"]
+    user_email = current_user.get("email")
     
-    # Get user's workspace/account
-    account = await get_user_account(supabase_admin, user_id)
-    if not account:
-        raise HTTPException(status_code=400, detail="Workspace not initialized")
-    
-    account_id = account["id"]
-    
-    # Get business profile to link schedule
+    # Get business profile created during onboarding
     profile = await get_business_profile_supabase(supabase_admin, user_id)
     business_profile_id = profile.get("id") if profile else None
+    company_name = profile.get("business_name") if profile else None
     
-    if not business_profile_id:
-        logger.warning(f"No business profile found for user {user_id} - cannot create calibration schedule")
+    # STEP 1: CREATE PARENT ACCOUNT (if doesn't exist)
+    try:
+        account = await get_or_create_user_account(
+            supabase_admin, 
+            user_id, 
+            user_email, 
+            company_name
+        )
+        account_id = account["id"]
+        
+        logger.info(f"✅ Parent account ensured for user {user_id}: {account_id}")
+        
+        # STEP 2: Link business profile to account (if exists)
+        if business_profile_id:
+            try:
+                # Update business_profile with account_id if not already set
+                profile_update = await get_business_profile_supabase(supabase_admin, user_id)
+                
+                if profile_update and not profile_update.get('account_id'):
+                    await update_business_profile_supabase(
+                        supabase_admin,
+                        user_id,
+                        {"account_id": account_id}
+                    )
+                    logger.info(f"✅ Business profile linked to account {account_id}")
+                    
+            except Exception as e:
+                logger.error(f"⚠️ Failed to link business profile to account: {e}")
+                # Non-blocking - continue with completion
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to create/get parent account: {e}")
+        # Non-blocking - onboarding completion continues
+        account_id = None
+        business_profile_id = None
     
-    # Mark onboarding complete
+    # STEP 3: Mark onboarding complete
     completion_data = {
         "completed": True,
         "completed_at": datetime.now(timezone.utc).isoformat()
@@ -5025,8 +5057,8 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
     
     await update_onboarding_supabase(supabase_admin, user_id, completion_data)
     
-    # FOUNDATION: Create calibration schedule (if profile exists)
-    if business_profile_id:
+    # STEP 4: Create calibration schedule (if account + profile exist)
+    if account_id and business_profile_id:
         try:
             now = datetime.now(timezone.utc)
             next_weekly = now + timedelta(days=7)
@@ -5046,16 +5078,14 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
                 "quarterly_completion_count": 0
             }
             
-            # UPSERT: Prevent duplicates if onboarding marked complete multiple times
+            # UPSERT: Prevent duplicates
             result = supabase_admin.table("calibration_schedules").upsert(
                 schedule_data,
                 on_conflict="business_profile_id"
             ).execute()
             
             if result.data:
-                logger.info(f"✅ Calibration schedule created for user {user_id}")
-                logger.info(f"   Next weekly: {next_weekly.isoformat()}")
-                logger.info(f"   Next quarterly: {next_quarterly.isoformat()}")
+                logger.info(f"✅ Calibration schedule created")
             else:
                 logger.warning(f"⚠️ Calibration schedule upsert returned no data")
                 
