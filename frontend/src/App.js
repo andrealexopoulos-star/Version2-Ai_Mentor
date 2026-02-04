@@ -33,6 +33,7 @@ import Integrations from "./pages/Integrations";
 import ConnectEmail from "./pages/ConnectEmail";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import OnboardingWizard from "./pages/OnboardingWizard";
+import OnboardingDecision from "./pages/OnboardingDecision";
 import IntelCentre from "./pages/IntelCentre";
 import ProfileImport from "./pages/ProfileImport";
 import OutlookTest from "./pages/OutlookTest";
@@ -122,6 +123,7 @@ function AppRoutes() {
       <Route path="/register" element={<Navigate to="/register-supabase" replace />} />
 
       {/* Onboarding */}
+      <Route path="/onboarding-decision" element={<ProtectedRoute><OnboardingDecision /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
       <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 

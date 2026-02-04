@@ -97,6 +97,7 @@ const AuthCallbackSupabase = () => {
             
             // Check if user needs onboarding
             try {
+              // STEP 2: BUSINESS PROFILE STATE CHECK
               const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
               const response = await fetch(`${BACKEND_URL}/api/auth/check-profile`, {
                 method: 'GET',
@@ -108,24 +109,58 @@ const AuthCallbackSupabase = () => {
               
               if (!response.ok) {
                 console.error('❌ Profile check failed:', response.status);
-                // Safe fallback: new OAuth users should go to onboarding by default
-                // This ensures they don't skip the important business profile setup
-                console.log('Profile check failed - redirecting to onboarding (safe default for new users)');
-                setStatus('Redirecting to onboarding...');
-                navigate('/onboarding', { replace: true });
+                // Safe fallback: new OAuth users should go to onboarding decision
+                console.log('Profile check failed - treating as not_started');
+                setStatus('Setting up your experience...');
+                
+                // Store state for decision screen
+                sessionStorage.setItem('onboarding_state', 'not_started');
+                navigate('/onboarding-decision', { replace: true });
                 return;
               }
               
               const profileData = await response.json();
               console.log('📋 Profile check result:', profileData);
               
-              setStatus('Redirecting...');
-              
+              // ROUTING RULES (LOCKED)
               if (profileData.needs_onboarding) {
-                console.log('🎯 User needs onboarding');
-                navigate('/onboarding', { replace: true });
+                const onboardingStatus = profileData.onboarding_status || 'not_started';
+                
+                // CASE B: in_progress - FORCE redirect to onboarding
+                if (onboardingStatus === 'in_progress') {
+                  console.log('🔄 Onboarding in progress - resuming');
+                  setStatus('Resuming your onboarding...');
+                  navigate('/onboarding', { replace: true });
+                  return;
+                }
+                
+                // CASE A: not_started - Show decision screen
+                if (onboardingStatus === 'not_started') {
+                  // Check session-only deferral
+                  const sessionDeferred = sessionStorage.getItem('onboarding_deferred');
+                  
+                  if (sessionDeferred === 'true') {
+                    // User chose "Later" in THIS session - go to advisor
+                    console.log('✅ Onboarding deferred this session - going to advisor');
+                    setStatus('Redirecting...');
+                    navigate('/advisor', { replace: true });
+                  } else {
+                    // First time this session - show decision screen
+                    console.log('🎯 New user - showing onboarding decision');
+                    setStatus('Setting up your experience...');
+                    sessionStorage.setItem('onboarding_state', 'not_started');
+                    navigate('/onboarding-decision', { replace: true });
+                  }
+                  return;
+                }
+                
+                // Unknown state - safe fallback to decision
+                console.log('⚠️ Unknown onboarding state - showing decision');
+                navigate('/onboarding-decision', { replace: true });
               } else {
-                console.log('🚀 User profile complete, going to advisor');
+                // CASE C: completed - go straight to advisor
+                console.log('✅ Onboarding complete - going to advisor');
+                setStatus('Redirecting to advisor...');
                 navigate('/advisor', { replace: true });
               }
             } catch (profileCheckError) {
