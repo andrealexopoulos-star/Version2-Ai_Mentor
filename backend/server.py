@@ -37,6 +37,20 @@ from supabase_email_helpers import (
     find_email_by_id_supabase
 )
 
+# Import Google Drive helpers (100% Supabase)
+from supabase_drive_helpers import (
+    store_merge_integration,
+    get_user_merge_integrations,
+    get_merge_integration_by_token,
+    update_merge_integration_sync,
+    store_drive_file,
+    store_drive_files_batch,
+    get_user_drive_files,
+    count_user_drive_files,
+    delete_user_drive_files,
+    get_drive_file_by_id
+)
+
 # Import document helpers
 from supabase_document_helpers import (
     create_document_supabase,
