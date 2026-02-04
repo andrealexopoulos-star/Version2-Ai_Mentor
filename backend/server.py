@@ -8324,3 +8324,304 @@ app.include_router(voice_router, prefix="/api/voice")
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+# ==================== GOOGLE DRIVE INTEGRATION (MERGE.DEV) ====================
+
+@api_router.post("/integrations/google-drive/connect")
+async def connect_google_drive(current_user: dict = Depends(get_current_user)):
+    """
+    Generate Merge Link Token for Google Drive connection
+    100% Supabase storage - Zero MongoDB
+    """
+    from workspace_helpers import get_or_create_user_account
+    
+    merge_api_key = os.environ.get("MERGE_API_KEY")
+    if not merge_api_key:
+        raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
+    
+    user_id = current_user["id"]
+    user_email = current_user.get("email")
+    
+    # Get workspace
+    account = await get_or_create_user_account(supabase_admin, user_id, user_email)
+    account_id = account["id"]
+    account_name = account["name"]
+    
+    logger.info(f"🔗 Creating Google Drive link token for workspace: {account_name}")
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.merge.dev/api/integrations/create-link-token",
+                headers={
+                    "Authorization": f"Bearer {merge_api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "end_user_origin_id": account_id,
+                    "end_user_organization_name": account_name,
+                    "end_user_email_address": user_email,
+                    "categories": ["file_storage"]  # Google Drive category
+                }
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+            
+            data = response.json()
+            link_token = data.get("link_token")
+            
+            if not link_token:
+                raise HTTPException(status_code=500, detail="No link_token in response")
+            
+            logger.info(f"✅ Google Drive link token created")
+            return {"link_token": link_token}
+            
+    except Exception as e:
+        logger.error(f"❌ Error creating link token: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/integrations/google-drive/callback")
+async def google_drive_callback(
+    public_token: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Handle Google Drive connection callback from Merge.dev
+    Stores account_token in Supabase and triggers initial sync
+    """
+    from workspace_helpers import get_user_account
+    from supabase_drive_helpers import store_merge_integration
+    
+    merge_api_key = os.environ.get("MERGE_API_KEY")
+    user_id = current_user["id"]
+    
+    # Get workspace
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="Workspace not initialized")
+    
+    account_id = account["id"]
+    
+    # Exchange public_token for account_token
+    try:
+        async with httpx.AsyncClient() as client:
+            exchange_url = f"https://api.merge.dev/api/integrations/account-token/{public_token}"
+            
+            response = await client.get(
+                exchange_url,
+                headers={"Authorization": f"Bearer {merge_api_key}"}
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+            
+            data = response.json()
+            account_token = data.get("account_token")
+            integration_info = data.get("integration", {})
+            
+            if not account_token:
+                raise HTTPException(status_code=500, detail="No account_token received")
+            
+            # Store integration in Supabase
+            integration_data = {
+                "account_id": account_id,
+                "user_id": user_id,
+                "account_token": account_token,
+                "integration_category": "file_storage",
+                "integration_slug": "google_drive",
+                "integration_name": integration_info.get("name", "Google Drive"),
+                "status": "active",
+                "connected_at": datetime.now(timezone.utc).isoformat(),
+                "end_user_email": current_user.get("email")
+            }
+            
+            await store_merge_integration(supabase_admin, integration_data)
+            
+            logger.info(f"✅ Google Drive connected for workspace {account_id}")
+            
+            # Trigger initial sync
+            import asyncio
+            asyncio.create_task(sync_google_drive_files(user_id, account_id, account_token))
+            
+            return {
+                "success": True,
+                "message": "Google Drive connected successfully",
+                "provider": "Google Drive"
+            }
+            
+    except Exception as e:
+        logger.error(f"❌ Google Drive callback error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def sync_google_drive_files(user_id: str, account_id: str, account_token: str):
+    """
+    Background task: Sync Google Drive files to Supabase
+    100% PostgreSQL storage
+    """
+    from merge_client import get_merge_client
+    from supabase_drive_helpers import store_drive_files_batch, update_merge_integration_sync
+    
+    try:
+        logger.info(f"🔄 Starting Google Drive sync for account {account_id}")
+        
+        merge_client = get_merge_client()
+        
+        # Fetch files from Merge API
+        files_response = await merge_client.get_files(account_token)
+        files = files_response.get("results", [])
+        
+        logger.info(f"📥 Fetched {len(files)} files from Google Drive")
+        
+        if not files:
+            logger.info("ℹ️ No files found")
+            return
+        
+        # Transform files for Supabase storage
+        supabase_files = []
+        for file in files:
+            file_data = {
+                "account_id": account_id,
+                "user_id": user_id,
+                "merge_file_id": file.get("id"),
+                "merge_account_token": account_token,
+                "file_name": file.get("name", "Untitled"),
+                "file_type": file.get("file_type"),
+                "mime_type": file.get("mime_type"),
+                "file_size": file.get("size"),
+                "parent_folder_id": file.get("folder"),
+                "web_view_link": file.get("file_url"),
+                "owner_email": file.get("owner", {}).get("email") if isinstance(file.get("owner"), dict) else None,
+                "created_at": file.get("created_at") or datetime.now(timezone.utc).isoformat(),
+                "modified_at": file.get("modified_at") or datetime.now(timezone.utc).isoformat(),
+                "synced_at": datetime.now(timezone.utc).isoformat()
+            }
+            supabase_files.append(file_data)
+        
+        # Batch insert to Supabase
+        stored_count = await store_drive_files_batch(supabase_admin, supabase_files)
+        
+        logger.info(f"✅ Stored {stored_count} Google Drive files in Supabase")
+        
+        # Update integration sync status
+        await update_merge_integration_sync(
+            supabase_admin,
+            account_token,
+            {
+                "last_sync_at": datetime.now(timezone.utc).isoformat(),
+                "sync_stats": {"files_synced": stored_count, "last_sync_success": True}
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Google Drive sync failed: {e}")
+
+
+@api_router.get("/integrations/google-drive/files")
+async def get_google_drive_files(
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get Google Drive files from Supabase
+    100% PostgreSQL - Zero MongoDB
+    """
+    from supabase_drive_helpers import get_user_drive_files
+    
+    user_id = current_user["id"]
+    
+    files = await get_user_drive_files(supabase_admin, user_id, limit=limit)
+    
+    return {
+        "files": files,
+        "count": len(files)
+    }
+
+
+@api_router.post("/integrations/google-drive/sync")
+async def trigger_google_drive_sync(current_user: dict = Depends(get_current_user)):
+    """
+    Manually trigger Google Drive sync
+    Fetches latest files from Merge.dev and stores in Supabase
+    """
+    from workspace_helpers import get_user_account
+    from supabase_drive_helpers import get_user_merge_integrations
+    
+    user_id = current_user["id"]
+    
+    # Get workspace
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="Workspace not initialized")
+    
+    account_id = account["id"]
+    
+    # Get Google Drive integration
+    integrations = await get_user_merge_integrations(
+        supabase_admin,
+        user_id,
+        integration_category="file_storage"
+    )
+    
+    drive_integration = next(
+        (i for i in integrations if i.get("integration_slug") == "google_drive"),
+        None
+    )
+    
+    if not drive_integration:
+        raise HTTPException(status_code=404, detail="Google Drive not connected")
+    
+    account_token = drive_integration["account_token"]
+    
+    # Trigger background sync
+    import asyncio
+    asyncio.create_task(sync_google_drive_files(user_id, account_id, account_token))
+    
+    return {
+        "success": True,
+        "message": "Sync started. Files will be available shortly."
+    }
+
+
+@api_router.get("/integrations/google-drive/status")
+async def google_drive_status(current_user: dict = Depends(get_current_user)):
+    """
+    Check if Google Drive is connected
+    """
+    from supabase_drive_helpers import get_user_merge_integrations, count_user_drive_files
+    
+    user_id = current_user["id"]
+    
+    # Check for integration
+    integrations = await get_user_merge_integrations(
+        supabase_admin,
+        user_id,
+        integration_category="file_storage"
+    )
+    
+    drive_integration = next(
+        (i for i in integrations if i.get("integration_slug") == "google_drive"),
+        None
+    )
+    
+    if not drive_integration:
+        return {
+            "connected": False,
+            "files_count": 0
+        }
+    
+    # Count files
+    files_count = await count_user_drive_files(supabase_admin, user_id)
+    
+    return {
+        "connected": True,
+        "integration_name": drive_integration.get("integration_name", "Google Drive"),
+        "connected_at": drive_integration.get("connected_at"),
+        "last_sync_at": drive_integration.get("last_sync_at"),
+        "files_count": files_count,
+        "status": drive_integration.get("status", "active")
+    }
+
