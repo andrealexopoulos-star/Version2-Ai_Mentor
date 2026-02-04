@@ -748,42 +748,22 @@ def create_token(user_id: str, email: str, role: str, account_id: Optional[str] 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
-    HYBRID Authentication - Supports BOTH Supabase and MongoDB tokens
-    Tries Supabase first (new system), falls back to MongoDB (legacy)
+    SUPABASE-ONLY Authentication
+    MongoDB fallback REMOVED - All users must use Supabase Auth
     """
     token = credentials.credentials
     
-    # TRY 1: Validate as Supabase token (NEW SYSTEM)
+    # Validate as Supabase token ONLY
     try:
         from auth_supabase import verify_supabase_token
         user = await verify_supabase_token(token)
         if user:
-            print(f"✅ Authenticated via Supabase: {user.get('email')}")
             return user
+        else:
+            raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
-        # Not a Supabase token or validation failed, try MongoDB
-        print(f"Supabase token validation failed, trying MongoDB: {str(e)}")
-        pass
-    
-    # TRY 2: Validate as MongoDB JWT (LEGACY SYSTEM)
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
-        if user and payload.get("account_id") and not user.get("account_id"):
-            await db.users.update_one({"id": user["id"]}, {"$set": {"account_id": payload.get("account_id")}})
-            user["account_id"] = payload.get("account_id")
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        print(f"✅ Authenticated via MongoDB: {user.get('email')}")
-        return user
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        logger.error(f"Supabase token validation failed: {str(e)}")
+        raise HTTPException(status_code=401, detail="Authentication failed - please log in again")
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
