@@ -438,6 +438,31 @@ const Integrations = () => {
       tier: 'pro',
       popular: true
     },
+    // Knowledge Base (File Storage)
+    {
+      id: 'google_drive',
+      name: 'Google Drive',
+      description: 'Read-only access for intelligence context',
+      category: 'knowledge',
+      logo: 'GD',
+      color: '#4285F4',
+      tier: 'free',
+      popular: true,
+      viaMerge: true,
+      safetyNote: 'Document metadata only, no file editing'
+    },
+    {
+      id: 'onedrive',
+      name: 'Microsoft OneDrive',
+      description: 'Read-only access for intelligence context',
+      category: 'knowledge',
+      logo: 'OD',
+      color: '#0078D4',
+      tier: 'free',
+      popular: true,
+      viaMerge: true,
+      safetyNote: 'Document metadata only, no file editing'
+    },
   ];
 
   // Filter integrations by category (EXCLUDE email/communication - handled via sidebar)
