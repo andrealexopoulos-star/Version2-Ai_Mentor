@@ -7608,10 +7608,8 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
         data_signals["document_count"] = doc_count
     
     # Check recent activity
-    recent_chats = await db.chat_history.find(
-        {"user_id": user_id},
-        {"_id": 0, "created_at": 1}
-    ).sort("created_at", -1).limit(1).to_list(1)
+    recent_chats_result = supabase_admin.table("chat_history").select("created_at").eq("user_id", user_id).order("created_at", desc=True).limit(1).execute()
+    recent_chats = recent_chats_result.data if recent_chats_result.data else []
     
     if recent_chats:
         data_signals["has_chat_history"] = True
