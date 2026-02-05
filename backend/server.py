@@ -5408,10 +5408,10 @@ async def generate_sop(request: dict, current_user: dict = Depends(get_current_u
     # Get uploaded document content if provided
     document_context = ""
     if uploaded_file_id:
-        uploaded_doc = await get_user_data_files_supabase(supabase_admin, 
-            {"user_id": user_id, "id": uploaded_file_id},
-            {"_id": 0, "filename": 1, "extracted_text": 1}
-        )
+        uploaded_doc_result = supabase_admin.table("data_files").select(
+            "filename,extracted_text"
+        ).eq("user_id", user_id).eq("id", uploaded_file_id).single().execute()
+        uploaded_doc = uploaded_doc_result.data if uploaded_doc_result.data else None
         if uploaded_doc and uploaded_doc.get("extracted_text"):
             document_context = f"\n\nREFERENCE DOCUMENT: {uploaded_doc.get('filename')}\n{uploaded_doc.get('extracted_text')[:3000]}\n"
     
