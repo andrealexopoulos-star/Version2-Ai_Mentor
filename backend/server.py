@@ -7525,13 +7525,14 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     
-    analysis_count = await db.analyses.count_documents({"user_id": user_id})  # TODO: Migrate to Supabase
+    analysis_result = supabase_admin.table("analyses").select("id", count="exact").eq("user_id", user_id).execute()
+    analysis_count = analysis_result.count if analysis_result.count is not None else 0
     document_count = await count_user_documents_supabase(supabase_admin, user_id)
-    chat_sessions = await db.chat_history.distinct("session_id", {"user_id": user_id})
+    chat_result = supabase_admin.table("chat_history").select("session_id").eq("user_id", user_id).execute()
+    session_ids = {row.get("session_id") for row in (chat_result.data or []) if row.get("session_id")}
     
-    recent_analyses = await db.analyses.find(
-        {"user_id": user_id}, {"_id": 0}
-    ).sort("created_at", -1).limit(5).to_list(5)
+    recent_analyses_result = supabase_admin.table("analyses").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
+    recent_analyses = recent_analyses_result.data if recent_analyses_result.data else []
     
     # Get recent documents using Supabase
     recent_docs_result = supabase_admin.table("documents").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
@@ -7540,7 +7541,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     return {
         "total_analyses": analysis_count,
         "total_documents": document_count,
-        "total_chat_sessions": len(chat_sessions),
+        "total_chat_sessions": len(session_ids),
         "recent_analyses": recent_analyses,
         "recent_documents": recent_documents
     }
