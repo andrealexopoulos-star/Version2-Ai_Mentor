@@ -292,11 +292,16 @@ export const SupabaseAuthProvider = ({ children }) => {
         const activeSession = session || (await supabase.auth.getSession()).data.session;
 
         if (!activeSession) {
-          // No session = not authenticated. This is NOT an error.
-          // ProtectedRoute will handle redirect to login via its own !user && !session check.
-          // Keeping authState as LOADING would cause infinite spinner, so we use a neutral state.
-          // Since user/session are null, ProtectedRoute line 29 will redirect to login.
-          if (!cancelled) setAuthState(AUTH_STATE.LOADING);
+          // No session = not authenticated. This is NOT an error state.
+          // We need a state that allows ProtectedRoute to redirect to login.
+          // Using NEEDS_CALIBRATION won't work (redirects to /calibration).
+          // We need to NOT block on authState when user/session are null.
+          // The safest approach: don't change authState, let loading finish naturally.
+          // ProtectedRoute checks !user && !session AFTER loading check, so we need
+          // to ensure authState is not LOADING when no session exists.
+          // Solution: Use a neutral state that doesn't block - READY allows children to render
+          // but ProtectedRoute will see !user && !session and redirect to login.
+          if (!cancelled) setAuthState(AUTH_STATE.READY);
           return;
         }
 
