@@ -7293,7 +7293,7 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
     score += (strategic_filled / len(strategic)) * 10
     
     # === PLATFORM ENGAGEMENT (20 points) ===
-    if user_id and db is not None:
+    if user_id:
         # Documents uploaded (5 points)
         doc_count = await count_user_data_files_supabase(supabase_admin, user_id)
         score += min(5, doc_count * 1)  # 1 point per doc, max 5
