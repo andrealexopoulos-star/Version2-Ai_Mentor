@@ -2,6 +2,7 @@ import "@/App.css";
 import "@/mobile-fixes.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SupabaseAuthProvider, useSupabaseAuth, AUTH_STATE } from "./context/SupabaseAuthContext";
+import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
 import { MobileDrawerProvider } from "./context/MobileDrawerContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -43,40 +44,6 @@ import CalendarView from "./pages/CalendarView";
 import MySoundBoard from "./pages/MySoundBoard";
 import AuthDebug from "./pages/AuthDebug";
 import GmailTest from "./pages/GmailTest";
-
-const LoadingScreen = () => (
-  <div className="min-h-screen flex items-center justify-center" data-testid="auth-loading-screen">
-    <div className="spinner" />
-  </div>
-);
-
-const AuthError = () => (
-  <div className="min-h-screen flex items-center justify-center" data-testid="auth-error-screen">
-    <div className="text-center text-gray-700">
-      <h2 className="text-lg font-semibold">Authentication error</h2>
-      <p className="text-sm text-gray-500">Please refresh and try again.</p>
-    </div>
-  </div>
-);
-
-// Protected Route Component - Supabase Auth Only
-const ProtectedRoute = ({ children }) => {
-  const { authState } = useSupabaseAuth();
-
-  if (authState === AUTH_STATE.LOADING) {
-    return <LoadingScreen />;
-  }
-
-  if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
-    return <Navigate to="/calibration" replace />;
-  }
-
-  if (authState === AUTH_STATE.ERROR) {
-    return <AuthError />;
-  }
-
-  return children;
-};
 
 // Public Route (redirect to advisor if logged in) - Supabase Auth Only
 const PublicRoute = ({ children }) => {
