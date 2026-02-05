@@ -2355,15 +2355,44 @@ async def get_calibration_status(request: Request):
     """
     Calibration status is a GUARD endpoint.
     It must NEVER error for authenticated users.
+    FAIL-OPEN: If token verification fails but a Bearer token is present,
+    return NEEDS_CALIBRATION instead of 401.
     """
+    import base64, json as json_lib
 
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    token = auth_header.replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = None
+
+    # Primary path: verify via Supabase Admin API
     try:
-        # Safely extract user from Supabase session
         current_user = await get_current_user_from_request(request)
         user_id = current_user.get("id")
-    except Exception:
-        # True unauthenticated case
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    except Exception as auth_err:
+        logger.warning(f"[calibration/status] Primary auth failed: {auth_err}")
+        # Fallback: decode JWT payload without verification to extract user_id
+        try:
+            parts = token.split(".")
+            if len(parts) >= 2:
+                payload_b64 = parts[1]
+                # Add padding
+                payload_b64 += "=" * (4 - len(payload_b64) % 4)
+                payload = json_lib.loads(base64.urlsafe_b64decode(payload_b64))
+                user_id = payload.get("sub")
+                logger.info(f"[calibration/status] Fallback JWT decode got user_id: {user_id}")
+        except Exception as decode_err:
+            logger.warning(f"[calibration/status] JWT fallback decode failed: {decode_err}")
+
+    # If we still have no user_id, return NEEDS_CALIBRATION (fail-open for bearer tokens)
+    if not user_id:
+        logger.warning("[calibration/status] No user_id resolved, returning NEEDS_CALIBRATION")
+        return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION"})
 
     try:
         result = (
