@@ -316,7 +316,39 @@ export const SupabaseAuthProvider = ({ children }) => {
           console.log('[CONTEXT] No cache found');
         }
 
-        // STEP 2: Fetch fresh context from API
+        // STEP 2: Calibration status check (override)
+        console.log('[CONTEXT] Calling /api/calibration/status...');
+        const calibrationResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!calibrationResponse.ok) {
+          throw new Error(`Calibration status failed: ${calibrationResponse.status}`);
+        }
+
+        const calibrationData = await calibrationResponse.json();
+        if (!calibrationData.has_business_profile || calibrationData.calibration_status !== 'complete') {
+          const calibrationContext = {
+            user_id: session.user.id,
+            account_id: calibrationData.account_id || null,
+            business_profile_id: calibrationData.business_profile_id || null,
+            onboarding_status: 'calibration_required',
+            calibration_status: calibrationData.calibration_status || null,
+            cached_at: Date.now()
+          };
+          localStorage.setItem('biqc_context_v1', JSON.stringify(calibrationContext));
+          console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(calibrationContext.cached_at).toISOString()})`);
+          setBusinessContext(calibrationContext);
+          setContextSource('api');
+          setContextLoading(false);
+          return;
+        }
+
+        // STEP 3: Fetch fresh context from API
         console.log('[CONTEXT] Calling /api/auth/check-profile...');
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
           method: 'GET',
@@ -332,12 +364,13 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         const profileData = await response.json();
         
-        // STEP 3: Build cache object (exact fields only)
+        // STEP 4: Build cache object (exact fields only)
         const freshContext = {
           user_id: session.user.id,
           account_id: profileData.user?.account_id || null,
           business_profile_id: profileData.user?.business_profile_id || null,
-          onboarding_status: profileData.onboarding_status || 'not_started',
+          onboarding_status: profileData.onboarding_status || 'calibration_required',
+          calibration_status: profileData.calibration_status || null,
           cached_at: Date.now()
         };
 
