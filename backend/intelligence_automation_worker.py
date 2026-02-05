@@ -11,6 +11,7 @@ import os
 
 from supabase_client import init_supabase
 from truth_engine_rpc import generate_cold_read
+from silence_detection import process_silence_interventions
 from watchtower_store import init_watchtower_store
 from workspace_helpers import get_user_account
 
@@ -64,6 +65,8 @@ async def run_automatic_intelligence(user_id: str):
             supabase_admin=supabase_admin,
             watchtower_store=watchtower_store
         )
+
+        await process_silence_interventions(supabase_admin, watchtower_store)
         
         if result.get('events_created', 0) > 0:
             logger.info(f"✅ {result['events_created']} events created for user {user_id[:8]}...")
