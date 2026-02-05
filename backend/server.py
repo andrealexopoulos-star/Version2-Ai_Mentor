@@ -6434,15 +6434,12 @@ async def build_advisor_context(user_id: str) -> dict:
     onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     
     # Recent activity for context
-    recent_chats = await db.chat_history.find(
-        {"user_id": user_id},
-        {"_id": 0, "message": 1, "response": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(5).to_list(5)
-    
-    recent_docs = await db.data_files.find(
-        {"user_id": user_id},
-        {"_id": 0, "filename": 1, "category": 1, "description": 1, "extracted_text": 1}
-    ).sort("created_at", -1).limit(5).to_list(5)
+    recent_chats = await get_chat_history_supabase(supabase_admin, user_id, limit=5)
+
+    recent_docs_result = supabase_admin.table("data_files").select(
+        "filename,category,description,extracted_text,created_at"
+    ).eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
+    recent_docs = recent_docs_result.data if recent_docs_result.data else []
     
     web_sources = await get_web_sources_supabase(supabase_admin, user_id)
     
