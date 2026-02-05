@@ -108,66 +108,65 @@ const AuthCallbackSupabase = () => {
               });
               
               if (!response.ok) {
-                console.error('❌ Profile check failed:', response.status);
-                // Safe fallback: new OAuth users should go to onboarding decision
-                console.log('Profile check failed - treating as not_started');
-                setStatus('Setting up your experience...');
+                const errorStatus = response.status;
+                console.error(`[GUARD] ❌ Context load failed: ${errorStatus}`);
                 
-                // Store state for decision screen
-                sessionStorage.setItem('onboarding_state', 'not_started');
-                navigate('/onboarding-decision', { replace: true });
-                return;
+                // HARD GATE: Do NOT route on error - show blocking UI
+                setError(`Failed to load your business context (HTTP ${errorStatus})`);
+                setStatus('Unable to verify your account. Please retry.');
+                return; // STOP - no routing
               }
               
               const profileData = await response.json();
-              console.log('📋 Profile check result:', profileData);
+              console.log('[GUARD] ✅ Context load ok:', { 
+                needs_onboarding: profileData.needs_onboarding,
+                onboarding_status: profileData.onboarding_status
+              });
               
-              // ROUTING RULES (LOCKED)
+              // Cache business context (24h TTL)
+              // KEY: biqc_context_v1 (exact name)
+              // FIELDS: user_id, account_id, business_profile_id, onboarding_status, cached_at
+              const businessContext = {
+                user_id: sessionData.session.user.id,
+                account_id: profileData.user?.account_id || null,
+                business_profile_id: profileData.user?.business_profile_id || profileData.user?.id || null,
+                onboarding_status: profileData.onboarding_status || 'not_started',
+                cached_at: Date.now()
+              };
+              localStorage.setItem('biqc_context_v1', JSON.stringify(businessContext));
+              console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(businessContext.cached_at).toISOString()})`);
+              
+              // ROUTING DECISION
               if (profileData.needs_onboarding) {
                 const onboardingStatus = profileData.onboarding_status || 'not_started';
+                console.log(`[GUARD] Routing decision = onboarding (status: ${onboardingStatus})`);
                 
-                // CASE B: in_progress - FORCE redirect to onboarding
+                // CASE B: in_progress
                 if (onboardingStatus === 'in_progress') {
-                  console.log('🔄 Onboarding in progress - resuming');
-                  setStatus('Resuming your onboarding...');
                   navigate('/onboarding', { replace: true });
                   return;
                 }
                 
-                // CASE A: not_started - Show decision screen
-                if (onboardingStatus === 'not_started') {
-                  // Check session-only deferral
-                  const sessionDeferred = sessionStorage.getItem('onboarding_deferred');
-                  
-                  if (sessionDeferred === 'true') {
-                    // User chose "Later" in THIS session - go to advisor
-                    console.log('✅ Onboarding deferred this session - going to advisor');
-                    setStatus('Redirecting...');
-                    navigate('/advisor', { replace: true });
-                  } else {
-                    // First time this session - show decision screen
-                    console.log('🎯 New user - showing onboarding decision');
-                    setStatus('Setting up your experience...');
-                    sessionStorage.setItem('onboarding_state', 'not_started');
-                    navigate('/onboarding-decision', { replace: true });
-                  }
-                  return;
+                // CASE A: not_started
+                const sessionDeferred = sessionStorage.getItem('onboarding_deferred');
+                if (sessionDeferred === 'true') {
+                  console.log('[GUARD] Routing decision = dashboard (deferred)');
+                  navigate('/advisor', { replace: true });
+                } else {
+                  navigate('/onboarding-decision', { replace: true });
                 }
-                
-                // Unknown state - safe fallback to decision
-                console.log('⚠️ Unknown onboarding state - showing decision');
-                navigate('/onboarding-decision', { replace: true });
               } else {
-                // CASE C: completed - go straight to advisor
-                console.log('✅ Onboarding complete - going to advisor');
-                setStatus('Redirecting to advisor...');
+                // CASE C: completed
+                console.log('[GUARD] Routing decision = dashboard (completed)');
                 navigate('/advisor', { replace: true });
               }
             } catch (profileCheckError) {
               console.error('❌ Error checking profile:', profileCheckError);
-              // Fallback: go directly to advisor
-              setStatus('Redirecting...');
-              navigate('/advisor', { replace: true });
+              
+              // HARD GATE: Show error UI, do NOT route to advisor/onboarding
+              setError('Network error loading your profile');
+              setStatus('Please retry or contact support if this persists.');
+              return; // STOP routing
             }
           } else {
             console.log('❌ No session despite access token');

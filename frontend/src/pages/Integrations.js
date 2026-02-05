@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   Plug, Check, ExternalLink, Search, X,
   Lock, ArrowRight, Zap, AlertCircle, CheckCircle2,
-  LogOut, ShieldAlert, RefreshCw, ChevronRight, Sparkles
+  LogOut, ShieldAlert, RefreshCw, ChevronRight, Sparkles, Loader2
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useMergeLink } from '@mergeapi/react-merge-link';
@@ -927,6 +927,15 @@ const Integrations = () => {
                           </div>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{outlookStatus.connected_email || 'Connected'}</p>
                         </div>
+                        <Button
+                          onClick={handleOutlookDisconnect}
+                          variant="outline"
+                          size="sm"
+                          disabled={disconnecting}
+                          className="text-red-600 hover:bg-red-50 border-red-200"
+                        >
+                          {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -943,6 +952,15 @@ const Integrations = () => {
                           </div>
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{gmailStatus.connected_email || 'Connected'}</p>
                         </div>
+                        <Button
+                          onClick={handleGmailDisconnect}
+                          variant="outline"
+                          size="sm"
+                          disabled={disconnecting}
+                          className="text-red-600 hover:bg-red-50 border-red-200"
+                        >
+                          {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
+                        </Button>
                       </div>
                     </div>
                   )}

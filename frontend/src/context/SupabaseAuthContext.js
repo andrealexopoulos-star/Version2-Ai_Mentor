@@ -267,6 +267,102 @@ export const SupabaseAuthProvider = ({ children }) => {
   };
 
   // Force refresh the session from Supabase
+  // BUSINESS CONTEXT REHYDRATION (HARD GATE)
+  const [businessContext, setBusinessContext] = useState(null);
+  const [contextLoading, setContextLoading] = useState(true);
+  const [contextError, setContextError] = useState(null);
+  const [contextSource, setContextSource] = useState(null); // 'cache' | 'api'
+
+  // Rehydrate business context on session change
+  useEffect(() => {
+    const rehydrateBusinessContext = async () => {
+      if (!session || !session.user) {
+        console.log('[CONTEXT] No session - clearing context');
+        setBusinessContext(null);
+        setContextLoading(false);
+        setContextSource(null);
+        return;
+      }
+
+      console.log('[CONTEXT] Session detected - rehydrating...');
+      setContextLoading(true);
+      setContextError(null);
+
+      try {
+        // STEP 1: Check cache first (24h TTL)
+        const cached = localStorage.getItem('biqc_context_v1');
+        if (cached) {
+          try {
+            const parsedCache = JSON.parse(cached);
+            const cacheAge = Date.now() - (parsedCache.cached_at || 0);
+            const cacheAgeMinutes = Math.floor(cacheAge / 60000);
+            const ttl = 24 * 60 * 60 * 1000; // 24 hours
+
+            if (cacheAge < ttl && parsedCache.user_id === session.user.id) {
+              console.log(`[CONTEXT] ✅ cache hit (age=${cacheAgeMinutes}m, onboarding_status=${parsedCache.onboarding_status})`);
+              console.log('[CONTEXT] Skipping /check-profile because cache valid');
+              
+              setBusinessContext(parsedCache);
+              setContextSource('cache');
+              setContextLoading(false);
+              return; // EARLY EXIT - skip API call
+            } else {
+              console.log(`[CONTEXT] Cache expired (age=${cacheAgeMinutes}m) or user mismatch`);
+            }
+          } catch (parseError) {
+            console.warn('[CONTEXT] Cache parse error, fetching fresh');
+          }
+        } else {
+          console.log('[CONTEXT] No cache found');
+        }
+
+        // STEP 2: Fetch fresh context from API
+        console.log('[CONTEXT] Calling /api/auth/check-profile...');
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Profile check failed: ${response.status}`);
+        }
+
+        const profileData = await response.json();
+        
+        // STEP 3: Build cache object (exact fields only)
+        const freshContext = {
+          user_id: session.user.id,
+          account_id: profileData.user?.account_id || null,
+          business_profile_id: profileData.user?.business_profile_id || null,
+          onboarding_status: profileData.onboarding_status || 'not_started',
+          cached_at: Date.now()
+        };
+
+        // STEP 4: Write to localStorage
+        localStorage.setItem('biqc_context_v1', JSON.stringify(freshContext));
+        console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(freshContext.cached_at).toISOString()})`);
+        
+        setBusinessContext(freshContext);
+        setContextSource('api');
+        
+        console.log('[CONTEXT] ✅ Rehydration complete (source: api)');
+
+      } catch (error) {
+        console.error('[CONTEXT] ❌ Rehydration failed:', error.message);
+        setContextError(error.message);
+        setContextSource('error');
+        // Keep last known state - do NOT clear context
+      } finally {
+        setContextLoading(false);
+      }
+    };
+
+    rehydrateBusinessContext();
+  }, [session]);
+
   const refreshSession = async () => {
     try {
       console.log('[Auth] Forcing session refresh...');
