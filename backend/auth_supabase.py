@@ -277,6 +277,16 @@ async def get_current_user_supabase(credentials: HTTPAuthorizationCredentials = 
     """
     Dependency to get current authenticated user from Supabase token
     """
+    if isinstance(credentials, Request):
+        auth_header = credentials.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        token = auth_header.split(" ", 1)[1]
+        return await verify_supabase_token(token)
+
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     token = credentials.credentials
     return await verify_supabase_token(token)
 
