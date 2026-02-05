@@ -116,18 +116,9 @@ const AuthCallbackSupabase = () => {
               }
 
               const calibrationData = await calibrationResponse.json();
-              if (!calibrationData.has_business_profile || calibrationData.calibration_status !== 'complete') {
-                const businessContext = {
-                  user_id: sessionData.session.user.id,
-                  account_id: calibrationData.account_id || null,
-                  business_profile_id: calibrationData.business_profile_id || null,
-                  onboarding_status: 'calibration_required',
-                  calibration_status: calibrationData.calibration_status || null,
-                  cached_at: Date.now()
-                };
-                localStorage.setItem('biqc_context_v1', JSON.stringify(businessContext));
-                console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(businessContext.cached_at).toISOString()})`);
-                console.log('[GUARD] ➤ routing to /calibration');
+              // /api/calibration/status returns { status: "NEEDS_CALIBRATION" | "COMPLETE" }
+              if (calibrationData.status !== 'COMPLETE') {
+                console.log('[GUARD] ➤ Calibration needed, routing to /calibration');
                 navigate('/calibration', { replace: true });
                 return;
               }
