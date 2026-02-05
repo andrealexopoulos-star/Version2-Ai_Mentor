@@ -5,7 +5,6 @@ from typing import Dict, Any, Optional, List
 from uuid import uuid4
 
 from cognitive_core_supabase import CognitiveCore, get_cognitive_core
-from ai_helpers import get_ai_response
 
 
 ALLOWED_REGEN_LAYERS = [
@@ -82,6 +81,7 @@ def _strategy_drift_improved(supabase_admin, account_id: str) -> Optional[bool]:
 
 
 async def _generate_layer_draft(layer: str, strategy_profile: Dict[str, Any], reason: str, user_id: str) -> str:
+    from server import get_ai_response
     prompt = (
         "You are BIQC. Generate a revised draft for the requested strategic layer only. "
         "Return JSON: {\"draft\": \"...\"}. Keep it specific to the business and grounded in the raw inputs. "
