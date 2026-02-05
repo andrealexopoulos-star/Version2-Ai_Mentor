@@ -317,14 +317,28 @@ class CognitiveCore:
         """
         try:
             obs_type = observation.get("type")
+            obs_layer = observation.get("layer")
+            obs_payload = observation.get("payload", {})
+            now = datetime.now(timezone.utc).isoformat()
+
             profile = await self.get_profile(user_id)
-            
-            # For now, just update last_updated timestamp
-            # Complex nested updates can be added incrementally
-            self.supabase.table("cognitive_profiles").update({
-                "last_updated": datetime.now(timezone.utc).isoformat()
-            }).eq("user_id", user_id).execute()
-            
+
+            updates: Dict[str, Any] = {
+                "last_updated": now
+            }
+
+            if obs_layer in [
+                "immutable_reality",
+                "behavioural_truth",
+                "delivery_preference",
+                "consequence_memory"
+            ] and isinstance(obs_payload, dict):
+                base_layer = profile.get(obs_layer, {}) or {}
+                merged_layer = {**base_layer, **obs_payload, "last_updated": now}
+                updates[obs_layer] = merged_layer
+
+            self.supabase.table("cognitive_profiles").update(updates).eq("user_id", user_id).execute()
+
             logger.debug(f"Observation recorded for user {user_id}: {obs_type}")
         except Exception as e:
             logger.error(f"Error recording observation: {e}")
