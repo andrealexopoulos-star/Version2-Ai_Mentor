@@ -66,13 +66,14 @@ async def run_automatic_intelligence(user_id: str):
             watchtower_store=watchtower_store
         )
 
-        await process_silence_interventions(supabase_admin, watchtower_store)
         
         if result.get('events_created', 0) > 0:
             logger.info(f"✅ {result['events_created']} events created for user {user_id[:8]}...")
         else:
             logger.debug(f"No patterns detected for user {user_id[:8]}...")
             
+        await process_silence_interventions(supabase_admin, watchtower_store)
+
     except Exception as e:
         logger.error(f"Error generating intelligence for user {user_id[:8]}...: {e}")
 
