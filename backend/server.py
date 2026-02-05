@@ -2351,13 +2351,15 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 @api_router.get("/calibration/status")
 async def get_calibration_status(current_user: dict = Depends(get_current_user_supabase)):
     user_id = current_user["id"]
-    business_profile = await get_business_profile_supabase(supabase_admin, user_id)
-    return {
-        "has_business_profile": business_profile is not None,
-        "business_profile_id": business_profile.get("id") if business_profile else None,
-        "account_id": business_profile.get("account_id") if business_profile else None,
-        "calibration_status": business_profile.get("calibration_status") if business_profile else None
-    }
+    try:
+        business_profile = await get_business_profile_supabase(supabase_admin, user_id)
+        if not business_profile:
+            return {"status": "NEEDS_CALIBRATION"}
+        if business_profile.get("calibration_status") != "complete":
+            return {"status": "NEEDS_CALIBRATION"}
+        return {"status": "COMPLETE"}
+    except Exception:
+        return {"status": "NEEDS_CALIBRATION"}
 
 
 def _split_two_parts(answer: str) -> List[str]:
