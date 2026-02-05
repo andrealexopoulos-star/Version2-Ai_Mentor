@@ -1,163 +1,214 @@
-<analysis>**original_problem_statement**: The user's initial goal was to overhaul the application's UI/UX to create an intelligent advisor persona named BIQC. This involved fixing mobile UI bugs, redesigning the main insights page, and debugging critical integration issues with Azure OAuth and Merge.dev.
+<analysis>**original_problem_statement**: The user's initial goal was to overhaul the application's UI/UX to create an intelligent advisor persona named BIQC. This evolved into building a Truth Engine to provide immediate insights to new users. The architecture has undergone several major pivots: from Python-based analysis to Supabase RPCs (PostgreSQL functions), a full data migration from MongoDB to Supabase, and a series of user-provided Supreme Execution Mode directives to redefine the core intelligence posture, fix authentication loops, and prepare the system for a new conversational Calibration a-gent that replaces the original onboarding wizard. The final goal is to create a robust, automated intelligence system running entirely on Supabase, ready for deployment.
 
-The project then pivoted to a major new feature: the Truth Engine, a backend system designed to provide a wow moment for new users by generating a powerful insight (a Shadow Report or Watchtower Event) from their connected data (email, CRM, etc.) shortly after signup. This led to multiple architectural shifts, extensive debugging of OAuth and domain/DNS configurations, and numerous iterations on the landing page copy. The final and most significant architectural change was moving the core intelligence analysis logic from the Python backend into high-performance PostgreSQL functions (RPCs) within Supabase.
+PRODUCT REQUIREMENTS (from user directives):
+-   **Intelligence Posture**: Intelligence must be automatic (daily/weekly scans), not manually triggered. The Watchtower is a sensor-only layer, collecting raw signals. The Cognitive Core, informed by a new Calibration system, decides severity and importance.
+-   **Calibration System**: A new conversational agent will replace the old onboarding wizard. It will ask a series of 17 questions to understand the user's business, storing all data in new Supabase tables (, , etc.). This calibration will seed the Cognitive Core and set priorities for the intelligence engine.
+-   **Onboarding/Routing Logic**: Onboarding must be deterministic. New users are prompted to start; partially onboarded users are forced to continue; completed users are sent to the main app. This state must survive logouts, and context rehydration must be robust, using a  cache to prevent redundant API calls and incorrect routing on errors.
+-   **Data Storage**: All new and existing functionality must use Supabase as the single source of truth. All dependencies on MongoDB must be systematically removed.
+-   **UI/UX**: Remove UI clutter (top search bar), fix layout issues (sidebar title alignment), and add critical functionality like a Disconnect button for integrations.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is in a hybrid state, using both MongoDB and Supabase. The frontend is a React application with a Watchtower UI () to display intelligence events. The backend is FastAPI, which has been refactored to call new server-side intelligence functions (RPCs) in Supabase. These RPCs are designed to analyze email data for patterns like ghosting and burnout. A  table in Supabase serves as the new, authoritative system of record for all generated insights. However, the core email data itself () resides in a legacy MongoDB collection. This creates a critical disconnect, as the new Supabase RPCs expect to find the email data in a PostgreSQL table. The application has been plagued by OAuth configuration issues and frontend environment variables reverting to incorrect values.
+The application is a React frontend with a FastAPI backend, now operating almost exclusively on a Supabase (PostgreSQL) database. The legacy MongoDB database still exists but is being systematically phased out. Two background workers are running via : one for syncing emails () and a new one for automating intelligence analysis ().
+
+The frontend has been updated to fix a critical onboarding loop by implementing a robust business context cache in . The UI has been cleaned up by removing the top search bar and adding a Disconnect button for integrations.
+
+However, the application is **not deployable**. A pre-deployment health check revealed critical blockers, including remaining code that uses MongoDB query syntax, which will cause runtime failures in a Supabase-only environment.
 
 **Last working item**:
-- Last item agent was working: Implementing a major architectural shift to move the Cold Read intelligence logic from Python-based processing to server-side Supabase RPCs (PostgreSQL functions) for performance. The agent created the necessary SQL migration file containing the new functions (, ) and updated the Python backend () to call them. The final action was providing the user with the SQL code to execute in their Supabase SQL Editor.
-- Status: **USER VERIFICATION PENDING**
-- Agent Testing Done: N (Cannot be tested until the user applies the SQL migration to their Supabase project).
-- Which testing method agent to use? The next agent must first guide the user to apply the SQL migration. Then, the agent should test the flow by using  to trigger the  endpoint and inspect backend logs for errors or successful RPC calls.
-- User Testing Done: N
+-   Last item agent was working: Running a pre-deployment readiness check using the .
+-   Status: **BLOCKED**
+-   Agent Testing Done: Y (The deployment agent's analysis serves as the test)
+-   Which testing method agent to use? The main agent needs to perform code fixes. Use  and  to find and fix the invalid MongoDB syntax identified by the deployment agent. After the fix, the  should be run again.
+-   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-- Issue 1: Execute Server-Side Intelligence RPCs (P0 - BLOCKER)
-- Issue 2: Critical Data Disconnect for Intelligence Engine (P0 - BLOCKER)
-- Issue 3: Persistent Frontend Environment Variable Reversion (P1 - High)
+-   Issue 1: Critical Deployment Blocker: MongoDB Syntax in Supabase Code (P0)
+-   Issue 2: Google Drive/OneDrive Connection Failure (P0)
+-   Issue 3: Persistent Environment Variable Reversion (P1)
+-   Issue 4: Incomplete MongoDB Code Removal (P1)
 
 **Issues Detail**:
-- **Issue 1: Execute Server-Side Intelligence RPCs**
-    - **Description**: The new, high-performance intelligence engine relies on two PostgreSQL functions (, ) that must be created in the user's Supabase database. The agent has provided the SQL code, but the user has not yet executed it. Until this is done, all intelligence-gathering functionality is broken.
-    - **Attempted fixes**: The agent provided the complete SQL in a code block for the user to copy and paste.
-    - **Next debug checklist**:
-        1.  Instruct the user to navigate to their Supabase SQL Editor.
-        2.  Tell them to paste the SQL from  and run it.
-        3.  Confirm with the user that it executed successfully.
-    - **Why fix this issue and what will be achieved with the fix?**: This is the final step to enable the new server-side Truth Engine. Fixing it will make the Run Analysis feature functional.
-    - **Status**: USER VERIFICATION PENDING
-    - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?** Backend
-    - **Blocked on other issue**: None.
+-   **Issue 1: Critical Deployment Blocker: MongoDB Syntax in Supabase Code**
+    -   **Description**: The  found that  still uses MongoDB-style update queries (e.g., ). This syntax is invalid for Supabase and will cause the application to crash.
+    -   **Attempted fixes**: None. This was the last finding.
+    -   **Next debug checklist**:
+        1.  Locate the  function in .
+        2.  Find all calls to this function from .
+        3.  Replace the MongoDB update syntax with the correct Supabase/PostgREST syntax (e.g., ).
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a hard blocker for deployment. Fixing it will make the Cognitive Core compatible with Supabase and allow the application to run without crashing.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on other issue**: None.
 
-- **Issue 2: Critical Data Disconnect for Intelligence Engine**
-    - **Description**: The new Supabase RPCs are designed to query an  table within PostgreSQL. However, all evidence from system audits shows that the application's email sync process writes data to a MongoDB collection named , while the Supabase table of the same name is empty. This means the new intelligence engine will run on an empty dataset and produce no insights.
-    - **Attempted fixes**: None. This is a newly identified critical flaw in the architecture resulting from the latest pivot.
-    - **Next debug checklist**:
-        1.  Verify the current email sync destination by inspecting  and helper functions related to .
-        2.  Formulate a plan to resolve the disconnect. Options:
-            a. **Modify the sync logic:** Update the email sync function to write data to the Supabase  table instead of (or in addition to) MongoDB.
-            b. **Modify the RPCs:** Rewrite the RPCs to somehow access data from MongoDB (highly complex and not recommended).
-        3.  Propose the plan (Option A is strongly preferred) to the user for approval.
-    - **Why fix this issue and what will be achieved with the fix?**: The entire Truth Engine and Watchtower features are useless without data to analyze. This fix will connect the intelligence engine to the data source.
-    - **Status**: NOT STARTED
-    - **Is recurring issue?** N
-    - **Should Test frontend/backend/both after fix?** Backend
-    - **Blocked on other issue**: Issue 1 should be resolved first, but this issue will immediately block any meaningful results.
+-   **Issue 2: Google Drive/OneDrive Connection Failure**
+    -   **Description**: The user reported that clicking the Connect button for Google Drive and OneDrive on the Integrations page is not working. The agent previously identified an error  and attempted a fix, but the issue persists.
+    -   **Attempted fixes**: The agent tried adding the missing function definition to  but the implementation was likely incorrect.
+    -   **Next debug checklist**:
+        1.  Review .
+        2.  Inspect the  function and the  handler for the Knowledge Base category integrations (Google Drive, OneDrive).
+        3.  Ensure the  function (from the  hook) is being called correctly with the  category.
+        4.  Verify the  is being generated successfully from the backend.
+    -   **Why fix this issue and what will be achieved with the fix?**: The file storage integration is a key feature and is currently broken.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Frontend
 
-- **Issue 3: Persistent Frontend Environment Variable Reversion**
-    - **Description**: The  file's  has repeatedly and inexplicably reverted to an old Emergent preview URL, causing CORS errors and breaking all communication with the backend after deployment. This has been manually fixed multiple times but the root cause is unknown.
-    - **Attempted fixes**: Manually editing the  file and restarting the frontend service. This works temporarily.
-    - **Next debug checklist**: Before any deployment, run REACT_APP_BACKEND_URL=https://biqc-advisor-1.preview.emergentagent.com to ensure it is set to . If it's incorrect, fix it and restart the frontend service. The root cause may be related to the Emergent platform's environment management.
-    - **Why fix this issue and what will be achieved with the fix?**: A stable and correct backend URL is required for the application to function at all.
-    - **Status**: IN PROGRESS
-    - **Is recurring issue?** Y
-    - **Should Test frontend/backend/both after fix?** Both
+-   **Issue 3: Persistent Environment Variable Reversion**
+    -   **Description**: Key environment variables (especially , , ) keep reverting to old  preview values, breaking authentication and API calls.
+    -   **Attempted fixes**: The agent correctly identified that platform-level environment variables in the Emergent Dashboard were overriding the  files. The agent has repeatedly edited the local  files, which is only a temporary fix. The user has been instructed to update them in the dashboard.
+    -   **Next debug checklist**: This is not a code issue. The next agent must:
+        1.  Politely but firmly re-iterate to the user that this issue can ONLY be solved by updating the environment variables in the **Emergent Platform Dashboard** and then clicking **Re-deploy changes**.
+        2.  List the exact variables and their correct values ( -> ,  -> ,  -> ).
+    -   **Why fix this issue and what will be achieved with the fix?**: This is the root cause of all authentication and CORS errors. A stable environment is required for the app to function.
+    -   **Status**: USER VERIFICATION PENDING
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both
+
+-   **Issue 4: Incomplete MongoDB Code Removal**
+    -   **Description**: A platform reliability audit found 37 remaining MongoDB calls () in  for features like Soundboard, Analyses, and user profile creation. These will break when MongoDB is decommissioned.
+    -   **Attempted fixes**: The agent started removing some calls but did not complete the task. A file  lists all occurrences.
+    -   **Next debug checklist**:
+        1.  Review the list of remaining calls in .
+        2.  Systematically go through  and replace each  call with its Supabase equivalent, using the existing Supabase helper functions where possible.
+        3.  Prioritize the critical P0 operations identified in the audit: user registration and Soundboard chat history.
+    -   **Why fix this issue and what will be achieved with the fix?**: To achieve the goal of a 100% Supabase-native application and prevent future runtime failures.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend
 
 **In progress Task List**:
-- **Task 1: Complete deployment and testing on the custom domain**
-    - **Where to resume**: After resolving the blocking issues (RPC creation and data disconnect), the next step is to guide the user through a final deployment and test the full end-to-end flow on .
-    - **What will be achieved with this?**: A fully functional application on the user's custom domain.
-    - **Status**: BLOCKED
-    - **Should Test frontend/backend/both after fix?** Both
-    - **Blocked on something**: Issue 1, Issue 2.
+-   **Task 1: Complete MongoDB Elimination**
+    -   **Where to resume**: Continue fixing the remaining MongoDB calls in  as identified in .
+    -   **What will be achieved with this?**: A backend that no longer relies on MongoDB for any core functionality.
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on something**: None.
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks:**
-    - **(P1)** Full end-to-end testing of the Watchtower feature after resolving blockers.
-    - **(P2)** Connect Business Diagnosis page to a live backend.
-- **Future Tasks:**
-    - **(P2)** Complete the full migration of all legacy data from MongoDB to Supabase.
-    - **(P3)** Implement a proper error monitoring and observability solution (e.g., Sentry), which was planned but deferred.
+-   **Upcoming Tasks**:
+    -   **(P0)** Implement the live Calibration Agent conversational flow using the specification in . This will replace the old onboarding wizard entirely.
+    -   **(P1)** Connect the new Calibration data (e.g., , ) to the  to make the Watchtower analysis context-aware.
+    -   **(P2)** Implement the weekly check-in agent based on the  table.
+
+-   **Future Tasks**:
+    -   Add more sophisticated intelligence patterns to the Watchtower beyond Ghosting and Burnout.
+    -   Restore the Business Diagnosis page UI using the newly available Supabase data.
+    -   Integrate a proper error monitoring solution like Sentry.
 
 **Completed work in this session**
-- **Architecture**: Migrated core intelligence logic from Python processing to high-performance Supabase RPCs (PostgreSQL functions).
-- **Backend**:
-    - Created the  table in Supabase as the source of truth for insights.
-    - Developed  to call the new database functions.
-    - Enhanced the Outlook sync process to ingest metadata from Sent Items to provide context for intelligence signals.
-- **Frontend**:
-    - Built the  page to serve as the main UI for displaying intelligence.
-    - Implemented multiple rounds of fixes to stabilize the mobile UI, including addressing layout, overflow, and typography issues.
-    - Iterated extensively on the  page copy to align with the user's desired authoritative tone.
-- **Debugging**:
-    - Resolved numerous critical OAuth, CORS, and domain/DNS issues related to the custom domain .
-    - Identified and implemented cache-busting solutions for the service worker to ensure UI updates are delivered to the user.
-- **Documentation**:
-    - Conducted a full system audit (PROMPT 0) to map out data stores, dependencies, and risks.
-    - Created multiple configuration guides for the user to correctly set up their OAuth provider URLs.
+-   **Architecture**:
+    -   Implemented a provider-agnostic background worker () for syncing emails from any source.
+    -   Created an  to run analysis on a schedule, making intelligence automatic.
+    -   Designed and created the full Supabase schema for the new Calibration System, which replaces onboarding.
+    -   Created the Supabase RPC  for advanced signal-to-noise classification.
+-   **Authentication & Routing**:
+    -   Fixed the OAuth account picker issue for Google and Microsoft by adding .
+    -   Solved a critical onboarding loop by implementing a hard gate and  caching for the user's business context in .
+-   **Data Migration**:
+    -   Successfully executed a fresh sync of email data into the new  Supabase table, resolving the data disconnect.
+-   **Bug Fixes & Refactoring**:
+    -   Began the process of removing legacy MongoDB calls from .
+    -   Identified the root cause of persistent environment variable reversions (platform overrides).
+-   **UI/UX**:
+    -   Added a Disconnect button to the Integrations page.
+    -   Removed the top search bar and centered the sidebar title for a cleaner layout.
+
+**Earlier issues found/mentioned but not fixed**
+-   The platform reliability audit (summary in ) identified remaining MongoDB dependencies for Soundboard, Analyses, and Data Files which are not yet fixed.
 
 **Known issue recurrence from previous fork**
-- **Mobile UI defects:** A P0 mobile navigation bug was carried over and addressed. The general instability of the mobile layout has been a recurring theme, requiring multiple intervention rounds.
+-   **Persistent Frontend Environment Variable Reversion**: The  and Azure-related variables in  files keep getting reverted to old preview URLs. This is caused by the Emergent platform's environment settings overriding the file-level settings. The solution is for the user to update the values in the Emergent platform dashboard.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Server-Side Intelligence (RPC)**: The core architectural decision to move heavy data analysis from the Python backend into performant PostgreSQL functions within Supabase.
-- **Hybrid Database Architecture**: Actively using MongoDB as a legacy read-only data store (for historical emails) while using Supabase (PostgreSQL) as the primary database for auth, new intelligence events, and server-side processing.
-- **OAuth 2.0 Flow**: The application uses OAuth for Google and Azure (Outlook) connections. Debugging redirect URI mismatches has been a major focus.
-- **Service Worker Caching**: The frontend uses a service worker, which has caused significant caching issues, preventing updated assets from loading on the user's device.
+-   **Background Workers**: Using  to run persistent Python scripts (, ) for asynchronous tasks like data syncing and analysis.
+-   **Supabase RPCs**: Heavy data processing logic (Signal-to-Noise, Ghosting) is encapsulated in performant PostgreSQL functions, called from the FastAPI backend.
+-   **Frontend State Caching**: Using  () to cache the user's business context, preventing redundant API calls and fixing a critical onboarding redirect loop.
+-   **Declarative Agent Prompts**: The user provides highly specific, role-playing Supreme Execution Mode prompts that dictate exact implementation details, which the agent is expected to execute without deviation.
+-   **Platform vs. File Configuration**: Critical discovery that environment variables set in the Emergent platform dashboard override  files, which was the root cause of persistent auth and URL issues.
 
 **key DB schema**
-- **Supabase (PostgreSQL)**:
-  - :  - The authoritative store for all generated intelligence.
-  - :  - **This table is expected by the new RPCs but is currently empty.**
-- **MongoDB**:
-  - : Contains over 1,700 historical email documents. This is where the application currently syncs email data.
+-   **outlook_emails**:  - Stores all synced emails (provider-agnostic).
+-   **business_profiles**:  - Core business info from calibration.
+-   **strategy_profiles**:  - Stores raw user inputs and AI-generated strategic drafts.
+-   **calibration_schedules**:  - Post-calibration schedule for check-ins.
+-   **working_schedules**:  - 15-week schedule scaffold.
+-   **intelligence_priorities**:  - Defines what signals are most important for a user.
+-   **google_drive_files**:  - Stores metadata for synced Google Drive files.
+-   **merge_integrations**:  - Stores connection details for Merge.dev integrations.
 
 **All files of reference**
-- : **Critical.** Contains the SQL the user must run.
-- : The current intelligence logic.
-- : The primary UI for the main feature.
-- : Contains OAuth, sync logic, and API endpoints.
-- : Prone to incorrect value for .
-- : Contains all backend service credentials.
+-   : Core application logic, still contains legacy MongoDB code that needs removal.
+-   : Contains the P0 deployment-blocking bug (MongoDB syntax).
+-   : The heart of the frontend auth and state management logic.
+-   : Contains the broken Google Drive/OneDrive connection logic.
+-   : A report listing all remaining MongoDB calls to be removed.
+-   : A summary of how the different intelligence layers work together.
+-   : The prompt to be used for the new conversational calibration agent.
+-   All migration files in .
 
 **Critical Info for New Agent**
-1.  **User Action Required (P0 Blocker):** Your immediate first step is to guide the user to execute the SQL in  in their Supabase project. The entire Watchtower feature is dead without it.
-2.  **Data Disconnect (P0 Blocker):** You must immediately address the fact that the new intelligence RPCs query an empty PostgreSQL table (), while the actual data resides in MongoDB. The email sync logic in  must be modified to write to the Supabase  table. Propose this fix to the user before implementing.
-3.  ** Instability:** Before every deployment or major test, double-check that  has . This file has reverted to old values multiple times.
-4.  **Correct Domain:** The single source-of-truth domain for all configurations is . There is no  subdomain. Ensure all user-facing OAuth instructions reflect this.
+1.  **IMMEDIATE P0 BLOCKER**: You must first fix the MongoDB syntax in . The  confirmed this will crash the application.
+2.  **ENVIRONMENT VARIABLES**: The  URL issue is **NOT a code problem**. It is a platform configuration issue. You must guide the user to update the , , and  variables in the **Emergent Platform Dashboard** and Re-deploy changes. Do not waste time editing  files.
+3.  **USER DIRECTIVES**: The user operates in a Supreme Execution Mode. Adhere strictly to their prompts. Do not ask for clarification, offer alternatives, or deviate from the instructions unless you hit a hard blocker.
+4.  **MONGODB DECOMMISSION**: The primary architectural goal is to eliminate all MongoDB dependencies. All new logic MUST be Supabase-native. Refer to  to finish removing the remaining legacy code.
 
 **documents and test reports created in this job**
-- /app/backend/migrations/002_watchtower_rpcs.sql
-- /app/SYSTEM_AUDIT_PROMPT0_PART1.md
-- /app/SYSTEM_AUDIT_PROMPT0_PART2.md
-- /app/DATA_DUPLICATION_CONTROL_MATRIX.md
-- /app/FINAL_OAUTH_CONFIG.md
-- /app/INTEGRATION_AUTH_ANALYSIS.md
+-   /app/backend/migrations/ (Files 003 to 009)
+-   /app/GOOGLE_DRIVE_INTEGRATION_GUIDE.md
+-   /app/GOOGLE_DRIVE_COMPLETE_SETUP.md
+-   /app/MONGODB_ELIMINATION_PLAN.md
+-   /app/MONGODB_LEGACY_AUDIT.md
+-   /app/ONBOARDING_FLOW_REVIEW.md
+-   /app/GUARD_ELIMINATION_AUDIT.md
+-   /app/CONTEXT_CACHE_PROOF.md
+-   /app/CALIBRATION_ADVISOR_AGENT_PROMPT.md
+-   /app/BIQC_INTELLIGENCE_ARCHITECTURE.md
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asks for the SQL code to be pasted directly into chat for easy copy-pasting into Supabase. (DONE)
-2.  **Agent**: Provides the complete SQL for the Supabase RPCs. (PENDING USER ACTION)
-3.  **User**: Asks how far back the Watchtower is reviewing emails. (DONE)
-4.  **Agent**: Reports that the lookback period is hardcoded to 90 days in the Python code. (DONE)
-5.  **User**: Provides a directive to replace the Python intelligence logic with Supabase RPCs for performance, providing the exact SQL and Python code to use. (DONE)
-6.  **Agent**: Acknowledges and implements the server-side intelligence RPCs. (PENDING USER ACTION)
-7.  **User**: Provides a final directive to fix the Cold Read payload by replacing the  function in the frontend with a verified, correct implementation. (DONE)
-8.  **Agent**: Acknowledges and overwrites the function with the provided code. (DONE)
-9.  **User**: Asks for a final acceptance test and gives the Go for Launch command for the Watchtower. (DONE)
-10. **User**: Provides a new directive to include Sent Items metadata in the email ingestion process to improve the accuracy of the Ghosting and Burnout signals. (DONE)
-11. **User**: asks to  (DONE)
+1.  **User**: Instructed agent to fix the onboarding loop with a hard gate and remove dangerous fallbacks. (DONE)
+2.  **User**: Instructed agent to implement a  cache for business context to improve rehydration reliability. (DONE)
+3.  **User**: Provided the first of two prompts defining the new Calibration System that replaces onboarding. (DONE)
+4.  **User**: Replied proceed to the agent's clarification request, confirming implementation was desired. (DONE)
+5.  **User**: Provided the second prompt defining the Live Calibration Advisor agent. (DONE)
+6.  **User**: Requested all SQL schemas sequentially in chat. (DONE)
+7.  **User**: Confirmed all SQL was executed. (DONE)
+8.  **User**: Requested a thorough update on the entire BIQC intelligence architecture. (DONE)
+9.  **User**: Gave a Supreme Execution Mode directive to activate automatic intelligence and realign the system's intelligence posture. (DONE)
+10. **User**: Reported that the  URL has reappeared on the welcome screen. (IN PROGRESS - Root cause is platform env variables)
+11. **User**: Reported that the Google Drive/OneDrive connect buttons are not working. (IN PROGRESS)
+12. **User**: Confirmed that the platform environment variables have been updated and deployed. (DONE)
+13. **User**: Issued a directive to add a Disconnect button, remove the top search bar, and center the sidebar title. (DONE)
+14. **User**: Ran a health check and received a report about critical blockers from the deployment agent. (PENDING FIXES)
 
 **Project Health Check:**
-- **Broken**:
-    - The core intelligence feature (Truth Engine) is non-functional due to the un-executed SQL migration (Issue 1) and the critical data disconnect (Issue 2).
-- **Mocked**: None.
+-   **Broken**:
+    -   Deployment is blocked due to MongoDB syntax in Supabase code ().
+    -   The Connect functionality for Google Drive and OneDrive is not working.
+    -   Several core features (Soundboard, Analyses) will fail if MongoDB is decommissioned, as their code has not been fully migrated to Supabase.
+-   **Mocked**: None.
 
 **3rd Party Integrations**
-- **Supabase**: Used for PostgreSQL database, User Authentication (Auth), and server-side functions (RPCs).
-- **MongoDB**: Legacy database, currently holds historical email data.
-- **Microsoft Graph (Outlook)**: Email and Calendar sync.
-- **Google (Gmail)**: Email and Calendar sync.
-- **Merge.dev**: Unified API for CRM (HubSpot) and Accounting (Xero).
+-   **Supabase**: Primary database, auth, and serverless functions (RPCs).
+-   **MongoDB**: Legacy database, being phased out.
+-   **Microsoft Graph (Outlook)**: Email sync.
+-   **Google (Gmail)**: Email sync.
+-   **Merge.dev**: Unified API for file storage (Google Drive, OneDrive) and other integrations.
 
 **Testing status**
-- Testing agent used after significant changes: NO
-- Troubleshoot agent used after agent stuck in loop: YES (Used for CORS/domain issues).
-- Test files created: []
-- Known regressions: None from this session, but the application is currently in a non-functional state due to the blocking issues.</analysis>
+-   Testing agent used after significant changes: YES (Deployment agent was used for a health check and found a P0 blocker).
+-   Troubleshoot agent used after agent stuck in loop: NO
+-   Test files created: []
+-   Known regressions: The  reversion is a persistent environmental regression.
+
+**Credentials to test flow:**
+N/A - The agent should use the user's existing session and test credentials from the environment.
+
+**What agent forgot to execute**
+-   The agent did not fully complete the removal of all MongoDB calls from  after the platform reliability audit. This is a key pending task.
+-   The agent's fix for the Google Drive connection button was incomplete and did not resolve the issue.</analysis>

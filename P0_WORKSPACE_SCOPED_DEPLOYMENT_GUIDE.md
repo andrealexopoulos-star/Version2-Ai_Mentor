@@ -86,7 +86,7 @@ sudo supervisorctl restart backend
 tail -n 50 /var/log/supervisor/backend.*.log | grep -i "workspace"
 
 # Check endpoint is accessible
-curl -X POST https://biqc-advisor-1.preview.emergentagent.com/api/integrations/merge/link-token \
+curl -X POST https://watchtower-ai.preview.emergentagent.com/api/integrations/merge/link-token \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json"
 ```
@@ -331,11 +331,11 @@ Run this after deployment:
 python3 /app/check_and_migrate_schema.py
 
 # 2. Backend check
-curl -I https://biqc-advisor-1.preview.emergentagent.com/api/health
+curl -I https://watchtower-ai.preview.emergentagent.com/api/health
 
 # 3. Integration test (requires auth token)
 # Login as user, then:
-curl -X POST https://biqc-advisor-1.preview.emergentagent.com/api/integrations/merge/link-token \
+curl -X POST https://watchtower-ai.preview.emergentagent.com/api/integrations/merge/link-token \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json"
 

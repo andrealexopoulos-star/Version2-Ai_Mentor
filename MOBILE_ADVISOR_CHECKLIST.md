@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://biqc-advisor-1.preview.emergentagent.com/advisor
+## For: https://watchtower-ai.preview.emergentagent.com/advisor
 
 ---
 

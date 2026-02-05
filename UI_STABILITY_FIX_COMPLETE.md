@@ -230,7 +230,7 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 1. Open Chrome DevTools (F12)
 2. Click "Toggle Device Toolbar" (Ctrl+Shift+M)
 3. Select "iPhone 12 Pro" or "Pixel 5"
-4. Navigate to: https://biqc-advisor-1.preview.emergentagent.com/advisor
+4. Navigate to: https://watchtower-ai.preview.emergentagent.com/advisor
 5. Click input field
 6. Verify keyboard doesn't block input
 7. Type a message and send

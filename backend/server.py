@@ -2076,10 +2076,13 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
                         context_parts.append(f"      Reason given: {adv.get('reason', '')[:50]}...")
                 
                 # Get past successful approaches
-                recent_recs = await cognitive_core.advisory_log.find(
-                    {"user_id": user_id, "status": "acted"},
-                    {"_id": 0}
-                ).sort("created_at", -1).limit(3).to_list(length=3)
+                # Get recent acted-on recommendations from Supabase (MongoDB removed)
+                try:
+                    recent_recs_result = supabase_admin.table("advisory_log").select("*").eq("user_id", user_id).eq("status", "acted").order("created_at", desc=True).limit(3).execute()
+                    recent_recs = recent_recs_result.data if recent_recs_result.data else []
+                except Exception as e:
+                    logger.error(f"Failed to fetch advisory log: {e}")
+                    recent_recs = []
                 
                 if recent_recs:
                     context_parts.append("\n═══ PAST SUCCESSFUL ADVICE ═══")

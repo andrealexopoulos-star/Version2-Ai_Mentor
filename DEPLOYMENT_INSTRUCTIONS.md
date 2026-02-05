@@ -71,7 +71,7 @@ Before deploying Edge Functions, ensure:
 5. **Verify Secrets** are configured:
    - `AZURE_CLIENT_ID`
    - `AZURE_CLIENT_SECRET`
-   - `BACKEND_URL` = `https://biqc-advisor-1.preview.emergentagent.com`
+   - `BACKEND_URL` = `https://watchtower-ai.preview.emergentagent.com`
    - `SUPABASE_URL` (should be auto-configured)
    - `SUPABASE_SERVICE_ROLE_KEY` (should be auto-configured)
    - `SUPABASE_ANON_KEY` (should be auto-configured)
@@ -88,7 +88,7 @@ Before deploying Edge Functions, ensure:
 5. **Verify Secrets** are configured:
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
-   - `BACKEND_URL` = `https://biqc-advisor-1.preview.emergentagent.com`
+   - `BACKEND_URL` = `https://watchtower-ai.preview.emergentagent.com`
    - `SUPABASE_URL` (should be auto-configured)
    - `SUPABASE_SERVICE_ROLE_KEY` (should be auto-configured)
    - `SUPABASE_ANON_KEY` (should be auto-configured)
