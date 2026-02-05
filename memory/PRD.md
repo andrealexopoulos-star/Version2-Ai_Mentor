@@ -103,6 +103,7 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 5. **Canonical Intelligence Moments** - Activated revenue risk, founder strain, and strategy drift moments with calibration weighting, Cognitive Core delivery preferences, and constitution checks in watchtower generation
 6. **Controlled User Purge** - Executed Supabase + Mongo deletions for specified user IDs per destructive purge request
 7. **Calibration Advisor Activation** - Added calibration routing override, live advisor flow, and Supabase writes for Q1–Q9 with AI draft generation and post-calibration scaffolding
+8. **Silence Intervention System** - Implemented silence detection, escalation ladder, engagement risk scoring, and consequence memory updates with Watchtower events
 
 #### ✅ TESTING
 - `GET /api/health`
