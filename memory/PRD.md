@@ -108,6 +108,7 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 10. **Env URL Alignment** - Updated frontend REACT_APP_BACKEND_URL to https://beta.thestrategysquad.com
 11. **Calibration-first Auth Guard** - Replaced auth bootstrap with calibration-first gating and auth-state routing
 12. **Login URL Fix** - Set Welcome Back page home link and OAuth redirect to beta.thestrategysquad.com
+13. **Calibration Status Guard** - Enforced deterministic /api/calibration/status responses (NEEDS_CALIBRATION/COMPLETE only)
 
 #### ✅ TESTING
 - `GET /api/health`
