@@ -548,6 +548,8 @@ async def generate_cold_read(
     """
     insights = []
 
+    _register_canonical_templates()
+
     try:
         profile_result = supabase_admin.table("business_profiles").select("*").eq("user_id", user_id).single().execute()
         business_profile = profile_result.data if profile_result.data else {}
