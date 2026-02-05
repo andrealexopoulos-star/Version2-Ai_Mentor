@@ -11,7 +11,7 @@ import os
 
 from supabase_client import init_supabase
 from truth_engine_rpc import generate_cold_read
-from silence_detection import process_silence_interventions
+from silence_detection import evaluate_silence_intervention
 from watchtower_store import init_watchtower_store
 from workspace_helpers import get_user_account
 
@@ -72,7 +72,7 @@ async def run_automatic_intelligence(user_id: str):
         else:
             logger.debug(f"No patterns detected for user {user_id[:8]}...")
             
-        await process_silence_interventions(supabase_admin, watchtower_store)
+        await evaluate_silence_intervention(user_id, account_id, supabase_admin, watchtower_store)
 
     except Exception as e:
         logger.error(f"Error generating intelligence for user {user_id[:8]}...: {e}")
