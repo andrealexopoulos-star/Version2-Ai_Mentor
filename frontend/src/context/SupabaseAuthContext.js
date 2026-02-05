@@ -375,6 +375,11 @@ export const SupabaseAuthProvider = ({ children }) => {
     loading,
     authHydrated, // TASK 1: Expose hydration flag
     onboardingState, // TASK 2: Expose cached onboarding state
+    authState,
+    businessContext,
+    contextLoading,
+    contextError,
+    contextSource,
     signUp,
     signIn,
     signInWithOAuth,
