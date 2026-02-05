@@ -176,7 +176,7 @@ const CalibrationAdvisor = () => {
               key={`${message.role}-${index}`}
               className={`max-w-2xl rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-lg ${
                 message.role === "advisor"
-                  ? "bg-white/10 text-white"
+                  ? "bg-white/15 text-white"
                   : "bg-blue-500 text-white ml-auto"
               }`}
               data-testid={`calibration-message-${index}`}
