@@ -101,4 +101,8 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 3. **MongoDB Elimination (server.py)** - Replaced legacy db.* queries with Supabase for chat sessions, analyses, data center, business profiles, advisory history, admin stats, dashboard stats, notifications, and soundboard delete
 4. **Integrations UI Test IDs** - Added data-testid coverage for Integrations interactions
 
+#### ✅ TESTING
+- `GET /api/health`
+- Integrations page load (auth-gated login view)
+
 *Last Updated: February 05, 2026*
