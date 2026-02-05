@@ -6103,24 +6103,23 @@ async def upload_data_file(
 @api_router.get("/data-center/files")
 async def get_data_files(category: Optional[str] = None, current_user: dict = Depends(get_current_user)):
     """Get all files in user's data center"""
-    query = {"user_id": current_user["id"]}
+    query = supabase_admin.table("data_files").select(
+        "id,filename,file_type,category,description,extracted_text,file_size,created_at"
+    ).eq("user_id", current_user["id"])
+
     if category:
-        query["category"] = category
-    
-    files = await db.data_files.find(
-        query,
-        {"_id": 0, "file_content": 0}  # Exclude file content for listing
-    ).sort("created_at", -1).to_list(100)
-    
-    return files
+        query = query.eq("category", category)
+
+    result = query.order("created_at", desc=True).limit(100).execute()
+    return result.data if result.data else []
 
 @api_router.get("/data-center/files/{file_id}")
 async def get_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
     """Get a specific file details"""
-    file = await get_user_data_files_supabase(supabase_admin, 
-        {"id": file_id, "user_id": current_user["id"]},
-        {"_id": 0, "file_content": 0}
-    )
+    result = supabase_admin.table("data_files").select(
+        "id,filename,file_type,category,description,extracted_text,file_size,created_at"
+    ).eq("id", file_id).eq("user_id", current_user["id"]).single().execute()
+    file = result.data if result.data else None
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
     return file
@@ -6128,9 +6127,10 @@ async def get_data_file(file_id: str, current_user: dict = Depends(get_current_u
 @api_router.get("/data-center/files/{file_id}/download")
 async def download_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
     """Download a file"""
-    file = await get_user_data_files_supabase(supabase_admin, 
-        {"id": file_id, "user_id": current_user["id"]}
-    )
+    result = supabase_admin.table("data_files").select(
+        "filename,file_content,file_type"
+    ).eq("id", file_id).eq("user_id", current_user["id"]).single().execute()
+    file = result.data if result.data else None
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
     
@@ -6143,23 +6143,24 @@ async def download_data_file(file_id: str, current_user: dict = Depends(get_curr
 @api_router.delete("/data-center/files/{file_id}")
 async def delete_data_file(file_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a file from data center"""
-    result = await supabase_admin.table("data_files").delete().eq("id", 
-        {"id": file_id, "user_id": current_user["id"]}
-    )
-    if result.deleted_count == 0:
+    result = supabase_admin.table("data_files").delete().eq("id", file_id).eq("user_id", current_user["id"]).execute()
+    if not result.data:
         raise HTTPException(status_code=404, detail="File not found")
     return {"message": "File deleted successfully"}
 
 @api_router.get("/data-center/categories")
 async def get_data_categories(current_user: dict = Depends(get_current_user)):
     """Get file categories with counts"""
-    pipeline = [
-        {"$match": {"user_id": current_user["id"]}},
-        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}
+    from collections import Counter
+
+    result = supabase_admin.table("data_files").select("category").eq("user_id", current_user["id"]).execute()
+    categories_raw = result.data if result.data else []
+
+    counter = Counter([c.get("category") for c in categories_raw if c.get("category")])
+    return [
+        {"category": category, "count": count}
+        for category, count in sorted(counter.items(), key=lambda x: x[1], reverse=True)
     ]
-    categories = await db.data_files.aggregate(pipeline).to_list(20)
-    return [{"category": c["_id"], "count": c["count"]} for c in categories]
 
 @api_router.get("/data-center/stats")
 async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
@@ -6167,12 +6168,9 @@ async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
     total_files = await count_user_data_files_supabase(supabase_admin, current_user["id"])
     
     # Total size
-    pipeline = [
-        {"$match": {"user_id": current_user["id"]}},
-        {"$group": {"_id": None, "total_size": {"$sum": "$file_size"}}}
-    ]
-    size_result = await db.data_files.aggregate(pipeline).to_list(1)
-    total_size = size_result[0]["total_size"] if size_result else 0
+    size_result = supabase_admin.table("data_files").select("file_size").eq("user_id", current_user["id"]).execute()
+    size_rows = size_result.data if size_result.data else []
+    total_size = sum([row.get("file_size", 0) or 0 for row in size_rows])
     
     # Categories
     categories = await get_data_categories(current_user)
