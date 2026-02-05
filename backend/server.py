@@ -2661,6 +2661,19 @@ async def save_calibration_answer(payload: CalibrationAnswerRequest, current_use
     return {"status": "saved", "calibration_complete": False}
 
 
+@api_router.post("/strategy/regeneration/request")
+async def queue_regeneration_request(payload: RegenerationRequestPayload, current_user: dict = Depends(get_current_user_supabase)):
+    return await request_regeneration(current_user["id"], payload.layer, payload.reason, supabase_admin)
+
+
+@api_router.post("/strategy/regeneration/response")
+async def handle_regeneration_response(payload: RegenerationResponsePayload, current_user: dict = Depends(get_current_user_supabase)):
+    action = payload.action.lower()
+    if action not in {"accept", "refine", "keep"}:
+        raise HTTPException(status_code=400, detail="Invalid response action")
+    return await record_regeneration_response(current_user["id"], payload.proposal_id, action, supabase_admin)
+
+
 
 
 # ═══════════════════════════════════════════════════════════════
