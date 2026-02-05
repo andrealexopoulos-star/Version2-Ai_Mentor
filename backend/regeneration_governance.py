@@ -194,6 +194,21 @@ async def evaluate_regeneration(user_id: str, account_id: str, supabase_admin, w
             })
         return None
 
+    recent_negative = False
+    for entry in history:
+        if entry.get("status") == "accept" and entry.get("performance_improved") is False:
+            created_at = entry.get("created_at")
+            try:
+                created_dt = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+            except Exception:
+                created_dt = None
+            if created_dt and (datetime.now(timezone.utc) - created_dt).days < 60:
+                recent_negative = True
+                break
+
+    if recent_negative and "user_request" not in triggers:
+        return None
+
     trigger = triggers[0]
     layer = _select_layer(trigger, requested_layer)
     if layer not in ALLOWED_REGEN_LAYERS:
