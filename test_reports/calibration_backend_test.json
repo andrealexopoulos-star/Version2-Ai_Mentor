@@ -1,0 +1,59 @@
+{
+  "test_run": {
+    "timestamp": "2026-02-05T12:58:19.895471",
+    "base_url": "https://watchtower-ai.preview.emergentagent.com",
+    "total_tests": 8,
+    "passed_tests": 6,
+    "success_rate": "75.0%"
+  },
+  "results": [
+    {
+      "test": "Unauthenticated Access",
+      "success": true,
+      "details": "Correctly returned 401: 401",
+      "timestamp": "2026-02-05T12:58:19.633277"
+    },
+    {
+      "test": "Invalid Token",
+      "success": true,
+      "details": "Correctly returned 401: 401",
+      "timestamp": "2026-02-05T12:58:19.670580"
+    },
+    {
+      "test": "Malformed Token",
+      "success": true,
+      "details": "Correctly returned 401: 401",
+      "timestamp": "2026-02-05T12:58:19.705656"
+    },
+    {
+      "test": "Empty Auth Header",
+      "success": true,
+      "details": "Correctly returned 401: 401",
+      "timestamp": "2026-02-05T12:58:19.747299"
+    },
+    {
+      "test": "Bearer Only",
+      "success": true,
+      "details": "Correctly returned 401: 401",
+      "timestamp": "2026-02-05T12:58:19.787385"
+    },
+    {
+      "test": "Endpoint /api/health",
+      "success": true,
+      "details": "Returned expected 200",
+      "timestamp": "2026-02-05T12:58:19.822122"
+    },
+    {
+      "test": "Endpoint /api/auth/oauth/google",
+      "success": false,
+      "details": "Expected 200, got 404",
+      "timestamp": "2026-02-05T12:58:19.856055"
+    },
+    {
+      "test": "Endpoint /api/auth/oauth/azure",
+      "success": false,
+      "details": "Expected 200, got 404",
+      "timestamp": "2026-02-05T12:58:19.894561"
+    }
+  ]
+}
