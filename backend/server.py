@@ -2352,10 +2352,13 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 async def get_calibration_status(current_user: dict = Depends(get_current_user_supabase)):
     user_id = current_user["id"]
     try:
-        business_profile = await get_business_profile_supabase(supabase_admin, user_id)
-        if not business_profile:
+        result = supabase_admin.table("business_profiles").select("calibration_status").eq(
+            "user_id", user_id
+        ).limit(1).execute()
+        profile = result.data[0] if result.data else None
+        if not profile:
             return {"status": "NEEDS_CALIBRATION"}
-        if business_profile.get("calibration_status") != "complete":
+        if profile.get("calibration_status") != "complete":
             return {"status": "NEEDS_CALIBRATION"}
         return {"status": "COMPLETE"}
     except Exception as e:
