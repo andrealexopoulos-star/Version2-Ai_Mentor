@@ -185,6 +185,13 @@ async def evaluate_regeneration(user_id: str, account_id: str, supabase_admin, w
         triggers.append("ineffective_strategy")
 
     if not triggers:
+        if history_updated:
+            memory["regeneration_history"] = history
+            await core.observe(user_id, {
+                "type": "regeneration_governance",
+                "layer": "consequence_memory",
+                "payload": memory
+            })
         return None
 
     trigger = triggers[0]
