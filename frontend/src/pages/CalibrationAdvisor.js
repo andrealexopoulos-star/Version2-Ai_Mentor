@@ -212,7 +212,7 @@ const CalibrationAdvisor = () => {
                 : "Type your response"
             }
             disabled={isSubmitting || calibrationComplete}
-            className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
             data-testid="calibration-input"
           />
           <button
