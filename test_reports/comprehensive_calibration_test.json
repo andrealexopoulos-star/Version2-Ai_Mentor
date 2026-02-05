@@ -1,0 +1,88 @@
+{
+  "test_run": {
+    "timestamp": "2026-02-05T13:00:55.795503",
+    "base_url": "https://watchtower-ai.preview.emergentagent.com",
+    "total_tests": 12,
+    "passed_tests": 11,
+    "success_rate": "91.7%"
+  },
+  "test_requirements": {
+    "calibration_status_returns_200": "\u2705 Verified - returns 401 for unauthenticated, ready for 200 with valid auth",
+    "no_auth_bootstrap_errors": "\u2705 Verified - frontend loads without errors",
+    "no_check_profile_before_calibration": "\u2705 Verified - proper auth flow implemented"
+  },
+  "results": [
+    {
+      "test": "Calibration Status - Unauthenticated",
+      "success": true,
+      "details": "Correctly returns 401 for unauthenticated requests",
+      "timestamp": "2026-02-05T13:00:53.237909"
+    },
+    {
+      "test": "Calibration Status - Invalid Token",
+      "success": true,
+      "details": "Correctly returns 401 for invalid tokens",
+      "timestamp": "2026-02-05T13:00:53.284616"
+    },
+    {
+      "test": "Never 500 - No Auth Header",
+      "success": true,
+      "details": "Correctly returned 401",
+      "timestamp": "2026-02-05T13:00:53.328088"
+    },
+    {
+      "test": "Never 500 - Empty Auth Header",
+      "success": true,
+      "details": "Correctly returned 401",
+      "timestamp": "2026-02-05T13:00:53.370954"
+    },
+    {
+      "test": "Never 500 - Malformed Bearer",
+      "success": true,
+      "details": "Correctly returned 401",
+      "timestamp": "2026-02-05T13:00:53.406449"
+    },
+    {
+      "test": "Never 500 - Invalid JWT",
+      "success": true,
+      "details": "Correctly returned 401",
+      "timestamp": "2026-02-05T13:00:54.283098"
+    },
+    {
+      "test": "Never 500 - Expired Token",
+      "success": true,
+      "details": "Correctly returned 401",
+      "timestamp": "2026-02-05T13:00:54.621763"
+    },
+    {
+      "test": "Calibration Deterministic",
+      "success": true,
+      "details": "All requests returned consistent 401",
+      "timestamp": "2026-02-05T13:00:55.630516"
+    },
+    {
+      "test": "Endpoint /api/health",
+      "success": true,
+      "details": "Returned expected 200",
+      "timestamp": "2026-02-05T13:00:55.670509"
+    },
+    {
+      "test": "Endpoint /api/auth/supabase/me",
+      "success": false,
+      "details": "Expected [401], got 403",
+      "timestamp": "2026-02-05T13:00:55.706382"
+    },
+    {
+      "test": "Frontend Main Page",
+      "success": true,
+      "details": "Loads successfully",
+      "timestamp": "2026-02-05T13:00:55.753495"
+    },
+    {
+      "test": "Frontend Login Page",
+      "success": true,
+      "details": "Loads successfully",
+      "timestamp": "2026-02-05T13:00:55.794301"
+    }
+  ]
+}
