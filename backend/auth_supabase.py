@@ -2,7 +2,7 @@
 Supabase Authentication Module
 Handles user authentication using Supabase Auth with Google and Azure providers
 """
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
@@ -13,7 +13,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 # Pydantic Models
 class SignUpRequest(BaseModel):
