@@ -292,7 +292,11 @@ export const SupabaseAuthProvider = ({ children }) => {
         const activeSession = session || (await supabase.auth.getSession()).data.session;
 
         if (!activeSession) {
-          if (!cancelled) setAuthState(AUTH_STATE.ERROR);
+          // No session = not authenticated. This is NOT an error.
+          // ProtectedRoute will handle redirect to login via its own !user && !session check.
+          // Keeping authState as LOADING would cause infinite spinner, so we use a neutral state.
+          // Since user/session are null, ProtectedRoute line 29 will redirect to login.
+          if (!cancelled) setAuthState(AUTH_STATE.LOADING);
           return;
         }
 
