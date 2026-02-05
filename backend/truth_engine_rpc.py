@@ -266,7 +266,7 @@ async def _build_revenue_risk(context: Dict[str, Any], supabase_admin: Any) -> O
     week_number = context["week"]["week_number"] or 1
     focus_area = context["week"]["focus_area"] or "revenue focus"
     delivery_pref = context["delivery_preference"]
-    tone_prefix = _tone_prefix(delivery_pref)
+    tone_prefix = "From the outside, "
 
     for ghost in ghosts:
         contact_email = ghost.get("sender_email")
