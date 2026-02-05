@@ -718,6 +718,7 @@ const Integrations = () => {
                 setSelectedCategory(null);
                 setSelectedIntegration(null);
               }}
+              data-testid="integrations-tab-connected-apps"
               className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
                 activeTab === 'connected-apps'
                   ? 'text-blue-700'
@@ -741,6 +742,7 @@ const Integrations = () => {
                 setSelectedCategory(null);
                 setSelectedIntegration(null);
               }}
+              data-testid="integrations-tab-data-connections"
               className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
                 activeTab === 'intelligence-sources'
                   ? 'text-blue-700'
@@ -774,6 +776,7 @@ const Integrations = () => {
                       setSelectedCategory(cat.id);
                       setSelectedIntegration(null);
                     }}
+                    data-testid={`integrations-category-${cat.id}`}
                     className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-120 flex items-center gap-3 ${
                       selectedCategory === cat.id
                         ? 'bg-blue-50 text-blue-700'
@@ -801,6 +804,7 @@ const Integrations = () => {
                     setSelectedCategory(e.target.value || null);
                     setSelectedIntegration(null);
                   }}
+                  data-testid="integrations-category-select"
                   className="w-full px-4 py-3.5 pr-10 rounded-xl border text-sm font-medium appearance-none"
                   style={{
                     background: 'var(--bg-card)',
@@ -854,6 +858,7 @@ const Integrations = () => {
                       <div
                         key={integration.id}
                         onClick={() => setSelectedIntegration(integration)}
+                        data-testid={`integration-card-${integration.id}`}
                         className="p-4 rounded-xl border cursor-pointer transition-all duration-120 active:scale-[0.98]"
                         style={{
                           background: 'var(--bg-card)',
@@ -937,6 +942,7 @@ const Integrations = () => {
                           variant="outline"
                           size="sm"
                           disabled={disconnecting}
+                          data-testid="integrations-outlook-disconnect-inline-button"
                           className="text-red-600 hover:bg-red-50 border-red-200"
                         >
                           {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
@@ -962,6 +968,7 @@ const Integrations = () => {
                           variant="outline"
                           size="sm"
                           disabled={disconnecting}
+                          data-testid="integrations-gmail-disconnect-inline-button"
                           className="text-red-600 hover:bg-red-50 border-red-200"
                         >
                           {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
@@ -1049,6 +1056,7 @@ const Integrations = () => {
               <div className="p-6 border-b flex-shrink-0" style={{ borderColor: 'var(--border-light)' }}>
                 <button
                   onClick={() => setSelectedIntegration(null)}
+                  data-testid="integrations-detail-close-button"
                   className="absolute top-4 right-4 p-2 rounded-lg transition-colors"
                   style={{ 
                     background: 'transparent',
@@ -1110,6 +1118,7 @@ const Integrations = () => {
                               <Button
                                 onClick={handleSyncEmails}
                                 disabled={syncing}
+                                data-testid="integrations-outlook-refresh-button"
                                 className="w-full btn-secondary"
                               >
                                 {syncing ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
@@ -1118,6 +1127,7 @@ const Integrations = () => {
                               <Button
                                 onClick={handleOutlookDisconnect}
                                 disabled={disconnecting}
+                                data-testid="integrations-outlook-disconnect-button"
                                 className="w-full btn-secondary text-red-600"
                               >
                                 <LogOut className="w-4 h-4 mr-2" />
@@ -1140,6 +1150,7 @@ const Integrations = () => {
                             <Button
                               onClick={handleGmailDisconnect}
                               disabled={disconnecting}
+                              data-testid="integrations-gmail-disconnect-button"
                               className="w-full btn-secondary text-red-600"
                             >
                               <LogOut className="w-4 h-4 mr-2" />
@@ -1172,6 +1183,7 @@ const Integrations = () => {
                         <Button
                           onClick={() => handleConnect(selectedIntegration)}
                           disabled={connecting === selectedIntegration.id}
+                          data-testid={`integrations-connect-${selectedIntegration.id}-button`}
                           className="w-full btn-primary"
                         >
                           {connecting === selectedIntegration.id ? 'Connecting...' : 'Connect'}
@@ -1188,6 +1200,7 @@ const Integrations = () => {
           <div 
             className="lg:hidden fixed inset-0 bg-black/40 z-50 animate-fade-in"
             onClick={() => setSelectedIntegration(null)}
+            data-testid="integrations-mobile-overlay"
           >
             <div
               className="absolute bottom-0 left-0 right-0 rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
@@ -1240,6 +1253,7 @@ const Integrations = () => {
                           <Button
                             onClick={selectedIntegration.id === 'outlook' ? handleOutlookDisconnect : handleGmailDisconnect}
                             disabled={disconnecting}
+                            data-testid={`integrations-mobile-disconnect-${selectedIntegration.id}-button`}
                             className="w-full btn-secondary text-red-600"
                           >
                             <LogOut className="w-4 h-4 mr-2" />
@@ -1253,6 +1267,7 @@ const Integrations = () => {
                       <Button
                         onClick={() => handleConnect(selectedIntegration)}
                         disabled={connecting === selectedIntegration.id}
+                        data-testid={`integrations-mobile-connect-${selectedIntegration.id}-button`}
                         className="w-full btn-primary sticky bottom-0"
                       >
                         {connecting === selectedIntegration.id ? 'Connecting...' : 'Connect'}
@@ -1275,6 +1290,7 @@ const Integrations = () => {
             zIndex: 40
           }}
           onClick={() => setSelectedIntegration(null)}
+          data-testid="integrations-desktop-overlay"
         />
       )}
     </DashboardLayout>
