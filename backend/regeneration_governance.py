@@ -16,6 +16,14 @@ ALLOWED_REGEN_LAYERS = [
     "growth_strategy"
 ]
 
+CONSTITUTION_BLOCKLIST = [
+    "i've updated your strategy",
+    "this is your new mission",
+    "this is your new vision",
+    "final version",
+    "replace your strategy"
+]
+
 
 def _truncate(value: str, limit: int = 220) -> str:
     if not value:
@@ -23,6 +31,11 @@ def _truncate(value: str, limit: int = 220) -> str:
     if len(value) <= limit:
         return value
     return value[:limit].rstrip() + "…"
+
+
+def _passes_constitution(statement: str) -> bool:
+    lowered = statement.lower()
+    return not any(phrase in lowered for phrase in CONSTITUTION_BLOCKLIST)
 
 
 async def _get_strategy_profile(supabase_admin, user_id: str) -> Optional[Dict[str, Any]]:
