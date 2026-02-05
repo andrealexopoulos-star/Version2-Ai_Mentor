@@ -264,6 +264,17 @@ async def evaluate_silence_intervention(user_id: str, account_id: str, supabase_
             )
 
         if not _passes_constitution(statement):
+            if interventions_updated:
+                memory.update({
+                    "silence_interventions": interventions,
+                    "engagement_risk_score": risk_score,
+                    "last_interaction_at": last_interaction_at.isoformat() if last_interaction_at else None
+                })
+                await core.observe(user_id, {
+                    "type": "silence_intervention",
+                    "layer": "consequence_memory",
+                    "payload": memory
+                })
             return None
 
         severity = "medium" if escalation_level == 1 else "high" if escalation_level == 2 else "critical"
