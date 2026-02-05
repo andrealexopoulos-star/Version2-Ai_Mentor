@@ -4774,16 +4774,13 @@ async def get_advisory_history(
     current_user: dict = Depends(get_current_user)
 ):
     """Get the advisory log for this user."""
-    query = {"user_id": current_user["id"]}
+    query = supabase_admin.table("advisory_log").select("*").eq("user_id", current_user["id"])
+
     if topic:
-        query["topic_tags"] = topic
-    
-    cursor = cognitive_core.advisory_log.find(
-        query,
-        {"_id": 0}
-    ).sort("created_at", -1).limit(limit)
-    
-    history = await cursor.to_list(length=limit)
+        query = query.contains("topic_tags", [topic])
+
+    result = query.order("created_at", desc=True).limit(limit).execute()
+    history = result.data if result.data else []
     
     # Calculate stats
     total = len(history)
