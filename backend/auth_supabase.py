@@ -452,11 +452,15 @@ async def get_current_user_from_request(request) -> Dict[str, Any]:
         if not token:
             raise HTTPException(status_code=401, detail="No token provided")
         
+        # Debug: log token format (first/last chars + segment count)
+        segments = token.split(".")
+        logger.info(f"[Auth] Token segments: {len(segments)}, length: {len(token)}, first_10: {token[:10]}...")
+        
         # Verify token using existing function
         return await verify_supabase_token(token)
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error extracting user from request: {e}")
+        logger.error(f"Error extracting user from request: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
