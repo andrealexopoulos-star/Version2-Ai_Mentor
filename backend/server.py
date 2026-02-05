@@ -5657,12 +5657,11 @@ async def get_versioned_profile(current_user: dict = Depends(get_current_user)):
 @api_router.get("/business-profile/history")
 async def get_profile_history(current_user: dict = Depends(get_current_user)):
     """Get all profile versions (active and archived)"""
-    profiles = await db.business_profiles_versioned.find(
-        {"user_id": current_user["id"]},
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(100)
-    
-    return profiles
+    result = supabase_admin.table("business_profiles_versioned").select("*").eq(
+        "user_id", current_user["id"]
+    ).order("created_at", desc=True).limit(100).execute()
+
+    return result.data if result.data else []
 
 
 class ProfileUpdateRequest(BaseModel):
