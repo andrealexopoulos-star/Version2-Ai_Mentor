@@ -97,8 +97,42 @@ const AuthCallbackSupabase = () => {
             
             // Check if user needs onboarding
             try {
-              // STEP 2: BUSINESS PROFILE STATE CHECK
+              // STEP 2: CALIBRATION STATUS CHECK (override)
               const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+              const calibrationResponse = await fetch(`${BACKEND_URL}/api/calibration/status`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${sessionData.session.access_token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              if (!calibrationResponse.ok) {
+                const errorStatus = calibrationResponse.status;
+                console.error(`[GUARD] ❌ Calibration status failed: ${errorStatus}`);
+                setError(`Failed to load your calibration status (HTTP ${errorStatus})`);
+                setStatus('Unable to verify your account. Please retry.');
+                return; // STOP - no routing
+              }
+
+              const calibrationData = await calibrationResponse.json();
+              if (!calibrationData.has_business_profile || calibrationData.calibration_status !== 'complete') {
+                const businessContext = {
+                  user_id: sessionData.session.user.id,
+                  account_id: calibrationData.account_id || null,
+                  business_profile_id: calibrationData.business_profile_id || null,
+                  onboarding_status: 'calibration_required',
+                  calibration_status: calibrationData.calibration_status || null,
+                  cached_at: Date.now()
+                };
+                localStorage.setItem('biqc_context_v1', JSON.stringify(businessContext));
+                console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(businessContext.cached_at).toISOString()})`);
+                console.log('[GUARD] ➤ routing to /calibration');
+                navigate('/calibration', { replace: true });
+                return;
+              }
+
+              // STEP 3: BUSINESS PROFILE STATE CHECK (post-calibration)
               const response = await fetch(`${BACKEND_URL}/api/auth/check-profile`, {
                 method: 'GET',
                 headers: {
@@ -110,8 +144,6 @@ const AuthCallbackSupabase = () => {
               if (!response.ok) {
                 const errorStatus = response.status;
                 console.error(`[GUARD] ❌ Context load failed: ${errorStatus}`);
-                
-                // HARD GATE: Do NOT route on error - show blocking UI
                 setError(`Failed to load your business context (HTTP ${errorStatus})`);
                 setStatus('Unable to verify your account. Please retry.');
                 return; // STOP - no routing
@@ -123,41 +155,22 @@ const AuthCallbackSupabase = () => {
                 onboarding_status: profileData.onboarding_status
               });
               
-              // Cache business context (24h TTL)
-              // KEY: biqc_context_v1 (exact name)
-              // FIELDS: user_id, account_id, business_profile_id, onboarding_status, cached_at
               const businessContext = {
                 user_id: sessionData.session.user.id,
                 account_id: profileData.user?.account_id || null,
                 business_profile_id: profileData.user?.business_profile_id || profileData.user?.id || null,
-                onboarding_status: profileData.onboarding_status || 'not_started',
+                onboarding_status: profileData.onboarding_status || 'calibration_required',
+                calibration_status: profileData.calibration_status || null,
                 cached_at: Date.now()
               };
               localStorage.setItem('biqc_context_v1', JSON.stringify(businessContext));
               console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(businessContext.cached_at).toISOString()})`);
               
-              // ROUTING DECISION
-              if (profileData.needs_onboarding) {
-                const onboardingStatus = profileData.onboarding_status || 'not_started';
-                console.log(`[GUARD] Routing decision = onboarding (status: ${onboardingStatus})`);
-                
-                // CASE B: in_progress
-                if (onboardingStatus === 'in_progress') {
-                  navigate('/onboarding', { replace: true });
-                  return;
-                }
-                
-                // CASE A: not_started
-                const sessionDeferred = sessionStorage.getItem('onboarding_deferred');
-                if (sessionDeferred === 'true') {
-                  console.log('[GUARD] Routing decision = dashboard (deferred)');
-                  navigate('/advisor', { replace: true });
-                } else {
-                  navigate('/onboarding-decision', { replace: true });
-                }
+              if (profileData.needs_onboarding || profileData.onboarding_status === 'calibration_required') {
+                console.log('[GUARD] Routing decision = calibration');
+                navigate('/calibration', { replace: true });
               } else {
-                // CASE C: completed
-                console.log('[GUARD] Routing decision = dashboard (completed)');
+                console.log('[GUARD] ✅ Calibration complete. routing to /advisor');
                 navigate('/advisor', { replace: true });
               }
             } catch (profileCheckError) {
