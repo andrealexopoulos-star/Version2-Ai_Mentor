@@ -2437,6 +2437,12 @@ async def save_calibration_answer(payload: CalibrationAnswerRequest, current_use
                 "calibration_status": "in_progress"
             }).eq("id", profile.get("id")).execute()
 
+            if not profile.get("account_id") and identity["business_name"] and user_email:
+                from workspace_helpers import get_or_create_user_account
+                account_id = await get_or_create_user_account(supabase_admin, user_id, user_email, identity["business_name"])
+                supabase_admin.table("business_profiles").update({"account_id": account_id}).eq("id", profile.get("id")).execute()
+                supabase_admin.table("users").update({"account_id": account_id}).eq("id", user_id).execute()
+
     if not profile:
         raise HTTPException(status_code=500, detail="Business profile unavailable")
 
