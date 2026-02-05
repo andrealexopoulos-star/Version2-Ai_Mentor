@@ -281,128 +281,71 @@ export const SupabaseAuthProvider = ({ children }) => {
   const [contextError, setContextError] = useState(null);
   const [contextSource, setContextSource] = useState(null); // 'cache' | 'api'
 
-  // Rehydrate business context on session change
   useEffect(() => {
-    const rehydrateBusinessContext = async () => {
-      if (!session || !session.user) {
-        console.log('[CONTEXT] No session - clearing context');
-        setBusinessContext(null);
-        setContextLoading(false);
-        setContextSource(null);
-        return;
-      }
+    let cancelled = false;
 
-      console.log('[CONTEXT] Session detected - rehydrating...');
-      setContextLoading(true);
-      setContextError(null);
-
+    const bootstrap = async () => {
       try {
-        // STEP 1: Check cache first (24h TTL)
-        const cached = localStorage.getItem('biqc_context_v1');
-        if (cached) {
-          try {
-            const parsedCache = JSON.parse(cached);
-            const cacheAge = Date.now() - (parsedCache.cached_at || 0);
-            const cacheAgeMinutes = Math.floor(cacheAge / 60000);
-            const ttl = 24 * 60 * 60 * 1000; // 24 hours
+        setAuthState(AUTH_STATE.LOADING);
 
-            if (cacheAge < ttl && parsedCache.user_id === session.user.id) {
-              console.log(`[CONTEXT] ✅ cache hit (age=${cacheAgeMinutes}m, onboarding_status=${parsedCache.onboarding_status})`);
-              console.log('[CONTEXT] Skipping /check-profile because cache valid');
-              
-              setBusinessContext(parsedCache);
-              setContextSource('cache');
-              setContextLoading(false);
-              return; // EARLY EXIT - skip API call
-            } else {
-              console.log(`[CONTEXT] Cache expired (age=${cacheAgeMinutes}m) or user mismatch`);
-            }
-          } catch (parseError) {
-            console.warn('[CONTEXT] Cache parse error, fetching fresh');
-          }
-        } else {
-          console.log('[CONTEXT] No cache found');
-        }
+        // 1. Get auth session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        // STEP 2: Calibration status check (override)
-        console.log('[CONTEXT] Calling /api/calibration/status...');
-        const calibrationResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!calibrationResponse.ok) {
-          throw new Error(`Calibration status failed: ${calibrationResponse.status}`);
-        }
-
-        const calibrationData = await calibrationResponse.json();
-        if (!calibrationData.has_business_profile || calibrationData.calibration_status !== 'complete') {
-          const calibrationContext = {
-            user_id: session.user.id,
-            account_id: calibrationData.account_id || null,
-            business_profile_id: calibrationData.business_profile_id || null,
-            onboarding_status: 'calibration_required',
-            calibration_status: calibrationData.calibration_status || null,
-            cached_at: Date.now()
-          };
-          localStorage.setItem('biqc_context_v1', JSON.stringify(calibrationContext));
-          console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(calibrationContext.cached_at).toISOString()})`);
-          setBusinessContext(calibrationContext);
-          setContextSource('api');
-          setContextLoading(false);
+        if (!session) {
+          if (!cancelled) setAuthState(AUTH_STATE.ERROR);
           return;
         }
 
-        // STEP 3: Fetch fresh context from API
-        console.log('[CONTEXT] Calling /api/auth/check-profile...');
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json'
-          }
+        // 2. Check calibration status FIRST
+        const calRes = await fetch('/api/calibration/status', {
+          credentials: 'include',
         });
 
-        if (!response.ok) {
-          throw new Error(`Profile check failed: ${response.status}`);
+        if (!calRes.ok) {
+          throw new Error('Calibration status check failed');
         }
 
-        const profileData = await response.json();
-        
-        // STEP 4: Build cache object (exact fields only)
-        const freshContext = {
-          user_id: session.user.id,
-          account_id: profileData.user?.account_id || null,
-          business_profile_id: profileData.user?.business_profile_id || null,
-          onboarding_status: profileData.onboarding_status || 'calibration_required',
-          calibration_status: profileData.calibration_status || null,
-          cached_at: Date.now()
-        };
+        const cal = await calRes.json();
+        if (!cal.status) {
+          cal.status = cal.calibration_status === 'complete' && cal.has_business_profile ? 'READY' : 'NEEDS_CALIBRATION';
+        }
 
-        // STEP 4: Write to localStorage
-        localStorage.setItem('biqc_context_v1', JSON.stringify(freshContext));
-        console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(freshContext.cached_at).toISOString()})`);
-        
-        setBusinessContext(freshContext);
-        setContextSource('api');
-        
-        console.log('[CONTEXT] ✅ Rehydration complete (source: api)');
+        // ⛔ HARD STOP — do NOT rehydrate before calibration
+        if (cal.status === 'NEEDS_CALIBRATION') {
+          if (!cancelled) setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+          return;
+        }
 
-      } catch (error) {
-        console.error('[CONTEXT] ❌ Rehydration failed:', error.message);
-        setContextError(error.message);
-        setContextSource('error');
-        // Keep last known state - do NOT clear context
-      } finally {
-        setContextLoading(false);
+        // 3. Only now is rehydration allowed
+        const profileRes = await fetch('/api/auth/check-profile', {
+          credentials: 'include',
+        });
+
+        if (!profileRes.ok) {
+          throw new Error('Profile rehydration failed');
+        }
+
+        const profile = await profileRes.json();
+
+        if (!cancelled) {
+          setBusinessContext(profile);
+          setAuthState(AUTH_STATE.READY);
+        }
+
+      } catch (err) {
+        console.error('[AUTH BOOTSTRAP ERROR]', err);
+        if (!cancelled) setAuthState(AUTH_STATE.ERROR);
       }
     };
 
-    rehydrateBusinessContext();
-  }, [session]);
+    bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const refreshSession = async () => {
     try {
