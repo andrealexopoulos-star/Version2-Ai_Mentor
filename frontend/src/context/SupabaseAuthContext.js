@@ -298,11 +298,21 @@ export const SupabaseAuthProvider = ({ children }) => {
           return;
         }
 
+        let accessToken = session.access_token;
+        if (!accessToken) {
+          const refreshed = await supabase.auth.refreshSession();
+          accessToken = refreshed?.data?.session?.access_token;
+        }
+
+        if (!accessToken) {
+          throw new Error('Session refresh failed');
+        }
+
         // 2. Check calibration status FIRST
         const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         });
 
@@ -325,7 +335,7 @@ export const SupabaseAuthProvider = ({ children }) => {
         const profileRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         });
 
