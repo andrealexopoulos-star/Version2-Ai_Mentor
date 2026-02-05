@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://watchtower-ai.preview.emergentagent.com
+**Test URL:** https://calibration-hub-9.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://watchtower-ai.preview.emergentagent.com/advisor
+- [ ] Navigate to https://calibration-hub-9.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://watchtower-ai.preview.emergentagent.com/
+**Landing:** https://calibration-hub-9.preview.emergentagent.com/
 
-**Login:** https://watchtower-ai.preview.emergentagent.com/login-supabase
+**Login:** https://calibration-hub-9.preview.emergentagent.com/login-supabase
 
-**Register:** https://watchtower-ai.preview.emergentagent.com/register-supabase
+**Register:** https://calibration-hub-9.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://watchtower-ai.preview.emergentagent.com/pricing
+**Pricing:** https://calibration-hub-9.preview.emergentagent.com/pricing
 
-**Terms:** https://watchtower-ai.preview.emergentagent.com/terms
+**Terms:** https://calibration-hub-9.preview.emergentagent.com/terms
 
-**Advisor:** https://watchtower-ai.preview.emergentagent.com/advisor
+**Advisor:** https://calibration-hub-9.preview.emergentagent.com/advisor
 
 ---
 

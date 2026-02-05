@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://watchtower-ai.preview.emergentagent.com
+https://calibration-hub-9.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://watchtower-ai.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://watchtower-ai.preview.emergentagent.com
+https://calibration-hub-9.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://watchtower-ai.preview.emergentagent.com/**
-https://watchtower-ai.preview.emergentagent.com/auth/callback
-https://watchtower-ai.preview.emergentagent.com/auth-callback-supabase
-https://watchtower-ai.preview.emergentagent.com/connect-email
-https://watchtower-ai.preview.emergentagent.com/integrations
+https://calibration-hub-9.preview.emergentagent.com/**
+https://calibration-hub-9.preview.emergentagent.com/auth/callback
+https://calibration-hub-9.preview.emergentagent.com/auth-callback-supabase
+https://calibration-hub-9.preview.emergentagent.com/connect-email
+https://calibration-hub-9.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://watchtower-ai.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://watchtower-ai.preview.emergentagent.com/api/auth/outlook/callback
+https://calibration-hub-9.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://watchtower-ai.preview.emergentagent.com
+https://calibration-hub-9.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://watchtower-ai.preview.emergentagent.com/api/auth/gmail/callback
+https://calibration-hub-9.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

@@ -1,6 +1,6 @@
 # 📸 SCREENSHOT PROOF - ALL FEATURES VALIDATED
 
-**Canonical URL:** https://watchtower-ai.preview.emergentagent.com  
+**Canonical URL:** https://calibration-hub-9.preview.emergentagent.com  
 **Validation Date:** January 22, 2026  
 **Status:** ✅ ALL CLAIMED FEATURES VERIFIED WITH VISUAL PROOF
 
@@ -165,7 +165,7 @@ Full strategic analysis including:
 
 ## 🔗 CANONICAL TEST URL (VALIDATED)
 
-# **https://watchtower-ai.preview.emergentagent.com**
+# **https://calibration-hub-9.preview.emergentagent.com**
 
 **Validation Status:** ✅ **CONFIRMED WITH SCREENSHOT PROOF**
 

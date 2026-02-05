@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://watchtower-ai.preview.emergentagent.com`
-- **Backend:** `https://watchtower-ai.preview.emergentagent.com/api`
+- **Frontend:** `https://calibration-hub-9.preview.emergentagent.com`
+- **Backend:** `https://calibration-hub-9.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

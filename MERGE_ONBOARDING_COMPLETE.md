@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://watchtower-ai.preview.emergentagent.com/login-supabase
+https://calibration-hub-9.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://watchtower-ai.preview.emergentagent.com/integrations
+https://calibration-hub-9.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

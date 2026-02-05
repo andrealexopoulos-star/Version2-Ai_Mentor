@@ -55,7 +55,7 @@ BIQC uses **Merge.dev Unified API** to connect to HubSpot. This means:
 
 **A. In BIQC Application:**
 
-1. **Navigate to**: https://watchtower-ai.preview.emergentagent.com/integrations
+1. **Navigate to**: https://calibration-hub-9.preview.emergentagent.com/integrations
 
 2. **Find HubSpot card**:
    - Should be in the "CRM" category

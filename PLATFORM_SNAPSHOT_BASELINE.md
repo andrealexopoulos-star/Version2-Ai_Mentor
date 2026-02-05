@@ -310,7 +310,7 @@ File sizes after gzip:
 
 ### Frontend Environment Variables (Confirmed)
 ```
-REACT_APP_BACKEND_URL=https://watchtower-ai.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://calibration-hub-9.preview.emergentagent.com
 REACT_APP_GOOGLE_CLIENT_ID=(present)
 REACT_APP_SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=(present)
