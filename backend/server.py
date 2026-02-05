@@ -2359,7 +2359,7 @@ async def get_calibration_status(request: Request):
 
     try:
         # Safely extract user from Supabase session
-        current_user = await get_current_user_supabase(request)
+        current_user = await get_current_user_from_request(request)
         user_id = current_user.get("id")
     except Exception:
         # True unauthenticated case
