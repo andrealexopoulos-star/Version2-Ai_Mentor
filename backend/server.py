@@ -7458,19 +7458,26 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/admin/users")
 async def admin_get_users(admin: dict = Depends(get_admin_user)):
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
-    return users
+    result = supabase_admin.table("users").select("*").order("created_at", desc=True).limit(1000).execute()
+    return result.data if result.data else []
 
 @api_router.get("/admin/stats")
 async def admin_get_stats(admin: dict = Depends(get_admin_user)):
-    user_count = await db.users.count_documents({})
-    analysis_count = await db.analyses.count_documents({})
-    document_count = await count_user_documents_supabase(supabase_admin, admin["id"]) # Temporary: count all needs admin access
-    chat_count = await db.chat_history.count_documents({})
+    user_result = supabase_admin.table("users").select("id", count="exact").execute()
+    analysis_result = supabase_admin.table("analyses").select("id", count="exact").execute()
+    document_result = supabase_admin.table("documents").select("id", count="exact").execute()
+    chat_result = supabase_admin.table("chat_history").select("id", count="exact").execute()
+
+    user_count = user_result.count if user_result.count is not None else 0
+    analysis_count = analysis_result.count if analysis_result.count is not None else 0
+    document_count = document_result.count if document_result.count is not None else 0
+    chat_count = chat_result.count if chat_result.count is not None else 0
     
     # Recent activity
-    recent_users = await db.users.find({}, {"_id": 0, "password": 0}).sort("created_at", -1).limit(5).to_list(5)
-    recent_analyses = await db.analyses.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    recent_users_result = supabase_admin.table("users").select("*").order("created_at", desc=True).limit(5).execute()
+    recent_analyses_result = supabase_admin.table("analyses").select("*").order("created_at", desc=True).limit(5).execute()
+    recent_users = recent_users_result.data if recent_users_result.data else []
+    recent_analyses = recent_analyses_result.data if recent_analyses_result.data else []
     
     return {
         "total_users": user_count,
@@ -7489,8 +7496,8 @@ async def admin_update_user(user_id: str, update: AdminUserUpdate, admin: dict =
     
     update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
     
-    result = await db.users.update_one({"id": user_id}, {"$set": update_dict})
-    if result.matched_count == 0:
+    result = supabase_admin.table("users").update(update_dict).eq("id", user_id).execute()
+    if not result.data:
         raise HTTPException(status_code=404, detail="User not found")
     
     user = await get_user_by_id(user_id) # Supabase
@@ -7501,12 +7508,12 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
     if user_id == admin["id"]:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
     
-    result = await db.users.delete_one({"id": user_id})
-    if result.deleted_count == 0:
+    result = supabase_admin.table("users").delete().eq("id", user_id).execute()
+    if not result.data:
         raise HTTPException(status_code=404, detail="User not found")
     
     # Clean up user data
-    await supabase_admin.table("analyses").delete().eq("user_id", {"user_id": user_id})
+    supabase_admin.table("analyses").delete().eq("user_id", user_id).execute()
     await delete_user_documents_supabase(supabase_admin, user_id)
     await delete_user_chats_supabase(supabase_admin, user_id)
     
