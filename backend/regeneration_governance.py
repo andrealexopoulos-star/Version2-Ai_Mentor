@@ -258,8 +258,9 @@ async def evaluate_regeneration(user_id: str, account_id: str, supabase_admin, w
     if not _passes_constitution(statement):
         return None
 
+    event_id = str(uuid4())
     event = {
-        "id": str(uuid4()),
+        "id": event_id,
         "account_id": account_id,
         "type": "regeneration",
         "domain": "operations",
@@ -267,7 +268,7 @@ async def evaluate_regeneration(user_id: str, account_id: str, supabase_admin, w
         "headline": headline,
         "statement": statement,
         "evidence_payload": {
-            "proposal_id": "pending",
+            "proposal_id": event_id,
             "layer": layer,
             "reason": reason,
             "before": current_value,
