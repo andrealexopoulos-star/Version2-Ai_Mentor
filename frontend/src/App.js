@@ -34,6 +34,7 @@ import ConnectEmail from "./pages/ConnectEmail";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import OnboardingDecision from "./pages/OnboardingDecision";
+import CalibrationAdvisor from "./pages/CalibrationAdvisor";
 import IntelCentre from "./pages/IntelCentre";
 import ProfileImport from "./pages/ProfileImport";
 import OutlookTest from "./pages/OutlookTest";
