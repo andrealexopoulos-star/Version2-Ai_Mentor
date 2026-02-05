@@ -421,3 +421,32 @@ async def get_oauth_url(provider: str, redirect_to: str = None):
     except Exception as e:
         print(f"OAuth URL error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate OAuth URL: {str(e)}")
+
+async def get_current_user_from_request(request) -> Dict[str, Any]:
+    """
+    Extract user from Request object (for endpoints that don't use Depends)
+    Used by calibration endpoint which needs to handle auth manually
+    """
+    try:
+        # Extract Authorization header
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        
+        # Check Bearer format
+        if not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid authorization format")
+        
+        # Extract token
+        token = auth_header.replace("Bearer ", "").strip()
+        if not token:
+            raise HTTPException(status_code=401, detail="No token provided")
+        
+        # Verify token using existing function
+        return await verify_supabase_token(token)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error extracting user from request: {e}")
+        raise HTTPException(status_code=401, detail="Authentication failed")
