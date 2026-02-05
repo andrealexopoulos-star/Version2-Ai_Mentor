@@ -7055,10 +7055,10 @@ async def create_profile_version(
     """Create a new immutable version of the business profile"""
     
     # Get current active profile
-    current_profile = await db.business_profiles_versioned.find_one(
-        {"user_id": user_id, "status": "active"},
-        {"_id": 0}
-    )
+    current_profile_result = supabase_admin.table("business_profiles_versioned").select("*").eq(
+        "user_id", user_id
+    ).eq("status", "active").order("created_at", desc=True).limit(1).execute()
+    current_profile = current_profile_result.data[0] if current_profile_result.data else None
     
     # Generate new version number
     current_version = current_profile.get("version") if current_profile else None
@@ -7066,10 +7066,9 @@ async def create_profile_version(
     
     # Archive current profile if exists
     if current_profile:
-        await db.business_profiles_versioned.update_one(
-            {"profile_id": current_profile["profile_id"]},
-            {"$set": {"status": "archived"}}
-        )
+        supabase_admin.table("business_profiles_versioned").update({
+            "status": "archived"
+        }).eq("profile_id", current_profile["profile_id"]).execute()
     
     # Build domains from profile data
     now = datetime.now(timezone.utc).isoformat()
@@ -7201,18 +7200,17 @@ async def create_profile_version(
         new_profile["change_log"] = current_profile["change_log"] + new_profile["change_log"]
     
     # Insert new version
-    await db.business_profiles_versioned.insert_one(new_profile)
+    supabase_admin.table("business_profiles_versioned").insert(new_profile).execute()
     
     return profile_id
 
 
 async def get_active_profile(user_id: str) -> Optional[dict]:
     """Get the active (current) business profile version"""
-    profile = await db.business_profiles_versioned.find_one(
-        {"user_id": user_id, "status": "active"},
-        {"_id": 0}
-    )
-    return profile
+    result = supabase_admin.table("business_profiles_versioned").select("*").eq(
+        "user_id", user_id
+    ).eq("status", "active").order("created_at", desc=True).limit(1).execute()
+    return result.data[0] if result.data else None
 
 
 def calculate_profile_completeness(profile: dict) -> int:
