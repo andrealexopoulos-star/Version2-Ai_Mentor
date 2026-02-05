@@ -2339,6 +2339,313 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
         raise HTTPException(status_code=500, detail=f"Failed to check profile: {str(e)}")
 
 
+@api_router.get("/calibration/status")
+async def get_calibration_status(current_user: dict = Depends(get_current_user_supabase)):
+    user_id = current_user["id"]
+    business_profile = await get_business_profile_supabase(supabase_admin, user_id)
+    return {
+        "has_business_profile": business_profile is not None,
+        "business_profile_id": business_profile.get("id") if business_profile else None,
+        "account_id": business_profile.get("account_id") if business_profile else None,
+        "calibration_status": business_profile.get("calibration_status") if business_profile else None
+    }
+
+
+def _split_two_parts(answer: str) -> List[str]:
+    parts = re.split(r"\s+and\s+|\s+—\s+|\s+–\s+|\s+-\s+", answer, maxsplit=1)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _parse_business_identity(answer: str) -> Dict[str, Optional[str]]:
+    if "," in answer:
+        name, industry = [p.strip() for p in answer.split(",", 1)]
+        return {"business_name": name, "industry": industry}
+    if " in " in answer.lower():
+        name, industry = [p.strip() for p in re.split(r"\s+in\s+", answer, maxsplit=1, flags=re.IGNORECASE)]
+        return {"business_name": name, "industry": industry}
+    return {"business_name": answer.strip(), "industry": None}
+
+
+def _parse_business_stage(answer: str) -> Dict[str, Optional[str]]:
+    stage_match = re.search(r"(idea|early[-\s]?stage|established|enterprise)", answer, re.IGNORECASE)
+    stage = stage_match.group(1).lower().replace(" ", "-") if stage_match else None
+    years_match = re.search(r"(\d+(?:\.\d+)?)", answer)
+    years = years_match.group(1) if years_match else None
+    return {"business_stage": stage, "years_operating": years}
+
+
+def _parse_location(answer: str) -> Dict[str, Optional[str]]:
+    parts = [p.strip() for p in answer.split(",") if p.strip()]
+    if len(parts) >= 3:
+        return {"location_city": parts[0], "location_state": parts[1], "location_country": parts[2]}
+    if len(parts) == 2:
+        return {"location_city": parts[0], "location_state": parts[1], "location_country": None}
+    if len(parts) == 1:
+        return {"location_city": parts[0], "location_state": None, "location_country": None}
+    return {"location_city": None, "location_state": None, "location_country": None}
+
+
+def _extract_team_size(answer: str) -> Optional[int]:
+    match = re.search(r"(\d+)", answer)
+    return int(match.group(1)) if match else None
+
+
+@api_router.post("/calibration/answer")
+async def save_calibration_answer(payload: CalibrationAnswerRequest, current_user: dict = Depends(get_current_user_supabase)):
+    user_id = current_user["id"]
+    answer = payload.answer.strip()
+    question_id = payload.question_id
+
+    if not answer:
+        raise HTTPException(status_code=400, detail="Answer required")
+
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
+
+    user_profile = supabase_admin.table("users").select("id,email,account_id,full_name").eq("id", user_id).execute().data
+    user_email = user_profile[0].get("email") if user_profile else None
+    account_id = user_profile[0].get("account_id") if user_profile else None
+
+    if not profile and question_id != 1:
+        raise HTTPException(status_code=400, detail="Calibration must start with question 1")
+
+    if question_id == 1:
+        identity = _parse_business_identity(answer)
+
+        if not profile:
+            profile_data = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "business_name": identity["business_name"],
+                "industry": identity["industry"],
+                "calibration_status": "in_progress",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            if identity["business_name"] and user_email:
+                from workspace_helpers import get_or_create_user_account
+                account_id = await get_or_create_user_account(supabase_admin, user_id, user_email, identity["business_name"])
+                profile_data["account_id"] = account_id
+                supabase_admin.table("users").update({"account_id": account_id}).eq("id", user_id).execute()
+
+            result = supabase_admin.table("business_profiles").insert(profile_data).execute()
+            profile = result.data[0] if result.data else profile_data
+        else:
+            supabase_admin.table("business_profiles").update({
+                "business_name": identity["business_name"],
+                "industry": identity["industry"],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "calibration_status": "in_progress"
+            }).eq("id", profile.get("id")).execute()
+
+    if not profile:
+        raise HTTPException(status_code=500, detail="Business profile unavailable")
+
+    business_profile_id = profile.get("id")
+
+    if question_id == 2:
+        stage_data = _parse_business_stage(answer)
+        supabase_admin.table("business_profiles").update({
+            "business_stage": stage_data.get("business_stage"),
+            "years_operating": stage_data.get("years_operating"),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "calibration_status": "in_progress"
+        }).eq("id", business_profile_id).execute()
+
+    if question_id == 3:
+        location_data = _parse_location(answer)
+        supabase_admin.table("business_profiles").update({
+            **location_data,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "calibration_status": "in_progress"
+        }).eq("id", business_profile_id).execute()
+
+    if question_id == 4:
+        parts = _split_two_parts(answer)
+        market = parts[0] if parts else answer
+        pain = parts[1] if len(parts) > 1 else answer
+        supabase_admin.table("business_profiles").update({
+            "target_market": market,
+            "ideal_customer_profile": market,
+            "customer_pain_points": pain,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "calibration_status": "in_progress"
+        }).eq("id", business_profile_id).execute()
+
+    if question_id == 5:
+        parts = _split_two_parts(answer)
+        products = parts[0] if parts else answer
+        differentiation = parts[1] if len(parts) > 1 else answer
+        supabase_admin.table("business_profiles").update({
+            "products_services": products,
+            "unique_value_proposition": differentiation,
+            "competitive_advantages": differentiation,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "calibration_status": "in_progress"
+        }).eq("id", business_profile_id).execute()
+
+    if question_id == 6:
+        team_size = _extract_team_size(answer)
+        supabase_admin.table("business_profiles").update({
+            "team_size": team_size or answer,
+            "founder_background": answer,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "calibration_status": "in_progress"
+        }).eq("id", business_profile_id).execute()
+
+    if question_id in {7, 8, 9}:
+        strategy = supabase_admin.table("strategy_profiles").select("*").eq("business_profile_id", business_profile_id).execute().data
+        strategy_profile = strategy[0] if strategy else None
+        
+        if not account_id and profile.get("account_id"):
+            account_id = profile.get("account_id")
+
+        if not strategy_profile:
+            strategy_profile = {
+                "id": str(uuid.uuid4()),
+                "business_profile_id": business_profile_id,
+                "user_id": user_id,
+                "account_id": account_id,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            supabase_admin.table("strategy_profiles").insert(strategy_profile).execute()
+
+        updates = {"updated_at": datetime.now(timezone.utc).isoformat(), "source": "user", "regenerable": True}
+        if question_id == 7:
+            parts = _split_two_parts(answer)
+            mission = parts[0] if parts else answer
+            vision = parts[1] if len(parts) > 1 else answer
+            if not strategy_profile.get("raw_mission_input"):
+                updates["raw_mission_input"] = mission
+            if not strategy_profile.get("raw_vision_input"):
+                updates["raw_vision_input"] = vision
+
+        if question_id == 8:
+            parts = _split_two_parts(answer)
+            goals = parts[0] if parts else answer
+            challenges = parts[1] if len(parts) > 1 else answer
+            if not strategy_profile.get("raw_goals_input"):
+                updates["raw_goals_input"] = goals
+            if not strategy_profile.get("raw_challenges_input"):
+                updates["raw_challenges_input"] = challenges
+
+        if question_id == 9:
+            if not strategy_profile.get("raw_growth_input"):
+                updates["raw_growth_input"] = answer
+
+        supabase_admin.table("strategy_profiles").update(updates).eq("id", strategy_profile.get("id")).execute()
+
+        if question_id == 9:
+            strategy_profile = supabase_admin.table("strategy_profiles").select("*").eq("business_profile_id", business_profile_id).execute().data
+            strategy_profile = strategy_profile[0] if strategy_profile else {}
+            raw_prompt = (
+                "Generate JSON with keys: mission_statement, vision_statement, short_term_goals, long_term_goals, "
+                "primary_challenges, growth_strategy. Keep outputs specific and grounded. Return ONLY JSON.\n\n"
+                f"Mission raw: {strategy_profile.get('raw_mission_input')}\n"
+                f"Vision raw: {strategy_profile.get('raw_vision_input')}\n"
+                f"Goals raw: {strategy_profile.get('raw_goals_input')}\n"
+                f"Challenges raw: {strategy_profile.get('raw_challenges_input')}\n"
+                f"Growth raw: {strategy_profile.get('raw_growth_input')}\n"
+            )
+
+            ai_text = await get_ai_response(raw_prompt, "general", f"calibration_{user_id}", user_id=user_id)
+            ai_payload = {}
+            try:
+                ai_payload = json.loads(ai_text)
+            except Exception:
+                ai_payload = {
+                    "mission_statement": strategy_profile.get("raw_mission_input"),
+                    "vision_statement": strategy_profile.get("raw_vision_input"),
+                    "short_term_goals": strategy_profile.get("raw_goals_input"),
+                    "long_term_goals": strategy_profile.get("raw_goals_input"),
+                    "primary_challenges": strategy_profile.get("raw_challenges_input"),
+                    "growth_strategy": strategy_profile.get("raw_growth_input")
+                }
+
+            supabase_admin.table("strategy_profiles").update({
+                **ai_payload,
+                "source": "ai_generated",
+                "regenerable": True,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }).eq("id", strategy_profile.get("id")).execute()
+
+            if not account_id and profile.get("account_id"):
+                account_id = profile.get("account_id")
+
+            schedule_focus = [
+                "Business foundation & positioning",
+                "Offer clarity & pricing",
+                "Pipeline build & outbound",
+                "Inbound demand & content",
+                "Sales conversion system",
+                "Delivery quality & client success",
+                "Retention & expansion",
+                "Operations efficiency",
+                "Team capacity & delegation",
+                "Metrics & financial visibility",
+                "Partnerships & channel growth",
+                "Offer evolution",
+                "Market expansion tests",
+                "Scale systems & hiring",
+                "Strategic review & next 15-week plan"
+            ]
+
+            today = datetime.now(timezone.utc).date()
+            for week in range(1, 16):
+                start_date = today + timedelta(days=(week - 1) * 7)
+                end_date = start_date + timedelta(days=6)
+                supabase_admin.table("working_schedules").upsert({
+                    "business_profile_id": business_profile_id,
+                    "user_id": user_id,
+                    "account_id": account_id,
+                    "week_number": week,
+                    "focus_area": schedule_focus[week - 1],
+                    "status": "in_progress" if week == 1 else "planned",
+                    "week_start_date": start_date.isoformat(),
+                    "week_end_date": end_date.isoformat()
+                }, on_conflict="business_profile_id,week_number").execute()
+
+            default_priorities = [
+                {"signal_category": "revenue_sales", "priority_rank": 1, "threshold_sensitivity": "high", "description": "Revenue and sales movement"},
+                {"signal_category": "team_capacity", "priority_rank": 2, "threshold_sensitivity": "medium", "description": "Leader and team capacity"},
+                {"signal_category": "strategy_drift", "priority_rank": 3, "threshold_sensitivity": "medium", "description": "Plan alignment"},
+                {"signal_category": "delivery_ops", "priority_rank": 4, "threshold_sensitivity": "low", "description": "Delivery and operations"}
+            ]
+
+            for priority in default_priorities:
+                supabase_admin.table("intelligence_priorities").upsert({
+                    "business_profile_id": business_profile_id,
+                    "user_id": user_id,
+                    **priority
+                }, on_conflict="business_profile_id,signal_category").execute()
+
+            supabase_admin.table("progress_cadence").upsert({
+                "business_profile_id": business_profile_id,
+                "user_id": user_id,
+                "account_id": account_id,
+                "cadence_type": "weekly",
+                "next_check_in_date": (today + timedelta(days=7)).isoformat()
+            }, on_conflict="business_profile_id").execute()
+
+            supabase_admin.table("calibration_sessions").insert({
+                "business_profile_id": business_profile_id,
+                "user_id": user_id,
+                "questions_answered": 9,
+                "completed": True,
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }).execute()
+
+            supabase_admin.table("business_profiles").update({
+                "calibration_status": "complete",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "account_id": account_id
+            }).eq("id", business_profile_id).execute()
+
+            return {"status": "complete", "calibration_complete": True}
+
+    return {"status": "saved", "calibration_complete": False}
+
+
 
 
 # ═══════════════════════════════════════════════════════════════
