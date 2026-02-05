@@ -2306,66 +2306,30 @@ async def supabase_get_me(current_user: dict = Depends(get_current_user_supabase
 
 @api_router.get("/auth/check-profile")
 async def check_user_profile(current_user: dict = Depends(get_current_user_supabase)):
-    """
-    Check if user profile exists and needs onboarding
-    This endpoint is called by AuthCallbackSupabase to determine redirect path
-    
-    Returns:
-        - profile_exists: Whether user has a complete profile
-        - needs_onboarding: Whether user should be sent to onboarding
-        - user: User profile data
-    """
+    """Calibration-first profile check used by AuthCallbackSupabase."""
     try:
         user_id = current_user["id"]
-        email = current_user["email"]
-        
-        # User profile MUST exist at this point because get_current_user_supabase
-        # automatically creates it via verify_supabase_token() -> create_user_profile()
-        # But we still verify and check for completeness
-        
-        # Get full user profile from Supabase
         user_profile = await get_user_by_id(user_id)
-        
-        if not user_profile:
-            # This should never happen, but handle gracefully
-            logger.warning(f"User {user_id} authenticated but no profile found, triggering onboarding")
-            return {
-                "profile_exists": False,
-                "needs_onboarding": True,
-                "user": current_user
-            }
-        
-        # Check onboarding completion status (Supabase-only, MongoDB removed)
-        onboarding = await get_onboarding_supabase(supabase_admin, user_id)
-        
-        if onboarding and onboarding.get("completed"):
-            # User has completed onboarding
-            needs_onboarding = False
-            onboarding_status = "completed"
-        elif onboarding and onboarding.get("current_step"):
-            # User has started but not finished onboarding
-            needs_onboarding = True
-            onboarding_status = "in_progress"
-        else:
-            # User has never started onboarding
-            needs_onboarding = True
-            onboarding_status = "not_started"
-        
-        logger.info(f"Profile check for {email}: exists=True, needs_onboarding={needs_onboarding}, legacy_user={legacy_user_exists}, has_company={has_company_info}")
-        
+        business_profile = await get_business_profile_supabase(supabase_admin, user_id)
+        calibration_status = (business_profile or {}).get("calibration_status")
+
+        needs_onboarding = not (business_profile and calibration_status == "complete")
+        onboarding_status = "complete" if not needs_onboarding else "calibration_required"
+
         return {
-            "profile_exists": True,
+            "profile_exists": bool(user_profile),
             "needs_onboarding": needs_onboarding,
             "user": {
-                "id": user_profile["id"],
-                "email": user_profile["email"],
-                "full_name": user_profile.get("full_name"),
-                "company_name": user_profile.get("company_name"),
-                "industry": user_profile.get("industry"),
-                "role": user_profile.get("role"),
-                "subscription_tier": user_profile.get("subscription_tier"),
-                "is_master_account": user_profile.get("is_master_account", False)
-            }
+                "id": user_profile.get("id") if user_profile else user_id,
+                "email": user_profile.get("email") if user_profile else current_user.get("email"),
+                "full_name": user_profile.get("full_name", "") if user_profile else "",
+                "company_name": business_profile.get("business_name") if business_profile else None,
+                "account_id": business_profile.get("account_id") if business_profile else None,
+                "business_profile_id": business_profile.get("id") if business_profile else None
+            },
+            "onboarding_status": onboarding_status,
+            "calibration_status": calibration_status,
+            "has_business_profile": business_profile is not None
         }
         
     except HTTPException:
