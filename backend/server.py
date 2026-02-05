@@ -5891,10 +5891,10 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         limit=6
     )
 
-    recent_files = await db.data_files.find(
-        {"user_id": current_user["id"]},
-        {"_id": 0, "filename": 1, "extracted_text": 1, "category": 1}
-    ).sort("created_at", -1).limit(6).to_list(6)
+    recent_files_result = supabase_admin.table("data_files").select(
+        "filename,extracted_text,category,created_at"
+    ).eq("user_id", current_user["id"]).order("created_at", desc=True).limit(6).execute()
+    recent_files = recent_files_result.data if recent_files_result.data else []
 
     website_text = ""
     if website:
