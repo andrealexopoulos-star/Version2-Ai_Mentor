@@ -1575,6 +1575,8 @@ def main():
             report = tester.run_supabase_migration_tests()
         elif sys.argv[1] == "--hubspot-crm":
             report = tester.run_hubspot_crm_tests()
+        elif sys.argv[1] == "--calibration":
+            report = tester.run_calibration_auth_tests()
         else:
             report = tester.run_all_tests()
     else:
