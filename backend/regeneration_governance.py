@@ -336,6 +336,13 @@ async def record_regeneration_response(user_id: str, proposal_id: str, action: s
 
     memory["regeneration_history"] = history
 
+    if action == "accept":
+        stage_result = supabase_admin.table("business_profiles").select("business_stage").eq(
+            "user_id", user_id
+        ).execute().data
+        if stage_result:
+            memory["strategy_stage_snapshot"] = stage_result[0].get("business_stage")
+
     await core.observe(user_id, {
         "type": "regeneration_governance",
         "layer": "consequence_memory",
