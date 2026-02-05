@@ -106,6 +106,7 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 8. **Silence Intervention System** - Implemented silence detection, escalation ladder, engagement risk scoring, and consequence memory updates with Watchtower events
 9. **Regeneration Governance** - Added controlled regeneration proposals with evidence gating, consequence tracking, and explicit response actions
 10. **Env URL Alignment** - Updated frontend REACT_APP_BACKEND_URL to https://beta.thestrategysquad.com
+11. **Calibration-first Auth Guard** - Replaced auth bootstrap with calibration-first gating and auth-state routing
 
 #### ✅ TESTING
 - `GET /api/health`
