@@ -116,5 +116,6 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 - Calibration route load (auth-gated login view)
 - `python -c` import of silence_detection/intelligence_automation_worker
 - `python -c` import of regeneration_governance
+- Calibration-first auth guard update (manual auth flow pending)
 
 *Last Updated: February 05, 2026*
