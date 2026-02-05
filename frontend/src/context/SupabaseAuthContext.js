@@ -299,8 +299,11 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         // 2. Check calibration status FIRST
-        const calRes = await fetch('/api/calibration/status', {
-          credentials: 'include',
+        const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
         });
 
         if (!calRes.ok) {
@@ -319,8 +322,11 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         // 3. Only now is rehydration allowed
-        const profileRes = await fetch('/api/auth/check-profile', {
-          credentials: 'include',
+        const profileRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
         });
 
         if (!profileRes.ok) {
