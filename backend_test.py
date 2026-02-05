@@ -706,7 +706,73 @@ class StrategicAdvisorAPITester:
                 200
             )
 
-    def test_supabase_auth_endpoints(self):
+    def test_calibration_status_endpoint(self):
+        """Test calibration status endpoint - CRITICAL for auth bootstrap"""
+        print("\n🔍 Testing Calibration Status Endpoint (CRITICAL)...")
+        
+        success, response = self.run_test(
+            "Calibration Status Check",
+            "GET",
+            "calibration/status",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            expected_fields = ['status', 'calibration_status', 'has_business_profile']
+            missing = [f for f in expected_fields if f not in response]
+            if not missing:
+                self.log_test("Calibration Status - Response Structure", True, "")
+                
+                # Log calibration details
+                status = response.get('status')
+                calibration_status = response.get('calibration_status')
+                has_business_profile = response.get('has_business_profile')
+                
+                self.log_test("Calibration Status - Fields Present", True, 
+                             f"Status: {status}, Calibration: {calibration_status}, Profile: {has_business_profile}")
+                
+                # Verify status logic
+                if status in ['READY', 'NEEDS_CALIBRATION']:
+                    self.log_test("Calibration Status - Valid Status Value", True, f"Status: {status}")
+                else:
+                    self.log_test("Calibration Status - Valid Status Value", False, f"Invalid status: {status}")
+            else:
+                self.log_test("Calibration Status - Response Structure", False, f"Missing: {missing}")
+        else:
+            self.log_test("Calibration Status - Endpoint Exists", False, "Endpoint returned error or not found")
+        
+        return success
+
+    def test_auth_bootstrap_flow(self):
+        """Test the complete auth bootstrap flow that's failing"""
+        print("\n🔍 Testing Auth Bootstrap Flow (P1 Issue)...")
+        
+        # Step 1: Test calibration status (this is where the error occurs)
+        calibration_success = self.test_calibration_status_endpoint()
+        
+        if not calibration_success:
+            self.log_test("Auth Bootstrap - Calibration Check Failed", False, "Cannot proceed with bootstrap flow")
+            return False
+        
+        # Step 2: Test check-profile endpoint (should only be called after calibration)
+        success, response = self.run_test(
+            "Auth Check Profile (After Calibration)",
+            "GET",
+            "auth/check-profile",
+            200
+        )
+        
+        if success:
+            # Verify response structure
+            expected_fields = ['profile_exists', 'needs_onboarding', 'user']
+            missing = [f for f in expected_fields if f not in response]
+            if not missing:
+                self.log_test("Auth Bootstrap - Profile Check Structure", True, "")
+            else:
+                self.log_test("Auth Bootstrap - Profile Check Structure", False, f"Missing: {missing}")
+        
+        return calibration_success and success
         """Test Supabase authentication endpoints"""
         print("\n🔍 Testing Supabase Auth Endpoints...")
         
