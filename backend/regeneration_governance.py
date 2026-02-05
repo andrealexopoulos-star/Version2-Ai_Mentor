@@ -353,6 +353,7 @@ async def record_regeneration_response(user_id: str, proposal_id: str, action: s
             break
 
     memory["regeneration_history"] = history
+    memory["regeneration_request"] = None
 
     if action == "accept":
         stage_result = supabase_admin.table("business_profiles").select("business_stage").eq(
