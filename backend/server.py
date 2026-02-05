@@ -2353,29 +2353,14 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user_s
     user_id = current_user["id"]
     try:
         business_profile = await get_business_profile_supabase(supabase_admin, user_id)
-        
-        # Check if business profile exists
-        has_business_profile = business_profile is not None
-        calibration_status = business_profile.get("calibration_status") if business_profile else None
-        
-        # Determine status based on calibration completion and business profile
-        if not has_business_profile or calibration_status != "complete":
-            status = "NEEDS_CALIBRATION"
-        else:
-            status = "READY"
-        
-        return {
-            "status": status,
-            "calibration_status": calibration_status or "not_started",
-            "has_business_profile": has_business_profile
-        }
+        if not business_profile:
+            return {"status": "NEEDS_CALIBRATION"}
+        if business_profile.get("calibration_status") != "complete":
+            return {"status": "NEEDS_CALIBRATION"}
+        return {"status": "COMPLETE"}
     except Exception as e:
         logger.error(f"Error in calibration status check: {e}")
-        return {
-            "status": "NEEDS_CALIBRATION",
-            "calibration_status": "error",
-            "has_business_profile": False
-        }
+        return {"status": "NEEDS_CALIBRATION"}
 
 
 def _split_two_parts(answer: str) -> List[str]:
