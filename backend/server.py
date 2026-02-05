@@ -7299,15 +7299,17 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
         score += min(5, doc_count * 1)  # 1 point per doc, max 5
         
         # AI advisor conversations (5 points)
-        chat_count = await db.chat_history.count_documents({"user_id": user_id})  # TODO: Migrate
+        chat_result = supabase_admin.table("chat_history").select("id", count="exact").eq("user_id", user_id).execute()
+        chat_count = chat_result.count if chat_result.count is not None else 0
         score += min(5, chat_count * 0.5)  # 0.5 points per chat, max 5
         
         # SOPs created (5 points)
-        sop_count = await count_sops_supabase(supabase_admin, {"user_id": user_id}) if await count_sops_supabase(supabase_admin, {}) else 0
+        sop_count = await count_sops_supabase(supabase_admin, user_id)
         score += min(5, sop_count * 2)  # 2 points per SOP, max 5
         
         # Analyses run (5 points)
-        analysis_count = await db.analyses.count_documents({"user_id": user_id})  # TODO: Migrate to Supabase
+        analysis_result = supabase_admin.table("analyses").select("id", count="exact").eq("user_id", user_id).execute()
+        analysis_count = analysis_result.count if analysis_result.count is not None else 0
         score += min(5, analysis_count * 1)  # 1 point per analysis, max 5
     
     # === BUSINESS DEPTH (25 points) ===
