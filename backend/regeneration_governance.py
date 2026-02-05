@@ -63,6 +63,24 @@ def _has_active_regeneration(supabase_admin, account_id: str) -> bool:
     return (result.count or 0) > 0
 
 
+def _strategy_drift_improved(supabase_admin, account_id: str) -> Optional[bool]:
+    now = datetime.now(timezone.utc)
+    recent_start = (now - timedelta(days=30)).isoformat()
+    prior_start = (now - timedelta(days=60)).isoformat()
+
+    recent = supabase_admin.table("watchtower_events").select("id", count="exact").eq(
+        "account_id", account_id
+    ).eq("source", "canonical_moment_strategy_drift").gte("created_at", recent_start).execute().count or 0
+
+    prior = supabase_admin.table("watchtower_events").select("id", count="exact").eq(
+        "account_id", account_id
+    ).eq("source", "canonical_moment_strategy_drift").gte("created_at", prior_start).lt("created_at", recent_start).execute().count or 0
+
+    if prior == 0:
+        return None
+    return recent < prior
+
+
 async def _generate_layer_draft(layer: str, strategy_profile: Dict[str, Any], reason: str, user_id: str) -> str:
     prompt = (
         "You are BIQC. Generate a revised draft for the requested strategic layer only. "
