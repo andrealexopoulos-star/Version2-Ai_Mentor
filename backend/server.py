@@ -5737,10 +5737,10 @@ async def business_profile_autofill(req: BusinessProfileAutofillRequest, current
     files_text = ""
     used_files = []
     if req.data_file_ids:
-        files = await db.data_files.find(
-            {"user_id": current_user["id"], "id": {"$in": req.data_file_ids}},
-            {"_id": 0, "id": 1, "filename": 1, "extracted_text": 1, "category": 1}
-        ).to_list(20)
+        files_result = supabase_admin.table("data_files").select(
+            "id,filename,extracted_text,category"
+        ).eq("user_id", current_user["id"]).in_("id", req.data_file_ids).execute()
+        files = files_result.data if files_result.data else []
         for f in files:
             used_files.append({"id": f.get("id"), "filename": f.get("filename"), "category": f.get("category")})
             if f.get("extracted_text"):
