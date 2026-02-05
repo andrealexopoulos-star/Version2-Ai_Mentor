@@ -52,6 +52,7 @@ from supabase_drive_helpers import (
     delete_user_drive_files,
     get_drive_file_by_id
 )
+from regeneration_governance import request_regeneration, record_regeneration_response
 
 # Import document helpers
 from supabase_document_helpers import (
