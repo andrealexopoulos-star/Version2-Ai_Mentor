@@ -4545,11 +4545,9 @@ async def rename_soundboard_conversation(
 @api_router.delete("/soundboard/conversations/{conversation_id}")
 async def delete_soundboard_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a conversation"""
-    result = await supabase_admin.table("soundboard_conversations").delete().eq("session_id", 
-        {"id": conversation_id, "user_id": current_user["id"]}
-    )
+    result = supabase_admin.table("soundboard_conversations").delete().eq("id", conversation_id).eq("user_id", current_user["id"]).execute()
     
-    if result.deleted_count == 0:
+    if not result.data:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
     return {"status": "deleted"}
