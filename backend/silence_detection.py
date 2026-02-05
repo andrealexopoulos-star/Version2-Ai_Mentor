@@ -182,9 +182,6 @@ async def evaluate_silence_intervention(user_id: str, account_id: str, supabase_
             "compounding_sources": list(severity_signals["compounding_sources"])
         }
 
-        if not any([missed_checkin, usage_drop, no_interaction_high, behaviour_increase]):
-            return None
-
         risk_score = 0
         if missed_checkin:
             risk_score += 30
@@ -205,6 +202,7 @@ async def evaluate_silence_intervention(user_id: str, account_id: str, supabase_
         profile = await core.get_profile(user_id)
         memory = profile.get("consequence_memory", {}) or {}
         interventions = memory.get("silence_interventions", [])
+        interventions_updated = False
 
         last_interaction_at = recent_activity["last_interaction"]
 
@@ -219,6 +217,21 @@ async def evaluate_silence_intervention(user_id: str, account_id: str, supabase_
                     entry["response_received"] = True
                     entry["response_at"] = last_interaction_at.isoformat()
                     entry["conditions_improved"] = risk_score < entry.get("risk_score", risk_score)
+                    interventions_updated = True
+
+        if not any([missed_checkin, usage_drop, no_interaction_high, behaviour_increase]):
+            if interventions_updated:
+                memory.update({
+                    "silence_interventions": interventions,
+                    "engagement_risk_score": risk_score,
+                    "last_interaction_at": last_interaction_at.isoformat() if last_interaction_at else None
+                })
+                await core.observe(user_id, {
+                    "type": "silence_intervention",
+                    "layer": "consequence_memory",
+                    "payload": memory
+                })
+            return None
 
         ignored_count = len([entry for entry in interventions if not entry.get("response_received")])
 
