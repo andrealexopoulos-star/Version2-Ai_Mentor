@@ -131,7 +131,7 @@ const CalibrationAdvisor = () => {
             business_profile_id: profileResponse.data.user.business_profile_id,
             onboarding_status: profileResponse.data.onboarding_status,
             calibration_status: profileResponse.data.calibration_status,
-            cached_at: new Date().toISOString(),
+            cached_at: Date.now(),
           };
           localStorage.setItem("biqc_context_v1", JSON.stringify(contextPayload));
         }
