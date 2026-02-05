@@ -211,6 +211,9 @@ async def evaluate_regeneration(user_id: str, account_id: str, supabase_admin, w
         "You explicitly requested an updated draft."
     )
 
+    if trigger == "user_request" and isinstance(request, dict) and request.get("reason"):
+        reason = request.get("reason")
+
     draft_text = await _generate_layer_draft(layer, strategy_profile, reason, user_id)
     if not draft_text:
         return None
