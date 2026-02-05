@@ -126,6 +126,7 @@ function AppRoutes() {
       {/* Onboarding */}
       <Route path="/onboarding-decision" element={<ProtectedRoute><OnboardingDecision /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
+      <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
       <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
       {/* Protected Routes */}
