@@ -5300,26 +5300,21 @@ Be specific to their situation. Reference actual business details."""
 
 @api_router.get("/analyses", response_model=List[AnalysisResponse])
 async def get_analyses(current_user: dict = Depends(get_current_user)):
-    analyses = await db.analyses.find(
-        {"user_id": current_user["id"]}, 
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(100)
+    analyses = await get_user_analyses_supabase(supabase_admin, current_user["id"], limit=100)
     return analyses
 
 @api_router.get("/analyses/{analysis_id}", response_model=AnalysisResponse)
 async def get_analysis(analysis_id: str, current_user: dict = Depends(get_current_user)):
-    analysis = await get_user_analyses_supabase(supabase_admin, 
-        {"id": analysis_id, "user_id": current_user["id"]},
-        {"_id": 0}
-    )
+    result = supabase_admin.table("analyses").select("*").eq("id", analysis_id).eq("user_id", current_user["id"]).single().execute()
+    analysis = result.data if result.data else None
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
     return analysis
 
 @api_router.delete("/analyses/{analysis_id}")
 async def delete_analysis(analysis_id: str, current_user: dict = Depends(get_current_user)):
-    result = await supabase_admin.table("analyses").delete().eq("id", {"id": analysis_id, "user_id": current_user["id"]})
-    if result.deleted_count == 0:
+    result = supabase_admin.table("analyses").delete().eq("id", analysis_id).eq("user_id", current_user["id"]).execute()
+    if not result.data:
         raise HTTPException(status_code=404, detail="Analysis not found")
     return {"message": "Analysis deleted"}
 
