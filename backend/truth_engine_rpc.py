@@ -319,7 +319,12 @@ async def _build_revenue_risk(context: Dict[str, Any], supabase_admin: Any) -> O
         if not _passes_constitution(statement, ["ghosting", "email not replied"]):
             continue
 
-        severity = _derive_severity(priority_rank, days_silent)
+        severity = _apply_cognitive_weighting(
+            _derive_severity(priority_rank, days_silent),
+            context["behavioural_truth"],
+            context["immutable_reality"],
+            "revenue"
+        )
 
         return {
             "id": str(uuid4()),
@@ -340,6 +345,10 @@ async def _build_revenue_risk(context: Dict[str, Any], supabase_admin: Any) -> O
                 "priority_rank": priority_rank,
                 "week_number": week_number,
                 "focus_area": focus_area,
+                "cognitive_weighting": {
+                    "risk_exposure": context["immutable_reality"].get("risk_exposure"),
+                    "decision_velocity": context["behavioural_truth"].get("decision_velocity")
+                },
                 "delivery_tone": delivery_pref.get("communication_style") or "advisory",
                 "delivery_window": context["delivery_window"]
             },
@@ -419,7 +428,12 @@ async def _build_founder_strain(context: Dict[str, Any], supabase_admin: Any) ->
         return None
 
     priority_rank = priority.get("priority_rank")
-    severity = _derive_severity(priority_rank, max(current_events, late_hours))
+    severity = _apply_cognitive_weighting(
+        _derive_severity(priority_rank, max(current_events, late_hours)),
+        context["behavioural_truth"],
+        context["immutable_reality"],
+        "capacity"
+    )
 
     return {
         "id": str(uuid4()),
@@ -439,6 +453,10 @@ async def _build_founder_strain(context: Dict[str, Any], supabase_admin: Any) ->
             "priority_rank": priority_rank,
             "week_number": week_number,
             "focus_area": focus_area,
+            "cognitive_weighting": {
+                "stress_tolerance": context["behavioural_truth"].get("stress_tolerance"),
+                "time_scarcity": context["behavioural_truth"].get("time_scarcity")
+            },
             "delivery_tone": delivery_pref.get("communication_style") or "protective",
             "delivery_window": context["delivery_window"]
         },
@@ -526,7 +544,12 @@ async def _build_strategy_drift(context: Dict[str, Any], supabase_admin: Any) ->
 
     priority = context["priorities"].get("strategy_drift") or {}
     priority_rank = priority.get("priority_rank")
-    severity = _derive_severity(priority_rank, days_into_week)
+    severity = _apply_cognitive_weighting(
+        _derive_severity(priority_rank, days_into_week),
+        context["behavioural_truth"],
+        context["immutable_reality"],
+        "drift"
+    )
 
     return {
         "id": str(uuid4()),
@@ -543,6 +566,10 @@ async def _build_strategy_drift(context: Dict[str, Any], supabase_admin: Any) ->
             "days_into_week": days_into_week,
             "activity_summary": activity_summary,
             "priority_rank": priority_rank,
+            "cognitive_weighting": {
+                "follow_through_reliability": context["behavioural_truth"].get("follow_through_reliability"),
+                "decision_velocity": context["behavioural_truth"].get("decision_velocity")
+            },
             "delivery_tone": delivery_pref.get("communication_style") or "neutral",
             "delivery_window": context["delivery_window"]
         },
