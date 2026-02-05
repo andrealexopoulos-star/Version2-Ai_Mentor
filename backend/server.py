@@ -4876,7 +4876,7 @@ async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(req
 
 @api_router.post("/account/users/accept", response_model=TokenResponse)
 async def accept_invite(req: InviteAcceptRequest):
-    invite = await get_invite_supabase(supabase_admin, {"token": req.token}, {"_id": 0})
+    invite = await get_invite_supabase(supabase_admin, req.token)
     if not invite:
         raise HTTPException(status_code=404, detail="Invite not found")
 
@@ -4912,10 +4912,28 @@ async def accept_invite(req: InviteAcceptRequest):
         "updated_at": created_at,
         "auth_provider": "invite",
     }
-    await db.users.insert_one(user_doc)
+
+    user_profile = {
+        "id": user_id,
+        "email": invite["email"],
+        "full_name": invite.get("name") or "User",
+        "company_name": None,
+        "industry": None,
+        "role": invite.get("role") or "member",
+        "subscription_tier": "free",
+        "subscription_started_at": created_at,
+        "account_id": invite["account_id"],
+        "is_master_account": False,
+        "created_at": created_at,
+        "updated_at": created_at
+    }
+
+    insert_result = supabase_admin.table("users").insert(user_profile).execute()
+    if not insert_result.data:
+        raise HTTPException(status_code=500, detail="Failed to create user profile")
 
     # Consume invite
-    await delete_invite_supabase(supabase_admin, {"id": invite["id"]})
+    await delete_invite_supabase(supabase_admin, invite["token"])
 
     access_token = create_token(user_id, user_doc["email"], user_doc["role"], account_id=user_doc.get("account_id"))
     return TokenResponse(
