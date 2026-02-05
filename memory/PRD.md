@@ -92,3 +92,13 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 
 ---
 *Last Updated: January 23, 2025*
+
+### Session: February 05, 2026
+
+#### ✅ COMPLETED
+1. **Cognitive Core Observe** - Supabase-safe updates with JSON merge and no Mongo syntax
+2. **Merge File Storage Connect** - Merge link token accepts categories; frontend now opens file_storage flow
+3. **MongoDB Elimination (server.py)** - Replaced legacy db.* queries with Supabase for chat sessions, analyses, data center, business profiles, advisory history, admin stats, dashboard stats, notifications, and soundboard delete
+4. **Integrations UI Test IDs** - Added data-testid coverage for Integrations interactions
+
+*Last Updated: February 05, 2026*
