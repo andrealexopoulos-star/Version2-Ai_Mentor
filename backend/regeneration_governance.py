@@ -255,6 +255,9 @@ async def evaluate_regeneration(user_id: str, account_id: str, supabase_admin, w
         "Choices: Accept draft as current · Refine together · Keep existing version."
     )
 
+    if not _passes_constitution(statement):
+        return None
+
     event = {
         "id": str(uuid4()),
         "account_id": account_id,
