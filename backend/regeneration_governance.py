@@ -149,6 +149,15 @@ async def evaluate_regeneration(user_id: str, account_id: str, supabase_admin, w
     memory = profile.get("consequence_memory", {}) or {}
     request = memory.get("regeneration_request")
     requested_layer = request.get("layer") if isinstance(request, dict) else None
+    history = memory.get("regeneration_history", [])
+    history_updated = False
+
+    for entry in history:
+        if entry.get("status") in {"accept", "keep"} and entry.get("performance_improved") is None:
+            improved = _strategy_drift_improved(supabase_admin, account_id)
+            if improved is not None:
+                entry["performance_improved"] = improved
+                history_updated = True
 
     triggers: List[str] = []
     if request:
