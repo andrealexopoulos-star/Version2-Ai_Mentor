@@ -102,10 +102,13 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 4. **Integrations UI Test IDs** - Added data-testid coverage for Integrations interactions
 5. **Canonical Intelligence Moments** - Activated revenue risk, founder strain, and strategy drift moments with calibration weighting, Cognitive Core delivery preferences, and constitution checks in watchtower generation
 6. **Controlled User Purge** - Executed Supabase + Mongo deletions for specified user IDs per destructive purge request
+7. **Calibration Advisor Activation** - Added calibration routing override, live advisor flow, and Supabase writes for Q1–Q9 with AI draft generation and post-calibration scaffolding
 
 #### ✅ TESTING
 - `GET /api/health`
 - Integrations page load (auth-gated login view)
 - `python -c` import of truth_engine_rpc
+- `GET /api/health` (post-calibration changes)
+- Calibration route load (auth-gated login view)
 
 *Last Updated: February 05, 2026*
