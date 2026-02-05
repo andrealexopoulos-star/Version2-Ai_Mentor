@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
 
-const INITIAL_MESSAGE =
-  "Welcome.\nI’m BIQC — your strategic advisor.\nBefore I can give you meaningful insight, I need to understand the business you’re responsible for.\nThis is a calibration session, not a form.\nI’ll ask one question at a time.";
+const BASE_INITIAL_MESSAGE =
+  "I’m BIQC — your strategic advisor.\nBefore I can give you meaningful insight, I need to understand the business you’re responsible for.\nThis is a calibration session, not a form.\nI’ll ask one question at a time.";
 
 const FINAL_MESSAGE =
   "Calibration complete.\nI now understand the business you’re responsible for.\nBIQC is ready to advise you.";
@@ -51,9 +51,7 @@ const QUESTIONS = [
 const CalibrationAdvisor = () => {
   const navigate = useNavigate();
   const { user, loading } = useSupabaseAuth();
-  const [messages, setMessages] = useState([
-    { role: "advisor", text: INITIAL_MESSAGE },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [stepIndex, setStepIndex] = useState(-1);
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,11 +64,24 @@ const CalibrationAdvisor = () => {
     return QUESTIONS[stepIndex] || null;
   }, [stepIndex]);
 
+  const initialMessage = useMemo(() => {
+    const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name;
+    const firstName = fullName ? fullName.split(" ")[0] : null;
+    const welcomeLine = firstName ? `Welcome, ${firstName}.` : "Welcome.";
+    return `${welcomeLine}\n${BASE_INITIAL_MESSAGE}`;
+  }, [user]);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
     }
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (messages.length === 0 && initialMessage) {
+      setMessages([{ role: "advisor", text: initialMessage }]);
+    }
+  }, [initialMessage, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
