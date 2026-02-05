@@ -346,8 +346,18 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
       } catch (err) {
-        console.error('[AUTH BOOTSTRAP ERROR]', err);
-        if (!cancelled) setAuthState(AUTH_STATE.ERROR);
+        console.error('[AUTH BOOTSTRAP ERROR]', err.message, err);
+        if (!cancelled) {
+          // If we have a session, default to NEEDS_CALIBRATION rather than ERROR
+          // This prevents showing AuthError for transient fetch failures
+          const activeSession = session || (await supabase.auth.getSession().catch(() => null))?.data?.session;
+          if (activeSession) {
+            console.warn('[AUTH BOOTSTRAP] Fetch failed but session exists — defaulting to NEEDS_CALIBRATION');
+            setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+          } else {
+            setAuthState(AUTH_STATE.ERROR);
+          }
+        }
       }
     };
 
