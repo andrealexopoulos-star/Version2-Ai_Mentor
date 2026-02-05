@@ -6848,10 +6848,11 @@ async def admin_set_subscription(user_id: str, update: SubscriptionUpdate, admin
 async def get_oac_recommendations(current_user: dict = Depends(get_current_user)):
     now = datetime.now(timezone.utc)
     mk = month_key(now)
+    user_id = current_user["id"]
 
     # Load user + profile
-    user = await get_user_by_id(current_user["id"]) # Supabase
-    profile = await get_business_profile_supabase(supabase_admin, current_user["id"])
+    user = await get_user_by_id(user_id) # Supabase
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
 
     tier = tier_from_user(user or {})
     base_limit = oac_monthly_limit_for_tier(tier)
@@ -6867,7 +6868,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         except Exception:
             pass
 
-    usage = await get_oac_usage_supabase(supabase_admin, current_user["id"], mk)
+    usage = await get_oac_usage_supabase(supabase_admin, user_id, mk)
     used = int((usage or {}).get("used", 0))
 
     if used >= limit:
@@ -6878,7 +6879,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
 
     # cache per day
     day_key = now.strftime("%Y-%m-%d")
-    cached = await get_oac_recommendations_supabase(supabase_admin, current_user["id"], day_key)
+    cached = await get_oac_recommendations_supabase(supabase_admin, user_id, day_key)
     if cached:
         return {
             "locked": False,
@@ -6888,17 +6889,17 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         }
 
     # Build context snippets
-    recent_chats = await get_chat_history_supabase(supabase_admin, current_user["id"], limit=8)
+    recent_chats = await get_chat_history_supabase(supabase_admin, user_id, limit=8)
 
     recent_docs = await get_user_documents_supabase(
         supabase_admin,
-        current_user["id"],
+        user_id,
         limit=8
     )
 
     recent_files_result = supabase_admin.table("data_files").select(
         "filename,category,description,created_at"
-    ).eq("user_id", current_user["id"]).order("created_at", desc=True).limit(8).execute()
+    ).eq("user_id", user_id).order("created_at", desc=True).limit(8).execute()
     recent_files = recent_files_result.data if recent_files_result.data else []
 
     # Prompt: strict, non-generic, actionable
@@ -6952,7 +6953,7 @@ Citations:
 """
 
     session_id = f"oac_{uuid.uuid4()}"
-    ai_text = await get_ai_response(prompt, "general", session_id, user_id=current_user["id"], user_data={
+    ai_text = await get_ai_response(prompt, "general", session_id, user_id=user_id, user_data={
         "name": (user or {}).get("name"),
         "business_name": biz_name,
         "industry": industry,
@@ -6963,16 +6964,16 @@ Citations:
     # persist cache + increment usage by 1 (daily batch counts as 1)
     rec_doc = {
         "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
+        "user_id": user_id,
         "month_key": day_key,
         "date": day_key,
         "items": items,
         "created_at": now.isoformat()
     }
-    await update_oac_recommendations_supabase(supabase_admin, current_user["id"], day_key, rec_doc)
+    await update_oac_recommendations_supabase(supabase_admin, user_id, day_key, rec_doc)
 
     used_after = used + 1
-    await update_oac_usage_supabase(supabase_admin, current_user["id"], mk, {"used": used_after})
+    await update_oac_usage_supabase(supabase_admin, user_id, mk, {"used": used_after})
 
     return {
         "locked": False,
