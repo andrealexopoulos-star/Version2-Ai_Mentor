@@ -263,6 +263,9 @@ class InviteResponse(BaseModel):
 class GoogleExchangeRequest(BaseModel):
     session_id: str
 
+class MergeLinkTokenRequest(BaseModel):
+    categories: Optional[List[str]] = None
+
 class ChatRequest(BaseModel):
     message: str
     context_type: Optional[str] = "general"
@@ -7827,7 +7830,10 @@ async def dismiss_notification(notification_id: str, current_user: dict = Depend
 # ==================== MERGE.DEV INTEGRATION ====================
 
 @api_router.post("/integrations/merge/link-token")
-async def create_merge_link_token(current_user: dict = Depends(get_current_user)):
+async def create_merge_link_token(
+    payload: Optional[MergeLinkTokenRequest] = None,
+    current_user: dict = Depends(get_current_user)
+):
     """Generate Merge.dev link token for workspace (P0: workspace-scoped)"""
     from workspace_helpers import get_or_create_user_account
     
@@ -7856,6 +7862,8 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
     
     try:
         async with httpx.AsyncClient() as client:
+            requested_categories = payload.categories if payload and payload.categories else None
+            categories = requested_categories or ["accounting", "crm", "hris", "ats"]
             # P0 FIX: Send workspace_id as end_user_origin_id (NOT user_id)
             # P0 FIX: Send workspace name as end_user_organization_name (NOT hardcoded)
             response = await client.post(
@@ -7868,7 +7876,7 @@ async def create_merge_link_token(current_user: dict = Depends(get_current_user)
                     "end_user_origin_id": account_id,  # WORKSPACE ID (was user_id)
                     "end_user_organization_name": account_name,  # WORKSPACE NAME (was hardcoded)
                     "end_user_email_address": user_email,
-                    "categories": ["accounting", "crm", "hris", "ats"]
+                    "categories": categories
                 }
             )
             
