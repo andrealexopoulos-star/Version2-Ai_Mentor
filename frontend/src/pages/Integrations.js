@@ -1209,6 +1209,7 @@ const Integrations = () => {
                 maxHeight: '85vh'
               }}
               onClick={(e) => e.stopPropagation()}
+              data-testid="integrations-mobile-sheet"
             >
               {/* Swipe Indicator */}
               <div className="pt-3 pb-2 flex justify-center flex-shrink-0">
