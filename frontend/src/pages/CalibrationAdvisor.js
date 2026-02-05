@@ -1,0 +1,221 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSupabaseAuth } from "../context/SupabaseAuthContext";
+import { apiClient } from "../lib/api";
+
+const INITIAL_MESSAGE =
+  "Welcome.\nI’m BIQC — your strategic advisor.\nBefore I can give you meaningful insight, I need to understand the business you’re responsible for.\nThis is a calibration session, not a form.\nI’ll ask one question at a time.";
+
+const FINAL_MESSAGE =
+  "Calibration complete.\nI now understand the business you’re responsible for.\nBIQC is ready to advise you.";
+
+const QUESTIONS = [
+  {
+    id: 1,
+    text: "What’s the name of the business you’re operating, and what industry does it sit in?",
+  },
+  {
+    id: 2,
+    text: "Where would you place the business today — idea, early-stage, established, or enterprise — and roughly how long has it been operating?",
+  },
+  {
+    id: 3,
+    text: "Where is the business primarily based? City and state is fine.",
+  },
+  {
+    id: 4,
+    text: "Who do you primarily sell to, and what problem are they hiring you to solve?",
+  },
+  {
+    id: 5,
+    text: "What do you actually sell today — and why do clients choose you over alternatives?",
+  },
+  {
+    id: 6,
+    text: "How big is the team today, and where do you personally spend most of your time?",
+  },
+  {
+    id: 7,
+    text: "In plain terms — why does this business exist, and what would success look like in three years?",
+  },
+  {
+    id: 8,
+    text: "What are the most important goals for the next 12 months — and what’s getting in the way right now?",
+  },
+  {
+    id: 9,
+    text: "How do you expect the business to grow — new markets, new offers, partnerships, or scale?",
+  },
+];
+
+const CalibrationAdvisor = () => {
+  const navigate = useNavigate();
+  const { user, loading } = useSupabaseAuth();
+  const [messages, setMessages] = useState([
+    { role: "advisor", text: INITIAL_MESSAGE },
+  ]);
+  const [stepIndex, setStepIndex] = useState(-1);
+  const [inputValue, setInputValue] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [calibrationComplete, setCalibrationComplete] = useState(false);
+  const scrollRef = useRef(null);
+
+  const currentQuestion = useMemo(() => {
+    if (stepIndex < 0) return null;
+    return QUESTIONS[stepIndex] || null;
+  }, [stepIndex]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login");
+    }
+  }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const appendMessage = (message) => {
+    setMessages((prev) => [...prev, message]);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isSubmitting || !inputValue.trim()) return;
+
+    setError(null);
+    const trimmed = inputValue.trim();
+    setInputValue("");
+
+    if (stepIndex === -1) {
+      appendMessage({ role: "user", text: trimmed });
+      appendMessage({ role: "advisor", text: QUESTIONS[0].text });
+      setStepIndex(0);
+      return;
+    }
+
+    if (!currentQuestion) return;
+
+    appendMessage({ role: "user", text: trimmed });
+    setIsSubmitting(true);
+
+    try {
+      const response = await apiClient.post("/api/calibration/answer", {
+        question_id: currentQuestion.id,
+        answer: trimmed,
+      });
+
+      if (response.data?.calibration_complete) {
+        appendMessage({ role: "advisor", text: FINAL_MESSAGE });
+        setCalibrationComplete(true);
+
+        const profileResponse = await apiClient.get("/api/auth/check-profile");
+        if (profileResponse.data?.user) {
+          const contextPayload = {
+            user_id: profileResponse.data.user.id,
+            account_id: profileResponse.data.user.account_id,
+            business_profile_id: profileResponse.data.user.business_profile_id,
+            onboarding_status: profileResponse.data.onboarding_status,
+            calibration_status: profileResponse.data.calibration_status,
+            cached_at: new Date().toISOString(),
+          };
+          localStorage.setItem("biqc_context_v1", JSON.stringify(contextPayload));
+        }
+
+        setTimeout(() => {
+          navigate("/advisor");
+        }, 2000);
+        return;
+      }
+
+      const nextIndex = stepIndex + 1;
+      if (QUESTIONS[nextIndex]) {
+        appendMessage({ role: "advisor", text: QUESTIONS[nextIndex].text });
+        setStepIndex(nextIndex);
+      }
+    } catch (err) {
+      setError("Calibration response could not be saved. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#1f2937] text-white flex flex-col">
+      <header className="px-6 py-6 border-b border-white/10">
+        <h1 className="text-2xl font-semibold" data-testid="calibration-title">
+          BIQC Calibration
+        </h1>
+        <p className="text-sm text-white/60" data-testid="calibration-subtitle">
+          One question at a time. Your answers shape the advisory context.
+        </p>
+      </header>
+
+      <main className="flex-1 flex flex-col px-6 py-6">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto space-y-4 pr-2"
+          data-testid="calibration-message-list"
+        >
+          {messages.map((message, index) => (
+            <div
+              key={`${message.role}-${index}`}
+              className={`max-w-2xl rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-lg ${
+                message.role === "advisor"
+                  ? "bg-white/10 text-white"
+                  : "bg-blue-500 text-white ml-auto"
+              }`}
+              data-testid={`calibration-message-${index}`}
+            >
+              {message.text.split("\n").map((line, idx) => (
+                <p key={`${index}-${idx}`}>{line}</p>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {error && (
+          <div
+            className="mt-4 text-sm text-red-300"
+            data-testid="calibration-error"
+          >
+            {error}
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 flex gap-3 items-center"
+          data-testid="calibration-form"
+        >
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(event) => setInputValue(event.target.value)}
+            placeholder={
+              stepIndex === -1
+                ? "Type to begin"
+                : "Type your response"
+            }
+            disabled={isSubmitting || calibrationComplete}
+            className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            data-testid="calibration-input"
+          />
+          <button
+            type="submit"
+            disabled={isSubmitting || calibrationComplete}
+            className="px-5 py-3 rounded-xl bg-blue-500 text-white text-sm font-semibold disabled:opacity-60"
+            data-testid="calibration-submit"
+          >
+            {stepIndex === -1 ? "Continue" : "Send"}
+          </button>
+        </form>
+      </main>
+    </div>
+  );
+};
+
+export default CalibrationAdvisor;
