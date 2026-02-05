@@ -42,6 +42,11 @@ DRIFT_TOLERANCE_DAYS = 4
 MAX_STATEMENT_LENGTH = 220
 
 
+def _register_canonical_templates() -> Dict[str, Dict[str, str]]:
+    """Register canonical templates in-process for Watchtower."""
+    return CANONICAL_TEMPLATES
+
+
 def _safe_datetime(value: Any) -> Optional[datetime]:
     if not value:
         return None
