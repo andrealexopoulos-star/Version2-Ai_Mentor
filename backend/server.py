@@ -5195,21 +5195,40 @@ async def get_chat_history(session_id: Optional[str] = None, current_user: dict 
 
 @api_router.get("/chat/sessions")
 async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
-    pipeline = [
-        {"$match": {"user_id": current_user["id"]}},
-        {"$group": {
-            "_id": "$session_id",
-            "last_message": {"$last": "$message"},
-            "context_type": {"$last": "$context_type"},
-            "created_at": {"$min": "$created_at"},
-            "updated_at": {"$max": "$created_at"},
-            "message_count": {"$sum": 1}
-        }},
-        {"$sort": {"updated_at": -1}},
-        {"$limit": 20}
-    ]
-    sessions = await db.chat_history.aggregate(pipeline).to_list(20)
-    return [{"session_id": s["_id"], **{k: v for k, v in s.items() if k != "_id"}} for s in sessions]
+    result = supabase_admin.table("chat_history").select(
+        "session_id,message,context_type,created_at"
+    ).eq("user_id", current_user["id"]).order("created_at", desc=True).limit(200).execute()
+
+    rows = result.data if result.data else []
+    sessions: Dict[str, Dict[str, Any]] = {}
+
+    for row in rows:
+        session_id = row.get("session_id")
+        if not session_id:
+            continue
+
+        if session_id not in sessions:
+            sessions[session_id] = {
+                "session_id": session_id,
+                "last_message": row.get("message"),
+                "context_type": row.get("context_type"),
+                "created_at": row.get("created_at"),
+                "updated_at": row.get("created_at"),
+                "message_count": 1
+            }
+        else:
+            sessions[session_id]["message_count"] += 1
+            created_at = row.get("created_at")
+            if created_at and (not sessions[session_id]["created_at"] or created_at < sessions[session_id]["created_at"]):
+                sessions[session_id]["created_at"] = created_at
+
+    sessions_list = sorted(
+        sessions.values(),
+        key=lambda s: s.get("updated_at", ""),
+        reverse=True
+    )[:20]
+
+    return sessions_list
 
 # ==================== ANALYSIS ROUTES ====================
 
