@@ -268,6 +268,10 @@ class GoogleExchangeRequest(BaseModel):
 class MergeLinkTokenRequest(BaseModel):
     categories: Optional[List[str]] = None
 
+class CalibrationAnswerRequest(BaseModel):
+    question_id: int
+    answer: str
+
 class ChatRequest(BaseModel):
     message: str
     context_type: Optional[str] = "general"
