@@ -1391,6 +1391,36 @@ class StrategicAdvisorAPITester:
         
         return self.generate_report()
     
+    def run_calibration_auth_tests(self):
+        """Run calibration auth bootstrap tests - P1 Issue"""
+        print("🚀 Starting Calibration Auth Bootstrap Tests (P1)...")
+        print(f"Base URL: {self.base_url}")
+        print("\n" + "="*80)
+        print("TESTING SCOPE: Calibration-First Auth Guard Issue")
+        print("="*80)
+        
+        # Health checks
+        self.test_health_check()
+        
+        # Authentication flow
+        print("\n📋 PHASE 1: Authentication")
+        if not self.test_user_registration():
+            if not self.test_user_login():
+                print("❌ Authentication failed, stopping tests")
+                return self.generate_report()
+        
+        self.test_auth_me()
+        
+        # CRITICAL: Test calibration auth bootstrap flow
+        print("\n📋 PHASE 2: Calibration Auth Bootstrap (CRITICAL)")
+        self.test_auth_bootstrap_flow()
+        
+        # Test Supabase auth endpoints
+        print("\n📋 PHASE 3: Supabase Auth Endpoints")
+        self.test_supabase_auth_endpoints()
+        
+        return self.generate_report()
+    
     def run_supabase_migration_tests(self):
         """Run comprehensive Supabase migration tests"""
         print("🚀 Starting FINAL SUPABASE MIGRATION VALIDATION...")
