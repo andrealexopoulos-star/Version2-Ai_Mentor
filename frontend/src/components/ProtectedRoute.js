@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
 
 const LoadingScreen = () => (
@@ -18,18 +18,27 @@ const AuthError = () => (
 );
 
 export default function ProtectedRoute({ children }) {
-  const { authState } = useSupabaseAuth();
+  const { authState, user, session } = useSupabaseAuth();
+  const location = useLocation();
 
   if (authState === AUTH_STATE.LOADING) {
     return <LoadingScreen />;
   }
 
-  // ✅ NEEDS_CALIBRATION IS NOT AN ERROR
+  // No session at all → redirect to login (not an error, just unauthenticated)
+  if (!user && !session) {
+    return <Navigate to="/login-supabase" replace />;
+  }
+
+  // NEEDS_CALIBRATION: allow /calibration page to render, redirect all others
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
+    if (location.pathname === '/calibration') {
+      return children;
+    }
     return <Navigate to="/calibration" replace />;
   }
 
-  // ❌ AuthError ONLY for real auth failures
+  // Real auth error (has session but bootstrap failed)
   if (authState === AUTH_STATE.ERROR) {
     return <AuthError />;
   }
