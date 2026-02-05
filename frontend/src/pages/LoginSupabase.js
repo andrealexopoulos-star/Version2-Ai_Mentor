@@ -10,6 +10,7 @@ import { ArrowLeft, Loader2, Eye, EyeOff, Zap } from 'lucide-react';
 const LoginSupabase = () => {
   const navigate = useNavigate();
   const { signIn, signInWithOAuth } = useSupabaseAuth();
+  const homeUrl = process.env.REACT_APP_BACKEND_URL;
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -68,13 +69,14 @@ const LoginSupabase = () => {
       {/* Form Side */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12 bg-white">
         <div className="max-w-md w-full mx-auto">
-          <Link 
-            to="/" 
+          <a
+            href={homeUrl}
             className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-10 transition-colors font-medium text-sm"
+            data-testid="login-back-to-home-link"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to home
-          </Link>
+          </a>
 
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-8">
