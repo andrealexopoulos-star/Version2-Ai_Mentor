@@ -6872,7 +6872,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         except Exception:
             pass
 
-    usage = await get_oac_usage_supabase(supabase_admin, {"user_id": current_user["id"], "month": mk}, {"_id": 0})
+    usage = await get_oac_usage_supabase(supabase_admin, current_user["id"], mk)
     used = int((usage or {}).get("used", 0))
 
     if used >= limit:
@@ -6883,7 +6883,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
 
     # cache per day
     day_key = now.strftime("%Y-%m-%d")
-    cached = await get_oac_recommendations_supabase(supabase_admin, {"user_id": current_user["id"], "date": day_key}, {"_id": 0})
+    cached = await get_oac_recommendations_supabase(supabase_admin, current_user["id"], day_key)
     if cached:
         return {
             "locked": False,
@@ -6901,10 +6901,10 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
         limit=8
     )
 
-    recent_files = await db.data_files.find(
-        {"user_id": current_user["id"]},
-        {"_id": 0, "filename": 1, "category": 1, "description": 1}
-    ).sort("created_at", -1).limit(8).to_list(8)
+    recent_files_result = supabase_admin.table("data_files").select(
+        "filename,category,description,created_at"
+    ).eq("user_id", current_user["id"]).order("created_at", desc=True).limit(8).execute()
+    recent_files = recent_files_result.data if recent_files_result.data else []
 
     # Prompt: strict, non-generic, actionable
     biz_name = (user or {}).get("business_name") or (profile or {}).get("business_name") or "this business"
@@ -6969,23 +6969,15 @@ Citations:
     rec_doc = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
+        "month_key": day_key,
         "date": day_key,
         "items": items,
         "created_at": now.isoformat()
     }
-    await update_oac_recommendations_supabase(supabase_admin, 
-        {"user_id": current_user["id"], "date": day_key},
-        {"$set": rec_doc},
-        upsert=True
-    )
-
-    await update_oac_usage_supabase(supabase_admin, 
-        {"user_id": current_user["id"], "month": mk},
-        {"$set": {"user_id": current_user["id"], "month": mk}, "$inc": {"used": 1}},
-        upsert=True
-    )
+    await update_oac_recommendations_supabase(supabase_admin, current_user["id"], day_key, rec_doc)
 
     used_after = used + 1
+    await update_oac_usage_supabase(supabase_admin, current_user["id"], mk, {"used": used_after})
 
     return {
         "locked": False,
