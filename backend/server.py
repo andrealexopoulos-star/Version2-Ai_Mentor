@@ -2350,21 +2350,44 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 
 
 @api_router.get("/calibration/status")
-async def get_calibration_status(current_user: dict = Depends(get_current_user_supabase)):
-    user_id = current_user["id"]
+async def get_calibration_status(request: Request):
+    """
+    Calibration status is a GUARD endpoint.
+    It must NEVER error for authenticated users.
+    """
+
     try:
-        result = supabase_admin.table("business_profiles").select("calibration_status").eq(
-            "user_id", user_id
-        ).limit(1).execute()
+        # Safely extract user from Supabase session
+        current_user = await get_current_user_supabase(request)
+        user_id = current_user.get("id")
+    except Exception:
+        # True unauthenticated case
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        result = (
+            supabase_admin
+            .table("business_profiles")
+            .select("calibration_status")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+
         profile = result.data[0] if result.data else None
+
         if not profile:
-            return {"status": "NEEDS_CALIBRATION"}
+            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION"})
+
         if profile.get("calibration_status") != "complete":
-            return {"status": "NEEDS_CALIBRATION"}
-        return {"status": "COMPLETE"}
+            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION"})
+
+        return JSONResponse(status_code=200, content={"status": "COMPLETE"})
+
     except Exception as e:
-        logger.error(f"Error in calibration status check: {e}")
-        return {"status": "NEEDS_CALIBRATION"}
+        logger.error(f"Calibration status fallback: {e}")
+        # NEVER propagate errors for this endpoint
+        return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION"})
 
 
 def _split_two_parts(answer: str) -> List[str]:
