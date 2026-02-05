@@ -100,9 +100,11 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 2. **Merge File Storage Connect** - Merge link token accepts categories; frontend now opens file_storage flow
 3. **MongoDB Elimination (server.py)** - Replaced legacy db.* queries with Supabase for chat sessions, analyses, data center, business profiles, advisory history, admin stats, dashboard stats, notifications, and soundboard delete
 4. **Integrations UI Test IDs** - Added data-testid coverage for Integrations interactions
+5. **Canonical Intelligence Moments** - Activated revenue risk, founder strain, and strategy drift moments with calibration weighting, Cognitive Core delivery preferences, and constitution checks in watchtower generation
 
 #### ✅ TESTING
 - `GET /api/health`
 - Integrations page load (auth-gated login view)
+- `python -c` import of truth_engine_rpc
 
 *Last Updated: February 05, 2026*
