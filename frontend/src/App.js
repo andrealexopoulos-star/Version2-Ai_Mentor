@@ -80,14 +80,14 @@ const ProtectedRoute = ({ children }) => {
 
 // Public Route (redirect to advisor if logged in) - Supabase Auth Only
 const PublicRoute = ({ children }) => {
-  const { user, session, loading } = useSupabaseAuth();
+  const { user, session, loading, authState } = useSupabaseAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-        <div className="spinner" />
-      </div>
-    );
+  if (authState === AUTH_STATE.LOADING || loading) {
+    return <LoadingScreen />;
+  }
+
+  if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
+    return <Navigate to="/calibration" replace />;
   }
 
   const isAuthenticated = user || session;
