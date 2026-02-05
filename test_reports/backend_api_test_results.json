@@ -1,28 +1,46 @@
 {
-  "summary": "Backend API testing completed - 0/3 tests passed (0.0%)",
-  "total_tests": 3,
-  "passed_tests": 0,
-  "failed_tests": 3,
-  "success_rate": "0.0%",
+  "summary": "Backend API testing completed - 4/6 tests passed (66.7%)",
+  "total_tests": 6,
+  "passed_tests": 4,
+  "failed_tests": 2,
+  "success_rate": "66.7%",
   "test_details": [
     {
       "test_name": "Health Check",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='fork_preview_url_placeholder', port=443): Max retries exceeded with url: /api/health (Caused by NameResolutionError(\"HTTPSConnection(host='fork_preview_url_placeholder', port=443): Failed to resolve 'fork_preview_url_placeholder' ([Errno -2] Name or service not known)\"))",
-      "timestamp": "2026-01-29T09:38:52.959280"
+      "success": true,
+      "details": "",
+      "timestamp": "2026-02-05T09:37:44.230160"
     },
     {
       "test_name": "Root Endpoint",
-      "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='fork_preview_url_placeholder', port=443): Max retries exceeded with url: /api/ (Caused by NameResolutionError(\"HTTPSConnection(host='fork_preview_url_placeholder', port=443): Failed to resolve 'fork_preview_url_placeholder' ([Errno -2] Name or service not known)\"))",
-      "timestamp": "2026-01-29T09:38:52.961030"
+      "success": true,
+      "details": "",
+      "timestamp": "2026-02-05T09:37:44.374333"
     },
     {
-      "test_name": "Login as andre@thestrategysquad.com.au (Supabase)",
+      "test_name": "User Registration (Supabase)",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-02-05T09:37:50.173706"
+    },
+    {
+      "test_name": "Registration - Token Received",
       "success": false,
-      "details": "Exception: HTTPSConnectionPool(host='fork_preview_url_placeholder', port=443): Max retries exceeded with url: /api/auth/supabase/login (Caused by NameResolutionError(\"HTTPSConnection(host='fork_preview_url_placeholder', port=443): Failed to resolve 'fork_preview_url_placeholder' ([Errno -2] Name or service not known)\"))",
-      "timestamp": "2026-01-29T09:38:52.962585"
+      "details": "No access_token in response",
+      "timestamp": "2026-02-05T09:37:50.174311"
+    },
+    {
+      "test_name": "Login Test User Registration (Supabase)",
+      "success": true,
+      "details": "",
+      "timestamp": "2026-02-05T09:37:55.868593"
+    },
+    {
+      "test_name": "User Login (Supabase)",
+      "success": false,
+      "details": "Status: 401, Expected: 200, Response: {'detail': 'Invalid email or password'}",
+      "timestamp": "2026-02-05T09:37:56.370318"
     }
   ],
-  "timestamp": "2026-01-29T09:38:52.962635"
+  "timestamp": "2026-02-05T09:37:56.370948"
 }
