@@ -340,6 +340,9 @@ async def record_regeneration_response(user_id: str, proposal_id: str, action: s
         return {"status": "not_found"}
 
     event = event[0]
+    if event.get("source") != "regeneration_proposal":
+        return {"status": "invalid"}
+
     payload = event.get("evidence_payload") or {}
     layer = payload.get("layer")
     draft_value = payload.get("after")
