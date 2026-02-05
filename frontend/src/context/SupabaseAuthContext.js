@@ -282,23 +282,21 @@ export const SupabaseAuthProvider = ({ children }) => {
   const [contextSource, setContextSource] = useState(null); // 'cache' | 'api'
 
   useEffect(() => {
+    if (!authHydrated) return;
     let cancelled = false;
 
     const bootstrap = async () => {
       try {
         setAuthState(AUTH_STATE.LOADING);
 
-        // 1. Get auth session
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const activeSession = session || (await supabase.auth.getSession()).data.session;
 
-        if (!session) {
+        if (!activeSession) {
           if (!cancelled) setAuthState(AUTH_STATE.ERROR);
           return;
         }
 
-        let accessToken = session.access_token;
+        let accessToken = activeSession.access_token;
         if (!accessToken) {
           const refreshed = await supabase.auth.refreshSession();
           accessToken = refreshed?.data?.session?.access_token;
@@ -321,9 +319,6 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         const cal = await calRes.json();
-        if (!cal.status) {
-          cal.status = cal.calibration_status === 'complete' && cal.has_business_profile ? 'READY' : 'NEEDS_CALIBRATION';
-        }
 
         // ⛔ HARD STOP — do NOT rehydrate before calibration
         if (cal.status === 'NEEDS_CALIBRATION') {
@@ -361,7 +356,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authHydrated, session]);
 
   const refreshSession = async () => {
     try {
