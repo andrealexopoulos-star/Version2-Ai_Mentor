@@ -273,6 +273,14 @@ class CalibrationAnswerRequest(BaseModel):
     question_id: int
     answer: str
 
+class RegenerationRequestPayload(BaseModel):
+    layer: Optional[str] = None
+    reason: Optional[str] = None
+
+class RegenerationResponsePayload(BaseModel):
+    proposal_id: str
+    action: str
+
 class ChatRequest(BaseModel):
     message: str
     context_type: Optional[str] = "general"
