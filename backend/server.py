@@ -7726,10 +7726,10 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
             })
     
     # Check recent emails for complaint keywords
-    recent_emails = await supabase_admin.table("outlook_emails").find(
-        {"user_id": user_id},
-        {"_id": 0, "subject": 1, "body_preview": 1, "from_name": 1, "from_address": 1, "received_date": 1, "id": 1}
-    ).sort("received_date", -1).limit(50).to_list(50)
+    recent_emails_result = supabase_admin.table("outlook_emails").select(
+        "subject,body_preview,from_name,from_address,received_date,id"
+    ).eq("user_id", user_id).order("received_date", desc=True).limit(50).execute()
+    recent_emails = recent_emails_result.data if recent_emails_result.data else []
     
     complaint_keywords = ["complaint", "unhappy", "disappointed", "refund", "cancel", "frustrated", "unacceptable", "terrible", "worst", "issue", "problem", "urgent"]
     
