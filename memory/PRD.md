@@ -104,6 +104,7 @@ CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO servi
 6. **Controlled User Purge** - Executed Supabase + Mongo deletions for specified user IDs per destructive purge request
 7. **Calibration Advisor Activation** - Added calibration routing override, live advisor flow, and Supabase writes for Q1–Q9 with AI draft generation and post-calibration scaffolding
 8. **Silence Intervention System** - Implemented silence detection, escalation ladder, engagement risk scoring, and consequence memory updates with Watchtower events
+9. **Regeneration Governance** - Added controlled regeneration proposals with evidence gating, consequence tracking, and explicit response actions
 
 #### ✅ TESTING
 - `GET /api/health`
