@@ -102,7 +102,7 @@ class CalibrationAPITester:
                 return False
                 
         except Exception as e:
-            self.log_result("Empty Auth Header", False, f"Exception: {str e}")
+            self.log_result("Empty Auth Header", False, f"Exception: {str(e)}")
             return False
 
     def test_calibration_status_bearer_only(self):
