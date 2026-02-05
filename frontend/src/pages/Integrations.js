@@ -627,7 +627,7 @@ const Integrations = () => {
 
   const [openingMergeLink, setOpeningMergeLink] = useState(false);
   
-  const openMergeLink = async () => {
+  const openMergeLink = async (categories = ['accounting', 'crm', 'hris', 'ats']) => {
     try {
       setOpeningMergeLink(true);
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -643,7 +643,8 @@ const Integrations = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
-        }
+        },
+        body: JSON.stringify({ categories })
       });
       
       if (!response.ok) {
@@ -677,6 +678,10 @@ const Integrations = () => {
       toast.error('Failed to open Merge Link');
       setOpeningMergeLink(false);
     }
+  };
+
+  const openMergeLinkForFileStorage = async () => {
+    await openMergeLink(['file_storage']);
   };
 
   return (
