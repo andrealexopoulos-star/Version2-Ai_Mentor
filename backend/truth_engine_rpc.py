@@ -186,6 +186,23 @@ def _derive_severity(priority_rank: Optional[int], intensity: int) -> str:
     return "medium"
 
 
+def _escalate_severity(severity: str) -> str:
+    levels = ["low", "medium", "high", "critical"]
+    if severity not in levels:
+        return severity
+    return levels[min(levels.index(severity) + 1, len(levels) - 1)]
+
+
+def _apply_cognitive_weighting(severity: str, behaviour: Dict[str, Any], immutable: Dict[str, Any], focus: str) -> str:
+    if focus == "capacity" and behaviour.get("stress_tolerance") == "low":
+        return _escalate_severity(severity)
+    if focus == "drift" and behaviour.get("follow_through_reliability") == "low":
+        return _escalate_severity(severity)
+    if focus == "revenue" and immutable.get("risk_exposure") == "high":
+        return _escalate_severity(severity)
+    return severity
+
+
 def _calculate_avg_gap_days(dates: List[datetime]) -> Optional[int]:
     if len(dates) < 2:
         return None
