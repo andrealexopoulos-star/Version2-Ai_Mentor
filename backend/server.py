@@ -7836,15 +7836,11 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
 @api_router.post("/notifications/dismiss/{notification_id}")
 async def dismiss_notification(notification_id: str, current_user: dict = Depends(get_current_user)):
     """Dismiss a notification"""
-    await dismiss_notification_supabase(supabase_admin, 
-        {"user_id": current_user["id"], "notification_id": notification_id},
-        {"$set": {
-            "user_id": current_user["id"],
-            "notification_id": notification_id,
-            "dismissed_at": datetime.now(timezone.utc).isoformat()
-        }},
-        upsert=True
-    )
+    supabase_admin.table("dismissed_notifications").upsert({
+        "user_id": current_user["id"],
+        "notification_id": notification_id,
+        "dismissed_at": datetime.now(timezone.utc).isoformat()
+    }, on_conflict="user_id,notification_id").execute()
     return {"status": "dismissed"}
 
 
