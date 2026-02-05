@@ -44,40 +44,35 @@ import MySoundBoard from "./pages/MySoundBoard";
 import AuthDebug from "./pages/AuthDebug";
 import GmailTest from "./pages/GmailTest";
 
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center" data-testid="auth-loading-screen">
+    <div className="spinner" />
+  </div>
+);
+
+const AuthError = () => (
+  <div className="min-h-screen flex items-center justify-center" data-testid="auth-error-screen">
+    <div className="text-center text-gray-700">
+      <h2 className="text-lg font-semibold">Authentication error</h2>
+      <p className="text-sm text-gray-500">Please refresh and try again.</p>
+    </div>
+  </div>
+);
+
 // Protected Route Component - Supabase Auth Only
-const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { user, session, loading, authHydrated } = useSupabaseAuth();
+const ProtectedRoute = ({ children }) => {
+  const { authState } = useSupabaseAuth();
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[ProtectedRoute] Auth state:', { 
-      loading, 
-      authHydrated,
-      hasUser: !!user, 
-      hasSession: !!session,
-      sessionEmail: session?.user?.email 
-    });
-  }, [loading, user, session, authHydrated]);
-
-  // TASK 1: Wait for auth hydration before making routing decisions
-  if (loading || !authHydrated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-        <div className="spinner" />
-      </div>
-    );
+  if (authState === AUTH_STATE.LOADING) {
+    return <LoadingScreen />;
   }
 
-  const isAuthenticated = user || session;
-
-  if (!isAuthenticated) {
-    console.log('[ProtectedRoute] Not authenticated, redirecting to login');
-    return <Navigate to="/login-supabase" replace />;
+  if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
+    return <Navigate to="/calibration" replace />;
   }
 
-  // Check admin status if required
-  if (adminOnly && user && !user.is_master_account) {
-    return <Navigate to="/advisor" replace />;
+  if (authState === AUTH_STATE.ERROR) {
+    return <AuthError />;
   }
 
   return children;
