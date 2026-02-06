@@ -47,18 +47,14 @@ import GmailTest from "./pages/GmailTest";
 
 // Public Route (redirect to advisor if logged in) - Supabase Auth Only
 const PublicRoute = ({ children }) => {
-  const { user, session, loading, authState } = useSupabaseAuth();
+  const { user, session, loading, authState, calibrationMode } = useSupabaseAuth();
 
   if (authState === AUTH_STATE.LOADING || loading) {
     return <LoadingScreen />;
   }
 
-  if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
+  if (authState === AUTH_STATE.NEEDS_CALIBRATION && calibrationMode !== 'DEFERRED') {
     return <Navigate to="/calibration" replace />;
-  }
-
-  if (authState === AUTH_STATE.CALIBRATION_DEFERRED) {
-    return <Navigate to="/advisor" replace />;
   }
 
   const isAuthenticated = user || session;
