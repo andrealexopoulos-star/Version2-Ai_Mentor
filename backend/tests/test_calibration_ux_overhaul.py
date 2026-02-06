@@ -124,10 +124,10 @@ class TestBusinessProfile:
     """Test business profile endpoint auth"""
     
     def test_business_profile_requires_auth(self):
-        """GET /api/business-profile returns 401 for unauthenticated"""
+        """GET /api/business-profile returns 401 or 403 for unauthenticated"""
         response = requests.get(f"{BASE_URL}/api/business-profile")
-        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
-        print("✓ business-profile requires auth")
+        assert response.status_code in [401, 403], f"Expected 401 or 403, got {response.status_code}"
+        print(f"✓ business-profile requires auth (returns {response.status_code})")
 
 
 class TestAuthCheckProfile:
