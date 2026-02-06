@@ -57,6 +57,10 @@ const PublicRoute = ({ children }) => {
     return <Navigate to="/calibration" replace />;
   }
 
+  if (authState === AUTH_STATE.CALIBRATION_DEFERRED) {
+    return <Navigate to="/advisor" replace />;
+  }
+
   const isAuthenticated = user || session;
 
   if (isAuthenticated) {
