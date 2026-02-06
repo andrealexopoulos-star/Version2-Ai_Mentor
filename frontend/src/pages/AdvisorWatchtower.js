@@ -61,6 +61,15 @@ const AdvisorWatchtower = () => {
   const [runningAnalysis, setRunningAnalysis] = useState(false);
   const [emailConnected, setEmailConnected] = useState(false);
   const [emailConnection, setEmailConnection] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Check for "Do Later" tutorial flag
+  useEffect(() => {
+    if (localStorage.getItem("biqc_show_tutorial") === "true") {
+      setShowTutorial(true);
+      localStorage.removeItem("biqc_show_tutorial");
+    }
+  }, []);
 
   // Check if email is connected
   useEffect(() => {
