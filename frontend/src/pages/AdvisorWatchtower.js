@@ -227,6 +227,29 @@ const AdvisorWatchtower = () => {
         {/* Guided Tutorial (from "Do Later" path) */}
         {showTutorial && <GuidedTutorial onDismiss={() => setShowTutorial(false)} />}
 
+        {/* Post-calibration advisor activation */}
+        {activation && (
+          <div className="space-y-3 mb-6">
+            {activation.integration_framing && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4">
+                <p className="text-xs font-medium text-blue-500 uppercase tracking-wide mb-1">BIQC Advisor</p>
+                <p className="text-sm text-slate-700">{activation.integration_framing}</p>
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" variant="outline" onClick={() => navigate('/connect-email')} className="text-xs">Connect Email</Button>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/calendar')} className="text-xs">Connect Calendar</Button>
+                </div>
+              </div>
+            )}
+            {activation.initial_observation && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4">
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Initial Observation · Provisional</p>
+                <p className="text-sm text-slate-700">{activation.initial_observation}</p>
+              </div>
+            )}
+            <button onClick={() => setActivation(null)} className="text-xs text-slate-400 hover:text-slate-600">Dismiss</button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
