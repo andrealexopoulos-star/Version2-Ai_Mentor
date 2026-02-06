@@ -4,9 +4,53 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
-import { RefreshCw, Loader2, Eye, Zap, AlertCircle } from 'lucide-react';
+import { RefreshCw, Loader2, Eye, Zap, AlertCircle, X, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import WatchtowerEvent from '../components/WatchtowerEvent';
+
+/* ─── Guided tutorial for "Do Later" path ─── */
+const TUTORIAL_STEPS = [
+  { title: "Your Dashboard", body: "This is the Watchtower — it shows what BIQC has noticed across your business signals, emails, and data." },
+  { title: "Where Insights Appear", body: "Intelligence events appear here automatically as BIQC analyses your connected data. No manual triggers needed." },
+  { title: "Calibration", body: "Head to Settings → Agent Calibration whenever you're ready. Calibration helps BIQC personalise its advice to your business." },
+];
+
+const GuidedTutorial = ({ onDismiss }) => {
+  const [step, setStep] = useState(0);
+  const current = TUTORIAL_STEPS[step];
+  const isLast = step === TUTORIAL_STEPS.length - 1;
+
+  return (
+    <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-blue-500 uppercase tracking-wide mb-1">
+            Quick guide · {step + 1} of {TUTORIAL_STEPS.length}
+          </p>
+          <h3 className="text-sm font-semibold text-slate-900">{current.title}</h3>
+          <p className="text-sm text-slate-600 mt-1">{current.body}</p>
+        </div>
+        <button onClick={onDismiss} className="text-slate-400 hover:text-slate-600 shrink-0 mt-0.5" aria-label="Dismiss">
+          <X size={16} />
+        </button>
+      </div>
+      <div className="flex items-center gap-2 mt-3">
+        {!isLast ? (
+          <Button size="sm" variant="outline" onClick={() => setStep(step + 1)} className="gap-1 text-xs">
+            Next <ArrowRight size={12} />
+          </Button>
+        ) : (
+          <Button size="sm" onClick={onDismiss} className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
+            Got it
+          </Button>
+        )}
+        <button onClick={onDismiss} className="text-xs text-slate-400 hover:text-slate-600 ml-2">
+          Skip tour
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const AdvisorWatchtower = () => {
   const { user } = useSupabaseAuth();
