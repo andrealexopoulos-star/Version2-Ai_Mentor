@@ -117,9 +117,11 @@ const CalibrationAdvisor = () => {
     try {
       const res = await calFetch("/api/calibration/defer", { method: "POST", session });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setCalibrationMode('DEFERRED');
     } catch (err) {
       console.error("[calibration] Defer failed:", err);
       toast.error("Calibration was deferred locally, but server did not confirm. You can resume in Settings.");
+      setCalibrationMode('DEFERRED');
     }
     navigate("/advisor");
   };
