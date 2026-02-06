@@ -2577,15 +2577,29 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 profile_data["account_id"] = account_id
                 supabase_admin.table("users").update({"account_id": account_id}).eq("id", user_id).execute()
 
-            result = supabase_admin.table("business_profiles").insert(profile_data).execute()
-            profile = result.data[0] if result.data else profile_data
+            try:
+                result = supabase_admin.table("business_profiles").insert(profile_data).execute()
+                profile = result.data[0] if result.data else profile_data
+            except Exception as insert_err:
+                logger.warning(f"[calibration/answer] Insert with calibration_status failed, retrying without: {insert_err}")
+                profile_data.pop("calibration_status", None)
+                result = supabase_admin.table("business_profiles").insert(profile_data).execute()
+                profile = result.data[0] if result.data else profile_data
         else:
-            supabase_admin.table("business_profiles").update({
-                "business_name": identity["business_name"],
-                "industry": identity["industry"],
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-                "calibration_status": "in_progress"
-            }).eq("id", profile.get("id")).execute()
+            try:
+                supabase_admin.table("business_profiles").update({
+                    "business_name": identity["business_name"],
+                    "industry": identity["industry"],
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "calibration_status": "in_progress"
+                }).eq("id", profile.get("id")).execute()
+            except Exception as update_err:
+                logger.warning(f"[calibration/answer] Update with calibration_status failed, retrying without: {update_err}")
+                supabase_admin.table("business_profiles").update({
+                    "business_name": identity["business_name"],
+                    "industry": identity["industry"],
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", profile.get("id")).execute()
 
             if not profile.get("account_id") and identity["business_name"] and user_email:
                 from workspace_helpers import get_or_create_user_account
