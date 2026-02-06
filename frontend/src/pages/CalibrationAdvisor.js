@@ -162,10 +162,17 @@ const CalibrationAdvisor = () => {
       setSaveStatus(msgIndex, "saved");
 
       if (data?.calibration_complete) {
-        appendMessage({ role: "advisor", text: FINAL_MESSAGE });
+        // Show AI closing if provided, otherwise use default
+        const closingText = data.advisor_response || FINAL_MESSAGE;
+        appendMessage({ role: "advisor", text: closingText });
         setPhase("complete");
         setTimeout(() => navigate("/advisor"), 2500);
         return;
+      }
+
+      // Show AI conversational response if returned
+      if (data?.advisor_response) {
+        appendMessage({ role: "advisor", text: data.advisor_response });
       }
 
       const nextIndex = stepIndex + 1;
