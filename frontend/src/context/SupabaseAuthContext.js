@@ -411,6 +411,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     onboardingState, // TASK 2: Expose cached onboarding state
     authState,
     calibrationMode,
+    setCalibrationMode,
     businessContext,
     contextLoading,
     contextError,
