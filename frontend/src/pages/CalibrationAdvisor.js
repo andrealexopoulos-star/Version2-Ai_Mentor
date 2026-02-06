@@ -46,7 +46,15 @@ const CalibrationAdvisor = () => {
 
   const welcomeText = useMemo(() => {
     const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.full_name;
-    const firstName = fullName ? fullName.split(" ")[0] : null;
+    // If name looks like an email, extract the part before @
+    let firstName = null;
+    if (fullName) {
+      if (fullName.includes("@")) {
+        firstName = fullName.split("@")[0];
+      } else {
+        firstName = fullName.split(" ")[0];
+      }
+    }
     return firstName ? `Welcome, ${firstName}.` : "Welcome.";
   }, [user]);
 
