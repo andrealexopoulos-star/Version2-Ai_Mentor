@@ -97,7 +97,6 @@ const CalibrationAdvisor = () => {
   /* ─── Do This Later ─── */
   const handleSkip = () => {
     localStorage.setItem("biqc_show_tutorial", "true");
-    localStorage.setItem("biqc_calibration_skipped", "true");
     navigate("/advisor");
   };
 
