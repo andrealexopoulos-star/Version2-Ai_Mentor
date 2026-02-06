@@ -2628,57 +2628,102 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
 
     business_profile_id = profile.get("id")
 
+    # ── Q2–Q6: Structured extraction (all fail-soft) ──
     if question_id == 2:
-        stage_data = _parse_business_stage(answer)
-        supabase_admin.table("business_profiles").update({
-            "business_stage": stage_data.get("business_stage"),
-            "years_operating": stage_data.get("years_operating"),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "calibration_status": "in_progress"
-        }).eq("id", business_profile_id).execute()
+        try:
+            stage_data = _parse_business_stage(answer)
+            update = {"updated_at": datetime.now(timezone.utc).isoformat()}
+            if stage_data.get("business_stage"):
+                update["business_stage"] = stage_data["business_stage"]
+            if stage_data.get("years_operating"):
+                update["years_operating"] = stage_data["years_operating"]
+            try:
+                update["calibration_status"] = "in_progress"
+                supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+            except Exception:
+                update.pop("calibration_status", None)
+                try:
+                    supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+                except Exception as e:
+                    logger.warning(f"[calibration/answer] Q2 write failed: {e}")
+        except Exception as e:
+            logger.warning(f"[calibration/answer] Q2 parse/write failed: {e}")
 
     if question_id == 3:
-        location_data = _parse_location(answer)
-        supabase_admin.table("business_profiles").update({
-            **location_data,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "calibration_status": "in_progress"
-        }).eq("id", business_profile_id).execute()
+        try:
+            location_data = _parse_location(answer)
+            update = {**location_data, "updated_at": datetime.now(timezone.utc).isoformat()}
+            try:
+                update["calibration_status"] = "in_progress"
+                supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+            except Exception:
+                update.pop("calibration_status", None)
+                try:
+                    supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+                except Exception as e:
+                    logger.warning(f"[calibration/answer] Q3 write failed: {e}")
+        except Exception as e:
+            logger.warning(f"[calibration/answer] Q3 parse/write failed: {e}")
 
     if question_id == 4:
-        parts = _split_two_parts(answer)
-        market = parts[0] if parts else answer
-        pain = parts[1] if len(parts) > 1 else answer
-        supabase_admin.table("business_profiles").update({
-            "target_market": market,
-            "ideal_customer_profile": market,
-            "customer_pain_points": pain,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "calibration_status": "in_progress"
-        }).eq("id", business_profile_id).execute()
+        try:
+            parts = _split_two_parts(answer)
+            market = parts[0] if parts else answer
+            pain = parts[1] if len(parts) > 1 else answer
+            update = {"target_market": market, "customer_pain_points": pain, "updated_at": datetime.now(timezone.utc).isoformat()}
+            try:
+                update["ideal_customer_profile"] = market
+                update["calibration_status"] = "in_progress"
+                supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+            except Exception:
+                try:
+                    supabase_admin.table("business_profiles").update({"target_market": market, "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", business_profile_id).execute()
+                except Exception as e:
+                    logger.warning(f"[calibration/answer] Q4 write failed: {e}")
+        except Exception as e:
+            logger.warning(f"[calibration/answer] Q4 parse/write failed: {e}")
 
     if question_id == 5:
-        parts = _split_two_parts(answer)
-        products = parts[0] if parts else answer
-        differentiation = parts[1] if len(parts) > 1 else answer
-        supabase_admin.table("business_profiles").update({
-            "products_services": products,
-            "unique_value_proposition": differentiation,
-            "competitive_advantages": differentiation,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "calibration_status": "in_progress"
-        }).eq("id", business_profile_id).execute()
+        try:
+            parts = _split_two_parts(answer)
+            products = parts[0] if parts else answer
+            differentiation = parts[1] if len(parts) > 1 else answer
+            update = {"products_services": products, "updated_at": datetime.now(timezone.utc).isoformat()}
+            try:
+                update["unique_value_proposition"] = differentiation
+                update["competitive_advantages"] = differentiation
+                update["calibration_status"] = "in_progress"
+                supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+            except Exception:
+                try:
+                    supabase_admin.table("business_profiles").update({"products_services": products, "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", business_profile_id).execute()
+                except Exception as e:
+                    logger.warning(f"[calibration/answer] Q5 write failed: {e}")
+        except Exception as e:
+            logger.warning(f"[calibration/answer] Q5 parse/write failed: {e}")
 
     if question_id == 6:
-        team_size = _extract_team_size(answer)
-        supabase_admin.table("business_profiles").update({
-            "team_size": team_size or answer,
-            "founder_background": answer,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "calibration_status": "in_progress"
-        }).eq("id", business_profile_id).execute()
+        try:
+            team_size = _extract_team_size(answer)
+            update = {"founder_background": answer, "updated_at": datetime.now(timezone.utc).isoformat()}
+            if team_size:
+                update["team_size"] = team_size
+            try:
+                update["calibration_status"] = "in_progress"
+                supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+            except Exception:
+                update.pop("calibration_status", None)
+                update.pop("team_size", None)
+                try:
+                    supabase_admin.table("business_profiles").update(update).eq("id", business_profile_id).execute()
+                except Exception as e:
+                    logger.warning(f"[calibration/answer] Q6 write failed: {e}")
+        except Exception as e:
+            logger.warning(f"[calibration/answer] Q6 parse/write failed: {e}")
 
+    # ── Q7–Q9: Strategy profiles (all fail-soft) ──
     if question_id in {7, 8, 9}:
+      try:
         strategy = supabase_admin.table("strategy_profiles").select("*").eq("business_profile_id", business_profile_id).execute().data
         strategy_profile = strategy[0] if strategy else None
         
