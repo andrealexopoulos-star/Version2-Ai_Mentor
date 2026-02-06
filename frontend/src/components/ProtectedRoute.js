@@ -25,12 +25,12 @@ export default function ProtectedRoute({ children }) {
     return <LoadingScreen />;
   }
 
-  // No session at all → redirect to login (not an error, just unauthenticated)
+  // No session at all → redirect to login
   if (!user && !session) {
     return <Navigate to="/login-supabase" replace />;
   }
 
-  // NEEDS_CALIBRATION: allow /calibration only
+  // INCOMPLETE calibration → force /calibration only
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
     if (location.pathname === '/calibration') {
       return children;
@@ -38,7 +38,12 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/calibration" replace />;
   }
 
-  // Real auth error (has session but bootstrap failed)
+  // DEFERRED calibration → allow general navigation
+  if (authState === AUTH_STATE.CALIBRATION_DEFERRED) {
+    return children;
+  }
+
+  // Real auth error
   if (authState === AUTH_STATE.ERROR) {
     return <AuthError />;
   }
