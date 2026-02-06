@@ -274,6 +274,19 @@ class CalibrationAnswerRequest(BaseModel):
     question_id: int
     answer: str
 
+QUESTIONS_TEXT = {
+    1: "What's the name of the business you're operating, and what industry does it sit in?",
+    2: "Where would you place the business today — idea, early-stage, established, or enterprise — and roughly how long has it been operating?",
+    3: "Where is the business primarily based? City and state is fine.",
+    4: "Who do you primarily sell to, and what problem are they hiring you to solve?",
+    5: "What do you actually sell today — and why do clients choose you over alternatives?",
+    6: "How big is the team today, and where do you personally spend most of your time?",
+    7: "In plain terms — why does this business exist, and what would success look like in three years?",
+    8: "What are the most important goals for the next 12 months — and what's getting in the way right now?",
+    9: "How do you expect the business to grow — new markets, new offers, partnerships, or scale?",
+}
+
+
 class RegenerationRequestPayload(BaseModel):
     layer: Optional[str] = None
     reason: Optional[str] = None
