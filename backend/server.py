@@ -2393,9 +2393,13 @@ async def get_calibration_status(request: Request):
 
 
 @api_router.post("/calibration/defer")
-async def defer_calibration(current_user: dict = Depends(get_current_user_supabase)):
+async def defer_calibration(request: Request):
     """Set calibration_status to 'deferred'. Creates shell profile if missing."""
-    user_id = current_user["id"]
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         profile = await get_business_profile_supabase(supabase_admin, user_id)
         if not profile:
