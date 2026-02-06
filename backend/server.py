@@ -2516,9 +2516,13 @@ async def init_calibration_session(request: Request):
 
 
 @api_router.post("/calibration/answer")
-async def save_calibration_answer(payload: CalibrationAnswerRequest, current_user: dict = Depends(get_current_user_supabase)):
+async def save_calibration_answer(request: Request, payload: CalibrationAnswerRequest):
     """Save calibration answer."""
-    user_id = current_user["id"]
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     answer = payload.answer.strip()
     question_id = payload.question_id
 
