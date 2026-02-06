@@ -333,11 +333,8 @@ export const SupabaseAuthProvider = ({ children }) => {
         // Route based on calibration state
         if (cal.status === 'NEEDS_CALIBRATION') {
           if (!cancelled) {
-            if (cal.mode === 'DEFERRED') {
-              setAuthState(AUTH_STATE.CALIBRATION_DEFERRED);
-            } else {
-              setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
-            }
+            setCalibrationMode(cal.mode || null);
+            setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
           }
           return;
         }
