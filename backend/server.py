@@ -2392,6 +2392,40 @@ async def get_calibration_status(request: Request):
         return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
 
 
+@api_router.post("/calibration/defer")
+async def defer_calibration(current_user: dict = Depends(get_current_user_supabase)):
+    """Set calibration_status to 'deferred'. Creates shell profile if missing."""
+    user_id = current_user["id"]
+    try:
+        profile = await get_business_profile_supabase(supabase_admin, user_id)
+        if not profile:
+            profile_data = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "calibration_status": "deferred",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            try:
+                supabase_admin.table("business_profiles").insert(profile_data).execute()
+            except Exception:
+                profile_data.pop("calibration_status", None)
+                supabase_admin.table("business_profiles").insert(profile_data).execute()
+        else:
+            try:
+                supabase_admin.table("business_profiles").update({
+                    "calibration_status": "deferred",
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", profile.get("id")).execute()
+            except Exception:
+                pass
+        return {"ok": True}
+    except Exception as e:
+        logger.error(f"[calibration/defer] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to defer calibration")
+
+
+
 def _split_two_parts(answer: str) -> List[str]:
     parts = re.split(r"\s+and\s+|\s+—\s+|\s+–\s+|\s+-\s+", answer, maxsplit=1)
     return [p.strip() for p in parts if p.strip()]
