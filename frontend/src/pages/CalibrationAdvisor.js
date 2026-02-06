@@ -297,7 +297,7 @@ const CalibrationAdvisor = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Type your response"
                 disabled={isSubmitting}
-                className="flex-1 rounded-xl bg-white/8 border border-white/15 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                className="flex-1 rounded-xl bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-blue-400"
                 data-testid="calibration-input"
               />
               <button
