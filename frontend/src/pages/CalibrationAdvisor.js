@@ -195,13 +195,13 @@ const CalibrationAdvisor = () => {
           <div className="max-w-xl w-full space-y-8 text-center">
             {/* Welcome card */}
             <div className="bg-black/40 border border-white/10 rounded-2xl px-8 py-10 text-left space-y-4">
-              <p className="text-3xl sm:text-4xl font-bold text-white tracking-tight">{welcomeText}</p>
-              <p className="text-lg font-semibold text-white/90">I&apos;m BIQC — your strategic advisor.</p>
-              <p className="text-base leading-relaxed text-white/70">
+              <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{welcomeText}</p>
+              <p className="text-base font-semibold text-white/90">I&apos;m BIQC — your strategic advisor.</p>
+              <p className="text-sm leading-relaxed text-white/70">
                 Before I can give you meaningful insight, I need to understand the business you&apos;re responsible for.
               </p>
-              <p className="text-base leading-relaxed text-white/70">This is a calibration session, not a form.</p>
-              <p className="text-base leading-relaxed text-white/70">I&apos;ll ask one question at a time.</p>
+              <p className="text-sm leading-relaxed text-white/70">This is a calibration session, not a form.</p>
+              <p className="text-sm leading-relaxed text-white/70">I&apos;ll ask one question at a time.</p>
             </div>
 
             {/* Actions */}
