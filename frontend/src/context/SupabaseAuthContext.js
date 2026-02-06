@@ -37,6 +37,7 @@ export const SupabaseAuthProvider = ({ children }) => {
   const [authHydrated, setAuthHydrated] = useState(false); // TASK 1: Explicit hydration flag
   const [onboardingState, setOnboardingState] = useState(null); // TASK 2: Cached onboarding state
   const [authState, setAuthState] = useState(AUTH_STATE.LOADING);
+  const [calibrationMode, setCalibrationMode] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
