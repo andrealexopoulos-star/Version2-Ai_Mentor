@@ -2898,6 +2898,16 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
 
       except Exception as strategy_err:
         logger.warning(f"[calibration/answer] Q{question_id} strategy block failed: {strategy_err}")
+        # Still mark complete even if strategy scaffolding failed
+        if question_id == 9:
+          try:
+            supabase_admin.table("business_profiles").update({
+                "calibration_status": "complete",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }).eq("id", business_profile_id).execute()
+          except Exception:
+            pass
+          return {"status": "complete", "calibration_complete": True}
 
     # Generate conversational advisor response (3-beat: acknowledge, reflect, orient)
     advisor_response = None
