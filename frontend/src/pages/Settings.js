@@ -461,7 +461,7 @@ const Settings = () => {
                         <span className="badge badge-primary">Active</span>
                       </div>
                       <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                        You're currently on the free plan. Upgrade to unlock advanced features and unlimited access.
+                        You&apos;re currently on the free plan. Upgrade to unlock advanced features and unlimited access.
                       </p>
                       <Button className="btn-primary">
                         Upgrade Plan
