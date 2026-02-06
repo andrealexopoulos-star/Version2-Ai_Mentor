@@ -2428,34 +2428,12 @@ def _extract_team_size(answer: str) -> Optional[int]:
 
 
 @api_router.post("/calibration/init")
-async def init_calibration_session(request: Request):
+async def init_calibration_session(current_user: dict = Depends(get_current_user_supabase)):
     """
     Initialize calibration: ensure business_profile shell exists.
     Called when user clicks 'Begin Calibration' — BEFORE any answers.
-    Uses fail-open auth like other calibration endpoints.
     """
-    import base64, json as json_lib
-
-    user_id = None
-    try:
-        current_user = await get_current_user_from_request(request)
-        user_id = current_user.get("id")
-    except Exception as auth_err:
-        logger.warning(f"[calibration/init] Primary auth failed: {auth_err}")
-        try:
-            auth_header = request.headers.get("Authorization", "")
-            token = auth_header.replace("Bearer ", "").strip()
-            parts = token.split(".")
-            if len(parts) >= 2:
-                payload_b64 = parts[1]
-                payload_b64 += "=" * (4 - len(payload_b64) % 4)
-                jwt_payload = json_lib.loads(base64.urlsafe_b64decode(payload_b64))
-                user_id = jwt_payload.get("sub")
-        except Exception:
-            pass
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user["id"]
     try:
         profile = await get_business_profile_supabase(supabase_admin, user_id)
         if not profile:
