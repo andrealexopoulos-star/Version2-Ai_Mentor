@@ -2816,7 +2816,29 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
 
             return {"status": "complete", "calibration_complete": True}
 
-    return {"status": "saved", "calibration_complete": False}
+    # Generate conversational advisor response (3-beat: acknowledge, reflect, orient)
+    advisor_response = None
+    try:
+        cal_prompt = (
+            "You are BIQC, a calm strategic advisor conducting a calibration session with a business owner. "
+            "The user just answered a calibration question. Generate a brief 2-4 sentence response following this exact structure:\n"
+            "1) ACKNOWLEDGE: Brief confirmation (e.g. 'Got it.' or 'Thanks — that helps.')\n"
+            "2) REFLECT: Light interpretation of what the answer suggests about their business. No judgement.\n"
+            "3) ORIENT: Why this matters or how you will use it.\n\n"
+            "Rules: No bullet points. No emojis. No enthusiasm or hype. Calm and professional. "
+            "Do not repeat the user's answer back. Do not say 'invalid'. Maximum 4 short sentences total.\n"
+            "Do not include the next question — just the response.\n\n"
+            f"Question {question_id} of 9 was: \"{QUESTIONS_TEXT.get(question_id, '')}\"\n"
+            f"User answered: \"{answer}\"\n\n"
+            "Your response:"
+        )
+        advisor_response = await get_ai_response(cal_prompt, "general", f"calibration_{user_id}", user_id=user_id)
+        if advisor_response:
+            advisor_response = advisor_response.strip().strip('"')
+    except Exception as ai_err:
+        logger.warning(f"[calibration/answer] AI response generation failed: {ai_err}")
+
+    return {"status": "saved", "calibration_complete": False, "advisor_response": advisor_response}
 
 
 @api_router.post("/strategy/regeneration/request")
