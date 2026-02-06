@@ -2767,6 +2767,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
         supabase_admin.table("strategy_profiles").update(updates).eq("id", strategy_profile.get("id")).execute()
 
         if question_id == 9:
+          try:
             strategy_profile = supabase_admin.table("strategy_profiles").select("*").eq("business_profile_id", business_profile_id).execute().data
             strategy_profile = strategy_profile[0] if strategy_profile else {}
             raw_prompt = (
@@ -2793,16 +2794,23 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                     "growth_strategy": strategy_profile.get("raw_growth_input")
                 }
 
-            supabase_admin.table("strategy_profiles").update({
-                **ai_payload,
-                "source": "ai_generated",
-                "regenerable": True,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }).eq("id", strategy_profile.get("id")).execute()
+            try:
+                supabase_admin.table("strategy_profiles").update({
+                    **ai_payload,
+                    "source": "ai_generated",
+                    "regenerable": True,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", strategy_profile.get("id")).execute()
+            except Exception as sp_err:
+                logger.warning(f"[calibration/answer] Q9 strategy_profiles AI update failed: {sp_err}")
+          except Exception as q9_ai_err:
+            logger.warning(f"[calibration/answer] Q9 AI generation failed: {q9_ai_err}")
 
-            if not account_id and profile.get("account_id"):
-                account_id = profile.get("account_id")
+          # Completion scaffolding — each part fail-soft
+          if not account_id and profile.get("account_id"):
+              account_id = profile.get("account_id")
 
+          try:
             schedule_focus = [
                 "Business foundation & positioning",
                 "Offer clarity & pricing",
@@ -2835,7 +2843,10 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                     "week_start_date": start_date.isoformat(),
                     "week_end_date": end_date.isoformat()
                 }, on_conflict="business_profile_id,week_number").execute()
+          except Exception as sched_err:
+            logger.warning(f"[calibration/answer] Q9 schedule creation failed: {sched_err}")
 
+          try:
             default_priorities = [
                 {"signal_category": "revenue_sales", "priority_rank": 1, "threshold_sensitivity": "high", "description": "Revenue and sales movement"},
                 {"signal_category": "team_capacity", "priority_rank": 2, "threshold_sensitivity": "medium", "description": "Leader and team capacity"},
@@ -2849,7 +2860,10 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                     "user_id": user_id,
                     **priority
                 }, on_conflict="business_profile_id,signal_category").execute()
+          except Exception as prio_err:
+            logger.warning(f"[calibration/answer] Q9 priorities creation failed: {prio_err}")
 
+          try:
             supabase_admin.table("progress_cadence").upsert({
                 "business_profile_id": business_profile_id,
                 "user_id": user_id,
@@ -2857,7 +2871,10 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 "cadence_type": "weekly",
                 "next_check_in_date": (today + timedelta(days=7)).isoformat()
             }, on_conflict="business_profile_id").execute()
+          except Exception as cad_err:
+            logger.warning(f"[calibration/answer] Q9 cadence creation failed: {cad_err}")
 
+          try:
             supabase_admin.table("calibration_sessions").insert({
                 "business_profile_id": business_profile_id,
                 "user_id": user_id,
@@ -2865,14 +2882,22 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 "completed": True,
                 "completed_at": datetime.now(timezone.utc).isoformat()
             }).execute()
+          except Exception as sess_err:
+            logger.warning(f"[calibration/answer] Q9 session insert failed: {sess_err}")
 
+          try:
             supabase_admin.table("business_profiles").update({
                 "calibration_status": "complete",
                 "updated_at": datetime.now(timezone.utc).isoformat(),
                 "account_id": account_id
             }).eq("id", business_profile_id).execute()
+          except Exception as comp_err:
+            logger.warning(f"[calibration/answer] Q9 calibration_status=complete failed: {comp_err}")
 
-            return {"status": "complete", "calibration_complete": True}
+          return {"status": "complete", "calibration_complete": True}
+
+      except Exception as strategy_err:
+        logger.warning(f"[calibration/answer] Q{question_id} strategy block failed: {strategy_err}")
 
     # Generate conversational advisor response (3-beat: acknowledge, reflect, orient)
     advisor_response = None
