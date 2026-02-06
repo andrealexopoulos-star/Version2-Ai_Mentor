@@ -154,38 +154,87 @@ const CalibrationAdvisor = () => {
     }
   };
 
+  // Derive step label for the header indicator
+  const stepLabel = useMemo(() => {
+    if (calibrationComplete) return "Calibration · Complete";
+    if (stepIndex < 0) return "Calibration · Getting started";
+    return `Calibration · Step ${stepIndex + 1} of ${QUESTIONS.length}`;
+  }, [stepIndex, calibrationComplete]);
+
+  // Check if a message is the initial welcome message (first advisor message)
+  const isInitialMessage = (message, index) =>
+    index === 0 && message.role === "advisor";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#1f2937] text-white flex flex-col">
-      <header className="px-6 py-6 border-b border-white/10">
-        <h1 className="text-2xl font-semibold" data-testid="calibration-title">
-          BIQC Calibration
-        </h1>
-        <p className="text-sm text-white/60" data-testid="calibration-subtitle">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0f1a] via-[#0f172a] to-[#1a2332] text-white flex flex-col">
+      <header className="px-6 sm:px-8 py-5 border-b border-white/10">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight" data-testid="calibration-title">
+            BIQC Calibration
+          </h1>
+          <span className="text-xs font-medium text-white/50 tracking-wide uppercase" data-testid="calibration-step">
+            {stepLabel}
+          </span>
+        </div>
+        <p className="text-sm text-white/50 mt-1" data-testid="calibration-subtitle">
           One question at a time. Your answers shape the advisory context.
         </p>
       </header>
 
-      <main className="flex-1 flex flex-col px-6 py-6">
+      <main className="flex-1 flex flex-col px-6 sm:px-8 py-6">
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto space-y-4 pr-2"
           data-testid="calibration-message-list"
         >
-          {messages.map((message, index) => (
-            <div
-              key={`${message.role}-${index}`}
-              className={`max-w-2xl rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-lg ${
-                message.role === "advisor"
-                  ? "bg-white/15 text-white"
-                  : "bg-blue-500 text-white ml-auto"
-              }`}
-              data-testid={`calibration-message-${index}`}
-            >
-              {message.text.split("\n").map((line, idx) => (
-                <p key={`${index}-${idx}`}>{line}</p>
-              ))}
-            </div>
-          ))}
+          {messages.map((message, index) => {
+            if (isInitialMessage(message, index)) {
+              const lines = message.text.split("\n");
+              return (
+                <div
+                  key={`${message.role}-${index}`}
+                  className="max-w-2xl rounded-2xl px-6 py-6 shadow-lg bg-black/50 border border-white/10"
+                  data-testid={`calibration-message-${index}`}
+                >
+                  {/* Welcome line — dominant */}
+                  <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                    {lines[0]}
+                  </p>
+                  {/* "I'm BIQC" line — strong secondary */}
+                  {lines[1] && (
+                    <p className="text-base sm:text-lg font-semibold text-white/90 mt-3">
+                      {lines[1]}
+                    </p>
+                  )}
+                  {/* Remaining lines — clear body text with spacing */}
+                  {lines.slice(2).map((line, idx) => (
+                    <p
+                      key={`${index}-body-${idx}`}
+                      className="text-sm sm:text-base leading-relaxed text-white/80 mt-3"
+                    >
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={`${message.role}-${index}`}
+                className={`max-w-2xl rounded-2xl px-5 py-4 text-sm sm:text-base leading-relaxed shadow-lg ${
+                  message.role === "advisor"
+                    ? "bg-black/50 border border-white/10 text-white/90"
+                    : "bg-blue-500 text-white ml-auto"
+                }`}
+                data-testid={`calibration-message-${index}`}
+              >
+                {message.text.split("\n").map((line, idx) => (
+                  <p key={`${index}-${idx}`}>{line}</p>
+                ))}
+              </div>
+            );
+          })}
         </div>
 
         {error && (
@@ -212,13 +261,13 @@ const CalibrationAdvisor = () => {
                 : "Type your response"
             }
             disabled={isSubmitting || calibrationComplete}
-            className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="flex-1 rounded-xl bg-white/8 border border-white/15 px-4 py-3 text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-blue-400/40"
             data-testid="calibration-input"
           />
           <button
             type="submit"
             disabled={isSubmitting || calibrationComplete}
-            className="px-5 py-3 rounded-xl bg-blue-500 text-white text-sm font-semibold disabled:opacity-60"
+            className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
             data-testid="calibration-submit"
           >
             {stepIndex === -1 ? "Continue" : "Send"}
