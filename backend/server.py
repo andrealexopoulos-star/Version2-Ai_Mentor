@@ -2540,52 +2540,75 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
 
     if question_id == 1:
         identity = _parse_business_identity(answer)
+        biz_name = identity.get("business_name") or answer
+        industry = identity.get("industry")  # may be None — that is fine
 
         if not profile:
+            # Build insert payload — only include columns that have values
             profile_data = {
                 "id": str(uuid.uuid4()),
                 "user_id": user_id,
-                "business_name": identity["business_name"],
-                "industry": identity["industry"],
-                "calibration_status": "in_progress",
+                "business_name": biz_name,
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }
-            if identity["business_name"] and user_email:
-                from workspace_helpers import get_or_create_user_account
-                account_id = await get_or_create_user_account(supabase_admin, user_id, user_email, identity["business_name"])
-                profile_data["account_id"] = account_id
-                supabase_admin.table("users").update({"account_id": account_id}).eq("id", user_id).execute()
-
+            if industry:
+                profile_data["industry"] = industry
             try:
+                profile_data["calibration_status"] = "in_progress"
                 result = supabase_admin.table("business_profiles").insert(profile_data).execute()
                 profile = result.data[0] if result.data else profile_data
             except Exception as insert_err:
-                logger.warning(f"[calibration/answer] Insert with calibration_status failed, retrying without: {insert_err}")
+                logger.warning(f"[calibration/answer] Insert failed, retrying minimal: {insert_err}")
                 profile_data.pop("calibration_status", None)
-                result = supabase_admin.table("business_profiles").insert(profile_data).execute()
-                profile = result.data[0] if result.data else profile_data
-        else:
-            try:
-                supabase_admin.table("business_profiles").update({
-                    "business_name": identity["business_name"],
-                    "industry": identity["industry"],
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                    "calibration_status": "in_progress"
-                }).eq("id", profile.get("id")).execute()
-            except Exception as update_err:
-                logger.warning(f"[calibration/answer] Update with calibration_status failed, retrying without: {update_err}")
-                supabase_admin.table("business_profiles").update({
-                    "business_name": identity["business_name"],
-                    "industry": identity["industry"],
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }).eq("id", profile.get("id")).execute()
+                profile_data.pop("industry", None)
+                try:
+                    result = supabase_admin.table("business_profiles").insert(profile_data).execute()
+                    profile = result.data[0] if result.data else profile_data
+                except Exception as retry_err:
+                    logger.error(f"[calibration/answer] Q1 insert fully failed: {retry_err}")
+                    return {"status": "saved", "calibration_complete": False}
 
-            if not profile.get("account_id") and identity["business_name"] and user_email:
-                from workspace_helpers import get_or_create_user_account
-                account_id = await get_or_create_user_account(supabase_admin, user_id, user_email, identity["business_name"])
-                supabase_admin.table("business_profiles").update({"account_id": account_id}).eq("id", profile.get("id")).execute()
-                supabase_admin.table("users").update({"account_id": account_id}).eq("id", user_id).execute()
+            # Account creation — non-blocking
+            try:
+                if biz_name and user_email:
+                    from workspace_helpers import get_or_create_user_account
+                    account_id = await get_or_create_user_account(supabase_admin, user_id, user_email, biz_name)
+                    if account_id:
+                        profile_data["account_id"] = account_id
+                        supabase_admin.table("users").update({"account_id": account_id}).eq("id", user_id).execute()
+            except Exception as acct_err:
+                logger.warning(f"[calibration/answer] Account creation non-critical error: {acct_err}")
+        else:
+            # Profile exists — update with whatever we parsed
+            update_fields = {
+                "business_name": biz_name,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            if industry:
+                update_fields["industry"] = industry
+            try:
+                update_fields["calibration_status"] = "in_progress"
+                supabase_admin.table("business_profiles").update(update_fields).eq("id", profile.get("id")).execute()
+            except Exception as update_err:
+                logger.warning(f"[calibration/answer] Update failed, retrying minimal: {update_err}")
+                update_fields.pop("calibration_status", None)
+                update_fields.pop("industry", None)
+                try:
+                    supabase_admin.table("business_profiles").update(update_fields).eq("id", profile.get("id")).execute()
+                except Exception as retry_err:
+                    logger.error(f"[calibration/answer] Q1 update fully failed: {retry_err}")
+
+            # Account creation — non-blocking
+            try:
+                if not profile.get("account_id") and biz_name and user_email:
+                    from workspace_helpers import get_or_create_user_account
+                    account_id = await get_or_create_user_account(supabase_admin, user_id, user_email, biz_name)
+                    if account_id:
+                        supabase_admin.table("business_profiles").update({"account_id": account_id}).eq("id", profile.get("id")).execute()
+                        supabase_admin.table("users").update({"account_id": account_id}).eq("id", user_id).execute()
+            except Exception as acct_err:
+                logger.warning(f"[calibration/answer] Account update non-critical error: {acct_err}")
 
     if not profile:
         raise HTTPException(status_code=500, detail="Business profile unavailable")
