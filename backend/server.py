@@ -2934,6 +2934,58 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
     return {"status": "saved", "calibration_complete": False, "advisor_response": advisor_response}
 
 
+@api_router.get("/calibration/activation")
+async def get_calibration_activation(request: Request):
+    """Generate post-calibration advisor activation: focus statement, time horizon, engagement contract, integration framing, initial observation."""
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
+    if not profile:
+        return {"focus": None, "time_horizon": None, "engagement": None, "integration_framing": None, "initial_observation": None}
+
+    biz_name = profile.get("business_name", "your business")
+    industry = profile.get("industry", "")
+    stage = profile.get("business_stage", "")
+    team = profile.get("team_size", "")
+
+    context_summary = f"Business: {biz_name}. Industry: {industry or 'not specified'}. Stage: {stage or 'not specified'}. Team: {team or 'not specified'}."
+
+    try:
+        activation_prompt = (
+            "You are BIQC, a calm senior strategic advisor. A business owner just completed calibration. "
+            "Generate a JSON object with exactly these keys. All values are strings.\n\n"
+            "1) \"focus\": 3 bullet points (use • character) of what you will be watching for this business. "
+            "Plain English, no jargon, no scores. Start with 'Based on what you\\'ve shared, I\\'ll be watching:'\n\n"
+            "2) \"time_horizon\": One short paragraph setting realistic time expectations. "
+            "Mention 7 days for early signals, 30 days for patterns. Calm, no guarantees.\n\n"
+            "3) \"engagement\": 1-2 sentences explaining the user doesn't need to ask everything — "
+            "BIQC surfaces what matters and the user can correct anytime.\n\n"
+            "4) \"integration_framing\": 2 sentences referencing calibration themes, explaining why "
+            "email and calendar visibility matters for THIS specific business. Frame as visibility not requirement.\n\n"
+            "5) \"initial_observation\": One provisional observation based on calibration data only. "
+            "Explicitly mark it as provisional. No warnings, no actions. Start with 'Initial observation:'\n\n"
+            f"Business context: {context_summary}\n\n"
+            "Return ONLY valid JSON. No markdown. No explanation."
+        )
+        ai_text = await get_ai_response(activation_prompt, "general", f"activation_{user_id}", user_id=user_id)
+        activation = json.loads(ai_text)
+        return activation
+    except Exception as e:
+        logger.warning(f"[calibration/activation] AI generation failed: {e}")
+        return {
+            "focus": f"Based on what you've shared, I'll be watching:\n• financial stability and cashflow patterns\n• pressure on you as the primary operator\n• signals that it's time to systematise or delegate",
+            "time_horizon": "In the next 7 days, I'll start noticing early signals. Over the next 30 days, patterns will become clearer as activity builds.",
+            "engagement": "You don't need to ask me everything. I'll surface what matters when it matters — and you can correct me anytime.",
+            "integration_framing": f"For {biz_name}, email and calendar help me spot early warning signs before they become problems. This isn't setup — it's giving me visibility.",
+            "initial_observation": "Initial observation: Owner workload may become a constraint before revenue stabilises. I'll confirm or dismiss this once I see real activity."
+        }
+
+
+
 @api_router.post("/strategy/regeneration/request")
 async def queue_regeneration_request(payload: RegenerationRequestPayload, current_user: dict = Depends(get_current_user_supabase)):
     return await request_regeneration(current_user["id"], payload.layer, payload.reason, supabase_admin)
