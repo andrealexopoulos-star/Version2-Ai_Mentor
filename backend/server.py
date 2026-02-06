@@ -2499,15 +2499,23 @@ async def init_calibration_session(request: Request):
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }
-            result = supabase_admin.table("business_profiles").insert(profile_data).execute()
-            profile = result.data[0] if result.data else profile_data
+            try:
+                result = supabase_admin.table("business_profiles").insert(profile_data).execute()
+                profile = result.data[0] if result.data else profile_data
+            except Exception:
+                profile_data.pop("calibration_status", None)
+                result = supabase_admin.table("business_profiles").insert(profile_data).execute()
+                profile = result.data[0] if result.data else profile_data
             logger.info(f"[calibration/init] Created shell business_profile for {user_id}")
         else:
-            if profile.get("calibration_status") != "complete":
-                supabase_admin.table("business_profiles").update({
-                    "calibration_status": "in_progress",
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }).eq("id", profile.get("id")).execute()
+            try:
+                if profile.get("calibration_status") != "complete":
+                    supabase_admin.table("business_profiles").update({
+                        "calibration_status": "in_progress",
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }).eq("id", profile.get("id")).execute()
+            except Exception:
+                pass  # Non-critical: column may not exist in schema cache
             logger.info(f"[calibration/init] Profile already exists for {user_id}")
         return {"status": "ready", "profile_id": profile.get("id")}
     except Exception as e:
