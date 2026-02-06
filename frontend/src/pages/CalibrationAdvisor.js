@@ -246,11 +246,11 @@ const CalibrationAdvisor = () => {
               if (isFirstAdvisor) {
                 const lines = message.text.split("\n");
                 return (
-                  <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-6 py-6 bg-black/50 border border-white/10 shadow-lg" data-testid={`calibration-message-${index}`}>
-                    <p className="text-2xl font-bold text-white tracking-tight">{lines[0]}</p>
-                    {lines[1] && <p className="text-base font-semibold text-white/90 mt-3">{lines[1]}</p>}
+                  <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-6 py-5 bg-black/50 border border-white/10 shadow-lg" data-testid={`calibration-message-${index}`}>
+                    <p className="text-lg font-bold text-white tracking-tight">{lines[0]}</p>
+                    {lines[1] && <p className="text-sm font-semibold text-white/90 mt-2">{lines[1]}</p>}
                     {lines.slice(2).map((line, idx) => (
-                      <p key={`intro-${idx}`} className="text-sm leading-relaxed text-white/75 mt-2.5">{line}</p>
+                      <p key={`intro-${idx}`} className="text-sm leading-relaxed text-white/75 mt-2">{line}</p>
                     ))}
                   </div>
                 );
