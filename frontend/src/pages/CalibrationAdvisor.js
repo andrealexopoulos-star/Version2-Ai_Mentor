@@ -162,11 +162,22 @@ const CalibrationAdvisor = () => {
       setSaveStatus(msgIndex, "saved");
 
       if (data?.calibration_complete) {
-        // Show AI closing if provided, otherwise use default
         const closingText = data.advisor_response || FINAL_MESSAGE;
         appendMessage({ role: "advisor", text: closingText });
         setPhase("complete");
-        setTimeout(() => navigate("/advisor"), 2500);
+
+        // Fetch and display advisor activation sequence
+        try {
+          const actRes = await calFetch("/api/calibration/activation", { method: "GET", session });
+          if (actRes.ok) {
+            const act = await actRes.json();
+            if (act.focus) appendMessage({ role: "advisor", text: act.focus });
+            if (act.time_horizon) appendMessage({ role: "advisor", text: act.time_horizon });
+            if (act.engagement) appendMessage({ role: "advisor", text: act.engagement });
+          }
+        } catch (_) { /* non-critical */ }
+
+        setTimeout(() => navigate("/advisor"), 6000);
         return;
       }
 
