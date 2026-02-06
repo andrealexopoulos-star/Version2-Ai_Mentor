@@ -15,6 +15,7 @@ import { apiClient } from '../lib/api';
 
 const Settings = () => {
   const { user } = useSupabaseAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('account');
