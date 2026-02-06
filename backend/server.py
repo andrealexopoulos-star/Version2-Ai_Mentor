@@ -2353,8 +2353,8 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 @api_router.get("/calibration/status")
 async def get_calibration_status(request: Request):
     """
-    Calibration status is a GUARD endpoint.
-    Returns deterministic 200 for authenticated users.
+    Calibration status — deterministic 200 for authenticated users.
+    Returns mode: INCOMPLETE | DEFERRED | COMPLETE
     """
     try:
         current_user = await get_current_user_from_request(request)
@@ -2375,16 +2375,21 @@ async def get_calibration_status(request: Request):
         profile = result.data[0] if result.data else None
 
         if not profile:
-            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION"})
+            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
 
-        if profile.get("calibration_status") != "complete":
-            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION"})
+        cal_status = profile.get("calibration_status")
 
-        return JSONResponse(status_code=200, content={"status": "COMPLETE"})
+        if cal_status == "complete":
+            return JSONResponse(status_code=200, content={"status": "COMPLETE"})
+
+        if cal_status == "deferred":
+            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "DEFERRED"})
+
+        return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
 
     except Exception as e:
         logger.error(f"Calibration status error: {e}")
-        return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION"})
+        return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
 
 
 def _split_two_parts(answer: str) -> List[str]:
