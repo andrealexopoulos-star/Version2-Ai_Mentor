@@ -87,6 +87,31 @@ const Settings = () => {
             </p>
           </div>
 
+          {/* Agent Calibration Status */}
+          <Card className="mb-6">
+            <CardContent className="py-4 px-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${profile.calibration_status === 'complete' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
+                  <div>
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Agent Calibration</h3>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {profile.calibration_status === 'complete' ? 'Calibration complete — BIQC is personalised to your business' : 'Incomplete — BIQC needs calibration to advise effectively'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant={profile.calibration_status === 'complete' ? 'outline' : 'default'}
+                  onClick={() => navigate('/calibration')}
+                  className={profile.calibration_status === 'complete' ? '' : 'btn-primary'}
+                >
+                  {profile.calibration_status === 'complete' ? 'Recalibrate' : 'Complete Calibration'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-4 w-full mb-8">
