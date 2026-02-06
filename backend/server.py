@@ -2459,6 +2459,40 @@ def _extract_team_size(answer: str) -> Optional[int]:
     return int(match.group(1)) if match else None
 
 
+
+@api_router.post("/calibration/init")
+async def init_calibration_session(current_user: dict = Depends(get_current_user_supabase)):
+    """
+    Initialize calibration: ensure business_profile shell exists.
+    Called when user clicks 'Begin Calibration' — BEFORE any answers.
+    """
+    user_id = current_user["id"]
+    try:
+        profile = await get_business_profile_supabase(supabase_admin, user_id)
+        if not profile:
+            profile_data = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "calibration_status": "in_progress",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            result = supabase_admin.table("business_profiles").insert(profile_data).execute()
+            profile = result.data[0] if result.data else profile_data
+            logger.info(f"[calibration/init] Created shell business_profile for {user_id}")
+        else:
+            if profile.get("calibration_status") != "complete":
+                supabase_admin.table("business_profiles").update({
+                    "calibration_status": "in_progress",
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", profile.get("id")).execute()
+            logger.info(f"[calibration/init] Profile already exists for {user_id}")
+        return {"status": "ready", "profile_id": profile.get("id")}
+    except Exception as e:
+        logger.error(f"[calibration/init] Error: {e}")
+        return JSONResponse(status_code=200, content={"status": "ready", "profile_id": None})
+
+
 @api_router.post("/calibration/answer")
 async def save_calibration_answer(payload: CalibrationAnswerRequest, current_user: dict = Depends(get_current_user_supabase)):
     user_id = current_user["id"]
