@@ -51,7 +51,7 @@ async function calFetch(path, { method = "GET", body, session } = {}) {
 
 const CalibrationAdvisor = () => {
   const navigate = useNavigate();
-  const { user, session, loading } = useSupabaseAuth();
+  const { user, session, loading, setCalibrationMode } = useSupabaseAuth();
 
   // Phase: "welcome" → "initializing" → "active" → "complete"
   const [phase, setPhase] = useState("welcome");
