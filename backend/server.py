@@ -2471,12 +2471,16 @@ def _extract_team_size(answer: str) -> Optional[int]:
 
 
 @api_router.post("/calibration/init")
-async def init_calibration_session(current_user: dict = Depends(get_current_user_supabase)):
+async def init_calibration_session(request: Request):
     """
     Initialize calibration: ensure business_profile shell exists.
     Called when user clicks 'Begin Calibration' — BEFORE any answers.
     """
-    user_id = current_user["id"]
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         profile = await get_business_profile_supabase(supabase_admin, user_id)
         if not profile:
