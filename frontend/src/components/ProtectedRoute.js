@@ -30,9 +30,14 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login-supabase" replace />;
   }
 
-  // NEEDS_CALIBRATION: allow /calibration page to render, redirect all others
+  // NEEDS_CALIBRATION: allow /calibration + allow "Do Later" skip
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
     if (location.pathname === '/calibration') {
+      return children;
+    }
+    // Allow access if user explicitly chose "Do This Later"
+    const skipped = localStorage.getItem("biqc_calibration_skipped");
+    if (skipped === "true") {
       return children;
     }
     return <Navigate to="/calibration" replace />;
