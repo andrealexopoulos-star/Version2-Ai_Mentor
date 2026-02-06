@@ -18,36 +18,38 @@ const AuthError = () => (
 );
 
 export default function ProtectedRoute({ children }) {
-  const { authState, user, session } = useSupabaseAuth();
+  const { authState, calibrationMode, user, session } = useSupabaseAuth();
   const location = useLocation();
 
+  // Still loading
   if (authState === AUTH_STATE.LOADING) {
     return <LoadingScreen />;
   }
 
-  // No session at all → redirect to login
+  // No session → login
   if (!user && !session) {
     return <Navigate to="/login-supabase" replace />;
   }
 
-  // INCOMPLETE calibration → force /calibration only
-  if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
+  // Hard auth failure
+  if (authState === AUTH_STATE.ERROR) {
+    return <AuthError />;
+  }
+
+  // Calibration required AND NOT deferred → force calibration
+  if (
+    authState === AUTH_STATE.NEEDS_CALIBRATION &&
+    calibrationMode !== 'DEFERRED'
+  ) {
     if (location.pathname === '/calibration') {
       return children;
     }
     return <Navigate to="/calibration" replace />;
   }
 
-  // DEFERRED calibration → allow general navigation
-  if (authState === AUTH_STATE.CALIBRATION_DEFERRED) {
-    return children;
-  }
-
-  // Real auth error
-  if (authState === AUTH_STATE.ERROR) {
-    return <AuthError />;
-  }
-
+  // Allowed cases:
+  // - READY (COMPLETE)
+  // - NEEDS_CALIBRATION + DEFERRED
   return children;
 }
 
