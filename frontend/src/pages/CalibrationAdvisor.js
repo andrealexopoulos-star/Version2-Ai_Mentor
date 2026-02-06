@@ -95,8 +95,12 @@ const CalibrationAdvisor = () => {
   };
 
   /* ─── Do This Later ─── */
-  const handleSkip = () => {
-    localStorage.setItem("biqc_show_tutorial", "true");
+  const handleSkip = async () => {
+    try {
+      await apiClient.post("/api/calibration/defer");
+    } catch (err) {
+      console.warn("[calibration] defer call failed:", err);
+    }
     navigate("/advisor");
   };
 
