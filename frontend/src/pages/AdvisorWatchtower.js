@@ -207,6 +207,9 @@ const AdvisorWatchtower = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Guided Tutorial (from "Do Later" path) */}
+        {showTutorial && <GuidedTutorial onDismiss={() => setShowTutorial(false)} />}
+
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
