@@ -330,9 +330,15 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         const cal = await calRes.json();
 
-        // ⛔ HARD STOP — do NOT rehydrate before calibration
+        // Route based on calibration state
         if (cal.status === 'NEEDS_CALIBRATION') {
-          if (!cancelled) setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+          if (!cancelled) {
+            if (cal.mode === 'DEFERRED') {
+              setAuthState(AUTH_STATE.CALIBRATION_DEFERRED);
+            } else {
+              setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+            }
+          }
           return;
         }
 
