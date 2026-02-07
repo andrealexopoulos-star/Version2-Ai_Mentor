@@ -316,7 +316,7 @@ const AdvisorWatchtower = () => {
           </div>
         ) : watchtowerEvents.length === 0 ? (
           /* War Room Console */
-          <div className="w-full h-[600px] bg-black border border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
+          <div className="w-full h-[800px] bg-black border-2 border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
             <WarRoomConsole />
           </div>
         ) : (
