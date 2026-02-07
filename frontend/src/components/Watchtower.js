@@ -1,6 +1,6 @@
 // FILE: src/components/Watchtower.js
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../supabaseClient'; 
+import { supabase } from '../context/SupabaseAuthContext'; 
 
 const Watchtower = () => {
   const [history, setHistory] = useState([]); 
