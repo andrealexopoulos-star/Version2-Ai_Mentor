@@ -76,9 +76,9 @@ function AppRoutes() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       
-      {/* Auth Routes - Supabase Only */}
-      <Route path="/login-supabase" element={<LoginSupabase />} />
-      <Route path="/register-supabase" element={<RegisterSupabase />} />
+      {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
+      <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
+      <Route path="/register-supabase" element={<PublicRoute><RegisterSupabase /></PublicRoute>} />
       <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
       <Route path="/auth-debug" element={<AuthDebug />} />
       
