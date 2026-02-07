@@ -128,18 +128,26 @@ function AppRoutes() {
 function App() {
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   
-  // Register service worker for PWA
+  // Force clear old service worker cache, then register fresh
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      // Unregister ALL old service workers first to bust cache
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(reg => reg.unregister());
+      }).then(() => {
         navigator.serviceWorker.register('/service-worker.js')
-          .then((registration) => {
-            console.log('✅ Service Worker registered:', registration);
+          .then(registration => {
+            registration.update(); // Force update check
+            console.log('✅ Service Worker re-registered:', registration);
           })
-          .catch((error) => {
+          .catch(error => {
             console.log('❌ Service Worker registration failed:', error);
           });
       });
+    }
+    // Also clear caches directly
+    if ('caches' in window) {
+      caches.keys().then(names => names.forEach(name => caches.delete(name)));
     }
   }, []);
   
