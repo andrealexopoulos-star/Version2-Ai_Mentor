@@ -59,13 +59,6 @@ const RegisterSupabase = () => {
   const handleOAuthSignIn = async (provider) => {
     const providerName = provider === 'google' ? 'Google' : 'Microsoft';
     
-    // Show confirmation before redirecting - SIGNUP CONTEXT
-    const confirmMessage = `Sign up with ${providerName}?\n\nThis will:\n✓ Create your BIQC account using ${providerName}\n✓ No password needed\n✓ Secure authentication\n\nContinue?`;
-    
-    if (!window.confirm(confirmMessage)) {
-      return; // User cancelled
-    }
-    
     setOauthLoading(true);
     try {
       const result = await signInWithOAuth(provider);
