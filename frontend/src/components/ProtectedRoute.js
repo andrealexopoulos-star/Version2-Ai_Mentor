@@ -37,11 +37,13 @@ export default function ProtectedRoute({ children }) {
   }
 
   // Calibration required AND NOT deferred → force calibration
+  // But allow specific routes that should be accessible regardless
   if (
     authState === AUTH_STATE.NEEDS_CALIBRATION &&
     calibrationMode !== 'DEFERRED'
   ) {
-    if (location.pathname === '/calibration') {
+    const allowedPaths = ['/calibration', '/war-room', '/settings'];
+    if (allowedPaths.includes(location.pathname)) {
       return children;
     }
     return <Navigate to="/calibration" replace />;
