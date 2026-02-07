@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { RefreshCw, Loader2, Eye, Zap, AlertCircle, X, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import WatchtowerEvent from '../components/WatchtowerEvent';
+import WarRoomConsole from '../components/WarRoomConsole';
 
 /* ─── Guided tutorial for "Do Later" path ─── */
 const TUTORIAL_STEPS = [
