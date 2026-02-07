@@ -114,6 +114,7 @@ function AppRoutes() {
       <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
       <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
+      <Route path="/watchtower" element={<ProtectedRoute><Watchtower /></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
