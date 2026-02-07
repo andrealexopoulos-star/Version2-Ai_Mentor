@@ -309,19 +309,14 @@ const AdvisorWatchtower = () => {
           </div>
         )}
 
-        {/* Loading State */}
-        {loadingEvents ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-          </div>
-        ) : watchtowerEvents.length === 0 ? (
-          /* War Room Console */
-          <div className="w-full h-[800px] bg-black border-2 border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
-            <WarRoomConsole />
-          </div>
-        ) : (
-          /* Watchtower Events */
-          <div className="space-y-6">
+        {/* War Room — Primary Strategic Console */}
+        <div className="w-full h-[800px] bg-black border-2 border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
+          <WarRoomConsole />
+        </div>
+
+        {/* Watchtower Events (below War Room if any exist) */}
+        {!loadingEvents && watchtowerEvents.length > 0 && (
+          <div className="space-y-6 mt-6">
             {Object.keys(eventsByDomain).map(domain => (
               <div key={domain} className="space-y-4">
                 <h2 className="text-lg font-semibold text-slate-900 capitalize">
