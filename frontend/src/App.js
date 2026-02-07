@@ -45,6 +45,7 @@ import MySoundBoard from "./pages/MySoundBoard";
 import AuthDebug from "./pages/AuthDebug";
 import GmailTest from "./pages/GmailTest";
 import Watchtower from './components/Watchtower';
+import WarRoomConsole from './components/WarRoomConsole';
 
 // Public Route (redirect to advisor if logged in) - Supabase Auth Only
 const PublicRoute = ({ children }) => {
