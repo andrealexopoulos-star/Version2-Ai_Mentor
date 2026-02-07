@@ -15,7 +15,7 @@ import {
   MessageSquare, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Building2,
   Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Calendar,
-  Lightbulb, AlertCircle, Mail, ChevronLeft, ChevronRight
+  Lightbulb, AlertCircle, Mail, ChevronLeft, ChevronRight, Terminal
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
@@ -124,6 +124,7 @@ const DashboardLayout = ({ children }) => {
   const navItems = [
     { type: 'divider', label: 'BUSINESS INTELLIGENCE QUOTIENT CENTRE' },
     { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
+    { icon: Terminal, label: 'War Room', path: '/war-room' },
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'IQ BUILDER' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
