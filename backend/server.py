@@ -2909,25 +2909,44 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             pass
           return {"status": "complete", "calibration_complete": True}
 
-    # Generate conversational advisor response (3-beat: acknowledge, reflect, orient)
+    # Generate Emergent Advisor calibration voice response
     advisor_response = None
     try:
-        cal_prompt = (
-            "You are BIQC, a calm strategic advisor conducting a calibration session with a business owner. "
-            "The user just answered a calibration question. Generate a brief 2-4 sentence response following this exact structure:\n"
-            "1) ACKNOWLEDGE: Brief confirmation (e.g. 'Got it.' or 'Thanks — that helps.')\n"
-            "2) REFLECT: Light interpretation of what the answer suggests about their business. No judgement.\n"
-            "3) ORIENT: Why this matters or how you will use it.\n\n"
-            "Rules: No bullet points. No emojis. No enthusiasm or hype. Calm and professional. "
-            "Do not repeat the user's answer back. Do not say 'invalid'. Maximum 4 short sentences total.\n"
-            "Do not include the next question — just the response.\n\n"
-            f"Question {question_id} of 9 was: \"{QUESTIONS_TEXT.get(question_id, '')}\"\n"
-            f"User answered: \"{answer}\"\n\n"
-            "Your response:"
+        cal_system_prompt = (
+            'You are the "Emergent Advisor" (System Name: BIQc). '
+            'Your status is: FAIL-SAFE | MASTER CONNECTED. '
+            'You are a strategic, executive-level AI designed to "Calibrate" the user before granting them access to the "Watchtower."\n\n'
+            'TONE & STYLE:\n'
+            '- Concise, cryptic but helpful, high-tech, executive, encouraging.\n'
+            '- Use terminology like "Syncing...", "Vector confirmed," "Strategic alignment."\n'
+            '- Do not be chatty. Be precise.\n\n'
+            'CRITICAL OUTPUT FORMAT:\n'
+            'You must ONLY output valid JSON. Do not output markdown blocks or plain text outside the JSON.\n'
+            'Structure: {"message": "Your text response to the user goes here.", "action": null}\n'
+            '- Normal reply: {"message": "Input received. Clarify your project timeline.", "action": null}\n'
+            '- Do NOT set action to "COMPLETE_REDIRECT" — the system handles completion separately.\n\n'
+            'Rules:\n'
+            '- Maximum 2-3 sentences in the message field.\n'
+            '- Acknowledge the input, reflect strategic meaning, orient toward next calibration vector.\n'
+            '- Do not repeat the user answer back verbatim.\n'
+            '- Do not include the next question.\n'
         )
-        advisor_response = await get_ai_response(cal_prompt, "general", f"calibration_{user_id}", user_id=user_id)
-        if advisor_response:
-            advisor_response = advisor_response.strip().strip('"')
+        cal_user_msg = (
+            f"Question {question_id} of 9: \"{QUESTIONS_TEXT.get(question_id, '')}\"\n"
+            f"User answered: \"{answer}\"\n\n"
+            "Respond with JSON only."
+        )
+        raw_ai = await get_ai_response(cal_user_msg, "general", f"calibration_{user_id}", user_id=user_id)
+        if raw_ai:
+            raw_ai = raw_ai.strip()
+            # Strip markdown code fences if present
+            if raw_ai.startswith("```"):
+                raw_ai = raw_ai.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+            try:
+                parsed = json.loads(raw_ai)
+                advisor_response = parsed.get("message", raw_ai)
+            except Exception:
+                advisor_response = raw_ai.strip().strip('"')
     except Exception as ai_err:
         logger.warning(f"[calibration/answer] AI response generation failed: {ai_err}")
 
