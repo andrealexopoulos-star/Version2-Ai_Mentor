@@ -1,0 +1,71 @@
+{
+  "summary": "War Room Console Visibility Investigation - CODE ANALYSIS ONLY (cannot authenticate to test actual rendering). Analyzed WarRoomConsole.js, AdvisorWatchtower.js, and DashboardLayout.js for CSS/rendering issues. No obvious bugs found in code - component structure and styles appear correct.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "code_analysis_findings": [
+      {
+        "file": "/app/frontend/src/components/WarRoomConsole.js",
+        "status": "NO_ISSUES",
+        "details": "ESLint passes. Component has Error Boundary, graceful session handling, all inline styles (no CSS opacity transitions). height:100% requires parent height which is provided by h-[800px] container."
+      },
+      {
+        "file": "/app/frontend/src/pages/AdvisorWatchtower.js",
+        "status": "NO_ISSUES",
+        "details": "Line 10 imports WarRoomConsole. Lines 313-315 render it unconditionally inside 800px black container. No conditional rendering that would hide it."
+      },
+      {
+        "file": "/app/frontend/src/components/DashboardLayout.js",
+        "status": "NO_ISSUES",
+        "details": "Main content area (lines 462-475) has NO overflow:hidden or max-height constraints. Uses minHeight:100dvh which allows content to grow. z-index:1 is correct (below nav elements)."
+      },
+      {
+        "file": "/app/frontend/tailwind.config.js",
+        "status": "NO_ISSUES",
+        "details": "Arbitrary value h-[800px] should work - Tailwind 3.x supports JIT arbitrary values by default."
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "MANUAL TESTING REQUIRED: The /advisor page requires Supabase OAuth (Google/Microsoft) which cannot be automated. Main agent should manually test the page after authenticating.",
+    "CHECK BROWSER CONSOLE: When authenticated, check browser console for any React hydration errors, component mount errors, or CSS warnings.",
+    "CHECK NETWORK TAB: Verify /api/calibration/brain endpoint returns successfully (the WarRoomConsole calls this on init).",
+    "CHECK ELEMENT INSPECTOR: Use browser DevTools to inspect if the 800px container exists in DOM and has correct computed styles.",
+    "HYPOTHESIS 1 - Scroll Position: The War Room is at line 313 in AdvisorWatchtower. If there's content above it (tutorial, activation messages, header, email warning), user may need to scroll down to see the 800px black container.",
+    "HYPOTHESIS 2 - Session Race: The component shows 'ESTABLISHING SECURE LINK...' until sessionReady=true. If Supabase session takes time to establish, user sees loading state.",
+    "HYPOTHESIS 3 - Backend Error: If /api/calibration/brain fails, the component shows '⚠ SIGNAL DISRUPTION' message but remains visible (not hidden)."
+  ],
+  "critical_code_review_comments": [
+    "VERIFIED: WarRoomConsole.js line 123 uses height:100% which inherits from parent's h-[800px] - this is correct.",
+    "VERIFIED: AdvisorWatchtower.js line 313 renders WarRoomConsole unconditionally (not inside any if statement).",
+    "VERIFIED: DashboardLayout.js main content area has NO CSS that would clip or hide an 800px container.",
+    "VERIFIED: No opacity:0 or visibility:hidden CSS in WarRoomConsole.js - all visible by default.",
+    "POSSIBLE ISSUE: If user doesn't scroll, they may not see the War Room if there's content above it (GuidedTutorial, activation messages, header, email warning)."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - not tested",
+    "frontend": "N/A - cannot authenticate to test rendering",
+    "code_review": "100% - no code issues found"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "War Room visibility issue requires MANUAL authentication test. Code analysis found no bugs. Most likely causes: (1) User needs to scroll down to see the 800px container, (2) Session not ready yet showing loading state, (3) Backend /api/calibration/brain failing. The /advisor page correctly redirects unauthenticated users to /login-supabase.",
+  "rca_of_the_issue": {
+    "investigation_type": "Code Analysis (no auth access)",
+    "findings": "No code bugs found. WarRoomConsole renders unconditionally. DashboardLayout has no overflow clipping.",
+    "likely_causes": [
+      "User may need to scroll down - War Room is below email warning, header, tutorial, and activation messages",
+      "Session not ready - component shows 'ESTABLISHING SECURE LINK...' until Supabase session is confirmed",
+      "Backend API failure - /api/calibration/brain may be returning errors"
+    ],
+    "verification_needed": "Manual authentication test with browser DevTools inspection"
+  }
+}
