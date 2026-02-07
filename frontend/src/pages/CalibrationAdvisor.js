@@ -12,7 +12,7 @@ const BASE_INITIAL_MESSAGE =
   "Link established. Identity unverified.\nInitiating calibration protocol.\nI need to map your strategic position before granting Watchtower access.\nOne vector at a time.";
 
 const FINAL_MESSAGE =
-  "Calibration complete.\nI now understand the business you're responsible for.\nBIQC is ready to advise you.";
+  "Calibration complete. All vectors confirmed.\nStrategic alignment locked.\nWatchtower access granted.";
 
 const QUESTIONS = [
   { id: 1, text: "What's the name of the business you're operating, and what industry does it sit in?" },
