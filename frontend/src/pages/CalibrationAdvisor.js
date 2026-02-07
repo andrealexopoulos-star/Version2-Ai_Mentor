@@ -1,38 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
-import { Check, AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 const apiBase = process.env.REACT_APP_BACKEND_URL
   ? process.env.REACT_APP_BACKEND_URL.replace(/\/$/, '')
   : '';
 
-const BASE_INITIAL_MESSAGE =
-  "Link established. Identity unverified.\nInitiating calibration protocol.\nI need to map your strategic position before granting Watchtower access.\nOne vector at a time.";
-
-const FINAL_MESSAGE =
-  "Calibration complete. All vectors confirmed.\nStrategic alignment locked.\nWatchtower access granted.";
-
-const QUESTIONS = [
-  { id: 1, text: "What's the name of the business you're operating, and what industry does it sit in?" },
-  { id: 2, text: "Where would you place the business today — idea, early-stage, established, or enterprise — and roughly how long has it been operating?" },
-  { id: 3, text: "Where is the business primarily based? City and state is fine." },
-  { id: 4, text: "Who do you primarily sell to, and what problem are they hiring you to solve?" },
-  { id: 5, text: "What do you actually sell today — and why do clients choose you over alternatives?" },
-  { id: 6, text: "How big is the team today, and where do you personally spend most of your time?" },
-  { id: 7, text: "In plain terms — why does this business exist, and what would success look like in three years?" },
-  { id: 8, text: "What are the most important goals for the next 12 months — and what's getting in the way right now?" },
-  { id: 9, text: "How do you expect the business to grow — new markets, new offers, partnerships, or scale?" },
-];
-
-const SaveBadge = ({ status }) => {
-  if (status === "saving") return <span className="text-[11px] text-white/40 ml-2">Saving…</span>;
-  if (status === "saved") return <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 ml-2"><Check size={11} /> Saved</span>;
-  return null;
-};
-
-/** Authenticated fetch helper — includes credentials + Bearer token from Supabase session */
+/** Authenticated fetch helper */
 async function calFetch(path, { method = "GET", body, session } = {}) {
   const url = `${apiBase}${path}`;
   const headers = { "Content-Type": "application/json" };
@@ -55,13 +31,13 @@ const CalibrationAdvisor = () => {
 
   // Phase: "welcome" → "initializing" → "active" → "complete"
   const [phase, setPhase] = useState("welcome");
-  const [messages, setMessages] = useState([]);
-  const [stepIndex, setStepIndex] = useState(-1);
+  const [messages, setMessages] = useState([]);    // { role: "advisor"|"user", text: string }
+  const [history, setHistory] = useState([]);       // OpenAI-format history for brain
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [saveStatuses, setSaveStatuses] = useState({});
   const [inlineError, setInlineError] = useState(null);
-  const [failedPayload, setFailedPayload] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
   const scrollRef = useRef(null);
 
   const welcomeText = useMemo(() => {
@@ -85,34 +61,49 @@ const CalibrationAdvisor = () => {
 
   /* Step label */
   const stepLabel = useMemo(() => {
-    if (phase === "welcome") return "Calibration";
-    if (phase === "initializing") return "Calibration · Preparing…";
-    if (phase === "complete") return "Calibration · Complete";
-    if (stepIndex >= 0) return `Calibration · Step ${stepIndex + 1} of ${QUESTIONS.length}`;
-    return "Calibration · Getting started";
-  }, [phase, stepIndex]);
+    if (phase === "welcome") return "CALIBRATION";
+    if (phase === "initializing") return "SYNCING...";
+    if (phase === "complete") return "CALIBRATION · COMPLETE";
+    if (currentStep > 0) return `CALIBRATION · STEP ${currentStep} OF 17 · ${progress}%`;
+    return "CALIBRATION · ACTIVE";
+  }, [phase, currentStep, progress]);
 
-  /* ── Begin Calibration (explicit, no auto-call) ── */
+  /* ── Begin Calibration ── */
   const handleBegin = async () => {
     setPhase("initializing");
     setInlineError(null);
+
+    // Init business profile shell
     try {
-      const res = await calFetch("/api/calibration/init", { method: "POST", session });
+      await calFetch("/api/calibration/init", { method: "POST", session });
+    } catch (_) {}
+
+    // Send init signal to brain
+    try {
+      const res = await calFetch("/api/calibration/brain", {
+        method: "POST",
+        session,
+        body: { message: "[SYSTEM_INIT_SIGNAL]", history: [] },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setMessages([
-        { role: "advisor", text: `${welcomeText}\n${BASE_INITIAL_MESSAGE}` },
-        { role: "advisor", text: QUESTIONS[0].text },
+      const data = await res.json();
+
+      const advisorMsg = data.message || "Link established. State your business identity.";
+      setMessages([{ role: "advisor", text: advisorMsg }]);
+      setHistory([
+        { role: "assistant", content: advisorMsg }
       ]);
-      setStepIndex(0);
+      setCurrentStep(data.current_step_number || 1);
+      setProgress(data.percentage_complete || 0);
       setPhase("active");
     } catch (err) {
-      console.error("[calibration] Begin failed:", err);
+      console.error("[calibration] Brain init failed:", err);
       setPhase("welcome");
       setInlineError("Could not start calibration. Please refresh and try again.");
     }
   };
 
-  /* ── Do This Later (calls defer, then navigates) ── */
+  /* ── Do This Later ── */
   const handleSkip = async () => {
     try {
       const res = await calFetch("/api/calibration/defer", { method: "POST", session });
@@ -120,101 +111,100 @@ const CalibrationAdvisor = () => {
       setCalibrationMode('DEFERRED');
     } catch (err) {
       console.error("[calibration] Defer failed:", err);
-      toast.error("Calibration was deferred locally, but server did not confirm. You can resume in Settings.");
+      toast.error("Calibration deferred locally, but server did not confirm. Resume in Settings.");
       setCalibrationMode('DEFERRED');
     }
     navigate("/advisor");
   };
 
-  /* Helpers */
-  const appendMessage = (msg) => setMessages((prev) => [...prev, msg]);
-  const setSaveStatus = (idx, status) => setSaveStatuses((prev) => ({ ...prev, [idx]: status }));
-
-  /* ── Submit answer ── */
+  /* ── Submit message to brain ── */
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (isSubmitting || phase !== "active") return;
+    if (isSubmitting || phase !== "active" || !inputValue.trim()) return;
 
-    const trimmed = (failedPayload ? failedPayload.answer : inputValue).trim();
-    if (!trimmed) return;
-
-    setInlineError(null);
-    setFailedPayload(null);
+    const trimmed = inputValue.trim();
     setInputValue("");
-
-    const currentQ = QUESTIONS[stepIndex];
-    if (!currentQ) return;
-
-    const msgIndex = messages.length;
-    appendMessage({ role: "user", text: trimmed });
-    setSaveStatus(msgIndex, "saving");
+    setInlineError(null);
     setIsSubmitting(true);
 
+    // Show user message immediately
+    const newMessages = [...messages, { role: "user", text: trimmed }];
+    setMessages(newMessages);
+
+    // Build updated history
+    const newHistory = [...history, { role: "user", content: trimmed }];
+
     try {
-      const res = await calFetch("/api/calibration/answer", {
+      // Also save structured answer to the legacy endpoint (best-effort, maps step to question_id)
+      const questionId = Math.min(currentStep, 9);
+      calFetch("/api/calibration/answer", {
         method: "POST",
         session,
-        body: { question_id: currentQ.id, answer: trimmed },
+        body: { question_id: questionId, answer: trimmed },
+      }).catch(() => {}); // fire-and-forget
+
+      // Send to brain
+      const res = await calFetch("/api/calibration/brain", {
+        method: "POST",
+        session,
+        body: { message: trimmed, history: newHistory },
       });
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      setSaveStatus(msgIndex, "saved");
+      const advisorMsg = data.message || "Vector received. Continue.";
+      setMessages([...newMessages, { role: "advisor", text: advisorMsg }]);
+      setHistory([...newHistory, { role: "assistant", content: advisorMsg }]);
+      setCurrentStep(data.current_step_number || currentStep);
+      setProgress(data.percentage_complete || progress);
 
-      if (data?.calibration_complete) {
-        const closingText = data.advisor_response || FINAL_MESSAGE;
-        appendMessage({ role: "advisor", text: closingText });
+      // Check for completion
+      if (data.status === "COMPLETE") {
         setPhase("complete");
 
-        // Fetch and display advisor activation sequence
+        // Fetch activation briefing
         try {
           const actRes = await calFetch("/api/calibration/activation", { method: "GET", session });
           if (actRes.ok) {
             const act = await actRes.json();
-            if (act.focus) appendMessage({ role: "advisor", text: act.focus });
-            if (act.time_horizon) appendMessage({ role: "advisor", text: act.time_horizon });
-            if (act.engagement) appendMessage({ role: "advisor", text: act.engagement });
+            const activationMessages = [];
+            if (act.focus) activationMessages.push({ role: "advisor", text: act.focus });
+            if (act.time_horizon) activationMessages.push({ role: "advisor", text: act.time_horizon });
+            if (act.engagement) activationMessages.push({ role: "advisor", text: act.engagement });
+            if (activationMessages.length > 0) {
+              setMessages(prev => [...prev, ...activationMessages]);
+            }
           }
-        } catch (_) { /* non-critical */ }
+        } catch (_) {}
 
         setTimeout(() => navigate("/advisor"), 6000);
-        return;
-      }
-
-      // Show AI conversational response if returned
-      if (data?.advisor_response) {
-        appendMessage({ role: "advisor", text: data.advisor_response });
-      }
-
-      const nextIndex = stepIndex + 1;
-      if (QUESTIONS[nextIndex]) {
-        appendMessage({ role: "advisor", text: QUESTIONS[nextIndex].text });
-        setStepIndex(nextIndex);
       }
     } catch (err) {
-      setSaveStatus(msgIndex, null);
-      setInlineError("Could not save your response. Your answer is preserved — tap Retry.");
-      setFailedPayload({ question_id: currentQ.id, answer: trimmed });
+      console.error("[calibration] Brain error:", err);
+      setInlineError("Signal lost. Tap Retry to resend.");
       setInputValue(trimmed);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleRetry = () => {
-    if (!failedPayload) return;
-    handleSubmit(new Event("submit"));
-  };
-
   /* ══════════════ RENDER ══════════════ */
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#080c14] via-[#0f172a] to-[#162032] text-white flex flex-col">
       <header className="px-6 sm:px-8 py-4 border-b border-white/10 flex items-center justify-between">
-        <h1 className="text-base sm:text-lg font-semibold tracking-tight text-white">BIQC Calibration</h1>
-        <span className="text-[11px] font-medium text-white/40 tracking-widest uppercase">{stepLabel}</span>
+        <h1 className="text-base sm:text-lg font-semibold tracking-tight text-white font-mono">BIQc CALIBRATION</h1>
+        <span className="text-[11px] font-medium text-emerald-400/60 tracking-widest uppercase font-mono">{stepLabel}</span>
       </header>
 
-      {/* Welcome screen — NO auto-calls */}
+      {/* Progress bar */}
+      {(phase === "active" || phase === "complete") && (
+        <div className="h-0.5 bg-white/5">
+          <div className="h-full bg-emerald-400/60 transition-all duration-700" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+
+      {/* Welcome screen */}
       {phase === "welcome" && (
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-xl w-full space-y-8 text-center">
@@ -223,7 +213,7 @@ const CalibrationAdvisor = () => {
               <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{welcomeText}</p>
               <p className="text-base font-semibold text-white/90">Link established. Identity unverified.</p>
               <p className="text-sm leading-relaxed text-white/70">Initiating calibration protocol. I need to map your strategic position before granting Watchtower access.</p>
-              <p className="text-sm leading-relaxed text-white/70">One vector at a time.</p>
+              <p className="text-sm leading-relaxed text-white/70">17-point strategic extraction. One vector at a time.</p>
             </div>
             {inlineError && (
               <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-left">
@@ -243,6 +233,7 @@ const CalibrationAdvisor = () => {
         </main>
       )}
 
+      {/* Initializing */}
       {phase === "initializing" && (
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="flex items-center gap-3 text-white/60">
@@ -252,34 +243,21 @@ const CalibrationAdvisor = () => {
         </main>
       )}
 
+      {/* Active chat / Complete */}
       {(phase === "active" || phase === "complete") && (
         <main className="flex-1 flex flex-col px-6 sm:px-8 py-6 min-h-0">
           <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-1" data-testid="calibration-message-list">
             {messages.map((message, index) => {
-              const isFirstAdvisor = index === 0 && message.role === "advisor";
-              if (isFirstAdvisor) {
-                const lines = message.text.split("\n");
-                return (
-                  <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-6 py-5 bg-black/50 border border-white/10 shadow-lg" data-testid={`calibration-message-${index}`}>
-                    <p className="text-lg font-bold text-white tracking-tight">{lines[0]}</p>
-                    {lines[1] && <p className="text-sm font-semibold text-white/90 mt-2">{lines[1]}</p>}
-                    {lines.slice(2).map((line, idx) => (
-                      <p key={`intro-${idx}`} className="text-sm leading-relaxed text-white/75 mt-2">{line}</p>
-                    ))}
-                  </div>
-                );
-              }
               if (message.role === "advisor") {
                 return (
                   <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-5 py-4 bg-black/50 border border-white/10 shadow-lg" data-testid={`calibration-message-${index}`}>
-                    <p className="text-[15px] leading-relaxed text-white/90">{message.text}</p>
+                    <p className="text-[15px] leading-relaxed text-white/90 whitespace-pre-line">{message.text}</p>
                   </div>
                 );
               }
               return (
-                <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-5 py-4 bg-blue-500 shadow-lg ml-auto flex items-end gap-2" data-testid={`calibration-message-${index}`}>
-                  <p className="text-[15px] leading-relaxed text-white flex-1">{message.text}</p>
-                  <SaveBadge status={saveStatuses[index]} />
+                <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-5 py-4 bg-blue-500 shadow-lg ml-auto" data-testid={`calibration-message-${index}`}>
+                  <p className="text-[15px] leading-relaxed text-white">{message.text}</p>
                 </div>
               );
             })}
@@ -289,17 +267,22 @@ const CalibrationAdvisor = () => {
             <div className="mt-3 flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
               <AlertCircle size={16} className="text-red-400 shrink-0" />
               <p className="text-sm text-red-300 flex-1">{inlineError}</p>
-              {failedPayload && (
-                <button onClick={handleRetry} className="text-sm font-semibold text-red-300 hover:text-white underline underline-offset-2 shrink-0">Retry</button>
-              )}
             </div>
           )}
 
           {phase === "active" && (
             <form onSubmit={handleSubmit} className="mt-4 flex gap-3 items-center" data-testid="calibration-form">
-              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Type your response" disabled={isSubmitting} className="flex-1 rounded-xl bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-blue-400" data-testid="calibration-input" />
-              <button type="submit" disabled={isSubmitting || !inputValue.trim()} className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold disabled:opacity-40 transition-colors" data-testid="calibration-submit">Send</button>
+              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="State your response" disabled={isSubmitting} className="flex-1 rounded-xl bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-blue-400" data-testid="calibration-input" />
+              <button type="submit" disabled={isSubmitting || !inputValue.trim()} className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold disabled:opacity-40 transition-colors" data-testid="calibration-submit">
+                {isSubmitting ? "..." : "Send"}
+              </button>
             </form>
+          )}
+
+          {phase === "complete" && (
+            <div className="mt-4 text-center">
+              <p className="text-sm font-mono text-emerald-400/70">Watchtower access granted. Redirecting...</p>
+            </div>
           )}
         </main>
       )}
