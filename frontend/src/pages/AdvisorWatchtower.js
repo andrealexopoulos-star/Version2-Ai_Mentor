@@ -315,33 +315,9 @@ const AdvisorWatchtower = () => {
             <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
           </div>
         ) : watchtowerEvents.length === 0 ? (
-          /* Empty State */
-          <div className="text-center py-16 px-4">
-            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Eye className="w-8 h-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
-              {emailConnected ? 'No patterns detected yet' : 'Waiting for data'}
-            </h3>
-            <p className="text-sm text-slate-600 max-w-md mx-auto">
-              {emailConnected 
-                ? 'BIQc is monitoring your business activity. Click "Run Analysis" to generate intelligence from your email patterns.'
-                : 'Connect your email account to enable BIQc to detect patterns, risks, and opportunities.'
-              }
-            </p>
-            {emailConnected && (
-              <Button
-                onClick={runColdRead}
-                className="mt-6 bg-slate-900 hover:bg-slate-800 text-white"
-                disabled={runningAnalysis}
-              >
-                {runningAnalysis ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analyzing...</>
-                ) : (
-                  <><Eye className="w-4 h-4 mr-2" /> Run Analysis</>
-                )}
-              </Button>
-            )}
+          /* War Room Console */
+          <div className="w-full h-[600px] bg-black border border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
+            <WarRoomConsole />
           </div>
         ) : (
           /* Watchtower Events */
