@@ -34,7 +34,7 @@ const Watchtower = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Session invalid.");
 
-      const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/watchtower-brain`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/brain`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
