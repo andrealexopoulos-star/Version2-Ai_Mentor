@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://calibration-hub-9.preview.emergentagent.com/advisor
+## For: https://auth-loop-fix-4.preview.emergentagent.com/advisor
 
 ---
 

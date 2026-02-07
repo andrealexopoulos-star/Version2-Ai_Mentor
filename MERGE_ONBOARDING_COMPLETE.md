@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://calibration-hub-9.preview.emergentagent.com/login-supabase
+https://auth-loop-fix-4.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://calibration-hub-9.preview.emergentagent.com/integrations
+https://auth-loop-fix-4.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

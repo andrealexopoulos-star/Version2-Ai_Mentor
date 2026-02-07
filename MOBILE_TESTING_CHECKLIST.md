@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://calibration-hub-9.preview.emergentagent.com
+**Test URL:** https://auth-loop-fix-4.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://calibration-hub-9.preview.emergentagent.com/advisor
+- [ ] Navigate to https://auth-loop-fix-4.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://calibration-hub-9.preview.emergentagent.com/
+**Landing:** https://auth-loop-fix-4.preview.emergentagent.com/
 
-**Login:** https://calibration-hub-9.preview.emergentagent.com/login-supabase
+**Login:** https://auth-loop-fix-4.preview.emergentagent.com/login-supabase
 
-**Register:** https://calibration-hub-9.preview.emergentagent.com/register-supabase
+**Register:** https://auth-loop-fix-4.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://calibration-hub-9.preview.emergentagent.com/pricing
+**Pricing:** https://auth-loop-fix-4.preview.emergentagent.com/pricing
 
-**Terms:** https://calibration-hub-9.preview.emergentagent.com/terms
+**Terms:** https://auth-loop-fix-4.preview.emergentagent.com/terms
 
-**Advisor:** https://calibration-hub-9.preview.emergentagent.com/advisor
+**Advisor:** https://auth-loop-fix-4.preview.emergentagent.com/advisor
 
 ---
 

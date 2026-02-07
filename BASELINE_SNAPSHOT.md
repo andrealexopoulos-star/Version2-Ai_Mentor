@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://calibration-hub-9.preview.emergentagent.com`
-- **Backend:** `https://calibration-hub-9.preview.emergentagent.com/api`
+- **Frontend:** `https://auth-loop-fix-4.preview.emergentagent.com`
+- **Backend:** `https://auth-loop-fix-4.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

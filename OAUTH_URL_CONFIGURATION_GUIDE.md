@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://calibration-hub-9.preview.emergentagent.com
+https://auth-loop-fix-4.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://calibration-hub-9.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://calibration-hub-9.preview.emergentagent.com
+https://auth-loop-fix-4.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://calibration-hub-9.preview.emergentagent.com/**
-https://calibration-hub-9.preview.emergentagent.com/auth/callback
-https://calibration-hub-9.preview.emergentagent.com/auth-callback-supabase
-https://calibration-hub-9.preview.emergentagent.com/connect-email
-https://calibration-hub-9.preview.emergentagent.com/integrations
+https://auth-loop-fix-4.preview.emergentagent.com/**
+https://auth-loop-fix-4.preview.emergentagent.com/auth/callback
+https://auth-loop-fix-4.preview.emergentagent.com/auth-callback-supabase
+https://auth-loop-fix-4.preview.emergentagent.com/connect-email
+https://auth-loop-fix-4.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://calibration-hub-9.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://calibration-hub-9.preview.emergentagent.com/api/auth/outlook/callback
+https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://calibration-hub-9.preview.emergentagent.com
+https://auth-loop-fix-4.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://calibration-hub-9.preview.emergentagent.com/api/auth/gmail/callback
+https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

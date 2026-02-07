@@ -7,7 +7,7 @@ import requests
 import os
 
 # Use the preview endpoint URL for testing
-BASE_URL = os.environ.get('preview_endpoint', 'https://calibration-hub-9.preview.emergentagent.com')
+BASE_URL = os.environ.get('preview_endpoint', 'https://auth-loop-fix-4.preview.emergentagent.com')
 
 
 class TestBackendHealthAndCalibration:

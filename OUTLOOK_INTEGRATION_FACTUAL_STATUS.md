@@ -132,7 +132,7 @@ Note: Shows `a75a808f` (missing 'f')
 4. Click: **Authentication** (left sidebar)
 5. Under **Web** platform redirects:
    - Click **"+ Add URI"**
-   - Paste: `https://calibration-hub-9.preview.emergentagent.com/api/auth/outlook/callback`
+   - Paste: `https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback`
    - Click **"Save"**
 6. Wait 2-3 minutes for propagation
 

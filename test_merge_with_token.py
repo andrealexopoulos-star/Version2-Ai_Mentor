@@ -17,7 +17,7 @@ SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdX
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
 
 # Backend API URL
-BACKEND_URL = "https://calibration-hub-9.preview.emergentagent.com/api"
+BACKEND_URL = "https://auth-loop-fix-4.preview.emergentagent.com/api"
 
 def create_test_jwt(user_id: str, email: str) -> str:
     """Create a test JWT token for the user"""

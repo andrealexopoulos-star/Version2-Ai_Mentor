@@ -65,7 +65,7 @@ Click **"Save"** or **"Update"** button.
 
 ## 🧪 TEST THE CONNECTION
 
-1. Navigate to: https://calibration-hub-9.preview.emergentagent.com/integrations
+1. Navigate to: https://auth-loop-fix-4.preview.emergentagent.com/integrations
 2. Click "Connect" on HubSpot
 3. Merge modal opens
 4. Click HubSpot
