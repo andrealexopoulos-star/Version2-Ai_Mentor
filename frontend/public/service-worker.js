@@ -1,6 +1,6 @@
 /* BIQC Service Worker - PWA Offline Support */
 
-const CACHE_NAME = 'biqc-v3-20250202-beta-domain'; // Force cache refresh for beta.thestrategysquad.com
+const CACHE_NAME = 'biqc-v4-20250207-warroom'; // Force cache refresh for War Room deployment
 const urlsToCache = [
   '/',
   '/static/css/main.css',
