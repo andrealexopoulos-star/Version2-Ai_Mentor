@@ -247,7 +247,7 @@ const CalibrationAdvisor = () => {
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="flex items-center gap-3 text-white/60">
             <RefreshCw size={18} className="animate-spin" />
-            <span className="text-sm">Preparing your calibration session…</span>
+            <span className="text-sm font-mono">Syncing... Establishing calibration vectors.</span>
           </div>
         </main>
       )}
