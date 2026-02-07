@@ -116,6 +116,7 @@ function AppRoutes() {
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
       <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
       <Route path="/watchtower" element={<ProtectedRoute><Watchtower /></ProtectedRoute>} />
+      <Route path="/war-room" element={<ProtectedRoute><div className="h-screen bg-black"><WarRoomConsole /></div></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
