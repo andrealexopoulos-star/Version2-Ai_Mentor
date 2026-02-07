@@ -219,11 +219,11 @@ const CalibrationAdvisor = () => {
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-xl w-full space-y-8 text-center">
             <div className="bg-black/40 border border-white/10 rounded-2xl px-8 py-10 text-left space-y-4">
+              <p className="text-xs font-mono text-emerald-400/70 tracking-wider mb-2">FAIL-SAFE | MASTER CONNECTED</p>
               <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{welcomeText}</p>
-              <p className="text-base font-semibold text-white/90">I&apos;m BIQC — your strategic advisor.</p>
-              <p className="text-sm leading-relaxed text-white/70">Before I can give you meaningful insight, I need to understand the business you&apos;re responsible for.</p>
-              <p className="text-sm leading-relaxed text-white/70">This is a calibration session, not a form.</p>
-              <p className="text-sm leading-relaxed text-white/70">I&apos;ll ask one question at a time.</p>
+              <p className="text-base font-semibold text-white/90">Link established. Identity unverified.</p>
+              <p className="text-sm leading-relaxed text-white/70">Initiating calibration protocol. I need to map your strategic position before granting Watchtower access.</p>
+              <p className="text-sm leading-relaxed text-white/70">One vector at a time.</p>
             </div>
             {inlineError && (
               <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-left">
