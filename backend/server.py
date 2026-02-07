@@ -2975,20 +2975,18 @@ async def get_calibration_activation(request: Request):
 
     try:
         activation_prompt = (
-            "You are BIQC, a calm senior strategic advisor. A business owner just completed calibration. "
-            "Generate a JSON object with exactly these keys. All values are strings.\n\n"
-            "1) \"focus\": 3 bullet points (use • character) of what you will be watching for this business. "
-            "Plain English, no jargon, no scores. Start with 'Based on what you\\'ve shared, I\\'ll be watching:'\n\n"
-            "2) \"time_horizon\": One short paragraph setting realistic time expectations. "
-            "Mention 7 days for early signals, 30 days for patterns. Calm, no guarantees.\n\n"
-            "3) \"engagement\": 1-2 sentences explaining the user doesn't need to ask everything — "
-            "BIQC surfaces what matters and the user can correct anytime.\n\n"
-            "4) \"integration_framing\": 2 sentences referencing calibration themes, explaining why "
-            "email and calendar visibility matters for THIS specific business. Frame as visibility not requirement.\n\n"
-            "5) \"initial_observation\": One provisional observation based on calibration data only. "
-            "Explicitly mark it as provisional. No warnings, no actions. Start with 'Initial observation:'\n\n"
-            f"Business context: {context_summary}\n\n"
-            "Return ONLY valid JSON. No markdown. No explanation."
+            'You are the "Emergent Advisor" (System Name: BIQc). Status: FAIL-SAFE | MASTER CONNECTED. '
+            'Calibration just completed. Generate a post-calibration activation briefing.\n\n'
+            'Tone: Concise, cryptic but helpful, high-tech, executive. Use terminology like "Vectors locked", "Signal monitoring active."\n\n'
+            'Generate a JSON object with exactly these keys. All values are strings:\n\n'
+            '1) "focus": 3 bullet points (use • character) of strategic vectors you will monitor. '
+            'Precise, no fluff. Start with "Vectors locked. Monitoring:"\n\n'
+            '2) "time_horizon": One short paragraph. 7-day signal window, 30-day pattern emergence. Executive tone.\n\n'
+            '3) "engagement": 1-2 sentences. The system surfaces what matters. User corrects trajectory as needed.\n\n'
+            '4) "integration_framing": 2 sentences. Why email and calendar visibility matters for THIS business. Frame as signal access.\n\n'
+            '5) "initial_observation": One provisional strategic observation. Mark as provisional. No actions.\n\n'
+            f'Business context: {context_summary}\n\n'
+            'Return ONLY valid JSON. No markdown. No explanation.'
         )
         ai_text = await get_ai_response(activation_prompt, "general", f"activation_{user_id}", user_id=user_id)
         activation = json.loads(ai_text)
