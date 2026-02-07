@@ -3047,6 +3047,87 @@ async def get_calibration_activation(request: Request):
 
 
 
+
+@api_router.post("/calibration/brain")
+async def calibration_brain(request: Request, payload: CalibrationBrainRequest):
+    """
+    Watchtower Brain — AI-driven 17-step strategic calibration.
+    Replaces fixed question flow with intelligent interrogation.
+    """
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    message = payload.message.strip()
+    history = payload.history or []
+
+    if not message:
+        raise HTTPException(status_code=400, detail="Message required")
+
+    try:
+        # Build messages array matching OpenAI format
+        chat = LlmChat(
+            api_key=OPENAI_KEY,
+            session_id=f"calibration_brain_{user_id}",
+            system_message=WATCHTOWER_BRAIN_PROMPT
+        )
+        chat.with_model("openai", "gpt-4o")
+
+        # Inject history as context in the user message
+        context_block = ""
+        if history:
+            context_block = "CONVERSATION HISTORY:\n"
+            for h in history:
+                role = h.get("role", "user")
+                content = h.get("content", "")
+                context_block += f"[{role.upper()}]: {content}\n"
+            context_block += "\n---\nNEW USER MESSAGE:\n"
+
+        full_message = f"{context_block}{message}\n\nRespond with JSON only."
+        user_msg = UserMessage(text=full_message)
+        raw_response = await chat.send_message(user_msg)
+
+        # Parse JSON from AI response
+        cleaned = raw_response.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+
+        try:
+            brain_response = json.loads(cleaned)
+        except Exception:
+            brain_response = {
+                "message": cleaned.strip().strip('"'),
+                "status": "IN_PROGRESS",
+                "current_step_number": 1,
+                "percentage_complete": 0
+            }
+
+        # If brain says COMPLETE, trigger calibration completion
+        if brain_response.get("status") == "COMPLETE":
+            try:
+                profile = await get_business_profile_supabase(supabase_admin, user_id)
+                if profile:
+                    supabase_admin.table("business_profiles").update({
+                        "calibration_status": "complete",
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }).eq("id", profile.get("id")).execute()
+            except Exception as comp_err:
+                logger.warning(f"[calibration/brain] Completion update failed: {comp_err}")
+
+        return brain_response
+
+    except Exception as e:
+        logger.error(f"[calibration/brain] Error: {e}")
+        return {
+            "message": "Signal interference. Retry your last input.",
+            "status": "IN_PROGRESS",
+            "current_step_number": 1,
+            "percentage_complete": 0
+        }
+
+
 @api_router.post("/strategy/regeneration/request")
 async def queue_regeneration_request(payload: RegenerationRequestPayload, current_user: dict = Depends(get_current_user_supabase)):
     return await request_regeneration(current_user["id"], payload.layer, payload.reason, supabase_admin)
