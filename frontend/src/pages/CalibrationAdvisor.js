@@ -9,7 +9,7 @@ const apiBase = process.env.REACT_APP_BACKEND_URL
   : '';
 
 const BASE_INITIAL_MESSAGE =
-  "I'm BIQC — your strategic advisor.\nBefore I can give you meaningful insight, I need to understand the business you're responsible for.\nThis is a calibration session, not a form.\nI'll ask one question at a time.";
+  "Link established. Identity unverified.\nInitiating calibration protocol.\nI need to map your strategic position before granting Watchtower access.\nOne vector at a time.";
 
 const FINAL_MESSAGE =
   "Calibration complete.\nI now understand the business you're responsible for.\nBIQC is ready to advise you.";
