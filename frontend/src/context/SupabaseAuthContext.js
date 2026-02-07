@@ -225,7 +225,7 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   const signInWithOAuth = async (provider) => {
     try {
-      const redirectUrl = `${process.env.REACT_APP_BACKEND_URL}/auth/callback`;
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('OAuth redirect URL:', redirectUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
