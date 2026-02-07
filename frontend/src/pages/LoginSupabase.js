@@ -10,7 +10,7 @@ import { ArrowLeft, Loader2, Eye, EyeOff, Zap } from 'lucide-react';
 const LoginSupabase = () => {
   const navigate = useNavigate();
   const { signIn, signInWithOAuth } = useSupabaseAuth();
-  const homeUrl = process.env.REACT_APP_BACKEND_URL;
+  const homeUrl = '/';
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
