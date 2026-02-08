@@ -1,123 +1,100 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
-const apiBase = process.env.REACT_APP_BACKEND_URL
-  ? process.env.REACT_APP_BACKEND_URL.replace(/\/$/, '')
-  : '';
-
-/** Authenticated fetch helper */
-async function calFetch(path, { method = "GET", body, session } = {}) {
-  const url = `${apiBase}${path}`;
-  const headers = { "Content-Type": "application/json" };
-  if (session?.access_token) {
-    headers["Authorization"] = `Bearer ${session.access_token}`;
-  }
-  const res = await fetch(url, {
-    method,
-    headers,
-    credentials: "include",
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  console.log(`[calibration] ${method} ${url} → ${res.status}`);
-  return res;
-}
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
 const CalibrationAdvisor = () => {
   const navigate = useNavigate();
-  const { user, session, loading, setCalibrationMode } = useSupabaseAuth();
+  const { user, session, loading, setCalibrationMode, supabase } = useSupabaseAuth();
 
-  // Phase: "welcome" → "initializing" → "active" → "complete"
   const [phase, setPhase] = useState("welcome");
-  const [messages, setMessages] = useState([]);    // { role: "advisor"|"user", text: string }
-  const [history, setHistory] = useState([]);       // OpenAI-format history for brain
+  const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inlineError, setInlineError] = useState(null);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
   const welcomeText = useMemo(() => {
     const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.full_name;
-    let firstName = null;
-    if (fullName) {
-      firstName = fullName.includes("@") ? fullName.split("@")[0] : fullName.split(" ")[0];
-    }
+    if (!fullName) return "Welcome.";
+    const firstName = fullName.includes("@") ? fullName.split("@")[0] : fullName.split(" ")[0];
     return firstName ? `Welcome, ${firstName}.` : "Welcome.";
   }, [user]);
 
-  /* Auth guard */
   useEffect(() => {
-    if (!loading && !user) navigate("/login");
+    if (!loading && !user) navigate("/login-supabase");
   }, [loading, user, navigate]);
 
-  /* Auto-scroll */
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, phase]);
 
-  /* Step label */
   const stepLabel = useMemo(() => {
-    if (phase === "welcome") return "CALIBRATION";
+    if (phase === "welcome") return "PERSONA CALIBRATION";
     if (phase === "initializing") return "SYNCING...";
     if (phase === "complete") return "CALIBRATION · COMPLETE";
-    if (currentStep > 0) return `CALIBRATION · STEP ${currentStep} OF 17 · ${progress}%`;
+    if (currentStep > 0) return `STEP ${currentStep} OF 9 · ${progress}%`;
     return "CALIBRATION · ACTIVE";
   }, [phase, currentStep, progress]);
 
-  /* ── Begin Calibration ── */
+  /** Call the Supabase Edge Function */
+  const callEdgeFunction = async (message) => {
+    const { data: { session: activeSession } } = await supabase.auth.getSession();
+    const token = activeSession?.access_token;
+    if (!token) throw new Error("No session");
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration_psych`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message }),
+    });
+
+    if (!res.ok) throw new Error(`Edge Function error: ${res.status}`);
+    return res.json();
+  };
+
   const handleBegin = async () => {
     setPhase("initializing");
     setInlineError(null);
 
-    // Init business profile shell
     try {
-      await calFetch("/api/calibration/init", { method: "POST", session });
-    } catch (_) {}
-
-    // Send init signal to brain
-    try {
-      const res = await calFetch("/api/calibration/brain", {
-        method: "POST",
-        session,
-        body: { message: "[SYSTEM_INIT_SIGNAL]", history: [] },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      const advisorMsg = data.message || "Link established. State your business identity.";
-      setMessages([{ role: "advisor", text: advisorMsg }]);
-      setHistory([
-        { role: "assistant", content: advisorMsg }
-      ]);
-      setCurrentStep(data.current_step_number || 1);
-      setProgress(data.percentage_complete || 0);
+      const data = await callEdgeFunction("[SYSTEM_INIT_CALIBRATION]");
+      setMessages([{ role: "advisor", text: data.message }]);
+      setCurrentStep(data.step || 1);
+      setProgress(data.percentage || 0);
       setPhase("active");
     } catch (err) {
-      console.error("[calibration] Brain init failed:", err);
+      console.error("[calibration] Init failed:", err);
       setPhase("welcome");
       setInlineError("Could not start calibration. Please refresh and try again.");
     }
   };
 
-  /* ── Do This Later ── */
   const handleSkip = async () => {
     try {
-      const res = await calFetch("/api/calibration/defer", { method: "POST", session });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Use existing defer endpoint
+      const apiBase = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, '') || '';
+      const { data: { session: s } } = await supabase.auth.getSession();
+      await fetch(`${apiBase}/api/calibration/defer`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${s?.access_token}`, "Content-Type": "application/json" },
+      });
       setCalibrationMode('DEFERRED');
-    } catch (err) {
-      console.error("[calibration] Defer failed:", err);
-      toast.error("Calibration deferred locally, but server did not confirm. Resume in Settings.");
+    } catch (_) {
       setCalibrationMode('DEFERRED');
     }
     navigate("/advisor");
   };
 
-  /* ── Submit message to brain ── */
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (isSubmitting || phase !== "active" || !inputValue.trim()) return;
@@ -127,69 +104,31 @@ const CalibrationAdvisor = () => {
     setInlineError(null);
     setIsSubmitting(true);
 
-    // Show user message immediately
     const newMessages = [...messages, { role: "user", text: trimmed }];
     setMessages(newMessages);
 
-    // Build updated history
-    const newHistory = [...history, { role: "user", content: trimmed }];
-
     try {
-      // Also save structured answer to the legacy endpoint (best-effort, maps step to question_id)
-      const questionId = Math.min(currentStep, 9);
-      calFetch("/api/calibration/answer", {
-        method: "POST",
-        session,
-        body: { question_id: questionId, answer: trimmed },
-      }).catch(() => {}); // fire-and-forget
+      const data = await callEdgeFunction(trimmed);
 
-      // Send to brain
-      const res = await calFetch("/api/calibration/brain", {
-        method: "POST",
-        session,
-        body: { message: trimmed, history: newHistory },
-      });
+      setMessages([...newMessages, { role: "advisor", text: data.message }]);
+      setCurrentStep(data.step || currentStep);
+      setProgress(data.percentage || progress);
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      const advisorMsg = data.message || "Vector received. Continue.";
-      setMessages([...newMessages, { role: "advisor", text: advisorMsg }]);
-      setHistory([...newHistory, { role: "assistant", content: advisorMsg }]);
-      setCurrentStep(data.current_step_number || currentStep);
-      setProgress(data.percentage_complete || progress);
-
-      // Check for completion
       if (data.status === "COMPLETE") {
         setPhase("complete");
-
-        // Fetch activation briefing
-        try {
-          const actRes = await calFetch("/api/calibration/activation", { method: "GET", session });
-          if (actRes.ok) {
-            const act = await actRes.json();
-            const activationMessages = [];
-            if (act.focus) activationMessages.push({ role: "advisor", text: act.focus });
-            if (act.time_horizon) activationMessages.push({ role: "advisor", text: act.time_horizon });
-            if (act.engagement) activationMessages.push({ role: "advisor", text: act.engagement });
-            if (activationMessages.length > 0) {
-              setMessages(prev => [...prev, ...activationMessages]);
-            }
-          }
-        } catch (_) {}
-
-        setTimeout(() => navigate("/advisor"), 6000);
+        toast.success("Persona calibration complete.");
+        setTimeout(() => navigate("/advisor"), 3000);
       }
     } catch (err) {
-      console.error("[calibration] Brain error:", err);
+      console.error("[calibration] Error:", err);
       setInlineError("Signal lost. Tap Retry to resend.");
       setInputValue(trimmed);
     } finally {
       setIsSubmitting(false);
+      inputRef.current?.focus();
     }
   };
 
-  /* ══════════════ RENDER ══════════════ */
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#080c14] via-[#0f172a] to-[#162032] text-white flex flex-col">
       <header className="px-6 sm:px-8 py-4 border-b border-white/10 flex items-center justify-between">
@@ -197,23 +136,21 @@ const CalibrationAdvisor = () => {
         <span className="text-[11px] font-medium text-emerald-400/60 tracking-widest uppercase font-mono">{stepLabel}</span>
       </header>
 
-      {/* Progress bar */}
       {(phase === "active" || phase === "complete") && (
         <div className="h-0.5 bg-white/5">
           <div className="h-full bg-emerald-400/60 transition-all duration-700" style={{ width: `${progress}%` }} />
         </div>
       )}
 
-      {/* Welcome screen */}
       {phase === "welcome" && (
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-xl w-full space-y-8 text-center">
             <div className="bg-black/40 border border-white/10 rounded-2xl px-8 py-10 text-left space-y-4">
-              <p className="text-xs font-mono text-emerald-400/70 tracking-wider mb-2">FAIL-SAFE | MASTER CONNECTED</p>
+              <p className="text-xs font-mono text-emerald-400/70 tracking-wider mb-2">PERSONA CALIBRATION</p>
               <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{welcomeText}</p>
-              <p className="text-base font-semibold text-white/90">Link established. Identity unverified.</p>
-              <p className="text-sm leading-relaxed text-white/70">Initiating calibration protocol. I need to map your strategic position before granting Watchtower access.</p>
-              <p className="text-sm leading-relaxed text-white/70">17-point strategic extraction. One vector at a time.</p>
+              <p className="text-base font-semibold text-white/90">Before I can advise you, I need to understand how you operate.</p>
+              <p className="text-sm leading-relaxed text-white/70">9 questions about your working style, preferences, and boundaries. This calibrates my communication to match your operating mode.</p>
+              <p className="text-sm leading-relaxed text-white/50">This is about YOU — not your business.</p>
             </div>
             {inlineError && (
               <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-left">
@@ -222,10 +159,10 @@ const CalibrationAdvisor = () => {
               </div>
             )}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button onClick={handleBegin} className="px-8 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-base font-semibold transition-colors shadow-lg shadow-blue-500/20" data-testid="calibration-begin">
+              <button onClick={handleBegin} className="px-8 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-base font-semibold transition-colors shadow-lg shadow-blue-500/20">
                 Begin Calibration
               </button>
-              <button onClick={handleSkip} className="px-8 py-3.5 rounded-xl bg-white/8 hover:bg-white/12 border border-white/15 text-white/70 hover:text-white text-base font-medium transition-colors" data-testid="calibration-skip">
+              <button onClick={handleSkip} className="px-8 py-3.5 rounded-xl bg-white/8 hover:bg-white/12 border border-white/15 text-white/70 hover:text-white text-base font-medium transition-colors">
                 Do This Later
               </button>
             </div>
@@ -233,56 +170,73 @@ const CalibrationAdvisor = () => {
         </main>
       )}
 
-      {/* Initializing */}
-      {phase === "initializing" && (
-        <main className="flex-1 flex items-center justify-center px-6">
-          <div className="flex items-center gap-3 text-white/60">
-            <RefreshCw size={18} className="animate-spin" />
-            <span className="text-sm font-mono">Syncing... Establishing calibration vectors.</span>
-          </div>
-        </main>
-      )}
+      {(phase === "active" || phase === "complete" || phase === "initializing") && (
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-4">
+            {phase === "initializing" && (
+              <div className="flex justify-center py-12">
+                <span className="text-emerald-400/50 text-xs tracking-widest animate-pulse font-mono">ESTABLISHING LINK...</span>
+              </div>
+            )}
 
-      {/* Active chat / Complete */}
-      {(phase === "active" || phase === "complete") && (
-        <main className="flex-1 flex flex-col px-6 sm:px-8 py-6 min-h-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-1" data-testid="calibration-message-list">
-            {messages.map((message, index) => {
-              if (message.role === "advisor") {
-                return (
-                  <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-5 py-4 bg-black/50 border border-white/10 shadow-lg" data-testid={`calibration-message-${index}`}>
-                    <p className="text-[15px] leading-relaxed text-white/90 whitespace-pre-line">{message.text}</p>
-                  </div>
-                );
-              }
-              return (
-                <div key={`msg-${index}`} className="max-w-2xl rounded-2xl px-5 py-4 bg-blue-500 shadow-lg ml-auto" data-testid={`calibration-message-${index}`}>
-                  <p className="text-[15px] leading-relaxed text-white">{message.text}</p>
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed ${
+                  msg.role === "user"
+                    ? "bg-blue-600/20 border border-blue-500/20 text-white/90"
+                    : "bg-white/5 border border-white/10 text-white/80"
+                }`}>
+                  {msg.role !== "user" && <p className="text-[10px] font-mono text-emerald-400/50 mb-1 tracking-wider">CALIBRATION AGENT</p>}
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            ))}
 
-          {inlineError && (
-            <div className="mt-3 flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-              <AlertCircle size={16} className="text-red-400 shrink-0" />
-              <p className="text-sm text-red-300 flex-1">{inlineError}</p>
-            </div>
-          )}
+            {isSubmitting && (
+              <div className="flex justify-start">
+                <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                  <span className="text-emerald-400/40 text-xs tracking-widest animate-pulse font-mono">PROCESSING...</span>
+                </div>
+              </div>
+            )}
+
+            {phase === "complete" && (
+              <div className="flex justify-center py-6">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-6 py-4 text-center">
+                  <p className="text-emerald-400 font-semibold text-sm">Persona Calibration Complete</p>
+                  <p className="text-white/50 text-xs mt-1">Redirecting to your advisor...</p>
+                </div>
+              </div>
+            )}
+          </div>
 
           {phase === "active" && (
-            <form onSubmit={handleSubmit} className="mt-4 flex gap-3 items-center" data-testid="calibration-form">
-              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="State your response" disabled={isSubmitting} className="flex-1 rounded-xl bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60 focus:border-blue-400" data-testid="calibration-input" />
-              <button type="submit" disabled={isSubmitting || !inputValue.trim()} className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold disabled:opacity-40 transition-colors" data-testid="calibration-submit">
-                {isSubmitting ? "..." : "Send"}
-              </button>
+            <form onSubmit={handleSubmit} className="px-4 sm:px-8 py-4 border-t border-white/10">
+              {inlineError && (
+                <div className="flex items-center gap-2 mb-2 text-red-400 text-xs">
+                  <AlertCircle size={12} /> {inlineError}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type your answer..."
+                  disabled={isSubmitting}
+                  className="flex-1 bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !inputValue.trim()}
+                  className="px-6 py-3 bg-blue-500 hover:bg-blue-400 disabled:opacity-30 rounded-xl text-sm font-semibold text-white transition-colors"
+                >
+                  Send
+                </button>
+              </div>
             </form>
-          )}
-
-          {phase === "complete" && (
-            <div className="mt-4 text-center">
-              <p className="text-sm font-mono text-emerald-400/70">Watchtower access granted. Redirecting...</p>
-            </div>
           )}
         </main>
       )}
