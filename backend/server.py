@@ -9227,6 +9227,95 @@ async def handle_watchtower_event(
         "success": success
     }
 
+
+# ═══════════════════════════════════════════════════════════════
+# WATCHTOWER ENGINE V2 — Continuous Business Intelligence
+# ═══════════════════════════════════════════════════════════════
+
+class ObservationEventRequest(BaseModel):
+    domain: str
+    event_type: str
+    payload: Dict[str, Any] = {}
+    source: str
+    severity: str = "info"
+    observed_at: Optional[str] = None
+
+
+@api_router.post("/watchtower/emit")
+async def watchtower_emit_event(
+    event: ObservationEventRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Emit an observation event.
+    Called by integrations when they detect a factual signal.
+    """
+    from watchtower_engine import get_watchtower_engine
+    engine = get_watchtower_engine()
+
+    result = await engine.emit_event(
+        user_id=current_user["id"],
+        domain=event.domain,
+        event_type=event.event_type,
+        payload=event.payload,
+        source=event.source,
+        severity=event.severity,
+        observed_at=event.observed_at,
+    )
+
+    if result is None:
+        raise HTTPException(status_code=400, detail=f"Invalid domain: {event.domain}")
+
+    return {"success": True, "event_id": result.get("id")}
+
+
+@api_router.post("/watchtower/analyse")
+async def watchtower_analyse(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Trigger a Watchtower analysis cycle for the current user.
+    Event-driven or scheduled — behaviour is identical.
+    """
+    from watchtower_engine import get_watchtower_engine
+    engine = get_watchtower_engine()
+
+    result = await engine.run_analysis(current_user["id"])
+    return result
+
+
+@api_router.get("/watchtower/positions")
+async def watchtower_get_positions(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Read current domain positions for the current user.
+    Returns the most recent position per domain.
+    """
+    from watchtower_engine import get_watchtower_engine
+    engine = get_watchtower_engine()
+
+    positions = await engine.get_positions(current_user["id"])
+    return {"positions": positions}
+
+
+@api_router.get("/watchtower/findings")
+async def watchtower_get_findings(
+    domain: Optional[str] = None,
+    limit: int = 20,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Read historical findings (position changes and material findings).
+    Append-only record of judgement over time.
+    """
+    from watchtower_engine import get_watchtower_engine
+    engine = get_watchtower_engine()
+
+    findings = await engine.get_findings(current_user["id"], domain=domain, limit=limit)
+    return {"findings": findings, "count": len(findings)}
+
+
 # Include router and middleware
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
