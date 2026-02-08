@@ -204,7 +204,7 @@ const AuthCallbackSupabase = () => {
             console.log('No session found, redirecting to login');
             navigate('/login-supabase');
           } else {
-            console.log('Existing session found, redirecting to biqc-insights');
+            console.log('Existing session found, redirecting to advisor');
             navigate('/advisor', { replace: true });
           }
         }
