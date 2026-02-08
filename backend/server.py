@@ -9253,6 +9253,9 @@ async def watchtower_emit_event(
     from watchtower_engine import get_watchtower_engine
     engine = get_watchtower_engine()
 
+    if event.domain not in ("finance", "sales", "operations", "team", "market"):
+        raise HTTPException(status_code=400, detail=f"Invalid domain: {event.domain}")
+
     result = await engine.emit_event(
         user_id=current_user["id"],
         domain=event.domain,
@@ -9264,7 +9267,7 @@ async def watchtower_emit_event(
     )
 
     if result is None:
-        raise HTTPException(status_code=400, detail=f"Invalid domain: {event.domain}")
+        raise HTTPException(status_code=500, detail="Failed to persist observation event")
 
     return {"success": True, "event_id": result.get("id")}
 
