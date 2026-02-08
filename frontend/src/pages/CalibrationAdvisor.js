@@ -292,7 +292,7 @@ const CalibrationAdvisor = () => {
               </div>
             </div>
             <button
-              onClick={() => navigate("/advisor")}
+              onClick={() => window.location.href = "/advisor"}
               className="mt-4 px-8 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold transition-colors"
             >
               Go to Dashboard Now
