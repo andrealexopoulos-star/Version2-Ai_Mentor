@@ -81,13 +81,20 @@ const CalibrationAdvisor = () => {
 
   const handleSkip = async () => {
     try {
-      // Use existing defer endpoint
-      const apiBase = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, '') || '';
+      // Write deferred status directly to Supabase
       const { data: { session: s } } = await supabase.auth.getSession();
-      await fetch(`${apiBase}/api/calibration/defer`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${s?.access_token}`, "Content-Type": "application/json" },
-      });
+      if (s?.user?.id) {
+        // Upsert: set status to in_progress (deferred is handled client-side)
+        const { error } = await supabase
+          .from('user_operator_profile')
+          .upsert({
+            user_id: s.user.id,
+            persona_calibration_status: 'incomplete',
+            operator_profile: {},
+            current_step: 1,
+          }, { onConflict: 'user_id' });
+        if (error) console.warn('[calibration] Defer upsert warn:', error);
+      }
       setCalibrationMode('DEFERRED');
     } catch (_) {
       setCalibrationMode('DEFERRED');
