@@ -157,7 +157,10 @@ const CalibrationAdvisor = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#080c14] via-[#0f172a] to-[#162032] text-white flex flex-col">
       <header className="px-6 sm:px-8 py-4 border-b border-white/10 flex items-center justify-between">
         <h1 className="text-base sm:text-lg font-semibold tracking-tight text-white font-mono">BIQc CALIBRATION</h1>
-        <span className="text-[11px] font-medium text-emerald-400/60 tracking-widest uppercase font-mono">{stepLabel}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[9px] font-mono text-amber-500/50 bg-amber-500/10 px-2 py-0.5 rounded">v2-EDGE</span>
+          <span className="text-[11px] font-medium text-emerald-400/60 tracking-widest uppercase font-mono">{stepLabel}</span>
+        </div>
       </header>
 
       {(phase === "active" || phase === "complete") && (
