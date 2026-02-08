@@ -239,11 +239,14 @@ const CalibrationAdvisor = () => {
                 <input
                   ref={inputRef}
                   type="text"
+                  inputMode="text"
+                  enterKeyHint="send"
+                  autoComplete="off"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Type your answer..."
                   disabled={isSubmitting}
-                  className="flex-1 bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                  className="flex-1 bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-base text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
                   autoFocus
                 />
                 <button
