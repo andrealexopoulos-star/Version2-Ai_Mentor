@@ -70,9 +70,10 @@ const CalibrationAdvisor = () => {
     console.log('[calibration-psych] Response status:', res.status);
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error('[calibration-psych] Error body:', errText);
-      throw new Error(`Edge Function error: ${res.status}`);
+      let errText = '';
+      try { errText = await res.text(); } catch { errText = 'Could not read error'; }
+      console.error('[calibration-psych] Error:', res.status, errText);
+      throw new Error(`Edge Function error ${res.status}: ${errText.substring(0, 100)}`);
     }
     const data = await res.json();
     console.log('[calibration-psych] Response:', data);
