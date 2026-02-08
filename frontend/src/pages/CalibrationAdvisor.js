@@ -136,6 +136,11 @@ const CalibrationAdvisor = () => {
       if (data.status === "COMPLETE") {
         setPhase("complete");
         setProgress(100);
+        // Full page reload to /advisor — forces fresh auth bootstrap
+        // which will see persona_calibration_status = 'complete'
+        setTimeout(() => {
+          window.location.href = "/advisor";
+        }, 4000);
       }
     } catch (err) {
       console.error("[calibration-psych] Error:", err);
