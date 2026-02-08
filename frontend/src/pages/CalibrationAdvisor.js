@@ -99,14 +99,16 @@ const CalibrationAdvisor = () => {
   // On mount: check if already complete → redirect immediately
   useEffect(() => {
     if (!loading && user && supabase) {
+      const uid = user.id || session?.user?.id;
+      if (!uid) return;
       supabase.from('user_operator_profile')
         .select('persona_calibration_status')
-        .eq('user_id', user.id || session?.user?.id)
+        .eq('user_id', uid)
         .maybeSingle()
         .then(({ data }) => {
           if (data?.persona_calibration_status === 'complete') {
-            console.log('[calibration-psych] Already complete → redirecting to /advisor');
-            window.location.href = '/advisor';
+            console.log('[calibration-psych] Already complete → redirecting to /biqc-insights');
+            window.location.href = '/biqc-insights';
           }
         });
     }
@@ -123,7 +125,7 @@ const CalibrationAdvisor = () => {
       // If already complete, redirect immediately
       if (data.status === "COMPLETE") {
         console.log('[calibration-psych] Already complete → redirecting');
-        window.location.href = "/advisor";
+        window.location.href = "/biqc-insights";
         return;
       }
 
