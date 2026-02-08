@@ -11,12 +11,8 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Try multiple possible secret names for the OpenAI key
-const OPENAI_KEY = Deno.env.get("Calibration Voice Open AI")
-  || Deno.env.get("CALIBRATION_VOICE_OPEN_AI")
-  || Deno.env.get("OPENAI_API_KEY")
-  || Deno.env.get("Calibration_Voice_Open_AI")
-  || "";
+// Read OpenAI key from the dedicated secret for this function
+const OPENAI_KEY = Deno.env.get("Calibration-Psych") || "";
 
 const MODEL = "gpt-4o";
 
