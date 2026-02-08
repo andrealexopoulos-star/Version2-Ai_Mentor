@@ -165,7 +165,7 @@ const CalibrationAdvisor = () => {
         // Full page reload to /advisor — forces fresh auth bootstrap
         // which will see persona_calibration_status = 'complete'
         setTimeout(() => {
-          window.location.href = "/advisor";
+          window.location.href = "/biqc-insights";
         }, 4000);
       }
     } catch (err) {
