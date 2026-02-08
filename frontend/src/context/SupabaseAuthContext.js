@@ -292,64 +292,66 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         const activeSession = session || (await supabase.auth.getSession()).data.session;
 
-        // No session → READY (ProtectedRoute will redirect to login via !user check)
         if (!activeSession) {
           if (!cancelled) setAuthState(AUTH_STATE.READY);
           return;
         }
 
-        const userId = activeSession.user.id;
+        const accessToken = activeSession.access_token;
+        if (!accessToken) {
+          if (!cancelled) setAuthState(AUTH_STATE.READY);
+          return;
+        }
 
         // ═══════════════════════════════════════════════════════════
-        // AUTHORITATIVE CALIBRATION CHECK — SINGLE SOURCE OF TRUTH
-        // Rule: persona_calibration_status === 'complete' → READY
-        //       Everything else → NEEDS_CALIBRATION
-        //       Error → show error, NEVER redirect to calibration
+        // CALIBRATION CHECK — bypasses RLS (ES256 JWTs can't query via client)
+        // Method: call Edge Function with a status check, then fall back to legacy
         // ═══════════════════════════════════════════════════════════
 
         let calibrationComplete = false;
 
-        // Primary: check user_operator_profile in Supabase
+        // Primary: call calibration-psych Edge Function with a check message
+        // If user is complete, it returns status: "COMPLETE"
         try {
-          const { data: opProfile, error: opError } = await supabase
-            .from('user_operator_profile')
-            .select('persona_calibration_status, post_calibration_seen, orientation_completed')
-            .eq('user_id', userId)
-            .maybeSingle();
-
-          if (!opError && opProfile?.persona_calibration_status === 'complete') {
-            calibrationComplete = true;
-            console.log('[Auth] ✅ Persona calibration COMPLETE → READY');
+          const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+          const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+          const edgeRes = await fetch(`${SUPABASE_URL}/functions/v1/calibration-psych`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+              'apikey': ANON_KEY,
+            },
+            body: JSON.stringify({ message: '[STATUS_CHECK]' }),
+          });
+          if (edgeRes.ok) {
+            const edgeData = await edgeRes.json();
+            if (edgeData.status === 'COMPLETE') {
+              calibrationComplete = true;
+              console.log('[Auth] ✅ Edge Function confirms COMPLETE → READY');
+            }
           }
         } catch (e) {
-          console.warn('[Auth] Supabase profile query failed:', e.message);
+          console.warn('[Auth] Edge Function check failed:', e.message);
         }
 
-        // Fallback: legacy endpoint (only if primary didn't confirm complete)
+        // Fallback: legacy endpoint
         if (!calibrationComplete) {
           try {
-            let accessToken = activeSession.access_token;
-            if (!accessToken) {
-              const refreshed = await supabase.auth.refreshSession();
-              accessToken = refreshed?.data?.session?.access_token;
-            }
-            if (accessToken) {
-              const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-              });
-              if (calRes.ok) {
-                const cal = await calRes.json();
-                if (cal.status === 'COMPLETE') {
-                  calibrationComplete = true;
-                  console.log('[Auth] ✅ Legacy calibration COMPLETE → READY');
-                }
+            const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (calRes.ok) {
+              const cal = await calRes.json();
+              if (cal.status === 'COMPLETE') {
+                calibrationComplete = true;
+                console.log('[Auth] ✅ Legacy confirms COMPLETE → READY');
               }
             }
           } catch { /* non-fatal */ }
         }
 
-        // DECISION: set auth state
         if (!cancelled) {
           if (calibrationComplete) {
             setAuthState(AUTH_STATE.READY);
@@ -363,9 +365,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       } catch (err) {
         console.error('[AUTH BOOTSTRAP ERROR]', err.message);
         if (!cancelled) {
-          // ON ERROR: show error state — NEVER redirect to calibration
-          // This prevents redirect loops from transient failures
-          console.error('[Auth] Bootstrap failed — showing READY to prevent loop');
+          console.error('[Auth] Bootstrap failed — READY to prevent loop');
           setAuthState(AUTH_STATE.READY);
         }
       }
