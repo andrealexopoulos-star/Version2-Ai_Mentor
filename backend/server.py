@@ -164,6 +164,11 @@ from watchtower_store import init_watchtower_store
 watchtower_store = init_watchtower_store(supabase_admin)
 logger.info("🎯 Watchtower Store initialized - Truth Engine ready")
 
+# Initialize Watchtower Engine (V2 — Continuous Intelligence)
+from watchtower_engine import init_watchtower_engine
+watchtower_engine = init_watchtower_engine(supabase_admin)
+logger.info("🔭 Watchtower Engine initialized - Continuous Intelligence active")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
