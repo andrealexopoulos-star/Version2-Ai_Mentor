@@ -20,7 +20,7 @@
 ### PHASE 1: Setup & Connection (5 minutes)
 
 **Step 1: Login**
-1. Go to: https://auth-loop-fix-4.preview.emergentagent.com/login-supabase
+1. Go to: https://warroom-strategic-ai.preview.emergentagent.com/login-supabase
 2. Sign in with your real business account (Google or Microsoft)
 3. Verify you land on `/advisor` page
 

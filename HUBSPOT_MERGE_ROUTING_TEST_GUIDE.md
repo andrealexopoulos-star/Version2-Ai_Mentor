@@ -144,13 +144,13 @@ const openMergeLink = async () => {
 ### Test Procedure
 
 #### Step 1: Login
-1. Navigate to: https://auth-loop-fix-4.preview.emergentagent.com/login-supabase
+1. Navigate to: https://warroom-strategic-ai.preview.emergentagent.com/login-supabase
 2. Click "Continue with Google"
 3. Login with: **andre@thestrategysquad.com.au**
 4. Verify successful login and redirect
 
 #### Step 2: Navigate to Integrations
-1. Navigate to: https://auth-loop-fix-4.preview.emergentagent.com/integrations
+1. Navigate to: https://warroom-strategic-ai.preview.emergentagent.com/integrations
 2. Verify page loads successfully
 3. **OPEN BROWSER CONSOLE** (F12 → Console tab) - CRITICAL for debugging
 

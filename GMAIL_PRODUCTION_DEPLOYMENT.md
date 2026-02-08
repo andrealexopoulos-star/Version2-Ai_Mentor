@@ -46,7 +46,7 @@
 
 **DO THIS FIRST - Fix Your Session:**
 
-1. **Go to:** `https://auth-loop-fix-4.preview.emergentagent.com`
+1. **Go to:** `https://warroom-strategic-ai.preview.emergentagent.com`
 
 2. **Sign out completely:**
    - Click profile → Sign Out
@@ -61,7 +61,7 @@
 
 5. **Open NEW tab and go to:**
    ```
-   https://auth-loop-fix-4.preview.emergentagent.com/login-supabase
+   https://warroom-strategic-ai.preview.emergentagent.com/login-supabase
    ```
 
 6. **Click "Continue with Google"**
@@ -76,7 +76,7 @@
 
 1. **After logging in, go to:**
    ```
-   https://auth-loop-fix-4.preview.emergentagent.com/integrations
+   https://warroom-strategic-ai.preview.emergentagent.com/integrations
    ```
 
 2. **Find the Gmail card** (it should be next to Outlook)

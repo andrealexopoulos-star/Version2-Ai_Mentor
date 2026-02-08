@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://auth-loop-fix-4.preview.emergentagent.com
+https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://auth-loop-fix-4.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://auth-loop-fix-4.preview.emergentagent.com
+https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/**
-https://auth-loop-fix-4.preview.emergentagent.com/auth/callback
-https://auth-loop-fix-4.preview.emergentagent.com/auth-callback-supabase
-https://auth-loop-fix-4.preview.emergentagent.com/connect-email
-https://auth-loop-fix-4.preview.emergentagent.com/integrations
+https://warroom-strategic-ai.preview.emergentagent.com/**
+https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
+https://warroom-strategic-ai.preview.emergentagent.com/auth-callback-supabase
+https://warroom-strategic-ai.preview.emergentagent.com/connect-email
+https://warroom-strategic-ai.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://auth-loop-fix-4.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback
+https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://auth-loop-fix-4.preview.emergentagent.com
+https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback
+https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

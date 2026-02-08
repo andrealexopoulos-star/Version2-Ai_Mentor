@@ -4,7 +4,7 @@
 
 ### Redirect URI
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback
+https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 **Where to paste**: Azure Portal → App Registrations → Your App → Authentication → Platform configurations → Web → Redirect URIs
@@ -23,7 +23,7 @@ https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback
 
 ### Authorized Redirect URI
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback
+https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 **Where to paste**: Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs → Your Web Client → Authorized redirect URIs
@@ -53,7 +53,7 @@ Add these secrets (one by one):
 **Secret Name**: `BACKEND_URL`  
 **Secret Value**: 
 ```
-https://auth-loop-fix-4.preview.emergentagent.com
+https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 ---
@@ -73,7 +73,7 @@ Add these secrets (one by one):
 **Secret Name**: `BACKEND_URL`  
 **Secret Value**: 
 ```
-https://auth-loop-fix-4.preview.emergentagent.com
+https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 ---
@@ -83,8 +83,8 @@ https://auth-loop-fix-4.preview.emergentagent.com
 Your `/app/backend/.env` should have these (already configured):
 
 ```env
-BACKEND_URL=https://auth-loop-fix-4.preview.emergentagent.com
-FRONTEND_URL=https://auth-loop-fix-4.preview.emergentagent.com
+BACKEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
+FRONTEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
 SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 
 # Microsoft OAuth (get from Azure Portal)
@@ -104,7 +104,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 Your `/app/frontend/.env` should have these (already configured):
 
 ```env
-REACT_APP_BACKEND_URL=https://auth-loop-fix-4.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
 REACT_APP_SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 ```
 
@@ -114,12 +114,12 @@ REACT_APP_SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 
 ### Connect Email Page
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/connect-email
+https://warroom-strategic-ai.preview.emergentagent.com/connect-email
 ```
 
 ### Priority Inbox Page (after connection)
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/email-inbox
+https://warroom-strategic-ai.preview.emergentagent.com/email-inbox
 ```
 
 ---
@@ -150,14 +150,14 @@ WHERE user_id = auth.uid();
 ## 📋 Quick Checklist
 
 ### Microsoft Azure Configuration
-- [ ] Redirect URI added: `https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback`
+- [ ] Redirect URI added: `https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback`
 - [ ] All 6 API permissions added
 - [ ] Admin consent granted (if required)
 - [ ] Client ID copied to backend `.env`
 - [ ] Client Secret copied to backend `.env`
 
 ### Google Cloud Configuration
-- [ ] Redirect URI added: `https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback`
+- [ ] Redirect URI added: `https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback`
 - [ ] All 4 scopes configured
 - [ ] OAuth consent screen published
 - [ ] Client ID copied to backend `.env`
@@ -200,7 +200,7 @@ Use the values from the "Supabase Edge Function Secrets" section above.
 
 ### 3. Test Connection
 
-1. Navigate to: `https://auth-loop-fix-4.preview.emergentagent.com/connect-email`
+1. Navigate to: `https://warroom-strategic-ai.preview.emergentagent.com/connect-email`
 2. Click "Connect Outlook" or "Connect Gmail"
 3. Authorize
 4. Verify "Connected" status appears

@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/login-supabase
+https://warroom-strategic-ai.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/integrations
+https://warroom-strategic-ai.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

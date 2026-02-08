@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://auth-loop-fix-4.preview.emergentagent.com`
-- **Backend:** `https://auth-loop-fix-4.preview.emergentagent.com/api`
+- **Frontend:** `https://warroom-strategic-ai.preview.emergentagent.com`
+- **Backend:** `https://warroom-strategic-ai.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

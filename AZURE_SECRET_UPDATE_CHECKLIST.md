@@ -36,7 +36,7 @@ Backend restarted ✅
 **Secret Name**: `BACKEND_URL`  
 **Secret Value**:
 ```
-https://auth-loop-fix-4.preview.emergentagent.com
+https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 ### After Updating Secrets
@@ -65,7 +65,7 @@ AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
 ```
 AZURE_CLIENT_ID=biqc-advisor
 AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
-BACKEND_URL=https://auth-loop-fix-4.preview.emergentagent.com
+BACKEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 ---

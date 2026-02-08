@@ -9,8 +9,8 @@
 ## 🌐 BASE URLS (FROM ENVIRONMENT)
 
 ```
-BACKEND_URL=https://auth-loop-fix-4.preview.emergentagent.com
-FRONTEND_URL=https://auth-loop-fix-4.preview.emergentagent.com
+BACKEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
+FRONTEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
 SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 ```
 
@@ -31,7 +31,7 @@ SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 
 **Authorized Redirect URIs (ADD THIS EXACT URL):**
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback
+https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 **Required Scopes:**
@@ -66,7 +66,7 @@ Client Secret: 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
 
 **Redirect URIs (ADD THIS EXACT URL):**
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback
+https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 **Required API Permissions (Microsoft Graph - Delegated):**
@@ -107,13 +107,13 @@ Client Secret: o8S8Q~3.q3nakGJkPOSZ.WkcdA0xsdNJUZ8Y5aVb
 
 **Site URL Configuration:**
 ```
-Site URL: https://auth-loop-fix-4.preview.emergentagent.com
+Site URL: https://warroom-strategic-ai.preview.emergentagent.com
 ```
 
 **Redirect URLs (Supabase manages these, but verify they include):**
 ```
-https://auth-loop-fix-4.preview.emergentagent.com/auth/callback
-https://auth-loop-fix-4.preview.emergentagent.com/**
+https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
+https://warroom-strategic-ai.preview.emergentagent.com/**
 ```
 
 **Frontend Callback Handler:**
@@ -172,14 +172,14 @@ Base URL: https://api.merge.dev/api
 **Google Login:**
 ```
 Initiation: Supabase SDK (managed)
-Callback: https://auth-loop-fix-4.preview.emergentagent.com/auth/callback (React route)
+Callback: https://warroom-strategic-ai.preview.emergentagent.com/auth/callback (React route)
 Handler: /app/frontend/src/pages/AuthCallbackSupabase.js
 ```
 
 **Microsoft Azure Login:**
 ```
 Initiation: Supabase SDK (managed)
-Callback: https://auth-loop-fix-4.preview.emergentagent.com/auth/callback (React route)
+Callback: https://warroom-strategic-ai.preview.emergentagent.com/auth/callback (React route)
 Handler: /app/frontend/src/pages/AuthCallbackSupabase.js
 ```
 
@@ -191,15 +191,15 @@ Handler: /app/frontend/src/pages/AuthCallbackSupabase.js
 ```
 UI Button: Integrations.js → "Connect Outlook"
   ↓
-Login URL: https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/login
+Login URL: https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/login
   ↓
 Microsoft OAuth
   ↓
-Callback URL: https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback
+Callback URL: https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback
   ↓
 Stores tokens → outlook_oauth_tokens table
   ↓
-Redirects to: https://auth-loop-fix-4.preview.emergentagent.com/integrations?outlook_connected=true
+Redirects to: https://warroom-strategic-ai.preview.emergentagent.com/integrations?outlook_connected=true
 ```
 
 **Sync Endpoints:**
@@ -218,15 +218,15 @@ Disconnect: POST /api/outlook/disconnect
 ```
 UI Button: Integrations.js → "Connect Gmail"
   ↓
-Login URL: https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/login
+Login URL: https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/login
   ↓
 Google OAuth
   ↓
-Callback URL: https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback
+Callback URL: https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback
   ↓
 Stores tokens → gmail_connections table
   ↓
-Redirects to: https://auth-loop-fix-4.preview.emergentagent.com/integrations?gmail_connected=true
+Redirects to: https://warroom-strategic-ai.preview.emergentagent.com/integrations?gmail_connected=true
 ```
 
 **Status/Sync:**
@@ -282,7 +282,7 @@ CRM Owners: GET /api/integrations/crm/owners
 
 2. **Authorized Redirect URIs:**
    ```
-   https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback
+   https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback
    ```
 
 3. **OAuth Consent Screen:**
@@ -324,7 +324,7 @@ AZURE_CLIENT_ID=biqc-fixer  ← INVALID (not a GUID)
    - Platform: **Web**
    - Redirect URI:
      ```
-     https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback
+     https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback
      ```
 
 4. **Get Correct Client ID:**
@@ -364,13 +364,13 @@ sudo supervisorctl restart backend
 
 1. **Site URL:**
    - Go to: Authentication → URL Configuration
-   - Site URL: `https://auth-loop-fix-4.preview.emergentagent.com`
+   - Site URL: `https://warroom-strategic-ai.preview.emergentagent.com`
 
 2. **Redirect URLs:**
    - Additional Redirect URLs:
      ```
-     https://auth-loop-fix-4.preview.emergentagent.com/auth/callback
-     https://auth-loop-fix-4.preview.emergentagent.com/**
+     https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
+     https://warroom-strategic-ai.preview.emergentagent.com/**
      ```
 
 3. **Auth Providers:**
@@ -430,7 +430,7 @@ sudo supervisorctl restart backend
 
 ```bash
 # Health check
-curl -s https://auth-loop-fix-4.preview.emergentagent.com/api/health
+curl -s https://warroom-strategic-ai.preview.emergentagent.com/api/health
 
 # Expected: {"status":"healthy"}
 ```
@@ -439,14 +439,14 @@ curl -s https://auth-loop-fix-4.preview.emergentagent.com/api/health
 
 ```bash
 # Outlook login (will redirect to Microsoft)
-curl -I https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/login
+curl -I https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/login
 
 # Expected: 401 or 307 redirect (needs auth)
 ```
 
 ```bash
 # Gmail login (will redirect to Google)
-curl -I https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/login
+curl -I https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/login
 
 # Expected: 401 or 307 redirect (needs auth)
 ```
@@ -455,14 +455,14 @@ curl -I https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/login
 
 ```bash
 # Outlook callback (with fake code)
-curl -I "https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback?code=test&state=test"
+curl -I "https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback?code=test&state=test"
 
 # Expected: 302 redirect to frontend (even with invalid code)
 ```
 
 ```bash
 # Gmail callback (with fake code)
-curl -I "https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback?code=test&state=test"
+curl -I "https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback?code=test&state=test"
 
 # Expected: 302 redirect to frontend
 ```
@@ -526,7 +526,7 @@ AZURE_CLIENT_ID=biqc-fixer
 
 ### Google Cloud Console
 - [ ] OAuth 2.0 client created
-- [ ] Redirect URI: `https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback`
+- [ ] Redirect URI: `https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback`
 - [ ] Scopes configured: gmail.readonly, gmail.modify
 - [ ] Gmail API enabled
 - [ ] Consent screen configured
@@ -535,13 +535,13 @@ AZURE_CLIENT_ID=biqc-fixer
 ### Microsoft Azure AD
 - [ ] App registration exists
 - [ ] **CRITICAL:** Get actual Application (client) ID GUID
-- [ ] Redirect URI: `https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback`
+- [ ] Redirect URI: `https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback`
 - [ ] API permissions granted: offline_access, User.Read, Mail.Read, Calendars.Read
 - [ ] Client secret created
 - [ ] Tenant ID: "common" (multi-tenant) ✅
 
 ### Supabase
-- [ ] Site URL: `https://auth-loop-fix-4.preview.emergentagent.com` ✅
+- [ ] Site URL: `https://warroom-strategic-ai.preview.emergentagent.com` ✅
 - [ ] Redirect URLs include: `/auth/callback` ✅
 - [ ] Google provider enabled
 - [ ] Azure provider enabled
@@ -572,9 +572,9 @@ AZURE_CLIENT_ID=biqc-fixer
 ## 📝 SUMMARY
 
 **Valid URIs (Verified from Code):**
-- ✅ Gmail callback: `https://auth-loop-fix-4.preview.emergentagent.com/api/auth/gmail/callback`
-- ✅ Outlook callback: `https://auth-loop-fix-4.preview.emergentagent.com/api/auth/outlook/callback`
-- ✅ Supabase callback: `https://auth-loop-fix-4.preview.emergentagent.com/auth/callback`
+- ✅ Gmail callback: `https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback`
+- ✅ Outlook callback: `https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback`
+- ✅ Supabase callback: `https://warroom-strategic-ai.preview.emergentagent.com/auth/callback`
 - ✅ Merge: No URI needed (SDK-managed)
 
 **Critical Issue Found:**
