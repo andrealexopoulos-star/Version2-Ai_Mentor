@@ -97,27 +97,45 @@ const AuthCallbackSupabase = () => {
             
             // Check if user needs onboarding
             try {
-              // STEP 2: CALIBRATION STATUS CHECK (override)
-              const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-              const calibrationResponse = await fetch(`${BACKEND_URL}/api/calibration/status`, {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${sessionData.session.access_token}`,
-                  'Content-Type': 'application/json'
-                }
-              });
+              // STEP 2: CALIBRATION STATUS CHECK — query Supabase directly
+              const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+              const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-              if (!calibrationResponse.ok) {
-                const errorStatus = calibrationResponse.status;
-                console.error(`[GUARD] ❌ Calibration status failed: ${errorStatus}`);
-                setError(`Failed to load your calibration status (HTTP ${errorStatus})`);
-                setStatus('Unable to verify your account. Please retry.');
-                return; // STOP - no routing
+              // Query user_operator_profile for persona_calibration_status
+              const calCheckRes = await fetch(
+                `${supabaseUrl}/rest/v1/user_operator_profile?user_id=eq.${sessionData.session.user.id}&select=persona_calibration_status`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${sessionData.session.access_token}`,
+                    'apikey': supabaseKey,
+                  }
+                }
+              );
+
+              let needsCalibration = true;
+              if (calCheckRes.ok) {
+                const calRows = await calCheckRes.json();
+                if (calRows.length > 0 && calRows[0].persona_calibration_status === 'complete') {
+                  needsCalibration = false;
+                }
               }
 
-              const calibrationData = await calibrationResponse.json();
-              // /api/calibration/status returns { status: "NEEDS_CALIBRATION" | "COMPLETE" }
-              if (calibrationData.status !== 'COMPLETE') {
+              // Fallback: check legacy endpoint if new table query failed
+              if (needsCalibration) {
+                try {
+                  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+                  const legacyRes = await fetch(`${BACKEND_URL}/api/calibration/status`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }
+                  });
+                  if (legacyRes.ok) {
+                    const legacyData = await legacyRes.json();
+                    if (legacyData.status === 'COMPLETE') needsCalibration = false;
+                  }
+                } catch { /* legacy unavailable, proceed with new system */ }
+              }
+
+              if (needsCalibration) {
                 console.log('[GUARD] ➤ Calibration needed, routing to /calibration');
                 navigate('/calibration', { replace: true });
                 return;
