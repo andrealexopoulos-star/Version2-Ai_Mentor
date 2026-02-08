@@ -1,6 +1,8 @@
 // supabase/functions/calibration-psych/index.ts
 // Persona Calibration — 9-step operator psychology profiling
 // OpenAI Responses API · Structured JSON outputs · Supabase JWT auth
+//
+// Deploy: supabase functions deploy calibration-psych --no-verify-jwt
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -8,7 +10,14 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 // ─── Config ───
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const OPENAI_KEY = Deno.env.get("Calibration Voice Open AI")!;
+
+// Try multiple possible secret names for the OpenAI key
+const OPENAI_KEY = Deno.env.get("Calibration Voice Open AI")
+  || Deno.env.get("CALIBRATION_VOICE_OPEN_AI")
+  || Deno.env.get("OPENAI_API_KEY")
+  || Deno.env.get("Calibration_Voice_Open_AI")
+  || "";
+
 const MODEL = "gpt-4o";
 
 // ─── 9 Calibration Steps ───
@@ -62,13 +71,11 @@ const TURN_SCHEMA = {
         additionalProperties: false,
       },
       agent_persona: {
-        description:
-          "Full agent persona object. Null unless status=COMPLETE.",
+        description: "Full agent persona object. Null unless status=COMPLETE.",
       },
       agent_instructions: {
         type: ["string", "null"] as const,
-        description:
-          "System prompt fragment for this operator. Null unless status=COMPLETE.",
+        description: "System prompt fragment for this operator. Null unless status=COMPLETE.",
       },
     },
     required: [
@@ -145,9 +152,7 @@ async function askOpenAI(
   userMessage: string,
   step: number,
   profile: Record<string, unknown>,
-  prevId: string | null,
 ): Promise<{ parsed: Record<string, unknown>; responseId: string }> {
-  // Build context
   const profileSummary =
     Object.keys(profile).length > 0
       ? `\nOPERATOR PROFILE SO FAR:\n${JSON.stringify(profile, null, 2)}\n---`
@@ -171,7 +176,8 @@ async function askOpenAI(
       },
     },
   };
-  if (prevId) body.previous_response_id = prevId;
+
+  console.log(`[calibration-psych] Calling OpenAI for step ${step}...`);
 
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -185,19 +191,18 @@ async function askOpenAI(
   if (!res.ok) {
     const err = await res.text();
     console.error("[calibration-psych] OpenAI error:", res.status, err);
-    throw new Error(`OpenAI ${res.status}`);
+    throw new Error(`OpenAI ${res.status}: ${err.substring(0, 200)}`);
   }
 
   const data = await res.json();
 
-  // Responses API output structure:
-  // data.output[] → find type "message" → content[] → find type "output_text" → .text
+  // Responses API output: data.output[] → type "message" → content[] → type "output_text" → .text
   const textBlock = data.output
     ?.find((o: Record<string, unknown>) => o.type === "message")
     ?.content?.find((c: Record<string, unknown>) => c.type === "output_text");
 
   if (!textBlock?.text) {
-    console.error("[calibration-psych] No text in response:", JSON.stringify(data.output));
+    console.error("[calibration-psych] No text in response:", JSON.stringify(data).substring(0, 300));
     throw new Error("Empty OpenAI response");
   }
 
@@ -205,20 +210,14 @@ async function askOpenAI(
   try {
     parsed = JSON.parse(textBlock.text);
   } catch {
-    console.error("[calibration-psych] JSON parse failed:", textBlock.text);
+    console.error("[calibration-psych] JSON parse failed:", textBlock.text.substring(0, 200));
     throw new Error("Malformed JSON from OpenAI");
-  }
-
-  // Validate required keys
-  const required = ["message", "status", "step", "percentage", "captured"];
-  for (const k of required) {
-    if (!(k in parsed)) throw new Error(`Missing key: ${k}`);
   }
 
   return { parsed, responseId: data.id };
 }
 
-// ─── Error Response (still matches output contract) ───
+// ─── Error Response (matches output contract) ───
 function errorResponse(msg: string, step: number): Response {
   return new Response(
     JSON.stringify({
@@ -245,15 +244,27 @@ serve(async (req: Request) => {
   let currentStep = 1;
 
   try {
+    // ── 0. Check OpenAI key ──
+    if (!OPENAI_KEY) {
+      // Log all available env var names for debugging
+      const envKeys = Object.keys(Deno.env.toObject()).join(", ");
+      console.error(`[calibration-psych] No OpenAI key found. Available env vars: ${envKeys}`);
+      return new Response(
+        JSON.stringify({ error: `OpenAI key not configured. Available: [${envKeys}]` }),
+        { status: 500, headers: CORS },
+      );
+    }
+
     // ── 1. Auth ──
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing Authorization" }), {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
         status: 401,
         headers: CORS,
       });
     }
     const userId = await resolveUserId(authHeader);
+    console.log(`[calibration-psych] User: ${userId}`);
 
     // ── 2. Parse body ──
     const { message } = await req.json();
@@ -293,11 +304,9 @@ serve(async (req: Request) => {
     }
 
     currentStep = profile.current_step || 1;
-    const operatorProfile: Record<string, unknown> =
-      profile.operator_profile || {};
-    const prevId: string | null = profile.prev_response_id || null;
+    const operatorProfile: Record<string, unknown> = profile.operator_profile || {};
 
-    // Already complete? Return done state.
+    // Already complete?
     if (profile.persona_calibration_status === "complete") {
       return new Response(
         JSON.stringify({
@@ -314,12 +323,8 @@ serve(async (req: Request) => {
     }
 
     // ── 4. Call OpenAI ──
-    const { parsed, responseId } = await askOpenAI(
-      message,
-      currentStep,
-      operatorProfile,
-      prevId,
-    );
+    const { parsed, responseId } = await askOpenAI(message, currentStep, operatorProfile);
+    console.log(`[calibration-psych] OpenAI returned step=${parsed.step}, status=${parsed.status}`);
 
     // ── 5. Merge captured field ──
     const updated = { ...operatorProfile };
@@ -333,8 +338,7 @@ serve(async (req: Request) => {
       updated[cap.field as string] = cap.value;
     }
 
-    // ── 6. Compute next step deterministically ──
-    // Count how many of the 9 fields are filled
+    // ── 6. Compute next step ──
     const filledCount = Object.keys(STEPS).filter(
       (k) => updated[STEPS[Number(k)].field] !== undefined,
     ).length;
@@ -363,9 +367,7 @@ serve(async (req: Request) => {
       .update(patch)
       .eq("user_id", userId);
 
-    if (updateErr) {
-      console.error("[calibration-psych] Update error:", updateErr);
-    }
+    if (updateErr) console.error("[calibration-psych] Update error:", updateErr);
 
     // ── 8. Return ──
     return new Response(
@@ -376,17 +378,12 @@ serve(async (req: Request) => {
         percentage: pct,
         captured: parsed.captured,
         agent_persona: isComplete ? parsed.agent_persona ?? null : null,
-        agent_instructions: isComplete
-          ? parsed.agent_instructions ?? null
-          : null,
+        agent_instructions: isComplete ? parsed.agent_instructions ?? null : null,
       }),
       { status: 200, headers: CORS },
     );
   } catch (err) {
     console.error("[calibration-psych] Unhandled:", err);
-    return errorResponse(
-      "Calibration link disrupted. Please retry.",
-      currentStep,
-    );
+    return errorResponse("Calibration link disrupted. Please retry.", currentStep);
   }
 });
