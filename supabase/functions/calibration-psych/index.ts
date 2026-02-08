@@ -22,7 +22,6 @@ const STEPS: { [k: number]: { field: string; label: string } } = {
   9: { field: "boundaries", label: "Boundaries" },
 };
 
-// Flat schema — all fields are string|null to satisfy OpenAI strict mode
 const TURN_SCHEMA = {
   type: "json_schema" as const,
   name: "calibration_turn",
@@ -77,6 +76,12 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 };
+
+// Compute current step from operator_profile (count filled fields)
+function computeStep(op: Record<string, unknown>): number {
+  const filled = Object.keys(STEPS).filter(k => op[STEPS[Number(k)].field] !== undefined).length;
+  return Math.min(filled + 1, 9);
+}
 
 async function resolveUserId(authHeader: string): Promise<string> {
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -150,14 +155,14 @@ serve(async (req: Request) => {
     let profile = existing;
     if (!profile) {
       const { data: created, error: err } = await sb.from("user_operator_profile")
-        .insert({ user_id: userId, operator_profile: {}, current_step: 1, persona_calibration_status: "in_progress" })
+        .insert({ user_id: userId, operator_profile: {}, persona_calibration_status: "in_progress" })
         .select().single();
       if (err) throw err;
       profile = created;
     }
 
-    currentStep = profile.current_step || 1;
     const op: Record<string, unknown> = profile.operator_profile || {};
+    currentStep = computeStep(op);
 
     if (profile.persona_calibration_status === "complete") {
       return new Response(JSON.stringify({
@@ -168,7 +173,6 @@ serve(async (req: Request) => {
 
     const { parsed, responseId } = await askOpenAI(message, currentStep, op);
 
-    // Merge captured
     const updated = { ...op };
     if (parsed.captured_field && parsed.captured_value !== null) {
       updated[parsed.captured_field as string] = parsed.captured_value;
@@ -179,12 +183,12 @@ serve(async (req: Request) => {
     const pct = isComplete ? 100 : Math.round((filled / 9) * 100);
 
     const patch: Record<string, unknown> = {
-      operator_profile: updated, current_step: isComplete ? 9 : Math.min(filled + 1, 9),
-      prev_response_id: responseId, persona_calibration_status: isComplete ? "complete" : "in_progress",
+      operator_profile: updated,
+      prev_response_id: responseId,
+      persona_calibration_status: isComplete ? "complete" : "in_progress",
       updated_at: new Date().toISOString(),
     };
 
-    // Parse agent_persona from JSON string if complete
     if (isComplete && parsed.agent_persona) {
       try { patch.agent_persona = JSON.parse(parsed.agent_persona as string); } catch { patch.agent_persona = parsed.agent_persona; }
     }
@@ -192,7 +196,6 @@ serve(async (req: Request) => {
 
     await sb.from("user_operator_profile").update(patch).eq("user_id", userId);
 
-    // Return with nested captured for frontend compatibility
     return new Response(JSON.stringify({
       message: parsed.message, status: isComplete ? "COMPLETE" : "IN_PROGRESS",
       step: isComplete ? 9 : (parsed.step as number), percentage: pct,
