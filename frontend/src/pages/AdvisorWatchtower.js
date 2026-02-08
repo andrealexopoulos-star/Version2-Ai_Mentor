@@ -73,21 +73,8 @@ const AdvisorWatchtower = () => {
     }
   }, []);
 
-  // Fetch post-calibration activation on first load
-  useEffect(() => {
-    const shown = sessionStorage.getItem("biqc_activation_shown");
-    if (shown) return;
-    const fetchActivation = async () => {
-      try {
-        const res = await apiClient.get('/calibration/activation');
-        if (res.data?.integration_framing || res.data?.initial_observation) {
-          setActivation(res.data);
-          sessionStorage.setItem("biqc_activation_shown", "true");
-        }
-      } catch (_) { /* silent */ }
-    };
-    fetchActivation();
-  }, []);
+  // Post-calibration activation — disabled (legacy endpoint removed)
+  // Activation data now comes from user_operator_profile.agent_persona
 
   // Check if email is connected
   useEffect(() => {
