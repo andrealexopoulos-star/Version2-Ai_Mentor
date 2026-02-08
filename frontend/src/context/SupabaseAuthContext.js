@@ -317,66 +317,53 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         // 2. Check persona calibration status from Supabase directly
-        const { data: opProfile, error: opError } = await supabase
+        const { data: opProfile } = await supabase
           .from('user_operator_profile')
           .select('persona_calibration_status')
           .eq('user_id', activeSession.user.id)
           .maybeSingle();
 
-        // If no profile row or status != complete → needs calibration
         const calStatus = opProfile?.persona_calibration_status;
-        if (!opProfile || opError || calStatus !== 'complete') {
-          // Fallback: also check legacy endpoint in case new table doesn't exist yet
+        
+        // If persona calibration is complete → READY (skip legacy check)
+        if (calStatus === 'complete') {
+          console.log('[Auth] Persona calibration complete → READY');
+          if (!cancelled) setAuthState(AUTH_STATE.READY);
+          // Still try profile rehydration but don't block on it
           try {
-            const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+            const profileRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
               method: 'GET',
               headers: { 'Authorization': `Bearer ${accessToken}` }
             });
-            if (calRes.ok) {
-              const cal = await calRes.json();
-              if (cal.status === 'COMPLETE') {
-                // Legacy says complete — proceed
-                if (!cancelled) {
-                  setAuthState(AUTH_STATE.READY);
-                }
-                // Skip to profile rehydration below
-              } else {
-                if (!cancelled) {
-                  setCalibrationMode(cal.mode || null);
-                  setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
-                }
-                return;
-              }
-            } else {
-              // Legacy endpoint failed too — default to needs calibration
-              if (!cancelled) {
-                setCalibrationMode(null);
-                setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
-              }
+            if (profileRes.ok) {
+              const profile = await profileRes.json();
+              if (!cancelled) setBusinessContext(profile);
+            }
+          } catch { /* non-blocking */ }
+          return;
+        }
+
+        // Not complete → check legacy endpoint as fallback
+        try {
+          const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+          if (calRes.ok) {
+            const cal = await calRes.json();
+            if (cal.status === 'COMPLETE') {
+              if (!cancelled) setAuthState(AUTH_STATE.READY);
               return;
             }
-          } catch {
-            if (!cancelled) {
-              setCalibrationMode(null);
-              setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
-            }
-            return;
           }
+        } catch { /* ignore */ }
+
+        // Neither system says complete → needs calibration
+        if (!cancelled) {
+          setCalibrationMode(null);
+          setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
         }
-
-        // 3. Only now is rehydration allowed
-        const profileRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
-
-        if (!profileRes.ok) {
-          throw new Error('Profile rehydration failed');
-        }
-
-        const profile = await profileRes.json();
+        return;
 
         if (!cancelled) {
           setBusinessContext(profile);
