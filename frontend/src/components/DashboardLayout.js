@@ -123,7 +123,7 @@ const DashboardLayout = ({ children }) => {
 
   const navItems = [
     { type: 'divider', label: 'BUSINESS INTELLIGENCE QUOTIENT CENTRE' },
-    { icon: MessageSquare, label: 'BIQc Insights', path: '/biqc-insights', showBadge: true },
+    { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
     { icon: Terminal, label: 'War Room', path: '/war-room' },
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'IQ BUILDER' },

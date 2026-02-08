@@ -107,8 +107,8 @@ const CalibrationAdvisor = () => {
         .maybeSingle()
         .then(({ data }) => {
           if (data?.persona_calibration_status === 'complete') {
-            console.log('[calibration-psych] Already complete → redirecting to /biqc-insights');
-            window.location.href = '/biqc-insights';
+            console.log('[calibration-psych] Already complete → redirecting to /advisor');
+            window.location.href = '/advisor';
           }
         });
     }
@@ -125,7 +125,7 @@ const CalibrationAdvisor = () => {
       // If already complete, redirect immediately
       if (data.status === "COMPLETE") {
         console.log('[calibration-psych] Already complete → redirecting');
-        window.location.href = "/biqc-insights";
+        window.location.href = "/advisor";
         return;
       }
 
@@ -165,7 +165,7 @@ const CalibrationAdvisor = () => {
         // Full page reload to /advisor — forces fresh auth bootstrap
         // which will see persona_calibration_status = 'complete'
         setTimeout(() => {
-          window.location.href = "/biqc-insights";
+          window.location.href = "/advisor";
         }, 4000);
       }
     } catch (err) {
