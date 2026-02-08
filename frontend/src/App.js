@@ -94,8 +94,9 @@ function AppRoutes() {
       <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
       {/* Protected Routes */}
-      <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
-      <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
+      <Route path="/biqc-insights" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<Navigate to="/biqc-insights" replace />} />
+      <Route path="/advisor" element={<Navigate to="/biqc-insights" replace />} />
       <Route path="/advisor-legacy" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
