@@ -149,10 +149,12 @@ const LoginSupabase = () => {
               <Input
                 id="email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="you@company.com"
-                className="mt-2 h-12"
+                className="mt-2 h-12 text-base"
                 required
               />
             </div>
