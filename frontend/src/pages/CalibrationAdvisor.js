@@ -96,6 +96,22 @@ const CalibrationAdvisor = () => {
     }
   };
 
+  // On mount: check if already complete → redirect immediately
+  useEffect(() => {
+    if (!loading && user && supabase) {
+      supabase.from('user_operator_profile')
+        .select('persona_calibration_status')
+        .eq('user_id', user.id || session?.user?.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.persona_calibration_status === 'complete') {
+            console.log('[calibration-psych] Already complete → redirecting to /advisor');
+            window.location.href = '/advisor';
+          }
+        });
+    }
+  }, [loading, user, supabase, session]);
+
   const handleBegin = async () => {
     console.log('[calibration-psych] Begin clicked');
     setPhase("initializing");
@@ -103,6 +119,14 @@ const CalibrationAdvisor = () => {
 
     try {
       const data = await callEdgeFunction("[SYSTEM_INIT_CALIBRATION]");
+
+      // If already complete, redirect immediately
+      if (data.status === "COMPLETE") {
+        console.log('[calibration-psych] Already complete → redirecting');
+        window.location.href = "/advisor";
+        return;
+      }
+
       setMessages([{ role: "advisor", text: data.message }]);
       setCurrentStep(data.step || 1);
       setProgress(data.percentage || 0);
