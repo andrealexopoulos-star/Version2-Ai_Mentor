@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
 const CalibrationAdvisor = () => {
   const navigate = useNavigate();
-  const { user, session, loading, setCalibrationMode, supabase } = useSupabaseAuth();
+  const { user, session, loading, supabase } = useSupabaseAuth();
 
   const [phase, setPhase] = useState("welcome");
   const [messages, setMessages] = useState([]);
@@ -38,7 +38,7 @@ const CalibrationAdvisor = () => {
   const stepLabel = useMemo(() => {
     if (phase === "welcome") return "PERSONA CALIBRATION";
     if (phase === "initializing") return "SYNCING...";
-    if (phase === "complete") return "CALIBRATION · COMPLETE";
+    if (phase === "complete") return "CALIBRATION COMPLETE";
     if (currentStep > 0) return `STEP ${currentStep} OF 9 · ${progress}%`;
     return "CALIBRATION · ACTIVE";
   }, [phase, currentStep, progress]);
@@ -54,10 +54,8 @@ const CalibrationAdvisor = () => {
     }
 
     const url = `${SUPABASE_URL}/functions/v1/calibration-psych`;
-    console.log('[calibration-psych] Calling:', url);
-    console.log('[calibration-psych] Message:', message);
-
     const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+    console.log('[calibration-psych] Calling:', url);
 
     const res = await fetch(url, {
       method: "POST",
@@ -74,11 +72,27 @@ const CalibrationAdvisor = () => {
     if (!res.ok) {
       const errText = await res.text();
       console.error('[calibration-psych] Error body:', errText);
-      throw new Error(`Edge Function error: ${res.status} — ${errText}`);
+      throw new Error(`Edge Function error: ${res.status}`);
     }
     const data = await res.json();
-    console.log('[calibration-psych] Response data:', data);
+    console.log('[calibration-psych] Response:', data);
     return data;
+  };
+
+  /** Back button handler — go back one step or to welcome */
+  const handleBack = () => {
+    if (phase === "active" && messages.length <= 1) {
+      setPhase("welcome");
+      setMessages([]);
+      setCurrentStep(0);
+      setProgress(0);
+    } else if (phase === "active" && messages.length > 1) {
+      // Remove last exchange (user + advisor)
+      const trimmed = messages.slice(0, -2);
+      setMessages(trimmed);
+      setCurrentStep(Math.max(currentStep - 1, 1));
+      setProgress(Math.max(progress - 11, 0));
+    }
   };
 
   const handleBegin = async () => {
@@ -95,31 +109,8 @@ const CalibrationAdvisor = () => {
     } catch (err) {
       console.error("[calibration-psych] Init failed:", err);
       setPhase("welcome");
-      setInlineError(`Could not start calibration: ${err.message}. Check console for details.`);
+      setInlineError(`Could not start calibration: ${err.message}`);
     }
-  };
-
-  const handleSkip = async () => {
-    try {
-      // Write deferred status directly to Supabase
-      const { data: { session: s } } = await supabase.auth.getSession();
-      if (s?.user?.id) {
-        // Upsert: set status to in_progress (deferred is handled client-side)
-        const { error } = await supabase
-          .from('user_operator_profile')
-          .upsert({
-            user_id: s.user.id,
-            persona_calibration_status: 'incomplete',
-            operator_profile: {},
-            current_step: 1,
-          }, { onConflict: 'user_id' });
-        if (error) console.warn('[calibration] Defer upsert warn:', error);
-      }
-      setCalibrationMode('DEFERRED');
-    } catch (_) {
-      setCalibrationMode('DEFERRED');
-    }
-    navigate("/advisor");
   };
 
   const handleSubmit = async (event) => {
@@ -143,12 +134,11 @@ const CalibrationAdvisor = () => {
 
       if (data.status === "COMPLETE") {
         setPhase("complete");
-        toast.success("Persona calibration complete.");
-        setTimeout(() => navigate("/advisor"), 3000);
+        setProgress(100);
       }
     } catch (err) {
-      console.error("[calibration] Error:", err);
-      setInlineError("Signal lost. Tap Retry to resend.");
+      console.error("[calibration-psych] Error:", err);
+      setInlineError("Signal lost. Please try again.");
       setInputValue(trimmed);
     } finally {
       setIsSubmitting(false);
@@ -158,20 +148,30 @@ const CalibrationAdvisor = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#080c14] via-[#0f172a] to-[#162032] text-white flex flex-col">
+      {/* Header with back arrow */}
       <header className="px-6 sm:px-8 py-4 border-b border-white/10 flex items-center justify-between">
-        <h1 className="text-base sm:text-lg font-semibold tracking-tight text-white font-mono">BIQc CALIBRATION</h1>
+        <div className="flex items-center gap-3">
+          {phase !== "welcome" && phase !== "complete" && (
+            <button onClick={handleBack} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" title="Go back">
+              <ArrowLeft size={18} className="text-white/60" />
+            </button>
+          )}
+          <h1 className="text-base sm:text-lg font-semibold tracking-tight text-white font-mono">BIQc CALIBRATION</h1>
+        </div>
         <div className="flex items-center gap-3">
           <span className="text-[9px] font-mono text-amber-500/50 bg-amber-500/10 px-2 py-0.5 rounded">v2-EDGE</span>
           <span className="text-[11px] font-medium text-emerald-400/60 tracking-widest uppercase font-mono">{stepLabel}</span>
         </div>
       </header>
 
+      {/* Progress bar */}
       {(phase === "active" || phase === "complete") && (
-        <div className="h-0.5 bg-white/5">
-          <div className="h-full bg-emerald-400/60 transition-all duration-700" style={{ width: `${progress}%` }} />
+        <div className="h-1 bg-white/5">
+          <div className="h-full bg-emerald-400 transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
         </div>
       )}
 
+      {/* ── WELCOME SCREEN ── */}
       {phase === "welcome" && (
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-xl w-full space-y-8 text-center">
@@ -180,7 +180,7 @@ const CalibrationAdvisor = () => {
               <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">{welcomeText}</p>
               <p className="text-base font-semibold text-white/90">Before I can advise you, I need to understand how you operate.</p>
               <p className="text-sm leading-relaxed text-white/70">9 questions about your working style, preferences, and boundaries. This calibrates my communication to match your operating mode.</p>
-              <p className="text-sm leading-relaxed text-white/50">This is about YOU — not your business.</p>
+              <p className="text-sm leading-relaxed text-white/50 italic">This is about you — not your business.</p>
             </div>
             {inlineError && (
               <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-left">
@@ -188,19 +188,15 @@ const CalibrationAdvisor = () => {
                 <p className="text-sm text-red-300">{inlineError}</p>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button onClick={handleBegin} className="px-8 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-base font-semibold transition-colors shadow-lg shadow-blue-500/20">
-                Begin Calibration
-              </button>
-              <button onClick={handleSkip} className="px-8 py-3.5 rounded-xl bg-white/8 hover:bg-white/12 border border-white/15 text-white/70 hover:text-white text-base font-medium transition-colors">
-                Do This Later
-              </button>
-            </div>
+            <button onClick={handleBegin} className="w-full sm:w-auto px-10 py-4 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-base font-semibold transition-colors shadow-lg shadow-blue-500/20">
+              Begin Calibration
+            </button>
           </div>
         </main>
       )}
 
-      {(phase === "active" || phase === "complete" || phase === "initializing") && (
+      {/* ── ACTIVE CONVERSATION ── */}
+      {(phase === "active" || phase === "initializing") && (
         <main className="flex-1 flex flex-col overflow-hidden">
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-4">
             {phase === "initializing" && (
@@ -226,15 +222,6 @@ const CalibrationAdvisor = () => {
               <div className="flex justify-start">
                 <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
                   <span className="text-emerald-400/40 text-xs tracking-widest animate-pulse font-mono">PROCESSING...</span>
-                </div>
-              </div>
-            )}
-
-            {phase === "complete" && (
-              <div className="flex justify-center py-6">
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-6 py-4 text-center">
-                  <p className="text-emerald-400 font-semibold text-sm">Persona Calibration Complete</p>
-                  <p className="text-white/50 text-xs mt-1">Redirecting to your advisor...</p>
                 </div>
               </div>
             )}
@@ -268,6 +255,40 @@ const CalibrationAdvisor = () => {
               </div>
             </form>
           )}
+        </main>
+      )}
+
+      {/* ── COMPLETION SCREEN ── */}
+      {phase === "complete" && (
+        <main className="flex-1 flex items-center justify-center px-6">
+          <div className="max-w-lg w-full text-center space-y-6">
+            <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-2xl font-bold text-white">Calibration Complete</h2>
+              <p className="text-base text-white/70 leading-relaxed">
+                Thank you for taking the time to calibrate your agent. Your preferences have been saved and your AI advisor is now tuned to your operating style.
+              </p>
+              <p className="text-sm text-white/50">
+                You'll now be directed to your advisor dashboard where we'll walk you through the key features.
+              </p>
+            </div>
+            <div className="pt-4">
+              <div className="flex items-center justify-center gap-2 text-emerald-400/60 text-sm">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                Redirecting to your dashboard...
+              </div>
+            </div>
+            <button
+              onClick={() => navigate("/advisor")}
+              className="mt-4 px-8 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold transition-colors"
+            >
+              Go to Dashboard Now
+            </button>
+          </div>
         </main>
       )}
     </div>
