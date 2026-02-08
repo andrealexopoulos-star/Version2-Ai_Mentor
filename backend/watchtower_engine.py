@@ -321,10 +321,6 @@ class WatchtowerEngine:
         top_types = sorted(event_types.items(), key=lambda x: x[1], reverse=True)[:3]
         types_desc = ", ".join(f"{t}({c})" for t, c in top_types)
 
-        # Time span
-        oldest = events[-1].get("observed_at", "")
-        newest = events[0].get("observed_at", "")
-
         finding = (
             f"{domain.capitalize()} position: {position}. "
             f"{total} events over window ({types_desc}). "
