@@ -49,7 +49,7 @@ const CalibrationAdvisor = () => {
     const token = activeSession?.access_token;
     if (!token) throw new Error("No session");
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration_psych`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-psych`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
