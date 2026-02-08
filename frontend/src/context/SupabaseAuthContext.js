@@ -316,27 +316,52 @@ export const SupabaseAuthProvider = ({ children }) => {
           throw new Error('Session refresh failed');
         }
 
-        // 2. Check calibration status FIRST
-        const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
+        // 2. Check persona calibration status from Supabase directly
+        const { data: opProfile, error: opError } = await supabase
+          .from('user_operator_profile')
+          .select('persona_calibration_status')
+          .eq('user_id', activeSession.user.id)
+          .maybeSingle();
+
+        // If no profile row or status != complete → needs calibration
+        const calStatus = opProfile?.persona_calibration_status;
+        if (!opProfile || opError || calStatus !== 'complete') {
+          // Fallback: also check legacy endpoint in case new table doesn't exist yet
+          try {
+            const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (calRes.ok) {
+              const cal = await calRes.json();
+              if (cal.status === 'COMPLETE') {
+                // Legacy says complete — proceed
+                if (!cancelled) {
+                  setAuthState(AUTH_STATE.READY);
+                }
+                // Skip to profile rehydration below
+              } else {
+                if (!cancelled) {
+                  setCalibrationMode(cal.mode || null);
+                  setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+                }
+                return;
+              }
+            } else {
+              // Legacy endpoint failed too — default to needs calibration
+              if (!cancelled) {
+                setCalibrationMode(null);
+                setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+              }
+              return;
+            }
+          } catch {
+            if (!cancelled) {
+              setCalibrationMode(null);
+              setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+            }
+            return;
           }
-        });
-
-        if (!calRes.ok) {
-          throw new Error('Calibration status check failed');
-        }
-
-        const cal = await calRes.json();
-
-        // Route based on calibration state
-        if (cal.status === 'NEEDS_CALIBRATION') {
-          if (!cancelled) {
-            setCalibrationMode(cal.mode || null);
-            setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
-          }
-          return;
         }
 
         // 3. Only now is rehydration allowed
