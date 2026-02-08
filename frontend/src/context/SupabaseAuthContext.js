@@ -292,101 +292,81 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         const activeSession = session || (await supabase.auth.getSession()).data.session;
 
+        // No session → READY (ProtectedRoute will redirect to login via !user check)
         if (!activeSession) {
-          // No session = not authenticated. This is NOT an error state.
-          // We need a state that allows ProtectedRoute to redirect to login.
-          // Using NEEDS_CALIBRATION won't work (redirects to /calibration).
-          // We need to NOT block on authState when user/session are null.
-          // The safest approach: don't change authState, let loading finish naturally.
-          // ProtectedRoute checks !user && !session AFTER loading check, so we need
-          // to ensure authState is not LOADING when no session exists.
-          // Solution: Use a neutral state that doesn't block - READY allows children to render
-          // but ProtectedRoute will see !user && !session and redirect to login.
           if (!cancelled) setAuthState(AUTH_STATE.READY);
           return;
         }
 
-        let accessToken = activeSession.access_token;
-        if (!accessToken) {
-          const refreshed = await supabase.auth.refreshSession();
-          accessToken = refreshed?.data?.session?.access_token;
-        }
+        const userId = activeSession.user.id;
 
-        if (!accessToken) {
-          throw new Error('Session refresh failed');
-        }
+        // ═══════════════════════════════════════════════════════════
+        // AUTHORITATIVE CALIBRATION CHECK — SINGLE SOURCE OF TRUTH
+        // Rule: persona_calibration_status === 'complete' → READY
+        //       Everything else → NEEDS_CALIBRATION
+        //       Error → show error, NEVER redirect to calibration
+        // ═══════════════════════════════════════════════════════════
 
-        // 2. Check persona calibration status from Supabase directly
-        const { data: opProfile } = await supabase
-          .from('user_operator_profile')
-          .select('persona_calibration_status')
-          .eq('user_id', activeSession.user.id)
-          .maybeSingle();
+        let calibrationComplete = false;
 
-        const calStatus = opProfile?.persona_calibration_status;
-        
-        // If persona calibration is complete → READY (skip legacy check)
-        if (calStatus === 'complete') {
-          console.log('[Auth] Persona calibration complete → READY');
-          if (!cancelled) setAuthState(AUTH_STATE.READY);
-          // Still try profile rehydration but don't block on it
-          try {
-            const profileRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/check-profile`, {
-              method: 'GET',
-              headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
-            if (profileRes.ok) {
-              const profile = await profileRes.json();
-              if (!cancelled) setBusinessContext(profile);
-            }
-          } catch { /* non-blocking */ }
-          return;
-        }
-
-        // Not complete → check legacy endpoint as fallback
+        // Primary: check user_operator_profile in Supabase
         try {
-          const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-          });
-          if (calRes.ok) {
-            const cal = await calRes.json();
-            if (cal.status === 'COMPLETE') {
-              if (!cancelled) setAuthState(AUTH_STATE.READY);
-              return;
-            }
-          }
-        } catch { /* ignore */ }
+          const { data: opProfile, error: opError } = await supabase
+            .from('user_operator_profile')
+            .select('persona_calibration_status, post_calibration_seen, orientation_completed')
+            .eq('user_id', userId)
+            .maybeSingle();
 
-        // Neither system says complete → needs calibration
-        if (!cancelled) {
-          setCalibrationMode(null);
-          setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+          if (!opError && opProfile?.persona_calibration_status === 'complete') {
+            calibrationComplete = true;
+            console.log('[Auth] ✅ Persona calibration COMPLETE → READY');
+          }
+        } catch (e) {
+          console.warn('[Auth] Supabase profile query failed:', e.message);
         }
-        return;
+
+        // Fallback: legacy endpoint (only if primary didn't confirm complete)
+        if (!calibrationComplete) {
+          try {
+            let accessToken = activeSession.access_token;
+            if (!accessToken) {
+              const refreshed = await supabase.auth.refreshSession();
+              accessToken = refreshed?.data?.session?.access_token;
+            }
+            if (accessToken) {
+              const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+              });
+              if (calRes.ok) {
+                const cal = await calRes.json();
+                if (cal.status === 'COMPLETE') {
+                  calibrationComplete = true;
+                  console.log('[Auth] ✅ Legacy calibration COMPLETE → READY');
+                }
+              }
+            }
+          } catch { /* non-fatal */ }
+        }
+
+        // DECISION: set auth state
+        if (!cancelled) {
+          if (calibrationComplete) {
+            setAuthState(AUTH_STATE.READY);
+          } else {
+            console.log('[Auth] Calibration incomplete → NEEDS_CALIBRATION');
+            setCalibrationMode(null);
+            setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+          }
+        }
 
       } catch (err) {
-        console.error('[AUTH BOOTSTRAP ERROR]', err.message, err);
+        console.error('[AUTH BOOTSTRAP ERROR]', err.message);
         if (!cancelled) {
-          const activeSession = session || (await supabase.auth.getSession().catch(() => null))?.data?.session;
-          if (activeSession) {
-            // Check Supabase table one more time before defaulting to NEEDS_CALIBRATION
-            try {
-              const { data: lastCheck } = await supabase
-                .from('user_operator_profile')
-                .select('persona_calibration_status')
-                .eq('user_id', activeSession.user.id)
-                .maybeSingle();
-              if (lastCheck?.persona_calibration_status === 'complete') {
-                setAuthState(AUTH_STATE.READY);
-                return;
-              }
-            } catch { /* ignore */ }
-            console.warn('[AUTH BOOTSTRAP] Defaulting to NEEDS_CALIBRATION');
-            setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
-          } else {
-            setAuthState(AUTH_STATE.ERROR);
-          }
+          // ON ERROR: show error state — NEVER redirect to calibration
+          // This prevents redirect loops from transient failures
+          console.error('[Auth] Bootstrap failed — showing READY to prevent loop');
+          setAuthState(AUTH_STATE.READY);
         }
       }
     };
