@@ -45,11 +45,19 @@ const CalibrationAdvisor = () => {
 
   /** Call the Supabase Edge Function */
   const callEdgeFunction = async (message) => {
+    console.log('[calibration-psych] Getting session...');
     const { data: { session: activeSession } } = await supabase.auth.getSession();
     const token = activeSession?.access_token;
-    if (!token) throw new Error("No session");
+    if (!token) {
+      console.error('[calibration-psych] No session token available');
+      throw new Error("No session");
+    }
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-psych`, {
+    const url = `${SUPABASE_URL}/functions/v1/calibration-psych`;
+    console.log('[calibration-psych] Calling:', url);
+    console.log('[calibration-psych] Message:', message);
+
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -58,11 +66,20 @@ const CalibrationAdvisor = () => {
       body: JSON.stringify({ message }),
     });
 
-    if (!res.ok) throw new Error(`Edge Function error: ${res.status}`);
-    return res.json();
+    console.log('[calibration-psych] Response status:', res.status);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[calibration-psych] Error body:', errText);
+      throw new Error(`Edge Function error: ${res.status} — ${errText}`);
+    }
+    const data = await res.json();
+    console.log('[calibration-psych] Response data:', data);
+    return data;
   };
 
   const handleBegin = async () => {
+    console.log('[calibration-psych] Begin clicked');
     setPhase("initializing");
     setInlineError(null);
 
@@ -73,9 +90,9 @@ const CalibrationAdvisor = () => {
       setProgress(data.percentage || 0);
       setPhase("active");
     } catch (err) {
-      console.error("[calibration] Init failed:", err);
+      console.error("[calibration-psych] Init failed:", err);
       setPhase("welcome");
-      setInlineError("Could not start calibration. Please refresh and try again.");
+      setInlineError(`Could not start calibration: ${err.message}. Check console for details.`);
     }
   };
 
