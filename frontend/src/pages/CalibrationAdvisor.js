@@ -57,11 +57,14 @@ const CalibrationAdvisor = () => {
     console.log('[calibration-psych] Calling:', url);
     console.log('[calibration-psych] Message:', message);
 
+    const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
+        "apikey": ANON_KEY,
       },
       body: JSON.stringify({ message }),
     });
