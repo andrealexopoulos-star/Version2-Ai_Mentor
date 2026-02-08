@@ -180,7 +180,7 @@ const AuthCallbackSupabase = () => {
                 navigate('/calibration', { replace: true });
               } else {
                 console.log('[GUARD] ✅ Calibration complete. routing to /advisor');
-                navigate('/advisor', { replace: true });
+                navigate('/biqc-insights', { replace: true });
               }
             } catch (profileCheckError) {
               console.error('❌ Error checking profile:', profileCheckError);
@@ -204,8 +204,8 @@ const AuthCallbackSupabase = () => {
             console.log('No session found, redirecting to login');
             navigate('/login-supabase');
           } else {
-            console.log('Existing session found, redirecting to advisor');
-            navigate('/advisor', { replace: true });
+            console.log('Existing session found, redirecting to biqc-insights');
+            navigate('/biqc-insights', { replace: true });
           }
         }
       } catch (error) {
