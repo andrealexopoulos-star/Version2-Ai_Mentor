@@ -365,19 +365,24 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
         return;
 
-        if (!cancelled) {
-          setBusinessContext(profile);
-          setAuthState(AUTH_STATE.READY);
-        }
-
       } catch (err) {
         console.error('[AUTH BOOTSTRAP ERROR]', err.message, err);
         if (!cancelled) {
-          // If we have a session, default to NEEDS_CALIBRATION rather than ERROR
-          // This prevents showing AuthError for transient fetch failures
           const activeSession = session || (await supabase.auth.getSession().catch(() => null))?.data?.session;
           if (activeSession) {
-            console.warn('[AUTH BOOTSTRAP] Fetch failed but session exists — defaulting to NEEDS_CALIBRATION');
+            // Check Supabase table one more time before defaulting to NEEDS_CALIBRATION
+            try {
+              const { data: lastCheck } = await supabase
+                .from('user_operator_profile')
+                .select('persona_calibration_status')
+                .eq('user_id', activeSession.user.id)
+                .maybeSingle();
+              if (lastCheck?.persona_calibration_status === 'complete') {
+                setAuthState(AUTH_STATE.READY);
+                return;
+              }
+            } catch { /* ignore */ }
+            console.warn('[AUTH BOOTSTRAP] Defaulting to NEEDS_CALIBRATION');
             setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
           } else {
             setAuthState(AUTH_STATE.ERROR);
