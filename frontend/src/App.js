@@ -47,22 +47,22 @@ import GmailTest from "./pages/GmailTest";
 import Watchtower from './components/Watchtower';
 import WarRoomConsole from './components/WarRoomConsole';
 
-// Public Route (redirect to advisor if logged in) - Supabase Auth Only
+// Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
-  const { user, session, loading, authState, calibrationMode } = useSupabaseAuth();
+  const { user, session, loading, authState } = useSupabaseAuth();
 
   if (authState === AUTH_STATE.LOADING || loading) {
     return <LoadingScreen />;
   }
 
-  if (authState === AUTH_STATE.NEEDS_CALIBRATION && calibrationMode !== 'DEFERRED') {
+  const isAuthenticated = user || session;
+
+  if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) {
     return <Navigate to="/calibration" replace />;
   }
 
-  const isAuthenticated = user || session;
-
   if (isAuthenticated) {
-    return <Navigate to="/advisor" replace />;
+    return <Navigate to="/biqc-insights" replace />;
   }
 
   return children;
