@@ -210,11 +210,11 @@ const CalibrationAdvisor = () => {
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed ${
                   msg.role === "user"
-                    ? "bg-blue-600/20 border border-blue-500/20 text-white/90"
-                    : "bg-white/5 border border-white/10 text-white/80"
+                    ? "bg-blue-600/20 border border-blue-500/20 text-white"
+                    : "bg-white/8 border border-white/15 text-white"
                 }`}>
-                  {msg.role !== "user" && <p className="text-[10px] font-mono text-emerald-400/50 mb-1 tracking-wider">CALIBRATION AGENT</p>}
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                  {msg.role !== "user" && <p className="text-[10px] font-mono text-emerald-400/60 mb-1 tracking-wider">CALIBRATION AGENT</p>}
+                  <p className="whitespace-pre-wrap text-white">{msg.text}</p>
                 </div>
               </div>
             ))}
