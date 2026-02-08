@@ -165,10 +165,12 @@ const LoginSupabase = () => {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  enterKeyHint="go"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="••••••••"
-                  className="h-12 pr-12"
+                  className="h-12 pr-12 text-base"
                   required
                 />
                 <button
