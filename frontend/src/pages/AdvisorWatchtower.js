@@ -251,90 +251,84 @@ const AdvisorWatchtower = () => {
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-              Watchtower
-            </h1>
-            <p className="text-sm md:text-base text-slate-600 mt-1">
-              What BIQc has noticed across your business
-            </p>
+        {/* ─── SECTION 1: WAR ROOM (Strategic Console) ─── */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">War Room</h2>
+              <p className="text-xs text-slate-500">Strategic operations console</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate('/war-room')} className="text-xs gap-1">
+              <ArrowRight className="w-3 h-3" /> Full Screen
+            </Button>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={fetchWatchtowerEvents}
-              variant="outline"
-              disabled={loadingEvents}
-              className="gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingEvents ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button 
-              onClick={runColdRead}
-              disabled={runningAnalysis || !emailConnected}
-              className="bg-slate-900 hover:bg-slate-800 text-white gap-2"
-            >
-              {runningAnalysis ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-              Run Analysis
-            </Button>
+          <div className="w-full h-[500px] bg-black border-2 border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
+            <WarRoomConsole />
           </div>
         </div>
 
-        {/* Email Connection Warning */}
-        {!emailConnected && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-amber-900">
-                Connect your email to enable Watchtower analysis
-              </p>
-              <p className="text-xs text-amber-700 mt-1">
-                BIQc requires email access to detect communication patterns and relationship signals.
-              </p>
-              <Button
-                onClick={() => navigate('/connect-email')}
-                size="sm"
-                variant="outline"
-                className="mt-3 border-amber-300 text-amber-700 hover:bg-amber-100"
-              >
-                Connect Email
+        {/* ─── SECTION 2: WATCHTOWER (Intelligence Events) ─── */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Watchtower</h2>
+              <p className="text-xs text-slate-500">What BIQc has noticed across your business</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={fetchWatchtowerEvents} variant="outline" size="sm" disabled={loadingEvents} className="gap-1 text-xs">
+                <RefreshCw className={`w-3 h-3 ${loadingEvents ? 'animate-spin' : ''}`} /> Refresh
+              </Button>
+              <Button onClick={runColdRead} size="sm" disabled={runningAnalysis || !emailConnected} className="bg-slate-900 hover:bg-slate-800 text-white gap-1 text-xs">
+                {runningAnalysis ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />} Run Analysis
               </Button>
             </div>
           </div>
-        )}
 
-        {/* War Room — Primary Strategic Console */}
-        <div className="w-full h-[800px] bg-black border-2 border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
-          <WarRoomConsole />
-        </div>
-
-        {/* Watchtower Events (below War Room if any exist) */}
-        {!loadingEvents && watchtowerEvents.length > 0 && (
-          <div className="space-y-6 mt-6">
-            {Object.keys(eventsByDomain).map(domain => (
-              <div key={domain} className="space-y-4">
-                <h2 className="text-lg font-semibold text-slate-900 capitalize">
-                  {domainLabels[domain] || domain}
-                </h2>
-                <div className="space-y-3">
-                  {eventsByDomain[domain].map(event => (
-                    <WatchtowerEvent
-                      key={event.id}
-                      event={event}
-                      onHandle={handleEventAction}
-                    />
-                  ))}
-                </div>
+          {/* Email Connection Warning */}
+          {!emailConnected && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3 mb-4">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-amber-900">Connect your email to enable Watchtower</p>
+                <Button onClick={() => navigate('/connect-email')} size="sm" variant="outline" className="mt-2 text-xs border-amber-300 text-amber-700 hover:bg-amber-100">
+                  Connect Email
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+
+          {/* Loading */}
+          {loadingEvents && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loadingEvents && watchtowerEvents.length === 0 && (
+            <div className="text-center py-10 px-4 bg-slate-50 rounded-lg border border-slate-200">
+              <Eye className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-medium text-slate-600">No intelligence events yet</p>
+              <p className="text-xs text-slate-400 mt-1">Events appear as BIQc analyses your connected data.</p>
+            </div>
+          )}
+
+          {/* Events list */}
+          {!loadingEvents && watchtowerEvents.length > 0 && (
+            <div className="space-y-4">
+              {Object.keys(eventsByDomain).map(domain => (
+                <div key={domain} className="space-y-3">
+                  <h3 className="text-sm font-semibold text-slate-700 capitalize">{domainLabels[domain] || domain}</h3>
+                  <div className="space-y-2">
+                    {eventsByDomain[domain].map(event => (
+                      <WatchtowerEvent key={event.id} event={event} onHandle={handleEventAction} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );
