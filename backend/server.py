@@ -169,6 +169,17 @@ from watchtower_engine import init_watchtower_engine
 watchtower_engine = init_watchtower_engine(supabase_admin)
 logger.info("🔭 Watchtower Engine initialized - Continuous Intelligence active")
 
+# Initialize Merge Emission Layer
+try:
+    from merge_client import get_merge_client
+    from merge_emission_layer import init_emission_layer
+    _merge = get_merge_client()
+    emission_layer = init_emission_layer(supabase_admin, _merge)
+    logger.info("📡 Merge Emission Layer initialized")
+except Exception as _emission_init_err:
+    logger.warning(f"📡 Merge Emission Layer skipped (MERGE_API_KEY not set): {_emission_init_err}")
+    emission_layer = None
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
