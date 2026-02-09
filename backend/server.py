@@ -9319,6 +9319,107 @@ async def watchtower_get_findings(
     return {"findings": findings, "count": len(findings)}
 
 
+# ═══════════════════════════════════════════════════════════════
+# BOARD ROOM — Authority Execution Mode
+# ═══════════════════════════════════════════════════════════════
+
+class BoardRoomRequest(BaseModel):
+    message: str
+    history: Optional[List[Dict[str, str]]] = []
+
+
+@api_router.post("/boardroom/respond")
+async def boardroom_respond(request: Request, payload: BoardRoomRequest):
+    """
+    Board Room — Authority response endpoint.
+
+    Priority order:
+    1. Watchtower State (positions, findings)
+    2. Intelligence Configuration
+    3. Calibration (operator profile)
+    4. User Message (secondary context)
+    """
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    message = payload.message.strip()
+    history = payload.history or []
+
+    if not message:
+        raise HTTPException(status_code=400, detail="Message required")
+
+    try:
+        from watchtower_engine import get_watchtower_engine
+        from boardroom_prompt import build_boardroom_prompt
+
+        engine = get_watchtower_engine()
+
+        # 1. Load Watchtower State
+        positions = await engine.get_positions(user_id)
+        findings = await engine.get_findings(user_id, limit=10)
+
+        # 2. Load Intelligence Configuration
+        intel_config = None
+        try:
+            bp_result = supabase_admin.table("business_profiles").select(
+                "intelligence_configuration"
+            ).eq("user_id", user_id).single().execute()
+            if bp_result.data:
+                intel_config = bp_result.data.get("intelligence_configuration")
+        except Exception:
+            pass
+
+        # 3. Load Calibration
+        calibration = None
+        try:
+            cal_result = supabase_admin.table("user_operator_profile").select(
+                "operator_profile, agent_persona, agent_instructions"
+            ).eq("user_id", user_id).single().execute()
+            if cal_result.data:
+                calibration = cal_result.data
+        except Exception:
+            pass
+
+        # Build system prompt
+        system_prompt = build_boardroom_prompt(
+            watchtower_positions=positions,
+            watchtower_findings=findings,
+            intelligence_config=intel_config,
+            calibration=calibration,
+        )
+
+        # Build context + message
+        chat = LlmChat(
+            api_key=OPENAI_KEY,
+            session_id=f"boardroom_{user_id}",
+            system_message=system_prompt,
+        )
+        chat.with_model("openai", "gpt-4o")
+
+        context_block = ""
+        if history:
+            context_block = "PRIOR EXCHANGE:\n"
+            for h in history:
+                role = h.get("role", "user")
+                content = h.get("content", "")
+                label = "OPERATOR" if role == "user" else "BOARD ROOM"
+                context_block += f"[{label}]: {content}\n"
+            context_block += "\n---\n"
+
+        full_message = f"{context_block}OPERATOR INPUT: {message}"
+        user_msg = UserMessage(text=full_message)
+        raw_response = await chat.send_message(user_msg)
+
+        return {"response": raw_response.strip()}
+
+    except Exception as e:
+        logger.error(f"[boardroom] Error: {e}")
+        return {"response": "Intelligence link disrupted. Retry."}
+
+
 # Include router and middleware
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
