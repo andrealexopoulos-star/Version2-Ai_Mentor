@@ -506,6 +506,18 @@ class WatchtowerEngine:
                 f"[watchtower] {domain}: {previous_position or 'NEW'} → {new_position} "
                 f"(confidence: {confidence})"
             )
+
+            # ─── Escalation Memory: record position change ───────
+            try:
+                from escalation_memory import get_escalation_memory
+                mem = get_escalation_memory()
+                if new_position == "STABLE":
+                    await mem.record_recovery(user_id, domain)
+                else:
+                    await mem.record_escalation(user_id, domain, new_position)
+            except RuntimeError:
+                pass  # Memory not initialized — non-fatal
+
             return result.data[0] if result.data else insight
         except Exception as e:
             logger.error(f"[watchtower] Failed to persist finding: {e}")
