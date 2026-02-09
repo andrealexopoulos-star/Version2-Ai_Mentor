@@ -121,6 +121,42 @@ def _build_watchtower_section(
     return "\n".join(lines)
 
 
+def _build_escalation_section(history: Optional[List[Dict[str, Any]]]) -> str:
+    lines = ["═══ ESCALATION MEMORY (FACTUAL RECORD) ═══"]
+
+    if not history:
+        lines.append("No prior escalations recorded.")
+        return "\n".join(lines)
+
+    lines.append("USE THIS to determine: Is this risk new or recurring? Was it previously ignored?")
+    lines.append("Do NOT infer user intent. Report facts only.")
+    lines.append("")
+
+    for esc in history:
+        domain = esc.get("domain", "").upper()
+        position = esc.get("position", "")
+        times = esc.get("times_detected", 1)
+        first = (esc.get("first_detected_at") or "")[:16]
+        last = (esc.get("last_detected_at") or "")[:16]
+        action = esc.get("last_user_action", "unknown")
+        exposed = esc.get("last_boardroom_exposed_at")
+        active = esc.get("active", True)
+        resolved = esc.get("resolved_at")
+
+        status = "ACTIVE" if active else f"RESOLVED ({(resolved or '')[:16]})"
+
+        lines.append(f"{domain}: {position} [{status}]")
+        lines.append(f"  First detected: {first}")
+        if times > 1:
+            lines.append(f"  Recurrence: {times}x (last: {last})")
+        if exposed:
+            lines.append(f"  Last surfaced to operator: {str(exposed)[:16]}")
+        lines.append(f"  Operator response: {action}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def _build_config_section(config: Optional[Dict[str, Any]]) -> str:
     lines = ["═══ INTELLIGENCE CONFIGURATION ═══"]
 
