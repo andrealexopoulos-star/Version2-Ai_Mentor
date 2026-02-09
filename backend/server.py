@@ -180,6 +180,11 @@ except Exception as _emission_init_err:
     logger.warning(f"📡 Merge Emission Layer skipped (MERGE_API_KEY not set): {_emission_init_err}")
     emission_layer = None
 
+# Initialize Escalation Memory
+from escalation_memory import init_escalation_memory
+escalation_memory = init_escalation_memory(supabase_admin)
+logger.info("🧠 Escalation Memory initialized")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
