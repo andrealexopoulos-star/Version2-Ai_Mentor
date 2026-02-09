@@ -9431,6 +9431,34 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         return {"response": "Intelligence link disrupted. Retry."}
 
 
+# ═══════════════════════════════════════════════════════════════
+# MERGE EMISSION — Integration Signal Trigger
+# ═══════════════════════════════════════════════════════════════
+
+@api_router.post("/emission/run")
+async def run_emission(current_user: dict = Depends(get_current_user)):
+    """
+    Trigger a Merge emission cycle.
+    Reads connected integrations, emits observation events.
+    """
+    from workspace_helpers import get_user_account
+
+    user_id = current_user["id"]
+
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="Workspace not initialized")
+
+    try:
+        from merge_emission_layer import get_emission_layer
+        layer = get_emission_layer()
+    except RuntimeError:
+        return {"signals_emitted": 0, "status": "emission_layer_not_available"}
+
+    result = await layer.run_emission(user_id, account["id"])
+    return result
+
+
 # Include router and middleware
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
