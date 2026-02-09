@@ -46,6 +46,7 @@ import AuthDebug from "./pages/AuthDebug";
 import GmailTest from "./pages/GmailTest";
 import Watchtower from './components/Watchtower';
 import WarRoomConsole from './components/WarRoomConsole';
+import BoardRoom from './components/BoardRoom';
 
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
@@ -117,6 +118,7 @@ function AppRoutes() {
       <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
       <Route path="/watchtower" element={<ProtectedRoute><Watchtower /></ProtectedRoute>} />
       <Route path="/war-room" element={<ProtectedRoute><div className="h-screen bg-black"><WarRoomConsole /></div></ProtectedRoute>} />
+      <Route path="/board-room" element={<ProtectedRoute><div className="h-screen bg-black"><BoardRoom /></div></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
