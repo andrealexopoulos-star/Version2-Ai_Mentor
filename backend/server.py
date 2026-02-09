@@ -9394,12 +9394,22 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         except Exception:
             pass
 
+        # 4. Load Escalation Memory
+        escalation_history = None
+        try:
+            from escalation_memory import get_escalation_memory
+            mem = get_escalation_memory()
+            escalation_history = await mem.get_active_escalations(user_id)
+        except RuntimeError:
+            pass
+
         # Build system prompt
         system_prompt = build_boardroom_prompt(
             watchtower_positions=positions,
             watchtower_findings=findings,
             intelligence_config=intel_config,
             calibration=calibration,
+            escalation_history=escalation_history,
         )
 
         # Build context + message
@@ -9423,6 +9433,17 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         full_message = f"{context_block}OPERATOR INPUT: {message}"
         user_msg = UserMessage(text=full_message)
         raw_response = await chat.send_message(user_msg)
+
+        # Record exposure for active escalations
+        try:
+            from escalation_memory import get_escalation_memory
+            mem = get_escalation_memory()
+            for domain in positions:
+                pos = positions[domain].get("position")
+                if pos and pos != "STABLE":
+                    await mem.record_exposure(user_id, domain)
+        except RuntimeError:
+            pass
 
         return {"response": raw_response.strip()}
 
