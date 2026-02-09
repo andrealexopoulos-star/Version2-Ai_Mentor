@@ -1,125 +1,115 @@
 # BIQC (Business IQ Centre) - Product Requirements Document
 
 ## Original Problem Statement
-Migrate BIQC application from MongoDB to Supabase (PostgreSQL) and stabilize for investor demo. Primary goal: fully functional advisor chat, seamless mobile UX, and working Outlook integration with Priority Inbox.
+Build a strategic business intelligence platform (BIQC) with:
+- Persona Calibration (9-step operator psychology profiling)
+- War Room (17-step business strategy extraction)
+- Watchtower Engine (continuous domain-based intelligence)
+- Board Room (authority interface for intelligence delivery)
+- Full user lifecycle (onboarding, orientation, recalibration)
 
 ## Architecture
 - **Frontend**: React + Tailwind CSS + Shadcn UI
-- **Backend**: FastAPI (Python)
+- **Backend**: FastAPI (Python) + Supabase Edge Functions (Deno/TypeScript)
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (Google/Microsoft OAuth, Email/Password)
-- **AI**: OpenAI GPT via Emergent LLM Key
-- **Email**: Microsoft Graph API via Supabase Edge Function
+- **AI**: OpenAI GPT-4o via Emergent LLM Key + User's own key for calibration
+- **Intelligence**: Watchtower Engine (domain positions) → Board Room (authority delivery)
 
 ## What's Been Implemented
 
-### Session: January 23, 2025
+### Persona Calibration (COMPLETE)
+- 9-step operator psychology profiling via `calibration-psych` Edge Function
+- Stores results in `user_operator_profile` table
+- Fields: communication_style, verbosity, bluntness, risk_posture, decision_style, accountability_cadence, time_constraints, challenge_tolerance, boundaries
 
-#### ✅ COMPLETED
-1. **Auth Redirect Loop** - Fixed by proper session handling and user ID sync
-2. **Azure Client ID** - Restored correct ID: `5d6e3cbb-cd88-4694-aa19-9b7115666866`
-3. **Outlook OAuth Flow** - Now uses Supabase Edge Function correctly
-4. **User ID Sync** - Fixed duplicate user ID issue between auth.users and public.users
-5. **RLS Policies** - Added service_role policies for all critical tables
-6. **Priority Inbox Analysis** - Fixed MongoDB-style function call to Supabase
-7. **Notification Polling** - Disabled via feature flag for demo (no console noise)
-8. **Manifest Icons** - Created logo192.png and logo512.png
-9. **Suggest Reply Feature** - BIQC-style decisive replies with advisor rationale
-10. **Reply Modal UI** - Updated to render new response format
+### War Room (COMPLETE)
+- 17-step strategic business interrogation at `/war-room` and embedded in `/advisor`
+- Backend: `POST /api/calibration/brain` with `WATCHTOWER_BRAIN_PROMPT`
+- Stores completion in `business_profiles.calibration_status`
 
-#### 🔧 KEY FIXES APPLIED
-- `/app/backend/auth_supabase.py` - User profile creation with ID migration
-- `/app/backend/server.py` - Priority analysis write fix, Suggest Reply endpoint
-- `/app/frontend/src/pages/EmailInbox.js` - Reply modal rendering
-- `/app/frontend/src/components/DashboardLayout.js` - Notification polling disabled
-- `/app/frontend/public/logo192.png` & `logo512.png` - PWA icons created
+### Watchtower Engine V2 (COMPLETE — Feb 9, 2026)
+- Continuous business intelligence authority
+- Backend: `/app/backend/watchtower_engine.py`
+- Tables: `observation_events`, `watchtower_insights`
+- Column: `business_profiles.intelligence_configuration`
+- API Endpoints:
+  - `POST /api/watchtower/emit` — integrations emit observation events
+  - `POST /api/watchtower/analyse` — trigger analysis cycle
+  - `GET /api/watchtower/positions` — read current domain positions
+  - `GET /api/watchtower/findings` — read historical findings
+- Domains: finance, sales, operations, team, market
+- Positions: STABLE → ELEVATED → DETERIORATING → CRITICAL
+- Features: window-based evaluation, trend detection, cognitive weighting, silence detection, drift/recovery detection
 
-## Database Schema (Supabase)
+### Board Room (COMPLETE — Feb 9, 2026)
+- Authority execution mode interface at `/board-room`
+- Backend: `POST /api/boardroom/respond`
+- Prompt builder: `/app/backend/boardroom_prompt.py`
+- Frontend: `/app/frontend/src/components/BoardRoom.js`
+- Priority order: Watchtower State → Intelligence Config → Calibration → User Message
+- Response format: Position → Evidence → Trajectory → Decision Window
+- Rules: no hedging, no options, no bullet lists, silence is valid
+
+### Auth & Routing (COMPLETE)
+- Redirect loop fixed via `get-calibration-status` Edge Function
+- Calibration-first gating in `SupabaseAuthContext.js`
+- Protected routes with deterministic state machine
+
+## Database Schema
 
 ### Key Tables
-- `users` - User profiles (synced with auth.users)
-- `outlook_oauth_tokens` - Microsoft OAuth tokens (from Edge Function)
-- `outlook_emails` - Synced emails from Outlook
-- `email_priority_analysis` - BIQC priority analysis results
-- `onboarding` - User onboarding status
-- `chat_history` - Advisor chat history
-- `cognitive_profiles` - BIQC cognitive core data
-- `business_profiles` - User business information
+| Table | Purpose |
+|-------|---------|
+| `user_operator_profile` | Persona calibration data, lifecycle flags |
+| `business_profiles` | Business data, calibration_status, intelligence_configuration |
+| `observation_events` | Raw signals from integrations (NEW) |
+| `watchtower_insights` | Domain positions and findings (NEW) |
+| `cognitive_profiles` | Behavioral models, delivery preferences |
+| `chat_history` | Advisor conversations |
+| `users` | User profiles |
+| `outlook_oauth_tokens` | Microsoft OAuth tokens |
+| `outlook_emails` | Synced emails |
+| `gmail_connections` | Gmail OAuth |
 
-### Required RLS Policies
-```sql
-CREATE POLICY "Service role full access" ON public.users FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON public.outlook_oauth_tokens FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON public.outlook_emails FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON public.onboarding FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON public.chat_history FOR ALL TO service_role USING (true) WITH CHECK (true);
-```
+## Key API Endpoints
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/boardroom/respond` | POST | Board Room authority response |
+| `/api/watchtower/emit` | POST | Emit observation event |
+| `/api/watchtower/analyse` | POST | Trigger analysis cycle |
+| `/api/watchtower/positions` | GET | Read domain positions |
+| `/api/watchtower/findings` | GET | Read historical findings |
+| `/api/calibration/brain` | POST | War Room interrogation |
+| `/functions/v1/calibration-psych` | POST | Persona calibration |
+| `/functions/v1/get-calibration-status` | GET | Auth-safe status check |
 
 ## Prioritized Backlog
 
-### P0 - DONE ✅
-- [x] Auth redirect loop
-- [x] Outlook OAuth connection
-- [x] Priority Inbox display
-- [x] Suggest Reply feature
-- [x] Console error cleanup for demo
+### P0 - IN PROGRESS
+- [ ] Post-Calibration Handoff Screen
+- [ ] First-Time Orientation Tour
+- [ ] Intelligence Enablement Screen
 
 ### P1 - HIGH PRIORITY
-- [ ] Email sync verification (ensure emails populate after OAuth)
-- [ ] New user signup flow testing
-- [ ] Google Calendar integration
-- [ ] Gmail integration
+- [ ] Agent Recalibration Flow (from Settings)
+- [ ] Integration emission layer (integrations → observation_events)
+- [ ] Scheduled Watchtower analysis (cron/periodic)
 
 ### P2 - MEDIUM PRIORITY
-- [ ] Theme toggle fix
-- [ ] Password reset flow
-- [ ] 2FA implementation
-- [ ] Notifications endpoint fix (currently disabled)
+- [ ] Mobile keyboard fix verification
+- [ ] Board Room sidebar navigation link
+- [ ] Board Room in DashboardLayout
 
 ### P3 - BACKLOG
-- [ ] Serper.dev integration for live data
+- [ ] Google Calendar integration
+- [ ] Gmail intelligence emission
+- [ ] CRM integrations
 - [ ] Backend refactoring (break down server.py)
-- [ ] BIQC meta-layer (beliefs, decisions, drift tracking)
-- [ ] CRM integrations (HubSpot, Salesforce, Xero)
-
-## Key URLs
-- **App**: https://warroom-strategic-ai.preview.emergentagent.com
-- **Supabase**: https://uxyqpdfftxpkzeppqtvk.supabase.co
 
 ## Credentials
-- **Test Account**: (create via Microsoft OAuth)
-- **Azure Client ID**: `5d6e3cbb-cd88-4694-aa19-9b7115666866`
+- **Test Account**: andrewrx@hotmail.com / KooksMou06**
+- **App URL**: https://warroom-strategic-ai.preview.emergentagent.com
 
 ---
-*Last Updated: January 23, 2025*
-
-### Session: February 05, 2026
-
-#### ✅ COMPLETED
-1. **Cognitive Core Observe** - Supabase-safe updates with JSON merge and no Mongo syntax
-2. **Merge File Storage Connect** - Merge link token accepts categories; frontend now opens file_storage flow
-3. **MongoDB Elimination (server.py)** - Replaced legacy db.* queries with Supabase for chat sessions, analyses, data center, business profiles, advisory history, admin stats, dashboard stats, notifications, and soundboard delete
-4. **Integrations UI Test IDs** - Added data-testid coverage for Integrations interactions
-5. **Canonical Intelligence Moments** - Activated revenue risk, founder strain, and strategy drift moments with calibration weighting, Cognitive Core delivery preferences, and constitution checks in watchtower generation
-6. **Controlled User Purge** - Executed Supabase + Mongo deletions for specified user IDs per destructive purge request
-7. **Calibration Advisor Activation** - Added calibration routing override, live advisor flow, and Supabase writes for Q1–Q9 with AI draft generation and post-calibration scaffolding
-8. **Silence Intervention System** - Implemented silence detection, escalation ladder, engagement risk scoring, and consequence memory updates with Watchtower events
-9. **Regeneration Governance** - Added controlled regeneration proposals with evidence gating, consequence tracking, and explicit response actions
-10. **Env URL Alignment** - Updated frontend REACT_APP_BACKEND_URL to https://beta.thestrategysquad.com
-11. **Calibration-first Auth Guard** - Replaced auth bootstrap with calibration-first gating and auth-state routing
-12. **Login URL Fix** - Set Welcome Back page home link and OAuth redirect to beta.thestrategysquad.com
-13. **Calibration Status Guard** - Enforced deterministic /api/calibration/status responses (NEEDS_CALIBRATION/COMPLETE only)
-14. **Auth Bootstrap Refresh** - Refreshes Supabase session token before calibration/status checks to prevent auth failures
-15. **Auth Bootstrap Timing** - Bootstrap now waits for auth hydration/session to prevent premature errors
-
-#### ✅ TESTING
-- `GET /api/health`
-- Integrations page load (auth-gated login view)
-- `python -c` import of truth_engine_rpc
-- `GET /api/health` (post-calibration changes)
-- Calibration route load (auth-gated login view)
-- `python -c` import of silence_detection/intelligence_automation_worker
-- `python -c` import of regeneration_governance
-- Calibration-first auth guard update (manual auth flow pending)
-
-*Last Updated: February 05, 2026*
+*Last Updated: February 9, 2026*
