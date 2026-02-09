@@ -257,7 +257,7 @@ const BoardRoom = () => {
       {/* INPUT */}
       <form onSubmit={handleSubmit} style={{ position: 'relative', zIndex: 5, padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', background: '#050505', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,0.08)', padding: '8px 14px', background: 'rgba(255,255,255,0.02)' }}>
-          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, userSelect: 'none' }}>></span>
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, userSelect: 'none' }}>{'>'}</span>
           <input
             ref={inputRef}
             data-testid="boardroom-input"
