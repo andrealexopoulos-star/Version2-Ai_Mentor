@@ -9427,6 +9427,15 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         except RuntimeError:
             pass
 
+        # 6. Load Decision Pressure
+        pressure = None
+        try:
+            from pressure_calibration import get_pressure_calibration
+            pc = get_pressure_calibration()
+            pressure = await pc.get_active_pressures(user_id)
+        except RuntimeError:
+            pass
+
         # Build system prompt
         system_prompt = build_boardroom_prompt(
             watchtower_positions=positions,
@@ -9435,6 +9444,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
             calibration=calibration,
             escalation_history=escalation_history,
             contradictions=contradictions,
+            pressure=pressure,
         )
 
         # Build context + message
