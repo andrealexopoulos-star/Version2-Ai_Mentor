@@ -161,6 +161,41 @@ def _build_escalation_section(history: Optional[List[Dict[str, Any]]]) -> str:
     return "\n".join(lines)
 
 
+def _build_contradiction_section(contradictions: Optional[List[Dict[str, Any]]]) -> str:
+    lines = ["═══ CONTRADICTIONS (EVIDENCE-BASED MISALIGNMENT) ═══"]
+
+    if not contradictions:
+        lines.append("No contradictions detected.")
+        return "\n".join(lines)
+
+    lines.append("These are factual misalignments between declared intent and observed behaviour.")
+    lines.append("Use to increase pressure and shorten decision windows. Do NOT infer motivation.")
+    lines.append("")
+
+    type_labels = {
+        "priority_mismatch": "PRIORITY MISMATCH — declared important but unaddressed",
+        "action_inaction": "ACTION vs INACTION — deferred or ignored despite worsening state",
+        "repeated_ignore": "REPEATED IGNORE — escalated multiple times without resolution",
+    }
+
+    for c in contradictions:
+        domain = c.get("domain", "").upper()
+        ctype = c.get("contradiction_type", "")
+        label = type_labels.get(ctype, ctype)
+        times = c.get("times_detected", 1)
+        first = (c.get("first_detected_at") or "")[:16]
+        declared = c.get("declared_priority", "")
+        observed = c.get("observed_state", "")
+
+        lines.append(f"{domain}: {label}")
+        lines.append(f"  Declared: {declared}")
+        lines.append(f"  Observed: {observed}")
+        lines.append(f"  Times detected: {times}x (since {first})")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def _build_config_section(config: Optional[Dict[str, Any]]) -> str:
     lines = ["═══ INTELLIGENCE CONFIGURATION ═══"]
 
