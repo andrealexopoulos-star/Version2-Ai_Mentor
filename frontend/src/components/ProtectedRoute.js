@@ -2,11 +2,22 @@ import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
 
-const LoadingScreen = () => (
-  <div className="min-h-screen flex items-center justify-center" data-testid="auth-loading-screen">
-    <div className="spinner" />
-  </div>
-);
+const LoadingScreen = () => {
+  // Determine greeting based on time of day
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#050505]" data-testid="auth-loading-screen">
+      <div className="text-center space-y-4">
+        <div className="w-6 h-6 border border-white/20 border-t-white/60 rounded-full animate-spin mx-auto" />
+        <p className="text-sm text-white/40 tracking-wide">
+          Good {greeting}. Connecting to BIQc...
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const AuthError = () => (
   <div className="min-h-screen flex items-center justify-center" data-testid="auth-error-screen">
