@@ -5326,8 +5326,9 @@ COGNITIVE CORE CONTEXT (USE THIS)
 {cognitive_context if cognitive_context else 'Limited data - ask questions to learn more about this user.'}
 """
     
-    # Prepare conversation for LLM
-    system_message = SOUNDBOARD_SYSTEM_PROMPT + f"\n\nCONTEXT:\n{user_context}"
+    # Prepare conversation for LLM — inject resolved facts
+    fact_block = f"\n\nGLOBAL FACT AUTHORITY:\n{facts_prompt}\nDo NOT re-ask any fact listed above.\n" if facts_prompt else ""
+    system_message = SOUNDBOARD_SYSTEM_PROMPT + fact_block + f"\n\nCONTEXT:\n{user_context}"
     
     try:
         chat = LlmChat(
