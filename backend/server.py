@@ -6202,6 +6202,41 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
     }
 
 
+# ==================== FACT RESOLUTION ROUTES ====================
+
+@api_router.get("/facts/resolve")
+async def resolve_user_facts(current_user: dict = Depends(get_current_user)):
+    """Resolve all known facts for the user from every Supabase source.
+    Returns a map of fact_key → { value, source, confidence, confirmed }."""
+    from fact_resolution import resolve_facts, resolve_onboarding_fields
+    
+    user_id = current_user["id"]
+    facts = await resolve_facts(supabase_admin, user_id)
+    resolved_fields = resolve_onboarding_fields(facts)
+    
+    return {
+        "facts": facts,
+        "resolved_fields": resolved_fields,
+        "total_known": len(facts),
+    }
+
+
+class FactConfirmRequest(BaseModel):
+    fact_key: str
+    value: Any
+    source: str = "user_confirmed"
+
+@api_router.post("/facts/confirm")
+async def confirm_fact(request: FactConfirmRequest, current_user: dict = Depends(get_current_user)):
+    """Confirm or persist a single fact."""
+    from fact_resolution import persist_fact
+    
+    user_id = current_user["id"]
+    await persist_fact(supabase_admin, user_id, request.fact_key, request.value, request.source)
+    
+    return {"status": "confirmed", "fact_key": request.fact_key}
+
+
 # ==================== CHAT ROUTES ====================
 
 @api_router.post("/chat", response_model=ChatResponse)
