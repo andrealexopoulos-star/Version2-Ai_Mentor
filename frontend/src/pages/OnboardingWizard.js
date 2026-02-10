@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
@@ -11,120 +11,138 @@ import { Progress } from '../components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { 
   Rocket, Building2, Lightbulb, ArrowRight, ArrowLeft, 
-  CheckCircle, Loader2, Sparkles, Target, Users, TrendingUp,
-  DollarSign, Zap, Brain, Save
+  CheckCircle, Loader2, Target, Users, TrendingUp,
+  DollarSign, Zap, Brain, Globe, ExternalLink, Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 
-const BUSINESS_STAGES = [
-  {
-    id: 'idea',
-    label: 'Business Idea',
-    icon: Lightbulb,
-    description: 'I have a concept but haven\'t started yet',
-    color: '#FF9500'
-  },
-  {
-    id: 'startup',
-    label: 'Startup',
-    icon: Rocket,
-    description: 'Launched recently, building traction',
-    color: '#7C3AED'
-  },
-  {
-    id: 'established',
-    label: 'Established Business',
-    icon: Building2,
-    description: 'Operational with consistent revenue',
-    color: '#0066FF'
-  }
+const STEPS = [
+  { id: 'welcome', label: 'Welcome', icon: Zap },
+  { id: 'basics', label: 'Business Identity', icon: Building2 },
+  { id: 'website', label: 'Website', icon: Globe },
+  { id: 'market', label: 'Market & Customers', icon: Target },
+  { id: 'product', label: 'Products & Services', icon: Package },
+  { id: 'team', label: 'Team', icon: Users },
+  { id: 'goals', label: 'Goals & Strategy', icon: TrendingUp },
+  { id: 'preferences', label: 'BIQC Preferences', icon: Brain },
 ];
 
 const OnboardingWizard = () => {
   const navigate = useNavigate();
-  const { user, refreshSession, onboardingState } = useSupabaseAuth();
+  const { user } = useSupabaseAuth();
   const [currentStep, setCurrentStep] = useState(0);
-  const [businessStage, setBusinessStage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({});
+  const [existingProfile, setExistingProfile] = useState({});
+  const [enriching, setEnriching] = useState(false);
+  const [enrichPreview, setEnrichPreview] = useState(null);
+  const saveTimerRef = useRef(null);
 
+  // Load existing data on mount
   useEffect(() => {
-    checkOnboardingStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onboardingState]);
+    loadExistingData();
+  }, []);
 
-  const checkOnboardingStatus = async () => {
+  const loadExistingData = async () => {
     try {
-      // TASK 3: Use cached onboarding state if available
-      if (onboardingState) {
-        console.log('[Onboarding] Using cached state:', onboardingState);
-        
-        if (onboardingState.completed) {
-          console.log('[Onboarding] Already completed - redirecting to dashboard');
-          navigate('/dashboard', { replace: true });
-          return;
-        }
-        
-        if (onboardingState.status === 'partial' && onboardingState.current_step) {
-          console.log('[Onboarding] Resuming from step:', onboardingState.current_step);
-          setCurrentStep(onboardingState.current_step);
-          setBusinessStage(onboardingState.business_stage);
-        }
-        
-        setLoading(false);
+      const res = await apiClient.get('/business-profile/context');
+      const ctx = res.data;
+      
+      const profile = ctx.profile || {};
+      const onboarding = ctx.onboarding || {};
+      
+      setExistingProfile(profile);
+      
+      // If onboarding is complete, go to dashboard
+      if (onboarding.completed) {
+        navigate('/advisor', { replace: true });
         return;
       }
       
-      // Fallback: Fetch from backend if no cached state
-      const res = await apiClient.get('/onboarding/status');
+      // Merge existing profile data into form
+      const merged = { ...onboarding.data };
+      // Pre-populate from business_profiles
+      const profileFields = [
+        'business_name', 'industry', 'business_type', 'business_stage',
+        'website', 'abn', 'location', 'years_operating',
+        'target_market', 'ideal_customer_profile', 'business_model',
+        'geographic_focus', 'customer_count', 'revenue_range',
+        'products_services', 'unique_value_proposition', 'competitive_advantages',
+        'pricing_model', 'team_size', 'hiring_status',
+        'mission_statement', 'short_term_goals', 'long_term_goals',
+        'main_challenges', 'growth_strategy'
+      ];
       
-      if (res.data.completed) {
-        console.log('[Onboarding] Already completed - redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
-        return;
+      for (const field of profileFields) {
+        if (profile[field] && !merged[field]) {
+          merged[field] = profile[field];
+        }
       }
       
-      if (res.data.current_step) {
-        console.log('[Onboarding] Resuming from step:', res.data.current_step);
-        setCurrentStep(res.data.current_step);
-        setBusinessStage(res.data.business_stage);
-        setFormData(res.data.data || {});
+      if (onboarding.business_stage) {
+        merged.business_stage = onboarding.business_stage;
+      }
+      
+      setFormData(merged);
+      
+      // Resume from last step
+      if (onboarding.current_step && onboarding.current_step > 0) {
+        setCurrentStep(onboarding.current_step);
       }
     } catch (error) {
-      // TASK 4: Fail open - allow wizard to proceed
-      console.warn('[Onboarding] Failed to fetch status - allowing fresh start:', error);
+      console.warn('[Onboarding] Failed to load context:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const saveProgress = async (data, step, stage) => {
+  const updateField = useCallback((field, value) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      // Debounced auto-save
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        persistProgress(updated, currentStep);
+      }, 1500);
+      return updated;
+    });
+  }, [currentStep]);
+
+  const toggleArrayItem = useCallback((field, item) => {
+    setFormData(prev => {
+      const current = prev[field] || [];
+      const updated = current.includes(item)
+        ? current.filter(i => i !== item)
+        : [...current, item];
+      const newData = { ...prev, [field]: updated };
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        persistProgress(newData, currentStep);
+      }, 1500);
+      return newData;
+    });
+  }, [currentStep]);
+
+  const persistProgress = async (data, step) => {
     try {
       await apiClient.post('/onboarding/save', {
         current_step: step,
-        business_stage: stage || businessStage,
-        data: { ...formData, ...data },
+        business_stage: data.business_stage || null,
+        data: data,
         completed: false
       });
     } catch (error) {
-      console.error('Error saving progress:', error);
+      console.error('Auto-save failed:', error);
     }
   };
 
-  const handleStageSelect = async (stage) => {
-    setBusinessStage(stage);
-    await saveProgress({}, 1, stage);
-    setCurrentStep(1);
-  };
-
   const handleNext = async () => {
-    const newData = { ...formData };
-    await saveProgress(newData, currentStep + 1, businessStage);
+    // Save current step
+    await persistProgress(formData, currentStep + 1);
     
-    if (currentStep === getTotalSteps()) {
-      // Complete onboarding
+    if (currentStep === STEPS.length - 1) {
       await completeOnboarding();
     } else {
       setCurrentStep(currentStep + 1);
@@ -132,10 +150,7 @@ const OnboardingWizard = () => {
   };
 
   const handleBack = () => {
-    if (currentStep === 1) {
-      setBusinessStage(null);
-      setCurrentStep(0);
-    } else {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
@@ -143,1055 +158,581 @@ const OnboardingWizard = () => {
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      // Save final data to business profile
-      const profileData = {
-        business_stage: businessStage,
-        ...formData
-      };
-      
-      console.log('Saving profile data:', profileData);
-      
-      await apiClient.put('/business-profile', profileData);
-      
-      // Mark onboarding as complete
+      // Save final business profile data
+      await apiClient.put('/business-profile', formData);
       await apiClient.post('/onboarding/complete');
-      
-      // Refresh user session to get updated profile
-      if (refreshSession) {
-        await refreshSession();
-      }
-      
-      toast.success('🎉 Profile completed! Welcome to Strategy Squad');
-      
-      // Navigate directly to advisor (skip /dashboard redirect)
+      toast.success('Profile completed! Welcome to BIQC');
       navigate('/advisor', { replace: true });
     } catch (error) {
-      const errorMsg = error.response?.data?.detail || error.message || 'Failed to complete onboarding';
-      toast.error(errorMsg);
-      console.error('Onboarding completion error:', error.response?.data || error);
+      toast.error('Failed to complete setup');
+      console.error('Onboarding completion error:', error);
     } finally {
       setSaving(false);
     }
   };
 
-  const updateFormData = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const toggleArrayItem = (field, item) => {
-    const current = formData[field] || [];
-    const updated = current.includes(item)
-      ? current.filter(i => i !== item)
-      : [...current, item];
-    updateFormData(field, updated);
-  };
-
-  const getTotalSteps = () => {
-    return getSteps().length;
-  };
-
-  const getSteps = () => {
-    if (!businessStage) return [];
+  const enrichWebsite = async () => {
+    const url = formData.website;
+    if (!url) return;
     
-    const commonSteps = [
-      { id: 'basics', label: 'Basics', icon: Building2 },
-      { id: 'team', label: 'Team', icon: Users },
-      { id: 'goals', label: 'Goals', icon: Target },
-      { id: 'tools', label: 'Tools', icon: Zap },
-      { id: 'preferences', label: 'Preferences', icon: Brain }
-    ];
-
-    if (businessStage === 'idea') {
-      return [
-        { id: 'basics', label: 'Basics', icon: Lightbulb },
-        { id: 'concept', label: 'Your Concept', icon: Brain },
-        { id: 'market', label: 'Target Market', icon: Target },
-        { id: 'timeline', label: 'Timeline', icon: TrendingUp },
-        { id: 'resources', label: 'Resources', icon: DollarSign },
-        { id: 'tools', label: 'Tools', icon: Zap },
-        { id: 'preferences', label: 'Preferences', icon: Sparkles }
-      ];
-    } else if (businessStage === 'startup') {
-      return [
-        { id: 'basics', label: 'Basics', icon: Rocket },
-        { id: 'product', label: 'Product/Service', icon: Sparkles },
-        { id: 'traction', label: 'Traction', icon: TrendingUp },
-        { id: 'team', label: 'Team', icon: Users },
-        { id: 'funding', label: 'Funding', icon: DollarSign },
-        { id: 'tools', label: 'Tools', icon: Zap },
-        { id: 'preferences', label: 'Preferences', icon: Brain }
-      ];
-    } else {
-      return [
-        { id: 'basics', label: 'Basics', icon: Building2 },
-        { id: 'operations', label: 'Operations', icon: Zap },
-        { id: 'performance', label: 'Performance', icon: TrendingUp },
-        { id: 'team', label: 'Team', icon: Users },
-        { id: 'growth', label: 'Growth', icon: Rocket },
-        { id: 'tools', label: 'Tools', icon: DollarSign },
-        { id: 'preferences', label: 'Preferences', icon: Brain }
-      ];
+    setEnriching(true);
+    setEnrichPreview(null);
+    try {
+      const res = await apiClient.post('/website/enrich', { url });
+      const data = res.data;
+      if (data.title || data.description) {
+        setEnrichPreview(data);
+      } else {
+        toast.info('Could not extract details from this website');
+      }
+    } catch {
+      toast.error('Failed to fetch website details');
+    } finally {
+      setEnriching(false);
     }
   };
 
-  const renderStepContent = () => {
-    const steps = getSteps();
-    if (currentStep === 0) return null;
-    const step = steps[currentStep - 1];
-    
-    return renderStepByStage(step?.id);
-  };
-
-  const renderStepByStage = (stepId) => {
-    if (businessStage === 'idea') {
-      return renderIdeaSteps(stepId);
-    } else if (businessStage === 'startup') {
-      return renderStartupSteps(stepId);
-    } else {
-      return renderEstablishedSteps(stepId);
+  const applyEnrichment = () => {
+    if (!enrichPreview) return;
+    const updates = {};
+    if (enrichPreview.inferred_name && !formData.business_name) {
+      updates.business_name = enrichPreview.inferred_name;
     }
-  };
-
-  const renderIdeaSteps = (stepId) => {
-    switch (stepId) {
-      case 'basics':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>What's your business idea called?</Label>
-              <Input
-                value={formData.business_name || ''}
-                onChange={(e) => updateFormData('business_name', e.target.value)}
-                placeholder="e.g., EcoBox Delivery"
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>In one sentence, what problem does it solve?</Label>
-              <Textarea
-                value={formData.problem_statement || ''}
-                onChange={(e) => updateFormData('problem_statement', e.target.value)}
-                placeholder="e.g., People want sustainable packaging but don't know where to start"
-                rows={3}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>What industry or sector?</Label>
-              <Select 
-                value={formData.industry} 
-                onValueChange={(val) => updateFormData('industry', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Technology">Technology</SelectItem>
-                  <SelectItem value="Retail">Retail & E-commerce</SelectItem>
-                  <SelectItem value="Professional Services">Professional Services</SelectItem>
-                  <SelectItem value="Food">Food & Hospitality</SelectItem>
-                  <SelectItem value="Healthcare">Healthcare</SelectItem>
-                  <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 'concept':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Who is your ideal customer?</Label>
-              <Textarea
-                value={formData.target_customer || ''}
-                onChange={(e) => updateFormData('target_customer', e.target.value)}
-                placeholder="Describe your target customer..."
-                rows={3}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>What makes your idea unique?</Label>
-              <Textarea
-                value={formData.unique_value || ''}
-                onChange={(e) => updateFormData('unique_value', e.target.value)}
-                placeholder="Your unique value proposition..."
-                rows={3}
-                className="mt-2"
-              />
-            </div>
-          </div>
-        );
-      case 'market':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Where will you operate? (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                {['Local', 'State-wide', 'National', 'International'].map(loc => (
-                  <label key={loc} className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      checked={(formData.operating_regions || []).includes(loc)}
-                      onChange={() => toggleArrayItem('operating_regions', loc)}
-                    />
-                    <span>{loc}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label>Do you have competitors?</Label>
-              <RadioGroup 
-                value={formData.has_competitors} 
-                onValueChange={(val) => updateFormData('has_competitors', val)}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="comp-yes" />
-                  <Label htmlFor="comp-yes">Yes, I know my competitors</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="unsure" id="comp-unsure" />
-                  <Label htmlFor="comp-unsure">Not sure yet</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="comp-no" />
-                  <Label htmlFor="comp-no">No direct competitors</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        );
-      case 'timeline':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>When do you plan to launch?</Label>
-              <Select 
-                value={formData.launch_timeline} 
-                onValueChange={(val) => updateFormData('launch_timeline', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select timeline" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-3 months">1-3 months</SelectItem>
-                  <SelectItem value="3-6 months">3-6 months</SelectItem>
-                  <SelectItem value="6-12 months">6-12 months</SelectItem>
-                  <SelectItem value="12+ months">12+ months</SelectItem>
-                  <SelectItem value="still-planning">Still planning</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>What's your biggest challenge right now?</Label>
-              <Textarea
-                value={formData.biggest_challenge || ''}
-                onChange={(e) => updateFormData('biggest_challenge', e.target.value)}
-                placeholder="e.g., Finding funding, validating the idea, building a team..."
-                rows={4}
-                className="mt-2"
-              />
-            </div>
-          </div>
-        );
-      case 'resources':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Do you have funding or capital?</Label>
-              <RadioGroup 
-                value={formData.funding_status} 
-                onValueChange={(val) => updateFormData('funding_status', val)}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="bootstrapping" id="fund-boot" />
-                  <Label htmlFor="fund-boot">Bootstrapping (self-funded)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="seeking" id="fund-seek" />
-                  <Label htmlFor="fund-seek">Seeking funding</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="secured" id="fund-sec" />
-                  <Label htmlFor="fund-sec">Funding secured</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="not-yet" id="fund-not" />
-                  <Label htmlFor="fund-not">Not thought about it yet</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <div>
-              <Label>How much time can you dedicate per week?</Label>
-              <Select 
-                value={formData.time_commitment} 
-                onValueChange={(val) => updateFormData('time_commitment', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select time commitment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="<5 hours">Less than 5 hours</SelectItem>
-                  <SelectItem value="5-10 hours">5-10 hours</SelectItem>
-                  <SelectItem value="10-20 hours">10-20 hours (part-time)</SelectItem>
-                  <SelectItem value="20-40 hours">20-40 hours (full-time)</SelectItem>
-                  <SelectItem value="40+ hours">40+ hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 'tools':
-        return renderToolsStep();
-      case 'preferences':
-        return renderPreferencesStep();
-      default:
-        return <div>Step content</div>;
+    if (enrichPreview.description && !formData.mission_statement) {
+      updates.mission_statement = enrichPreview.description;
     }
+    setFormData(prev => ({ ...prev, ...updates }));
+    setEnrichPreview(null);
+    toast.success('Details applied from website');
   };
 
-  const renderStartupSteps = (stepId) => {
-    switch (stepId) {
-      case 'basics':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Business Name</Label>
-              <Input
-                value={formData.business_name || ''}
-                onChange={(e) => updateFormData('business_name', e.target.value)}
-                placeholder="Your company name"
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Industry</Label>
-              <Select 
-                value={formData.industry} 
-                onValueChange={(val) => updateFormData('industry', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Technology">Technology</SelectItem>
-                  <SelectItem value="Retail">Retail & E-commerce</SelectItem>
-                  <SelectItem value="Professional Services">Professional Services</SelectItem>
-                  <SelectItem value="Food">Food & Hospitality</SelectItem>
-                  <SelectItem value="Healthcare">Healthcare</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>When did you launch?</Label>
-              <Input
-                type="month"
-                value={formData.launch_date || ''}
-                onChange={(e) => updateFormData('launch_date', e.target.value)}
-                className="mt-2"
-              />
-            </div>
-          </div>
-        );
-      case 'product':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>What do you offer?</Label>
-              <Textarea
-                value={formData.product_description || ''}
-                onChange={(e) => updateFormData('product_description', e.target.value)}
-                placeholder="Describe your product or service..."
-                rows={4}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Business model</Label>
-              <Select 
-                value={formData.business_model} 
-                onValueChange={(val) => updateFormData('business_model', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="B2B">B2B</SelectItem>
-                  <SelectItem value="B2C">B2C</SelectItem>
-                  <SelectItem value="B2B2C">B2B2C</SelectItem>
-                  <SelectItem value="Marketplace">Marketplace</SelectItem>
-                  <SelectItem value="SaaS">SaaS</SelectItem>
-                  <SelectItem value="Subscription">Subscription</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 'traction':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Do you have paying customers?</Label>
-              <RadioGroup 
-                value={formData.has_customers} 
-                onValueChange={(val) => updateFormData('has_customers', val)}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="cust-yes" />
-                  <Label htmlFor="cust-yes">Yes, we have customers</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="trials" id="cust-trial" />
-                  <Label htmlFor="cust-trial">Trialing/testing phase</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="not-yet" id="cust-no" />
-                  <Label htmlFor="cust-no">Not yet</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <div>
-              <Label>Monthly revenue range</Label>
-              <Select 
-                value={formData.revenue_range} 
-                onValueChange={(val) => updateFormData('revenue_range', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pre-revenue">Pre-revenue</SelectItem>
-                  <SelectItem value="< $1K">Less than $1K</SelectItem>
-                  <SelectItem value="$1K - $5K">$1K - $5K</SelectItem>
-                  <SelectItem value="$5K - $10K">$5K - $10K</SelectItem>
-                  <SelectItem value="$10K - $50K">$10K - $50K</SelectItem>
-                  <SelectItem value="$50K+">$50K+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 'team':
-        return renderTeamStep();
-      case 'funding':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Funding stage</Label>
-              <Select 
-                value={formData.funding_stage} 
-                onValueChange={(val) => updateFormData('funding_stage', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Bootstrapped">Bootstrapped</SelectItem>
-                  <SelectItem value="Friends & Family">Friends & Family</SelectItem>
-                  <SelectItem value="Angel">Angel</SelectItem>
-                  <SelectItem value="Seed">Seed</SelectItem>
-                  <SelectItem value="Series A">Series A</SelectItem>
-                  <SelectItem value="Series B+">Series B+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Are you actively fundraising?</Label>
-              <RadioGroup 
-                value={formData.fundraising_status} 
-                onValueChange={(val) => updateFormData('fundraising_status', val)}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="fr-yes" />
-                  <Label htmlFor="fr-yes">Yes, actively raising</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="planning" id="fr-plan" />
-                  <Label htmlFor="fr-plan">Planning to raise soon</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="fr-no" />
-                  <Label htmlFor="fr-no">Not at this time</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        );
-      case 'tools':
-        return renderToolsStep();
-      case 'preferences':
-        return renderPreferencesStep();
-      default:
-        return <div>Step content</div>;
-    }
+  const hasExistingValue = (field) => {
+    return existingProfile[field] && existingProfile[field] !== '';
   };
 
-  const renderEstablishedSteps = (stepId) => {
-    switch (stepId) {
-      case 'basics':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Business Name</Label>
-              <Input
-                value={formData.business_name || ''}
-                onChange={(e) => updateFormData('business_name', e.target.value)}
-                placeholder="Your company name"
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>ABN (Australian Business Number)</Label>
-              <Input
-                value={formData.abn || ''}
-                onChange={(e) => updateFormData('abn', e.target.value)}
-                placeholder="12 345 678 901"
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Industry</Label>
-              <Select 
-                value={formData.industry} 
-                onValueChange={(val) => updateFormData('industry', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Technology">Technology</SelectItem>
-                  <SelectItem value="Retail">Retail & E-commerce</SelectItem>
-                  <SelectItem value="Professional Services">Professional Services</SelectItem>
-                  <SelectItem value="Food">Food & Hospitality</SelectItem>
-                  <SelectItem value="Healthcare">Healthcare</SelectItem>
-                  <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="Construction">Construction</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Years in operation</Label>
-              <Select 
-                value={formData.years_operating} 
-                onValueChange={(val) => updateFormData('years_operating', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-2 years">1-2 years</SelectItem>
-                  <SelectItem value="2-5 years">2-5 years</SelectItem>
-                  <SelectItem value="5-10 years">5-10 years</SelectItem>
-                  <SelectItem value="10+ years">10+ years</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 'operations':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>What do you offer?</Label>
-              <Textarea
-                value={formData.products_services || ''}
-                onChange={(e) => updateFormData('products_services', e.target.value)}
-                placeholder="Describe your products or services..."
-                rows={4}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Business model</Label>
-              <Select 
-                value={formData.business_model} 
-                onValueChange={(val) => updateFormData('business_model', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="B2B">B2B</SelectItem>
-                  <SelectItem value="B2C">B2C</SelectItem>
-                  <SelectItem value="B2B2C">B2B2C</SelectItem>
-                  <SelectItem value="Hybrid">Hybrid</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 'performance':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Annual revenue range</Label>
-              <Select 
-                value={formData.revenue_range} 
-                onValueChange={(val) => updateFormData('revenue_range', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="< $100K">Less than $100K</SelectItem>
-                  <SelectItem value="$100K - $500K">$100K - $500K</SelectItem>
-                  <SelectItem value="$500K - $1M">$500K - $1M</SelectItem>
-                  <SelectItem value="$1M - $5M">$1M - $5M</SelectItem>
-                  <SelectItem value="$5M - $10M">$5M - $10M</SelectItem>
-                  <SelectItem value="$10M+">$10M+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Customer count</Label>
-              <Select 
-                value={formData.customer_count} 
-                onValueChange={(val) => updateFormData('customer_count', val)}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="< 10">Less than 10</SelectItem>
-                  <SelectItem value="10-50">10-50</SelectItem>
-                  <SelectItem value="50-100">50-100</SelectItem>
-                  <SelectItem value="100-500">100-500</SelectItem>
-                  <SelectItem value="500-1000">500-1000</SelectItem>
-                  <SelectItem value="1000+">1000+</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>What's your primary growth challenge?</Label>
-              <Textarea
-                value={formData.growth_challenge || ''}
-                onChange={(e) => updateFormData('growth_challenge', e.target.value)}
-                placeholder="e.g., Scaling operations, customer acquisition, competition..."
-                rows={4}
-                className="mt-2"
-              />
-            </div>
-          </div>
-        );
-      case 'team':
-        return renderTeamStep();
-      case 'growth':
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>What are your main growth goals? (Select all that apply)</Label>
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                {[
-                  'Increase revenue',
-                  'Expand market',
-                  'Improve efficiency',
-                  'Scale team',
-                  'New products',
-                  'Better margins'
-                ].map(goal => (
-                  <label key={goal} className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      checked={(formData.growth_goals || []).includes(goal)}
-                      onChange={() => toggleArrayItem('growth_goals', goal)}
-                    />
-                    <span className="text-sm">{goal}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label>Are you considering expansion or exit?</Label>
-              <RadioGroup 
-                value={formData.exit_strategy} 
-                onValueChange={(val) => updateFormData('exit_strategy', val)}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="grow" id="exit-grow" />
-                  <Label htmlFor="exit-grow">Focused on growth</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="expand" id="exit-expand" />
-                  <Label htmlFor="exit-expand">Planning to expand</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="exit" id="exit-exit" />
-                  <Label htmlFor="exit-exit">Considering exit/sale</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="maintain" id="exit-main" />
-                  <Label htmlFor="exit-main">Maintain current size</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        );
-      case 'tools':
-        return renderToolsStep();
-      case 'preferences':
-        return renderPreferencesStep();
-      default:
-        return <div>Step content</div>;
-    }
+  // Render a field with confirmation hint if value already exists
+  const renderField = (field, label, component) => {
+    const existing = hasExistingValue(field);
+    return (
+      <div key={field}>
+        <Label className="flex items-center gap-2">
+          {label}
+          {existing && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-normal">
+              pre-filled
+            </span>
+          )}
+        </Label>
+        {component}
+      </div>
+    );
   };
 
-  const renderTeamStep = () => (
-    <div className="space-y-6">
-      <div>
-        <Label>Team size (including you)</Label>
-        <Select 
-          value={formData.team_size} 
-          onValueChange={(val) => updateFormData('team_size', val)}
-        >
-          <SelectTrigger className="mt-2">
-            <SelectValue placeholder="Select size" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Just me">Just me (solo)</SelectItem>
-            <SelectItem value="2-5">2-5 people</SelectItem>
-            <SelectItem value="6-10">6-10 people</SelectItem>
-            <SelectItem value="11-25">11-25 people</SelectItem>
-            <SelectItem value="26-50">26-50 people</SelectItem>
-            <SelectItem value="51+">51+ people</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label>Are you hiring or planning to hire?</Label>
-        <RadioGroup 
-          value={formData.hiring_status} 
-          onValueChange={(val) => updateFormData('hiring_status', val)}
-          className="mt-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="actively" id="hire-active" />
-            <Label htmlFor="hire-active">Actively hiring</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="planning" id="hire-plan" />
-            <Label htmlFor="hire-plan">Planning to hire</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="not-now" id="hire-no" />
-            <Label htmlFor="hire-no">Not at this time</Label>
-          </div>
-        </RadioGroup>
-      </div>
-    </div>
-  );
-
-  const renderToolsStep = () => (
-    <div className="space-y-6">
-      <div>
-        <Label>What tools do you currently use? (Select all that apply)</Label>
-        <div className="grid grid-cols-2 gap-3 mt-2">
-          {[
-            'Xero / QuickBooks',
-            'HubSpot / CRM',
-            'Slack / Teams',
-            'Google Workspace',
-            'Notion / Asana',
-            'Stripe / Payment',
-            'None yet',
-            'Other'
-          ].map(tool => (
-            <label key={tool} className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={(formData.current_tools || []).includes(tool)}
-                onChange={() => toggleArrayItem('current_tools', tool)}
-              />
-              <span className="text-sm">{tool}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-      <div>
-        <Label>Website or social media (optional)</Label>
-        <Input
-          value={formData.website || ''}
-          onChange={(e) => updateFormData('website', e.target.value)}
-          placeholder="yoursite.com or @handle"
-          className="mt-2"
-        />
-      </div>
-    </div>
-  );
-
-  const renderPreferencesStep = () => (
-    <div className="space-y-6">
-      <div>
-        <Label>How do you prefer to receive advice?</Label>
-        <RadioGroup 
-          value={formData.advice_style} 
-          onValueChange={(val) => updateFormData('advice_style', val)}
-          className="mt-2 space-y-3"
-        >
-          <div className="flex items-start space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-            <RadioGroupItem value="concise" id="advice-concise" className="mt-1" />
-            <Label htmlFor="advice-concise" className="cursor-pointer">
-              <div className="font-medium">Quick & Concise</div>
-              <div className="text-sm text-gray-500">Give me actionable bullet points</div>
-            </Label>
-          </div>
-          <div className="flex items-start space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-            <RadioGroupItem value="detailed" id="advice-detail" className="mt-1" />
-            <Label htmlFor="advice-detail" className="cursor-pointer">
-              <div className="font-medium">Detailed & Thorough</div>
-              <div className="text-sm text-gray-500">Explain the reasoning and context</div>
-            </Label>
-          </div>
-          <div className="flex items-start space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
-            <RadioGroupItem value="conversational" id="advice-conv" className="mt-1" />
-            <Label htmlFor="advice-conv" className="cursor-pointer">
-              <div className="font-medium">Conversational</div>
-              <div className="text-sm text-gray-500">Like chatting with a business partner</div>
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
-      <div>
-        <Label>Time availability for implementation</Label>
-        <Select 
-          value={formData.time_availability} 
-          onValueChange={(val) => updateFormData('time_availability', val)}
-        >
-          <SelectTrigger className="mt-2">
-            <SelectValue placeholder="Select time availability" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="< 2 hours/week">Less than 2 hours/week</SelectItem>
-            <SelectItem value="2-5 hours/week">2-5 hours/week</SelectItem>
-            <SelectItem value="5-10 hours/week">5-10 hours/week</SelectItem>
-            <SelectItem value="10-20 hours/week">10-20 hours/week</SelectItem>
-            <SelectItem value="20+ hours/week">20+ hours/week</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  );
+  const completeness = Math.round(((currentStep) / (STEPS.length - 1)) * 100);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+      <div className="min-h-screen flex items-center justify-center bg-[#080c14]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto" />
+          <p className="text-sm text-white/40">Loading your profile...</p>
+        </div>
       </div>
     );
   }
 
-  const progress = currentStep === 0 ? 0 : Math.round((currentStep / (getTotalSteps() + 1)) * 100);
-  const steps = getSteps();
-
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-secondary)' }}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#080c14] via-[#0f172a] to-[#162032]" data-testid="onboarding-wizard">
       {/* Header */}
-      <div 
-        className="border-b"
-        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-      >
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-white/10 px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-white text-sm">BIQC Setup</h3>
+            <p className="text-xs text-white/40">{STEPS[currentStep]?.label}</p>
+          </div>
+        </div>
+        {currentStep > 0 && (
           <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'var(--accent-primary)' }}
-            >
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Strategy Squad</h3>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Profile Setup</p>
+            <span className="text-xs text-white/40 font-mono">
+              {currentStep}/{STEPS.length - 1}
+            </span>
+            <div className="w-24 h-1.5 rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${completeness}%` }}
+              />
             </div>
           </div>
-          {currentStep > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Step {currentStep} of {getTotalSteps()}
-              </span>
-              <div className="w-32 h-2 rounded-full" style={{ background: 'var(--bg-tertiary)' }}>
-                <div 
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${progress}%`, background: 'var(--accent-primary)' }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        )}
+      </header>
 
-      {/* Main Content */}
+      {/* Content */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-2xl" style={{ background: 'var(--bg-card)' }}>
+        <Card className="w-full max-w-2xl bg-[#0f1629]/80 border-white/10 backdrop-blur-sm" data-testid="onboarding-card">
           <CardContent className="p-8">
-            {/* Stage Selection */}
-            {currentStep === 0 && !businessStage && (
-              <div className="space-y-8">
-                <div className="text-center">
-                  <div 
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                    style={{ background: 'var(--bg-tertiary)' }}
-                  >
-                    <Sparkles className="w-8 h-8" style={{ color: 'var(--accent-primary)' }} />
+            {/* STEP 0: Welcome */}
+            {currentStep === 0 && (
+              <div className="space-y-8" data-testid="onboarding-welcome">
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-600/20 flex items-center justify-center mx-auto">
+                    <Zap className="w-8 h-8 text-blue-400" />
                   </div>
-                  <h1 className="text-3xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
-                    Welcome to Strategy Squad! 👋
-                  </h1>
-                  <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
-                    Let's build your personalised AI business advisor
-                  </p>
-                  <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-                    This takes about 5-8 minutes. You can save and resume anytime.
+                  <h1 className="text-3xl font-bold text-white">Welcome to BIQC</h1>
+                  <p className="text-white/60 max-w-md mx-auto">
+                    Your continuous business intelligence and situational awareness system.
                   </p>
                 </div>
 
+                <div className="space-y-4 max-w-lg mx-auto">
+                  {[
+                    { icon: Target, title: 'BIQC Insights', desc: 'Real-time intelligence on your business health across finance, operations, and growth.' },
+                    { icon: Building2, title: 'Business DNA', desc: 'Your core identity, team, market, and strategy — the foundation BIQC uses to understand you.' },
+                    { icon: TrendingUp, title: 'Goals & Objectives', desc: 'Your priorities drive what BIQC monitors and what it escalates.' },
+                    { icon: Brain, title: 'How BIQC works', desc: 'BIQC observes signals, forms positions, and only speaks when findings cross your thresholds.' },
+                  ].map(item => (
+                    <div key={item.title} className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
+                      <div className="w-10 h-10 rounded-lg bg-blue-600/10 flex items-center justify-center flex-shrink-0">
+                        <item.icon className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                        <p className="text-xs text-white/50 mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-white/30 text-center">
+                  Takes about 5 minutes. Your progress is saved automatically.
+                </p>
+              </div>
+            )}
+
+            {/* STEP 1: Business Identity */}
+            {currentStep === 1 && (
+              <div className="space-y-6" data-testid="step-basics">
+                <StepHeader icon={Building2} title="Business Identity" subtitle="Let's start with who you are." />
+                
+                {renderField('business_name', 'Business Name',
+                  <Input
+                    value={formData.business_name || ''}
+                    onChange={(e) => updateField('business_name', e.target.value)}
+                    placeholder="Your company name"
+                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    data-testid="input-business-name"
+                  />
+                )}
+
+                {renderField('industry', 'Industry',
+                  <Select value={formData.industry || ''} onValueChange={(val) => updateField('industry', val)}>
+                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-industry">
+                      <SelectValue placeholder="Select industry" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['Technology', 'Professional Services', 'Retail & E-commerce', 'Food & Hospitality', 'Healthcare', 'Manufacturing', 'Construction', 'Finance', 'Education', 'Other'].map(i => (
+                        <SelectItem key={i} value={i}>{i}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {renderField('business_stage', 'Business Stage',
+                    <Select value={formData.business_stage || ''} onValueChange={(val) => updateField('business_stage', val)}>
+                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-stage">
+                        <SelectValue placeholder="Select stage" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="idea">Business Idea</SelectItem>
+                        <SelectItem value="startup">Startup</SelectItem>
+                        <SelectItem value="established">Established</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {renderField('location', 'Location',
+                    <Input
+                      value={formData.location || ''}
+                      onChange={(e) => updateField('location', e.target.value)}
+                      placeholder="City, Country"
+                      className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      data-testid="input-location"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: Website */}
+            {currentStep === 2 && (
+              <div className="space-y-6" data-testid="step-website">
+                <StepHeader icon={Globe} title="Website" subtitle="We can auto-detect details from your website." />
+                
                 <div>
-                  <Label className="text-lg mb-4 block">What stage is your business at?</Label>
-                  <div className="space-y-3">
-                    {BUSINESS_STAGES.map((stage) => {
-                      const StageIcon = stage.icon;
-                      return (
-                        <button
-                          key={stage.id}
-                          onClick={() => handleStageSelect(stage.id)}
-                          className="w-full text-left p-6 rounded-xl border-2 transition-all hover:border-opacity-100"
-                          style={{ 
-                            borderColor: 'var(--border-medium)',
-                            background: 'var(--bg-primary)'
-                          }}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div 
-                              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                              style={{ background: `${stage.color}15` }}
-                            >
-                              <StageIcon className="w-6 h-6" style={{ color: stage.color }} />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                                {stage.label}
-                              </h3>
-                              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                                {stage.description}
-                              </p>
-                            </div>
-                            <ArrowRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: 'var(--text-muted)' }} />
-                          </div>
-                        </button>
-                      );
-                    })}
+                  <Label className="text-white/70">Website URL</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      value={formData.website || ''}
+                      onChange={(e) => updateField('website', e.target.value)}
+                      placeholder="www.yourcompany.com"
+                      className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      data-testid="input-website"
+                    />
+                    <Button
+                      onClick={enrichWebsite}
+                      disabled={!formData.website || enriching}
+                      variant="outline"
+                      className="border-white/10 text-white/70 hover:bg-white/5"
+                      data-testid="btn-enrich"
+                    >
+                      {enriching ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+                      Detect
+                    </Button>
+                  </div>
+                </div>
+
+                {enrichPreview && (
+                  <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-3" data-testid="enrich-preview">
+                    <p className="text-sm font-medium text-blue-400">Detected from your website:</p>
+                    {enrichPreview.title && (
+                      <div className="text-sm text-white/70">
+                        <span className="text-white/40 text-xs">Title: </span>{enrichPreview.title}
+                      </div>
+                    )}
+                    {enrichPreview.description && (
+                      <div className="text-sm text-white/70">
+                        <span className="text-white/40 text-xs">Description: </span>{enrichPreview.description}
+                      </div>
+                    )}
+                    {enrichPreview.inferred_name && (
+                      <div className="text-sm text-white/70">
+                        <span className="text-white/40 text-xs">Business name: </span>{enrichPreview.inferred_name}
+                      </div>
+                    )}
+                    <Button
+                      onClick={applyEnrichment}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      data-testid="btn-apply-enrichment"
+                    >
+                      <CheckCircle className="w-3 h-3 mr-1" /> Apply these details
+                    </Button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {renderField('abn', 'ABN (optional)',
+                    <Input
+                      value={formData.abn || ''}
+                      onChange={(e) => updateField('abn', e.target.value)}
+                      placeholder="12 345 678 901"
+                      className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      data-testid="input-abn"
+                    />
+                  )}
+
+                  {renderField('years_operating', 'Years Operating',
+                    <Select value={formData.years_operating || ''} onValueChange={(val) => updateField('years_operating', val)}>
+                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-years">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="< 1 year">Less than 1 year</SelectItem>
+                        <SelectItem value="1-2 years">1-2 years</SelectItem>
+                        <SelectItem value="2-5 years">2-5 years</SelectItem>
+                        <SelectItem value="5-10 years">5-10 years</SelectItem>
+                        <SelectItem value="10+ years">10+ years</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: Market & Customers */}
+            {currentStep === 3 && (
+              <div className="space-y-6" data-testid="step-market">
+                <StepHeader icon={Target} title="Market & Customers" subtitle="Understanding your market helps BIQC prioritize signals." />
+                
+                {renderField('target_market', 'Target Market',
+                  <Textarea
+                    value={formData.target_market || ''}
+                    onChange={(e) => updateField('target_market', e.target.value)}
+                    placeholder="Describe your target market..."
+                    rows={3}
+                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    data-testid="input-target-market"
+                  />
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {renderField('business_model', 'Business Model',
+                    <Select value={formData.business_model || ''} onValueChange={(val) => updateField('business_model', val)}>
+                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-model">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['B2B', 'B2C', 'B2B2C', 'Marketplace', 'SaaS', 'Subscription', 'Hybrid'].map(m => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {renderField('revenue_range', 'Revenue Range',
+                    <Select value={formData.revenue_range || ''} onValueChange={(val) => updateField('revenue_range', val)}>
+                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-revenue">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pre-revenue">Pre-revenue</SelectItem>
+                        <SelectItem value="< $100K">Less than $100K</SelectItem>
+                        <SelectItem value="$100K - $500K">$100K - $500K</SelectItem>
+                        <SelectItem value="$500K - $1M">$500K - $1M</SelectItem>
+                        <SelectItem value="$1M - $5M">$1M - $5M</SelectItem>
+                        <SelectItem value="$5M+">$5M+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {renderField('customer_count', 'Customer Count',
+                  <Select value={formData.customer_count || ''} onValueChange={(val) => updateField('customer_count', val)}>
+                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-customers">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="None yet">None yet</SelectItem>
+                      <SelectItem value="< 10">Less than 10</SelectItem>
+                      <SelectItem value="10-50">10-50</SelectItem>
+                      <SelectItem value="50-100">50-100</SelectItem>
+                      <SelectItem value="100-500">100-500</SelectItem>
+                      <SelectItem value="500+">500+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            {/* STEP 4: Products & Services */}
+            {currentStep === 4 && (
+              <div className="space-y-6" data-testid="step-product">
+                <StepHeader icon={Package} title="Products & Services" subtitle="What you offer and why customers choose you." />
+                
+                {renderField('products_services', 'Main Products/Services',
+                  <Textarea
+                    value={formData.products_services || ''}
+                    onChange={(e) => updateField('products_services', e.target.value)}
+                    placeholder="Describe your main offerings..."
+                    rows={3}
+                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    data-testid="input-products"
+                  />
+                )}
+
+                {renderField('unique_value_proposition', 'What makes you different?',
+                  <Textarea
+                    value={formData.unique_value_proposition || ''}
+                    onChange={(e) => updateField('unique_value_proposition', e.target.value)}
+                    placeholder="Your unique value proposition..."
+                    rows={3}
+                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    data-testid="input-uvp"
+                  />
+                )}
+
+                {renderField('pricing_model', 'Pricing Model',
+                  <Select value={formData.pricing_model || ''} onValueChange={(val) => updateField('pricing_model', val)}>
+                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-pricing">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['Hourly', 'Project-based', 'Retainer', 'Subscription', 'One-time purchase', 'Usage-based', 'Tiered'].map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            {/* STEP 5: Team */}
+            {currentStep === 5 && (
+              <div className="space-y-6" data-testid="step-team">
+                <StepHeader icon={Users} title="Team" subtitle="Your people and organizational shape." />
+
+                {renderField('team_size', 'Team Size',
+                  <Select value={formData.team_size || ''} onValueChange={(val) => updateField('team_size', val)}>
+                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-team-size">
+                      <SelectValue placeholder="Select size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Just me">Just me (solo)</SelectItem>
+                      <SelectItem value="2-5">2-5 people</SelectItem>
+                      <SelectItem value="6-10">6-10 people</SelectItem>
+                      <SelectItem value="11-25">11-25 people</SelectItem>
+                      <SelectItem value="26-50">26-50 people</SelectItem>
+                      <SelectItem value="51+">51+ people</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {renderField('hiring_status', 'Hiring Status',
+                  <RadioGroup
+                    value={formData.hiring_status || ''}
+                    onValueChange={(val) => updateField('hiring_status', val)}
+                    className="mt-2 space-y-2"
+                  >
+                    {[
+                      { value: 'actively', label: 'Actively hiring' },
+                      { value: 'planning', label: 'Planning to hire' },
+                      { value: 'not-now', label: 'Not at this time' },
+                    ].map(opt => (
+                      <div key={opt.value} className="flex items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/5">
+                        <RadioGroupItem value={opt.value} id={`hire-${opt.value}`} />
+                        <Label htmlFor={`hire-${opt.value}`} className="text-white/70 cursor-pointer">{opt.label}</Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
+              </div>
+            )}
+
+            {/* STEP 6: Goals & Strategy */}
+            {currentStep === 6 && (
+              <div className="space-y-6" data-testid="step-goals">
+                <StepHeader icon={TrendingUp} title="Goals & Strategy" subtitle="Your priorities drive what BIQC monitors." />
+
+                {renderField('short_term_goals', 'Short-term Goals (6-12 months)',
+                  <Textarea
+                    value={formData.short_term_goals || ''}
+                    onChange={(e) => updateField('short_term_goals', e.target.value)}
+                    placeholder="What do you want to achieve in the next year?"
+                    rows={3}
+                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    data-testid="input-short-goals"
+                  />
+                )}
+
+                {renderField('main_challenges', 'Biggest Challenges',
+                  <Textarea
+                    value={formData.main_challenges || ''}
+                    onChange={(e) => updateField('main_challenges', e.target.value)}
+                    placeholder="What obstacles are you facing right now?"
+                    rows={3}
+                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    data-testid="input-challenges"
+                  />
+                )}
+
+                {renderField('growth_strategy', 'Growth Strategy',
+                  <Textarea
+                    value={formData.growth_strategy || ''}
+                    onChange={(e) => updateField('growth_strategy', e.target.value)}
+                    placeholder="How do you plan to grow?"
+                    rows={3}
+                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    data-testid="input-growth"
+                  />
+                )}
+              </div>
+            )}
+
+            {/* STEP 7: BIQC Preferences */}
+            {currentStep === 7 && (
+              <div className="space-y-6" data-testid="step-preferences">
+                <StepHeader icon={Brain} title="BIQC Preferences" subtitle="How should BIQC communicate with you?" />
+
+                <div>
+                  <Label className="text-white/70">Communication Style</Label>
+                  <RadioGroup
+                    value={formData.advice_style || ''}
+                    onValueChange={(val) => updateField('advice_style', val)}
+                    className="mt-3 space-y-2"
+                  >
+                    {[
+                      { value: 'concise', label: 'Quick & Concise', desc: 'Actionable bullet points' },
+                      { value: 'detailed', label: 'Detailed & Thorough', desc: 'Explain the reasoning and context' },
+                      { value: 'conversational', label: 'Conversational', desc: 'Like chatting with a business partner' },
+                    ].map(opt => (
+                      <div key={opt.value} className="flex items-start gap-3 p-4 rounded-lg bg-white/5 border border-white/5 cursor-pointer hover:bg-white/8">
+                        <RadioGroupItem value={opt.value} id={`style-${opt.value}`} className="mt-0.5" />
+                        <Label htmlFor={`style-${opt.value}`} className="cursor-pointer">
+                          <div className="text-sm font-medium text-white">{opt.label}</div>
+                          <div className="text-xs text-white/40">{opt.desc}</div>
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-white/70">What tools do you use?</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {['Xero / QuickBooks', 'HubSpot / CRM', 'Slack / Teams', 'Google Workspace', 'Notion / Asana', 'Stripe', 'None yet', 'Other'].map(tool => (
+                      <label key={tool} className="flex items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/5 cursor-pointer hover:bg-white/8 text-white/70 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={(formData.current_tools || []).includes(tool)}
+                          onChange={() => toggleArrayItem('current_tools', tool)}
+                          className="rounded"
+                        />
+                        {tool}
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Steps Content */}
+            {/* Navigation */}
+            <div className="flex items-center justify-between pt-8 mt-8 border-t border-white/10">
+              {currentStep > 0 ? (
+                <Button
+                  onClick={handleBack}
+                  variant="ghost"
+                  className="text-white/50 hover:text-white hover:bg-white/5"
+                  data-testid="btn-back"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                </Button>
+              ) : <div />}
+
+              <Button
+                onClick={handleNext}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+                data-testid="btn-next"
+              >
+                {saving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Completing...</>
+                ) : currentStep === STEPS.length - 1 ? (
+                  <><CheckCircle className="w-4 h-4 mr-1" /> Complete Setup</>
+                ) : currentStep === 0 ? (
+                  <>Get Started <ArrowRight className="w-4 h-4 ml-1" /></>
+                ) : (
+                  <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
+                )}
+              </Button>
+            </div>
+
+            {/* Save for later */}
             {currentStep > 0 && (
-              <div className="space-y-8">
-                {/* Step Title */}
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    {steps[currentStep - 1] && (() => {
-                      const StepIcon = steps[currentStep - 1].icon;
-                      return (
-                        <>
-                          <div 
-                            className="w-10 h-10 rounded-xl flex items-center justify-center"
-                            style={{ background: 'var(--bg-tertiary)' }}
-                          >
-                            <StepIcon className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
-                          </div>
-                          <div>
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                              Step {currentStep} of {getTotalSteps()}
-                            </p>
-                            <h2 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
-                              {steps[currentStep - 1].label}
-                            </h2>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                {/* Step Form */}
-                <div>
-                  {renderStepContent()}
-                </div>
-
-                {/* Navigation */}
-                <div className="flex items-center justify-between pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                  {currentStep > 1 ? (
-                    <Button
-                      onClick={handleBack}
-                      variant="outline"
-                      className="btn-secondary"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      Back
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => {
-                        setBusinessStage(null);
-                        setCurrentStep(0);
-                      }}
-                      variant="outline"
-                      className="btn-secondary"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      Change Stage
-                    </Button>
-                  )}
-
-                  <Button
-                    onClick={handleNext}
-                    disabled={saving}
-                    className="btn-primary"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Completing...
-                      </>
-                    ) : currentStep === getTotalSteps() ? (
-                      <>
-                        <CheckCircle className="w-4 h-4" />
-                        Complete Setup
-                      </>
-                    ) : (
-                      <>
-                        Continue
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Save for Later */}
-                <div className="text-center pt-4">
-                  <button
-                    onClick={() => {
-                      saveProgress(formData, currentStep, businessStage);
-                      toast.success('Progress saved! You can continue anytime.');
-                      navigate('/dashboard');
-                    }}
-                    className="text-sm"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <Save className="w-4 h-4 inline mr-1" />
-                    Save and continue later
-                  </button>
-                </div>
+              <div className="text-center pt-4">
+                <button
+                  onClick={() => {
+                    persistProgress(formData, currentStep);
+                    toast.success('Progress saved. You can continue anytime.');
+                    navigate('/advisor');
+                  }}
+                  className="text-xs text-white/30 hover:text-white/50 transition-colors"
+                  data-testid="btn-save-later"
+                >
+                  Save and continue later
+                </button>
               </div>
             )}
           </CardContent>
@@ -1200,5 +741,17 @@ const OnboardingWizard = () => {
     </div>
   );
 };
+
+const StepHeader = ({ icon: Icon, title, subtitle }) => (
+  <div className="flex items-center gap-3 pb-2">
+    <div className="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center">
+      <Icon className="w-5 h-5 text-blue-400" />
+    </div>
+    <div>
+      <h2 className="text-xl font-bold text-white">{title}</h2>
+      <p className="text-sm text-white/40">{subtitle}</p>
+    </div>
+  </div>
+);
 
 export default OnboardingWizard;
