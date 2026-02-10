@@ -9,20 +9,20 @@
 ## CURRENT SITUATION
 
 ### Canonical OAuth URL (Supabase Configured)
-**Working URL:** `https://warroom-strategic-ai.preview.emergentagent.com`
+**Working URL:** `https://boardroom-console.preview.emergentagent.com`
 
 This URL is configured in Supabase as the authorized OAuth redirect URL for:
 - Microsoft OAuth (Outlook integration)
 - Google OAuth (if configured)
 
 ### Current Preview URL (This Fork)
-**Active URL:** `https://warroom-strategic-ai.preview.emergentagent.com`
+**Active URL:** `https://boardroom-console.preview.emergentagent.com`
 
 **Environment Variables:**
 ```
-REACT_APP_BACKEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
-FRONTEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
-BACKEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://boardroom-console.preview.emergentagent.com
+FRONTEND_URL=https://boardroom-console.preview.emergentagent.com
+BACKEND_URL=https://boardroom-console.preview.emergentagent.com
 ```
 
 ---
@@ -69,17 +69,17 @@ BACKEND_URL=https://warroom-strategic-ai.preview.emergentagent.com
 ## TESTING GUIDELINES
 
 ### For OAuth Testing (Microsoft/Google Login):
-**USE ONLY:** `https://warroom-strategic-ai.preview.emergentagent.com`
+**USE ONLY:** `https://boardroom-console.preview.emergentagent.com`
 
 **Workflow:**
-1. Navigate to: `https://warroom-strategic-ai.preview.emergentagent.com`
+1. Navigate to: `https://boardroom-console.preview.emergentagent.com`
 2. Click "Sign in with Microsoft" or "Sign in with Google"
 3. Complete OAuth flow
 4. Will redirect back to advisor-chat-1 ✅
 5. Session persists correctly
 
 ### For Non-OAuth Testing (Email/Password, Features):
-**CAN USE:** `https://warroom-strategic-ai.preview.emergentagent.com` (this fork)
+**CAN USE:** `https://boardroom-console.preview.emergentagent.com` (this fork)
 
 **Workflow:**
 1. Use email/password login (no OAuth)
@@ -132,8 +132,8 @@ To support multiple preview URLs, would need to:
 
 ### This Fork (business-iq-1):
 ```
-Frontend: https://warroom-strategic-ai.preview.emergentagent.com
-Backend: https://warroom-strategic-ai.preview.emergentagent.com/api
+Frontend: https://boardroom-console.preview.emergentagent.com
+Backend: https://boardroom-console.preview.emergentagent.com/api
 Database: Supabase (shared)
 Auth: Supabase (shared)
 ```
@@ -148,8 +148,8 @@ Auth: Supabase (shared)
 
 ### Canonical URL (advisor-chat-1):
 ```
-Frontend: https://warroom-strategic-ai.preview.emergentagent.com
-Backend: https://warroom-strategic-ai.preview.emergentagent.com/api
+Frontend: https://boardroom-console.preview.emergentagent.com
+Backend: https://boardroom-console.preview.emergentagent.com/api
 Database: Supabase (shared)
 Auth: Supabase (shared)
 OAuth: Configured ✅
@@ -213,7 +213,7 @@ OAuth: Configured ✅
 
 ### ⚠️ IMPORTANT: OAuth URLs
 If you are testing OAuth features (Microsoft login, Outlook, Google):
-- **YOU MUST USE:** `https://warroom-strategic-ai.preview.emergentagent.com`
+- **YOU MUST USE:** `https://boardroom-console.preview.emergentagent.com`
 - **DO NOT USE:** Other preview URLs (business-iq-1, etc.)
 
 Reason: Supabase OAuth is configured for advisor-chat-1 only.

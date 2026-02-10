@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://warroom-strategic-ai.preview.emergentagent.com
+https://boardroom-console.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://warroom-strategic-ai.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://warroom-strategic-ai.preview.emergentagent.com
+https://boardroom-console.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://warroom-strategic-ai.preview.emergentagent.com/**
-https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
-https://warroom-strategic-ai.preview.emergentagent.com/auth-callback-supabase
-https://warroom-strategic-ai.preview.emergentagent.com/connect-email
-https://warroom-strategic-ai.preview.emergentagent.com/integrations
+https://boardroom-console.preview.emergentagent.com/**
+https://boardroom-console.preview.emergentagent.com/auth/callback
+https://boardroom-console.preview.emergentagent.com/auth-callback-supabase
+https://boardroom-console.preview.emergentagent.com/connect-email
+https://boardroom-console.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://warroom-strategic-ai.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://warroom-strategic-ai.preview.emergentagent.com/api/auth/outlook/callback
+https://boardroom-console.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://warroom-strategic-ai.preview.emergentagent.com
+https://boardroom-console.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://warroom-strategic-ai.preview.emergentagent.com/api/auth/gmail/callback
+https://boardroom-console.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

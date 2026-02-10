@@ -1,7 +1,7 @@
 # SUPABASE OAUTH UPDATE GUIDE — business-iq-1 Fork
 
-**Current Fork URL:** `https://warroom-strategic-ai.preview.emergentagent.com`  
-**Previous URL:** `https://warroom-strategic-ai.preview.emergentagent.com`  
+**Current Fork URL:** `https://boardroom-console.preview.emergentagent.com`  
+**Previous URL:** `https://boardroom-console.preview.emergentagent.com`  
 **Task:** Update Supabase OAuth to work with current fork  
 **Status:** Awaiting user configuration
 
@@ -19,8 +19,8 @@
 4. Add the following URLs (keep existing ones):
 
 ```
-https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
-https://warroom-strategic-ai.preview.emergentagent.com/**
+https://boardroom-console.preview.emergentagent.com/auth/callback
+https://boardroom-console.preview.emergentagent.com/**
 ```
 
 **Why both:**
@@ -33,12 +33,12 @@ In same **URL Configuration** section:
 
 **Site URL:** Change from:
 ```
-https://warroom-strategic-ai.preview.emergentagent.com
+https://boardroom-console.preview.emergentagent.com
 ```
 
 To:
 ```
-https://warroom-strategic-ai.preview.emergentagent.com
+https://boardroom-console.preview.emergentagent.com
 ```
 
 **Note:** You can keep both URLs active if you want to support both forks.
@@ -80,7 +80,7 @@ Review your Edge Function code for hardcoded URLs:
 **Look for:**
 ```typescript
 // Check if there are hardcoded redirects like:
-const redirectUrl = 'https://warroom-strategic-ai.preview.emergentagent.com/integrations';
+const redirectUrl = 'https://boardroom-console.preview.emergentagent.com/integrations';
 
 // Or if it uses dynamic state parameter:
 const redirectUrl = state.redirect_url; // ✅ Good (no change needed)
@@ -116,12 +116,12 @@ const redirectUrl = state.redirect_url; // ✅ Good (no change needed)
 2. Go to: **Authentication** → **URL Configuration**
 3. Under **Redirect URLs**, add:
    ```
-   https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
-   https://warroom-strategic-ai.preview.emergentagent.com/**
+   https://boardroom-console.preview.emergentagent.com/auth/callback
+   https://boardroom-console.preview.emergentagent.com/**
    ```
 4. Under **Site URL**, change to:
    ```
-   https://warroom-strategic-ai.preview.emergentagent.com
+   https://boardroom-console.preview.emergentagent.com
    ```
 5. Click **Save**
 
@@ -142,7 +142,7 @@ const redirectUrl = state.redirect_url; // ✅ Good (no change needed)
 
 ### Step 3: Test OAuth Flow (3 minutes)
 
-1. Open: `https://warroom-strategic-ai.preview.emergentagent.com`
+1. Open: `https://boardroom-console.preview.emergentagent.com`
 2. Click: **Sign in with Microsoft**
 3. Complete OAuth
 4. Should redirect back to: `business-iq-1/auth/callback` ✅
@@ -158,10 +158,10 @@ If your Edge Function needs updating, use this pattern:
 // ✅ GOOD: Dynamic redirect
 const redirectUrl = request.headers.get('referer') || 
                     state.frontend_url || 
-                    'https://warroom-strategic-ai.preview.emergentagent.com';
+                    'https://boardroom-console.preview.emergentagent.com';
 
 // ❌ BAD: Hardcoded
-const redirectUrl = 'https://warroom-strategic-ai.preview.emergentagent.com';
+const redirectUrl = 'https://boardroom-console.preview.emergentagent.com';
 ```
 
 ---
@@ -204,7 +204,7 @@ After updating Supabase:
 ## EXPECTED BEHAVIOR AFTER UPDATE
 
 ### ✅ Should Work:
-1. Navigate to: `https://warroom-strategic-ai.preview.emergentagent.com`
+1. Navigate to: `https://boardroom-console.preview.emergentagent.com`
 2. Click: "Sign in with Microsoft"
 3. Redirect to: Microsoft login
 4. Redirect to: Supabase
@@ -221,10 +221,10 @@ After updating Supabase:
 ### If You Want to Support Both URLs:
 You can keep BOTH URLs in Supabase redirect list:
 ```
-https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
-https://warroom-strategic-ai.preview.emergentagent.com/**
-https://warroom-strategic-ai.preview.emergentagent.com/auth/callback
-https://warroom-strategic-ai.preview.emergentagent.com/**
+https://boardroom-console.preview.emergentagent.com/auth/callback
+https://boardroom-console.preview.emergentagent.com/**
+https://boardroom-console.preview.emergentagent.com/auth/callback
+https://boardroom-console.preview.emergentagent.com/**
 ```
 
 This allows OAuth to work on both forks.

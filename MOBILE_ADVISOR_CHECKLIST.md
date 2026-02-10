@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://warroom-strategic-ai.preview.emergentagent.com/advisor
+## For: https://boardroom-console.preview.emergentagent.com/advisor
 
 ---
 

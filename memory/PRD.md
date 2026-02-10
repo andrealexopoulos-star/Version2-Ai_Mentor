@@ -109,7 +109,7 @@ Build a strategic business intelligence platform (BIQC) with:
 
 ## Credentials
 - **Test Account**: andrewrx@hotmail.com / KooksMou06**
-- **App URL**: https://warroom-strategic-ai.preview.emergentagent.com
+- **App URL**: https://boardroom-console.preview.emergentagent.com
 
 ---
 *Last Updated: February 9, 2026*

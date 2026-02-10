@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://warroom-strategic-ai.preview.emergentagent.com`
-- **Backend:** `https://warroom-strategic-ai.preview.emergentagent.com/api`
+- **Frontend:** `https://boardroom-console.preview.emergentagent.com`
+- **Backend:** `https://boardroom-console.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**
