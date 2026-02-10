@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -30,6 +30,9 @@ export const SupabaseAuthProvider = ({ children }) => {
   const [authHydrated, setAuthHydrated] = useState(false);
   const [authState, setAuthState] = useState(AUTH_STATE.LOADING);
 
+  // Onboarding state — fetched once per session, cached in context
+  const [onboardingStatus, setOnboardingStatus] = useState(null); // null = not fetched, object = fetched
+
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
@@ -38,7 +41,6 @@ export const SupabaseAuthProvider = ({ children }) => {
     const initializeAuth = async () => {
       try {
         if (retryCount >= MAX_RETRIES) {
-          console.error('[Auth] Max retries reached, stopping initialization');
           if (isMounted) {
             setLoading(false);
             setInitialized(true);
@@ -48,7 +50,6 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
         
         retryCount++;
-        console.log(`[Auth] Initializing auth state... (attempt ${retryCount}/${MAX_RETRIES})`);
         
         let retries = 3;
         let sessionData = null;
@@ -56,11 +57,8 @@ export const SupabaseAuthProvider = ({ children }) => {
         while (retries > 0 && !sessionData) {
           const { data, error } = await supabase.auth.getSession();
           if (error) {
-            console.error('[Auth] Error getting session:', error);
             retries--;
-            if (retries > 0) {
-              await new Promise(r => setTimeout(r, 500));
-            }
+            if (retries > 0) await new Promise(r => setTimeout(r, 500));
           } else {
             sessionData = data;
           }
@@ -69,8 +67,6 @@ export const SupabaseAuthProvider = ({ children }) => {
         if (!isMounted) return;
         
         const currentSession = sessionData?.session;
-        console.log('[Auth] Initial session:', currentSession ? `User: ${currentSession.user?.email}` : 'No session');
-        
         setSession(currentSession);
         if (currentSession?.user) {
           await fetchUserProfile(currentSession.user.id, currentSession);
@@ -81,7 +77,6 @@ export const SupabaseAuthProvider = ({ children }) => {
         setAuthHydrated(true);
       } catch (error) {
         if (!isMounted) return;
-        console.error('[Auth] Initialization error:', error);
         setLoading(false);
         setInitialized(true);
         setAuthHydrated(true);
@@ -92,14 +87,12 @@ export const SupabaseAuthProvider = ({ children }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
-      
-      console.log('[Auth] Auth state changed:', event, session ? `User: ${session.user?.email}` : 'No session');
-      
       setSession(session);
       if (session?.user) {
         fetchUserProfile(session.user.id, session);
       } else {
         setUser(null);
+        setOnboardingStatus(null); // Clear cached onboarding on logout
         setLoading(false);
       }
     });
@@ -113,7 +106,7 @@ export const SupabaseAuthProvider = ({ children }) => {
   const fetchUserProfile = async (userId, existingSession) => {
     try {
       if (existingSession?.user) {
-        const fallbackUser = {
+        setUser({
           id: existingSession.user.id,
           email: existingSession.user.email,
           full_name: existingSession.user.user_metadata?.full_name || existingSession.user.user_metadata?.name || existingSession.user.email,
@@ -122,120 +115,81 @@ export const SupabaseAuthProvider = ({ children }) => {
           role: existingSession.user.user_metadata?.role || 'user',
           subscription_tier: 'free',
           is_master_account: existingSession.user.email === 'andre@thestrategysquad.com.au'
-        };
-        setUser(fallbackUser);
+        });
       }
-      
       setLoading(false);
     } catch (error) {
-      console.error('[Auth] Error in fetchUserProfile:', error);
       setLoading(false);
     }
   };
 
   const signUp = async (email, password, metadata = {}) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: metadata }
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([{
-            id: data.user.id,
-            email: data.user.email,
-            full_name: metadata.full_name || null,
-            company_name: metadata.company_name || null,
-            industry: metadata.industry || null,
-            role: metadata.role || null,
-            subscription_tier: 'free',
-            is_master_account: email === 'andre@thestrategysquad.com.au',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-        }
-
-        const { error: cognitiveError } = await supabase
-          .from('cognitive_profiles')
-          .insert([{
-            user_id: data.user.id,
-            immutable_reality: {},
-            behavioural_truth: {},
-            delivery_preference: {},
-            consequence_memory: {},
-            last_updated: new Date().toISOString()
-          }]);
-
-        if (cognitiveError) {
-          console.error('Error creating cognitive profile:', cognitiveError);
-        }
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
+    const { data, error } = await supabase.auth.signUp({
+      email, password, options: { data: metadata }
+    });
+    if (error) throw error;
+    if (data.user) {
+      await supabase.from('users').insert([{
+        id: data.user.id, email: data.user.email,
+        full_name: metadata.full_name || null,
+        company_name: metadata.company_name || null,
+        industry: metadata.industry || null,
+        role: metadata.role || null,
+        subscription_tier: 'free',
+        is_master_account: email === 'andre@thestrategysquad.com.au',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }]);
+      await supabase.from('cognitive_profiles').insert([{
+        user_id: data.user.id,
+        immutable_reality: {}, behavioural_truth: {},
+        delivery_preference: {}, consequence_memory: {},
+        last_updated: new Date().toISOString()
+      }]);
     }
+    return data;
   };
 
   const signIn = async (email, password) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
   };
 
   const signInWithOAuth = async (provider) => {
-    try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: false,
-          queryParams: {
-            ...(provider === 'google' && { prompt: 'select_account', access_type: 'offline' }),
-            ...(provider === 'azure' && { prompt: 'select_account' })
-          }
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: false,
+        queryParams: {
+          ...(provider === 'google' && { prompt: 'select_account', access_type: 'offline' }),
+          ...(provider === 'azure' && { prompt: 'select_account' })
         }
-      });
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('OAuth error:', error);
-      throw error;
-    }
+      }
+    });
+    if (error) throw error;
+    return data;
   };
 
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+    } finally {
       setUser(null);
       setSession(null);
-    } catch (error) {
-      console.error('Logout error:', error);
-      setUser(null);
-      setSession(null);
-      throw error;
+      setOnboardingStatus(null);
     }
   };
 
-  // CALIBRATION CHECK — single source of truth: user_operator_profile.persona_calibration_status
+  // Mark onboarding as complete in the cached state (called by OnboardingWizard on completion)
+  const markOnboardingComplete = useCallback(() => {
+    setOnboardingStatus({ completed: true });
+  }, []);
+
+  // CALIBRATION + ONBOARDING CHECK — runs once after auth hydration
   useEffect(() => {
     if (!authHydrated) return;
     let cancelled = false;
@@ -245,81 +199,82 @@ export const SupabaseAuthProvider = ({ children }) => {
         setAuthState(AUTH_STATE.LOADING);
 
         const activeSession = session || (await supabase.auth.getSession()).data.session;
-
-        if (!activeSession) {
+        if (!activeSession?.access_token) {
           if (!cancelled) setAuthState(AUTH_STATE.READY);
           return;
         }
 
         const accessToken = activeSession.access_token;
-        if (!accessToken) {
-          if (!cancelled) setAuthState(AUTH_STATE.READY);
-          return;
-        }
-
         let calibrationComplete = false;
 
-        // Check user_operator_profile directly via Supabase REST
+        // Check user_operator_profile.persona_calibration_status
         try {
           const userId = activeSession.user.id;
-          
           const opRes = await fetch(
             `${SUPABASE_URL}/rest/v1/user_operator_profile?user_id=eq.${userId}&select=persona_calibration_status`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'apikey': SUPABASE_ANON_KEY,
-              }
-            }
+            { headers: { 'Authorization': `Bearer ${accessToken}`, 'apikey': SUPABASE_ANON_KEY } }
           );
-          
           if (opRes.ok) {
             const rows = await opRes.json();
             if (rows.length > 0 && rows[0].persona_calibration_status === 'complete') {
               calibrationComplete = true;
-              console.log('[Auth] user_operator_profile confirms COMPLETE');
             }
           }
         } catch (e) {
           console.warn('[Auth] user_operator_profile check failed:', e.message);
         }
 
-        // Fallback: backend endpoint (also reads user_operator_profile)
+        // Fallback: backend endpoint
         if (!calibrationComplete) {
           try {
             const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
-              method: 'GET',
-              headers: { 'Authorization': `Bearer ${accessToken}` }
+              method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` }
             });
             if (calRes.ok) {
               const cal = await calRes.json();
-              if (cal.status === 'COMPLETE') {
-                calibrationComplete = true;
-                console.log('[Auth] Backend confirms COMPLETE');
-              }
+              if (cal.status === 'COMPLETE') calibrationComplete = true;
             }
           } catch { /* non-fatal */ }
         }
 
-        if (!cancelled) {
-          if (calibrationComplete) {
-            setAuthState(AUTH_STATE.READY);
-          } else {
-            console.log('[Auth] Calibration incomplete → NEEDS_CALIBRATION');
-            setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
-          }
+        if (cancelled) return;
+
+        if (!calibrationComplete) {
+          setAuthState(AUTH_STATE.NEEDS_CALIBRATION);
+          return;
         }
+
+        // Calibration complete — now fetch onboarding status ONCE
+        try {
+          const obRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding/status`, {
+            method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+          if (obRes.ok) {
+            const obData = await obRes.json();
+            if (!cancelled) {
+              setOnboardingStatus({
+                completed: obData.completed === true,
+                currentStep: obData.current_step || 0,
+                businessStage: obData.business_stage || null,
+              });
+            }
+          } else {
+            // Fail open: treat as complete to avoid blocking
+            if (!cancelled) setOnboardingStatus({ completed: true });
+          }
+        } catch {
+          if (!cancelled) setOnboardingStatus({ completed: true });
+        }
+
+        if (!cancelled) setAuthState(AUTH_STATE.READY);
 
       } catch (err) {
         console.error('[AUTH BOOTSTRAP ERROR]', err.message);
-        if (!cancelled) {
-          setAuthState(AUTH_STATE.READY);
-        }
+        if (!cancelled) setAuthState(AUTH_STATE.READY);
       }
     };
 
     bootstrap();
-
     return () => { cancelled = true; };
   }, [authHydrated, session]);
 
@@ -335,7 +290,6 @@ export const SupabaseAuthProvider = ({ children }) => {
       }
       return data.session;
     } catch (error) {
-      console.error('[Auth] Session refresh exception:', error);
       return null;
     }
   };
@@ -346,6 +300,8 @@ export const SupabaseAuthProvider = ({ children }) => {
     loading,
     authHydrated,
     authState,
+    onboardingStatus,
+    markOnboardingComplete,
     signUp,
     signIn,
     signInWithOAuth,
