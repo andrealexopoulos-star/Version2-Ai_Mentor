@@ -2457,7 +2457,8 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 async def get_calibration_status(request: Request):
     """
     Calibration status — deterministic 200 for authenticated users.
-    Returns mode: INCOMPLETE | DEFERRED | COMPLETE
+    Single source of truth: user_operator_profile.persona_calibration_status
+    Fallback: business_profiles.calibration_status (legacy)
     """
     try:
         current_user = await get_current_user_from_request(request)
@@ -2466,27 +2467,30 @@ async def get_calibration_status(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
 
     try:
-        result = (
-            supabase_admin
-            .table("business_profiles")
-            .select("calibration_status")
-            .eq("user_id", user_id)
-            .limit(1)
-            .execute()
-        )
+        # PRIMARY: Check user_operator_profile.persona_calibration_status
+        try:
+            op_result = supabase_admin.table("user_operator_profile").select(
+                "persona_calibration_status"
+            ).eq("user_id", user_id).maybeSingle().execute()
+            
+            if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
+                return JSONResponse(status_code=200, content={"status": "COMPLETE"})
+        except Exception:
+            pass
 
-        profile = result.data[0] if result.data else None
-
-        if not profile:
-            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
-
-        cal_status = profile.get("calibration_status")
-
-        if cal_status == "complete":
-            return JSONResponse(status_code=200, content={"status": "COMPLETE"})
-
-        if cal_status == "deferred":
-            return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "DEFERRED"})
+        # FALLBACK: Check business_profiles.calibration_status (legacy)
+        try:
+            result = supabase_admin.table("business_profiles").select(
+                "calibration_status"
+            ).eq("user_id", user_id).limit(1).execute()
+            
+            profile = result.data[0] if result.data else None
+            if profile and profile.get("calibration_status") == "complete":
+                return JSONResponse(status_code=200, content={"status": "COMPLETE"})
+            if profile and profile.get("calibration_status") == "deferred":
+                return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "DEFERRED"})
+        except Exception:
+            pass
 
         return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
 
