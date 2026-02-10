@@ -95,13 +95,11 @@ const AuthCallbackSupabase = () => {
             
             setStatus('Checking profile...');
             
-            // Check if user needs onboarding
             try {
-              // STEP 2: CALIBRATION STATUS CHECK — query Supabase directly
+              // CALIBRATION CHECK — single source: user_operator_profile.persona_calibration_status
               const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
               const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-              // Query user_operator_profile for persona_calibration_status
               const calCheckRes = await fetch(
                 `${supabaseUrl}/rest/v1/user_operator_profile?user_id=eq.${sessionData.session.user.id}&select=persona_calibration_status`,
                 {
@@ -120,75 +118,33 @@ const AuthCallbackSupabase = () => {
                 }
               }
 
-              // Fallback: check legacy endpoint if new table query failed
+              // Fallback: backend endpoint (also reads user_operator_profile)
               if (needsCalibration) {
                 try {
                   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-                  const legacyRes = await fetch(`${BACKEND_URL}/api/calibration/status`, {
+                  const fallbackRes = await fetch(`${BACKEND_URL}/api/calibration/status`, {
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }
                   });
-                  if (legacyRes.ok) {
-                    const legacyData = await legacyRes.json();
-                    if (legacyData.status === 'COMPLETE') needsCalibration = false;
+                  if (fallbackRes.ok) {
+                    const fallbackData = await fallbackRes.json();
+                    if (fallbackData.status === 'COMPLETE') needsCalibration = false;
                   }
-                } catch { /* legacy unavailable, proceed with new system */ }
+                } catch { /* non-fatal */ }
               }
 
               if (needsCalibration) {
-                console.log('[GUARD] ➤ Calibration needed, routing to /calibration');
-                navigate('/calibration', { replace: true });
-                return;
-              }
-
-              // STEP 3: BUSINESS PROFILE STATE CHECK (post-calibration)
-              const response = await fetch(`${BACKEND_URL}/api/auth/check-profile`, {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${sessionData.session.access_token}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-              
-              if (!response.ok) {
-                const errorStatus = response.status;
-                console.error(`[GUARD] ❌ Context load failed: ${errorStatus}`);
-                setError(`Failed to load your business context (HTTP ${errorStatus})`);
-                setStatus('Unable to verify your account. Please retry.');
-                return; // STOP - no routing
-              }
-              
-              const profileData = await response.json();
-              console.log('[GUARD] ✅ Context load ok:', { 
-                needs_onboarding: profileData.needs_onboarding,
-                onboarding_status: profileData.onboarding_status
-              });
-              
-              const businessContext = {
-                user_id: sessionData.session.user.id,
-                account_id: profileData.user?.account_id || null,
-                business_profile_id: profileData.user?.business_profile_id || profileData.user?.id || null,
-                onboarding_status: profileData.onboarding_status || 'calibration_required',
-                calibration_status: profileData.calibration_status || null,
-                cached_at: Date.now()
-              };
-              localStorage.setItem('biqc_context_v1', JSON.stringify(businessContext));
-              console.log(`[CONTEXT] ✅ cached biqc_context_v1 (cached_at=${new Date(businessContext.cached_at).toISOString()})`);
-              
-              if (profileData.needs_onboarding || profileData.onboarding_status === 'calibration_required') {
-                console.log('[GUARD] Routing decision = calibration');
+                console.log('[GUARD] Calibration needed, routing to /calibration');
                 navigate('/calibration', { replace: true });
               } else {
-                console.log('[GUARD] ✅ Calibration complete. routing to /advisor');
+                console.log('[GUARD] Calibration complete, routing to /advisor');
                 navigate('/advisor', { replace: true });
               }
             } catch (profileCheckError) {
-              console.error('❌ Error checking profile:', profileCheckError);
-              
-              // HARD GATE: Show error UI, do NOT route to advisor/onboarding
+              console.error('Error checking profile:', profileCheckError);
               setError('Network error loading your profile');
               setStatus('Please retry or contact support if this persists.');
-              return; // STOP routing
+              return;
             }
           } else {
             console.log('❌ No session despite access token');
