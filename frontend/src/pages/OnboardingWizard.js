@@ -218,19 +218,33 @@ const OnboardingWizard = () => {
   };
 
   const hasExistingValue = (field) => {
+    // Check resolved facts first (Global Fact Authority), then existingProfile
+    if (resolvedFieldsMap[field] && resolvedFieldsMap[field].value) return true;
     return existingProfile[field] && existingProfile[field] !== '';
+  };
+
+  const getFieldSource = (field) => {
+    if (resolvedFieldsMap[field]) return resolvedFieldsMap[field].source;
+    return null;
   };
 
   // Render a field with confirmation hint if value already exists
   const renderField = (field, label, component) => {
     const existing = hasExistingValue(field);
+    const source = getFieldSource(field);
+    const isConfirmed = resolvedFieldsMap[field]?.confirmed;
     return (
       <div key={field}>
         <Label className="flex items-center gap-2">
           {label}
-          {existing && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-normal">
-              pre-filled
+          {existing && isConfirmed && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-normal">
+              confirmed
+            </span>
+          )}
+          {existing && !isConfirmed && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-normal">
+              {source === 'profile' ? 'from profile' : 'detected'}
             </span>
           )}
         </Label>
