@@ -158,9 +158,10 @@ const OnboardingWizard = () => {
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      // Save final business profile data
       await apiClient.put('/business-profile', formData);
       await apiClient.post('/onboarding/complete');
+      // Update cached state so ProtectedRoute stops redirecting
+      markOnboardingComplete();
       toast.success('Profile completed! Welcome to BIQC');
       navigate('/advisor', { replace: true });
     } catch (error) {
