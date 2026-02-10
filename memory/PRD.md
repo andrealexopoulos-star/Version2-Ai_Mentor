@@ -27,12 +27,11 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 
 ### Global Fact Authority (COMPLETE — Feb 10, 2026)
 - **Fact Resolution Engine** (`/app/backend/fact_resolution.py`): Three-layer resolution — (1) Supabase tables, (2) Merge-normalised integration data with `CONFIDENCE_THRESHOLD >= 0.75`, (3) Previously confirmed facts in `fact_ledger`.
-- **18 authoritative fact sources** (business_profiles + users) + **5 integration derivation rules** (CRM contact count, pipeline value, finance revenue/employees, calendar team inference) + **22 onboarding field mappings**.
-- **API Endpoints**: `GET /api/facts/resolve` returns all known facts. `POST /api/facts/confirm` persists a confirmed fact.
-- **Batch Persistence**: `persist_facts_batch()` — every onboarding answer immediately persists to `fact_ledger`. `POST /api/onboarding/save` calls this automatically.
-- **AI Integration**: `build_known_facts_prompt` separates `CONFIRMED FACTS (DO NOT RE-ASK)` from `UNCONFIRMED FACTS (CONFIRM ONLY)` in AI agent context.
-- **Violation Logging**: `log_fact_resolution_violation()` logs any question generated without fact resolution as a system error.
-- **UI**: OnboardingWizard shows `confirmed` badge (emerald) for confirmed facts and `detected`/`from profile` badge (amber) for unconfirmed.
+- **18 authoritative fact sources** + **5 integration derivation rules** + **22 onboarding field mappings**.
+- **API Endpoints**: `GET /api/facts/resolve`, `POST /api/facts/confirm`.
+- **Batch Persistence**: `persist_facts_batch()` — every onboarding answer persists to `fact_ledger`.
+- **Zero-Bypass Enforcement**: All AI prompt paths inject resolved facts — `format_advisor_brain_prompt` (zero "ASK THEM", uses "Not yet known"), `soundboard_chat`, `boardroom_respond`, `generate_checklist`, `generate_action_plan`. Business DNA and Settings pages use `GET /api/business-profile/context` with `resolved_fields`.
+- **UI**: OnboardingWizard shows `confirmed` (emerald) / `detected` (amber) badges.
 
 ### Audit Fixes H3, F4, F2 (COMPLETE — Feb 10, 2026)
 - **H3 — User profile from DB**: `fetchUserProfile` now enriches user data from `GET /api/auth/supabase/me` (reads `users` table) for authoritative `role`, `subscription_tier`, `is_master_account`. Session metadata used as instant fallback, then overwritten with DB values.
