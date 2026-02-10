@@ -215,6 +215,11 @@ export const SupabaseAuthProvider = ({ children }) => {
     setOnboardingStatus({ completed: true });
   }, []);
 
+  // Defer onboarding — allow dashboard access without completing (called by "save and continue later")
+  const deferOnboarding = useCallback(() => {
+    setOnboardingStatus(prev => ({ ...prev, completed: true, deferred: true }));
+  }, []);
+
   // CALIBRATION + ONBOARDING CHECK — runs once after auth hydration
   useEffect(() => {
     if (!authHydrated) return;
