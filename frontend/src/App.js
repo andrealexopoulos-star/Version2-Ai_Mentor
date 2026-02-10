@@ -47,6 +47,7 @@ import GmailTest from "./pages/GmailTest";
 import Watchtower from './components/Watchtower';
 import WarRoomConsole from './components/WarRoomConsole';
 import BoardRoom from './components/BoardRoom';
+import IntelligenceBaseline from './pages/IntelligenceBaseline';
 
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
