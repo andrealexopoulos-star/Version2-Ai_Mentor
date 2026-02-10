@@ -36,6 +36,7 @@ const OnboardingWizard = () => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({});
   const [existingProfile, setExistingProfile] = useState({});
+  const [resolvedFieldsMap, setResolvedFieldsMap] = useState({});
   const [enriching, setEnriching] = useState(false);
   const [enrichPreview, setEnrichPreview] = useState(null);
   const saveTimerRef = useRef(null);
