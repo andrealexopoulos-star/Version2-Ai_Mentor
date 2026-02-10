@@ -109,12 +109,9 @@ const Advisor = () => {
       }
       
       // THRESHOLD 3: BEHAVIOURAL REINFORCEMENT
-      // Track focus area recurrence in localStorage
       if (selectedFocus) {
-        const focusHistory = JSON.parse(localStorage.getItem('biqc_focus_history') || '[]');
         const focusCount = focusHistory.filter(f => f.area === selectedFocus).length;
         
-        // Behavioural reinforcement threshold: same focus selected 2+ times
         if (focusCount >= 2) {
           thresholds.behaviouralReinforcement = true;
         }
