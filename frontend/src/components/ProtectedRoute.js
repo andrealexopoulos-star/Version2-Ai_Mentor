@@ -20,15 +20,15 @@ const LoadingScreen = () => {
 };
 
 const AuthError = () => (
-  <div className="min-h-screen flex items-center justify-center" data-testid="auth-error-screen">
-    <div className="text-center text-gray-700">
-      <h2 className="text-lg font-semibold">Something went wrong</h2>
-      <p className="text-sm text-gray-500 mt-2">Please refresh the page to try again.</p>
+  <div className="min-h-screen flex items-center justify-center bg-[#050505]" data-testid="auth-error-screen">
+    <div className="text-center space-y-3">
+      <p className="text-xs tracking-widest text-red-400/60 uppercase">Connection interrupted</p>
+      <p className="text-sm text-white/50">Unable to establish session. Please try again.</p>
       <button 
         onClick={() => window.location.reload()} 
-        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
+        className="mt-2 px-5 py-2 border border-white/15 text-white/60 text-xs tracking-wider hover:bg-white/5 transition-colors"
       >
-        Refresh
+        Reconnect
       </button>
     </div>
   </div>
