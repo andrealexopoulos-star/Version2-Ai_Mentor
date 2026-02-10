@@ -5181,8 +5181,14 @@ async def get_soundboard_conversation(conversation_id: str, current_user: dict =
 
 @api_router.post("/soundboard/chat")
 async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
-    """Chat with MySoundBoard - Uses Cognitive Core for deep personalization"""
+    """Chat with MySoundBoard - Uses Cognitive Core + Global Fact Authority"""
+    from fact_resolution import resolve_facts, build_known_facts_prompt
+    
     user_id = current_user["id"]
+    
+    # Resolve facts before generating any response
+    resolved_facts = await resolve_facts(supabase_admin, user_id)
+    facts_prompt = build_known_facts_prompt(resolved_facts)
     
     # Get or create conversation from Supabase
     conversation = None
@@ -5194,9 +5200,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # Build message history for context
     messages_history = []
     if conversation:
-        messages_history = conversation.get("messages", [])[-20:]  # Last 20 messages for context
+        messages_history = conversation.get("messages", [])[-20:]
     
-    # ========== COGNITIVE CORE INTEGRATION ==========
     # Get deep user context from the Cognitive Core
     core_context = await cognitive_core.get_context_for_agent(user_id, "MySoundboard")
     
@@ -5205,8 +5210,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         "type": "message",
         "content": req.message,
         "agent": "MySoundboard",
-        "topics": [],  # Could be extracted via NLP
-        "is_repeated_concern": False  # Could be detected
+        "topics": [],
+        "is_repeated_concern": False
     })
     
     # Record timing observation
