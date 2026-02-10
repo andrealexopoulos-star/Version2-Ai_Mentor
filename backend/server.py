@@ -5938,17 +5938,27 @@ async def save_onboarding_progress(
     request: OnboardingSave,
     current_user: dict = Depends(get_current_user)
 ):
-    """Save onboarding progress - immediately persists answers to business_profiles"""
+    """Save onboarding progress to user_operator_profile (authoritative).
+    Anti-regression: current_step cannot decrease unless explicitly set to 0 (reset)."""
     user_id = current_user["id"]
     
-    onboarding_data = {
-        "current_step": request.current_step,
+    # Read current state to enforce anti-regression
+    current_state = await _read_onboarding_state(user_id)
+    current_step_saved = current_state.get("current_step", 0) if current_state else 0
+    
+    # Anti-regression: don't allow step to go backwards (except explicit reset to 0)
+    new_step = request.current_step
+    if new_step < current_step_saved and new_step != 0:
+        new_step = current_step_saved
+    
+    new_state = {
+        "current_step": new_step,
         "business_stage": request.business_stage,
-        "onboarding_data": request.data,
+        "data": request.data,
         "completed": request.completed
     }
     
-    await update_onboarding_supabase(supabase_admin, user_id, onboarding_data)
+    await _write_onboarding_state(user_id, new_state)
     
     # PROGRESSIVE SAVE: Also persist answers to business_profiles immediately
     if request.data:
@@ -5956,7 +5966,7 @@ async def save_onboarding_progress(
         field_mapping = {
             "business_name": "business_name",
             "industry": "industry",
-            "business_stage": None,  # handled separately
+            "business_stage": None,
             "abn": "abn",
             "website": "website",
             "products_services": "products_services",
@@ -5991,7 +6001,7 @@ async def save_onboarding_progress(
         if profile_fields:
             await update_business_profile_supabase(supabase_admin, user_id, profile_fields)
     
-    return {"status": "saved", "current_step": request.current_step}
+    return {"status": "saved", "current_step": new_step}
 
 @api_router.post("/onboarding/complete")
 async def complete_onboarding(current_user: dict = Depends(get_current_user)):
