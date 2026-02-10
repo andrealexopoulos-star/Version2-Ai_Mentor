@@ -149,8 +149,31 @@ const BoardRoom = () => {
     if (!isProcessing && input.trim()) sendMessage(input);
   };
 
+  const handleEscalationAction = async (domain, action) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/boardroom/escalation-action`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ domain, action }),
+      });
+      if (res.ok) {
+        setEscalations(prev => prev.map(e =>
+          e.domain === domain ? { ...e, last_user_action: action } : e
+        ));
+      }
+    } catch (err) {
+      console.error('[BoardRoom] Escalation action failed:', err);
+    }
+  };
+
   const positionEntries = Object.entries(positions);
   const hasPositions = positionEntries.length > 0;
+  const actionableEscalations = escalations.filter(e => e.last_user_action === 'unknown');
 
   return (
     <div
