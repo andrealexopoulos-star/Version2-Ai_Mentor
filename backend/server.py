@@ -9446,6 +9446,15 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         except RuntimeError:
             pass
 
+        # 7. Load Evidence Freshness
+        freshness = None
+        try:
+            from evidence_freshness import get_evidence_freshness
+            ef = get_evidence_freshness()
+            freshness = await ef.get_freshness(user_id)
+        except RuntimeError:
+            pass
+
         # Build system prompt
         system_prompt = build_boardroom_prompt(
             watchtower_positions=positions,
@@ -9455,6 +9464,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
             escalation_history=escalation_history,
             contradictions=contradictions,
             pressure=pressure,
+            freshness=freshness,
         )
 
         # Build context + message
