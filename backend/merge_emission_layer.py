@@ -234,6 +234,70 @@ class MergeEmissionLayer:
             )
             emitted.append(await self._persist_event(event))
 
+        # ─── CASH BURN ACCELERATION ──────────────────────────────
+        try:
+            payments_data = await self.merge.get_payments(account_token=account_token, page_size=200)
+            payments = payments_data.get("results", [])
+
+            if len(payments) >= 4:
+                mid = len(payments) // 2
+                recent_payments = payments[:mid]
+                older_payments = payments[mid:]
+
+                recent_total = sum(float(p.get("total_amount") or p.get("amount") or 0) for p in recent_payments)
+                older_total = sum(float(p.get("total_amount") or p.get("amount") or 0) for p in older_payments)
+
+                if older_total > 0 and recent_total > older_total * 1.2:
+                    event = self._build_event(
+                        user_id=user_id,
+                        source="merge_accounting",
+                        domain="finance",
+                        event_type="finance",
+                        signal_name="cash_burn_acceleration",
+                        entity={"snapshot": "outflows"},
+                        metric={
+                            "current_burn_rate": round(recent_total, 2),
+                            "previous_burn_rate": round(older_total, 2),
+                        },
+                        confidence=min(0.55 + (recent_total / older_total - 1) * 0.5, 0.9),
+                        severity="warning" if recent_total < older_total * 1.5 else "critical",
+                    )
+                    emitted.append(await self._persist_event(event))
+        except Exception as e:
+            logger.debug(f"[emission] Cash burn check failed: {e}")
+
+        # ─── MARGIN COMPRESSION ──────────────────────────────────
+        try:
+            total_revenue = sum(float(inv.get("total_amount") or inv.get("amount") or 0) for inv in invoices)
+            total_cost = sum(float(p.get("total_amount") or p.get("amount") or 0) for p in payments) if 'payments' in dir() else 0
+
+            if total_revenue > 0 and total_cost > 0:
+                current_margin = round((total_revenue - total_cost) / total_revenue, 4)
+
+                # Get prior margin from snapshot
+                prior_margin = await self._get_prior_margin(user_id)
+                if prior_margin is not None and current_margin < prior_margin * 0.9:
+                    event = self._build_event(
+                        user_id=user_id,
+                        source="merge_accounting",
+                        domain="finance",
+                        event_type="finance",
+                        signal_name="margin_compression",
+                        entity={"snapshot": "profitability"},
+                        metric={
+                            "current_margin": current_margin,
+                            "baseline_margin": prior_margin,
+                        },
+                        confidence=min(0.6 + abs(prior_margin - current_margin) * 2, 0.9),
+                        severity="warning",
+                    )
+                    emitted.append(await self._persist_event(event))
+
+                # Store current margin for next comparison
+                await self._store_margin_snapshot(user_id, current_margin)
+        except Exception as e:
+            logger.debug(f"[emission] Margin compression check failed: {e}")
+
         return emitted
 
     # ═══════════════════════════════════════════════════════════════
