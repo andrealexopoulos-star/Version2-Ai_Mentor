@@ -52,6 +52,7 @@ const OnboardingWizard = () => {
       
       const profile = ctx.profile || {};
       const onboarding = ctx.onboarding || {};
+      const resolvedFields = ctx.resolved_fields || {};
       
       setExistingProfile(profile);
       
@@ -61,17 +62,24 @@ const OnboardingWizard = () => {
         return;
       }
       
-      // Merge existing profile data into form
+      // Merge data: resolved facts → onboarding data → profile fields
       const merged = { ...onboarding.data };
-      // Pre-populate from business_profiles
+      
+      // Apply resolved facts (from Global Fact Authority)
+      for (const [field, factData] of Object.entries(resolvedFields)) {
+        if (factData.value && !merged[field]) {
+          merged[field] = factData.value;
+        }
+      }
+      
+      // Fallback: pre-populate from business_profiles for any remaining fields
       const profileFields = [
         'business_name', 'industry', 'business_type', 'business_stage',
-        'website', 'abn', 'location', 'years_operating',
-        'target_market', 'ideal_customer_profile', 'business_model',
-        'geographic_focus', 'customer_count', 'revenue_range',
+        'website', 'location', 'years_operating',
+        'target_market', 'business_model', 'revenue_range',
         'products_services', 'unique_value_proposition', 'competitive_advantages',
         'pricing_model', 'team_size', 'hiring_status',
-        'mission_statement', 'short_term_goals', 'long_term_goals',
+        'short_term_goals', 'long_term_goals',
         'main_challenges', 'growth_strategy'
       ];
       
