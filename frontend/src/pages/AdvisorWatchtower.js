@@ -238,11 +238,11 @@ const AdvisorWatchtower = () => {
           </div>
         )}
 
-        {/* ─── SECTION 1: WAR ROOM (Strategic Console) ─── */}
+        {/* ─── SECTION 1: Strategic Operations Console ─── */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">War Room</h2>
+              <h2 className="text-lg font-semibold text-slate-900">BIQc</h2>
               <p className="text-xs text-slate-500">Strategic operations console</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => navigate('/war-room')} className="text-xs gap-1">
