@@ -124,14 +124,6 @@ const ConnectEmail = () => {
         
         if (session?.access_token) {
           token = session.access_token;
-        } else {
-          // Try localStorage as fallback
-          try {
-            token = localStorage.getItem('token');
-          } catch (storageError) {
-            console.error("Storage access error:", storageError);
-            throw new Error("Cannot access browser storage. Please check browser settings.");
-          }
         }
       } catch (authError) {
         console.error("Auth error:", authError);
@@ -178,14 +170,6 @@ const ConnectEmail = () => {
         
         if (session?.access_token) {
           token = session.access_token;
-        } else {
-          // Try localStorage as fallback
-          try {
-            token = localStorage.getItem('token');
-          } catch (storageError) {
-            console.error("Storage access error:", storageError);
-            throw new Error("Cannot access browser storage. Please check browser settings.");
-          }
         }
       } catch (authError) {
         console.error("Auth error:", authError);
