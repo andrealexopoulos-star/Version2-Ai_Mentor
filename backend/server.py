@@ -1799,23 +1799,24 @@ async def build_cognitive_context_for_prompt(user_id: str, agent: str) -> str:
         
         # Get known information to prevent re-asking
         try:
-            known_info = await cognitive_core.get_known_information(user_id)
+            # PRIMARY: Use Global Fact Authority
+            from fact_resolution import resolve_facts, build_known_facts_prompt
+            resolved_facts = await resolve_facts(supabase_admin, user_id)
+            if resolved_facts:
+                context_parts.append("\n" + build_known_facts_prompt(resolved_facts))
             
-            if known_info.get("business_facts"):
-                context_parts.append("\n═══ KNOWN FACTS (DO NOT RE-ASK) ═══")
-                for fact in known_info["business_facts"][:15]:
-                    context_parts.append(f"  ✓ {fact}")
+            # SECONDARY: Also include cognitive core known info for coverage
+            known_info = await cognitive_core.get_known_information(user_id)
             
             if known_info.get("topics_discussed"):
                 context_parts.append(f"\nTOPICS ALREADY DISCUSSED: {', '.join(known_info['topics_discussed'][:10])}")
             
-            # Get recent questions asked
             questions_asked = await cognitive_core.get_questions_asked(user_id)
             if questions_asked:
                 recent_questions = [q.get("question", "")[:60] for q in questions_asked[-5:]]
                 context_parts.append("\nRECENT QUESTIONS ASKED (do not repeat):")
                 for q in recent_questions:
-                    context_parts.append(f"  • {q}...")
+                    context_parts.append(f"  {q}...")
                     
         except Exception as e:
             logger.warning(f"Could not load known information: {e}")
