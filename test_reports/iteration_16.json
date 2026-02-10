@@ -1,0 +1,63 @@
+{
+  "summary": "Iteration 16 Testing Complete - Onboarding State Consolidation to user_operator_profile Verified. All 6 backend API tests passed. Code review confirms correct implementation of all 10 features in the review request.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration16_onboarding_state.py",
+    "/app/test_reports/pytest/pytest_results_iteration16.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: _read_onboarding_state (line 5844) reads from user_operator_profile.operator_profile.onboarding_state FIRST, falls back to onboarding table with auto-migration",
+    "VERIFIED: _write_onboarding_state (line 5877) writes to user_operator_profile.operator_profile.onboarding_state, then syncs to onboarding table for backward compat",
+    "VERIFIED: GET /api/onboarding/status (line 5912) returns completed=false when no state exists - no auto-complete based on heuristics",
+    "VERIFIED: POST /api/onboarding/save (line 5936) has anti-regression logic at lines 5949-5952: if new_step < current_step_saved and new_step != 0, keeps current_step_saved",
+    "VERIFIED: POST /api/onboarding/complete (line 6006) writes completed=true to user_operator_profile first (line 6022), then creates account/links profile",
+    "VERIFIED: GET /api/business-profile/context (line 6156) reads onboarding state via _read_onboarding_state (line 6163)",
+    "VERIFIED: All 4 onboarding endpoints return 401/403 for unauthenticated requests",
+    "VERIFIED: ProtectedRoute.js line 67 reads onboardingStatus from useSupabaseAuth() context - NO API call made",
+    "VERIFIED: SupabaseAuthContext.js line 279-298 fetches onboarding status ONCE during bootstrap after calibration check",
+    "VERIFIED: Legacy migration path works - _read_onboarding_state migrates from onboarding table to user_operator_profile on first read (line 5871)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration16_onboarding_state.py"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6 tests passed)",
+    "frontend": "100% (code verification complete)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 16 verified onboarding state consolidation. The authoritative source is now user_operator_profile.operator_profile.onboarding_state (JSONB key). The onboarding table is kept in sync for backward compatibility but is no longer the primary read source. Key functions: _read_onboarding_state checks user_operator_profile FIRST, falls back to onboarding table with auto-migration. _write_onboarding_state writes to both. Anti-regression prevents current_step from decreasing. No auto-complete based on company_name or heuristics.",
+  "features_verified": {
+    "read_from_user_operator_profile": "COMPLETE - _read_onboarding_state checks user_operator_profile.operator_profile.onboarding_state FIRST",
+    "no_auto_complete": "COMPLETE - GET /api/onboarding/status returns completed=false when no state exists",
+    "save_writes_to_user_operator_profile": "COMPLETE - POST /api/onboarding/save calls _write_onboarding_state which writes to user_operator_profile",
+    "anti_regression": "COMPLETE - current_step cannot decrease unless reset to 0 (lines 5949-5952)",
+    "complete_writes_to_user_operator_profile": "COMPLETE - POST /api/onboarding/complete sets completed=true in user_operator_profile first",
+    "business_profile_context_reads_from_user_operator_profile": "COMPLETE - GET /api/business-profile/context uses _read_onboarding_state",
+    "legacy_fallback_migration": "COMPLETE - Falls back to onboarding table and auto-migrates to user_operator_profile",
+    "unauthenticated_requests_return_401": "COMPLETE - All 4 endpoints tested",
+    "protected_route_reads_from_context": "COMPLETE - ProtectedRoute.js line 67 uses onboardingStatus from context",
+    "context_fetches_once": "COMPLETE - SupabaseAuthContext.js bootstrap fetches onboarding ONCE at line 280"
+  },
+  "code_locations": {
+    "_read_onboarding_state": "server.py:5844-5874",
+    "_write_onboarding_state": "server.py:5877-5909",
+    "get_onboarding_status": "server.py:5912-5934",
+    "save_onboarding_progress": "server.py:5936-6003",
+    "anti_regression_logic": "server.py:5949-5952",
+    "complete_onboarding": "server.py:6006-6152",
+    "business_profile_context": "server.py:6156-6194",
+    "protected_route_context_read": "ProtectedRoute.js:67",
+    "context_onboarding_fetch": "SupabaseAuthContext.js:278-298"
+  }
+}
