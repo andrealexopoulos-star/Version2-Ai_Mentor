@@ -65,6 +65,7 @@ def build_boardroom_prompt(
     escalation_history: Optional[List[Dict[str, Any]]] = None,
     contradictions: Optional[List[Dict[str, Any]]] = None,
     pressure: Optional[Dict[str, Any]] = None,
+    freshness: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Build the full Board Room system prompt with context injected
@@ -83,6 +84,9 @@ def build_boardroom_prompt(
 
     # ─── 1.7. DECISION PRESSURE ──────────────────────────────
     sections.append(_build_pressure_section(pressure))
+
+    # ─── 1.8. EVIDENCE FRESHNESS ─────────────────────────────
+    sections.append(_build_freshness_section(freshness))
 
     # ─── 2. INTELLIGENCE CONFIGURATION ───────────────────────
     sections.append(_build_config_section(intelligence_config))
