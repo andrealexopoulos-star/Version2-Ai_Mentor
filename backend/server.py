@@ -9970,7 +9970,7 @@ app.include_router(voice_router, prefix="/api/voice")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    pass  # MongoDB client removed — no cleanup needed
 
 
 # ==================== GOOGLE DRIVE INTEGRATION (MERGE.DEV) ====================
