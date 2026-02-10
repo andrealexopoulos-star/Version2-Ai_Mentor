@@ -9718,6 +9718,10 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
             pressure=pressure,
             freshness=freshness,
         )
+        
+        # Inject resolved facts into system prompt
+        if facts_prompt:
+            system_prompt += f"\n\nRESOLVED BUSINESS FACTS:\n{facts_prompt}\n"
 
         # Build context + message
         chat = LlmChat(
