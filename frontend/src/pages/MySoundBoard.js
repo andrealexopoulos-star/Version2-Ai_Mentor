@@ -76,13 +76,10 @@ const MySoundBoard = () => {
     setLoading(true);
 
     try {
-      // Fetch current intelligence state from BIQC Insights
-      const intelligenceContext = JSON.parse(localStorage.getItem('biqc_intelligence_state') || '{}');
-      
       const response = await apiClient.post('/soundboard/chat', {
         message: userMessage,
         conversation_id: activeConversation,
-        intelligence_context: intelligenceContext
+        intelligence_context: {}
       });
 
       const { reply, conversation_id, conversation_title } = response.data;
