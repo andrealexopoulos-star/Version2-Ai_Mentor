@@ -2488,21 +2488,40 @@ async def get_calibration_status(request: Request):
 
 @api_router.post("/calibration/defer")
 async def defer_calibration(request: Request):
-    """Set calibration_status to 'deferred'. Creates shell profile if missing."""
+    """Set calibration as deferred. Writes to user_operator_profile (authoritative) and business_profiles."""
     try:
         current_user = await get_current_user_from_request(request)
         user_id = current_user.get("id")
     except Exception:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        # PRIMARY: Write to user_operator_profile
+        try:
+            existing_op = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+            if existing_op.data:
+                supabase_admin.table("user_operator_profile").update({
+                    "persona_calibration_status": "deferred"
+                }).eq("user_id", user_id).execute()
+            else:
+                supabase_admin.table("user_operator_profile").insert({
+                    "user_id": user_id,
+                    "persona_calibration_status": "deferred",
+                    "operator_profile": {}
+                }).execute()
+        except Exception as op_err:
+            logger.warning(f"[calibration/defer] user_operator_profile write failed: {op_err}")
+
+        # SECONDARY: business_profiles for backward compat
         profile = await get_business_profile_supabase(supabase_admin, user_id)
         if not profile:
             profile_data = {
                 "id": str(uuid.uuid4()),
                 "user_id": user_id,
                 "calibration_status": "deferred",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat()
+                "created_at": now_iso,
+                "updated_at": now_iso
             }
             try:
                 supabase_admin.table("business_profiles").insert(profile_data).execute()
@@ -2513,7 +2532,7 @@ async def defer_calibration(request: Request):
             try:
                 supabase_admin.table("business_profiles").update({
                     "calibration_status": "deferred",
-                    "updated_at": datetime.now(timezone.utc).isoformat()
+                    "updated_at": now_iso
                 }).eq("id", profile.get("id")).execute()
             except Exception:
                 pass
