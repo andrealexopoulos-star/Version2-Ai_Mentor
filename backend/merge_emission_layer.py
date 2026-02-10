@@ -269,7 +269,16 @@ class MergeEmissionLayer:
         # ─── MARGIN COMPRESSION ──────────────────────────────────
         try:
             total_revenue = sum(float(inv.get("total_amount") or inv.get("amount") or 0) for inv in invoices)
-            total_cost = sum(float(p.get("total_amount") or p.get("amount") or 0) for p in payments) if 'payments' in dir() else 0
+
+            # Fetch payments if not already loaded
+            margin_payments = []
+            try:
+                margin_data = await self.merge.get_payments(account_token=account_token, page_size=200)
+                margin_payments = margin_data.get("results", [])
+            except Exception:
+                pass
+
+            total_cost = sum(float(p.get("total_amount") or p.get("amount") or 0) for p in margin_payments)
 
             if total_revenue > 0 and total_cost > 0:
                 current_margin = round((total_revenue - total_cost) / total_revenue, 4)
