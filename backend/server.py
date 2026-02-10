@@ -6155,12 +6155,19 @@ async def enrich_website(request: WebsiteEnrichRequest, current_user: dict = Dep
 
 @api_router.get("/business-profile/context")
 async def get_business_profile_context(current_user: dict = Depends(get_current_user)):
-    """Get existing business profile + onboarding state + intelligence baseline.
-    Onboarding state reads from user_operator_profile (authoritative)."""
+    """Get existing business profile + onboarding state + resolved facts.
+    Onboarding state reads from user_operator_profile (authoritative).
+    Facts resolved from all Supabase sources."""
+    from fact_resolution import resolve_facts, resolve_onboarding_fields
+    
     user_id = current_user["id"]
     
     profile = await get_business_profile_supabase(supabase_admin, user_id)
     ob_state = await _read_onboarding_state(user_id)
+    
+    # Resolve all known facts
+    facts = await resolve_facts(supabase_admin, user_id)
+    resolved_fields = resolve_onboarding_fields(facts)
     
     # Get intelligence baseline if it exists
     baseline = None
@@ -6189,6 +6196,7 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
             "business_stage": ob_state.get("business_stage") if ob_state else None,
             "data": ob_state.get("data", {}) if ob_state else {}
         },
+        "resolved_fields": resolved_fields,
         "intelligence_baseline": baseline,
         "calibration_status": calibration_status
     }
