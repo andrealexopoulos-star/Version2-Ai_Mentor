@@ -31,8 +31,17 @@ const Settings = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await apiClient.get('/business-profile');
-      setProfile(response.data || {});
+      const response = await apiClient.get('/business-profile/context');
+      const ctx = response.data || {};
+      const resolvedFields = ctx.resolved_fields || {};
+      const rawProfile = ctx.profile || {};
+      const merged = { ...rawProfile };
+      for (const [field, factData] of Object.entries(resolvedFields)) {
+        if (factData.value && !merged[field]) {
+          merged[field] = factData.value;
+        }
+      }
+      setProfile(merged);
     } catch (error) {
       console.error('Failed to load profile:', error);
     } finally {
