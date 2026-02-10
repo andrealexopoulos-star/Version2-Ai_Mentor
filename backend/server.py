@@ -6062,15 +6062,7 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
         account_id = None
         business_profile_id = None
     
-    # STEP 3: Mark onboarding complete
-    completion_data = {
-        "completed": True,
-        "completed_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await update_onboarding_supabase(supabase_admin, user_id, completion_data)
-    
-    # STEP 4: Create calibration schedule (if account + profile exist)
+    # STEP 3: Create calibration schedule (if account + profile exist)
     if account_id and business_profile_id:
         try:
             now = datetime.now(timezone.utc)
