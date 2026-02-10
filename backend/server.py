@@ -9408,6 +9408,15 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         except RuntimeError:
             pass
 
+        # 5. Load Contradictions
+        contradictions = None
+        try:
+            from contradiction_engine import get_contradiction_engine
+            ce = get_contradiction_engine()
+            contradictions = await ce.get_active_contradictions(user_id)
+        except RuntimeError:
+            pass
+
         # Build system prompt
         system_prompt = build_boardroom_prompt(
             watchtower_positions=positions,
@@ -9415,6 +9424,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
             intelligence_config=intel_config,
             calibration=calibration,
             escalation_history=escalation_history,
+            contradictions=contradictions,
         )
 
         # Build context + message
