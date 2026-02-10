@@ -9505,6 +9505,51 @@ async def run_emission(current_user: dict = Depends(get_current_user)):
     return result
 
 
+# ═══════════════════════════════════════════════════════════════
+# SNAPSHOT AGENT — Periodic Intelligence Briefings
+# ═══════════════════════════════════════════════════════════════
+
+@api_router.post("/snapshot/generate")
+async def snapshot_generate(
+    snapshot_type: str = "ad_hoc",
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Generate an intelligence snapshot if material change exists.
+    Returns the snapshot or null if silence is correct.
+    """
+    from snapshot_agent import get_snapshot_agent
+    agent = get_snapshot_agent()
+
+    result = await agent.generate_snapshot(current_user["id"], snapshot_type)
+    if result is None:
+        return {"generated": False, "reason": "no_material_change"}
+    return {"generated": True, "snapshot": result}
+
+
+@api_router.get("/snapshot/latest")
+async def snapshot_latest(current_user: dict = Depends(get_current_user)):
+    """Read the most recent intelligence snapshot."""
+    from snapshot_agent import get_snapshot_agent
+    agent = get_snapshot_agent()
+
+    snapshot = await agent.get_latest_snapshot(current_user["id"])
+    return {"snapshot": snapshot}
+
+
+@api_router.get("/snapshot/history")
+async def snapshot_history(
+    limit: int = 10,
+    current_user: dict = Depends(get_current_user),
+):
+    """Read snapshot history."""
+    from snapshot_agent import get_snapshot_agent
+    agent = get_snapshot_agent()
+
+    snapshots = await agent.get_snapshots(current_user["id"], limit=limit)
+    return {"snapshots": snapshots, "count": len(snapshots)}
+
+
 # Include router and middleware
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
