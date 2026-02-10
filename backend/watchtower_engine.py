@@ -114,6 +114,17 @@ class WatchtowerEngine:
         except RuntimeError:
             pass
 
+        # ─── Evidence freshness (post-pressure) ──────────────
+        freshness_changes = 0
+        try:
+            from evidence_freshness import get_evidence_freshness
+            ef = get_evidence_freshness()
+            all_findings = await self.get_findings(user_id, limit=20)
+            fchanges = await ef.run_freshness_check(user_id, positions, all_findings)
+            freshness_changes = len(fchanges)
+        except RuntimeError:
+            pass
+
         return {
             "status": "complete",
             "domains_evaluated": len([d for d in domains_config.values() if d.get("enabled")]),
@@ -121,6 +132,7 @@ class WatchtowerEngine:
             "findings": results,
             "contradictions_detected": contradictions_found,
             "pressure_changes": pressure_changes,
+            "freshness_changes": freshness_changes,
         }
 
     async def emit_event(
