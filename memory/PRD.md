@@ -25,6 +25,14 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 
 ## What's Been Implemented
 
+### Global Fact Authority (COMPLETE — Feb 10, 2026)
+- **Fact Resolution Engine** (`/app/backend/fact_resolution.py`): Reads all Supabase sources (`business_profiles`, `users`, `user_operator_profile`) to produce a unified fact map. 18 fact source mappings + 22 onboarding field mappings.
+- **API Endpoints**: `GET /api/facts/resolve` returns all known facts. `POST /api/facts/confirm` persists a confirmed fact.
+- **Fact Ledger**: Stored in `user_operator_profile.operator_profile.fact_ledger` (JSONB). SQL for dedicated `fact_resolution_ledger` table provided at `/app/backend/migrations/010_fact_resolution_ledger.sql`.
+- **AI Integration**: `build_advisor_context` includes `known_facts_prompt` — a formatted list of all known facts injected into every AI agent prompt.
+- **Onboarding Integration**: `GET /api/business-profile/context` includes `resolved_fields` — onboarding wizard pre-populates from resolved facts before asking.
+- **Rule**: If a fact exists → show as confirmation. If unknown → ask once, persist immediately.
+
 ### Audit Fixes H3, F4, F2 (COMPLETE — Feb 10, 2026)
 - **H3 — User profile from DB**: `fetchUserProfile` now enriches user data from `GET /api/auth/supabase/me` (reads `users` table) for authoritative `role`, `subscription_tier`, `is_master_account`. Session metadata used as instant fallback, then overwritten with DB values.
 - **F4 — DashboardLayout name fix**: Avatar initial, greeting, and dropdown now use `user?.full_name` instead of `user?.name`.
