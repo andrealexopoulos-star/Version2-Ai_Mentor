@@ -3143,15 +3143,36 @@ async def calibration_brain(request: Request, payload: CalibrationBrainRequest):
 
         # If brain says COMPLETE, trigger calibration completion
         if brain_response.get("status") == "COMPLETE":
+            now_iso = datetime.now(timezone.utc).isoformat()
+            # PRIMARY: Write to user_operator_profile (authoritative)
+            try:
+                existing = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+                if existing.data:
+                    supabase_admin.table("user_operator_profile").update({
+                        "persona_calibration_status": "complete",
+                        "calibration_completed_at": now_iso
+                    }).eq("user_id", user_id).execute()
+                else:
+                    supabase_admin.table("user_operator_profile").insert({
+                        "user_id": user_id,
+                        "persona_calibration_status": "complete",
+                        "calibration_completed_at": now_iso,
+                        "operator_profile": {}
+                    }).execute()
+                logger.info(f"[calibration/brain] user_operator_profile.persona_calibration_status = complete for {user_id}")
+            except Exception as op_err:
+                logger.error(f"[calibration/brain] user_operator_profile write failed: {op_err}")
+
+            # SECONDARY: Also update business_profiles for backward compat
             try:
                 profile = await get_business_profile_supabase(supabase_admin, user_id)
                 if profile:
                     supabase_admin.table("business_profiles").update({
                         "calibration_status": "complete",
-                        "updated_at": datetime.now(timezone.utc).isoformat()
+                        "updated_at": now_iso
                     }).eq("id", profile.get("id")).execute()
             except Exception as comp_err:
-                logger.warning(f"[calibration/brain] Completion update failed: {comp_err}")
+                logger.warning(f"[calibration/brain] business_profiles update failed: {comp_err}")
 
         return brain_response
 
