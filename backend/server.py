@@ -9495,6 +9495,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         raw_response = await chat.send_message(user_msg)
 
         # Record exposure for active escalations
+        active_escalations = []
         try:
             from escalation_memory import get_escalation_memory
             mem = get_escalation_memory()
@@ -9502,14 +9503,58 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
                 pos = positions[domain].get("position")
                 if pos and pos != "STABLE":
                     await mem.record_exposure(user_id, domain)
+            # Include active escalations in response for frontend action buttons
+            esc_list = await mem.get_active_escalations(user_id)
+            for esc in esc_list:
+                active_escalations.append({
+                    "domain": esc.get("domain"),
+                    "position": esc.get("position"),
+                    "last_user_action": esc.get("last_user_action", "unknown"),
+                    "times_detected": esc.get("times_detected", 1),
+                })
         except RuntimeError:
             pass
 
-        return {"response": raw_response.strip()}
+        return {
+            "response": raw_response.strip(),
+            "escalations": active_escalations,
+        }
 
     except Exception as e:
         logger.error(f"[boardroom] Error: {e}")
-        return {"response": "Intelligence link disrupted. Retry."}
+        return {"response": "Intelligence link disrupted. Retry.", "escalations": []}
+
+
+class EscalationActionRequest(BaseModel):
+    domain: str
+    action: str  # acknowledged | deferred
+
+
+@api_router.post("/boardroom/escalation-action")
+async def boardroom_escalation_action(
+    request: Request,
+    payload: EscalationActionRequest,
+):
+    """
+    Record user acknowledgement or deferral of an escalated risk.
+    Informational only — does NOT resolve risk or reduce pressure.
+    """
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if payload.action not in ("acknowledged", "deferred"):
+        raise HTTPException(status_code=400, detail="Action must be 'acknowledged' or 'deferred'")
+
+    try:
+        from escalation_memory import get_escalation_memory
+        mem = get_escalation_memory()
+        await mem.record_user_action(user_id, payload.domain, payload.action)
+        return {"success": True, "domain": payload.domain, "action": payload.action}
+    except RuntimeError:
+        raise HTTPException(status_code=500, detail="Escalation memory not available")
 
 
 # ═══════════════════════════════════════════════════════════════
