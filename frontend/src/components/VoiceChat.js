@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { supabase } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { 
   Mic, MicOff, Phone, PhoneOff, Video, VideoOff, 
@@ -41,12 +42,15 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
   // Initialize WebRTC connection with OpenAI Realtime API
   const initializeWebRTC = async () => {
     try {
-      // Get session token from backend
+      // Get Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || '';
+      
       const tokenResponse = await fetch(`${API_BASE}/api/voice/realtime/session`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem('token')}`
+          "Authorization": `Bearer ${authToken}`
         }
       });
       
