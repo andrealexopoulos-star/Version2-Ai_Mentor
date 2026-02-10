@@ -205,6 +205,11 @@ from intelligence_baseline import init_intelligence_baseline
 intelligence_baseline = init_intelligence_baseline(supabase_admin)
 logger.info("🎯 Intelligence Baseline initialized")
 
+# Initialize Evidence Freshness
+from evidence_freshness import init_evidence_freshness
+evidence_freshness = init_evidence_freshness(supabase_admin)
+logger.info("⏱️ Evidence Freshness initialized")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
