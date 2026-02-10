@@ -5828,7 +5828,7 @@ async def save_onboarding_progress(
     request: OnboardingSave,
     current_user: dict = Depends(get_current_user)
 ):
-    """Save onboarding progress - SUPABASE VERSION"""
+    """Save onboarding progress - immediately persists answers to business_profiles"""
     user_id = current_user["id"]
     
     onboarding_data = {
@@ -5839,6 +5839,47 @@ async def save_onboarding_progress(
     }
     
     await update_onboarding_supabase(supabase_admin, user_id, onboarding_data)
+    
+    # PROGRESSIVE SAVE: Also persist answers to business_profiles immediately
+    if request.data:
+        profile_fields = {}
+        field_mapping = {
+            "business_name": "business_name",
+            "industry": "industry",
+            "business_stage": None,  # handled separately
+            "abn": "abn",
+            "website": "website",
+            "products_services": "products_services",
+            "business_model": "business_model",
+            "target_customer": "ideal_customer_profile",
+            "unique_value": "unique_value_proposition",
+            "team_size": "team_size",
+            "hiring_status": "hiring_status",
+            "revenue_range": "revenue_range",
+            "customer_count": "customer_count",
+            "growth_challenge": "main_challenges",
+            "years_operating": "years_operating",
+            "location": "location",
+            "geographic_focus": "geographic_focus",
+            "product_description": "products_services",
+            "problem_statement": "mission_statement",
+            "growth_goals": "short_term_goals",
+            "funding_status": "funding_status",
+            "funding_stage": "funding_stage",
+        }
+        
+        for src_field, dest_field in field_mapping.items():
+            if dest_field and src_field in request.data and request.data[src_field]:
+                val = request.data[src_field]
+                if isinstance(val, list):
+                    val = ", ".join(val)
+                profile_fields[dest_field] = val
+        
+        if request.business_stage:
+            profile_fields["business_stage"] = request.business_stage
+        
+        if profile_fields:
+            await update_business_profile_supabase(supabase_admin, user_id, profile_fields)
     
     return {"status": "saved", "current_step": request.current_step}
 
