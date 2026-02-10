@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
+import { apiClient } from "../lib/api";
 
 const LoadingScreen = () => {
-  // Determine greeting based on time of day
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   
@@ -34,6 +34,12 @@ const AuthError = () => (
   </div>
 );
 
+// Paths that are exempt from the onboarding gate
+const ONBOARDING_EXEMPT_PATHS = [
+  '/onboarding', '/onboarding-decision', '/profile-import',
+  '/calibration', '/settings', '/business-profile'
+];
+
 /**
  * ProtectedRoute — Deterministic, loop-proof route guard
  * 
@@ -41,13 +47,37 @@ const AuthError = () => (
  * 1. LOADING → spinner
  * 2. No session → login
  * 3. ERROR → error screen (NEVER redirect to calibration)
- * 4. READY → render children (calibration complete or legacy complete)
- * 5. NEEDS_CALIBRATION → redirect to /calibration (ONLY for uncalibrated users)
- *    Exception: /calibration itself is always allowed
+ * 4. READY → check onboarding, then render children
+ * 5. NEEDS_CALIBRATION → redirect to /calibration
  */
 export default function ProtectedRoute({ children }) {
   const { authState, user, session } = useSupabaseAuth();
   const location = useLocation();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(true); // default true to avoid flash
+
+  // Check onboarding status once when READY
+  useEffect(() => {
+    if (authState !== AUTH_STATE.READY || !user) return;
+    
+    let cancelled = false;
+    const checkOnboarding = async () => {
+      try {
+        const res = await apiClient.get('/onboarding/status');
+        if (!cancelled) {
+          setOnboardingComplete(res.data.completed === true);
+        }
+      } catch {
+        // Fail open - don't block the user
+        if (!cancelled) setOnboardingComplete(true);
+      } finally {
+        if (!cancelled) setOnboardingChecked(true);
+      }
+    };
+    
+    checkOnboarding();
+    return () => { cancelled = true; };
+  }, [authState, user]);
 
   // Still loading
   if (authState === AUTH_STATE.LOADING) {
@@ -64,13 +94,22 @@ export default function ProtectedRoute({ children }) {
     return <AuthError />;
   }
 
-  // READY → render (calibration is complete)
+  // READY → check onboarding, then render
   if (authState === AUTH_STATE.READY) {
+    // If onboarding check is still loading, show spinner briefly
+    if (!onboardingChecked) {
+      return <LoadingScreen />;
+    }
+    
+    // If onboarding not complete and not on an exempt path, redirect
+    if (!onboardingComplete && !ONBOARDING_EXEMPT_PATHS.includes(location.pathname)) {
+      return <Navigate to="/onboarding" replace />;
+    }
+    
     return children;
   }
 
   // NEEDS_CALIBRATION → redirect to /calibration
-  // Exception: allow /calibration, /settings, and /onboarding paths to render
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
     const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import'];
     if (allowedPaths.includes(location.pathname)) {
@@ -79,7 +118,7 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/calibration" replace />;
   }
 
-  // Fallback: render children (defensive — should never reach here)
+  // Fallback
   return children;
 }
 
