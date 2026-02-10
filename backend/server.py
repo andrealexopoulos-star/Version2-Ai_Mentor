@@ -148,11 +148,6 @@ AZURE_TENANT_URL = os.environ.get("AZURE_TENANT_URL", "https://login.microsofton
 AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
 AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
 
-# MongoDB connection (LEGACY - Being phased out)
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
 # Initialize Cognitive Core with Supabase
 cognitive_core = init_cognitive_core(supabase_admin)
 logger = logging.getLogger(__name__)
