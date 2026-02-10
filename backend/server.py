@@ -190,6 +190,11 @@ from contradiction_engine import init_contradiction_engine
 contradiction_engine = init_contradiction_engine(supabase_admin)
 logger.info("⚡ Contradiction Engine initialized")
 
+# Initialize Snapshot Agent
+from snapshot_agent import init_snapshot_agent
+snapshot_agent = init_snapshot_agent(supabase_admin)
+logger.info("📸 Snapshot Agent initialized")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
