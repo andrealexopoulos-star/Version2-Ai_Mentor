@@ -131,7 +131,7 @@ const WarRoomConsoleInner = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e, 0 0 12px rgba(34,197,94,0.4)', animation: 'wrPulse 2s ease-in-out infinite', display: 'inline-block' }} />
           <span style={{ fontSize: 13, letterSpacing: '0.25em', textTransform: 'uppercase', fontWeight: 'bold', color: '#fbbf24' }}>
-            Strategic Operations <span style={{ color: 'rgba(245,158,11,0.4)' }}>//</span> Active
+            BIQc <span style={{ color: 'rgba(245,158,11,0.4)' }}>//</span> Strategic Operations Console
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 11, color: 'rgba(245,158,11,0.4)', letterSpacing: '0.1em' }}>
