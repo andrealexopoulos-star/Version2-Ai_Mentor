@@ -117,10 +117,10 @@ const BusinessProfile = () => {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl md:text-4xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
-                Business Profile
+                Business DNA
               </h1>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Your business DNA - the foundation for personalized AI advice
+                Your business identity — the foundation BIQC uses to understand you
               </p>
             </div>
             <Button onClick={handleSave} className="btn-primary" disabled={saving}>
