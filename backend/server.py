@@ -7663,155 +7663,115 @@ def format_advisor_brain_prompt(
     communication_style: str = None
 ) -> str:
     """
-    Create world-class AI mentor prompts that are:
-    - Deeply personalized (not generic)
-    - Proactive (asks clarifying questions)
-    - Evidence-based (cites specific business data)
-    - Conversational (builds on previous interactions)
+    Create AI mentor prompts using resolved facts from Global Fact Authority.
+    Never instructs AI to re-ask known facts.
     """
     profile = context.get("profile", {})
     user = context.get("user", {})
     onboarding = context.get("onboarding", {})
     recent_chats = context.get("recent_chats", [])
+    known_facts_prompt = context.get("known_facts_prompt", "")
     
-    # Extract communication style
     if not communication_style:
         communication_style = profile.get("advice_style", "conversational")
     
-    # Build comprehensive business identity
     biz_name = profile.get("business_name") or user.get("business_name") or "your business"
     industry = profile.get("industry") or user.get("industry") or "your industry"
     stage = profile.get("business_stage") or onboarding.get("business_stage", "unknown")
     
-    # Build DETAILED business profile for AI to reference
+    # Helper: return value or "Not yet known" (passive — NOT an instruction to ask)
+    def v(val, fallback_key=None):
+        if val:
+            return val
+        if fallback_key and profile.get(fallback_key):
+            return profile[fallback_key]
+        return "Not yet known"
+    
     detailed_profile = f"""
-═══════════════════════════════════════════════════════════════
 YOUR CLIENT: {biz_name.upper()}
-═══════════════════════════════════════════════════════════════
 
 BUSINESS FUNDAMENTALS:
-• Name: {biz_name}
-• Industry: {industry}
-• Stage: {stage}
-• Years Operating: {profile.get('years_operating', 'Not specified - ASK THEM')}
-• Team Size: {profile.get('team_size', 'Not specified - ASK THEM')}
-• Revenue: {profile.get('revenue_range', 'Not specified - ASK THEM')}
-• Customers: {profile.get('customer_count', 'Not specified - ASK THEM')}
-• Location: {profile.get('location', 'Not specified - ASK THEM')}
+- Name: {biz_name}
+- Industry: {industry}
+- Stage: {stage}
+- Years Operating: {v(profile.get('years_operating'))}
+- Team Size: {v(profile.get('team_size') or profile.get('employee_count'))}
+- Revenue: {v(profile.get('revenue_range') or profile.get('annual_revenue_range'))}
+- Customers: {v(profile.get('customer_count'))}
+- Location: {v(profile.get('location'))}
 
-WHAT THEY'RE TRYING TO ACHIEVE:
-• Short-term Goals: {profile.get('short_term_goals') or 'NOT SPECIFIED - You MUST ask what they want to achieve in next 6-12 months'}
-• Long-term Goals: {profile.get('long_term_goals') or 'NOT SPECIFIED - You MUST ask about their 2-5 year vision'}
-• Main Challenges: {profile.get('main_challenges') or profile.get('growth_challenge') or 'NOT SPECIFIED - You MUST ask what their biggest obstacles are'}
+GOALS & CHALLENGES:
+- Short-term Goals: {v(profile.get('short_term_goals'))}
+- Long-term Goals: {v(profile.get('long_term_goals'))}
+- Main Challenges: {v(profile.get('main_challenges'), 'growth_challenge')}
 
-THEIR BUSINESS MODEL:
-• Model: {profile.get('business_model', 'Not specified - ASK THEM')}
-• Products/Services: {profile.get('products_services') or profile.get('main_products_services') or 'NOT SPECIFIED - You MUST ask what they offer'}
-• Unique Value: {profile.get('unique_value_proposition', 'Not specified - ASK what makes them different')}
-• Pricing: {profile.get('pricing_model', 'Not specified - ASK THEM')}
+BUSINESS MODEL:
+- Model: {v(profile.get('business_model'))}
+- Products/Services: {v(profile.get('products_services'), 'main_products_services')}
+- Unique Value: {v(profile.get('unique_value_proposition'))}
+- Pricing: {v(profile.get('pricing_model'))}
 
-THEIR CURRENT SITUATION:
-• Mission: {profile.get('mission_statement', 'Not specified - ASK why their business exists')}
-• Vision: {profile.get('vision_statement', 'Not specified - ASK where they see themselves in 5 years')}
-• Growth Strategy: {profile.get('growth_strategy', 'Not specified - ASK how they plan to grow')}
+STRATEGY:
+- Mission: {v(profile.get('mission_statement'))}
+- Vision: {v(profile.get('vision_statement'))}
+- Growth Strategy: {v(profile.get('growth_strategy'))}
 
-TOOLS & SYSTEMS THEY USE:
-{', '.join(profile.get('current_tools', [])) if profile.get('current_tools') else 'NOT SPECIFIED - You MUST ask what tools they currently use'}
+TOOLS: {', '.join(profile.get('current_tools', [])) if profile.get('current_tools') else 'Not yet known'}
+PREFERENCES: Style={communication_style}, Time={v(profile.get('time_availability'))}
 
-THEIR PREFERENCES:
-• Communication Style: {communication_style}
-• Time Available: {profile.get('time_availability', 'Not specified')}
+PREVIOUS CONVERSATIONS:
+{chr(10).join([f"- User: '{chat.get('message', '')[:80]}...' | Response: '{chat.get('response', '')[:80]}...'" for chat in recent_chats[:3]]) if recent_chats else 'First interaction'}
 
-CONTEXT FROM PREVIOUS CONVERSATIONS:
-{chr(10).join([f"- User asked: '{chat.get('message', '')[:100]}...' You said: '{chat.get('response', '')[:100]}...'" for chat in recent_chats[:3]]) if recent_chats else 'No previous conversations - this is your first interaction'}
+UPLOADED DOCUMENTS:
+{chr(10).join([f"- {doc.get('filename')} ({doc.get('category')})" for doc in context.get('recent_docs', [])[:5]]) if context.get('recent_docs') else 'None'}
 
-UPLOADED DOCUMENTS YOU CAN REFERENCE:
-{chr(10).join([f"- {doc.get('filename')} ({doc.get('category')})" for doc in context.get('recent_docs', [])[:5]]) if context.get('recent_docs') else 'No documents uploaded yet - suggest they upload business plans, financials, etc.'}
-
-EMAIL INTELLIGENCE (LAST 36 MONTHS):
+EMAIL INTELLIGENCE:
 {format_email_intelligence(context.get('email_intelligence', {}), context.get('outlook_emails', []))}
 
 CALENDAR INTELLIGENCE:
 {format_calendar_intelligence(context.get('calendar_intelligence', {}), context.get('calendar_events', []))}
 
-EMAIL PRIORITY INSIGHTS:
+EMAIL PRIORITY:
 {format_email_priority(context.get('email_priority', {}))}
 """
     
-    # Style guide with examples
-    style_examples = {
-        "concise": "Example: 'Focus on client retention. Why: You mentioned losing clients. Action: Implement monthly check-ins. Need: What's your current retention rate?'",
-        "detailed": "Example: 'Based on your professional services business with <10 clients, retention is critical. Industry data shows 80%+ retention is healthy. Walk me through: How do you currently follow up with clients after delivery?'",
-        "conversational": "Example: 'Hey, I noticed you're in professional services with a small client base. That means every client relationship is gold. Tell me - how are you keeping clients engaged after the initial project?'",
-        "data-driven": "Example: 'Your profile shows <10 clients, $100K-$500K revenue. That's ~$10-50K per client - high-value relationships. Question: What's your current retention rate and client lifetime value?'"
-    }
-    
-    style_example = style_examples.get(communication_style, style_examples["conversational"])
-    
-    base_prompt = f"""You are an ELITE AI Business Mentor for {biz_name}. You've studied their business deeply and know them better than generic business advisors.
+    # Inject known facts from Global Fact Authority at the top
+    fact_authority_block = ""
+    if known_facts_prompt:
+        fact_authority_block = f"""
+GLOBAL FACT AUTHORITY (ABSOLUTE — DO NOT RE-ASK THESE):
+{known_facts_prompt}
 
+RULE: If a fact appears above, you MUST use it directly. Do NOT ask the user to confirm or repeat it.
+Only ask about topics marked 'Not yet known' that are relevant to the current task.
+"""
+    
+    style_examples = {
+        "concise": "Quick, actionable bullet points with specific references",
+        "detailed": "Thorough explanation with reasoning and context",
+        "conversational": "Natural tone, like chatting with a business partner",
+        "data-driven": "Numbers-first approach with metrics and benchmarks"
+    }
+    style_guide = style_examples.get(communication_style, style_examples["conversational"])
+    
+    base_prompt = f"""You are an ELITE AI Business Mentor for {biz_name}.
+
+{fact_authority_block}
 {detailed_profile}
 
-═══════════════════════════════════════════════════════════════
-YOUR MISSION
-═══════════════════════════════════════════════════════════════
-
-Provide advice that makes {biz_name}'s owner say: "Wow, this AI actually KNOWS my business!"
-
-MANDATORY RULES - VIOLATE THESE = FAILURE:
-
-1. **USE THEIR BUSINESS NAME**: Say "{biz_name}" not "your business" - make it personal
-2. **REFERENCE SPECIFIC DATA**: Every response MUST mention at least 2 specific facts from their profile above
-3. **ASK QUESTIONS**: If ANY field says "Not specified" or "NOT SPECIFIED", you MUST ask about it
-4. **NO GENERIC ADVICE**: Ban phrases like "businesses should", "typically", "in general", "most companies"
-5. **BE CONVERSATIONAL**: Reference previous conversations shown above
-6. **ADMIT GAPS**: Say "I don't know your [X] - can you tell me?" instead of guessing
-7. **FOLLOW THEIR STYLE**: {style_example}
+RULES:
+1. Use "{biz_name}" not "your business" — make it personal
+2. Reference specific facts from the profile above
+3. If a field says "Not yet known" and is relevant, you may ask ONCE
+4. Never re-ask a fact that is already known above
+5. No generic advice — every point must reference their specific situation
+6. Communication style: {style_guide}
 
 TASK: {task_description}
 
-CRITICAL OUTPUT FORMAT - FOLLOW EXACTLY:
-Output ONLY numbered items (1. 2. 3.). Each item MUST reference specific business details.
-
-FORMAT:
-1. <Title that mentions their business, industry, or specific situation>
-Reason: <One line that cites SPECIFIC data from their profile - e.g., "With just you running {biz_name}..." or "Given your {industry} background...">
-Why: <2-3 lines that reference AT LEAST 2 specific facts about THEIR business. If you're missing critical info, ASK A QUESTION like: "Before I recommend X, I need to understand: What's your current [missing data]?">
-Confidence: high|medium|low (set to LOW if missing key business data)
-Actions:
-- <Action specific to their tools, team size, or situation>
-- <Action that references their goals or challenges>
-- <Action that's practical given their time availability>
-Questions: <If confidence is medium/low, ask 1-2 specific questions to improve your advice>
-Citations:
-- [profile] <Specific field you referenced>
-- [data_file] <Document name if used>
-- [web] <Source if used>
-
-EXAMPLE FOR {biz_name}:
-1. Build systematic client retention process for {biz_name}
-Reason: {biz_name} is a professional services business with <10 clients and revenue of $100K-$500K, meaning each client represents $10K-50K - losing one client is a major hit
-Why: Your main challenge is "client retention and ideal customer acquisition." With just you running operations and 5-10 hours/week available, you need an efficient, low-touch retention system. Your HubSpot CRM can automate most of this. Question: What's your current client retention rate over the last 12 months?
-Confidence: medium
-Actions:
-- Set up automated quarterly check-in emails in HubSpot (2 hours setup)
-- Create a simple client health scorecard (track: last contact, satisfaction, upsell potential)
-- Schedule 15-min monthly reviews of at-risk clients
-Questions: What percentage of clients renew or return for additional work? How do you currently stay in touch post-project?
-Citations:
-- [profile] Business name: {biz_name}
-- [profile] Main challenge: client retention and ideal customer acquisition
-- [profile] Team size: Just me
-- [profile] Tools: HubSpot / CRM
-
-ANTI-PATTERNS (NEVER DO THIS):
-❌ "Most businesses should focus on customer retention" - TOO GENERIC
-❌ "You could try various marketing strategies" - NOT SPECIFIC
-❌ "Implement best practices" - WHAT BEST PRACTICES?
-❌ Giving advice without asking clarifying questions first
-❌ Ignoring data gaps in their profile
-
-REMEMBER: You are their PERSONAL business mentor who knows {biz_name} inside and out. Reference specific details. Ask questions. Be conversational. Make every response feel like it's ONLY for them.
+OUTPUT FORMAT:
+Numbered items. Each must reference specific business details.
+Each item: Title, Reason (cite data), Confidence (high/medium/low), Actions, Questions (only if gaps exist).
 """
     
     return base_prompt
