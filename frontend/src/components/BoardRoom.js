@@ -294,6 +294,39 @@ const BoardRoom = () => {
         <div ref={scrollRef} />
       </div>
 
+      {/* ESCALATION ACTIONS */}
+      {actionableEscalations.length > 0 && (
+        <div data-testid="escalation-actions" style={{ position: 'relative', zIndex: 5, padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.04)', background: '#050505', flexShrink: 0 }}>
+          {actionableEscalations.map(esc => (
+            <div key={esc.domain} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
+              <span style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>
+                {esc.domain} — {esc.position}
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  data-testid={`acknowledge-${esc.domain}`}
+                  onClick={() => handleEscalationAction(esc.domain, 'acknowledged')}
+                  style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)', padding: '4px 14px', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.target.style.borderColor = 'rgba(255,255,255,0.3)'; e.target.style.color = 'rgba(255,255,255,0.8)'; }}
+                  onMouseLeave={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.color = 'rgba(255,255,255,0.5)'; }}
+                >
+                  ACKNOWLEDGE
+                </button>
+                <button
+                  data-testid={`defer-${esc.domain}`}
+                  onClick={() => handleEscalationAction(esc.domain, 'deferred')}
+                  style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 14px', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.target.style.borderColor = 'rgba(255,255,255,0.2)'; e.target.style.color = 'rgba(255,255,255,0.6)'; }}
+                  onMouseLeave={e => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; e.target.style.color = 'rgba(255,255,255,0.3)'; }}
+                >
+                  DEFER
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* INPUT */}
       <form onSubmit={handleSubmit} style={{ position: 'relative', zIndex: 5, padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', background: '#050505', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,0.08)', padding: '8px 14px', background: 'rgba(255,255,255,0.02)' }}>
