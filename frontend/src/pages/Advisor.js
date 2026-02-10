@@ -121,35 +121,19 @@ const Advisor = () => {
       }
       
       setIntelligenceState(thresholds);
-      
-      // Persist to localStorage for Soundboard access
-      localStorage.setItem('biqc_intelligence_state', JSON.stringify({
-        thresholds,
-        integrations: {
-          email: integrationData.email.connected,
-          calendar: integrationData.calendar.connected,
-          crm: integrationData.crm.connected,
-          accounting: integrationData.accounting.connected
-        },
-        lastUpdated: new Date().toISOString()
-      }));
     };
     
     detectThresholds();
   }, [integrationData, selectedFocus]);
   
-  // Track focus area selections for behavioural reinforcement
+  // Track focus area selections for behavioural reinforcement (in-memory only)
+  const [focusHistory, setFocusHistory] = useState([]);
   useEffect(() => {
     if (selectedFocus) {
-      const focusHistory = JSON.parse(localStorage.getItem('biqc_focus_history') || '[]');
-      focusHistory.push({
-        area: selectedFocus,
-        timestamp: new Date().toISOString()
+      setFocusHistory(prev => {
+        const updated = [...prev, { area: selectedFocus, timestamp: new Date().toISOString() }];
+        return updated.slice(-50);
       });
-      
-      // Keep last 50 selections only
-      const trimmed = focusHistory.slice(-50);
-      localStorage.setItem('biqc_focus_history', JSON.stringify(trimmed));
     }
   }, [selectedFocus]);
 
