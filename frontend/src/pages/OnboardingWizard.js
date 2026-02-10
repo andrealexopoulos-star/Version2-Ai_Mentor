@@ -56,6 +56,7 @@ const OnboardingWizard = () => {
       const resolvedFields = ctx.resolved_fields || {};
       
       setExistingProfile(profile);
+      setResolvedFieldsMap(resolvedFields);
       
       // If onboarding is complete, go to dashboard
       if (onboarding.completed) {
