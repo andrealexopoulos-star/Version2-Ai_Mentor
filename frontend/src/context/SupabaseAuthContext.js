@@ -105,6 +105,7 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (userId, existingSession) => {
     try {
+      // Set initial user from session metadata (instant, avoids blank state)
       if (existingSession?.user) {
         setUser({
           id: existingSession.user.id,
@@ -118,6 +119,31 @@ export const SupabaseAuthProvider = ({ children }) => {
         });
       }
       setLoading(false);
+
+      // Then enrich from users table (authoritative source for role, subscription_tier)
+      if (existingSession?.access_token) {
+        try {
+          const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/supabase/me`, {
+            headers: { 'Authorization': `Bearer ${existingSession.access_token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const dbUser = data.user;
+            if (dbUser) {
+              setUser(prev => ({
+                ...prev,
+                role: dbUser.role || prev?.role || 'user',
+                subscription_tier: dbUser.subscription_tier || prev?.subscription_tier || 'free',
+                is_master_account: dbUser.is_master_account || false,
+                full_name: dbUser.full_name || prev?.full_name,
+                company_name: dbUser.company_name || prev?.company_name,
+              }));
+            }
+          }
+        } catch {
+          // Non-fatal: session metadata user is sufficient
+        }
+      }
     } catch (error) {
       setLoading(false);
     }
