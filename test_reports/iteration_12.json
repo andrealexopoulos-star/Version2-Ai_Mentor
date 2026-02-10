@@ -1,0 +1,56 @@
+{
+  "summary": "Iteration 12 Testing Complete - BIQC Calibration Write Unification Verified. All 27 backend tests passed. All calibration completion paths now write to user_operator_profile.persona_calibration_status.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration12_calibration_writes.py",
+    "/app/test_reports/pytest/pytest_results_iteration12.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: POST /api/calibration/brain completion block (lines 3197-3214) writes persona_calibration_status='complete' to user_operator_profile",
+    "VERIFIED: POST /api/calibration/answer Q9 completion (lines 2980-2997) writes persona_calibration_status='complete' to user_operator_profile",
+    "VERIFIED: POST /api/calibration/answer fallback completion (lines 3016-3031) also writes to user_operator_profile when strategy scaffolding fails",
+    "VERIFIED: POST /api/calibration/defer (lines 2500-2514) writes persona_calibration_status='deferred' to user_operator_profile",
+    "VERIFIED: POST /api/calibration/init (lines 2586-2618) does NOT reference calibration_status column - only creates shell business_profile",
+    "VERIFIED: POST /api/admin/backfill-calibration (lines 8402-8460) exists and writes to user_operator_profile",
+    "VERIFIED: GET /api/calibration/status (lines 2462-2486) reads ONLY from user_operator_profile.persona_calibration_status - NO business_profiles fallback",
+    "VERIFIED: GET /api/auth/check-profile (lines 2415-2459) reads ONLY from user_operator_profile.persona_calibration_status - NO business_profiles fallback",
+    "VERIFIED: All calibration endpoints return 401 for unauthenticated requests",
+    "NOTE: SECONDARY writes to business_profiles.calibration_status are still present (lines 2999-3007, 3216-3225, 2516-2538) for backward compatibility, but will silently fail since column doesn't exist"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration12_calibration_writes.py"
+  ],
+  "success_rate": {
+    "backend": "100% (27/27 tests passed)",
+    "frontend": "N/A (backend-only testing requested)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "BIQC calibration write unification verified. All three calibration completion paths (calibration/brain, calibration/answer Q9, calibration/answer fallback) now write to user_operator_profile.persona_calibration_status='complete'. The calibration/defer path writes 'deferred' to user_operator_profile. GET endpoints (calibration/status, auth/check-profile) read ONLY from user_operator_profile with no business_profiles fallback. business_profiles.calibration_status column does NOT exist, so secondary writes will silently fail (acceptable).",
+  "features_verified": {
+    "calibration_brain_write_path": "COMPLETE - writes persona_calibration_status='complete' to user_operator_profile",
+    "calibration_answer_q9_write_path": "COMPLETE - writes persona_calibration_status='complete' to user_operator_profile",
+    "calibration_answer_fallback_write_path": "COMPLETE - writes to user_operator_profile when strategy scaffolding fails",
+    "calibration_defer_write_path": "COMPLETE - writes persona_calibration_status='deferred' to user_operator_profile",
+    "calibration_init_clean": "COMPLETE - does NOT reference calibration_status column",
+    "calibration_status_read_path": "COMPLETE - reads ONLY from user_operator_profile",
+    "auth_check_profile_read_path": "COMPLETE - reads ONLY from user_operator_profile",
+    "admin_backfill_endpoint": "COMPLETE - exists and writes to user_operator_profile",
+    "auth_enforcement": "COMPLETE - all endpoints return 401 for unauthenticated"
+  },
+  "code_structure_notes": {
+    "primary_authority": "user_operator_profile.persona_calibration_status is the SOLE authority for calibration status",
+    "secondary_writes": "business_profiles.calibration_status writes are kept for backward compatibility but will silently fail (column doesn't exist)",
+    "upsert_pattern": "All write paths handle both UPDATE (existing row) and INSERT (new row) cases"
+  }
+}
