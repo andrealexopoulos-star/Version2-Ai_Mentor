@@ -38,6 +38,7 @@ const PositionIndicator = ({ domain, position, finding }) => {
 const BoardRoom = () => {
   const navigate = useNavigate();
   const [positions, setPositions] = useState({});
+  const [escalations, setEscalations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
