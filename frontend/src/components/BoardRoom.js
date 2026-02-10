@@ -126,6 +126,9 @@ const BoardRoom = () => {
       if (data.response) {
         setMessages(prev => [...prev, { role: 'authority', content: data.response }]);
       }
+      if (data.escalations) {
+        setEscalations(data.escalations);
+      }
 
       // Refresh positions after response
       await loadPositions();
