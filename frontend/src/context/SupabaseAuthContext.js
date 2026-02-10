@@ -333,6 +333,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     authState,
     onboardingStatus,
     markOnboardingComplete,
+    deferOnboarding,
     signUp,
     signIn,
     signInWithOAuth,
