@@ -30,7 +30,7 @@ const STEPS = [
 
 const OnboardingWizard = () => {
   const navigate = useNavigate();
-  const { user, markOnboardingComplete } = useSupabaseAuth();
+  const { user, markOnboardingComplete, deferOnboarding } = useSupabaseAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -726,6 +726,7 @@ const OnboardingWizard = () => {
                 <button
                   onClick={() => {
                     persistProgress(formData, currentStep);
+                    deferOnboarding();
                     toast.success('Progress saved. You can continue anytime.');
                     navigate('/advisor');
                   }}
