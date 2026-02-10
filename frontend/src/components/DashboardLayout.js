@@ -127,6 +127,7 @@ const DashboardLayout = ({ children }) => {
     { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
     { icon: Terminal, label: 'Strategic Console', path: '/war-room' },
     { icon: Crosshair, label: 'Board Room', path: '/board-room' },
+    { icon: Activity, label: 'Operator View', path: '/operator' },
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'CONFIGURATION' },
     { icon: BarChart3, label: 'Intelligence Baseline', path: '/intelligence-baseline' },
