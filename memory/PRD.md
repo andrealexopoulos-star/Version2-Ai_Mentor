@@ -25,6 +25,12 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 
 ## What's Been Implemented
 
+### Onboarding State Fix (COMPLETE — Feb 10, 2026)
+- **Single fetch per session**: Onboarding status fetched ONCE during auth bootstrap in `SupabaseAuthContext`, cached in `onboardingStatus` state. `ProtectedRoute` consumes cached state — makes ZERO API calls for onboarding.
+- **Auto-complete removed**: `GET /api/onboarding/status` no longer auto-marks onboarding complete based on `company_name`. Returns `completed: false` when no record exists.
+- **Resumable state**: OnboardingWizard loads from `/api/business-profile/context`, resumes from `current_step`.
+- **Cache update on completion**: `markOnboardingComplete()` callback updates cached state without re-fetch.
+
 ### Admin Access Control (COMPLETE — Feb 10, 2026)
 - **ProtectedRoute adminOnly enforcement**: `ProtectedRoute` accepts `adminOnly` prop, calls `GET /api/auth/supabase/me` to get authoritative role from `users` table, blocks access if role not in `['admin', 'superadmin']`.
 - **AccessDenied screen**: Non-admin users see "Access restricted" with "Return to Dashboard" link.
