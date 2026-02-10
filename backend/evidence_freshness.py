@@ -150,7 +150,6 @@ class EvidenceFreshness:
             new_confidence = max(base * 0.5, 0.05)
 
         new_confidence = round(min(max(new_confidence, 0.0), 1.0), 3)
-        now_iso = now.isoformat()
 
         if existing:
             old_state = existing.get("confidence_state")
