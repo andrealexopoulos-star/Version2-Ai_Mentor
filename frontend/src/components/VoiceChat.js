@@ -123,7 +123,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
         body: offer.sdp,
         headers: {
           "Content-Type": "application/sdp",
-          "Authorization": `Bearer ${localStorage.getItem('token')}`
+          "Authorization": `Bearer ${authToken}`
         }
       });
 
