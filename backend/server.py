@@ -9637,8 +9637,13 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
     try:
         from watchtower_engine import get_watchtower_engine
         from boardroom_prompt import build_boardroom_prompt
+        from fact_resolution import resolve_facts, build_known_facts_prompt
 
         engine = get_watchtower_engine()
+        
+        # Resolve facts for context
+        resolved_facts = await resolve_facts(supabase_admin, user_id)
+        facts_prompt = build_known_facts_prompt(resolved_facts)
 
         # 1. Load Watchtower State
         positions = await engine.get_positions(user_id)
