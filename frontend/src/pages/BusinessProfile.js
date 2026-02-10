@@ -51,10 +51,20 @@ const BusinessProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await apiClient.get('/business-profile');
-      setProfile(response.data || {});
+      const response = await apiClient.get('/business-profile/context');
+      const ctx = response.data || {};
+      // Merge resolved facts into profile for display
+      const resolvedFields = ctx.resolved_fields || {};
+      const rawProfile = ctx.profile || {};
+      // Apply resolved facts as base, raw profile on top
+      const merged = { ...rawProfile };
+      for (const [field, factData] of Object.entries(resolvedFields)) {
+        if (factData.value && !merged[field]) {
+          merged[field] = factData.value;
+        }
+      }
+      setProfile(merged);
     } catch (error) {
-      // DEFENSIVE: Fail gracefully
       console.error('Failed to load profile:', error);
       toast.error('Failed to load profile');
     } finally {
