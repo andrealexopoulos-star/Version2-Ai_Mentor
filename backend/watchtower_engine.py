@@ -97,12 +97,30 @@ class WatchtowerEngine:
         except RuntimeError:
             pass
 
+        # ─── Pressure calibration (post-contradiction) ────────
+        pressure_changes = 0
+        try:
+            from pressure_calibration import get_pressure_calibration
+            pc = get_pressure_calibration()
+            active_contras = []
+            try:
+                active_contras = await ce.get_active_contradictions(user_id)
+            except Exception:
+                pass
+            changes = await pc.run_calibration(
+                user_id, positions, escalations, active_contras
+            )
+            pressure_changes = len(changes)
+        except RuntimeError:
+            pass
+
         return {
             "status": "complete",
             "domains_evaluated": len([d for d in domains_config.values() if d.get("enabled")]),
             "position_changes": len(results),
             "findings": results,
             "contradictions_detected": contradictions_found,
+            "pressure_changes": pressure_changes,
         }
 
     async def emit_event(
