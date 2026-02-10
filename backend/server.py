@@ -185,6 +185,11 @@ from escalation_memory import init_escalation_memory
 escalation_memory = init_escalation_memory(supabase_admin)
 logger.info("🧠 Escalation Memory initialized")
 
+# Initialize Contradiction Engine
+from contradiction_engine import init_contradiction_engine
+contradiction_engine = init_contradiction_engine(supabase_admin)
+logger.info("⚡ Contradiction Engine initialized")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
