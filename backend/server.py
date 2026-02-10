@@ -5841,15 +5841,84 @@ class OnboardingStatusResponse(BaseModel):
 
 # ==================== ONBOARDING ROUTES ====================
 
+async def _read_onboarding_state(user_id: str) -> dict:
+    """Read onboarding state from user_operator_profile.operator_profile.onboarding_state (authoritative).
+    Falls back to onboarding table for migration, then writes back to user_operator_profile."""
+    # PRIMARY: Read from user_operator_profile
+    try:
+        op_result = supabase_admin.table("user_operator_profile").select(
+            "operator_profile"
+        ).eq("user_id", user_id).maybeSingle().execute()
+        
+        if op_result.data:
+            op = op_result.data.get("operator_profile") or {}
+            ob_state = op.get("onboarding_state")
+            if ob_state is not None:
+                return ob_state
+    except Exception as e:
+        logger.warning(f"[onboarding] user_operator_profile read failed: {e}")
+    
+    # FALLBACK: Read from legacy onboarding table, then migrate
+    onboarding = await get_onboarding_supabase(supabase_admin, user_id)
+    if onboarding:
+        state = {
+            "completed": onboarding.get("completed", False),
+            "current_step": onboarding.get("current_step", 0),
+            "business_stage": onboarding.get("business_stage"),
+            "data": onboarding.get("onboarding_data", {})
+        }
+        # Migrate to user_operator_profile
+        await _write_onboarding_state(user_id, state)
+        return state
+    
+    return None
+
+
+async def _write_onboarding_state(user_id: str, state: dict):
+    """Write onboarding state to user_operator_profile.operator_profile.onboarding_state."""
+    try:
+        op_result = supabase_admin.table("user_operator_profile").select(
+            "operator_profile"
+        ).eq("user_id", user_id).maybeSingle().execute()
+        
+        if op_result.data:
+            existing_op = op_result.data.get("operator_profile") or {}
+            existing_op["onboarding_state"] = state
+            supabase_admin.table("user_operator_profile").update({
+                "operator_profile": existing_op,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }).eq("user_id", user_id).execute()
+        else:
+            supabase_admin.table("user_operator_profile").insert({
+                "user_id": user_id,
+                "operator_profile": {"onboarding_state": state},
+                "persona_calibration_status": "incomplete"
+            }).execute()
+    except Exception as e:
+        logger.error(f"[onboarding] user_operator_profile write failed: {e}")
+    
+    # Also keep onboarding table in sync for backward compat
+    try:
+        await update_onboarding_supabase(supabase_admin, user_id, {
+            "current_step": state.get("current_step", 0),
+            "business_stage": state.get("business_stage"),
+            "onboarding_data": state.get("data", {}),
+            "completed": state.get("completed", False)
+        })
+    except Exception:
+        pass
+
+
 @api_router.get("/onboarding/status", response_model=OnboardingStatusResponse)
 async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
     """Check if user has completed onboarding.
-    Reads from onboarding table only. No auto-complete logic."""
+    Authoritative source: user_operator_profile.operator_profile.onboarding_state
+    No auto-complete. No heuristics."""
     user_id = current_user["id"]
     
-    onboarding = await get_onboarding_supabase(supabase_admin, user_id)
+    state = await _read_onboarding_state(user_id)
     
-    if not onboarding:
+    if not state:
         return OnboardingStatusResponse(
             completed=False,
             current_step=0,
@@ -5858,10 +5927,10 @@ async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
         )
     
     return OnboardingStatusResponse(
-        completed=onboarding.get("completed", False),
-        current_step=onboarding.get("current_step", 0),
-        business_stage=onboarding.get("business_stage"),
-        data=onboarding.get("onboarding_data", {})
+        completed=state.get("completed", False),
+        current_step=state.get("current_step", 0),
+        business_stage=state.get("business_stage"),
+        data=state.get("data", {})
     )
 
 @api_router.post("/onboarding/save")
