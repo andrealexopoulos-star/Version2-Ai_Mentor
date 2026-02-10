@@ -123,12 +123,12 @@ const DashboardLayout = ({ children }) => {
   };
 
   const navItems = [
-    { type: 'divider', label: 'BUSINESS INTELLIGENCE QUOTIENT CENTRE' },
+    { type: 'divider', label: 'INTELLIGENCE' },
     { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
-    { icon: Terminal, label: 'War Room', path: '/war-room' },
+    { icon: Terminal, label: 'Strategic Console', path: '/war-room' },
     { icon: Crosshair, label: 'Board Room', path: '/board-room' },
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
-    { type: 'divider', label: 'IQ BUILDER' },
+    { type: 'divider', label: 'CONFIGURATION' },
     { icon: BarChart3, label: 'Intelligence Baseline', path: '/intelligence-baseline' },
     { icon: Building2, label: 'Business Profile', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
