@@ -70,9 +70,10 @@ export default function ProtectedRoute({ children }) {
   }
 
   // NEEDS_CALIBRATION → redirect to /calibration
-  // Exception: allow /calibration and /settings to render
+  // Exception: allow /calibration, /settings, and /onboarding paths to render
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
-    if (location.pathname === '/calibration' || location.pathname === '/settings') {
+    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import'];
+    if (allowedPaths.includes(location.pathname)) {
       return children;
     }
     return <Navigate to="/calibration" replace />;
