@@ -9570,6 +9570,50 @@ async def snapshot_history(
     return {"snapshots": snapshots, "count": len(snapshots)}
 
 
+# ═══════════════════════════════════════════════════════════════
+# INTELLIGENCE BASELINE — Configuration
+# ═══════════════════════════════════════════════════════════════
+
+class BaselineSaveRequest(BaseModel):
+    baseline: Dict[str, Any]
+
+
+@api_router.get("/baseline")
+async def baseline_get(current_user: dict = Depends(get_current_user)):
+    """Read the user's intelligence baseline."""
+    from intelligence_baseline import get_intelligence_baseline
+    bl = get_intelligence_baseline()
+    existing = await bl.get_baseline(current_user["id"])
+    if existing:
+        return {"baseline": existing.get("baseline"), "configured": True}
+    defaults = await bl.get_defaults()
+    return {"baseline": defaults, "configured": False}
+
+
+@api_router.post("/baseline")
+async def baseline_save(
+    payload: BaselineSaveRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Save the user's intelligence baseline.
+    Syncs to business_profiles.intelligence_configuration automatically.
+    """
+    from intelligence_baseline import get_intelligence_baseline
+    bl = get_intelligence_baseline()
+    result = await bl.save_baseline(current_user["id"], payload.baseline)
+    return {"saved": True, "baseline": result}
+
+
+@api_router.get("/baseline/defaults")
+async def baseline_defaults(current_user: dict = Depends(get_current_user)):
+    """Return the default baseline structure."""
+    from intelligence_baseline import get_intelligence_baseline
+    bl = get_intelligence_baseline()
+    defaults = await bl.get_defaults()
+    return {"baseline": defaults}
+
+
 # Include router and middleware
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
