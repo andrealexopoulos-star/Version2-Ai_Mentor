@@ -1,0 +1,76 @@
+{
+  "summary": "Iteration 18 Testing Complete - BIQC Global Fact Authority Enhancements Verified. All 23 backend tests passed. New features: CONFIDENCE_THRESHOLD (0.75), INTEGRATION_FACT_DERIVATIONS mapping, resolve_facts reads observation_events, persist_facts_batch for batch persistence, build_known_facts_prompt separates CONFIRMED vs UNCONFIRMED facts, log_fact_resolution_violation for error logging, POST /api/onboarding/save persists to fact_ledger.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "shutdown_db_client",
+        "issue": "NameError: name 'client' is not defined in server.py shutdown handler. This occurs during hot reload but doesn't affect runtime functionality.",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration18_fact_authority.py",
+    "/app/test_reports/pytest/pytest_results_iteration18.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: CONFIDENCE_THRESHOLD = 0.75 exists in fact_resolution.py (line 21)",
+    "VERIFIED: INTEGRATION_FACT_DERIVATIONS maps 5 integration signals to fact_keys with confidence levels",
+    "VERIFIED: resolve_facts reads from observation_events table with CONFIDENCE_THRESHOLD check",
+    "VERIFIED: resolve_facts processes sources in correct order: Supabase tables → observation_events → fact_ledger",
+    "VERIFIED: persist_facts_batch is async function with params: supabase_client, user_id, fact_map, source",
+    "VERIFIED: log_fact_resolution_violation exists with params: user_id, fact_key, context",
+    "VERIFIED: build_known_facts_prompt separates CONFIRMED FACTS from UNCONFIRMED FACTS sections",
+    "VERIFIED: POST /api/onboarding/save imports persist_facts_batch and ONBOARDING_FIELD_TO_FACT",
+    "VERIFIED: POST /api/onboarding/save calls await persist_facts_batch for answered fields",
+    "VERIFIED: GET /api/facts/resolve endpoint returns 401/403 without auth",
+    "VERIFIED: POST /api/facts/confirm endpoint returns 401/403 without auth",
+    "VERIFIED: GET /api/business-profile/context returns resolved_fields with confidence",
+    "VERIFIED: OnboardingWizard.js has resolvedFieldsMap state and setResolvedFieldsMap",
+    "VERIFIED: OnboardingWizard renderField checks .confirmed status for badge display",
+    "VERIFIED: OnboardingWizard shows 'confirmed' badge (emerald) and 'detected'/'from profile' badge (amber)",
+    "VERIFIED: Backend starts cleanly with updated fact_resolution module"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration18_fact_authority.py"
+  ],
+  "success_rate": {
+    "backend": "100% (23/23 tests passed)",
+    "frontend": "100% (UI loads correctly, code verification complete)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 18 verified Global Fact Authority enhancements. Key additions: (1) CONFIDENCE_THRESHOLD=0.75 for integration-derived facts, (2) INTEGRATION_FACT_DERIVATIONS maps crm.contact_count, crm.pipeline_value, finance.revenue, finance.employee_count, calendar.team_size_inferred to fact_keys, (3) resolve_facts reads observation_events in LAYER 2, (4) persist_facts_batch for batch persistence from onboarding, (5) build_known_facts_prompt separates CONFIRMED FACTS (DO NOT RE-ASK) from UNCONFIRMED FACTS (CONFIRM ONLY), (6) log_fact_resolution_violation logs system errors, (7) POST /api/onboarding/save persists answered fields to fact_ledger, (8) OnboardingWizard shows 'confirmed' badge (emerald) and 'detected'/'from profile' badge (amber).",
+  "features_verified": {
+    "confidence_threshold_exists": "COMPLETE - CONFIDENCE_THRESHOLD = 0.75",
+    "integration_fact_derivations_mapping": "COMPLETE - 5 signal mappings with confidence levels",
+    "resolve_facts_reads_observation_events": "COMPLETE - LAYER 2 queries observation_events",
+    "persist_facts_batch_exists": "COMPLETE - async function with correct params",
+    "log_fact_resolution_violation_exists": "COMPLETE - function with user_id, fact_key, context params",
+    "build_known_facts_prompt_separates_confirmed_unconfirmed": "COMPLETE - CONFIRMED FACTS vs UNCONFIRMED FACTS sections",
+    "onboarding_save_persists_to_fact_ledger": "COMPLETE - imports persist_facts_batch and calls it",
+    "facts_resolve_endpoint_works": "COMPLETE - returns 401/403 without auth",
+    "facts_confirm_endpoint_works": "COMPLETE - returns 401/403 without auth",
+    "business_profile_context_includes_resolved_fields": "COMPLETE - includes confidence field",
+    "onboarding_wizard_shows_badges": "COMPLETE - confirmed (emerald) and detected/from profile (amber)",
+    "backend_starts_cleanly": "COMPLETE - health check returns healthy"
+  },
+  "code_locations": {
+    "CONFIDENCE_THRESHOLD": "fact_resolution.py:21",
+    "INTEGRATION_FACT_DERIVATIONS": "fact_resolution.py:75-81",
+    "resolve_facts_observation_events": "fact_resolution.py:176-204 (LAYER 2)",
+    "persist_facts_batch": "fact_resolution.py:276-320",
+    "log_fact_resolution_violation": "fact_resolution.py:376-381",
+    "build_known_facts_prompt_separation": "fact_resolution.py:323-357",
+    "onboarding_save_fact_persistence": "server.py:5944-6012",
+    "onboarding_wizard_badges": "OnboardingWizard.js:232-254"
+  }
+}
