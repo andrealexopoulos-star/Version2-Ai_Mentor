@@ -6039,7 +6039,7 @@ async def enrich_website(request: WebsiteEnrichRequest, current_user: dict = Dep
 
 
 @api_router.get("/business-profile/context")
-async def get_business_context(current_user: dict = Depends(get_current_user)):
+async def get_business_profile_context(current_user: dict = Depends(get_current_user)):
     """Get existing business profile + intelligence baseline for pre-population.
     Used by onboarding and agents to avoid re-asking known information."""
     user_id = current_user["id"]
