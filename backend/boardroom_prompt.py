@@ -64,6 +64,7 @@ def build_boardroom_prompt(
     calibration: Optional[Dict[str, Any]],
     escalation_history: Optional[List[Dict[str, Any]]] = None,
     contradictions: Optional[List[Dict[str, Any]]] = None,
+    pressure: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Build the full Board Room system prompt with context injected
@@ -79,6 +80,9 @@ def build_boardroom_prompt(
 
     # ─── 1.6. CONTRADICTIONS ─────────────────────────────────
     sections.append(_build_contradiction_section(contradictions))
+
+    # ─── 1.7. DECISION PRESSURE ──────────────────────────────
+    sections.append(_build_pressure_section(pressure))
 
     # ─── 2. INTELLIGENCE CONFIGURATION ───────────────────────
     sections.append(_build_config_section(intelligence_config))
