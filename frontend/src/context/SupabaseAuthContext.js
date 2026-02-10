@@ -304,38 +304,40 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // CALIBRATION CHECK — bypasses RLS (ES256 JWTs can't query via client)
-        // Method: call Edge Function with a status check, then fall back to legacy
+        // CALIBRATION CHECK — user_operator_profile.persona_calibration_status
+        // is the single source of truth for calibration state
         // ═══════════════════════════════════════════════════════════
 
         let calibrationComplete = false;
 
-        // Primary: call calibration-psych Edge Function with a check message
-        // If user is complete, it returns status: "COMPLETE"
+        // Primary: Check user_operator_profile directly via Supabase REST
         try {
           const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
           const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-          const edgeRes = await fetch(`${SUPABASE_URL}/functions/v1/calibration-psych`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-              'apikey': ANON_KEY,
-            },
-            body: JSON.stringify({ message: '[STATUS_CHECK]' }),
-          });
-          if (edgeRes.ok) {
-            const edgeData = await edgeRes.json();
-            if (edgeData.status === 'COMPLETE') {
+          const userId = activeSession.user.id;
+          
+          const opRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/user_operator_profile?user_id=eq.${userId}&select=persona_calibration_status`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'apikey': ANON_KEY,
+              }
+            }
+          );
+          
+          if (opRes.ok) {
+            const rows = await opRes.json();
+            if (rows.length > 0 && rows[0].persona_calibration_status === 'complete') {
               calibrationComplete = true;
-              console.log('[Auth] ✅ Edge Function confirms COMPLETE → READY');
+              console.log('[Auth] user_operator_profile confirms COMPLETE → READY');
             }
           }
         } catch (e) {
-          console.warn('[Auth] Edge Function check failed:', e.message);
+          console.warn('[Auth] user_operator_profile check failed:', e.message);
         }
 
-        // Fallback: legacy endpoint
+        // Fallback: legacy backend endpoint
         if (!calibrationComplete) {
           try {
             const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
@@ -346,7 +348,7 @@ export const SupabaseAuthProvider = ({ children }) => {
               const cal = await calRes.json();
               if (cal.status === 'COMPLETE') {
                 calibrationComplete = true;
-                console.log('[Auth] ✅ Legacy confirms COMPLETE → READY');
+                console.log('[Auth] Legacy confirms COMPLETE → READY');
               }
             }
           } catch { /* non-fatal */ }
