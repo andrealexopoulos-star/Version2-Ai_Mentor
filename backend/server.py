@@ -6006,17 +6006,20 @@ async def save_onboarding_progress(
 @api_router.post("/onboarding/complete")
 async def complete_onboarding(current_user: dict = Depends(get_current_user)):
     """
-    Mark onboarding as completed - SUPABASE VERSION
-    TRIGGERS:
-    1. Create Parent Account (if first completion)
-    2. Link user as owner
-    3. Link business profile to account
-    4. Create calibration schedule
+    Mark onboarding as completed.
+    Writes to user_operator_profile (authoritative) and onboarding table (compat).
     """
     from workspace_helpers import get_or_create_user_account
     
     user_id = current_user["id"]
     user_email = current_user.get("email")
+    
+    # Mark onboarding complete in user_operator_profile (authoritative)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    current_state = await _read_onboarding_state(user_id) or {}
+    current_state["completed"] = True
+    current_state["completed_at"] = now_iso
+    await _write_onboarding_state(user_id, current_state)
     
     # Get business profile created during onboarding
     profile = await get_business_profile_supabase(supabase_admin, user_id)
