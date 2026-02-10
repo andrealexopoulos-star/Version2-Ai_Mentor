@@ -237,6 +237,35 @@ def _build_pressure_section(pressure: Optional[Dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def _build_freshness_section(freshness: Optional[Dict[str, Any]]) -> str:
+    lines = ["═══ EVIDENCE FRESHNESS (CERTAINTY GOVERNANCE) ═══"]
+
+    if not freshness:
+        lines.append("No freshness data. Treat all positions with standard confidence.")
+        return "\n".join(lines)
+
+    lines.append("Confidence is earned and maintained. Stale evidence reduces certainty.")
+    lines.append("")
+
+    for domain, data in freshness.items():
+        state = data.get("confidence_state", "FRESH")
+        conf = data.get("current_confidence", 0)
+        last = (data.get("last_evidence_at") or "")[:16]
+
+        lines.append(f"{domain.upper()}: {state} (confidence: {conf})")
+        lines.append(f"  Last evidence: {last}")
+
+        if state == "AGING":
+            lines.append("  DIRECTIVE: Soften certainty language. Qualify assertions.")
+        elif state == "STALE":
+            lines.append("  DIRECTIVE: State explicitly that evidence is outdated. Do NOT assert with confidence.")
+            lines.append("  DIRECTIVE: Do NOT escalate pressure on stale evidence.")
+
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def _build_config_section(config: Optional[Dict[str, Any]]) -> str:
     lines = ["═══ INTELLIGENCE CONFIGURATION ═══"]
 
