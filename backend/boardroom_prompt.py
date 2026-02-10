@@ -200,6 +200,39 @@ def _build_contradiction_section(contradictions: Optional[List[Dict[str, Any]]])
     return "\n".join(lines)
 
 
+def _build_pressure_section(pressure: Optional[Dict[str, Any]]) -> str:
+    lines = ["═══ DECISION PRESSURE (EVIDENCE-BASED) ═══"]
+
+    if not pressure:
+        lines.append("No active decision pressure.")
+        return "\n".join(lines)
+
+    lines.append("Pressure is earned through persistence, not tone.")
+    lines.append("At HIGH/CRITICAL: shorten responses, remove optional framing, state narrowing choices.")
+    lines.append("")
+
+    for domain, data in pressure.items():
+        level = data.get("pressure_level", "LOW")
+        basis = data.get("basis") or {}
+        window = basis.get("window_days_remaining")
+        first = (data.get("first_applied_at") or "")[:16]
+
+        lines.append(f"{domain.upper()}: {level}")
+        lines.append(f"  Since: {first}")
+
+        if window is not None:
+            lines.append(f"  Decision window: {window} days remaining")
+
+        if level == "HIGH":
+            lines.append("  DIRECTIVE: Remove optional framing. State choices directly.")
+        elif level == "CRITICAL":
+            lines.append("  DIRECTIVE: Maximum brevity. One sentence per section. No hedging.")
+
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def _build_config_section(config: Optional[Dict[str, Any]]) -> str:
     lines = ["═══ INTELLIGENCE CONFIGURATION ═══"]
 
