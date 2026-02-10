@@ -5940,14 +5940,15 @@ async def save_onboarding_progress(
     current_user: dict = Depends(get_current_user)
 ):
     """Save onboarding progress to user_operator_profile (authoritative).
-    Anti-regression: current_step cannot decrease unless explicitly set to 0 (reset)."""
+    Also persists answered fields to the fact_ledger and business_profiles."""
+    from fact_resolution import persist_facts_batch, ONBOARDING_FIELD_TO_FACT
+    
     user_id = current_user["id"]
     
     # Read current state to enforce anti-regression
     current_state = await _read_onboarding_state(user_id)
     current_step_saved = current_state.get("current_step", 0) if current_state else 0
     
-    # Anti-regression: don't allow step to go backwards (except explicit reset to 0)
     new_step = request.current_step
     if new_step < current_step_saved and new_step != 0:
         new_step = current_step_saved
@@ -5961,8 +5962,8 @@ async def save_onboarding_progress(
     
     await _write_onboarding_state(user_id, new_state)
     
-    # PROGRESSIVE SAVE: Also persist answers to business_profiles immediately
     if request.data:
+        # Persist to business_profiles
         profile_fields = {}
         field_mapping = {
             "business_name": "business_name",
@@ -6001,6 +6002,14 @@ async def save_onboarding_progress(
         
         if profile_fields:
             await update_business_profile_supabase(supabase_admin, user_id, profile_fields)
+        
+        # Persist to fact_ledger — every answered field becomes a confirmed fact
+        fact_map = {}
+        for form_field, value in request.data.items():
+            if value and form_field in ONBOARDING_FIELD_TO_FACT:
+                fact_map[ONBOARDING_FIELD_TO_FACT[form_field]] = value
+        if fact_map:
+            await persist_facts_batch(supabase_admin, user_id, fact_map, source="onboarding")
     
     return {"status": "saved", "current_step": new_step}
 
