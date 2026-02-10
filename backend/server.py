@@ -6594,34 +6594,27 @@ Format using clear markdown with headers and numbered lists."""
 @api_router.post("/generate/checklist")
 async def generate_checklist(request: dict, current_user: dict = Depends(get_current_user)):
     topic = request.get("topic", "")
-    context = request.get("context", "")
+    req_context = request.get("context", "")
+    user_id = current_user["id"]
     
-    user_data = {
-        "name": current_user.get("name"),
-        "business_name": current_user.get("business_name"),
-        "industry": current_user.get("industry")
-    }
+    context = await build_advisor_context(user_id)
+    profile = context.get("profile", {})
+    biz_name = profile.get("business_name") or "N/A"
+    industry = profile.get("industry") or "General"
     
-    prompt = f"""Create a comprehensive checklist for:
+    task = f"""Create a comprehensive checklist for:
 
 Topic: {topic}
-Context: {context}
-Business: {user_data.get('business_name', 'N/A')}
-Industry: {user_data.get('industry', 'General')}
+Context: {req_context}
+Business: {biz_name}
+Industry: {industry}
 
-Please provide:
-1. A clear title
-2. Categorized checklist items with checkboxes (use [ ] format)
-3. Priority indicators (🔴 High / 🟡 Medium / 🟢 Low)
-4. Estimated time for each item if applicable
-5. Dependencies between items
-6. Success criteria for completion
+Provide: title, categorized items, priority indicators, time estimates, dependencies, success criteria.
+Make it industry-specific and actionable."""
 
-Make this industry-specific and actionable.
-Format as a practical, actionable checklist using markdown."""
-
+    prompt = format_advisor_brain_prompt(task, context, "checklist")
     session_id = f"checklist_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "sop_generator", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
+    response = await get_ai_response(prompt, "sop_generator", session_id, user_id=user_id, use_advanced=True)
     
     return {"checklist_content": response, "topic": topic}
 
