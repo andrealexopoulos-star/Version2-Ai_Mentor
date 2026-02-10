@@ -25,6 +25,13 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 
 ## What's Been Implemented
 
+### Calibration Write Unification (COMPLETE — Feb 10, 2026)
+- **All completion paths now write to `user_operator_profile`**: `calibration/brain` (War Room), `calibration/answer` (legacy 9-step), and `calibration-psych` Edge Function all write `persona_calibration_status = 'complete'` to `user_operator_profile`.
+- **calibration/defer** writes `persona_calibration_status = 'deferred'` to `user_operator_profile`.
+- **calibration/init** cleaned: no longer references non-existent `calibration_status` column.
+- **Backfill endpoint**: `POST /api/admin/backfill-calibration` for migrating any missed users.
+- **Discovery**: `business_profiles.calibration_status` column does NOT exist in Supabase schema. All previous writes to it were silently failing.
+
 ### Data-Plane Remediation (COMPLETE — Feb 10, 2026)
 - **Calibration Source Alignment**: `/api/auth/check-profile` and `/api/calibration/status` read ONLY from `user_operator_profile.persona_calibration_status`. All legacy `business_profiles.calibration_status` reads removed.
 - **MongoDB Decommission**: `motor` import removed, no MongoDB client initialization on startup. App boots without MongoDB.
