@@ -2966,10 +2966,32 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
           except Exception as sess_err:
             logger.warning(f"[calibration/answer] Q9 session insert failed: {sess_err}")
 
+          now_iso = datetime.now(timezone.utc).isoformat()
+
+          # PRIMARY: Write to user_operator_profile (authoritative)
+          try:
+            existing_op = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+            if existing_op.data:
+                supabase_admin.table("user_operator_profile").update({
+                    "persona_calibration_status": "complete",
+                    "calibration_completed_at": now_iso
+                }).eq("user_id", user_id).execute()
+            else:
+                supabase_admin.table("user_operator_profile").insert({
+                    "user_id": user_id,
+                    "persona_calibration_status": "complete",
+                    "calibration_completed_at": now_iso,
+                    "operator_profile": {}
+                }).execute()
+            logger.info(f"[calibration/answer] user_operator_profile.persona_calibration_status = complete for {user_id}")
+          except Exception as op_err:
+            logger.error(f"[calibration/answer] user_operator_profile write failed: {op_err}")
+
+          # SECONDARY: Also update business_profiles for backward compat
           try:
             supabase_admin.table("business_profiles").update({
                 "calibration_status": "complete",
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": now_iso,
                 "account_id": account_id
             }).eq("id", business_profile_id).execute()
           except Exception as comp_err:
@@ -2981,10 +3003,29 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
         logger.warning(f"[calibration/answer] Q{question_id} strategy block failed: {strategy_err}")
         # Still mark complete even if strategy scaffolding failed
         if question_id == 9:
+          now_iso_fallback = datetime.now(timezone.utc).isoformat()
+          # PRIMARY: user_operator_profile
+          try:
+            existing_op2 = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+            if existing_op2.data:
+                supabase_admin.table("user_operator_profile").update({
+                    "persona_calibration_status": "complete",
+                    "calibration_completed_at": now_iso_fallback
+                }).eq("user_id", user_id).execute()
+            else:
+                supabase_admin.table("user_operator_profile").insert({
+                    "user_id": user_id,
+                    "persona_calibration_status": "complete",
+                    "calibration_completed_at": now_iso_fallback,
+                    "operator_profile": {}
+                }).execute()
+          except Exception:
+            pass
+          # SECONDARY: business_profiles
           try:
             supabase_admin.table("business_profiles").update({
                 "calibration_status": "complete",
-                "updated_at": datetime.now(timezone.utc).isoformat()
+                "updated_at": now_iso_fallback
             }).eq("id", business_profile_id).execute()
           except Exception:
             pass
