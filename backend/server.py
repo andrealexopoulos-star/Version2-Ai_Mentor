@@ -5985,6 +5985,100 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
     
     return {"status": "completed"}
 
+
+# ==================== WEBSITE ENRICHMENT ====================
+
+class WebsiteEnrichRequest(BaseModel):
+    url: str
+
+@api_router.post("/website/enrich")
+async def enrich_website(request: WebsiteEnrichRequest, current_user: dict = Depends(get_current_user)):
+    """Fetch website metadata and infer business details from a URL"""
+    url = request.url.strip()
+    if not url.startswith("http"):
+        url = f"https://{url}"
+    
+    result = {"url": url, "title": None, "description": None, "inferred_name": None, "inferred_category": None}
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 BIQC-Bot/1.0"})
+            html = resp.text[:50000]  # limit to first 50KB
+            
+            # Extract title
+            title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+            if title_match:
+                result["title"] = title_match.group(1).strip()[:200]
+            
+            # Extract meta description
+            desc_match = re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE)
+            if not desc_match:
+                desc_match = re.search(r'<meta[^>]+content=["\'](.*?)["\'][^>]+name=["\']description["\']', html, re.IGNORECASE)
+            if desc_match:
+                result["description"] = desc_match.group(1).strip()[:500]
+            
+            # Infer business name from title (before separator)
+            if result["title"]:
+                for sep in [" | ", " - ", " – ", " — ", " :: "]:
+                    if sep in result["title"]:
+                        result["inferred_name"] = result["title"].split(sep)[0].strip()
+                        break
+                if not result["inferred_name"]:
+                    result["inferred_name"] = result["title"]
+            
+            # Extract og:type or keywords for category hint
+            og_match = re.search(r'<meta[^>]+property=["\']og:type["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE)
+            if og_match:
+                result["inferred_category"] = og_match.group(1).strip()
+            
+    except Exception as e:
+        logger.warning(f"Website enrichment failed for {url}: {e}")
+        result["error"] = str(e)
+    
+    return result
+
+
+@api_router.get("/business-profile/context")
+async def get_business_context(current_user: dict = Depends(get_current_user)):
+    """Get existing business profile + intelligence baseline for pre-population.
+    Used by onboarding and agents to avoid re-asking known information."""
+    user_id = current_user["id"]
+    
+    profile = await get_business_profile_supabase(supabase_admin, user_id)
+    onboarding = await get_onboarding_supabase(supabase_admin, user_id)
+    
+    # Get intelligence baseline if it exists
+    baseline = None
+    try:
+        bl_result = supabase_admin.table("intelligence_baseline").select("*").eq("user_id", user_id).maybeSingle().execute()
+        baseline = bl_result.data if bl_result.data else None
+    except Exception:
+        pass
+    
+    # Get calibration status
+    calibration_status = "incomplete"
+    try:
+        op_result = supabase_admin.table("user_operator_profile").select(
+            "persona_calibration_status"
+        ).eq("user_id", user_id).maybeSingle().execute()
+        if op_result.data:
+            calibration_status = op_result.data.get("persona_calibration_status", "incomplete")
+    except Exception:
+        pass
+    
+    return {
+        "profile": profile or {},
+        "onboarding": {
+            "completed": onboarding.get("completed", False) if onboarding else False,
+            "current_step": onboarding.get("current_step", 0) if onboarding else 0,
+            "business_stage": onboarding.get("business_stage") if onboarding else None,
+            "data": onboarding.get("onboarding_data", {}) if onboarding else {}
+        },
+        "intelligence_baseline": baseline,
+        "calibration_status": calibration_status
+    }
+
+
 # ==================== CHAT ROUTES ====================
 
 @api_router.post("/chat", response_model=ChatResponse)
