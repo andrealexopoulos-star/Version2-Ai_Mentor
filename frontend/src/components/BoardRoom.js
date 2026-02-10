@@ -172,8 +172,19 @@ const BoardRoom = () => {
           <div style={{ fontSize: 11, letterSpacing: '0.35em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>BIQC</div>
           <div style={{ fontSize: 15, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: 2 }}>BOARD ROOM</div>
         </div>
-        <div style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.2)' }}>
-          {new Date().toISOString().slice(0, 10)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.2)' }}>
+            {new Date().toISOString().slice(0, 10)}
+          </span>
+          <button
+            data-testid="boardroom-home"
+            onClick={() => navigate('/advisor')}
+            style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 12px', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'color 0.2s' }}
+            onMouseEnter={e => e.target.style.color = 'rgba(255,255,255,0.6)'}
+            onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.3)'}
+          >
+            HOME
+          </button>
         </div>
       </header>
 
