@@ -120,6 +120,7 @@ function AppRoutes() {
       <Route path="/watchtower" element={<ProtectedRoute><Watchtower /></ProtectedRoute>} />
       <Route path="/war-room" element={<ProtectedRoute><div className="h-screen bg-black"><WarRoomConsole /></div></ProtectedRoute>} />
       <Route path="/board-room" element={<ProtectedRoute><div className="h-screen bg-black"><BoardRoom /></div></ProtectedRoute>} />
+      <Route path="/intelligence-baseline" element={<ProtectedRoute><IntelligenceBaseline /></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
