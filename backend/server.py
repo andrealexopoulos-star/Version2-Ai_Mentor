@@ -8409,6 +8409,67 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
 
 # ==================== ADMIN ROUTES ====================
 
+@api_router.post("/admin/backfill-calibration")
+async def admin_backfill_calibration(request: Request):
+    """
+    Backfill user_operator_profile for users who completed calibration
+    via business_profiles but have no record in user_operator_profile.
+    This is a one-time fix for the dual-authority issue.
+    """
+    try:
+        current_user = await get_current_user_from_request(request)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Find all business_profiles with calibration_status = 'complete'
+    bp_result = supabase_admin.table("business_profiles").select(
+        "user_id"
+    ).eq("calibration_status", "complete").execute()
+
+    completed_users = [r["user_id"] for r in (bp_result.data or []) if r.get("user_id")]
+    
+    backfilled = 0
+    skipped = 0
+    errors = 0
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    for uid in completed_users:
+        try:
+            # Check if user_operator_profile already has 'complete'
+            op_result = supabase_admin.table("user_operator_profile").select(
+                "persona_calibration_status"
+            ).eq("user_id", uid).maybeSingle().execute()
+
+            if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
+                skipped += 1
+                continue
+
+            # Needs backfill
+            if op_result.data:
+                supabase_admin.table("user_operator_profile").update({
+                    "persona_calibration_status": "complete",
+                    "calibration_completed_at": now_iso
+                }).eq("user_id", uid).execute()
+            else:
+                supabase_admin.table("user_operator_profile").insert({
+                    "user_id": uid,
+                    "persona_calibration_status": "complete",
+                    "calibration_completed_at": now_iso,
+                    "operator_profile": {}
+                }).execute()
+            backfilled += 1
+            logger.info(f"[backfill] Backfilled user_operator_profile for {uid}")
+        except Exception as e:
+            errors += 1
+            logger.error(f"[backfill] Error for user {uid}: {e}")
+
+    return {
+        "total_completed_in_business_profiles": len(completed_users),
+        "backfilled": backfilled,
+        "already_correct": skipped,
+        "errors": errors
+    }
+
 @api_router.get("/admin/users")
 async def admin_get_users(admin: dict = Depends(get_admin_user)):
     result = supabase_admin.table("users").select("*").order("created_at", desc=True).limit(1000).execute()
