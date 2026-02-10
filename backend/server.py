@@ -6552,28 +6552,9 @@ async def get_diagnoses(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/business-profile")
 async def get_business_profile(current_user: dict = Depends(get_current_user)):
-    """Get user's business profile - returns active versioned profile or legacy"""
-    # Try versioned profile first
-    versioned_profile = await get_active_profile(current_user["id"])
-    
-    if versioned_profile:
-        # Flatten domains for backward compatibility
-        flattened = {
-            "user_id": versioned_profile["user_id"],
-            "profile_id": versioned_profile["profile_id"],
-            "version": versioned_profile["version"],
-            **versioned_profile["domains"]["business_identity"],
-            **versioned_profile["domains"]["market"],
-            **versioned_profile["domains"]["offer"],
-            **versioned_profile["domains"]["team"],
-            **versioned_profile["domains"]["strategy"]
-        }
-        return flattened
-    
-    # Fallback to legacy profile
+    """Get user's business profile — reads from business_profiles (authoritative)"""
     profile = await get_business_profile_supabase(supabase_admin, current_user["id"])
     if not profile:
-        # Return default empty profile
         return {
             "user_id": current_user["id"],
             "business_name": current_user.get("business_name"),
