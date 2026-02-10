@@ -616,6 +616,36 @@ class MergeEmissionLayer:
         )
         await self._persist_event(snapshot)
 
+    async def _get_prior_margin(self, user_id: str) -> Optional[float]:
+        """Get previously stored margin for comparison."""
+        try:
+            result = self.supabase.table("observation_events").select(
+                "metric"
+            ).eq("user_id", user_id).eq(
+                "signal_name", "margin_snapshot"
+            ).order("observed_at", desc=True).limit(1).execute()
+
+            if result.data:
+                return result.data[0].get("metric", {}).get("margin")
+            return None
+        except Exception:
+            return None
+
+    async def _store_margin_snapshot(self, user_id: str, margin: float):
+        """Store current margin as a snapshot event."""
+        snapshot = self._build_event(
+            user_id=user_id,
+            source="merge_accounting",
+            domain="finance",
+            event_type="snapshot",
+            signal_name="margin_snapshot",
+            entity={"snapshot": "profitability"},
+            metric={"margin": margin},
+            confidence=1.0,
+            severity="info",
+        )
+        await self._persist_event(snapshot)
+
 
 # ═══════════════════════════════════════════════════════════════
 # SINGLETON
