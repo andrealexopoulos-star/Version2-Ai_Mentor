@@ -7558,7 +7558,8 @@ async def build_advisor_context(user_id: str) -> dict:
         "email_intelligence": email_intel or {},
         "calendar_intelligence": calendar_intel or {},
         "calendar_events": calendar_events,
-        "email_priority": email_priority or {}
+        "email_priority": email_priority or {},
+        "known_facts_prompt": facts_prompt,
     }
 
 
