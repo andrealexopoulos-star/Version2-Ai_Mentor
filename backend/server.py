@@ -6623,38 +6623,25 @@ async def generate_action_plan(request: dict, current_user: dict = Depends(get_c
     goal = request.get("goal", "")
     timeline = request.get("timeline", "3 months")
     resources = request.get("resources", "")
+    user_id = current_user["id"]
     
-    user_data = {
-        "name": current_user.get("name"),
-        "business_name": current_user.get("business_name"),
-        "industry": current_user.get("industry")
-    }
+    context = await build_advisor_context(user_id)
+    profile = context.get("profile", {})
+    biz_name = profile.get("business_name") or "N/A"
     
-    prompt = f"""Create a strategic action plan for:
+    task = f"""Create a strategic action plan for {biz_name}:
 
 Goal: {goal}
 Timeline: {timeline}
 Available Resources: {resources}
-Business: {user_data.get('business_name', 'N/A')}
-Industry: {user_data.get('industry', 'General')}
 
-Please provide:
-1. Executive Summary
-2. SMART Goals breakdown
-3. Milestones with specific dates/weeks
-4. Key activities and tasks (with owners if applicable)
-5. Resource allocation and budget considerations
-6. Risk assessment and mitigation strategies
-7. Success metrics and KPIs
-8. Weekly/Monthly review checkpoints
-9. Contingency plans for common obstacles
-10. Quick wins to build momentum
+Provide: executive summary, SMART goals, milestones, activities, resource allocation,
+risk assessment, success metrics, review checkpoints, contingency plans, quick wins.
+Make it specific to their industry and realistic."""
 
-Make this specific to their industry and realistic for an SMB.
-Format with clear structure and actionable steps."""
-
+    prompt = format_advisor_brain_prompt(task, context, "action_plan")
     session_id = f"action_plan_{uuid.uuid4()}"
-    response = await get_ai_response(prompt, "business_analysis", session_id, user_id=current_user["id"], user_data=user_data, use_advanced=True)
+    response = await get_ai_response(prompt, "business_analysis", session_id, user_id=user_id, use_advanced=True)
     
     return {"action_plan": response, "goal": goal, "timeline": timeline}
 
