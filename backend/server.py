@@ -5843,30 +5843,13 @@ class OnboardingStatusResponse(BaseModel):
 
 @api_router.get("/onboarding/status", response_model=OnboardingStatusResponse)
 async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
-    """Check if user has completed onboarding"""
+    """Check if user has completed onboarding.
+    Reads from onboarding table only. No auto-complete logic."""
     user_id = current_user["id"]
     
     onboarding = await get_onboarding_supabase(supabase_admin, user_id)
     
     if not onboarding:
-        # User has no onboarding record
-        # If they have company_name, they're a legacy user or already setup - mark as completed
-        if current_user.get("company_name"):
-            # Auto-complete for existing users
-            await update_onboarding_supabase(supabase_admin, user_id, {
-                "completed": True,
-                "current_step": 3,
-                "business_stage": "established",
-                "onboarding_data": {}
-            })
-            return OnboardingStatusResponse(
-                completed=True,
-                current_step=3,
-                business_stage="established",
-                data={}
-            )
-        
-        # New user without company info - needs onboarding
         return OnboardingStatusResponse(
             completed=False,
             current_step=0,
