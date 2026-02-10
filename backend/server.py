@@ -7518,11 +7518,17 @@ def parse_citations_block(text: str) -> List[Dict[str, Any]]:
 async def build_advisor_context(user_id: str) -> dict:
     """
     Build comprehensive context for Advisor Brain.
-    This is the 'truth serum' - all evidence the AI needs to provide personalized advice.
+    Includes resolved facts from the Global Fact Authority.
     """
+    from fact_resolution import resolve_facts, build_known_facts_prompt
+    
     user = await get_user_by_id(user_id) # Supabase
     profile = await get_business_profile_supabase(supabase_admin, user_id)
     onboarding = await get_onboarding_supabase(supabase_admin, user_id)
+    
+    # Resolve all known facts
+    facts = await resolve_facts(supabase_admin, user_id)
+    facts_prompt = build_known_facts_prompt(facts)
     
     # Recent activity for context
     recent_chats = await get_chat_history_supabase(supabase_admin, user_id, limit=5)
@@ -7533,22 +7539,11 @@ async def build_advisor_context(user_id: str) -> dict:
     recent_docs = recent_docs_result.data if recent_docs_result.data else []
     
     web_sources = await get_web_sources_supabase(supabase_admin, user_id)
-    
     sops = await get_sops_supabase(supabase_admin, user_id)
-    
-    # Outlook emails (if connected)
     outlook_emails = await get_user_emails_supabase(supabase_admin, user_id, limit=10)
-    
-    # Email intelligence summary
     email_intel = await get_email_intelligence_supabase(supabase_admin, user_id)
-    
-    # Calendar intelligence
     calendar_intel = await get_calendar_intelligence_supabase(supabase_admin, user_id)
-    
-    # Calendar events (upcoming)
     calendar_events = await get_user_calendar_events_supabase(supabase_admin, user_id)
-    
-    # Email priority analysis
     email_priority = await get_priority_analysis_supabase(supabase_admin, user_id)
     
     return {
