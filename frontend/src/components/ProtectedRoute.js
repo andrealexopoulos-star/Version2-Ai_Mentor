@@ -60,43 +60,14 @@ const ONBOARDING_EXEMPT_PATHS = [
 /**
  * ProtectedRoute — Deterministic, loop-proof route guard
  * 
- * RULES:
- * 1. LOADING → spinner
- * 2. No session → login
- * 3. ERROR → error screen
- * 4. adminOnly → verify role from backend (users table)
- * 5. READY → check onboarding, then render children
- * 6. NEEDS_CALIBRATION → redirect to /calibration
+ * Onboarding state is read from SupabaseAuthContext (fetched once per session).
+ * No API call is made by ProtectedRoute — it consumes cached state only.
  */
 export default function ProtectedRoute({ children, adminOnly }) {
-  const { authState, user, session } = useSupabaseAuth();
+  const { authState, user, session, onboardingStatus } = useSupabaseAuth();
   const location = useLocation();
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-  const [onboardingComplete, setOnboardingComplete] = useState(true);
-  const [adminChecked, setAdminChecked] = useState(!adminOnly); // skip check if not admin route
+  const [adminChecked, setAdminChecked] = useState(!adminOnly);
   const [isAdmin, setIsAdmin] = useState(false);
-
-  // Check onboarding status once when READY
-  useEffect(() => {
-    if (authState !== AUTH_STATE.READY || !user) return;
-    
-    let cancelled = false;
-    const checkOnboarding = async () => {
-      try {
-        const res = await apiClient.get('/onboarding/status');
-        if (!cancelled) {
-          setOnboardingComplete(res.data.completed === true);
-        }
-      } catch {
-        if (!cancelled) setOnboardingComplete(true);
-      } finally {
-        if (!cancelled) setOnboardingChecked(true);
-      }
-    };
-    
-    checkOnboarding();
-    return () => { cancelled = true; };
-  }, [authState, user]);
 
   // Check admin role from backend when adminOnly is true
   useEffect(() => {
@@ -107,9 +78,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
       try {
         const res = await apiClient.get('/auth/supabase/me');
         const role = res.data?.user?.role;
-        if (!cancelled) {
-          setIsAdmin(ADMIN_ROLES.includes(role));
-        }
+        if (!cancelled) setIsAdmin(ADMIN_ROLES.includes(role));
       } catch {
         if (!cancelled) setIsAdmin(false);
       } finally {
@@ -138,22 +107,19 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // READY → enforce gates
   if (authState === AUTH_STATE.READY) {
-    // Admin check (if applicable)
+    // Admin check
     if (adminOnly) {
-      if (!adminChecked) {
-        return <LoadingScreen />;
-      }
-      if (!isAdmin) {
-        return <AccessDenied />;
-      }
+      if (!adminChecked) return <LoadingScreen />;
+      if (!isAdmin) return <AccessDenied />;
     }
 
-    // Onboarding check
-    if (!onboardingChecked) {
+    // Onboarding check — uses cached state from context (no API call here)
+    if (onboardingStatus === null) {
+      // Bootstrap hasn't completed the onboarding fetch yet
       return <LoadingScreen />;
     }
     
-    if (!onboardingComplete && !ONBOARDING_EXEMPT_PATHS.includes(location.pathname)) {
+    if (!onboardingStatus.completed && !ONBOARDING_EXEMPT_PATHS.includes(location.pathname)) {
       return <Navigate to="/onboarding" replace />;
     }
     
