@@ -320,11 +320,11 @@ const DashboardLayout = ({ children }) => {
                 aria-label="User menu"
               >
                 <div className="avatar w-7 h-7 md:w-8 md:h-8 text-xs md:text-sm">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-xs md:text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {user?.name?.split(' ')[0] || 'User'}
+                    {user?.full_name?.split(' ')[0] || 'User'}
                   </p>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 md:w-4 md:h-4 hidden sm:block" style={{ color: 'var(--text-muted)' }} />
@@ -340,7 +340,7 @@ const DashboardLayout = ({ children }) => {
               }}
             >
               <div className="px-3 py-2.5">
-                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{user?.name}</p>
+                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{user?.full_name}</p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
               </div>
               <DropdownMenuSeparator style={{ background: 'var(--border-light)' }} />
