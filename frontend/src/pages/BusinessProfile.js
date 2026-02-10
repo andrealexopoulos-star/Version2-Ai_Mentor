@@ -162,25 +162,21 @@ const BusinessProfile = () => {
                 <Building2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Basics</span>
               </TabsTrigger>
-              <TabsTrigger value="market" disabled={!isPaidUser} className="flex items-center gap-2">
+              <TabsTrigger value="market" className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 <span className="hidden sm:inline">Market</span>
-                {!isPaidUser && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
-              <TabsTrigger value="product" disabled={!isPaidUser} className="flex items-center gap-2">
+              <TabsTrigger value="product" className="flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 <span className="hidden sm:inline">Product</span>
-                {!isPaidUser && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
-              <TabsTrigger value="team" disabled={!isEnterprise} className="flex items-center gap-2">
+              <TabsTrigger value="team" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Team</span>
-                {!isEnterprise && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
-              <TabsTrigger value="strategy" disabled={!isPaidUser} className="flex items-center gap-2">
+              <TabsTrigger value="strategy" className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
                 <span className="hidden sm:inline">Strategy</span>
-                {!isPaidUser && <span className="text-xs ml-1">🔒</span>}
               </TabsTrigger>
             </TabsList>
 
