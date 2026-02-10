@@ -195,6 +195,11 @@ from snapshot_agent import init_snapshot_agent
 snapshot_agent = init_snapshot_agent(supabase_admin)
 logger.info("📸 Snapshot Agent initialized")
 
+# Initialize Pressure Calibration
+from pressure_calibration import init_pressure_calibration
+pressure_calibration = init_pressure_calibration(supabase_admin)
+logger.info("🎚️ Pressure Calibration initialized")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
