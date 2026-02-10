@@ -131,7 +131,7 @@ const DashboardLayout = ({ children }) => {
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'CONFIGURATION' },
     { icon: BarChart3, label: 'Intelligence Baseline', path: '/intelligence-baseline' },
-    { icon: Building2, label: 'Business Profile', path: '/business-profile' },
+    { icon: Building2, label: 'Business DNA', path: '/business-profile' },
     { icon: Plug, label: 'Integrations', path: '/integrations' },
     { icon: Mail, label: 'Email', path: '/connect-email' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
