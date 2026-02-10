@@ -25,6 +25,12 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 
 ## What's Been Implemented
 
+### Admin Access Control (COMPLETE — Feb 10, 2026)
+- **ProtectedRoute adminOnly enforcement**: `ProtectedRoute` accepts `adminOnly` prop, calls `GET /api/auth/supabase/me` to get authoritative role from `users` table, blocks access if role not in `['admin', 'superadmin']`.
+- **AccessDenied screen**: Non-admin users see "Access restricted" with "Return to Dashboard" link.
+- **Backend enforcement**: `get_admin_user` dependency accepts `admin` and `superadmin` roles, returns 403 otherwise.
+- **Double enforcement**: Both frontend (ProtectedRoute) and backend (get_admin_user) independently verify admin role.
+
 ### Calibration Write Unification (COMPLETE — Feb 10, 2026)
 - **All completion paths now write to `user_operator_profile`**: `calibration/brain` (War Room), `calibration/answer` (legacy 9-step), and `calibration-psych` Edge Function all write `persona_calibration_status = 'complete'` to `user_operator_profile`.
 - **calibration/defer** writes `persona_calibration_status = 'deferred'` to `user_operator_profile`.
