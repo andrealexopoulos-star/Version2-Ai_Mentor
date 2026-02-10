@@ -25,6 +25,11 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 
 ## What's Been Implemented
 
+### Audit Fixes H3, F4, F2 (COMPLETE — Feb 10, 2026)
+- **H3 — User profile from DB**: `fetchUserProfile` now enriches user data from `GET /api/auth/supabase/me` (reads `users` table) for authoritative `role`, `subscription_tier`, `is_master_account`. Session metadata used as instant fallback, then overwritten with DB values.
+- **F4 — DashboardLayout name fix**: Avatar initial, greeting, and dropdown now use `user?.full_name` instead of `user?.name`.
+- **F2 — Save and continue later**: `deferOnboarding()` callback temporarily sets `onboardingStatus.completed = true` so `ProtectedRoute` allows `/advisor` access. Progress is saved; onboarding can be resumed later.
+
 ### Onboarding State Fix (COMPLETE — Feb 10, 2026)
 - **Single fetch per session**: Onboarding status fetched ONCE during auth bootstrap in `SupabaseAuthContext`, cached in `onboardingStatus` state. `ProtectedRoute` consumes cached state — makes ZERO API calls for onboarding.
 - **Auto-complete removed**: `GET /api/onboarding/status` no longer auto-marks onboarding complete based on `company_name`. Returns `completed: false` when no record exists.
