@@ -16,7 +16,7 @@ import {
   ChevronDown, Shield, User, Stethoscope, Building2,
   Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Calendar,
   Lightbulb, AlertCircle, Mail, ChevronLeft, ChevronRight, Terminal,
-  Crosshair, BarChart3
+  Crosshair, BarChart3, Activity
 } from 'lucide-react';
 
 const DashboardLayout = ({ children }) => {
