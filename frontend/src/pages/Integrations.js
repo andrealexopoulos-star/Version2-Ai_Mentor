@@ -527,7 +527,7 @@ const Integrations = () => {
     
     // Get current session token
     const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || localStorage.getItem('token');
+    const token = session?.access_token;
     
     if (!token) {
       toast.error('Please log in to connect Outlook');
@@ -569,7 +569,7 @@ const Integrations = () => {
     
     // Get current session token
     const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || localStorage.getItem('token');
+    const token = session?.access_token;
     
     if (!token) {
       toast.error('Please log in to connect Gmail');
