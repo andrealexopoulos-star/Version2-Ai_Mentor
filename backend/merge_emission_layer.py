@@ -486,10 +486,50 @@ class MergeEmissionLayer:
             )
             emitted.append(await self._persist_event(event))
 
-        return emitted
+        # ─── DECISION GAP ────────────────────────────────────────
+        # Recurring meetings with no decision artifacts over window
+        try:
+            window_start = (now - timedelta(days=14)).isoformat()
+            recurring_result = self.supabase.table("outlook_calendar_events").select(
+                "id, subject, start_time"
+            ).eq("user_id", user_id).gte(
+                "start_time", window_start
+            ).lt("start_time", week_end.isoformat()).execute()
 
-    # ═══════════════════════════════════════════════════════════════
-    # HELPERS
+            recurring_events = recurring_result.data or []
+
+            # Group by subject to find recurring meetings
+            subject_counts = {}
+            for ev in recurring_events:
+                subj = (ev.get("subject") or "").strip().lower()
+                if subj and len(subj) > 3:
+                    subject_counts[subj] = subject_counts.get(subj, 0) + 1
+
+            # Recurring = same subject appears 2+ times in 14 days
+            recurring_subjects = {s: c for s, c in subject_counts.items() if c >= 2}
+            meetings_without_decision = sum(recurring_subjects.values())
+
+            if meetings_without_decision >= 3:
+                event = self._build_event(
+                    user_id=user_id,
+                    source="native_calendar",
+                    domain="operations",
+                    event_type="operations",
+                    signal_name="decision_gap",
+                    entity={"snapshot": "recurring_meetings"},
+                    metric={
+                        "meetings_without_decision": meetings_without_decision,
+                        "window_days": 14,
+                        "recurring_subjects": len(recurring_subjects),
+                    },
+                    confidence=min(0.5 + meetings_without_decision * 0.05, 0.85),
+                    severity="warning",
+                )
+                emitted.append(await self._persist_event(event))
+        except Exception as e:
+            logger.debug(f"[emission] Decision gap check failed: {e}")
+
+        return emitted
     # ═══════════════════════════════════════════════════════════════
 
     def _build_event(
