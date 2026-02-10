@@ -83,11 +83,26 @@ class WatchtowerEngine:
             if outcome:
                 results.append(outcome)
 
+        # ─── Contradiction detection (post-analysis) ─────────
+        contradictions_found = 0
+        try:
+            from contradiction_engine import get_contradiction_engine
+            from escalation_memory import get_escalation_memory
+            ce = get_contradiction_engine()
+            mem = get_escalation_memory()
+            positions = await self.get_positions(user_id)
+            escalations = await mem.get_active_escalations(user_id)
+            contradictions = await ce.run_detection(user_id, positions, config, escalations)
+            contradictions_found = len(contradictions)
+        except RuntimeError:
+            pass
+
         return {
             "status": "complete",
             "domains_evaluated": len([d for d in domains_config.values() if d.get("enabled")]),
             "position_changes": len(results),
             "findings": results,
+            "contradictions_detected": contradictions_found,
         }
 
     async def emit_event(
