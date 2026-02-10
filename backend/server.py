@@ -4,7 +4,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
@@ -2420,15 +2419,27 @@ async def supabase_get_me(current_user: dict = Depends(get_current_user_supabase
 
 @api_router.get("/auth/check-profile")
 async def check_user_profile(current_user: dict = Depends(get_current_user_supabase)):
-    """Calibration-first profile check used by AuthCallbackSupabase."""
+    """Calibration-first profile check used by AuthCallbackSupabase.
+    Single source of truth: user_operator_profile.persona_calibration_status"""
     try:
         user_id = current_user["id"]
         user_profile = await get_user_by_id(user_id)
         business_profile = await get_business_profile_supabase(supabase_admin, user_id)
-        calibration_status = (business_profile or {}).get("calibration_status")
 
-        needs_onboarding = not (business_profile and calibration_status == "complete")
-        onboarding_status = "complete" if not needs_onboarding else "calibration_required"
+        # Check calibration from user_operator_profile ONLY
+        calibration_complete = False
+        try:
+            op_result = supabase_admin.table("user_operator_profile").select(
+                "persona_calibration_status"
+            ).eq("user_id", user_id).maybeSingle().execute()
+            if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
+                calibration_complete = True
+        except Exception:
+            pass
+
+        calibration_status = "complete" if calibration_complete else "incomplete"
+        needs_onboarding = not calibration_complete
+        onboarding_status = "complete" if calibration_complete else "calibration_required"
 
         return {
             "profile_exists": bool(user_profile),
@@ -2458,7 +2469,6 @@ async def get_calibration_status(request: Request):
     """
     Calibration status — deterministic 200 for authenticated users.
     Single source of truth: user_operator_profile.persona_calibration_status
-    Fallback: business_profiles.calibration_status (legacy)
     """
     try:
         current_user = await get_current_user_from_request(request)
@@ -2467,30 +2477,12 @@ async def get_calibration_status(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
 
     try:
-        # PRIMARY: Check user_operator_profile.persona_calibration_status
-        try:
-            op_result = supabase_admin.table("user_operator_profile").select(
-                "persona_calibration_status"
-            ).eq("user_id", user_id).maybeSingle().execute()
-            
-            if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
-                return JSONResponse(status_code=200, content={"status": "COMPLETE"})
-        except Exception:
-            pass
-
-        # FALLBACK: Check business_profiles.calibration_status (legacy)
-        try:
-            result = supabase_admin.table("business_profiles").select(
-                "calibration_status"
-            ).eq("user_id", user_id).limit(1).execute()
-            
-            profile = result.data[0] if result.data else None
-            if profile and profile.get("calibration_status") == "complete":
-                return JSONResponse(status_code=200, content={"status": "COMPLETE"})
-            if profile and profile.get("calibration_status") == "deferred":
-                return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "DEFERRED"})
-        except Exception:
-            pass
+        op_result = supabase_admin.table("user_operator_profile").select(
+            "persona_calibration_status"
+        ).eq("user_id", user_id).maybeSingle().execute()
+        
+        if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
+            return JSONResponse(status_code=200, content={"status": "COMPLETE"})
 
         return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
 
