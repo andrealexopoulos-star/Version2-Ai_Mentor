@@ -200,6 +200,11 @@ from pressure_calibration import init_pressure_calibration
 pressure_calibration = init_pressure_calibration(supabase_admin)
 logger.info("🎚️ Pressure Calibration initialized")
 
+# Initialize Intelligence Baseline
+from intelligence_baseline import init_intelligence_baseline
+intelligence_baseline = init_intelligence_baseline(supabase_admin)
+logger.info("🎯 Intelligence Baseline initialized")
+
 # JWT Configuration
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
 JWT_ALGORITHM = "HS256"
