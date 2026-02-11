@@ -115,7 +115,7 @@ from supabase_remaining_helpers import (
 
 # Import Cognitive Core - SUPABASE VERSION (MIGRATED)
 from cognitive_core_supabase import CognitiveCore, init_cognitive_core, get_cognitive_core
-from supabase_client import init_supabase
+from supabase_client import init_supabase, safe_query_single
 
 # Initialize Supabase after imports
 supabase_admin = init_supabase()
