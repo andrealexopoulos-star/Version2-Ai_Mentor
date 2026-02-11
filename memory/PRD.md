@@ -1,56 +1,78 @@
 # BIQC Platform — Product Requirements Document
 
 ## Original Problem Statement
-BIQC is a deterministic lifecycle intelligence engine: Calibration → Onboarding → Integrations → Orientation → BIQc Insights.
+BIQC is a deterministic lifecycle intelligence engine: Calibration → Onboarding → Integrations → BIQc Insights.
 
 ## Architecture
 - Backend: FastAPI + Supabase (PostgreSQL)
 - Frontend: React with Supabase Auth
 - AI: OpenAI GPT-4o via Emergent LLM Key
 
-## Lifecycle Coherence Sprint (Feb 2026)
+## Lifecycle Coherence Sprint — Complete (Feb 2026)
 
-### A) Calibration Consistency — IMPLEMENTED
-- Settings reads `persona_calibration_status` from backend `/api/calibration/status` ONLY
-- Green dot + "Calibration complete" when complete, "Recalibrate Agent" button
-- No red warning for calibrated users
-- No "Complete Calibration" shown for completed users
+### A) Calibration Consistency — PASS
+- Settings reads `persona_calibration_status` from `/api/calibration/status` (DB authority only)
+- Green dot + "Recalibrate Agent" when complete
+- Screenshot verified
 
-### B) Strategic Console No Redundant Questions — IMPLEMENTED
-- `resolve_facts()` + `build_known_facts_prompt()` injected into `/api/calibration/brain` prompt BEFORE AI call
-- Known facts (business name, industry, website, etc.) injected as context with "DO NOT ask for these again"
-- Strategic Console now skips 7 known steps (verified: jumps from Step 1 to Step 8)
+### B) Strategic Console No Redundant Questions — PASS  
+- `resolve_facts()` + `build_known_facts_prompt()` injected into `/api/calibration/brain` BEFORE AI call
+- Console skips known steps (verified: jumped to Step 8)
 
-### E) Recalibration Flow — IMPLEMENTED
-- `POST /api/calibration/reset` endpoint: archives persona, sets status to 'recalibrating'
-- Settings "Recalibrate Agent" calls reset then routes to /calibration via full page reload
-- Bootstrap detects 'recalibrating' status → NEEDS_CALIBRATION → renders calibration page
+### C) Business DNA Auto-Save — PASS
+- Debounced auto-save (1.5s) on every field change
+- "Save Profile" button removed, replaced with "Auto-saves as you type" indicator
+- DB confirmation: write "Melbourne, VIC (auto-saved)" → read back confirmed
 
-### F) Website Enrichment — IMPLEMENTED (Guard 2)
+### D) Integration Disconnect — PASS
+- Disconnect buttons on all Merge-connected integration cards
+- `POST /api/merge/disconnect` endpoint removes from `integration_accounts`
+- Session preserved (no redirect)
+
+### E) Recalibration Flow — PASS
+- `POST /api/calibration/reset` archives persona, sets status to 'recalibrating'
+- Settings "Recalibrate Agent" calls reset then routes to /calibration
+
+### F) Website Enrichment — PASS (Guard 2)
 - `POST /api/enrichment/website` with action="scan" returns DRAFT (not persisted)
 - action="commit" persists to business_profiles
-- Server-side fetch + sanitize (strips non-printable chars, normalizes whitespace)
-- Verified: scan of thestrategysquad.com returns clean title + description as draft
+- No auto-write before explicit commit
 
-### G) Operator View Intelligence State — IMPLEMENTED
-- Shows "Intelligence State Diagnosis" with DB-sourced reasons:
-  - Integration count + provider names
-  - Domains enabled list
-  - "No observation events received yet" with action guidance
-- When intelligence exists, shows positions, escalations, contradictions, pressure
+### G) Operator View Intelligence State — PASS
+- Shows "Intelligence State Diagnosis" with DB-sourced reasons
+- Lists integrations, domains, and explicit "No observation events" message
+- Screenshot verified with real data
 
-### Service Worker Fix — IMPLEMENTED
-- Excludes all /api/* routes from SW interception
-- Content-type guards on calibration/auth fetch calls
-- Fixed 11 hardcoded /integrations error redirects → /connect-email
+### H) WOW Landing — PASS
+- BIQc Intelligence Summary panel on /advisor with 4 columns:
+  - Calibration: "Agent Calibrated" + business name from DB
+  - Business DNA: "17 facts confirmed" + industry + website from DB
+  - Integrations: "3 Connected" + "HubSpot, Xero, outlook" from DB
+  - Intelligence: "Pre-analysis" + enabled domains from DB
+- No placeholder text, no mock state
 
-### Backend Endpoints Added
+### Guard 3 — Iron Curtain — PASS
+- Onboarding incomplete → /war-room attempt → redirected to /onboarding
+- URL manipulation blocked
+- Screenshot verified
+
+## Backend Endpoints Added
 - `POST /api/calibration/reset` — recalibration flow
-- `GET /api/lifecycle/state` — full lifecycle state for routing + operator view
-- `POST /api/enrichment/website` — Draft → Review → Commit enrichment
+- `GET /api/lifecycle/state` — full lifecycle state
+- `POST /api/enrichment/website` — Draft → Commit enrichment
+- `POST /api/merge/disconnect` — disconnect Merge integrations
 
-## Remaining Items
-- C) Business DNA auto-save (partially done via context endpoint, needs debounced field-level save)
-- D) Integrations disconnect buttons on cards
-- H) WOW Landing after lifecycle completion
-- Guard 3 strict state machine (partially implemented in ProtectedRoute)
+## Files Modified
+- `backend/server.py` (4 endpoints + fact injection in calibration/brain)
+- `frontend/src/pages/Settings.js` (calibration DB read, Recalibrate Agent)
+- `frontend/src/pages/OperatorDashboard.js` (intelligence state diagnosis)
+- `frontend/src/pages/AdvisorWatchtower.js` (WOW Landing summary)
+- `frontend/src/pages/BusinessProfile.js` (debounced auto-save)
+- `frontend/src/pages/Integrations.js` (disconnect buttons)
+- `frontend/src/pages/ConnectEmail.js` (email display fix)
+- `frontend/src/pages/AuthCallbackSupabase.js` (OAuth redirect fix)
+- `frontend/src/context/SupabaseAuthContext.js` (single backend calibration check)
+- `frontend/src/components/ProtectedRoute.js` (state machine routing)
+- `frontend/src/components/BoardRoom.js` (priority compression)
+- `frontend/public/service-worker.js` (API route exclusion)
+- `backend/routes/boardroom.py` (rank_domains)
