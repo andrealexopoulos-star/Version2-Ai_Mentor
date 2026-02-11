@@ -9738,122 +9738,12 @@ async def boardroom_escalation_action(
         raise HTTPException(status_code=500, detail="Escalation memory not available")
 
 
-# ═══════════════════════════════════════════════════════════════
-# MERGE EMISSION — Integration Signal Trigger
-# ═══════════════════════════════════════════════════════════════
-
-@api_router.post("/emission/run")
-async def run_emission(current_user: dict = Depends(get_current_user)):
-    """
-    Trigger a Merge emission cycle.
-    Reads connected integrations, emits observation events.
-    """
-    from workspace_helpers import get_user_account
-
-    user_id = current_user["id"]
-
-    account = await get_user_account(supabase_admin, user_id)
-    if not account:
-        raise HTTPException(status_code=400, detail="Workspace not initialized")
-
-    try:
-        from merge_emission_layer import get_emission_layer
-        layer = get_emission_layer()
-    except RuntimeError:
-        return {"signals_emitted": 0, "status": "emission_layer_not_available"}
-
-    result = await layer.run_emission(user_id, account["id"])
-    return result
-
 
 # ═══════════════════════════════════════════════════════════════
-# SNAPSHOT AGENT — Periodic Intelligence Briefings
+# EMISSION, SNAPSHOT, BASELINE — Extracted to routes/intelligence.py
 # ═══════════════════════════════════════════════════════════════
-
-@api_router.post("/snapshot/generate")
-async def snapshot_generate(
-    snapshot_type: str = "ad_hoc",
-    current_user: dict = Depends(get_current_user),
-):
-    """
-    Generate an intelligence snapshot if material change exists.
-    Returns the snapshot or null if silence is correct.
-    """
-    from snapshot_agent import get_snapshot_agent
-    agent = get_snapshot_agent()
-
-    result = await agent.generate_snapshot(current_user["id"], snapshot_type)
-    if result is None:
-        return {"generated": False, "reason": "no_material_change"}
-    return {"generated": True, "snapshot": result}
-
-
-@api_router.get("/snapshot/latest")
-async def snapshot_latest(current_user: dict = Depends(get_current_user)):
-    """Read the most recent intelligence snapshot."""
-    from snapshot_agent import get_snapshot_agent
-    agent = get_snapshot_agent()
-
-    snapshot = await agent.get_latest_snapshot(current_user["id"])
-    return {"snapshot": snapshot}
-
-
-@api_router.get("/snapshot/history")
-async def snapshot_history(
-    limit: int = 10,
-    current_user: dict = Depends(get_current_user),
-):
-    """Read snapshot history."""
-    from snapshot_agent import get_snapshot_agent
-    agent = get_snapshot_agent()
-
-    snapshots = await agent.get_snapshots(current_user["id"], limit=limit)
-    return {"snapshots": snapshots, "count": len(snapshots)}
-
-
-# ═══════════════════════════════════════════════════════════════
-# INTELLIGENCE BASELINE — Configuration
-# ═══════════════════════════════════════════════════════════════
-
-class BaselineSaveRequest(BaseModel):
-    baseline: Dict[str, Any]
-
-
-@api_router.get("/baseline")
-async def baseline_get(current_user: dict = Depends(get_current_user)):
-    """Read the user's intelligence baseline."""
-    from intelligence_baseline import get_intelligence_baseline
-    bl = get_intelligence_baseline()
-    existing = await bl.get_baseline(current_user["id"])
-    if existing:
-        return {"baseline": existing.get("baseline"), "configured": True}
-    defaults = await bl.get_defaults()
-    return {"baseline": defaults, "configured": False}
-
-
-@api_router.post("/baseline")
-async def baseline_save(
-    payload: BaselineSaveRequest,
-    current_user: dict = Depends(get_current_user),
-):
-    """
-    Save the user's intelligence baseline.
-    Syncs to business_profiles.intelligence_configuration automatically.
-    """
-    from intelligence_baseline import get_intelligence_baseline
-    bl = get_intelligence_baseline()
-    result = await bl.save_baseline(current_user["id"], payload.baseline)
-    return {"saved": True, "baseline": result}
-
-
-@api_router.get("/baseline/defaults")
-async def baseline_defaults(current_user: dict = Depends(get_current_user)):
-    """Return the default baseline structure."""
-    from intelligence_baseline import get_intelligence_baseline
-    bl = get_intelligence_baseline()
-    defaults = await bl.get_defaults()
-    return {"baseline": defaults}
-
+from routes.intelligence import router as intelligence_router
+api_router.include_router(intelligence_router)
 
 # Include router and middleware
 app.include_router(api_router)
