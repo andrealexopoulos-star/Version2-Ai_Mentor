@@ -116,27 +116,43 @@ const Settings = () => {
             </p>
           </div>
 
-          {/* Agent Calibration Status */}
+          {/* Agent Calibration Status — reads from persona_calibration_status ONLY */}
           <Card className="mb-6">
             <CardContent className="py-4 px-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${profile.calibration_status === 'complete' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${calibrationStatus === 'complete' ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
                   <div>
                     <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Agent Calibration</h3>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {profile.calibration_status === 'complete' ? 'Calibration complete — BIQC is personalised to your business' : 'Incomplete — BIQC needs calibration to advise effectively'}
+                      {calibrationStatus === 'complete' ? 'Calibration complete — BIQC is personalised to your operating style' : 'Incomplete — BIQC needs calibration to advise effectively'}
                     </p>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant={profile.calibration_status === 'complete' ? 'outline' : 'default'}
-                  onClick={() => navigate('/calibration')}
-                  className={profile.calibration_status === 'complete' ? '' : 'btn-primary'}
-                >
-                  {profile.calibration_status === 'complete' ? 'Recalibrate' : 'Complete Calibration'}
-                </Button>
+                {calibrationStatus === 'complete' ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={resettingCalibration}
+                    onClick={async () => {
+                      setResettingCalibration(true);
+                      try {
+                        await apiClient.post('/calibration/reset');
+                        toast.success('Calibration reset. Redirecting...');
+                        setTimeout(() => { window.location.href = '/calibration'; }, 1000);
+                      } catch (e) {
+                        toast.error('Failed to reset calibration');
+                        setResettingCalibration(false);
+                      }
+                    }}
+                  >
+                    {resettingCalibration ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Recalibrate Agent'}
+                  </Button>
+                ) : (
+                  <Button size="sm" className="btn-primary" onClick={() => navigate('/calibration')}>
+                    Complete Calibration
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
