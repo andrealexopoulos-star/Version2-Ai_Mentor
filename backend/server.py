@@ -2473,15 +2473,21 @@ async def get_calibration_status(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
 
     try:
-        op_result = supabase_admin.table("user_operator_profile").select(
-            "persona_calibration_status"
-        ).eq("user_id", user_id).maybe_single().execute()
+        op_result = safe_query_single(
+            supabase_admin.table("user_operator_profile").select(
+                "persona_calibration_status"
+            ).eq("user_id", user_id)
+        )
         
         if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
             return JSONResponse(status_code=200, content={"status": "COMPLETE"})
 
         return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
 
+    except RuntimeError as e:
+        # SDK mismatch — fail loud, not silent
+        logger.error(f"FATAL: Calibration status SDK error: {e}")
+        raise HTTPException(status_code=500, detail="Internal SDK error — contact support")
     except Exception as e:
         logger.error(f"Calibration status error: {e}")
         return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
