@@ -113,6 +113,7 @@ const BoardRoom = () => {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           message: text,
@@ -120,7 +121,8 @@ const BoardRoom = () => {
         }),
       });
 
-      if (!res.ok) throw new Error('Board Room connection failed');
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok || !ct.includes('application/json')) throw new Error('Board Room connection failed');
       const data = await res.json();
 
       if (data.response) {
