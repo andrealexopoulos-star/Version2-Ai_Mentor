@@ -28,10 +28,11 @@ const pricingModels = ['Hourly', 'Project-based', 'Retainer', 'Subscription', 'O
 const BusinessProfile = () => {
   const { user } = useSupabaseAuth();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({});
   const [scores, setScores] = useState({ completeness: 0, strength: 0 });
   const [activeTab, setActiveTab] = useState('basics');
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const saveTimerRef = useRef(null);
 
   // DEFENSIVE: Get user subscription tier with fallbacks
   const userTier = user?.subscription_tier || 'free';
