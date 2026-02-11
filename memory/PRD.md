@@ -25,10 +25,18 @@ The BIQC platform is a strategic business intelligence system backed by Supabase
 - `server.py` still ~9000+ lines — remaining routes need extraction
 
 ### UX Stage 1: Priority Compression (COMPLETE — Feb 2026)
-- **Backend**: `rank_domains()` function in `routes/boardroom.py` scores domains by severity (40), pressure (30), contradiction (+15 each), persistence (capped 15), decision window compression (20/10/5)
-- **Response**: `priority_compression` field with `primary`, `secondary` (max 3), `collapsed` structure
-- **Frontend**: BoardRoom.js renders Primary Focus card, Secondary items, collapsible evidence, expandable collapsed domains
-- **Invariants preserved**: resolve_facts injection, escalation logic, pressure logic, route paths, SDK guardrails
+- Backend: `rank_domains()` in `routes/boardroom.py` scores domains by severity, pressure, contradiction, persistence, window compression
+- Response includes `priority_compression` with `primary`, `secondary` (max 3), `collapsed`
+- Frontend: BoardRoom.js renders Primary Focus card, Secondary items, collapsible evidence
+
+### Deterministic Calibration Routing (COMPLETE — Feb 2026)
+- **Root cause eliminated**: Removed all direct Supabase REST calls to `user_operator_profile` from frontend (RLS-fragile)
+- **Single authority**: Frontend uses ONLY backend `/api/calibration/status` (service_role key, bypasses RLS)
+- **Fail-open**: On ANY error (network, 500), frontend defaults to READY, never NEEDS_CALIBRATION
+- **Deterministic gates**: ProtectedRoute redirects calibrated users from /calibration to /advisor
+- **Order enforced**: Calibration check → Onboarding check (never reversed)
+- **Backend fix**: Catch-all error now returns 500 (not 200 with NEEDS_CALIBRATION)
+- Files modified: `SupabaseAuthContext.js`, `ProtectedRoute.js`, `AuthCallbackSupabase.js`, `server.py`
 
 ## Prioritized Backlog
 
@@ -45,3 +53,4 @@ The BIQC platform is a strategic business intelligence system backed by Supabase
 
 ### P3
 - E2E authenticated testing of Board Room Priority Compression view
+- E2E authenticated testing of calibration routing flows
