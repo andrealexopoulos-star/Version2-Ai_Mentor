@@ -9633,7 +9633,7 @@ async def get_baseline_snapshot(current_user: dict = Depends(get_current_user)):
     try:
         result = supabase_admin.table("intelligence_snapshots").select("*").eq(
             "user_id", user_id
-        ).eq("type", "baseline_initialized").order("created_at", desc=True).limit(1).execute()
+        ).eq("snapshot_type", "baseline_initialized").order("generated_at", desc=True).limit(1).execute()
         if result.data and len(result.data) > 0:
             row = result.data[0]
             row.pop("id", None)
