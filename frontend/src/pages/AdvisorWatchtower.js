@@ -64,6 +64,8 @@ const AdvisorWatchtower = () => {
   const [emailConnection, setEmailConnection] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [activation, setActivation] = useState(null);
+  const [lifecycle, setLifecycle] = useState(null);
+  const [resolvedFacts, setResolvedFacts] = useState(null);
 
   // Check for "Do Later" tutorial flag
   useEffect(() => {
