@@ -263,7 +263,7 @@ const ConnectEmail = () => {
                         Email Account Connected
                       </p>
                       <p className="text-sm text-green-700">
-                        {outlookStatus.connected && `Connected to Outlook (${outlookStatus.connected_email})`}
+                        {outlookStatus.connected && `Connected to Outlook (${outlookStatus.email || 'connected'})`}
                         {gmailStatus.connected && `Connected to Gmail (${gmailStatus.email})`}
                       </p>
                     </div>
