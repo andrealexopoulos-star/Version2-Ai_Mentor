@@ -2427,7 +2427,7 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
         try:
             op_result = supabase_admin.table("user_operator_profile").select(
                 "persona_calibration_status"
-            ).eq("user_id", user_id).maybeSingle().execute()
+            ).eq("user_id", user_id).maybe_single().execute()
             if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
                 calibration_complete = True
         except Exception:
@@ -2475,7 +2475,7 @@ async def get_calibration_status(request: Request):
     try:
         op_result = supabase_admin.table("user_operator_profile").select(
             "persona_calibration_status"
-        ).eq("user_id", user_id).maybeSingle().execute()
+        ).eq("user_id", user_id).maybe_single().execute()
         
         if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
             return JSONResponse(status_code=200, content={"status": "COMPLETE"})
@@ -2500,7 +2500,7 @@ async def defer_calibration(request: Request):
 
         # PRIMARY: Write to user_operator_profile
         try:
-            existing_op = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+            existing_op = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybe_single().execute()
             if existing_op.data:
                 supabase_admin.table("user_operator_profile").update({
                     "persona_calibration_status": "deferred"
@@ -2980,7 +2980,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
 
           # PRIMARY: Write to user_operator_profile (authoritative)
           try:
-            existing_op = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+            existing_op = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybe_single().execute()
             if existing_op.data:
                 supabase_admin.table("user_operator_profile").update({
                     "persona_calibration_status": "complete",
@@ -3016,7 +3016,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
           now_iso_fallback = datetime.now(timezone.utc).isoformat()
           # PRIMARY: user_operator_profile
           try:
-            existing_op2 = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+            existing_op2 = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybe_single().execute()
             if existing_op2.data:
                 supabase_admin.table("user_operator_profile").update({
                     "persona_calibration_status": "complete",
@@ -3197,7 +3197,7 @@ async def calibration_brain(request: Request, payload: CalibrationBrainRequest):
             now_iso = datetime.now(timezone.utc).isoformat()
             # PRIMARY: Write to user_operator_profile (authoritative)
             try:
-                existing = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybeSingle().execute()
+                existing = supabase_admin.table("user_operator_profile").select("user_id").eq("user_id", user_id).maybe_single().execute()
                 if existing.data:
                     supabase_admin.table("user_operator_profile").update({
                         "persona_calibration_status": "complete",
@@ -5855,7 +5855,7 @@ async def _read_onboarding_state(user_id: str) -> dict:
     try:
         op_result = supabase_admin.table("user_operator_profile").select(
             "operator_profile"
-        ).eq("user_id", user_id).maybeSingle().execute()
+        ).eq("user_id", user_id).maybe_single().execute()
         
         if op_result.data:
             op = op_result.data.get("operator_profile") or {}
@@ -5886,7 +5886,7 @@ async def _write_onboarding_state(user_id: str, state: dict):
     try:
         op_result = supabase_admin.table("user_operator_profile").select(
             "operator_profile"
-        ).eq("user_id", user_id).maybeSingle().execute()
+        ).eq("user_id", user_id).maybe_single().execute()
         
         if op_result.data:
             existing_op = op_result.data.get("operator_profile") or {}
@@ -6188,7 +6188,7 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
     # Get intelligence baseline if it exists
     baseline = None
     try:
-        bl_result = supabase_admin.table("intelligence_baseline").select("*").eq("user_id", user_id).maybeSingle().execute()
+        bl_result = supabase_admin.table("intelligence_baseline").select("*").eq("user_id", user_id).maybe_single().execute()
         baseline = bl_result.data if bl_result.data else None
     except Exception:
         pass
@@ -6198,7 +6198,7 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
     try:
         op_result = supabase_admin.table("user_operator_profile").select(
             "persona_calibration_status"
-        ).eq("user_id", user_id).maybeSingle().execute()
+        ).eq("user_id", user_id).maybe_single().execute()
         if op_result.data:
             calibration_status = op_result.data.get("persona_calibration_status", "incomplete")
     except Exception:
@@ -8481,7 +8481,7 @@ async def admin_backfill_calibration(request: Request):
         try:
             op_result = supabase_admin.table("user_operator_profile").select(
                 "persona_calibration_status"
-            ).eq("user_id", uid).maybeSingle().execute()
+            ).eq("user_id", uid).maybe_single().execute()
 
             if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
                 skipped += 1
