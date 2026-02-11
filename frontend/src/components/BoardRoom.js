@@ -81,9 +81,10 @@ const BoardRoom = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/watchtower/positions`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json' },
       });
-      if (res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (res.ok && ct.includes('application/json')) {
         const data = await res.json();
         setPositions(data.positions || {});
       }
