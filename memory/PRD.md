@@ -27,7 +27,8 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 ### Adversarial Validation & Critical Fix (Feb 11, 2026)
 - **CRITICAL FIX**: `maybeSingle()` → `maybe_single()` in 17 occurrences across `server.py` and `fact_resolution.py`. The Supabase Python client v2.27.2 uses snake_case. All prior camelCase calls threw silent exceptions, causing `/api/calibration/status` to return `NEEDS_CALIBRATION` for ALL users.
 - **CalibrationAdvisor RLS Fix**: Replaced client-side `supabase.from('user_operator_profile')` query (blocked by RLS) with backend API call `GET /api/calibration/status` (uses service_role key).
-- **Validation Result**: 19/19 API tests passed. Login → /advisor routing works. /calibration redirects calibrated users. Admin access denied for non-admin. Facts resolve and persist correctly.
+- **SDK Guardrails**: Runtime assertion at startup verifies `maybe_single` exists. `safe_query_single()` wrapper raises `RuntimeError` on `AttributeError` instead of silently continuing. 8-test suite at `/app/backend/tests/test_sdk_integrity.py`.
+- **Validation Result**: 19/19 API tests passed. 8/8 SDK integrity tests passed.
 
 ### Global Fact Authority (COMPLETE — Feb 10, 2026)
 - Three-layer resolution: Supabase tables → integration data (confidence >= 0.75) → fact ledger
