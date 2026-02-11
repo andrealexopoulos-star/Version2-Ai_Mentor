@@ -1,36 +1,34 @@
 # BIQC Platform — PRD
 
-## Lifecycle Coherence: Context & State Integrity Sprint (Feb 2026)
+## Baseline Initialization & Executive Synthesis Sprint (Feb 2026)
 
-### Part 1 — Workspace Context Stabilization — PASS
-- `workspace_id` resolved from DB via `GET /api/lifecycle/state` before console renders
-- Console log: `[Console] Workspace context resolved: 12c3ac17-a156-4a7b-a861-5d76bc1fb098`
-- Run Analysis calls `POST /api/intelligence/cold-read` — backend resolves workspace internally
-- No frontend workspace_id guard — backend is authority
+### Part 1 — Database-Backed Baseline — PASS
+- `POST /api/intelligence/cold-read` now inserts `baseline_initialized` into `intelligence_snapshots` when events_created == 0
+- SQL proof: Record exists with `snapshot_type: baseline_initialized`, `domains.enabled: [sales, finance, operations]`, `domains.integrations_checked: [HubSpot, Xero, outlook]`
+- WOW Landing displays: green dot + "Baseline Initialized — Checked: HubSpot, Xero, outlook | Monitoring: sales, finance, operations"
+- Persists across page refresh (DB-backed, not local state)
 
-### Part 2 — Console Step Persistence — PASS
-- `POST /api/console/state` persists `current_step` to `user_operator_profile.operator_profile.console_state`
-- On mount: fetches console_state, resumes correct step
-- Console log: `[Console] Resuming from step 8`
-- Screenshot: Console shows "STEP 8/17 ACTIVE" after DB load
+### Part 2 — Data Readiness Panel — PASS
+- `GET /api/intelligence/data-readiness` returns per-integration: provider, category, status, connected_at, observation_events count
+- Operator View renders Data Readiness section with real DB state
+- API confirmed: HubSpot (crm, 0 events, since 2026-02-06), Xero (accounting, 0 events, since 2026-02-09), Outlook (email, 0 events, since 2026-02-11)
 
-### Part 3 — Data-Driven Truth Handover — PASS
-- AI message references stored DNA: "What are the specific products or services that TSS offers in your business advisory role?"
-- "TSS" is from resolved facts (`business.name` = "TSS and we do business advisory")
-- No placeholder text, no scripted data
+### Part 3 — Executive Memo — PASS
+- Data-bound, no hallucination
+- References: "andre" (user name), "Professional Services" (confirmed industry fact), "3 connected data sources (HubSpot, Xero, outlook)" (DB integration count), "sales, finance, operations" (enabled domains)
+- Full text: "andre, based on your confirmed Professional Services focus and 3 connected data sources (HubSpot, Xero, outlook), I have initialized monitoring across sales, finance, operations. Baseline established — I will surface material changes as they occur."
 
-### Part 4 — Run Analysis Handshake — PASS
-- Run Analysis button enabled (no email guard)
-- `POST /api/intelligence/cold-read` succeeds: `{events_created: 0, status: "no_patterns"}`
-- Backend resolves workspace internally — no frontend payload required
-- Zero console errors confirmed
+### Part 4 — Run Analysis Feedback — PASS  
+- events_created == 0: Toast shows "Baseline Initialized. No material changes detected yet."
+- events_created > 0: Normal intelligence output
+- No animation in this sprint
+
+### Endpoints Added/Modified
+- `POST /api/intelligence/cold-read` — now inserts baseline_initialized snapshot
+- `GET /api/intelligence/baseline-snapshot` — returns latest baseline snapshot
+- `GET /api/intelligence/data-readiness` — per-integration status from DB
 
 ### Files Modified
-- `backend/server.py` — added `POST /api/console/state`, extended `GET /api/lifecycle/state` with workspace_id + console_state
-- `frontend/src/components/WarRoomConsole.js` — workspace context resolution, step persistence, resume logic
-- `frontend/src/pages/AdvisorWatchtower.js` — removed strict email/workspace guards from Run Analysis
-
-### Endpoints
-- `GET /api/lifecycle/state` — now returns workspace_id + console_state
-- `POST /api/console/state` — persists console step to DB
-- `POST /api/intelligence/cold-read` — backend resolves workspace (no frontend payload needed)
+- `backend/server.py` — 3 endpoint changes
+- `frontend/src/pages/AdvisorWatchtower.js` — Executive Memo, Baseline display, Run Analysis feedback
+- `frontend/src/pages/OperatorDashboard.js` — Data Readiness panel
