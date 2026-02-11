@@ -20,10 +20,28 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('account');
   const [profile, setProfile] = useState({});
+  const [calibrationStatus, setCalibrationStatus] = useState(null); // DB authority only
+  const [resettingCalibration, setResettingCalibration] = useState(false);
   const [accountData, setAccountData] = useState({
     name: user?.name || '',
     email: user?.email || ''
   });
+
+  useEffect(() => {
+    fetchProfile();
+    fetchCalibrationStatus();
+  }, []);
+
+  const fetchCalibrationStatus = async () => {
+    try {
+      const res = await apiClient.get('/calibration/status');
+      setCalibrationStatus(res.data?.status === 'COMPLETE' ? 'complete' : 'incomplete');
+      console.log('[Settings] Calibration status from DB:', res.data?.status);
+    } catch (e) {
+      console.error('[Settings] Failed to fetch calibration status:', e);
+      setCalibrationStatus('error');
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
