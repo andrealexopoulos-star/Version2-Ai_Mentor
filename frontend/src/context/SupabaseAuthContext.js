@@ -241,14 +241,20 @@ export const SupabaseAuthProvider = ({ children }) => {
         // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
         // No direct Supabase REST queries. No fallback chains. No cached state.
         try {
-          const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+          const calUrl = `${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`;
+          console.log(`[CALIBRATION ROUTING] Fetching: ${calUrl}`);
+          const calRes = await fetch(calUrl, {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${accessToken}` }
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
           });
-          if (calRes.ok) {
+          const contentType = calRes.headers.get('content-type') || '';
+          if (calRes.ok && contentType.includes('application/json')) {
             const cal = await calRes.json();
             calibrationComplete = cal.status === 'COMPLETE';
             console.log(`[CALIBRATION ROUTING] Backend status: ${cal.status} → calibrationComplete=${calibrationComplete}`);
+          } else if (calRes.ok && !contentType.includes('application/json')) {
+            console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType}) → fail-open to READY`);
+            calibrationComplete = true;
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status} → fail-open to READY`);
             calibrationComplete = true;

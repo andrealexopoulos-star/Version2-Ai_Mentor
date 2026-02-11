@@ -101,14 +101,20 @@ const AuthCallbackSupabase = () => {
               let needsCalibration = false;
 
               try {
-                const calRes = await fetch(`${BACKEND_URL}/api/calibration/status`, {
+                const calUrl = `${BACKEND_URL}/api/calibration/status`;
+                console.log(`[CALIBRATION ROUTING] Auth callback fetching: ${calUrl}`);
+                const calRes = await fetch(calUrl, {
                   method: 'GET',
-                  headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }
+                  headers: { 'Authorization': `Bearer ${sessionData.session.access_token}`, 'Accept': 'application/json' }
                 });
-                if (calRes.ok) {
+                const contentType = calRes.headers.get('content-type') || '';
+                if (calRes.ok && contentType.includes('application/json')) {
                   const calData = await calRes.json();
                   needsCalibration = calData.status !== 'COMPLETE';
                   console.log(`[CALIBRATION ROUTING] Auth callback: status=${calData.status} → needsCalibration=${needsCalibration}`);
+                } else if (calRes.ok && !contentType.includes('application/json')) {
+                  console.warn(`[CALIBRATION ROUTING] Auth callback: got HTML not JSON (${contentType}) → fail-open`);
+                  needsCalibration = false;
                 } else {
                   console.warn(`[CALIBRATION ROUTING] Auth callback: backend error ${calRes.status} → fail-open`);
                   needsCalibration = false;
