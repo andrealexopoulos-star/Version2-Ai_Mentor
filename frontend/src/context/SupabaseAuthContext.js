@@ -238,37 +238,29 @@ export const SupabaseAuthProvider = ({ children }) => {
         const accessToken = activeSession.access_token;
         let calibrationComplete = false;
 
-        // Check user_operator_profile.persona_calibration_status
+        // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
+        // No direct Supabase REST queries. No fallback chains. No cached state.
         try {
-          const userId = activeSession.user.id;
-          const opRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/user_operator_profile?user_id=eq.${userId}&select=persona_calibration_status`,
-            { headers: { 'Authorization': `Bearer ${accessToken}`, 'apikey': SUPABASE_ANON_KEY } }
-          );
-          if (opRes.ok) {
-            const rows = await opRes.json();
-            if (rows.length > 0 && rows[0].persona_calibration_status === 'complete') {
-              calibrationComplete = true;
-            }
+          const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+          if (calRes.ok) {
+            const cal = await calRes.json();
+            calibrationComplete = cal.status === 'COMPLETE';
+            console.log(`[CALIBRATION ROUTING] Backend status: ${cal.status} → calibrationComplete=${calibrationComplete}`);
+          } else {
+            console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status} → fail-open to READY`);
+            calibrationComplete = true;
           }
         } catch (e) {
-          console.warn('[Auth] user_operator_profile check failed:', e.message);
-        }
-
-        // Fallback: backend endpoint
-        if (!calibrationComplete) {
-          try {
-            const calRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`, {
-              method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
-            if (calRes.ok) {
-              const cal = await calRes.json();
-              if (cal.status === 'COMPLETE') calibrationComplete = true;
-            }
-          } catch { /* non-fatal */ }
+          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-open to READY`);
+          calibrationComplete = true;
         }
 
         if (cancelled) return;
+
+        console.log(`[CALIBRATION ROUTING] Decision: ${calibrationComplete ? 'READY (calibrated)' : 'NEEDS_CALIBRATION'}`);
 
         if (!calibrationComplete) {
           setAuthState(AUTH_STATE.NEEDS_CALIBRATION);

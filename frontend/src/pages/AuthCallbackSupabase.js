@@ -96,55 +96,38 @@ const AuthCallbackSupabase = () => {
             setStatus('Checking profile...');
             
             try {
-              // CALIBRATION CHECK — single source: user_operator_profile.persona_calibration_status
-              const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-              const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+              // CALIBRATION CHECK — backend only (service_role key, bypasses RLS)
+              const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+              let needsCalibration = false;
 
-              const calCheckRes = await fetch(
-                `${supabaseUrl}/rest/v1/user_operator_profile?user_id=eq.${sessionData.session.user.id}&select=persona_calibration_status`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${sessionData.session.access_token}`,
-                    'apikey': supabaseKey,
-                  }
-                }
-              );
-
-              let needsCalibration = true;
-              if (calCheckRes.ok) {
-                const calRows = await calCheckRes.json();
-                if (calRows.length > 0 && calRows[0].persona_calibration_status === 'complete') {
+              try {
+                const calRes = await fetch(`${BACKEND_URL}/api/calibration/status`, {
+                  method: 'GET',
+                  headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }
+                });
+                if (calRes.ok) {
+                  const calData = await calRes.json();
+                  needsCalibration = calData.status !== 'COMPLETE';
+                  console.log(`[CALIBRATION ROUTING] Auth callback: status=${calData.status} → needsCalibration=${needsCalibration}`);
+                } else {
+                  console.warn(`[CALIBRATION ROUTING] Auth callback: backend error ${calRes.status} → fail-open`);
                   needsCalibration = false;
                 }
-              }
-
-              // Fallback: backend endpoint (also reads user_operator_profile)
-              if (needsCalibration) {
-                try {
-                  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-                  const fallbackRes = await fetch(`${BACKEND_URL}/api/calibration/status`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }
-                  });
-                  if (fallbackRes.ok) {
-                    const fallbackData = await fallbackRes.json();
-                    if (fallbackData.status === 'COMPLETE') needsCalibration = false;
-                  }
-                } catch { /* non-fatal */ }
+              } catch (e) {
+                console.warn(`[CALIBRATION ROUTING] Auth callback: fetch failed: ${e.message} → fail-open`);
+                needsCalibration = false;
               }
 
               if (needsCalibration) {
-                console.log('[GUARD] Calibration needed, routing to /calibration');
+                console.log('[CALIBRATION ROUTING] Routing to /calibration');
                 navigate('/calibration', { replace: true });
               } else {
-                console.log('[GUARD] Calibration complete, routing to /advisor');
+                console.log('[CALIBRATION ROUTING] Routing to /advisor');
                 navigate('/advisor', { replace: true });
               }
             } catch (profileCheckError) {
-              console.error('Error checking profile:', profileCheckError);
-              setError('Network error loading your profile');
-              setStatus('Please retry or contact support if this persists.');
-              return;
+              console.warn('[CALIBRATION ROUTING] Profile check error → fail-open to /advisor');
+              navigate('/advisor', { replace: true });
             }
           } else {
             console.log('❌ No session despite access token');

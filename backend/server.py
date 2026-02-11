@@ -2502,7 +2502,7 @@ async def get_calibration_status(request: Request):
         raise HTTPException(status_code=500, detail="Internal SDK error — contact support")
     except Exception as e:
         logger.error(f"Calibration status error: {e}")
-        return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
+        raise HTTPException(status_code=500, detail="Calibration check failed")
 
 
 @api_router.post("/calibration/defer")

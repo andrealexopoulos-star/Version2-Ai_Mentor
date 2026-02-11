@@ -107,6 +107,12 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // READY → enforce gates
   if (authState === AUTH_STATE.READY) {
+    // Calibrated users must NEVER see /calibration — deterministic redirect
+    if (location.pathname === '/calibration') {
+      console.log('[CALIBRATION ROUTING] Calibrated user on /calibration → redirect to /advisor');
+      return <Navigate to="/advisor" replace />;
+    }
+
     // Admin check
     if (adminOnly) {
       if (!adminChecked) return <LoadingScreen />;
