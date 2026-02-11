@@ -2425,11 +2425,16 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
         # Check calibration from user_operator_profile ONLY
         calibration_complete = False
         try:
-            op_result = supabase_admin.table("user_operator_profile").select(
-                "persona_calibration_status"
-            ).eq("user_id", user_id).maybe_single().execute()
+            op_result = safe_query_single(
+                supabase_admin.table("user_operator_profile").select(
+                    "persona_calibration_status"
+                ).eq("user_id", user_id)
+            )
             if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
                 calibration_complete = True
+        except RuntimeError as e:
+            logger.error(f"FATAL: auth/check-profile SDK error: {e}")
+            raise HTTPException(status_code=500, detail="Internal SDK error")
         except Exception:
             pass
 
