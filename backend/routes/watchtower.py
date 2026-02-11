@@ -2,16 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
+from routes.deps import get_current_user
 
 router = APIRouter()
-
-# Injected by setup()
-_get_current_user = None
-
-
-def setup(get_current_user):
-    global _get_current_user
-    _get_current_user = get_current_user
 
 
 class ObservationEventRequest(BaseModel):
@@ -26,7 +19,7 @@ class ObservationEventRequest(BaseModel):
 @router.post("/watchtower/emit")
 async def watchtower_emit_event(
     event: ObservationEventRequest,
-    current_user: dict = Depends(lambda: None)
+    current_user: dict = Depends(get_current_user)
 ):
     from watchtower_engine import get_watchtower_engine
     engine = get_watchtower_engine()
@@ -51,7 +44,7 @@ async def watchtower_emit_event(
 
 
 @router.post("/watchtower/analyse")
-async def watchtower_analyse(current_user: dict = Depends(lambda: None)):
+async def watchtower_analyse(current_user: dict = Depends(get_current_user)):
     from watchtower_engine import get_watchtower_engine
     engine = get_watchtower_engine()
     result = await engine.run_analysis(current_user["id"])
@@ -59,7 +52,7 @@ async def watchtower_analyse(current_user: dict = Depends(lambda: None)):
 
 
 @router.get("/watchtower/positions")
-async def watchtower_get_positions(current_user: dict = Depends(lambda: None)):
+async def watchtower_get_positions(current_user: dict = Depends(get_current_user)):
     from watchtower_engine import get_watchtower_engine
     engine = get_watchtower_engine()
     positions = await engine.get_positions(current_user["id"])
@@ -70,7 +63,7 @@ async def watchtower_get_positions(current_user: dict = Depends(lambda: None)):
 async def watchtower_get_findings(
     domain: Optional[str] = None,
     limit: int = 20,
-    current_user: dict = Depends(lambda: None)
+    current_user: dict = Depends(get_current_user)
 ):
     from watchtower_engine import get_watchtower_engine
     engine = get_watchtower_engine()
