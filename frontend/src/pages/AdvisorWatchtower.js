@@ -160,8 +160,12 @@ const AdvisorWatchtower = () => {
       await fetchWatchtowerEvents();
       // Refresh lifecycle to update WOW Landing
       try {
-        const lcRes = await apiClient.get('/lifecycle/state');
+        const [lcRes, blRes] = await Promise.all([
+          apiClient.get('/lifecycle/state'),
+          apiClient.get('/intelligence/baseline-snapshot'),
+        ]);
         setLifecycle(lcRes.data);
+        if (blRes.data?.snapshot) setBaselineSnapshot(blRes.data.snapshot);
       } catch {}
 
     } catch (error) {
