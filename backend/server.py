@@ -865,7 +865,7 @@ def create_token(user_id: str, email: str, role: str, account_id: Optional[str] 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     SUPABASE-ONLY Authentication
-    MongoDB fallback REMOVED - All users must use Supabase Auth
+    Also available as routes.deps.get_current_user for route modules.
     """
     token = credentials.credentials
     
@@ -880,6 +880,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except Exception as e:
         logger.error(f"Supabase token validation failed: {str(e)}")
         raise HTTPException(status_code=401, detail="Authentication failed - please log in again")
+
+# Keep deps.py in sync — it imports the same logic
+from routes.deps import get_current_user as _deps_get_current_user
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") not in ("admin", "superadmin"):
