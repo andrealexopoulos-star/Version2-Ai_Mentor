@@ -106,7 +106,7 @@ const OperatorDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div data-testid="operator-dashboard" className="min-h-screen bg-[#050505] text-white/80">
+      <div data-testid="operator-dashboard" className="min-h-[calc(100vh-80px)] text-white/80 -mx-4 -my-4 md:-mx-6 md:-my-6 px-6 py-10" style={{ background: '#050505' }}>
         <div className="max-w-4xl mx-auto px-6 py-10 space-y-6">
           <div>
             <div className="text-[10px] tracking-[0.4em] uppercase text-white/25 mb-1">BIQC</div>
