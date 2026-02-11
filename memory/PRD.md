@@ -64,7 +64,7 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 | `/api/watchtower/analyse` | POST | Trigger analysis cycle |
 
 ## Prioritized Backlog
-- [ ] Continue modularizing `server.py` (10,058 lines → extract more route groups)
+- [ ] Continue modularizing `server.py` (9,709 lines → extract calibration, onboarding, chat, integrations)
 - [ ] Remove 15 dead routes without sidebar navigation
 - [ ] Add Board Room/War Room back-navigation
 - [ ] Unify UI/UX with eco-cyberpunk aesthetic
