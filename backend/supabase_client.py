@@ -79,10 +79,15 @@ def safe_query_single(table_query):
     """
     Fail-fast wrapper for .maybe_single().execute() calls.
     If AttributeError occurs (SDK mismatch), raises RuntimeError immediately.
-    Returns the execute() result — .data will be None if no row found.
+    Returns an object with .data attribute (None if no row found).
     """
     try:
         result = table_query.maybe_single().execute()
+        if result is None:
+            # maybe_single().execute() can return None for no matching row
+            class _Empty:
+                data = None
+            return _Empty()
         return result
     except AttributeError as e:
         logger.error(
