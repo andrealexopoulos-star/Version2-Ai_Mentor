@@ -2561,6 +2561,200 @@ async def defer_calibration(request: Request):
         raise HTTPException(status_code=500, detail="Failed to defer calibration")
 
 
+@api_router.post("/calibration/reset")
+async def reset_calibration(request: Request):
+    """Reset calibration — archives current persona, sets status to 'recalibrating'."""
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        existing = supabase_admin.table("user_operator_profile").select("*").eq("user_id", user_id).maybe_single().execute()
+        if existing.data:
+            archived = {
+                "agent_persona": existing.data.get("agent_persona"),
+                "agent_instructions": existing.data.get("agent_instructions"),
+                "archived_at": now_iso,
+            }
+            current_profile = existing.data.get("operator_profile") or {}
+            archives = current_profile.get("persona_archives", [])
+            archives.append(archived)
+            current_profile["persona_archives"] = archives
+            supabase_admin.table("user_operator_profile").update({
+                "persona_calibration_status": "recalibrating",
+                "operator_profile": current_profile,
+            }).eq("user_id", user_id).execute()
+        else:
+            supabase_admin.table("user_operator_profile").insert({
+                "user_id": user_id,
+                "persona_calibration_status": "recalibrating",
+                "operator_profile": {},
+            }).execute()
+        logger.info(f"[calibration/reset] Reset for {user_id}")
+        return {"ok": True, "status": "recalibrating"}
+    except Exception as e:
+        logger.error(f"[calibration/reset] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to reset calibration")
+
+
+@api_router.get("/lifecycle/state")
+async def get_lifecycle_state(request: Request):
+    """Returns full lifecycle state for deterministic routing."""
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        calibration_complete = False
+        calibration_status = "incomplete"
+        try:
+            op_result = safe_query_single(
+                supabase_admin.table("user_operator_profile").select(
+                    "persona_calibration_status, operator_profile, agent_persona"
+                ).eq("user_id", user_id)
+            )
+            if op_result.data:
+                calibration_status = op_result.data.get("persona_calibration_status", "incomplete")
+                calibration_complete = calibration_status == "complete"
+        except Exception:
+            pass
+
+        onboarding_complete = False
+        onboarding_step = 0
+        try:
+            op_result2 = safe_query_single(
+                supabase_admin.table("user_operator_profile").select("operator_profile").eq("user_id", user_id)
+            )
+            if op_result2.data:
+                ob_state = (op_result2.data.get("operator_profile") or {}).get("onboarding_state", {})
+                onboarding_complete = ob_state.get("completed", False)
+                onboarding_step = ob_state.get("current_step", 0)
+        except Exception:
+            pass
+
+        integrations_connected = 0
+        integration_names = []
+        try:
+            int_result = supabase_admin.table("integration_accounts").select("provider, category").eq("user_id", user_id).execute()
+            if int_result.data:
+                integrations_connected = len(int_result.data)
+                integration_names = [r.get("provider", "") for r in int_result.data]
+        except Exception:
+            pass
+
+        has_intelligence = False
+        try:
+            wi_result = supabase_admin.table("watchtower_insights").select("id").eq("user_id", user_id).limit(1).execute()
+            has_intelligence = bool(wi_result.data)
+        except Exception:
+            pass
+
+        domains_enabled = []
+        try:
+            bp = await get_business_profile_supabase(supabase_admin, user_id)
+            if bp:
+                ic = bp.get("intelligence_configuration", {}) or {}
+                for d, cfg in (ic.get("domains", {}) or {}).items():
+                    if cfg.get("enabled"):
+                        domains_enabled.append(d)
+        except Exception:
+            pass
+
+        return {
+            "calibration": {"status": calibration_status, "complete": calibration_complete},
+            "onboarding": {"complete": onboarding_complete, "step": onboarding_step},
+            "integrations": {"count": integrations_connected, "providers": integration_names},
+            "intelligence": {"has_events": has_intelligence, "domains_enabled": domains_enabled},
+        }
+    except Exception as e:
+        logger.error(f"[lifecycle/state] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get lifecycle state")
+
+
+class WebsiteEnrichRequest(BaseModel):
+    url: str
+    action: str = "scan"  # scan | commit
+
+
+@api_router.post("/enrichment/website")
+async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
+    """Draft → Review → Commit enrichment flow."""
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    url = payload.url.strip()
+    if not url.startswith("http"):
+        url = f"https://{url}"
+
+    if payload.action == "scan":
+        import re as _re
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as client:
+                resp = await client.get(url, headers={"User-Agent": "BIQC/1.0"})
+                html = resp.text[:50000]
+            title = ""
+            desc = ""
+            og_title = ""
+            og_desc = ""
+            import re
+            t = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+            if t:
+                title = t.group(1).strip()
+            for m in re.finditer(r'<meta\s+[^>]*>', html, re.IGNORECASE | re.DOTALL):
+                tag = m.group(0)
+                name = re.search(r'(?:name|property)\s*=\s*["\']([^"\']+)["\']', tag, re.IGNORECASE)
+                content = re.search(r'content\s*=\s*["\']([^"\']+)["\']', tag, re.IGNORECASE)
+                if name and content:
+                    n = name.group(1).lower()
+                    c = content.group(1).strip()
+                    if n == "description":
+                        desc = c
+                    elif n == "og:title":
+                        og_title = c
+                    elif n == "og:description":
+                        og_desc = c
+
+            def sanitize(s):
+                s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', s)
+                s = re.sub(r'\s+', ' ', s).strip()
+                return s[:500]
+
+            return {
+                "status": "draft",
+                "url": url,
+                "enrichment": {
+                    "title": sanitize(og_title or title),
+                    "description": sanitize(og_desc or desc),
+                },
+                "message": "Review the enrichment data below. Click Commit to save to Business DNA.",
+            }
+        except Exception as e:
+            logger.error(f"[enrichment/website] Scan failed: {e}")
+            return {"status": "error", "message": f"Failed to scan: {str(e)[:100]}"}
+
+    elif payload.action == "commit":
+        try:
+            profile = await get_business_profile_supabase(supabase_admin, user_id)
+            if not profile:
+                raise HTTPException(status_code=404, detail="No business profile")
+            supabase_admin.table("business_profiles").update({
+                "website": url,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("id", profile["id"]).execute()
+            return {"status": "committed", "message": "Website data saved to Business DNA."}
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"[enrichment/website] Commit failed: {e}")
+            raise HTTPException(status_code=500, detail="Commit failed")
+
+
 
 def _split_two_parts(answer: str) -> List[str]:
     parts = re.split(r"\s+and\s+|\s+—\s+|\s+–\s+|\s+-\s+", answer, maxsplit=1)
