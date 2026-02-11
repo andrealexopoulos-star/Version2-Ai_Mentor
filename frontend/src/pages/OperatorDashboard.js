@@ -130,6 +130,28 @@ const OperatorDashboard = () => {
             </div>
           )}
 
+          {/* Data Readiness Panel — Part 2 */}
+          {dataReadiness?.integrations?.length > 0 && (
+            <div className="border border-white/8 bg-white/[0.02] p-5">
+              <h3 className="text-[10px] tracking-[0.3em] uppercase text-white/30 mb-4">Data Readiness</h3>
+              {dataReadiness.integrations.map((int, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-white/4 last:border-0">
+                  <div>
+                    <span className="text-sm text-white/70">{int.provider}</span>
+                    <span className="text-xs text-white/25 ml-2">{int.category}</span>
+                  </div>
+                  <div className="text-right text-xs space-x-3">
+                    <span className="text-emerald-400">{int.status}</span>
+                    <span className="text-white/30">{int.observation_events} events</span>
+                    {int.connected_at && (
+                      <span className="text-white/20">since {int.connected_at.slice(0, 10)}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {data?.snapshot?.summary && (
             <div className="border border-white/8 bg-white/[0.02] p-5">
               <div className="text-[10px] tracking-[0.3em] uppercase text-white/25 mb-2">LATEST SNAPSHOT</div>
