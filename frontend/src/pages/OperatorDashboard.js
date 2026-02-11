@@ -42,17 +42,19 @@ const Row = ({ left, right, sub }) => (
 const OperatorDashboard = () => {
   const [data, setData] = useState(null);
   const [lifecycle, setLifecycle] = useState(null);
+  const [dataReadiness, setDataReadiness] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { load(); }, []);
 
   const load = async () => {
     try {
-      const [pos, findings, snapshot, lc] = await Promise.all([
+      const [pos, findings, snapshot, lc, dr] = await Promise.all([
         apiClient.get('/watchtower/positions').then(r => r.data).catch(() => ({ positions: {} })),
         apiClient.get('/watchtower/findings?limit=20').then(r => r.data).catch(() => ({ findings: [] })),
         apiClient.get('/snapshot/latest').then(r => r.data).catch(() => ({ snapshot: null })),
         apiClient.get('/lifecycle/state').then(r => r.data).catch(() => null),
+        apiClient.get('/intelligence/data-readiness').then(r => r.data).catch(() => null),
       ]);
       const snap = snapshot.snapshot;
       setData({
@@ -62,6 +64,7 @@ const OperatorDashboard = () => {
         snapshot: snap,
       });
       setLifecycle(lc);
+      setDataReadiness(dr);
     } catch (e) {
       console.error('[OperatorDashboard] Load failed:', e);
     } finally {
