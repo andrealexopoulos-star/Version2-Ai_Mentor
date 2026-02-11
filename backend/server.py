@@ -3562,12 +3562,12 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         
         if not hmac.compare_digest(provided_signature, expected_signature):
             logger.error(f"State signature mismatch for user: {user_id}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state_signature")
+            return RedirectResponse(url=f"{frontend_url}{return_to}?gmail_error=invalid_state_signature")
         
         logger.info(f"Gmail callback for verified user: {user_id}, returnTo: {return_to}")
     else:
         logger.error(f"Invalid or missing state: {state}")
-        return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state")
+        return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=invalid_state")
     
     # Exchange code for tokens
     token_url = "https://oauth2.googleapis.com/token"
