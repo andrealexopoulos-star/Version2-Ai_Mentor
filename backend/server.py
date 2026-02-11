@@ -9607,14 +9607,15 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
                 pass
 
             now_iso = datetime.now(timezone.utc).isoformat()
-            supabase_admin.table("intelligence_snapshots").upsert({
+            supabase_admin.table("intelligence_snapshots").insert({
                 "user_id": user_id,
-                "type": "baseline_initialized",
+                "snapshot_type": "baseline_initialized",
                 "summary": "Baseline Initialized — No Material Changes Detected",
-                "integrations_checked": integrations_checked,
-                "domains_enabled": domains_enabled,
-                "created_at": now_iso,
-            }, on_conflict="user_id,type").execute()
+                "domains": {"enabled": domains_enabled, "integrations_checked": integrations_checked},
+                "open_risks": [],
+                "contradictions": [],
+                "generated_at": now_iso,
+            }).execute()
             logger.info(f"[cold-read] Baseline initialized snapshot persisted for {user_id}")
         except Exception as snap_err:
             logger.warning(f"[cold-read] Baseline snapshot failed: {snap_err}")
