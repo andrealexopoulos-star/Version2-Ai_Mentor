@@ -83,31 +83,28 @@ const BusinessProfile = () => {
     }
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      console.log('Saving profile data:', profile);
-      const response = await apiClient.put('/business-profile', profile);
-      console.log('Save response:', response.data);
-      
-      toast.success('Profile saved successfully!');
-      
-      // Refresh scores immediately after save
-      await fetchScores();
-      
-      // Refresh profile data to confirm save
-      await fetchProfile();
-    } catch (error) {
-      const errorMsg = error.response?.data?.detail || error.message || 'Failed to save profile';
-      toast.error(errorMsg);
-      console.error('Save error:', error.response?.data || error);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const debouncedSave = useCallback((updatedProfile) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setAutoSaveStatus('saving');
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        await apiClient.put('/business-profile', updatedProfile);
+        setAutoSaveStatus('saved');
+        fetchScores();
+        setTimeout(() => setAutoSaveStatus(null), 2000);
+      } catch (e) {
+        setAutoSaveStatus('error');
+        console.error('[BusinessDNA] Auto-save failed:', e);
+      }
+    }, 1500);
+  }, []);
 
   const updateProfile = (field, value) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+    setProfile(prev => {
+      const updated = { ...prev, [field]: value };
+      debouncedSave(updated);
+      return updated;
+    });
   };
 
   if (loading) {
