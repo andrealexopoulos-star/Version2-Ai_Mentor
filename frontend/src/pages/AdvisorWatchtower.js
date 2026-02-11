@@ -154,7 +154,7 @@ const AdvisorWatchtower = () => {
           { id: 'cold-read' }
         );
       } else {
-        toast.info('Analysis complete: No new patterns detected', { id: 'cold-read' });
+        toast.success('Baseline Initialized. No material changes detected yet. Monitoring your enabled domains.', { id: 'cold-read' });
       }
 
       await fetchWatchtowerEvents();
