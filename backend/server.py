@@ -3527,18 +3527,18 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
     # Handle OAuth errors
     if error:
         logger.error(f"Gmail OAuth error: {error} - {error_description}")
-        return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error={error}")
+        return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error={error}")
     
     # Extract and validate state parameter
     # New format: gmail_auth_{user_id}_return_{returnTo}_sig_{signature}
     user_id = None
-    return_to = "/integrations"  # Default fallback
+    return_to = "/connect-email"  # Default fallback
     
     if state and state.startswith("gmail_auth_"):
         state_parts = state.replace("gmail_auth_", "").split("_sig_")
         if len(state_parts) != 2:
             logger.error(f"Invalid state format: {state}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=invalid_state")
+            return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=invalid_state")
         
         state_data = state_parts[0]
         provided_signature = state_parts[1]
