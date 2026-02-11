@@ -14,43 +14,37 @@ The BIQC platform is a strategic business intelligence system backed by Supabase
 ### Data Plane & Auth (COMPLETE)
 - Supabase as single source of truth (MongoDB decommissioned)
 - `user_operator_profile` as sole authority for calibration/onboarding state
-- Admin route enforcement, SDK guardrails
-
-### Global Fact Authority (COMPLETE)
-- `fact_resolution.py` prevents redundant questioning across all AI interfaces
-- Integrated into Board Room, Chat, and Onboarding flows
-
-### Codebase Modularization (IN PROGRESS)
-- 7 route groups extracted: admin, boardroom, calibration, facts, intelligence, onboarding, watchtower
-- `server.py` still ~9000+ lines — remaining routes need extraction
 
 ### UX Stage 1: Priority Compression (COMPLETE — Feb 2026)
-- Backend: `rank_domains()` in `routes/boardroom.py` scores domains by severity, pressure, contradiction, persistence, window compression
-- Response includes `priority_compression` with `primary`, `secondary` (max 3), `collapsed`
-- Frontend: BoardRoom.js renders Primary Focus card, Secondary items, collapsible evidence
+- Backend `rank_domains()` in `routes/boardroom.py`
+- Response includes `priority_compression` with primary/secondary/collapsed
 
 ### Deterministic Calibration Routing (COMPLETE — Feb 2026)
-- **Root cause eliminated**: Removed all direct Supabase REST calls to `user_operator_profile` from frontend (RLS-fragile)
-- **Single authority**: Frontend uses ONLY backend `/api/calibration/status` (service_role key, bypasses RLS)
-- **Fail-open**: On ANY error (network, 500), frontend defaults to READY, never NEEDS_CALIBRATION
-- **Deterministic gates**: ProtectedRoute redirects calibrated users from /calibration to /advisor
-- **Order enforced**: Calibration check → Onboarding check (never reversed)
-- **Backend fix**: Catch-all error now returns 500 (not 200 with NEEDS_CALIBRATION)
-- Files modified: `SupabaseAuthContext.js`, `ProtectedRoute.js`, `AuthCallbackSupabase.js`, `server.py`
+- Single backend authority for calibration check
+- Fail-open on error, never defaults to NEEDS_CALIBRATION
+
+### Service Worker Fix (COMPLETE — Feb 2026)
+- Service Worker now skips all `/api/*` routes
+- Content-type guards on all fetch calls prevent JSON parse errors on HTML responses
+- Accept: application/json header on all API calls
+
+### Email Display Bug Fix (COMPLETE — Feb 2026)
+- Fixed `outlookStatus.connected_email` → `outlookStatus.email` property mismatch
+- Email page now shows actual email address instead of "undefined"
+
+### OAuth Error Redirect Fix (COMPLETE — Feb 2026)
+- Fixed 11 hardcoded `/integrations` error redirects in Gmail/Outlook OAuth callbacks
+- All error paths now redirect to `/connect-email` (where user started)
+- Default `returnTo` changed from `/integrations` to `/connect-email` in both login endpoints
 
 ## Prioritized Backlog
 
 ### P0
-- Delete "SAFE TO DELETE" Category C routes per forensic audit
+- Deploy current build to production (Service Worker fix is blocking everything)
 
 ### P1
-- Complete modularization of `server.py` (chat, business profile, settings, legacy integrations)
+- Complete modularization of `server.py`
 
 ### P2
-- Performance optimization for data-heavy pages (Business DNA, Settings)
-- Remove dead `calibration_status` writes from `routes/calibration.py`
+- Performance optimization for data-heavy pages
 - War Room Fact Authority integration
-
-### P3
-- E2E authenticated testing of Board Room Priority Compression view
-- E2E authenticated testing of calibration routing flows
