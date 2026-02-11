@@ -9625,6 +9625,56 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     }
 
 
+@api_router.get("/intelligence/baseline-snapshot")
+async def get_baseline_snapshot(current_user: dict = Depends(get_current_user)):
+    """Get the latest baseline_initialized snapshot for the user."""
+    user_id = current_user["id"]
+    try:
+        result = supabase_admin.table("intelligence_snapshots").select("*").eq(
+            "user_id", user_id
+        ).eq("type", "baseline_initialized").order("created_at", desc=True).limit(1).execute()
+        if result.data and len(result.data) > 0:
+            row = result.data[0]
+            row.pop("id", None)
+            return {"snapshot": row}
+        return {"snapshot": None}
+    except Exception as e:
+        logger.error(f"[baseline-snapshot] Error: {e}")
+        return {"snapshot": None}
+
+
+@api_router.get("/intelligence/data-readiness")
+async def get_data_readiness(current_user: dict = Depends(get_current_user)):
+    """Data readiness for each integration — real state from DB."""
+    user_id = current_user["id"]
+    try:
+        integrations = []
+        int_result = supabase_admin.table("integration_accounts").select(
+            "provider, category, connected_at"
+        ).eq("user_id", user_id).execute()
+        for row in (int_result.data or []):
+            provider = row.get("provider", "")
+            obs_count = 0
+            try:
+                obs_r = supabase_admin.table("observation_events").select(
+                    "id", count="exact"
+                ).eq("user_id", user_id).eq("source", provider).execute()
+                obs_count = obs_r.count or 0
+            except Exception:
+                pass
+            integrations.append({
+                "provider": provider,
+                "category": row.get("category", ""),
+                "status": "Connected",
+                "connected_at": row.get("connected_at"),
+                "observation_events": obs_count,
+            })
+        return {"integrations": integrations}
+    except Exception as e:
+        logger.error(f"[data-readiness] Error: {e}")
+        return {"integrations": []}
+
+
 @api_router.get("/intelligence/watchtower")
 async def get_watchtower_events(
     status: Optional[str] = "active",
