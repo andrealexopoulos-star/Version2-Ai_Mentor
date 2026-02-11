@@ -61,8 +61,8 @@ class TestSDKIntegrity:
         client = init_supabase()
         assert client is not None
         
-        # Query for non-existent user — should not raise, returns result with data=None
-        result = safe_query_single(
+        # Query for non-existent user — should not raise
+        safe_query_single(
             client.table("users").select("id").eq("id", "00000000-0000-0000-0000-000000000000")
         )
         # maybe_single returns None when no row found — this is valid SDK behavior
