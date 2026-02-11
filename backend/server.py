@@ -3789,7 +3789,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         if response.status_code != 200:
             error_text = response.text
             logger.error(f"Token exchange failed: {error_text}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=token_exchange_failed")
+            return RedirectResponse(url=f"{frontend_url}{return_to}?outlook_error=token_exchange_failed")
         
         token_data = response.json()
     
