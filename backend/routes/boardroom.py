@@ -190,7 +190,22 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         except RuntimeError:
             pass
 
-        return {"response": raw_response.strip(), "escalations": active_escalations}
+        ranked = rank_domains(
+            positions, escalation_history, contradictions, pressure, freshness
+        )
+        primary = ranked[0] if ranked else None
+        secondary = ranked[1:4] if len(ranked) > 1 else []
+        collapsed = ranked[4:] if len(ranked) > 4 else []
+
+        return {
+            "response": raw_response.strip(),
+            "escalations": active_escalations,
+            "priority_compression": {
+                "primary": primary,
+                "secondary": secondary,
+                "collapsed": collapsed,
+            },
+        }
 
     except Exception as e:
         logger.error(f"[boardroom] Error: {e}")
