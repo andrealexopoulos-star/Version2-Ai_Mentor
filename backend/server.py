@@ -3548,7 +3548,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         if "_return_" in state_data:
             parts = state_data.split("_return_")
             user_id = parts[0]
-            return_to = parts[1] if len(parts) > 1 else "/integrations"
+            return_to = parts[1] if len(parts) > 1 else "/connect-email"
         else:
             # Legacy format support: just user_id
             user_id = state_data
@@ -3746,7 +3746,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         if "_return_" in state_data:
             parts = state_data.split("_return_")
             user_id = parts[0]
-            return_to = parts[1] if len(parts) > 1 else "/integrations"
+            return_to = parts[1] if len(parts) > 1 else "/connect-email"
         else:
             # Legacy format support: just user_id
             user_id = state_data
