@@ -91,7 +91,7 @@ class TestCalibrationStatus:
         )
 
     def test_unknown_user_returns_none(self):
-        """A non-existent user should return None data, not crash."""
+        """A non-existent user should return None/empty, not crash."""
         from supabase_client import init_supabase, safe_query_single
         client = init_supabase()
         assert client is not None
@@ -102,7 +102,10 @@ class TestCalibrationStatus:
             ).eq("user_id", "00000000-0000-0000-0000-000000000000")
         )
         
-        assert result.data is None, "Expected None for non-existent user"
+        # maybe_single returns None when no row found
+        # Key assertion: no exception raised, and data is None or absent
+        if result is not None:
+            assert result.data is None, "Expected None data for non-existent user"
 
     def test_no_maybeSingle_in_server_py(self):
         """server.py must not contain camelCase maybeSingle anywhere."""
