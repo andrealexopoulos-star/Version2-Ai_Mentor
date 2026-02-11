@@ -9178,6 +9178,30 @@ async def exchange_merge_account_token(
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
+class MergeDisconnectRequest(BaseModel):
+    provider: str
+    category: str
+
+
+@api_router.post("/merge/disconnect")
+async def disconnect_merge_integration(request: Request, payload: MergeDisconnectRequest):
+    """Disconnect a Merge.dev integration — removes from integration_accounts."""
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        result = supabase_admin.table("integration_accounts").delete().eq(
+            "user_id", user_id
+        ).eq("provider", payload.provider).execute()
+        logger.info(f"[merge/disconnect] Disconnected {payload.provider} for {user_id}")
+        return {"ok": True, "provider": payload.provider}
+    except Exception as e:
+        logger.error(f"[merge/disconnect] Error: {e}")
+        raise HTTPException(status_code=500, detail="Disconnect failed")
+
+
 @api_router.get("/integrations/merge/connected")
 async def get_connected_merge_integrations(current_user: dict = Depends(get_current_user)):
     """Get all connected Merge.dev integrations for the workspace (P0: workspace-scoped)"""
