@@ -19,6 +19,67 @@ class EscalationActionRequest(BaseModel):
     action: str  # acknowledged | deferred
 
 
+# ─── Priority Compression: domain ranking by urgency (pure function) ───
+POSITION_SEVERITY = {"CRITICAL": 40, "DETERIORATING": 30, "ELEVATED": 15, "STABLE": 0}
+PRESSURE_SCORE = {"CRITICAL": 30, "HIGH": 20, "MODERATE": 10, "LOW": 0}
+
+
+def rank_domains(positions, escalation_history, contradictions, pressure, freshness):
+    """Score and rank domains for priority compression. Pure function — response shaping only."""
+    esc_map = {}
+    if escalation_history:
+        for e in escalation_history:
+            esc_map[e.get("domain", "")] = e
+
+    contra_map = {}
+    if contradictions:
+        for c in contradictions:
+            d = c.get("domain", "")
+            if d not in contra_map:
+                contra_map[d] = []
+            contra_map[d].append(c)
+
+    ranked = []
+    for domain, data in (positions or {}).items():
+        pos = data.get("position", "STABLE")
+        score = POSITION_SEVERITY.get(pos, 0)
+
+        p_data = (pressure or {}).get(domain, {})
+        if p_data:
+            score += PRESSURE_SCORE.get(p_data.get("pressure_level", "LOW"), 0)
+            window = (p_data.get("basis") or {}).get("window_days_remaining")
+            if window is not None:
+                if window <= 3:
+                    score += 20
+                elif window <= 7:
+                    score += 10
+                elif window <= 14:
+                    score += 5
+
+        if domain in contra_map:
+            score += 15 * len(contra_map[domain])
+
+        if domain in esc_map:
+            score += min(esc_map[domain].get("times_detected", 1) * 3, 15)
+
+        ranked.append({
+            "domain": domain,
+            "position": pos,
+            "score": score,
+            "confidence": data.get("confidence", 0),
+            "finding": data.get("finding", ""),
+            "has_contradiction": domain in contra_map,
+            "contradiction_count": len(contra_map.get(domain, [])),
+            "pressure_level": p_data.get("pressure_level") if p_data else None,
+            "window_days": (p_data.get("basis") or {}).get("window_days_remaining") if p_data else None,
+            "persistence": esc_map.get(domain, {}).get("times_detected", 0),
+            "freshness_state": ((freshness or {}).get(domain) or {}).get("confidence_state"),
+        })
+
+    ranked.sort(key=lambda x: x["score"], reverse=True)
+    return ranked
+
+
 @router.post("/boardroom/respond")
 async def boardroom_respond(request: Request, payload: BoardRoomRequest):
     try:
