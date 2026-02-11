@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
+import { apiClient } from "../lib/api";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -97,22 +98,19 @@ const CalibrationAdvisor = () => {
   };
 
   // On mount: check if already complete → redirect immediately
+  // Uses backend API (service_role key) to bypass RLS
   useEffect(() => {
-    if (!loading && user && supabase) {
-      const uid = user.id || session?.user?.id;
-      if (!uid) return;
-      supabase.from('user_operator_profile')
-        .select('persona_calibration_status')
-        .eq('user_id', uid)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data?.persona_calibration_status === 'complete') {
+    if (!loading && user) {
+      apiClient.get('/calibration/status')
+        .then(res => {
+          if (res.data?.status === 'COMPLETE') {
             console.log('[calibration-psych] Already complete → redirecting to /advisor');
             window.location.href = '/advisor';
           }
-        });
+        })
+        .catch(() => {});
     }
-  }, [loading, user, supabase, session]);
+  }, [loading, user]);
 
   const handleBegin = async () => {
     console.log('[calibration-psych] Begin clicked');
