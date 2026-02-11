@@ -213,6 +213,10 @@ JWT_EXPIRATION_HOURS = 24
 EMERGENT_KEY = os.environ.get('EMERGENT_LLM_KEY')
 OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
 
+# Initialize route dependencies — makes supabase_admin and OPENAI_KEY available to route modules
+from routes.deps import init_route_deps
+init_route_deps(supabase_admin, OPENAI_KEY)
+
 # AGI-Ready Model Configuration  
 AI_MODEL = "gpt-4o"  # Latest model for regular chat
 AI_MODEL_ADVANCED = "gpt-4o"  # For complex analysis tasks
