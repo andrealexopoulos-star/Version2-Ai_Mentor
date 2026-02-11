@@ -3356,7 +3356,7 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
 # ==================== MICROSOFT OUTLOOK INTEGRATION ====================
 
 @api_router.get("/auth/outlook/login")
-async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = None, provider: Optional[str] = None):
+async def outlook_login(returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
     """
     Initiate Microsoft OAuth flow for Outlook
     Accepts authentication token as query parameter (for browser redirects)
@@ -3434,7 +3434,7 @@ async def outlook_login(returnTo: str = "/integrations", token: Optional[str] = 
 
 
 @api_router.get("/auth/gmail/login")
-async def gmail_login(returnTo: str = "/integrations", token: Optional[str] = None, provider: Optional[str] = None):
+async def gmail_login(returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
     """
     Initiate Google OAuth flow for Gmail
     Accepts authentication token as query parameter (for browser redirects)
