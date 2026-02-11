@@ -32,41 +32,82 @@ const WarRoomConsoleInner = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [sessionReady, setSessionReady] = useState(false);
   const [initError, setInitError] = useState(null);
+  const [workspaceId, setWorkspaceId] = useState(null);
+  const [contextResolved, setContextResolved] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const resumedRef = useRef(false);
 
-  // Check session availability (non-throwing)
+  // Part 1: Resolve workspace context + Part 2: Load console state
   useEffect(() => {
     let cancelled = false;
-    const checkSession = async () => {
+    const resolveContext = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!cancelled) setSessionReady(!!session);
-      } catch {
-        if (!cancelled) setSessionReady(false);
+        if (!session || cancelled) return;
+        setSessionReady(true);
+
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lifecycle/state`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json' },
+        });
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
+          const lc = await res.json();
+          if (lc.workspace_id) {
+            setWorkspaceId(lc.workspace_id);
+            console.log(`[Console] Workspace context resolved: ${lc.workspace_id}`);
+          }
+          // Restore console step
+          if (lc.console_state?.current_step && lc.console_state.current_step > 1) {
+            setCurrentStep(lc.console_state.current_step);
+            resumedRef.current = true;
+            console.log(`[Console] Resuming from step ${lc.console_state.current_step}`);
+          }
+          if (!cancelled) setContextResolved(true);
+        } else {
+          if (!cancelled) setContextResolved(true); // proceed anyway
+        }
+      } catch (e) {
+        console.warn('[Console] Context resolution failed:', e.message);
+        if (!cancelled) { setSessionReady(true); setContextResolved(true); }
       }
     };
-    checkSession();
-    // Also listen for auth changes
+    resolveContext();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!cancelled) setSessionReady(!!session);
     });
     return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
-  // Auto-init strategy conversation ONLY when session is ready
+  // Auto-init once context is resolved
   useEffect(() => {
-    if (!sessionReady) return;
+    if (!sessionReady || !contextResolved) return;
     if (history.length === 0) {
-      processMessage(' [SYSTEM_INIT_STRATEGY] ', true);
+      const initMsg = resumedRef.current
+        ? `[SYSTEM_RESUME_STEP_${currentStep}]`
+        : '[SYSTEM_INIT_STRATEGY]';
+      processMessage(initMsg, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionReady]);
+  }, [sessionReady, contextResolved]);
 
   // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, isThinking]);
+
+  // Persist step to DB (fire-and-forget)
+  const persistStep = async (step, stepStatus) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/console/state`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_step: step, status: stepStatus }),
+      });
+    } catch {}
+  };
 
   const processMessage = async (text, isHidden = false) => {
     if (!text.trim()) return;
@@ -88,6 +129,7 @@ const WarRoomConsoleInner = () => {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           message: text,
@@ -95,12 +137,16 @@ const WarRoomConsoleInner = () => {
         }),
       });
 
-      if (!response.ok) throw new Error('Strategy Connection Failed');
+      const ct = response.headers.get('content-type') || '';
+      if (!response.ok || !ct.includes('application/json')) throw new Error('Strategy Connection Failed');
       const data = await response.json();
 
       if (data.message) setHistory(prev => [...prev, { role: 'assistant', content: data.message }]);
       if (data.percentage_complete) setProgress(data.percentage_complete);
-      if (data.current_step_number) setCurrentStep(data.current_step_number);
+      if (data.current_step_number) {
+        setCurrentStep(data.current_step_number);
+        persistStep(data.current_step_number, data.status || 'IN_PROGRESS');
+      }
       if (data.status === 'COMPLETE') setStatus('COMPLETE');
     } catch (error) {
       console.error('Watchtower Error:', error);
