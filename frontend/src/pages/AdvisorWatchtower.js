@@ -308,7 +308,7 @@ const AdvisorWatchtower = () => {
               <Button onClick={fetchWatchtowerEvents} variant="outline" size="sm" disabled={loadingEvents} className="gap-1 text-xs">
                 <RefreshCw className={`w-3 h-3 ${loadingEvents ? 'animate-spin' : ''}`} /> Refresh
               </Button>
-              <Button onClick={runColdRead} size="sm" disabled={runningAnalysis || !emailConnected} className="bg-slate-900 hover:bg-slate-800 text-white gap-1 text-xs">
+              <Button onClick={runColdRead} size="sm" disabled={runningAnalysis} className="bg-slate-900 hover:bg-slate-800 text-white gap-1 text-xs">
                 {runningAnalysis ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />} Run Analysis
               </Button>
             </div>
