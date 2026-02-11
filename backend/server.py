@@ -2695,6 +2695,33 @@ async def get_lifecycle_state(request: Request):
         raise HTTPException(status_code=500, detail="Failed to get lifecycle state")
 
 
+class ConsoleStateSave(BaseModel):
+    current_step: int
+    status: str = "IN_PROGRESS"
+
+
+@api_router.post("/console/state")
+async def save_console_state(request: Request, payload: ConsoleStateSave):
+    """Persist console step to user_operator_profile.operator_profile.console_state."""
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        existing = supabase_admin.table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+        op = (existing.data.get("operator_profile") if existing.data else None) or {}
+        op["console_state"] = {"current_step": payload.current_step, "status": payload.status, "updated_at": datetime.now(timezone.utc).isoformat()}
+        if existing.data:
+            supabase_admin.table("user_operator_profile").update({"operator_profile": op}).eq("user_id", user_id).execute()
+        else:
+            supabase_admin.table("user_operator_profile").insert({"user_id": user_id, "operator_profile": op}).execute()
+        return {"ok": True, "step": payload.current_step}
+    except Exception as e:
+        logger.error(f"[console/state] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save console state")
+
+
 class WebsiteEnrichRequest(BaseModel):
     url: str
     action: str = "scan"  # scan | commit
