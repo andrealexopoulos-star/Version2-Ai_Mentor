@@ -894,6 +894,28 @@ const Integrations = () => {
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                               {integration.description}
                             </p>
+                            {isConnected && connectionState.source === 'merge' && (
+                              <button
+                                data-testid={`disconnect-${integration.id}`}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!window.confirm(`Disconnect ${integration.name}? This will stop data collection.`)) return;
+                                  try {
+                                    await apiClient.post('/merge/disconnect', { provider: integration.id, category: integration.category });
+                                    toast.success(`${integration.name} disconnected`);
+                                    setMergeIntegrations(prev => { const n = {...prev}; delete n[integration.id?.toLowerCase()]; delete n[integration.name?.toLowerCase()]; return n; });
+                                  } catch (err) {
+                                    toast.error(`Disconnect failed: ${err.response?.data?.detail || err.message}`);
+                                  }
+                                }}
+                                className="mt-2 text-xs px-3 py-1 rounded border transition-colors"
+                                style={{ borderColor: 'var(--border-light)', color: 'var(--text-muted)' }}
+                                onMouseEnter={e => { e.target.style.borderColor = '#ef4444'; e.target.style.color = '#ef4444'; }}
+                                onMouseLeave={e => { e.target.style.borderColor = 'var(--border-light)'; e.target.style.color = 'var(--text-muted)'; }}
+                              >
+                                Disconnect
+                              </button>
+                            )}
                           </div>
                           <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                         </div>
