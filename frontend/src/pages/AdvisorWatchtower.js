@@ -285,6 +285,32 @@ const AdvisorWatchtower = () => {
                 )}
               </div>
             </div>
+
+            {/* Executive Memo — data-bound, no hallucination */}
+            {resolvedFacts && lifecycle && (
+              <div className="col-span-full px-5 py-4 border-t" style={{ borderColor: 'var(--border-light)' }}>
+                <p className="text-xs font-medium tracking-wide uppercase mb-2" style={{ color: 'var(--text-muted)' }}>Executive Memo</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                  {user?.full_name ? `${user.full_name.split(' ')[0]}, b` : 'B'}ased on your confirmed {resolvedFacts['business.industry']?.value || 'business'} focus
+                  {lifecycle.integrations.count > 0 && ` and ${lifecycle.integrations.count} connected data source${lifecycle.integrations.count > 1 ? 's' : ''} (${lifecycle.integrations.providers.join(', ')})`}
+                  , {baselineSnapshot ? 'I have initialized monitoring' : 'I am preparing to monitor'} across {lifecycle.intelligence.domains_enabled.length > 0 ? lifecycle.intelligence.domains_enabled.join(', ') : 'your enabled domains'}.
+                  {baselineSnapshot && ' Baseline established — I will surface material changes as they occur.'}
+                </p>
+              </div>
+            )}
+
+            {/* Baseline Status */}
+            {baselineSnapshot && (
+              <div className="col-span-full px-5 py-3 border-t" style={{ borderColor: 'var(--border-light)', background: 'rgba(34,197,94,0.04)' }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>Baseline Initialized</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    — Checked: {(baselineSnapshot.domains?.integrations_checked || []).join(', ')} | Monitoring: {(baselineSnapshot.domains?.enabled || []).join(', ')}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
