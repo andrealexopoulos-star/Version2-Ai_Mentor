@@ -1,55 +1,92 @@
 """
-Supabase Client Initialization and Helper Functions
-Lazy initialization to prevent crashes when env vars not loaded
+Supabase Client Initialization — with SDK integrity checks.
+
+GUARDRAILS:
+- Asserts `maybe_single` method exists on query builders at startup
+- Wraps queries with fail-fast error handling (no silent AttributeError)
+- Pinned to supabase==2.27.2 (snake_case API: maybe_single, not maybeSingle)
 """
 import os
+import logging
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
 
+
+def _assert_sdk_integrity(client: Client):
+    """
+    RUNTIME ASSERTION: Verify the Supabase Python SDK has the expected API surface.
+    If the SDK is upgraded and method names change (e.g. maybe_single → maybeSingle),
+    this will fail FAST at startup instead of silently returning wrong data.
+    """
+    try:
+        builder = client.table("users").select("id").limit(0)
+        assert hasattr(builder, 'maybe_single'), (
+            "FATAL: Supabase SDK missing 'maybe_single' method. "
+            "Expected snake_case API (supabase>=2.x). "
+            "Check requirements.txt pins: supabase==2.27.2"
+        )
+        assert hasattr(builder, 'eq'), "FATAL: Supabase SDK missing 'eq' method."
+        assert hasattr(builder, 'execute'), "FATAL: Supabase SDK missing 'execute' method."
+        logger.info("[SDK] Supabase client integrity check PASSED (maybe_single, eq, execute)")
+    except AssertionError:
+        raise
+    except Exception as e:
+        logger.warning(f"[SDK] Integrity check skipped (non-fatal): {e}")
+
+
 def get_supabase_admin() -> Client:
-    """
-    Initialize Supabase client with service role key (for backend operations)
-    This bypasses RLS and should be used carefully for admin operations
-    """
+    """Initialize Supabase client with service role key (bypasses RLS)."""
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-        raise ValueError("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment")
-    
+        raise ValueError("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+
 def get_supabase_client() -> Client:
-    """
-    Initialize Supabase client with anon key (for user-scoped operations)
-    This respects RLS policies
-    """
+    """Initialize Supabase client with anon key (respects RLS)."""
     if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-        raise ValueError("Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment")
-    
+        raise ValueError("Missing SUPABASE_URL or SUPABASE_ANON_KEY")
     return create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-# Lazy initialization - don't create at import time
+
+# Lazy initialization
 supabase_admin = None
+
 
 def init_supabase():
     """
-    Initialize supabase_admin - call after env vars loaded
-    Returns None if Supabase not configured (graceful degradation)
+    Initialize supabase_admin with SDK integrity check.
+    Raises on SDK mismatch — fail fast, not silent.
     """
     global supabase_admin
     if supabase_admin is None:
-        try:
-            if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
-                supabase_admin = get_supabase_admin()
-                return supabase_admin
-            else:
-                # Supabase not configured - return None (app can still run without it)
-                return None
-        except Exception as e:
-            print(f"Warning: Could not initialize Supabase: {e}")
+        if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+            logger.error("[Supabase] Missing env vars — cannot initialize")
             return None
+        supabase_admin = get_supabase_admin()
+        _assert_sdk_integrity(supabase_admin)
+        logger.info("[Supabase] Admin client initialized and verified")
     return supabase_admin
+
+
+def safe_query_single(table_query):
+    """
+    Fail-fast wrapper for .maybe_single().execute() calls.
+    If AttributeError occurs (SDK mismatch), raises immediately instead of returning None.
+    """
+    try:
+        result = table_query.maybe_single().execute()
+        return result
+    except AttributeError as e:
+        logger.error(
+            f"[SDK MISMATCH] AttributeError in Supabase query: {e}. "
+            f"This likely means the Supabase Python SDK was upgraded and "
+            f"method names changed. Check requirements.txt pins."
+        )
+        raise RuntimeError(f"Supabase SDK method mismatch: {e}") from e
