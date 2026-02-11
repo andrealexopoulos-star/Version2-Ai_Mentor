@@ -3590,7 +3590,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         if response.status_code != 200:
             error_text = response.text
             logger.error(f"Failed to exchange code for tokens: {error_text}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=token_exchange_failed")
+            return RedirectResponse(url=f"{frontend_url}{return_to}?gmail_error=token_exchange_failed")
         
         token_data = response.json()
         access_token = token_data.get("access_token")
@@ -3599,7 +3599,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         
         if not access_token:
             logger.error("No access token in response")
-            return RedirectResponse(url=f"{frontend_url}/integrations?gmail_error=no_access_token")
+            return RedirectResponse(url=f"{frontend_url}{return_to}?gmail_error=no_access_token")
         
         logger.info("✅ Successfully exchanged code for Gmail tokens")
         
