@@ -94,7 +94,7 @@ async def resolve_facts(supabase_client, user_id: str) -> Dict[str, Any]:
     # 1a. business_profiles
     bp = {}
     try:
-        bp_result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).maybeSingle().execute()
+        bp_result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).maybe_single().execute()
         bp = bp_result.data or {}
     except Exception:
         pass
@@ -113,7 +113,7 @@ async def resolve_facts(supabase_client, user_id: str) -> Dict[str, Any]:
     # 1b. users table
     user_data = {}
     try:
-        user_result = supabase_client.table("users").select("*").eq("id", user_id).maybeSingle().execute()
+        user_result = supabase_client.table("users").select("*").eq("id", user_id).maybe_single().execute()
         user_data = user_result.data or {}
     except Exception:
         pass
@@ -134,7 +134,7 @@ async def resolve_facts(supabase_client, user_id: str) -> Dict[str, Any]:
     try:
         op_result = supabase_client.table("user_operator_profile").select(
             "operator_profile"
-        ).eq("user_id", user_id).maybeSingle().execute()
+        ).eq("user_id", user_id).maybe_single().execute()
         if op_result.data:
             op_profile = op_result.data.get("operator_profile") or {}
     except Exception:
@@ -155,7 +155,7 @@ async def resolve_facts(supabase_client, user_id: str) -> Dict[str, Any]:
 
     # 1d. intelligence_baseline
     try:
-        bl_result = supabase_client.table("intelligence_baseline").select("baseline").eq("user_id", user_id).maybeSingle().execute()
+        bl_result = supabase_client.table("intelligence_baseline").select("baseline").eq("user_id", user_id).maybe_single().execute()
         if bl_result.data and bl_result.data.get("baseline"):
             baseline = bl_result.data["baseline"]
             if isinstance(baseline, dict):
@@ -226,7 +226,7 @@ async def persist_fact(supabase_client, user_id: str, fact_key: str, value: Any,
     try:
         op_result = supabase_client.table("user_operator_profile").select(
             "operator_profile"
-        ).eq("user_id", user_id).maybeSingle().execute()
+        ).eq("user_id", user_id).maybe_single().execute()
 
         if op_result.data:
             op = op_result.data.get("operator_profile") or {}
@@ -279,7 +279,7 @@ async def persist_facts_batch(supabase_client, user_id: str, fact_map: Dict[str,
     try:
         op_result = supabase_client.table("user_operator_profile").select(
             "operator_profile"
-        ).eq("user_id", user_id).maybeSingle().execute()
+        ).eq("user_id", user_id).maybe_single().execute()
 
         op = {}
         if op_result.data:
