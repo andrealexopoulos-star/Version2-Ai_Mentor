@@ -3367,11 +3367,20 @@ async def calibration_brain(request: Request, payload: CalibrationBrainRequest):
         raise HTTPException(status_code=400, detail="Message required")
 
     try:
+        # Resolve known facts BEFORE AI call — Guard 1: no redundant questions
+        from fact_resolution import resolve_facts, build_known_facts_prompt
+        resolved_facts = await resolve_facts(supabase_admin, user_id)
+        facts_prompt = build_known_facts_prompt(resolved_facts)
+
         # Build messages array matching OpenAI format
+        system_with_facts = WATCHTOWER_BRAIN_PROMPT
+        if facts_prompt:
+            system_with_facts += f"\n\nKNOWN BUSINESS FACTS (DO NOT ask for these again):\n{facts_prompt}\nIf you need any of these facts, use the provided values. Do not re-ask.\n"
+
         chat = LlmChat(
             api_key=OPENAI_KEY,
             session_id=f"calibration_brain_{user_id}",
-            system_message=WATCHTOWER_BRAIN_PROMPT
+            system_message=system_with_facts
         )
         chat.with_model("openai", "gpt-4o")
 
