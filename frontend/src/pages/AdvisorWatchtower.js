@@ -66,6 +66,7 @@ const AdvisorWatchtower = () => {
   const [activation, setActivation] = useState(null);
   const [lifecycle, setLifecycle] = useState(null);
   const [resolvedFacts, setResolvedFacts] = useState(null);
+  const [baselineSnapshot, setBaselineSnapshot] = useState(null);
 
   // Check for "Do Later" tutorial flag
   useEffect(() => {
@@ -75,16 +76,18 @@ const AdvisorWatchtower = () => {
     }
   }, []);
 
-  // Fetch lifecycle state + resolved facts for WOW Landing
+  // Fetch lifecycle state + resolved facts + baseline snapshot for WOW Landing
   useEffect(() => {
     const fetchLifecycle = async () => {
       try {
-        const [lcRes, factsRes] = await Promise.all([
+        const [lcRes, factsRes, baselineRes] = await Promise.all([
           apiClient.get('/lifecycle/state').catch(() => ({ data: null })),
           apiClient.get('/facts/resolve').catch(() => ({ data: null })),
+          apiClient.get('/intelligence/baseline-snapshot').catch(() => ({ data: null })),
         ]);
         setLifecycle(lcRes.data);
         if (factsRes.data?.facts) setResolvedFacts(factsRes.data.facts);
+        if (baselineRes.data?.snapshot) setBaselineSnapshot(baselineRes.data.snapshot);
       } catch {}
     };
     fetchLifecycle();
