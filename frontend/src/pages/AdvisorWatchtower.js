@@ -170,21 +170,6 @@ const AdvisorWatchtower = () => {
     }
   };
 
-      // 7. Refresh View
-      await fetchWatchtowerEvents();
-
-    } catch (error) {
-      console.error("Cold read failed:", error);
-      const errorMsg =
-        error?.response?.data?.detail ||
-        "Unable to start analysis. Please try again.";
-      toast.error(errorMsg, { id: 'cold-read' });
-    } finally {
-      // 8. Always Release Lock
-      setRunningAnalysis(false);
-    }
-  };
-
   const handleEventAction = async (eventId) => {
     try {
       await apiClient.patch(`/intelligence/watchtower/${eventId}/handle`);
