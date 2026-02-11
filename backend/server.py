@@ -3724,19 +3724,19 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     # Handle OAuth errors
     if error:
         logger.error(f"Outlook OAuth error: {error} - {error_description}")
-        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error={error}")
+        return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error={error}")
     
     # Extract and validate state parameter (contains user_id, returnTo, and verification hash)
     # New format: outlook_auth_{user_id}_return_{returnTo}_sig_{signature}
     user_id = None
-    return_to = "/integrations"  # Default fallback
+    return_to = "/connect-email"  # Default fallback
     
     if state and state.startswith("outlook_auth_"):
         # State format: outlook_auth_{user_id}_return_{returnTo}_sig_{hmac_signature}
         state_parts = state.replace("outlook_auth_", "").split("_sig_")
         if len(state_parts) != 2:
             logger.error(f"Invalid state format: {state}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
+            return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=invalid_state")
         
         state_data = state_parts[0]
         provided_signature = state_parts[1]
