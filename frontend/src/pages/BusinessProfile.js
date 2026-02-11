@@ -131,10 +131,12 @@ const BusinessProfile = () => {
                 Your business identity — the foundation BIQC uses to understand you
               </p>
             </div>
-            <Button onClick={handleSave} className="btn-primary" disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Profile
-            </Button>
+            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+              {autoSaveStatus === 'saving' && <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>}
+              {autoSaveStatus === 'saved' && <><CheckCircle className="w-4 h-4 text-emerald-500" /> Saved</>}
+              {autoSaveStatus === 'error' && <><AlertCircle className="w-4 h-4 text-red-500" /> Save failed</>}
+              {!autoSaveStatus && <span className="text-xs">Auto-saves as you type</span>}
+            </div>
           </div>
 
           {/* Profile Completeness Card */}
