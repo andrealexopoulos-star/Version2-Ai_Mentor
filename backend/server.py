@@ -2653,6 +2653,8 @@ async def get_lifecycle_state(request: Request):
             pass
 
         domains_enabled = []
+        workspace_id = None
+        console_state = {}
         try:
             bp = await get_business_profile_supabase(supabase_admin, user_id)
             if bp:
@@ -2663,11 +2665,30 @@ async def get_lifecycle_state(request: Request):
         except Exception:
             pass
 
+        try:
+            from workspace_helpers import get_user_account
+            account = await get_user_account(supabase_admin, user_id)
+            if account:
+                workspace_id = account["id"]
+        except Exception:
+            pass
+
+        try:
+            op_cs = safe_query_single(
+                supabase_admin.table("user_operator_profile").select("operator_profile").eq("user_id", user_id)
+            )
+            if op_cs.data:
+                console_state = (op_cs.data.get("operator_profile") or {}).get("console_state", {})
+        except Exception:
+            pass
+
         return {
             "calibration": {"status": calibration_status, "complete": calibration_complete},
             "onboarding": {"complete": onboarding_complete, "step": onboarding_step},
             "integrations": {"count": integrations_connected, "providers": integration_names},
             "intelligence": {"has_events": has_intelligence, "domains_enabled": domains_enabled},
+            "workspace_id": workspace_id,
+            "console_state": console_state,
         }
     except Exception as e:
         logger.error(f"[lifecycle/state] Error: {e}")
