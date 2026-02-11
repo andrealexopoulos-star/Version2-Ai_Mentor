@@ -78,7 +78,8 @@ def init_supabase():
 def safe_query_single(table_query):
     """
     Fail-fast wrapper for .maybe_single().execute() calls.
-    If AttributeError occurs (SDK mismatch), raises immediately instead of returning None.
+    If AttributeError occurs (SDK mismatch), raises RuntimeError immediately.
+    Returns the execute() result — .data will be None if no row found.
     """
     try:
         result = table_query.maybe_single().execute()
