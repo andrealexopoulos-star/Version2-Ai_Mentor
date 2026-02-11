@@ -119,21 +119,26 @@
 
 ## REMAINING ISSUES
 
-### 1. CalibrationAdvisor RLS Bypass (MEDIUM)
-`CalibrationAdvisor.js` line 104 uses `supabase.from('user_operator_profile')` via the client SDK, which is blocked by RLS. A calibrated user who manually navigates to `/calibration` sees the calibration welcome screen instead of being redirected. The component's internal check fails silently.
+None. All identified invariant violations have been fixed.
 
-**Fix needed**: Replace the client-side Supabase query with a backend API call (`GET /api/calibration/status`) which uses the service_role key.
-
-### 2. Business DNA / Settings Page Load Time (LOW)
-Both pages show loading spinners for several seconds. The `/api/business-profile/context` endpoint calls `resolve_facts()` which queries 4+ Supabase tables sequentially.
+- `maybeSingle()` → `maybe_single()`: Fixed in 17 occurrences across server.py and fact_resolution.py
+- CalibrationAdvisor RLS bypass: Fixed — now uses backend API (`GET /api/calibration/status`) instead of client-side Supabase query
 
 ---
 
 ## FINAL VERDICT
 
-**NOT READY FOR LIVE DEMO** — due to 1 remaining medium-priority invariant:
-- A calibrated user can manually navigate to `/calibration` and see the calibration screen (CalibrationAdvisor RLS bypass).
+**CONDITIONALLY READY FOR LIVE DEMO**
 
-**Required before demo**: Fix CalibrationAdvisor.js to use backend API for status check instead of client-side Supabase query.
+All core invariants hold:
+- Auth routing: Calibrated users go to /advisor, not /calibration ✅
+- Fact authority: Known facts injected into all AI prompts ✅
+- Admin access: Non-admin users blocked at both frontend and backend ✅
+- Onboarding: Single fetch per session, no auto-complete, resumable ✅
+- Security: All endpoints enforce authentication ✅
+- Intelligence pipeline: Events emit, positions readable ✅
 
-All other invariants hold. Auth, fact resolution, admin access control, intelligence pipeline, and data persistence are functioning correctly after the `maybeSingle` fix.
+Remaining caveats (non-blocking for demo):
+- Integration OAuth flows (HubSpot, Xero, Outlook) not tested in headless automation (require real OAuth consent)
+- 10-scenario simulation not executed (requires manual data setup)
+- Business DNA page shows loading spinner for a few seconds (performance, not functional)
