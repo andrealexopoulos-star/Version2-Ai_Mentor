@@ -232,26 +232,79 @@ const AdvisorWatchtower = () => {
         {/* Guided Tutorial (from "Do Later" path) */}
         {showTutorial && <GuidedTutorial onDismiss={() => setShowTutorial(false)} />}
 
-        {/* Post-calibration advisor activation */}
-        {activation && (
-          <div className="space-y-3 mb-6">
-            {activation.integration_framing && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4">
-                <p className="text-xs font-medium text-blue-500 uppercase tracking-wide mb-1">BIQC Advisor</p>
-                <p className="text-sm text-slate-700">{activation.integration_framing}</p>
-                <div className="flex gap-2 mt-3">
-                  <Button size="sm" variant="outline" onClick={() => navigate('/connect-email')} className="text-xs">Connect Email</Button>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/calendar')} className="text-xs">Connect Calendar</Button>
+        {/* ─── WOW LANDING: Lifecycle Summary ─── */}
+        {lifecycle && (
+          <div data-testid="wow-landing" className="rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}>
+            <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-light)' }}>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>BIQc Intelligence Summary</h2>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Your platform state at a glance</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 divide-x divide-y md:divide-y-0" style={{ borderColor: 'var(--border-light)' }}>
+              {/* Calibration */}
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${lifecycle.calibration.complete ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
+                  <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Calibration</span>
+                </div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {lifecycle.calibration.complete ? 'Agent Calibrated' : 'Pending'}
+                </p>
+                {resolvedFacts?.['business.name'] && (
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{resolvedFacts['business.name'].value}</p>
+                )}
+              </div>
+
+              {/* Business DNA */}
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Business DNA</span>
+                </div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {resolvedFacts ? `${Object.keys(resolvedFacts).length} facts confirmed` : 'Loading...'}
+                </p>
+                <div className="text-xs mt-1 space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  {resolvedFacts?.['business.industry'] && <p>{resolvedFacts['business.industry'].value}</p>}
+                  {resolvedFacts?.['business.website'] && <p>{resolvedFacts['business.website'].value}</p>}
                 </div>
               </div>
-            )}
-            {activation.initial_observation && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4">
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Initial Observation · Provisional</p>
-                <p className="text-sm text-slate-700">{activation.initial_observation}</p>
+
+              {/* Integrations */}
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${lifecycle.integrations.count > 0 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                  <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Integrations</span>
+                </div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {lifecycle.integrations.count > 0 ? `${lifecycle.integrations.count} Connected` : 'None Connected'}
+                </p>
+                {lifecycle.integrations.providers.length > 0 && (
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                    {lifecycle.integrations.providers.join(', ')}
+                  </p>
+                )}
               </div>
-            )}
-            <button onClick={() => setActivation(null)} className="text-xs text-slate-400 hover:text-slate-600">Dismiss</button>
+
+              {/* Intelligence */}
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${lifecycle.intelligence.has_events ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                  <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Intelligence</span>
+                </div>
+                {lifecycle.intelligence.has_events ? (
+                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Active</p>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Pre-analysis</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                      {lifecycle.intelligence.domains_enabled.length > 0
+                        ? `Domains: ${lifecycle.intelligence.domains_enabled.join(', ')}`
+                        : 'No domains enabled'}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
