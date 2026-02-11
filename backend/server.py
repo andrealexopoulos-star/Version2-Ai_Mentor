@@ -3760,12 +3760,12 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         
         if not hmac.compare_digest(provided_signature, expected_signature):
             logger.error(f"State signature mismatch for user: {user_id}")
-            return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state_signature")
+            return RedirectResponse(url=f"{frontend_url}{return_to}?outlook_error=invalid_state_signature")
         
         logger.info(f"Outlook callback for verified user: {user_id}, returnTo: {return_to}")
     else:
         logger.error(f"Invalid or missing state: {state}")
-        return RedirectResponse(url=f"{frontend_url}/integrations?outlook_error=invalid_state")
+        return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=invalid_state")
     
     # Exchange code for tokens
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
