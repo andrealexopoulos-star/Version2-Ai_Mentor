@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://boardroom-console.preview.emergentagent.com
+**Test URL:** https://biqc-integrity.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://boardroom-console.preview.emergentagent.com/advisor
+- [ ] Navigate to https://biqc-integrity.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://boardroom-console.preview.emergentagent.com/
+**Landing:** https://biqc-integrity.preview.emergentagent.com/
 
-**Login:** https://boardroom-console.preview.emergentagent.com/login-supabase
+**Login:** https://biqc-integrity.preview.emergentagent.com/login-supabase
 
-**Register:** https://boardroom-console.preview.emergentagent.com/register-supabase
+**Register:** https://biqc-integrity.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://boardroom-console.preview.emergentagent.com/pricing
+**Pricing:** https://biqc-integrity.preview.emergentagent.com/pricing
 
-**Terms:** https://boardroom-console.preview.emergentagent.com/terms
+**Terms:** https://biqc-integrity.preview.emergentagent.com/terms
 
-**Advisor:** https://boardroom-console.preview.emergentagent.com/advisor
+**Advisor:** https://biqc-integrity.preview.emergentagent.com/advisor
 
 ---
 

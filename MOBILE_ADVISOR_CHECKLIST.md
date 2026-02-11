@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://boardroom-console.preview.emergentagent.com/advisor
+## For: https://biqc-integrity.preview.emergentagent.com/advisor
 
 ---
 

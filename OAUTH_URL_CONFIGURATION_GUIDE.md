@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://boardroom-console.preview.emergentagent.com
+https://biqc-integrity.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://boardroom-console.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://boardroom-console.preview.emergentagent.com
+https://biqc-integrity.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://boardroom-console.preview.emergentagent.com/**
-https://boardroom-console.preview.emergentagent.com/auth/callback
-https://boardroom-console.preview.emergentagent.com/auth-callback-supabase
-https://boardroom-console.preview.emergentagent.com/connect-email
-https://boardroom-console.preview.emergentagent.com/integrations
+https://biqc-integrity.preview.emergentagent.com/**
+https://biqc-integrity.preview.emergentagent.com/auth/callback
+https://biqc-integrity.preview.emergentagent.com/auth-callback-supabase
+https://biqc-integrity.preview.emergentagent.com/connect-email
+https://biqc-integrity.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://boardroom-console.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://boardroom-console.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://boardroom-console.preview.emergentagent.com
+https://biqc-integrity.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://boardroom-console.preview.emergentagent.com/api/auth/gmail/callback
+https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

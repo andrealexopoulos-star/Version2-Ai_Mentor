@@ -73,7 +73,7 @@ Build a strategic business intelligence platform (BIQC) — a "continuous situat
 ## Credentials
 - **Test Account**: andrewrx@hotmail.com / TestBIQC2026!
 - **Test Account UUID**: 361086fe-8a9b-43bf-ab3d-8793541a47fd
-- **App URL**: https://boardroom-console.preview.emergentagent.com
+- **App URL**: https://biqc-integrity.preview.emergentagent.com
 
 ---
 *Last Updated: February 11, 2026*

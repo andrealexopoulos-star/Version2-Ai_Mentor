@@ -20,7 +20,7 @@
 ### PHASE 1: Setup & Connection (5 minutes)
 
 **Step 1: Login**
-1. Go to: https://boardroom-console.preview.emergentagent.com/login-supabase
+1. Go to: https://biqc-integrity.preview.emergentagent.com/login-supabase
 2. Sign in with your real business account (Google or Microsoft)
 3. Verify you land on `/advisor` page
 

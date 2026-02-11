@@ -310,7 +310,7 @@ File sizes after gzip:
 
 ### Frontend Environment Variables (Confirmed)
 ```
-REACT_APP_BACKEND_URL=https://boardroom-console.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://biqc-integrity.preview.emergentagent.com
 REACT_APP_GOOGLE_CLIENT_ID=(present)
 REACT_APP_SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=(present)

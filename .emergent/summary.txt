@@ -1,0 +1,174 @@
+<analysis>**original_problem_statement:**
+The initial objective was to fix the BIQC platform's onboarding flow, data coherence, and agent questioning behavior. This evolved over multiple sessions into a comprehensive platform integrity overhaul.
+
+The core requirements were:
+1.  **Enforce a Single Source of Truth:** Make Supabase the sole authoritative datastore, completely decommissioning MongoDB at the application level.
+2.  **Fix Data Authority:** Establish clear ownership for user state, specifically using  for calibration and onboarding status.
+3.  **Correct Onboarding & Calibration:** Eliminate bugs causing users to be re-routed to calibration or onboarding loops. Ensure the flow is resumable, non-repeating, and saves progress immediately.
+4.  **Implement Global Fact Authority:** Create a system-wide layer () to prevent the platform (both UI and AI agents) from ever asking for information that already exists in Supabase or can be derived from integrations.
+5.  **Secure Admin Routes:** Ensure  routes are properly enforced on the backend.
+6.  **Improve Reliability:** Add SDK guardrails to prevent silent failures from dependency changes (e.g.,  vs  bug).
+7.  **Modularize Codebase:** Break down the monolithic  file (over 10,000 lines) into smaller, domain-specific modules for better maintainability.
+8.  **Audit and Validate:** Perform multiple, in-depth audits (data plane, UX, fact authority, route classification) and conduct adversarial testing to find and eliminate all critical bugs and architectural violations.
+
+**User's preferred language**: English
+
+**what currently exists?**
+The agent has successfully executed a massive platform-wide refactoring and integrity enforcement effort.
+-   **Data Plane Remediated:** MongoDB is fully decommissioned at the app level. Supabase is the single source of truth.  has been purged of all business state.
+-   **Onboarding/Calibration Fixed:**  is now the sole authority for calibration and onboarding state, with progress stored in its  JSONB column. The frontend fetches this state once and caches it in React Context, eliminating redundant API calls and routing loops.
+-   **Global Fact Authority Implemented:** A new service, , consolidates user data from all Supabase tables and integrations. All key AI prompts (chat, boardroom) and UI components (Onboarding, Business DNA) are now required to check this service before rendering questions, preventing duplication.
+-   **Security Hardened:**  routes are now correctly enforced in the  component and validated on the backend.
+-   **Reliability Improved:** The Supabase Python client version is pinned. A  wrapper and a startup assertion have been added to  to prevent silent SDK attribute errors from recurring.
+-   **Codebase Modularized (Phase 2 complete):** The monolithic  has been significantly refactored. Seven major route groups (admin, boardroom, calibration, facts, intelligence, onboarding, watchtower) have been extracted into a new  directory with a shared  for dependency injection.
+-   **Audited & Validated:** The platform has undergone multiple audits and a rigorous adversarial validation phase, which uncovered and led to the fixing of critical bugs, including a Supabase RLS issue and an SDK method name mismatch. The platform has been declared READY FOR LIVE DEMO.
+
+**Last working item**:
+-   Last item agent was working: A forensic audit of 12 Category C routes, which were identified as likely being dead code. The agent analyzed each route's function, references, and database interactions to produce a detailed report assessing the risk of deletion.
+-   Status: FINISHED
+-   Agent Testing Done: N/A
+-   Which testing method agent to use? backend testing agent
+-   User Testing Done: N/A
+
+**All Pending/In progress Issue list**:
+-   Issue 1: Performance Lag on Data-Heavy Pages (Priority: P2)
+-   Issue 2: War Room's Lack of Fact Authority Integration (Priority: P3)
+
+Issues Detail:
+-   **Issue 1: Performance Lag on Data-Heavy Pages**
+    -   Description: The adversarial validation phase noted that the Business DNA and Settings pages exhibit slow load times, showing a loading spinner for an extended period. This is suspected to be caused by the  endpoint being slow.
+    -   Next debug checklist:
+        1.  Profile the  endpoint to identify bottlenecks.
+        2.  Analyze the queries within the  function, which is called by this endpoint, and check for missing indexes or inefficient joins in the underlying Supabase tables.
+        3.  Investigate if the frontend can render a partial view with initial data while the full context is being fetched.
+    -   Why fix this issue and what will be achieved with the fix?: Fixing this will improve the user experience by making core pages feel more responsive.
+    -   Status: NOT STARTED
+    -   Is recurring issue?: N
+    -   Should Test frontend/backend/both after fix?: Both
+
+-   **Issue 2: War Room's Lack of Fact Authority Integration**
+    -   Description: The Strategic Operations Console (War Room) is a separate strategic extraction flow that does not currently use the Global Fact Authority layer. It can therefore ask the user for information the system already knows (e.g., business name).
+    -   Next debug checklist:
+        1.  Investigate the War Room component's data flow.
+        2.  Modify its backend logic to call  and inject the  into its initial prompt, similar to how the Board Room and other agents were fixed.
+    -   Why fix this issue and what will be achieved with the fix?: This will bring all user-facing questioning flows under the Global Fact Authority umbrella, ensuring a perfectly consistent user experience with no repeated questions anywhere on the platform.
+    -   Status: NOT STARTED
+    -   Is recurring issue?: N
+    -   Should Test frontend/backend/both after fix?: Both
+
+**In progress Task List**:
+-   Task 1: Complete Modularization of  (Priority: P1)
+
+Task Detail:
+-   **Task 1: Complete Modularization of **
+    -   Where to resume: Continue extracting the remaining large route blocks from  (e.g., chat, business profile, settings, legacy integrations) into the  directory. Follow the established pattern of using  for shared dependencies and registering the  in the main app file.
+    -   What will be achieved with this?: A fully modularized, more maintainable backend codebase where  acts as a clean orchestrator, significantly reducing technical debt.
+    -   Status: IN PROGRESS
+    -   Should Test frontend/backend/both after fix?: Backend (full regression suite)
+    -   Blocked on something: No
+
+**Upcoming and Future Tasks**
+Upcoming Tasks:
+-   (P0) **Delete SAFE TO DELETE Category C Routes**: Based on the completed forensic audit (), delete the 10 routes marked as  from  and run the full test suite to ensure no regressions.
+-   (P2) **Remove Dead  Writes**: The agent discovered that the column  never existed, meaning all writes to it are dead code. Remove these  blocks from the  file to clean up the code.
+
+**Completed work in this session**
+A massive amount of platform stabilization and refactoring has been completed.
+-   **Data Plane Remediation**: Decommissioned MongoDB, purged state from , and enforced Supabase as the single source of truth. (DONE)
+-   **Onboarding & Calibration Fix**: Eliminated dual-authority bugs and routing loops, making  the sole authority for this state. (DONE)
+-   **Global Fact Authority**: Implemented and enforced a system () to prevent re-asking for known information across all major UI/AI interfaces. (DONE)
+-   **Security Hardening**: Fixed and verified  route enforcement. (DONE)
+-   **SDK Reliability Guardrails**: Implemented wrappers and startup assertions to prevent silent SDK failures. (DONE)
+-   **Codebase Modularization**: Extracted 7 major route groups from the monolithic  into a new  directory. (IN PROGRESS, Phase 2 complete)
+-   **Critical Bug Fixes**: Found and fixed a Supabase RLS bug blocking user state reads and a fatal Supabase Python SDK method name mismatch ( vs ). (DONE)
+-   **Comprehensive Auditing**: Performed and acted upon multiple audits for data plane, UX, security, and code structure. (DONE)
+-   **Adversarial Validation**: Completed a rigorous end-to-end testing phase, bringing the platform to a Ready for Live Demo state. (DONE)
+
+**Earlier issues found/mentioned but not fixed**
+-   See All Pending/In progress Issue list.
+
+**Code Architecture**
+-   **Backend**: A FastAPI application. It was originally a single 10,000+ line  file, but is now being modularized. Core logic is being extracted into a  directory (e.g., , ), with shared dependencies in . A key service module is .
+-   **Frontend**: A React application using  for navigation. Global state (auth, calibration, onboarding status) is managed in . Access control is handled by .
+-   **Database**: Supabase (PostgreSQL).
+
+**Key Technical Concepts**
+-   **Single Source of Truth (SSOT)**: A core principle enforced throughout the project, with Supabase being the only authoritative datastore.
+-   **Global Fact Authority**: A custom-built service () that acts as a system-wide cache and source for all known user/business facts, preventing redundant questions.
+-   **Defensive Programming**: Implemented via SDK Guardrails, including a  wrapper and startup assertions in  to prevent silent runtime errors from library updates.
+-   **Code Modularization**: The ongoing effort to refactor a large monolithic application () into smaller, domain-focused modules under the  directory, using FastAPI's .
+-   **React Context API**: Used for managing global, session-wide state on the frontend to avoid prop-drilling and redundant API calls ().
+
+**key DB schema**
+-   : 
+-   :  (The  JSONB column contains  and the ).
+-   : 
+-   : 
+-   : Not a physical table. Implemented as a JSONB object within .
+
+**changes in tech stack**
+-   **MongoDB Decommissioned**: All dependencies and client code for MongoDB have been removed from the application. It is no longer part of the tech stack.
+
+**All files of reference**
+-   : The main application file, still containing some routes but now orchestrating the modular  directory.
+-   : Directory containing all newly extracted, domain-specific route modules (, , , , , , ).
+-   : Manages shared dependencies (like , ) for the modular routes.
+-   : The core logic for the Global Fact Authority layer.
+-   : Handles Supabase client initialization and reliability guardrails.
+-   : Manages session state on the frontend, preventing redundant API calls for user status.
+-   : Central component for frontend access control (auth, calibration, onboarding, admin).
+-   : Contains new unit tests to validate the SDK guardrails.
+
+**Areas that need refactoring**:
+-   : The file is still over 9,000 lines long and needs the modularization effort to be completed.
+-   : Contains dead code that attempts to write to a non-existent  column. This should be removed.
+
+**key api endpoints**
+-   : Gets the current user's profile from the authoritative  table.
+-   : Checks the user's calibration status from the single source of truth ().
+-   : Checks the user's onboarding status.
+-   : Persists onboarding progress.
+-   : A key endpoint that fetches the business profile combined with resolved facts for populating UIs.
+-   : The dedicated endpoint for the Global Fact Authority service.
+-   : The main AI chat endpoint, now integrated with fact resolution.
+-   All modularized endpoints under , , , etc.
+
+**Critical Info for New Agent**
+-   **The  vs  Bug Was Critical**: A mismatch in the Supabase Python SDK method name caused silent failures in production. This has been fixed and guardrailed with  and startup assertions in . Be extremely cautious with direct Supabase client calls; use the provided wrappers where possible.
+-   **RLS Policies Are Active**: A previous critical bug was caused by Row Level Security blocking client-side reads of . Backend endpoints using the  key are the reliable way to access cross-user or sensitive data. Do not assume frontend Supabase queries will work without verifying RLS policies.
+-   **Modularization Pattern is Established**: When continuing the refactor of , follow the existing pattern: extract routes into a new file in , import dependencies from , and include the new  in .
+-   **JSONB for Schema Evolution**: The agent successfully used JSONB columns () to add new data structures (, ) without requiring manual schema migrations. This is a valid pattern to use for new, non-relational user state.
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+The last several user messages defined a sequence of tasks for platform reliability, modularization, and auditing, culminating in a request for a comprehensive review document of all work performed. There are no pending human messages requiring an answer.
+
+**Project Health Check:**
+-   **Broken**: None. All known critical and high-priority functional bugs have been fixed.
+-   **Mocked**: None.
+
+**3rd Party Integrations**
+-   **Supabase (PostgreSQL, Auth)**: Core platform dependency.
+-   **OpenAI GPT**: Used for AI-driven intelligence (chat, boardroom, etc.). Uses Emergent LLM Key.
+-   **Merge.dev**: Service for integrating with other platforms like HubSpot. Requires User API Key.
+-   **Xero, Outlook, Google Drive**: Listed as connectable integrations. Requires User OAuth/API Keys.
+
+**Testing status**
+-   **Testing agent used after significant changes**: YES
+-   **Troubleshoot agent used after agent stuck in loop**: YES
+-   **Test files created**: []
+-   **Known regressions**: None. All identified regressions during development were fixed.
+
+**Credentials to test flow:**
+-   Test user: . A password was set during the session to allow login.
+
+**What agent forgot to execute**
+-   The agent completed the forensic audit to identify which of the 12 Category C routes were safe to delete but did not perform the actual deletion. This is the most immediate upcoming task.</analysis>

@@ -557,8 +557,8 @@ OPENAI_API_KEY=sk-proj-vEisusJarC_o4V7plhUG9kF8CpypZBlnVXgflEfdS5Ju...
 SERPER_API_KEY=5b4733e54463108c9b410ef3d38074f667ee3e46
 
 # URLs
-BACKEND_URL=https://boardroom-console.preview.emergentagent.com
-FRONTEND_URL=https://boardroom-console.preview.emergentagent.com
+BACKEND_URL=https://biqc-integrity.preview.emergentagent.com
+FRONTEND_URL=https://biqc-integrity.preview.emergentagent.com
 
 # Legacy
 JWT_SECRET_KEY=strategic-advisor-secret-key-2024-secure
@@ -570,7 +570,7 @@ CORS_ORIGINS="*"
 ## Frontend Environment Variables (/app/frontend/.env)
 
 ```bash
-REACT_APP_BACKEND_URL=https://boardroom-console.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://biqc-integrity.preview.emergentagent.com
 REACT_APP_GOOGLE_CLIENT_ID=903194754324-ife21qnmrokplbcu2ck5afce0kjd6j10.apps.googleusercontent.com
 
 # Supabase
@@ -594,9 +594,9 @@ ENABLE_HEALTH_CHECK=false
 ### Authentication Settings
 
 **URL Configuration:**
-- **Site URL:** `https://boardroom-console.preview.emergentagent.com`
+- **Site URL:** `https://biqc-integrity.preview.emergentagent.com`
 - **Redirect URLs:**
-  - `https://boardroom-console.preview.emergentagent.com/auth/callback`
+  - `https://biqc-integrity.preview.emergentagent.com/auth/callback`
 
 **Providers Enabled:**
 - ✅ Google OAuth
@@ -617,7 +617,7 @@ ENABLE_HEALTH_CHECK=false
 
 **Preview/Staging URL:**
 ```
-https://boardroom-console.preview.emergentagent.com
+https://biqc-integrity.preview.emergentagent.com
 ```
 
 **Status:** Active and running
@@ -684,7 +684,7 @@ tail -f /var/log/supervisor/frontend.out.log
 
 **Test Case 1: New User Sign Up**
 1. Open incognito browser
-2. Go to: https://boardroom-console.preview.emergentagent.com/
+2. Go to: https://biqc-integrity.preview.emergentagent.com/
 3. Click "Start your free account"
 4. Click "Continue with Google"
 5. Verify confirmation dialog appears
@@ -1022,7 +1022,7 @@ sudo supervisorctl status
 - **App Registration:** Strategy Squad Auth
 
 ## Application URLs
-- **Preview:** https://boardroom-console.preview.emergentagent.com
+- **Preview:** https://biqc-integrity.preview.emergentagent.com
 - **Login (New):** /login-supabase
 - **Register (New):** /register-supabase
 
