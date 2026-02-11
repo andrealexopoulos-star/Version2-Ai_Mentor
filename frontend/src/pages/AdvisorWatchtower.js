@@ -75,6 +75,21 @@ const AdvisorWatchtower = () => {
     }
   }, []);
 
+  // Fetch lifecycle state + resolved facts for WOW Landing
+  useEffect(() => {
+    const fetchLifecycle = async () => {
+      try {
+        const [lcRes, factsRes] = await Promise.all([
+          apiClient.get('/lifecycle/state').catch(() => ({ data: null })),
+          apiClient.get('/facts/resolve').catch(() => ({ data: null })),
+        ]);
+        setLifecycle(lcRes.data);
+        if (factsRes.data?.facts) setResolvedFacts(factsRes.data.facts);
+      } catch {}
+    };
+    fetchLifecycle();
+  }, []);
+
   // Post-calibration activation — disabled (legacy endpoint removed)
   // Activation data now comes from user_operator_profile.agent_persona
 
