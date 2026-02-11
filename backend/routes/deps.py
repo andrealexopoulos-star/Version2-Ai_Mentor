@@ -1,14 +1,38 @@
 """
-Shared auth dependencies for route modules.
+Shared dependencies for route modules.
 Extracted from server.py — zero logic changes.
+
+All route modules import auth deps and shared state from here.
+server.py calls init_route_deps() once at startup to inject globals.
 """
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
+import os
 
 logger = logging.getLogger("server")
 security = HTTPBearer()
 
+# ─── Globals injected by server.py at startup ───
+supabase_admin = None
+OPENAI_KEY = None
+
+
+def init_route_deps(sb_admin, openai_key):
+    """Called once by server.py after initialization."""
+    global supabase_admin, OPENAI_KEY
+    supabase_admin = sb_admin
+    OPENAI_KEY = openai_key
+
+
+def get_sb():
+    """Get supabase_admin. Fails fast if not initialized."""
+    if supabase_admin is None:
+        raise RuntimeError("supabase_admin not initialized — call init_route_deps() first")
+    return supabase_admin
+
+
+# ─── Auth Dependencies ───
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """SUPABASE-ONLY Authentication."""
@@ -32,3 +56,9 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") not in ("admin", "superadmin"):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
+
+
+async def get_current_user_from_request(request: Request):
+    """Extract user from raw Request object (for endpoints that don't use Depends)."""
+    from auth_supabase import get_current_user_from_request as _impl
+    return await _impl(request)
