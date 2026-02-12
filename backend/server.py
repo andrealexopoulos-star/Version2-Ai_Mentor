@@ -9659,7 +9659,11 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/intelligence/ingest")
 async def trigger_ingestion(current_user: dict = Depends(get_current_user)):
-    """Separate ingestion endpoint — pulls data from integrations. Not blocking cold-read."""
+    """Ingestion endpoint — admin/system only. Pulls data from integrations."""
+    # Role restriction: only admin or superadmin
+    user_role = current_user.get("role", "user")
+    if user_role not in ("admin", "superadmin"):
+        raise HTTPException(status_code=403, detail="Ingest requires admin role")
     import time as _time
     _t0 = _time.monotonic()
     user_id = current_user["id"]
