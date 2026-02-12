@@ -136,26 +136,25 @@ function AppRoutes() {
 function App() {
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   
-  // Force clear old service worker cache, then register fresh
+  // NUCLEAR: Remove ALL service workers and caches permanently
+  // Service workers have caused persistent HTML-instead-of-JSON bugs on production
+  // They provide no real value for this app (only cached / and /manifest.json)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      // Unregister ALL old service workers first to bust cache
       navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(reg => reg.unregister());
-      }).then(() => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(registration => {
-            registration.update(); // Force update check
-            console.log('✅ Service Worker re-registered:', registration);
-          })
-          .catch(error => {
-            console.log('❌ Service Worker registration failed:', error);
-          });
+        registrations.forEach(reg => {
+          reg.unregister();
+          console.log('[SW] Unregistered service worker:', reg.scope);
+        });
       });
     }
-    // Also clear caches directly
     if ('caches' in window) {
-      caches.keys().then(names => names.forEach(name => caches.delete(name)));
+      caches.keys().then(names => {
+        names.forEach(name => {
+          caches.delete(name);
+          console.log('[SW] Deleted cache:', name);
+        });
+      });
     }
   }, []);
   
