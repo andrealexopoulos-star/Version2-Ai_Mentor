@@ -577,6 +577,7 @@ class MergeEmissionLayer:
 
     async def _persist_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         try:
+            # Try fingerprint-based upsert first (requires migration)
             result = self.supabase.table("observation_events").upsert(
                 event, on_conflict="user_id,fingerprint", ignore_duplicates=True
             ).execute()
@@ -587,6 +588,16 @@ class MergeEmissionLayer:
                 logger.debug(f"[emission] {event['signal_name']} duplicate skipped")
                 return event
         except Exception as e:
+            # Fallback: if fingerprint column missing, insert without it
+            if "fingerprint" in str(e):
+                try:
+                    event_copy = {k: v for k, v in event.items() if k != "fingerprint"}
+                    result = self.supabase.table("observation_events").insert(event_copy).execute()
+                    logger.info(f"[emission] {event['signal_name']} emitted (no fingerprint)")
+                    return result.data[0] if result.data else event_copy
+                except Exception as e2:
+                    logger.error(f"[emission] Fallback persist failed: {e2}")
+                    return event
             logger.error(f"[emission] Persist failed for {event['signal_name']}: {e}")
             return event
 
