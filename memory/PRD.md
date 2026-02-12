@@ -28,11 +28,12 @@ Comprehensive platform integrity overhaul enforcing "Full Lifecycle Coherence" f
 ### Completed (Feb 12, 2026)
 - Fixed blank screen on login caused by `AdvisorWatchtower.js` crash when `/api/lifecycle/state` returns HTML instead of JSON
 - Added 3-layer defense: API client HTML rejection, lifecycle data validation, optional chaining on template
+- **P0: Deep Research + Inference Engine** — New `POST /api/research/analyze-website` endpoint with live scrape → LLM synthesis path and domain inference fallback. Full observability logging.
 
 ## Prioritized Backlog
 
 ### P0 (Critical)
-- None currently
+- Prompt 02: Research Findings Card + Trust Moment UI (layer research endpoint into onboarding)
 
 ### P1 (High Priority)
 - Complete modularization of `server.py` (IN PROGRESS)
