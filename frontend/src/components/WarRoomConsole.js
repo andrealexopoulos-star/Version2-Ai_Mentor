@@ -162,130 +162,146 @@ const WarRoomConsoleInner = () => {
     if (!isThinking && input.trim()) processMessage(input);
   };
 
+  // Smart scroll: track if user scrolled up manually
+  const chatContainerRef = useRef(null);
+  const userScrolledUpRef = useRef(false);
+
+  const handleScroll = () => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    userScrolledUpRef.current = !atBottom;
+  };
+
+  // Auto-scroll to bottom unless user scrolled up
+  useEffect(() => {
+    if (userScrolledUpRef.current) return;
+    const el = chatContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [history, isThinking]);
+
   const now = new Date();
   const timestamp = now.toISOString().replace('T', ' // ').slice(0, 22) + ' UTC';
 
   return (
-    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#0a0a0a', color: '#f59e0b', fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace", overflow: 'hidden' }}>
-      {/* Scanline overlay */}
-      <div style={{ pointerEvents: 'none', position: 'absolute', inset: 0, zIndex: 10, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)' }} />
-      {/* Dot grid */}
-      <div style={{ pointerEvents: 'none', position: 'absolute', inset: 0, zIndex: 0, backgroundImage: 'radial-gradient(circle, rgba(245,158,11,0.04) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#F6F7F9', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", overflow: 'hidden' }}>
 
       {/* HEADER */}
-      <header style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(245,158,11,0.15)', background: '#0a0a0a', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e, 0 0 12px rgba(34,197,94,0.4)', animation: 'wrPulse 2s ease-in-out infinite', display: 'inline-block' }} />
-          <span style={{ fontSize: 13, letterSpacing: '0.25em', textTransform: 'uppercase', fontWeight: 'bold', color: '#fbbf24' }}>
-            BIQc <span style={{ color: 'rgba(245,158,11,0.4)' }}>//</span> Strategic Operations Console
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #E5E7EB', background: '#fff', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#111827', letterSpacing: '-0.01em' }}>
+            BIQc Strategic Console
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 11, color: 'rgba(245,158,11,0.4)', letterSpacing: '0.1em' }}>
-          <span>STEP {currentStep}/17</span>
-          <span style={{ padding: '2px 8px', border: `1px solid ${status === 'COMPLETE' ? '#16a34a' : 'rgba(245,158,11,0.3)'}`, fontSize: 10, letterSpacing: '0.2em', color: status === 'COMPLETE' ? '#4ade80' : '#f59e0b' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, color: '#9CA3AF' }}>
+          <span>Step {currentStep}/17</span>
+          <span style={{ padding: '2px 10px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: status === 'COMPLETE' ? '#DCFCE7' : '#FEF3C7', color: status === 'COMPLETE' ? '#166534' : '#92400E' }}>
             {status}
           </span>
         </div>
       </header>
 
       {/* PROGRESS BAR */}
-      <div style={{ position: 'relative', zIndex: 5, height: 3, background: 'rgba(245,158,11,0.08)', flexShrink: 0 }}>
-        <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #b45309, #f59e0b)', boxShadow: '0 0 8px rgba(245,158,11,0.3)', transition: 'width 1s ease-out' }} />
+      <div style={{ height: 3, background: '#E5E7EB', flexShrink: 0 }}>
+        <div style={{ height: '100%', width: `${progress}%`, background: '#3B82F6', transition: 'width 0.8s ease-out', borderRadius: '0 2px 2px 0' }} />
       </div>
 
-      {/* LIVE FEED */}
-      <div style={{ position: 'relative', zIndex: 5, flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* CHAT AREA — single scroll container */}
+      <div
+        ref={chatContainerRef}
+        onScroll={handleScroll}
+        style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 16, WebkitOverflowScrolling: 'touch' }}
+      >
 
         {/* Waiting for session */}
         {!sessionReady && !initError && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <span style={{ color: 'rgba(245,158,11,0.4)', fontSize: 11, letterSpacing: '0.2em', animation: 'wrBlink 1.5s ease-in-out infinite' }}>
-              ESTABLISHING SECURE LINK...
-            </span>
+            <span style={{ color: '#9CA3AF', fontSize: 14 }}>Connecting...</span>
           </div>
         )}
 
         {/* Session error */}
         {initError && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', flexDirection: 'column', gap: 12 }}>
-            <span style={{ color: '#ef4444', fontSize: 11, letterSpacing: '0.15em' }}>⚠ {initError}</span>
-            <button onClick={() => window.location.reload()} style={{ color: '#f59e0b', fontSize: 11, letterSpacing: '0.15em', border: '1px solid rgba(245,158,11,0.3)', background: 'transparent', padding: '4px 16px', cursor: 'pointer', fontFamily: 'inherit' }}>
-              RECONNECT
+            <span style={{ color: '#DC2626', fontSize: 14 }}>{initError}</span>
+            <button onClick={() => window.location.reload()} style={{ color: '#3B82F6', fontSize: 14, border: '1px solid #D1D5DB', background: '#fff', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Reconnect
             </button>
           </div>
         )}
 
         {/* Messages */}
         {history.map((msg, i) => (
-          <div key={i} style={{ maxWidth: '85%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-            <div style={{ fontSize: 9, letterSpacing: '0.2em', marginBottom: 4, color: msg.role === 'user' ? 'rgba(34,197,94,0.5)' : 'rgba(245,158,11,0.4)', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-              {msg.role === 'user' ? '[ OPERATOR ]' : '[ WATCHTOWER ]'}
-            </div>
-            <div style={{
-              padding: '12px 16px', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-              border: `1px solid ${msg.role === 'user' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.12)'}`,
-              background: msg.role === 'user' ? 'rgba(34,197,94,0.04)' : 'rgba(245,158,11,0.03)',
-              color: msg.role === 'user' ? '#d1d5db' : '#fbbf24',
-              borderLeft: msg.role === 'user' ? 'none' : '2px solid rgba(245,158,11,0.3)',
-              borderRight: msg.role === 'user' ? '2px solid rgba(34,197,94,0.3)' : 'none',
-            }}>
-              {msg.content}
-            </div>
+          <div key={i} style={{ maxWidth: '88%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            {msg.role === 'user' ? (
+              <div style={{
+                padding: '12px 16px', fontSize: 15, lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                background: '#3B82F6', color: '#fff', borderRadius: '18px 18px 4px 18px',
+              }}>
+                {msg.content}
+              </div>
+            ) : (
+              <div>
+                <div style={{
+                  padding: '14px 18px', fontSize: 15, lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  background: '#fff', color: '#1F2937', borderRadius: '18px 18px 18px 4px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                }}>
+                  {msg.content}
+                </div>
+              </div>
+            )}
           </div>
         ))}
 
         {/* Thinking indicator */}
         {isThinking && (
-          <div style={{ maxWidth: '85%', alignSelf: 'flex-start' }}>
-            <div style={{ fontSize: 9, letterSpacing: '0.2em', marginBottom: 4, color: 'rgba(245,158,11,0.4)' }}>[ WATCHTOWER ]</div>
-            <div style={{ padding: '12px 16px', border: '1px solid rgba(245,158,11,0.12)', background: 'rgba(245,158,11,0.03)', borderLeft: '2px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', animation: 'wrDot 1.4s infinite' }} />
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', animation: 'wrDot 1.4s infinite 0.2s' }} />
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', animation: 'wrDot 1.4s infinite 0.4s' }} />
-              <span style={{ marginLeft: 12, color: 'rgba(245,158,11,0.3)', fontSize: 10, letterSpacing: '0.2em' }}>CALCULATING STRATEGY</span>
+          <div style={{ maxWidth: '88%', alignSelf: 'flex-start' }}>
+            <div style={{
+              padding: '14px 18px', background: '#fff', borderRadius: '18px 18px 18px 4px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#D1D5DB', animation: 'wrDot 1.4s infinite' }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#D1D5DB', animation: 'wrDot 1.4s infinite 0.2s' }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#D1D5DB', animation: 'wrDot 1.4s infinite 0.4s' }} />
             </div>
           </div>
         )}
         <div ref={scrollRef} />
       </div>
 
-      {/* INPUT DECK */}
-      <form onSubmit={handleSubmit} style={{ position: 'relative', zIndex: 5, padding: '16px 20px', borderTop: '1px solid rgba(245,158,11,0.15)', background: '#0a0a0a', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(245,158,11,0.2)', padding: '8px 12px', background: 'rgba(0,0,0,0.6)' }}>
-          <span style={{ color: '#d97706', fontSize: 14, userSelect: 'none' }}>▸</span>
+      {/* INPUT — fixed at bottom, keyboard-aware */}
+      <form onSubmit={handleSubmit} style={{ padding: '12px 16px', borderTop: '1px solid #E5E7EB', background: '#fff', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #D1D5DB', borderRadius: 12, padding: '10px 14px', background: '#F9FAFB', transition: 'border-color 0.15s' }}>
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="ENTER TACTICAL DATA..."
+            placeholder="Type your response..."
             disabled={isThinking || status === 'COMPLETE' || !sessionReady}
-            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#e5e7eb', fontFamily: 'inherit', fontSize: 13, letterSpacing: '0.05em', opacity: (isThinking || !sessionReady) ? 0.4 : 1 }}
-            autoFocus
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#1F2937', fontFamily: 'inherit', fontSize: 15, lineHeight: 1.5, opacity: (isThinking || !sessionReady) ? 0.5 : 1 }}
           />
           <button
             type="submit"
             disabled={isThinking || !input.trim() || status === 'COMPLETE' || !sessionReady}
-            style={{ padding: '6px 18px', fontFamily: 'inherit', fontSize: 11, letterSpacing: '0.2em', fontWeight: 600, color: '#0a0a0a', background: '#f59e0b', border: 'none', cursor: 'pointer', opacity: (isThinking || !input.trim() || !sessionReady) ? 0.3 : 1 }}
+            style={{
+              padding: '8px 18px', fontFamily: 'inherit', fontSize: 14, fontWeight: 500,
+              color: '#fff', background: '#3B82F6', border: 'none', borderRadius: 8,
+              cursor: 'pointer', opacity: (isThinking || !input.trim() || !sessionReady) ? 0.3 : 1,
+              transition: 'opacity 0.15s',
+            }}
           >
-            TRANSMIT
+            Send
           </button>
         </div>
       </form>
 
-      {/* Keyframe animations */}
       <style>{`
-        @keyframes wrPulse {
-          0%, 100% { opacity: 1; box-shadow: 0 0 6px #22c55e, 0 0 12px rgba(34,197,94,0.4); }
-          50% { opacity: 0.5; box-shadow: 0 0 3px #22c55e; }
-        }
         @keyframes wrDot {
-          0%, 80%, 100% { opacity: 0.15; }
-          40% { opacity: 1; }
-        }
-        @keyframes wrBlink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
+          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>
