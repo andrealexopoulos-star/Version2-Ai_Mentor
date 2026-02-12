@@ -9587,76 +9587,32 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
             }
         }
 
-    # ANALYSIS PATH: Read from precomputed positions + existing insights
+    # ANALYSIS PATH: Read from precomputed positions + existing insights (READ-ONLY)
     positions = {}
     findings = []
     try:
         from watchtower_engine import get_watchtower_engine
         engine = get_watchtower_engine()
         positions = await engine.get_positions(user_id)
-        findings_data = await engine.get_findings(user_id, limit=10)
-        findings = findings_data if isinstance(findings_data, list) else []
+        findings_raw = await engine.get_findings(user_id, limit=10)
+        findings = findings_raw if isinstance(findings_raw, list) else []
     except Exception as wt_err:
         logger.warning(f"🔭 Positions read failed: {wt_err}")
 
-    # 8-second fail-safe check
-    _elapsed_s = _time.monotonic() - _t0
-    if _elapsed_s > 8.0:
-        logger.warning(f"⏱ Cold Read exceeded 8s ({round(_elapsed_s, 1)}s) — returning partial")
-        return {
-            "success": True,
-            "cold_read": {
-                "status": "TIMEOUT",
-                "events_created": 0,
-                "signals": [],
-                "message": "Analysis timeout — partial results returned.",
-                "method": "fail_safe",
-                "positions": positions,
-            }
-        }
-
-    # Run Watchtower Engine analysis on existing observation_events
-    watchtower_result = None
-    try:
-        watchtower_result = await engine.run_analysis(user_id)
-        logger.info(f"🔭 Watchtower: {watchtower_result.get('position_changes', 0)} position changes")
-    except Exception as wt_err:
-        logger.warning(f"🔭 Watchtower analysis failed: {wt_err}")
-
-    # 8-second fail-safe check again
-    _elapsed_s = _time.monotonic() - _t0
-    if _elapsed_s > 8.0:
-        logger.warning(f"⏱ Cold Read exceeded 8s after watchtower ({round(_elapsed_s, 1)}s)")
-        return {
-            "success": True,
-            "cold_read": {
-                "status": "PARTIAL",
-                "events_created": watchtower_result.get("position_changes", 0) if watchtower_result else 0,
-                "signals": [],
-                "message": "Watchtower analysis complete. Skipping deep read.",
-                "method": "watchtower_only",
-                "watchtower_analysis": watchtower_result,
-            }
-        }
-
-    # Generate cold read from canonical moments (skip if already over 6s)
-    result = {"events_created": 0, "status": "no_patterns", "method": "canonical_moments"}
-    if _elapsed_s < 6.0:
-        try:
-            result = await generate_cold_read(
-                user_id=user_id,
-                account_id=account_id,
-                supabase_admin=supabase_admin,
-                watchtower_store=get_watchtower_store()
-            )
-        except Exception as cr_err:
-            logger.warning(f"Cold read generation failed: {cr_err}")
-    
-    if isinstance(result, dict):
-        result["watchtower_analysis"] = watchtower_result
-
     _elapsed = round((_time.monotonic() - _t0) * 1000)
-    logger.info(f"⚡ Cold Read completed in {_elapsed}ms")
+    logger.info(f"⚡ Cold Read completed in {_elapsed}ms (read-only)")
+
+    # Build result from precomputed state
+    events_created = len(findings)
+    result = {
+        "events_created": events_created,
+        "status": "ACTIVE" if positions else "NO_DATA",
+        "method": "precomputed",
+        "positions": positions,
+        "findings_count": len(findings),
+        "signals": [f.get("finding", "")[:100] for f in findings[:5]],
+        "message": "No material changes detected." if not positions else None,
+    }
 
     # PART 1: If no events created, persist baseline_initialized snapshot
     events_created = result.get("events_created", 0) if isinstance(result, dict) else 0
