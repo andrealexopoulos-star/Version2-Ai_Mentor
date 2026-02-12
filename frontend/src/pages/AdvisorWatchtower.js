@@ -325,7 +325,7 @@ const AdvisorWatchtower = () => {
               <ArrowRight className="w-3 h-3" /> Full Screen
             </Button>
           </div>
-          <div className="w-full h-[500px] bg-black border-2 border-amber-900/50 rounded-lg shadow-2xl overflow-hidden relative">
+          <div className="w-full h-[500px] border rounded-xl shadow-sm overflow-hidden relative" style={{ background: '#F6F7F9' }}>
             <WarRoomConsole />
           </div>
         </div>
