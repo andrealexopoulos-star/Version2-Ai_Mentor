@@ -2705,7 +2705,7 @@ async def save_console_state(request: Request, payload: ConsoleStateSave):
             supabase_admin.table("user_operator_profile").update({"operator_profile": op}).eq("user_id", user_id).execute()
         else:
             supabase_admin.table("user_operator_profile").insert({"user_id": user_id, "operator_profile": op}).execute()
-        return {"ok": True, "step": payload.current_step}
+        return {"ok": True}
     except Exception as e:
         logger.error(f"[console/state] Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to save console state")
