@@ -2654,7 +2654,6 @@ async def get_lifecycle_state(request: Request):
 
         domains_enabled = []
         workspace_id = None
-        console_state = {}
         try:
             bp = await get_business_profile_supabase(supabase_admin, user_id)
             if bp:
