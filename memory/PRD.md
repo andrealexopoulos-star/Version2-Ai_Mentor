@@ -1,32 +1,66 @@
-# BIQC Platform — PRD
+# BIQc Platform - Product Requirements Document
 
-## Strategic Console Light Theme Sprint (Feb 2026)
+## Original Problem Statement
+Comprehensive platform integrity overhaul enforcing "Full Lifecycle Coherence" for user experience. Core requirements include fixing lifecycle bugs, implementing priority compression UX, enforcing data sovereignty, improving UI/UX state coherence, building a WOW Landing page, fixing the intelligence pipeline, stabilizing critical endpoints, improving chat UX, and securing the system.
 
-### Part 1 — Chat Scroll Mechanics — IMPLEMENTED
-- Single scroll container with `ref={chatContainerRef}`
-- Bottom-anchored: auto-scrolls on new messages unless user manually scrolled up
-- `userScrolledUpRef` tracks manual scroll via `onScroll` handler
-- `scrollRef` anchor at bottom of chat
-- Mobile: `WebkitOverflowScrolling: touch`, flex-based layout, input at bottom
+## Architecture
+- **Backend**: FastAPI (server.py + routes/ directory, partially modularized)
+- **Frontend**: React with Supabase Auth
+- **Database**: Supabase (PostgreSQL)
+- **Integrations**: OpenAI GPT (Emergent LLM Key), Merge.dev (HubSpot, Xero), Microsoft Outlook
 
-### Part 2 — Typography — IMPLEMENTED
-- Font: Inter / system-ui stack
-- Base: 15px body, 1.6 line height
-- Headers: 600 weight
-- Body: 400 weight
-- No tiny captions, no monospace
+## Key Technical Concepts
+- **Lifecycle Coherence**: Strict state machine routing (Calibration -> Onboarding -> App)
+- **Read/Write Separation**: `/api/intelligence/cold-read` (fast, read-only) vs `/api/intelligence/ingest` (heavy, admin-only)
+- **Idempotency**: Data fingerprinting prevents duplicate ingestion
 
-### Part 3 — Light Executive Theme — IMPLEMENTED
-- Background: #F6F7F9 (soft neutral)
-- Cards: #fff with subtle box-shadow
-- Header: white with #E5E7EB border
-- Progress: #3B82F6 blue
-- User messages: #3B82F6 blue bubbles, white text
-- AI messages: white cards, #1F2937 text
-- Input: #F9FAFB bg, #D1D5DB border, 12px border-radius
-- Status badge: green/amber pills
-- Removed: scanlines, dot grids, neon amber, black backgrounds, monospace
+## What's Been Implemented
 
-### Files Modified
-- `frontend/src/components/WarRoomConsole.js` — full render rewrite
-- `frontend/src/pages/AdvisorWatchtower.js` — console container style
+### Completed (Previous Sessions)
+- Priority Compression UX in Board Room
+- Lifecycle routing state machine (no more redirect loops)
+- Service worker bug fix (API caching prevention)
+- Full Lifecycle Coherence features (Settings, Strategic Console, Business DNA, Integrations, Operator View, WOW Landing)
+- Intelligence Pipeline re-architecture (cold-read/ingest separation, idempotency)
+- Strategic Console chat UI rebuild
+- E2E validation across all pages
+
+### Completed (Feb 12, 2026)
+- Fixed blank screen on login caused by `AdvisorWatchtower.js` crash when `/api/lifecycle/state` returns HTML instead of JSON
+- Added 3-layer defense: API client HTML rejection, lifecycle data validation, optional chaining on template
+
+## Prioritized Backlog
+
+### P0 (Critical)
+- None currently
+
+### P1 (High Priority)
+- Complete modularization of `server.py` (IN PROGRESS)
+- Delete "SAFE TO DELETE" Category C dead routes
+- Website Enrichment UI (Requirement F)
+
+### P2 (Medium Priority)
+- Performance optimization for Business DNA/Settings pages (`/api/business-profile/context`)
+- Remove dead `calibration_status` writes in `routes/calibration.py`
+
+### P3 (Low Priority)
+- Automatic ingestion trigger (cron/webhook for `/api/intelligence/ingest`)
+
+## Key API Endpoints
+- `/api/intelligence/cold-read` - Fast, read-only intelligence retrieval
+- `/api/intelligence/ingest` - Admin-only heavy processing
+- `/api/calibration/status` - User calibration state
+- `/api/lifecycle/state` - Full lifecycle state for routing
+- `/api/console/state` - Strategic Console progress
+- `/api/integrations/merge/disconnect` - Disconnect integrations
+
+## Key Files
+- `/app/backend/server.py` - Main backend (needs modularization)
+- `/app/frontend/src/context/SupabaseAuthContext.js` - Auth state machine
+- `/app/frontend/src/pages/AdvisorWatchtower.js` - WOW Landing / main dashboard
+- `/app/frontend/src/lib/api.js` - API client with interceptors
+- `/app/frontend/public/service-worker.js` - SW with API exclusions
+
+## Test Credentials
+- User: `andre@thestrategysquad.com.au`
+- Password: Requires magic link reset
