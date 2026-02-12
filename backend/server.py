@@ -9614,43 +9614,6 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
         "message": "No material changes detected." if not positions else None,
     }
 
-    # PART 1: If no events created, persist baseline_initialized snapshot
-    events_created = result.get("events_created", 0) if isinstance(result, dict) else 0
-    if events_created == 0:
-        try:
-            # Gather what was checked
-            integrations_checked = []
-            try:
-                int_r = supabase_admin.table("integration_accounts").select("provider, category").eq("user_id", user_id).execute()
-                integrations_checked = [r.get("provider", "") for r in (int_r.data or [])]
-            except Exception:
-                pass
-
-            domains_enabled = []
-            try:
-                bp = await get_business_profile_supabase(supabase_admin, user_id)
-                if bp:
-                    ic = bp.get("intelligence_configuration", {}) or {}
-                    for d, cfg in (ic.get("domains", {}) or {}).items():
-                        if cfg.get("enabled"):
-                            domains_enabled.append(d)
-            except Exception:
-                pass
-
-            now_iso = datetime.now(timezone.utc).isoformat()
-            supabase_admin.table("intelligence_snapshots").insert({
-                "user_id": user_id,
-                "snapshot_type": "baseline_initialized",
-                "summary": "Baseline Initialized — No Material Changes Detected",
-                "domains": {"enabled": domains_enabled, "integrations_checked": integrations_checked},
-                "open_risks": [],
-                "contradictions": [],
-                "generated_at": now_iso,
-            }).execute()
-            logger.info(f"[cold-read] Baseline initialized snapshot persisted for {user_id}")
-        except Exception as snap_err:
-            logger.warning(f"[cold-read] Baseline snapshot failed: {snap_err}")
-
     return {
         "success": True,
         "cold_read": result
