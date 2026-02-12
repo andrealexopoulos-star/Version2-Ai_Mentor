@@ -229,11 +229,11 @@ const AdvisorWatchtower = () => {
               {/* Calibration */}
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${lifecycle.calibration.complete ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
+                  <div className={`w-2 h-2 rounded-full ${lifecycle.calibration?.complete ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
                   <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Calibration</span>
                 </div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {lifecycle.calibration.complete ? 'Agent Calibrated' : 'Pending'}
+                  {lifecycle.calibration?.complete ? 'Agent Calibrated' : 'Pending'}
                 </p>
                 {resolvedFacts?.['business.name'] && (
                   <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{resolvedFacts['business.name'].value}</p>
@@ -258,13 +258,13 @@ const AdvisorWatchtower = () => {
               {/* Integrations */}
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${lifecycle.integrations.count > 0 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                  <div className={`w-2 h-2 rounded-full ${lifecycle.integrations?.count > 0 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                   <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Integrations</span>
                 </div>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {lifecycle.integrations.count > 0 ? `${lifecycle.integrations.count} Connected` : 'None Connected'}
+                  {lifecycle.integrations?.count > 0 ? `${lifecycle.integrations.count} Connected` : 'None Connected'}
                 </p>
-                {lifecycle.integrations.providers.length > 0 && (
+                {lifecycle.integrations?.providers?.length > 0 && (
                   <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                     {lifecycle.integrations.providers.join(', ')}
                   </p>
@@ -274,16 +274,16 @@ const AdvisorWatchtower = () => {
               {/* Intelligence */}
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${lifecycle.intelligence.has_events ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                  <div className={`w-2 h-2 rounded-full ${lifecycle.intelligence?.has_events ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
                   <span className="text-xs font-medium tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>Intelligence</span>
                 </div>
-                {lifecycle.intelligence.has_events ? (
+                {lifecycle.intelligence?.has_events ? (
                   <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Active</p>
                 ) : (
                   <>
                     <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Pre-analysis</p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                      {lifecycle.intelligence.domains_enabled.length > 0
+                      {lifecycle.intelligence?.domains_enabled?.length > 0
                         ? `Domains: ${lifecycle.intelligence.domains_enabled.join(', ')}`
                         : 'No domains enabled'}
                     </p>
@@ -298,8 +298,8 @@ const AdvisorWatchtower = () => {
                 <p className="text-xs font-medium tracking-wide uppercase mb-2" style={{ color: 'var(--text-muted)' }}>Executive Memo</p>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                   {user?.full_name ? `${user.full_name.split(' ')[0]}, b` : 'B'}ased on your confirmed {resolvedFacts['business.industry']?.value || 'business'} focus
-                  {lifecycle.integrations.count > 0 && ` and ${lifecycle.integrations.count} connected data source${lifecycle.integrations.count > 1 ? 's' : ''} (${lifecycle.integrations.providers.join(', ')})`}
-                  , {baselineSnapshot ? 'I have initialized monitoring' : 'I am preparing to monitor'} across {lifecycle.intelligence.domains_enabled.length > 0 ? lifecycle.intelligence.domains_enabled.join(', ') : 'your enabled domains'}.
+                  {lifecycle.integrations?.count > 0 && ` and ${lifecycle.integrations.count} connected data source${lifecycle.integrations.count > 1 ? 's' : ''} (${lifecycle.integrations.providers.join(', ')})`}
+                  , {baselineSnapshot ? 'I have initialized monitoring' : 'I am preparing to monitor'} across {lifecycle.intelligence?.domains_enabled?.length > 0 ? lifecycle.intelligence.domains_enabled.join(', ') : 'your enabled domains'}.
                   {baselineSnapshot && ' Baseline established — I will surface material changes as they occur.'}
                 </p>
               </div>
