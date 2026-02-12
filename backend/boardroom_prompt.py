@@ -167,6 +167,46 @@ def _build_watchtower_section(
     return "\n".join(lines)
 
 
+def _build_signals_section(signals: Optional[List[Dict[str, Any]]]) -> str:
+    lines = ["═══ RAW SIGNAL TELEMETRY (USE FOR CAUSAL REASONING) ═══"]
+
+    if not signals:
+        lines.append("No recent signals available.")
+        return "\n".join(lines)
+
+    lines.append("These are the most recent observation events from connected systems.")
+    lines.append("Use these to ground your reasoning in specific, real data points.")
+    lines.append("Reference signal sources, event types, and severity when explaining causality.")
+    lines.append("")
+
+    # Group by domain for structured analysis
+    domain_signals = {}
+    for s in signals:
+        d = s.get("domain", "unknown")
+        if d not in domain_signals:
+            domain_signals[d] = {"critical": 0, "warning": 0, "info": 0, "sources": set(), "types": set(), "latest": None}
+        sev = s.get("severity", "info")
+        domain_signals[d][sev] = domain_signals[d].get(sev, 0) + 1
+        domain_signals[d]["sources"].add(s.get("source", "unknown"))
+        domain_signals[d]["types"].add(s.get("event_type", "unknown"))
+        if not domain_signals[d]["latest"]:
+            domain_signals[d]["latest"] = s.get("created_at", "")
+
+    for domain, data in domain_signals.items():
+        total = data["critical"] + data["warning"] + data["info"]
+        lines.append(f"{domain.upper()}: {total} recent signals")
+        lines.append(f"  Severity breakdown: critical={data['critical']}, warning={data['warning']}, info={data['info']}")
+        lines.append(f"  Signal sources: {', '.join(data['sources'])}")
+        lines.append(f"  Event types: {', '.join(data['types'])}")
+        lines.append(f"  Latest signal: {(data['latest'] or '')[:16]}")
+        if data['critical'] > data['info'] + data['warning']:
+            lines.append(f"  PATTERN: Critical signals dominate — systematic failure pattern, not isolated incidents.")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+
 def _build_escalation_section(history: Optional[List[Dict[str, Any]]]) -> str:
     lines = ["═══ ESCALATION MEMORY (FACTUAL RECORD) ═══"]
 
