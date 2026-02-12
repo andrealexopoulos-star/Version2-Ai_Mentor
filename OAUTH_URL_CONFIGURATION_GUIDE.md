@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://full-stack-upgrade-5.preview.emergentagent.com
+https://stability-verify.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://full-stack-upgrade-5.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://full-stack-upgrade-5.preview.emergentagent.com
+https://stability-verify.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://full-stack-upgrade-5.preview.emergentagent.com/**
-https://full-stack-upgrade-5.preview.emergentagent.com/auth/callback
-https://full-stack-upgrade-5.preview.emergentagent.com/auth-callback-supabase
-https://full-stack-upgrade-5.preview.emergentagent.com/connect-email
-https://full-stack-upgrade-5.preview.emergentagent.com/integrations
+https://stability-verify.preview.emergentagent.com/**
+https://stability-verify.preview.emergentagent.com/auth/callback
+https://stability-verify.preview.emergentagent.com/auth-callback-supabase
+https://stability-verify.preview.emergentagent.com/connect-email
+https://stability-verify.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://full-stack-upgrade-5.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/outlook/callback
+https://stability-verify.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://full-stack-upgrade-5.preview.emergentagent.com
+https://stability-verify.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/gmail/callback
+https://stability-verify.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

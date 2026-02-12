@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://full-stack-upgrade-5.preview.emergentagent.com/advisor
+## For: https://stability-verify.preview.emergentagent.com/advisor
 
 ---
 

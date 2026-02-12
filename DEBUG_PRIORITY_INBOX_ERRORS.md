@@ -40,7 +40,7 @@ From your screenshot:
 The access token has likely expired. You need to:
 
 1. **Disconnect Gmail**:
-   - Go to: https://full-stack-upgrade-5.preview.emergentagent.com/connect-email
+   - Go to: https://stability-verify.preview.emergentagent.com/connect-email
    - Click "Disconnect" on Gmail
 
 2. **Reconnect Gmail**:
@@ -49,7 +49,7 @@ The access token has likely expired. You need to:
    - This will store a fresh access token
 
 3. **Test Priority Inbox**:
-   - Go to: https://full-stack-upgrade-5.preview.emergentagent.com/email-inbox
+   - Go to: https://stability-verify.preview.emergentagent.com/email-inbox
    - Should now load successfully
 
 ---
@@ -136,7 +136,7 @@ Your application stores refresh tokens but doesn't automatically refresh them ye
 
 1. **Disconnect Gmail**:
    ```
-   https://full-stack-upgrade-5.preview.emergentagent.com/connect-email
+   https://stability-verify.preview.emergentagent.com/connect-email
    ```
    Click "Disconnect Gmail"
 
@@ -147,7 +147,7 @@ Your application stores refresh tokens but doesn't automatically refresh them ye
 
 3. **Go to Priority Inbox**:
    ```
-   https://full-stack-upgrade-5.preview.emergentagent.com/email-inbox
+   https://stability-verify.preview.emergentagent.com/email-inbox
    ```
 
 4. **Expected Result**:

@@ -33,7 +33,7 @@
 
 2. **Open a new tab and go to:**
    ```
-   https://full-stack-upgrade-5.preview.emergentagent.com/integrations
+   https://stability-verify.preview.emergentagent.com/integrations
    ```
 
 3. **Find the Gmail card** (red GM logo)
@@ -48,7 +48,7 @@
 
 7. **You should be redirected back to:**
    ```
-   https://full-stack-upgrade-5.preview.emergentagent.com/integrations?gmail_connected=true&connected_email=YOUR_EMAIL
+   https://stability-verify.preview.emergentagent.com/integrations?gmail_connected=true&connected_email=YOUR_EMAIL
    ```
 
 8. **You should see:**

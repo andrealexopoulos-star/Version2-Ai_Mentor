@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://full-stack-upgrade-5.preview.emergentagent.com
+**Test URL:** https://stability-verify.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://full-stack-upgrade-5.preview.emergentagent.com/advisor
+- [ ] Navigate to https://stability-verify.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://full-stack-upgrade-5.preview.emergentagent.com/
+**Landing:** https://stability-verify.preview.emergentagent.com/
 
-**Login:** https://full-stack-upgrade-5.preview.emergentagent.com/login-supabase
+**Login:** https://stability-verify.preview.emergentagent.com/login-supabase
 
-**Register:** https://full-stack-upgrade-5.preview.emergentagent.com/register-supabase
+**Register:** https://stability-verify.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://full-stack-upgrade-5.preview.emergentagent.com/pricing
+**Pricing:** https://stability-verify.preview.emergentagent.com/pricing
 
-**Terms:** https://full-stack-upgrade-5.preview.emergentagent.com/terms
+**Terms:** https://stability-verify.preview.emergentagent.com/terms
 
-**Advisor:** https://full-stack-upgrade-5.preview.emergentagent.com/advisor
+**Advisor:** https://stability-verify.preview.emergentagent.com/advisor
 
 ---
 

@@ -4,7 +4,7 @@
 # Requires: Valid user authentication
 
 # Configuration
-API_URL="https://full-stack-upgrade-5.preview.emergentagent.com/api"
+API_URL="https://stability-verify.preview.emergentagent.com/api"
 
 # Color codes for output
 GREEN='\033[0;32m'

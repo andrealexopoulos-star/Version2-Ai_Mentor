@@ -1,207 +1,157 @@
 <analysis>**original_problem_statement:**
-The initial goal was a comprehensive platform integrity overhaul, which evolved into enforcing a Full Lifecycle Coherence for the user experience. The core requirements were:
-1.  **Fix Core Lifecycle Bugs:** Eliminate all redirect loops related to calibration and onboarding by establishing a strict, backend-driven state machine for routing.
-2.  **Implement Priority Compression UX:** Redesign the Board Room to present a single primary focus, a few secondary items, and hide the rest, making the intelligence actionable and less overwhelming.
-3.  **Enforce Data Sovereignty:** Ensure user data is entered only once. All components (like the Strategic Console) must check for existing facts before asking questions. Business DNA fields must auto-save on change.
-4.  **Improve UI/UX State Coherence:** UI elements must deterministically reflect backend state (e.g., Complete Calibration button changes to Recalibrate Agent when done).
-5.  **Build a WOW Landing:** After completing the initial lifecycle steps (calibration, onboarding), present the user with a summary page (BIQc Insights) that shows their calibrated persona, confirmed business facts, connected integrations, and initial intelligence insights.
-6.  **Fix the Intelligence Pipeline:** The primary user frustration was that connected integrations (HubSpot, Xero, Outlook) were not producing any intelligence. The task was to diagnose and fix the entire data extraction and analysis pipeline, from data emission to Watchtower analysis, ensuring intelligence is generated and displayed.
-7.  **Stabilize Critical Endpoints:** The  endpoint was too slow (>30s), causing frontend timeouts. It needed to be refactored for performance (<8s) and made strictly read-only.
-8.  **Improve Chat UX:** Rebuild the Strategic Console's chat interface to have a modern, light theme and smooth, bottom-anchored scrolling similar to ChatGPT.
-9.  **Secure the System:** Make the data ingestion process idempotent to prevent duplicates and lock down the heavy-processing  endpoint to be admin-only.
+The user's primary goal is to achieve platform stability and eliminate recurring bugs that appear after deployments, particularly a critical issue where the frontend receives HTML instead of JSON for API calls, causing crashes. The user is highly frustrated and has demanded perfection and proof of stability.
+
+Additionally, the user has requested a new feature: a Deep Research + Inference Engine. This involves a new backend endpoint () that scrapes a website, uses an LLM to synthesize the content into a structured format, and has a deterministic fallback mechanism based on domain name analysis if the scrape fails.
+
+The user also requested a complete audit of all platform features, their functions, the APIs and databases they use, and any third-party integrations involved.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The agent successfully executed a massive series of architectural fixes and feature implementations, moving the platform from a buggy state to a largely coherent and functional system.
--   **Lifecycle & Routing Fixed:** The calibration redirect loops are resolved. A strict, backend-driven state machine now governs the user lifecycle (Calibration -> Onboarding -> WOW Landing -> Main App), preventing users from skipping steps.
--   **UX/UI Overhauled:** The Board Room now uses the Priority Compression UX. The Strategic Console chat has been rebuilt with a light theme and smooth scrolling. A WOW Landing page now serves as the main dashboard, summarizing the user's status.
--   **Intelligence Pipeline Operational:** The core issue of no intelligence being generated has been fixed. The agent identified and repaired multiple broken stages:
-    -   The emission layer now correctly extracts data from connected integrations (HubSpot).
-    -   The Watchtower engine is now correctly integrated into the pipeline to analyze the extracted data.
-    -   The  endpoint has been refactored to be a fast (<3s), read-only endpoint.
-    -   A new, admin-only  endpoint now handles all heavy processing (data extraction and analysis).
--   **Data Integrity Enforced:** The Strategic Console no longer re-asks for known information. Business DNA fields now auto-save to the database. Disconnect buttons have been added to integration cards.
--   **System Hardened:** The data ingestion process is now idempotent using a fingerprinting mechanism to prevent duplicate data. The  endpoint is secured and accessible only by admins.
+- A new Deep Research + Inference Engine has been fully implemented and tested at . It correctly handles both successful scrapes (using an LLM for synthesis) and failed scrapes (using a domain-inference fallback). The implementation is in a new modular route file, .
+- A comprehensive, multi-layered fix for the critical HTML instead of JSON bug has been implemented. This solution involves:
+    1.  Completely removing the frontend service worker by deleting its registration and replacing the worker file with a self-destructing script.
+    2.  Hardening the central  to automatically retry requests that receive HTML responses and to include cache-busting headers.
+    3.  Patching all other raw  calls throughout the application to also use cache-busting headers.
+    4.  Adding defensive null-safety guards (optional chaining ) to the UI to prevent crashes from malformed API data.
+- A full platform feature audit was completed, and the results were saved to .
+- Minor UI bugs (an incorrect email warning and a flashing no connections message) have been fixed.
 
 **Last working item**:
--   Last item agent was working: The agent performed a complete end-to-end test for the user  after all the architectural fixes were deployed. This involved logging in and taking screenshots of every major page (Login, WOW Landing, Settings, Business DNA, Integrations, Email, Operator View, Board Room) to verify the full lifecycle and data pipeline were working correctly.
--   Status: USER VERIFICATION PENDING
--   Agent Testing Done: Y
--   Which testing method agent to use? NA
+-   Last item agent was working: The agent's work was interrupted by a platform-level infrastructure failure (Bad Gateway), which made the development environment unreachable. Right before the outage, the agent had finished deploying a comprehensive set of fixes to permanently resolve the recurring service worker caching bug that was causing platform-wide instability. The agent was about to begin a full end-to-end (E2E) visual test to verify the fixes and provide proof of stability to the user.
+-   Status: BLOCKED
+-   Agent Testing Done: N
+-   Which testing method agent to use? both
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Complete Modularization of  (Priority: P1)
--   Issue 2: Delete SAFE TO DELETE Category C Routes (Priority: P1)
--   Issue 3: Performance Lag on Data-Heavy Pages (Priority: P2)
--   Issue 4: Remove Dead  Writes (Priority: P2)
+-   Issue 1: Platform Instability & Verification (Priority: P0)
+-   Issue 2: Complete Modularization of  (Priority: P1)
+-   Issue 3: Delete SAFE TO DELETE Category C Routes (Priority: P1)
+-   Issue 4: Performance Lag on Data-Heavy Pages (Priority: P2)
+-   Issue 5: Remove Dead  Writes (Priority: P2)
 
 Issues Detail:
--   **Issue 1: Complete Modularization of **
-    -   **Description**: The main  file is still over 10,000 lines long. The original plan to break it down into smaller, domain-specific modules in the  directory is still incomplete.
+-   **Issue 1: Platform Instability & Verification**
+    -   **Description**: A recurring, critical bug where API calls return cached HTML instead of JSON, causing the entire frontend to crash. This is the user's primary frustration. Fixes have been implemented but not yet verified due to a platform outage.
+    -   **Attempted fixes**: A multi-layered defense is in place: killed the service worker, added cache-busting headers to ALL frontend API calls, and added defensive UI null-safety guards.
     -   **Next debug checklist**:
-        1.  Identify the remaining large route blocks in  (e.g., chat, business profile, settings).
-        2.  Extract them into new files under , following the existing pattern.
-        3.  Update  to import and register the new s.
-    -   **Why fix this issue and what will be achieved with the fix?**: Completing this will make the backend codebase significantly more maintainable, easier to debug, and less prone to conflicts.
+        1.  Confirm the development environment is stable and reachable.
+        2.  Initiate a full end-to-end test for user .
+        3.  Log in and systematically navigate through every page of the application (WOW Landing, Settings, Business DNA, Integrations, Email, Board Room, etc.).
+        4.  Use the screenshot tool to capture each page, verifying it loads correctly without errors.
+        5.  Inspect the browser's developer console during navigation to ensure no API call receives an HTML response.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is the highest priority task. Successfully verifying this fix will restore platform stability, eliminate crashes, and rebuild critical user trust.
     -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Backend (full regression suite).
-    -   **Blocked on other issue**: None.
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Frontend (requires extensive E2E testing).
+    -   **Blocked on other issue**: Blocked by the unstable platform environment.
 
--   **Issue 2: Delete SAFE TO DELETE Category C Routes**
-    -   **Description**: A forensic audit () identified 10 routes in  as dead code that are safe to delete. This cleanup was never performed.
-    -   **Next debug checklist**:
-        1.  Review the report to confirm the list of routes.
-        2.  Search for and delete the corresponding route handler code blocks from .
-        3.  Run a full regression test to ensure no functionality was accidentally removed.
-    -   **Why fix this issue and what will be achieved with the fix?**: Reduces code clutter and technical debt, making the application easier to understand.
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Backend.
-    -   **Blocked on other issue**: None.
+-   **Issue 2: Complete Modularization of **
+    -   **Description**: The main  file is still a monolith and needs to be broken down into smaller route modules.
+    -   **Status**: IN PROGRESS
 
--   **Issue 3: Performance Lag on Data-Heavy Pages**
-    -   **Description**: The Business DNA and Settings pages are reported to load slowly. While the  endpoint was optimized, the original suspect () was not investigated.
-    -   **Next debug checklist**:
-        1.  Profile the  endpoint.
-        2.  Analyze queries within the  function for inefficiencies.
-        3.  Check for missing database indexes.
-    -   **Why fix this issue and what will be achieved with the fix?**: Improves user experience on core application pages.
+-   **Issue 3: Delete SAFE TO DELETE Category C Routes**
+    -   **Description**: An audit identified dead code in  that needs to be removed.
     -   **Status**: NOT STARTED
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Both.
-    -   **Blocked on other issue**: None.
 
--   **Issue 4: Remove Dead  Writes**
-    -   **Description**: The file  contains  blocks that attempt to write to a non-existent  column. This is dead code.
-    -   **Next debug checklist**:
-        1.  Locate the  blocks in  that reference .
-        2.  Remove these blocks.
-    -   **Why fix this issue and what will be achieved with the fix?**: Code cleanup and removal of confusing, non-functional logic.
+-   **Issue 4: Performance Lag on Data-Heavy Pages**
+    -   **Description**: The Business DNA and Settings pages are reported to load slowly. The  endpoint is a likely suspect.
     -   **Status**: NOT STARTED
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Backend.
-    -   **Blocked on other issue**: None.
+
+-   **Issue 5: Remove Dead  Writes**
+    -   **Description**:  contains non-functional code that should be removed.
+    -   **Status**: NOT STARTED
 
 **In progress Task List**:
--   Task 1: Complete Modularization of 
+-   Task 1: Verify platform stability fixes
 
  Task Detail:
-  -   **Task 1: Complete Modularization of **
-     -   **Where to resume**: Continue extracting large route blocks from  into the  directory, following the established  pattern.
-     -   **What will be achieved with this?**: A fully modularized, maintainable backend where  is a clean orchestrator.
+  -   **Task 1: Verify platform stability fixes**
+     -   **Where to resume**: Start by checking if the development environment is accessible. If so, immediately begin the comprehensive E2E testing process outlined in Issue 1: Next debug checklist.
+     -   **What will be achieved with this?**: Confirmation that the primary source of user frustration and platform instability has been resolved.
      -   **Status**: IN PROGRESS
-     -   **Should Test frontend/backend/both after fix?**: Backend
-     -   **Blocked on something**: No.
+     -   **Should Test frontend/backend/both after fix?**: Frontend
+     -   **Blocked on something**: The platform environment, which was down at the end of the last session.
 
 **Upcoming and Future Tasks**
--   **(P1) Website Enrichment UI (Requirement F)**: The Full Lifecycle Coherence task included a requirement (F) to fix the website enrichment flow by adding a server-side fetch, a sanitization step, and a preview UI with Confirm, Edit, and Re-scan options. This was not implemented.
--   **(P3) Automatic Ingestion Trigger**: The intelligence pipeline now relies on a manual call to the admin-only  endpoint. A mechanism (e.g., cron job, webhook) should be implemented to trigger this automatically to keep intelligence fresh.
+-   **Upcoming Tasks**:
+    -   **(P0) Research Findings Card + Trust Moment UI (Prompt 02)**: Build the frontend UI to display the results from the new  endpoint.
+    -   **(P1) Website Enrichment UI (Requirement F)**: Implement the UI for the website enrichment flow, allowing users to preview, edit, or re-scan fetched website metadata.
+-   **Future Tasks**:
+    -   **(P3) Automatic Ingestion Trigger**: Implement an automated mechanism (e.g., cron job) to periodically call the  endpoint to keep intelligence data fresh.
 
 **Completed work in this session**
--   **Priority Compression UX**: Implemented a new UI in the Board Room to focus on the most critical intelligence. (DONE)
--   **Lifecycle Routing Fixed**: Eliminated all calibration and onboarding redirect loops by implementing a strict, backend-driven state machine. (DONE)
--   **Service Worker Bug Fixed**: Diagnosed and fixed a critical bug where the frontend service worker was incorrectly caching API calls, causing the UI to receive HTML instead of JSON. (DONE)
--   **Full Lifecycle Coherence**: Implemented a large set of features to create a seamless user journey:
-    -   **Settings Page (A, E)**: Shows correct calibration status and a Recalibrate Agent button.
-    -   **Strategic Console (B)**: Injects known facts to avoid re-asking questions.
-    -   **Business DNA (C)**: Renamed from Business Profile and implemented debounced auto-saving.
-    -   **Integrations UX (D)**: Added Disconnect buttons to integration cards.
-    -   **Operator View (G)**: Now explains *why* there is no intelligence data if the pipeline is empty.
-    -   **WOW Landing (H)**: A new summary dashboard is shown after login, displaying the user's complete status.
--   **Intelligence Pipeline Re-architected**:
-    -   Diagnosed and fixed the entire broken data pipeline.
-    -   Separated heavy processing into an admin-only  endpoint.
-    -   Refactored  to be a fast (<3s), read-only endpoint.
-    -   Made data ingestion idempotent with fingerprinting to prevent duplicates.
--   **UI/UX Improvements**: Rebuilt the Strategic Console chat UI with a light, professional theme and smooth, bottom-anchored scrolling.
--   **E2E Validation**: Performed multiple comprehensive end-to-end tests with screenshots to validate all fixes and new features.
-
-**Earlier issues found/mentioned but not fixed**
--   See All Pending/In progress Issue list and Upcoming and Future Tasks.
+-   **Deep Research + Inference Engine Implemented**: Created the  endpoint with scraping, LLM synthesis, and a domain inference fallback.
+-   **Platform Instability Addressed**: Diagnosed the root cause as service worker caching and deployed a comprehensive, multi-layered fix to kill the service worker and enforce cache-busting on all API calls.
+-   **Platform Feature Inventory Generated**: Audited the entire codebase and created a detailed report of all features, APIs, and database tables.
+-   **Minor UI Bugs Fixed**: Resolved an incorrect email warning on the dashboard and a content flash on the Integrations page.
 
 **Code Architecture**
--   **Backend**: FastAPI. The monolithic  still exists but a significant amount of logic has been moved to services and other modules. A key architectural change is the strict separation between the fast, read-only  endpoint and the heavy, admin-only  endpoint.
--   **Frontend**: React. State management relies heavily on  which now powers a strict state machine for routing. API calls have been hardened with content-type guards.
--   **Database**: Supabase (PostgreSQL).
+-   **Backend**: A new modular route was added at  and registered in .
+-   **Frontend**: The architecture was significantly hardened against caching issues. The service worker () has been effectively decommissioned, and the main API client () now includes an auto-retry mechanism for invalid responses.
 
 **Key Technical Concepts**
--   **Lifecycle Coherence**: The principle that the entire application should guide the user through a deterministic sequence of states (Calibration -> Onboarding -> App).
--   **Strict State Machine Routing**: Using backend-authoritative status flags (, ) to control all routing and prevent users from accessing parts of the app out of sequence.
--   **Read/Write Separation for Performance**: A critical architectural pattern where user-facing API endpoints () are strictly fast and read-only, while slow, heavy data processing () is moved to separate, asynchronous, or admin-triggered endpoints.
--   **Idempotency**: Ensuring that repeated calls to the data ingestion endpoint do not create duplicate records, achieved through data fingerprinting and database constraints.
-
-**key DB schema**
--   : Added a  text column with a unique constraint () to ensure idempotency.
--   : Used to persist the  state, confirming that the analysis engine has run at least once.
--   : The  JSONB column was extended to store  to persist the user's progress in the Strategic Console.
+-   **Service Worker Decommissioning**: A strategy to forcefully unregister and disable a problematic service worker on client browsers by replacing its source file with a self-destructing script.
+-   **Defensive API Client & Cache-Busting**: Using  headers on all API calls and building retry logic into the client to make the frontend resilient to network or caching anomalies.
+-   **Defensive UI Rendering**: Using optional chaining () in React components to prevent crashes when API data is missing or malformed.
 
 **All files of reference**
--   : Heavily modified to refactor the intelligence pipeline, secure endpoints, and fix state logic. Still the main monolithic file.
--   : Updated to add fingerprinting for idempotency.
--   : Core of the frontend state machine for routing.
--   : Enforces the routing rules from the state machine.
--   : The WOW Landing page, which now serves as the main dashboard.
--   : The Strategic Console component, completely rewritten for better UX and state management.
--   : Updated to show correct calibration status.
--   : Updated to use debounced auto-saving.
--   : Updated to add disconnect buttons.
--   : Modified to prevent caching of API routes.
+-    (New): Implements the Deep Research + Inference Engine.
+-   : Updated to register the new research router.
+-   : Modified to remove service worker registration.
+-   : Replaced with a self-destructing script.
+-   : Hardened with an auto-retry mechanism and cache-busting headers.
+-   : Hardened raw  calls.
+-   : Hardened raw  calls.
+-   : Added UI null-safety guards.
 
 **Areas that need refactoring**:
--   : This remains the highest priority for refactoring. Completing its modularization is critical for long-term maintainability.
+-    remains the highest priority for modularization.
+-   All raw  calls across the frontend should ideally be migrated to use the single, hardened  for consistency.
 
 **key api endpoints**
--    (Refactored): Now a fast, read-only endpoint that returns pre-computed intelligence.
--    (New): An admin-only endpoint that triggers the heavy data extraction and analysis pipeline.
--    (New): Allows a user to reset their calibration status.
--    (New/Refactored): Provides the frontend with the user's complete lifecycle status (calibration, onboarding, etc.).
--    (New): Persists the user's progress in the Strategic Console.
--    (New): Handles disconnecting Merge.dev integrations.
+-    (New): The endpoint for the Deep Research + Inference Engine.
 
 **Critical Info for New Agent**
--   **The Intelligence Pipeline is a Two-Step Process**: This is the most critical new concept. User-facing pages should **only** call the fast, read-only  endpoint. To generate new intelligence, a separate, authorized call must be made to . Intelligence data will become stale without this second call.
--   **Routing is a Strict State Machine**: Do not attempt to bypass routing logic on the frontend. All navigation is controlled by the user's lifecycle status, which is fetched from the backend () and stored in .
--   **Service Worker Risks**: The application has a service worker () that has previously caused critical bugs by caching API calls. Any changes to frontend fetching logic should be tested to ensure the service worker isn't interfering.
+-   **The user's primary concern is STABILITY.** They are extremely frustrated with bugs. Your absolute highest priority is to prove that the recent fixes for the HTML instead of JSON error have permanently solved the problem. Do not proceed with new features until this is verified with evidence (screenshots, test reports).
+-   **The platform environment may be unstable.** The last session ended with a Bad Gateway error. Your first action should be to check if the environment is reachable. If it's still down, a new fork is the only solution.
+-   **A multi-layered defense against caching issues has been deployed but not verified.** You must perform a thorough E2E test to confirm this system works as a whole.
+-   **The next feature task is Prompt 02**, which involves building the UI for the new Research Engine. Do not start this until the stability issues are confirmed as fixed and the user is satisfied.
 
 **documents and test reports created in this job**
 -   
 -   
--   
+-    (Partial, interrupted)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Perform a production integrity audit, checking if cold-read is read-only, ingest is secure, idempotent, and triggered.
-2.  **Agent**: Delivered the audit, confirming cold-read is read-only, but ingest is unsecured, not idempotent, and not auto-triggered.
-3.  **User**: Issued three surgical tasks: 1) Make emission idempotent. 2) Lock down ingest to admin-only. 3) Remove snapshot writes from cold-read.
-4.  **Agent**: Implemented all three fixes, provided migration SQL, and test proof.
-5.  **User**: Confirmed deployment and requested a full E2E test with screenshots for .
-6.  **Agent**: Began the E2E test, providing screenshots for Login and the WOW Landing page.
-7.  **Agent**: Continued test, providing screenshots for Settings, Business DNA, and Integrations.
-8.  **Agent**: Provided screenshots for Email and noted Operator View was loading slowly.
-9.  **Agent**: Provided screenshot of the Board Room showing CRITICAL intelligence, completing the visual test.
-10. **Agent**: Delivered the final E2E test summary report.
+1.  **User**: Reports seeing errors and non-working features, demands a full E2E test and proof of stability for the user . (PENDING VERIFICATION)
+2.  **User**: Complains that bugs MUST Stop and that the agent must deliver perfection every time and stability. Re-iterates demand for testing and triage. (PENDING VERIFICATION)
+3.  **User**: Asks why the agent paused. (Answered)
+4.  **User**: Asks if there is an issue with the platform after the environment went down. (Answered)
+5.  **User**: Provides Emergent Prompt 01 to build the Deep Research + Inference Engine. (COMPLETED)
+6.  **User**: provides remaining prompts for E2E testing. (PENDING)
 
 **Project Health Check:**
--   **Broken**: None. All major known bugs and architectural flaws have been addressed. The Xero integration failed to authenticate during testing, which may require re-authentication by the user.
--   **Mocked**: None. The UI now reflects real database state.
+-   **Broken**: The development environment itself was unreachable at the end of the last session. The stability of the application code is unverified, although fixes for the primary known bugs have been implemented.
+-   **Mocked**: None.
 
 **3rd Party Integrations**
 -   **Supabase (PostgreSQL, Auth)**: Core platform dependency.
--   **OpenAI GPT**: Used for AI-driven intelligence. Uses Emergent LLM Key.
--   **Merge.dev**: Used for HubSpot and Xero integrations. Connection logic fixed.
--   **Microsoft Outlook**: Native integration. Connection logic fixed.
+-   **OpenAI GPT-4o**: Used for AI-driven intelligence and the new Research Engine. Uses Emergent LLM Key.
+-   **Merge.dev**: Used for HubSpot and Xero integrations.
+-   **Microsoft Outlook**: Native integration for email.
+-   **Google (OAuth, Drive)**: For Gmail and Drive integrations.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. Used multiple times to validate fixes.
--   **Troubleshoot agent used after agent stuck in loop**: YES. Used to diagnose the initial intelligence pipeline failure.
--   **Test files created**: []
--   **Known regressions**: None.
+-   **Testing agent used after significant changes**: YES, but the last run was interrupted by a platform timeout before completion.
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: None.
+-   **Known regressions**: None identified, but full regression testing is pending.
 
 **Credentials to test flow:**
 -   **User**: 
--   **Password**: The agent reset the password during the session. A new password will need to be set via magic link if direct login is required.
+-   **Password**: Unknown. The previous agent used internal methods to log in. A password reset via magic link might be necessary for a clean UI test if the session isn't preserved.
 
 **What agent forgot to execute**
--   **Website Enrichment UI (Requirement F)**: From the Full Lifecycle Coherence task list, the agent was supposed to implement a UI for website enrichment that allowed the user to preview, edit, or re-scan fetched website metadata. This was completely overlooked.</analysis>
+-   The agent was interrupted by a platform outage while fulfilling the user's explicit request for a full E2E test and screenshot evidence. The primary pending action is to complete this verification process once the environment is stable.</analysis>
