@@ -29,6 +29,8 @@ Comprehensive platform integrity overhaul enforcing "Full Lifecycle Coherence" f
 - Fixed blank screen on login caused by `AdvisorWatchtower.js` crash when `/api/lifecycle/state` returns HTML instead of JSON
 - Added 3-layer defense: API client HTML rejection, lifecycle data validation, optional chaining on template
 - **P0: Deep Research + Inference Engine** — New `POST /api/research/analyze-website` endpoint with live scrape → LLM synthesis path and domain inference fallback. Full observability logging.
+- **Stability fixes**: Fixed "body stream already read" on Integrations, false email warning on BIQc Insights, Data Connections tab loading flash
+- **E2E Testing**: All 11 pages tested and passing for user andre@thestrategysquad.com.au (testing agent iteration_23 + manual screenshots)
 
 ## Prioritized Backlog
 
