@@ -553,6 +553,10 @@ class MergeEmissionLayer:
         confidence: float,
         severity: str = "info",
     ) -> Dict[str, Any]:
+        import hashlib
+        # Build deterministic fingerprint from signal identity
+        fp_source = f"{user_id}:{source}:{domain}:{signal_name}:{json.dumps(entity, sort_keys=True, default=str)}"
+        fingerprint = hashlib.sha256(fp_source.encode()).hexdigest()[:40]
         return {
             "id": str(uuid4()),
             "user_id": user_id,
@@ -562,18 +566,25 @@ class MergeEmissionLayer:
             "signal_name": signal_name,
             "entity": entity,
             "metric": metric,
-            "payload": {**entity, **metric},  # backward compat with existing payload column
+            "payload": {**entity, **metric},
             "confidence": min(max(confidence, 0), 1),
             "severity": severity,
+            "fingerprint": fingerprint,
             "observed_at": datetime.now(timezone.utc).isoformat(),
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
     async def _persist_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            result = self.supabase.table("observation_events").insert(event).execute()
-            logger.info(f"[emission] {event['signal_name']} emitted for {event['domain']}")
-            return result.data[0] if result.data else event
+            result = self.supabase.table("observation_events").upsert(
+                event, on_conflict="user_id,fingerprint", ignore_duplicates=True
+            ).execute()
+            if result.data:
+                logger.info(f"[emission] {event['signal_name']} emitted for {event['domain']}")
+                return result.data[0]
+            else:
+                logger.debug(f"[emission] {event['signal_name']} duplicate skipped")
+                return event
         except Exception as e:
             logger.error(f"[emission] Persist failed for {event['signal_name']}: {e}")
             return event
