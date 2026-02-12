@@ -5627,7 +5627,13 @@ COGNITIVE CORE CONTEXT (USE THIS)
         ]
         
         # Store in Supabase (MongoDB removed - FIX APPLIED)
-        existing = await get_soundboard_conversation_supabase(supabase_admin, user_id, req.conversation_id)
+        existing = None
+        if req.conversation_id:
+            try:
+                ex_result = supabase_admin.table("soundboard_conversations").select("*").eq("id", req.conversation_id).eq("user_id", user_id).execute()
+                existing = ex_result.data[0] if ex_result.data else None
+            except Exception:
+                existing = None
         
         if existing:
             # Update existing conversation
