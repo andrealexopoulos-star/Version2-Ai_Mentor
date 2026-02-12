@@ -103,7 +103,8 @@ const Integrations = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Bearer ${session.access_token}`
+            'Authorization': `Bearer ${session.access_token}`,
+            'Cache-Control': 'no-cache, no-store',
           },
           body: new URLSearchParams({
             public_token,
