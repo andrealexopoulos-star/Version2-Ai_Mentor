@@ -9675,9 +9675,17 @@ async def trigger_ingestion(current_user: dict = Depends(get_current_user)):
             emission_signals = emission_result.get("signals_emitted", 0)
         except Exception as e:
             logger.warning(f"[ingest] Emission failed: {e}")
+    # Run Watchtower Engine analysis after ingestion
+    watchtower_result = None
+    try:
+        from watchtower_engine import get_watchtower_engine
+        engine = get_watchtower_engine()
+        watchtower_result = await engine.run_analysis(user_id)
+    except Exception as e:
+        logger.warning(f"[ingest] Watchtower analysis failed: {e}")
     _elapsed = round((_time.monotonic() - _t0) * 1000)
     logger.info(f"⚡ Ingestion completed in {_elapsed}ms — {emission_signals} signals")
-    return {"success": True, "signals_emitted": emission_signals, "elapsed_ms": _elapsed}
+    return {"success": True, "signals_emitted": emission_signals, "watchtower": watchtower_result, "elapsed_ms": _elapsed}
 
 
 @api_router.get("/intelligence/baseline-snapshot")
