@@ -643,11 +643,20 @@ const Integrations = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache, no-store',
         },
         body: JSON.stringify({ categories })
       });
       
+      // Check for HTML response (stale cache)
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        toast.error('Connection error — please refresh the page and try again');
+        setOpeningMergeLink(false);
+        return;
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         let detail = `Server error (${response.status})`;
