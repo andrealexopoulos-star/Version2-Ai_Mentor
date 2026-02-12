@@ -107,6 +107,9 @@ def build_boardroom_prompt(
     # ─── 1. WATCHTOWER STATE (highest priority) ──────────────
     sections.append(_build_watchtower_section(watchtower_positions, watchtower_findings))
 
+    # ─── 1.3. RAW SIGNAL TELEMETRY ───────────────────────────
+    sections.append(_build_signals_section(recent_signals))
+
     # ─── 1.5. ESCALATION MEMORY ──────────────────────────────
     sections.append(_build_escalation_section(escalation_history))
 
