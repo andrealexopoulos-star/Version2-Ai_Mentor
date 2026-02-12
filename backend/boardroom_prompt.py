@@ -96,6 +96,7 @@ def build_boardroom_prompt(
     contradictions: Optional[List[Dict[str, Any]]] = None,
     pressure: Optional[Dict[str, Any]] = None,
     freshness: Optional[Dict[str, Any]] = None,
+    recent_signals: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """
     Build the full Board Room system prompt with context injected
