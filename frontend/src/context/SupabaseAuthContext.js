@@ -281,7 +281,11 @@ export const SupabaseAuthProvider = ({ children }) => {
         // Calibration complete — now fetch onboarding status ONCE
         try {
           const obRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding/status`, {
-            method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` }
+            method: 'GET', headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+            }
           });
           if (obRes.ok) {
             const obData = await obRes.json();
