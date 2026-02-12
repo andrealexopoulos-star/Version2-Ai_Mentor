@@ -584,7 +584,7 @@ class MergeEmissionLayer:
         try:
             result = self.supabase.table("integration_accounts").select(
                 "category, account_token"
-            ).eq("account_id", account_id).eq("status", "active").execute()
+            ).eq("account_id", account_id).execute()
 
             for row in (result.data or []):
                 cat = row.get("category")
