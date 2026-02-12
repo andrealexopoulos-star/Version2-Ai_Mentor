@@ -325,8 +325,18 @@ const AdvisorWatchtower = () => {
               <ArrowRight className="w-3 h-3" /> Full Screen
             </Button>
           </div>
-          <div className="w-full h-[500px] border rounded-xl shadow-sm overflow-hidden relative" style={{ background: '#F6F7F9' }}>
-            <WarRoomConsole />
+          <div
+            className="w-full border rounded-xl shadow-sm overflow-hidden cursor-pointer transition-colors hover:border-blue-300"
+            style={{ background: '#F6F7F9' }}
+            onClick={() => navigate('/war-room')}
+          >
+            <div className="flex items-center justify-between px-5 py-4">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-sm font-medium text-slate-700">Open Strategic Console</span>
+              </div>
+              <span className="text-xs text-slate-400">Click to begin or continue your session</span>
+            </div>
           </div>
         </div>
 
