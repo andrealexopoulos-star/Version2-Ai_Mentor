@@ -267,7 +267,7 @@ async def scrape_website(url: str) -> Optional[dict]:
 
         # Quality check: insufficient content triggers fallback
         total_content = len(title) + len(meta_desc) + len(body_text)
-        if total_content < 500:
+        if total_content < 200:
             logger.info(f"[research] Scrape content too thin ({total_content} chars) for {url}")
             return None
 
@@ -326,19 +326,21 @@ Return structured JSON only with these exact keys:
 async def synthesize_with_llm(content: dict) -> Optional[dict]:
     """Send scraped content to LLM for structured extraction."""
     try:
-        # Build content block
         content_block = f"""TITLE: {content['title']}
 META DESCRIPTION: {content['meta_description']}
 HEADINGS: {'; '.join(content['headings'])}
 BODY CONTENT:
 {content['body_text'][:6000]}"""
 
-        chat = LlmChat()
+        import uuid
+        chat = LlmChat(
+            api_key=OPENAI_KEY,
+            session_id=str(uuid.uuid4()),
+            system_message=LLM_PROMPT
+        )
         chat.with_model("openai", "gpt-4o")
-        chat.with_api_key(OPENAI_KEY)
-        chat.with_system_prompt(LLM_PROMPT)
 
-        response = await chat.send_async(UserMessage(text=content_block))
+        response = await chat.send_message(UserMessage(text=content_block))
         raw = response.text.strip()
 
         # Strip markdown code fences if present
