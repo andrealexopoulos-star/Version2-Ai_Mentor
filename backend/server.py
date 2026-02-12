@@ -2688,7 +2688,6 @@ async def get_lifecycle_state(request: Request):
             "integrations": {"count": integrations_connected, "providers": integration_names},
             "intelligence": {"has_events": has_intelligence, "domains_enabled": domains_enabled},
             "workspace_id": workspace_id,
-            "console_state": console_state,
         }
     except Exception as e:
         logger.error(f"[lifecycle/state] Error: {e}")
