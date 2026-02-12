@@ -27,9 +27,16 @@ apiClient.interceptors.request.use(async (config) => {
   return Promise.reject(error);
 });
 
-// Response interceptor
+// Response interceptor — reject HTML responses (service worker / proxy misrouting)
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const ct = response.headers?.['content-type'] || '';
+    if (ct.includes('text/html') && !response.config?.expectHtml) {
+      console.warn(`[apiClient] Got HTML instead of JSON for ${response.config?.url}`);
+      return Promise.reject(new Error('Received HTML instead of JSON'));
+    }
+    return response;
+  },
   (error) => {
     return Promise.reject(error);
   }

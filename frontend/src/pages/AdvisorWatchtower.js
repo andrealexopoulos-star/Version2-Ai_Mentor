@@ -84,7 +84,11 @@ const AdvisorWatchtower = () => {
           apiClient.get('/facts/resolve').catch(() => ({ data: null })),
           apiClient.get('/intelligence/baseline-snapshot').catch(() => ({ data: null })),
         ]);
-        setLifecycle(lcRes.data);
+        // Validate lifecycle response has the expected shape before setting
+        const lc = lcRes.data;
+        if (lc && lc.calibration && lc.integrations && lc.intelligence) {
+          setLifecycle(lc);
+        }
         if (factsRes.data?.facts) setResolvedFacts(factsRes.data.facts);
         if (baselineRes.data?.snapshot) setBaselineSnapshot(baselineRes.data.snapshot);
       } catch {}
