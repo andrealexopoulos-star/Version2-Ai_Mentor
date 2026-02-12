@@ -9701,6 +9701,29 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     }
 
 
+@api_router.post("/intelligence/ingest")
+async def trigger_ingestion(current_user: dict = Depends(get_current_user)):
+    """Separate ingestion endpoint — pulls data from integrations. Not blocking cold-read."""
+    import time as _time
+    _t0 = _time.monotonic()
+    user_id = current_user["id"]
+    from workspace_helpers import get_user_account
+    account = await get_user_account(supabase_admin, user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="Workspace not initialized")
+    account_id = account["id"]
+    emission_signals = 0
+    if emission_layer:
+        try:
+            emission_result = await emission_layer.run_emission(user_id, account_id)
+            emission_signals = emission_result.get("signals_emitted", 0)
+        except Exception as e:
+            logger.warning(f"[ingest] Emission failed: {e}")
+    _elapsed = round((_time.monotonic() - _t0) * 1000)
+    logger.info(f"⚡ Ingestion completed in {_elapsed}ms — {emission_signals} signals")
+    return {"success": True, "signals_emitted": emission_signals, "elapsed_ms": _elapsed}
+
+
 @api_router.get("/intelligence/baseline-snapshot")
 async def get_baseline_snapshot(current_user: dict = Depends(get_current_user)):
     """Get the latest baseline_initialized snapshot for the user."""
