@@ -648,13 +648,16 @@ const Integrations = () => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(`Failed: ${errorData.detail || 'Unknown error'}`);
+        const errorText = await response.text();
+        let detail = `Server error (${response.status})`;
+        try { detail = JSON.parse(errorText).detail || detail; } catch {}
+        toast.error(`Failed: ${detail}`);
         setOpeningMergeLink(false);
         return;
       }
       
-      const { link_token } = await response.json();
+      const data = await response.json();
+      const link_token = data.link_token;
       
       if (!link_token) {
         toast.error('Invalid response from server');
