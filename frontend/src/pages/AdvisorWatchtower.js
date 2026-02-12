@@ -59,7 +59,7 @@ const AdvisorWatchtower = () => {
   const [watchtowerEvents, setWatchtowerEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [runningAnalysis, setRunningAnalysis] = useState(false);
-  const [emailConnected, setEmailConnected] = useState(false);
+  const [emailConnected, setEmailConnected] = useState(null); // null = loading
   const [emailConnection, setEmailConnection] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [activation, setActivation] = useState(null);
@@ -363,8 +363,8 @@ const AdvisorWatchtower = () => {
             </div>
           </div>
 
-          {/* Email Connection Warning */}
-          {!emailConnected && (
+          {/* Email Connection Warning — only show after status check confirms disconnected */}
+          {emailConnected === false && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3 mb-4">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
