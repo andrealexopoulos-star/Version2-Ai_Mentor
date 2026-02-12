@@ -9575,13 +9575,29 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     
     logger.info(f"🔍 Watchtower Cold Read (RPC) triggered for account {account_id}, user {user_id}")
     
-    # Execute Cold Read via RPCs
+    # STAGE 1: Run emission layer to extract data from integrations → observation_events
+    emission_signals = 0
+    if emission_layer:
+        try:
+            emission_result = await emission_layer.run_emission(user_id, account_id)
+            emission_signals = emission_result.get("signals_emitted", 0)
+            logger.info(f"📡 Emission layer: {emission_signals} signals extracted from integrations")
+        except Exception as emission_err:
+            logger.warning(f"📡 Emission layer failed (non-fatal): {emission_err}")
+    else:
+        logger.warning("📡 Emission layer not initialized — skipping integration extraction")
+
+    # STAGE 2: Execute Cold Read analysis via RPCs
     result = await generate_cold_read(
         user_id=user_id,
         account_id=account_id,
         supabase_admin=supabase_admin,
         watchtower_store=get_watchtower_store()
     )
+    
+    # Add emission context to result
+    if isinstance(result, dict):
+        result["signals_extracted"] = emission_signals
 
     # PART 1: If no events created, persist baseline_initialized snapshot
     events_created = result.get("events_created", 0) if isinstance(result, dict) else 0
