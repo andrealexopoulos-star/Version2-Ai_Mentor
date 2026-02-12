@@ -50,7 +50,9 @@ class TestAuthentication:
         
         if response.status_code == 200:
             data = response.json()
-            token = data.get("access_token") or data.get("token")
+            # Token is nested under session.access_token
+            session = data.get("session", {})
+            token = session.get("access_token") or data.get("access_token") or data.get("token")
             if token:
                 print(f"Got Supabase auth token")
                 return token
@@ -64,7 +66,8 @@ class TestAuthentication:
         
         if response.status_code == 200:
             data = response.json()
-            token = data.get("access_token") or data.get("token")
+            session = data.get("session", {})
+            token = session.get("access_token") or data.get("access_token") or data.get("token")
             if token:
                 print(f"Got regular auth token")
                 return token
