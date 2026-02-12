@@ -150,11 +150,25 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         except RuntimeError:
             pass
 
+        # Fetch recent observation events for raw signal context
+        recent_signals = []
+        try:
+            sig_result = sb.table("observation_events").select(
+                "domain, event_type, severity, source, created_at"
+            ).eq("user_id", user_id).order(
+                "created_at", desc=True
+            ).limit(15).execute()
+            if sig_result.data:
+                recent_signals = sig_result.data
+        except Exception:
+            pass
+
         system_prompt = build_boardroom_prompt(
             watchtower_positions=positions, watchtower_findings=findings,
             intelligence_config=intel_config, calibration=calibration,
             escalation_history=escalation_history, contradictions=contradictions,
             pressure=pressure, freshness=freshness,
+            recent_signals=recent_signals,
         )
         if facts_prompt:
             system_prompt += f"\n\nRESOLVED BUSINESS FACTS:\n{facts_prompt}\n"
