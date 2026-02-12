@@ -1,0 +1,67 @@
+{
+  "summary": "Iteration 22: BIQC Intelligence Pipeline Stability - All 18 tests PASSED. Verified 3-stage pipeline code fixes: (1) emission_layer.run_emission() now called in cold-read, (2) status filter removed from _get_account_tokens(), (3) watchtower_engine.run_analysis() now called. Test user has no workspace initialized, so full E2E pipeline execution could not be verified, but all code fixes are confirmed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/intelligence/cold-read", "issue": "Returns 400 'Workspace not initialized' for test user andre@thestrategysquad.com.au - user has no workspace/account configured"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration22_intelligence_pipeline.py",
+    "/app/test_reports/pytest/pytest_results_iteration22.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: merge_emission_layer.py _get_account_tokens() at line 585-587 has NO .eq('status', 'active') filter - FIX CONFIRMED",
+    "VERIFIED: server.py cold-read endpoint calls emission_layer.run_emission(user_id, account_id) at line 9582 - FIX CONFIRMED",
+    "VERIFIED: server.py cold-read endpoint calls engine.run_analysis(user_id) at line 9595 - FIX CONFIRMED",
+    "VERIFIED: Pipeline order is STAGE 1 emission (line 9578) → STAGE 2 watchtower (line 9590) → STAGE 3 cold-read (line 9600)",
+    "VERIFIED: /api/watchtower/positions endpoint returns proper structure",
+    "VERIFIED: /api/watchtower/findings endpoint returns proper structure",
+    "VERIFIED: /api/watchtower/analyse endpoint triggers analysis correctly",
+    "VERIFIED: /api/lifecycle/state returns intelligence.has_events and intelligence.domains_enabled",
+    "VERIFIED: /api/intelligence/data-readiness returns integrations with observation_events counts",
+    "VERIFIED: /api/intelligence/baseline-snapshot returns snapshot field",
+    "VERIFIED: All authenticated endpoints return 401 for unauthenticated requests",
+    "NOTE: Test user andre@thestrategysquad.com.au has workspace_id=null, integrations.count=0 - no workspace initialized",
+    "NOTE: Cold-read returns 400 'Workspace not initialized' which is correct behavior for user without workspace"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration22_intelligence_pipeline.py"
+  ],
+  "success_rate": {
+    "backend": "100% (18/18 tests passed)",
+    "frontend": "N/A (backend only testing)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 22 verified all 3-stage intelligence pipeline code fixes. Key verifications: (1) emission_layer.run_emission() is now called in cold-read endpoint at line 9582, (2) _get_account_tokens() in merge_emission_layer.py no longer has .eq('status', 'active') filter, (3) watchtower_engine.run_analysis() is now called at line 9595. The test user andre@thestrategysquad.com.au does NOT have a workspace initialized (workspace_id=null, integrations.count=0), so the cold-read endpoint correctly returns 400 'Workspace not initialized'. To fully E2E test the pipeline with actual integration data, a user with workspace AND integrations (HubSpot, Xero, Outlook) is required.",
+  "features_verified": {
+    "emission_layer_status_filter_fix": "COMPLETE - No .eq('status', 'active') in _get_account_tokens()",
+    "cold_read_calls_emission_layer": "COMPLETE - emission_layer.run_emission() at line 9582",
+    "cold_read_calls_watchtower_engine": "COMPLETE - engine.run_analysis() at line 9595",
+    "pipeline_order": "COMPLETE - emission → watchtower → cold-read",
+    "watchtower_positions_endpoint": "COMPLETE - Returns positions structure",
+    "watchtower_findings_endpoint": "COMPLETE - Returns findings array",
+    "watchtower_analyse_endpoint": "COMPLETE - Triggers analysis",
+    "lifecycle_state_intelligence": "COMPLETE - Returns has_events and domains_enabled",
+    "data_readiness_endpoint": "COMPLETE - Returns integrations with observation counts",
+    "baseline_snapshot_endpoint": "COMPLETE - Returns snapshot field",
+    "auth_protection": "COMPLETE - All endpoints require authentication"
+  },
+  "testing_limitations": {
+    "e2e_pipeline_test": "NOT PERFORMED - Test user has no workspace initialized (workspace_id=null)",
+    "integration_extraction_test": "NOT PERFORMED - Test user has no integrations connected (integrations.count=0)",
+    "observation_events_creation": "NOT VERIFIED - Requires user with workspace + integrations"
+  },
+  "other_info": {
+    "xero_403_issue": "Known issue - Xero accounting extraction fails with 403 (Merge permissions issue) - documented as not a code bug",
+    "hubspot_crm": "Expected to work and generate 86+ observation_events for user WITH integrations"
+  }
+}
