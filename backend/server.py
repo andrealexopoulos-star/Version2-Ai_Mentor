@@ -9787,6 +9787,12 @@ api_router.include_router(boardroom_router)
 from routes.intelligence import router as intelligence_router
 api_router.include_router(intelligence_router)
 
+# ═══════════════════════════════════════════════════════════════
+# DEEP RESEARCH + INFERENCE ENGINE — routes/research.py
+# ═══════════════════════════════════════════════════════════════
+from routes.research import router as research_router
+api_router.include_router(research_router)
+
 # Include router and middleware
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
