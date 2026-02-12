@@ -36,9 +36,8 @@ const WarRoomConsoleInner = () => {
   const [contextResolved, setContextResolved] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
-  const resumedRef = useRef(false);
 
-  // Part 1: Resolve workspace context + Part 2: Load console state
+  // Resolve workspace context — no auto-resume, no frontend-derived step
   useEffect(() => {
     let cancelled = false;
     const resolveContext = async () => {
@@ -55,17 +54,10 @@ const WarRoomConsoleInner = () => {
           const lc = await res.json();
           if (lc.workspace_id) {
             setWorkspaceId(lc.workspace_id);
-            console.log(`[Console] Workspace context resolved: ${lc.workspace_id}`);
-          }
-          // Restore console step
-          if (lc.console_state?.current_step && lc.console_state.current_step > 1) {
-            setCurrentStep(lc.console_state.current_step);
-            resumedRef.current = true;
-            console.log(`[Console] Resuming from step ${lc.console_state.current_step}`);
           }
           if (!cancelled) setContextResolved(true);
         } else {
-          if (!cancelled) setContextResolved(true); // proceed anyway
+          if (!cancelled) setContextResolved(true);
         }
       } catch (e) {
         console.warn('[Console] Context resolution failed:', e.message);
@@ -79,14 +71,11 @@ const WarRoomConsoleInner = () => {
     return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
-  // Auto-init once context is resolved
+  // Init conversation only when context is resolved — always fresh start
   useEffect(() => {
     if (!sessionReady || !contextResolved) return;
     if (history.length === 0) {
-      const initMsg = resumedRef.current
-        ? `[SYSTEM_RESUME_STEP_${currentStep}]`
-        : '[SYSTEM_INIT_STRATEGY]';
-      processMessage(initMsg, true);
+      processMessage('[SYSTEM_INIT_STRATEGY]', true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionReady, contextResolved]);
