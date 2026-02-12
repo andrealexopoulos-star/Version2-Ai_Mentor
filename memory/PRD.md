@@ -1,34 +1,32 @@
 # BIQC Platform — PRD
 
-## Baseline Initialization & Executive Synthesis Sprint (Feb 2026)
+## Strategic Console Light Theme Sprint (Feb 2026)
 
-### Part 1 — Database-Backed Baseline — PASS
-- `POST /api/intelligence/cold-read` now inserts `baseline_initialized` into `intelligence_snapshots` when events_created == 0
-- SQL proof: Record exists with `snapshot_type: baseline_initialized`, `domains.enabled: [sales, finance, operations]`, `domains.integrations_checked: [HubSpot, Xero, outlook]`
-- WOW Landing displays: green dot + "Baseline Initialized — Checked: HubSpot, Xero, outlook | Monitoring: sales, finance, operations"
-- Persists across page refresh (DB-backed, not local state)
+### Part 1 — Chat Scroll Mechanics — IMPLEMENTED
+- Single scroll container with `ref={chatContainerRef}`
+- Bottom-anchored: auto-scrolls on new messages unless user manually scrolled up
+- `userScrolledUpRef` tracks manual scroll via `onScroll` handler
+- `scrollRef` anchor at bottom of chat
+- Mobile: `WebkitOverflowScrolling: touch`, flex-based layout, input at bottom
 
-### Part 2 — Data Readiness Panel — PASS
-- `GET /api/intelligence/data-readiness` returns per-integration: provider, category, status, connected_at, observation_events count
-- Operator View renders Data Readiness section with real DB state
-- API confirmed: HubSpot (crm, 0 events, since 2026-02-06), Xero (accounting, 0 events, since 2026-02-09), Outlook (email, 0 events, since 2026-02-11)
+### Part 2 — Typography — IMPLEMENTED
+- Font: Inter / system-ui stack
+- Base: 15px body, 1.6 line height
+- Headers: 600 weight
+- Body: 400 weight
+- No tiny captions, no monospace
 
-### Part 3 — Executive Memo — PASS
-- Data-bound, no hallucination
-- References: "andre" (user name), "Professional Services" (confirmed industry fact), "3 connected data sources (HubSpot, Xero, outlook)" (DB integration count), "sales, finance, operations" (enabled domains)
-- Full text: "andre, based on your confirmed Professional Services focus and 3 connected data sources (HubSpot, Xero, outlook), I have initialized monitoring across sales, finance, operations. Baseline established — I will surface material changes as they occur."
-
-### Part 4 — Run Analysis Feedback — PASS  
-- events_created == 0: Toast shows "Baseline Initialized. No material changes detected yet."
-- events_created > 0: Normal intelligence output
-- No animation in this sprint
-
-### Endpoints Added/Modified
-- `POST /api/intelligence/cold-read` — now inserts baseline_initialized snapshot
-- `GET /api/intelligence/baseline-snapshot` — returns latest baseline snapshot
-- `GET /api/intelligence/data-readiness` — per-integration status from DB
+### Part 3 — Light Executive Theme — IMPLEMENTED
+- Background: #F6F7F9 (soft neutral)
+- Cards: #fff with subtle box-shadow
+- Header: white with #E5E7EB border
+- Progress: #3B82F6 blue
+- User messages: #3B82F6 blue bubbles, white text
+- AI messages: white cards, #1F2937 text
+- Input: #F9FAFB bg, #D1D5DB border, 12px border-radius
+- Status badge: green/amber pills
+- Removed: scanlines, dot grids, neon amber, black backgrounds, monospace
 
 ### Files Modified
-- `backend/server.py` — 3 endpoint changes
-- `frontend/src/pages/AdvisorWatchtower.js` — Executive Memo, Baseline display, Run Analysis feedback
-- `frontend/src/pages/OperatorDashboard.js` — Data Readiness panel
+- `frontend/src/components/WarRoomConsole.js` — full render rewrite
+- `frontend/src/pages/AdvisorWatchtower.js` — console container style
