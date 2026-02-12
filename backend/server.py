@@ -9587,7 +9587,17 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     else:
         logger.warning("📡 Emission layer not initialized — skipping integration extraction")
 
-    # STAGE 2: Execute Cold Read analysis via RPCs
+    # STAGE 2: Run Watchtower Engine to analyze observation_events → positions/insights
+    watchtower_result = None
+    try:
+        from watchtower_engine import get_watchtower_engine
+        engine = get_watchtower_engine()
+        watchtower_result = await engine.run_analysis(user_id)
+        logger.info(f"🔭 Watchtower Engine: {watchtower_result}")
+    except Exception as wt_err:
+        logger.warning(f"🔭 Watchtower Engine failed (non-fatal): {wt_err}")
+
+    # STAGE 3: Execute Cold Read analysis via RPCs (email/calendar patterns)
     result = await generate_cold_read(
         user_id=user_id,
         account_id=account_id,
@@ -9595,9 +9605,10 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
         watchtower_store=get_watchtower_store()
     )
     
-    # Add emission context to result
+    # Add emission + watchtower context to result
     if isinstance(result, dict):
         result["signals_extracted"] = emission_signals
+        result["watchtower_analysis"] = watchtower_result
 
     # PART 1: If no events created, persist baseline_initialized snapshot
     events_created = result.get("events_created", 0) if isinstance(result, dict) else 0
