@@ -341,7 +341,7 @@ BODY CONTENT:
         chat.with_model("openai", "gpt-4o")
 
         response = await chat.send_message(UserMessage(text=content_block))
-        raw = response.text.strip()
+        raw = response.strip() if isinstance(response, str) else response.text.strip()
 
         # Strip markdown code fences if present
         if raw.startswith("```"):
