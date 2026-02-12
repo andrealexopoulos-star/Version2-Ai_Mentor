@@ -1,174 +1,207 @@
 <analysis>**original_problem_statement:**
-The initial objective was to fix the BIQC platform's onboarding flow, data coherence, and agent questioning behavior. This evolved over multiple sessions into a comprehensive platform integrity overhaul.
-
-The core requirements were:
-1.  **Enforce a Single Source of Truth:** Make Supabase the sole authoritative datastore, completely decommissioning MongoDB at the application level.
-2.  **Fix Data Authority:** Establish clear ownership for user state, specifically using  for calibration and onboarding status.
-3.  **Correct Onboarding & Calibration:** Eliminate bugs causing users to be re-routed to calibration or onboarding loops. Ensure the flow is resumable, non-repeating, and saves progress immediately.
-4.  **Implement Global Fact Authority:** Create a system-wide layer () to prevent the platform (both UI and AI agents) from ever asking for information that already exists in Supabase or can be derived from integrations.
-5.  **Secure Admin Routes:** Ensure  routes are properly enforced on the backend.
-6.  **Improve Reliability:** Add SDK guardrails to prevent silent failures from dependency changes (e.g.,  vs  bug).
-7.  **Modularize Codebase:** Break down the monolithic  file (over 10,000 lines) into smaller, domain-specific modules for better maintainability.
-8.  **Audit and Validate:** Perform multiple, in-depth audits (data plane, UX, fact authority, route classification) and conduct adversarial testing to find and eliminate all critical bugs and architectural violations.
+The initial goal was a comprehensive platform integrity overhaul, which evolved into enforcing a Full Lifecycle Coherence for the user experience. The core requirements were:
+1.  **Fix Core Lifecycle Bugs:** Eliminate all redirect loops related to calibration and onboarding by establishing a strict, backend-driven state machine for routing.
+2.  **Implement Priority Compression UX:** Redesign the Board Room to present a single primary focus, a few secondary items, and hide the rest, making the intelligence actionable and less overwhelming.
+3.  **Enforce Data Sovereignty:** Ensure user data is entered only once. All components (like the Strategic Console) must check for existing facts before asking questions. Business DNA fields must auto-save on change.
+4.  **Improve UI/UX State Coherence:** UI elements must deterministically reflect backend state (e.g., Complete Calibration button changes to Recalibrate Agent when done).
+5.  **Build a WOW Landing:** After completing the initial lifecycle steps (calibration, onboarding), present the user with a summary page (BIQc Insights) that shows their calibrated persona, confirmed business facts, connected integrations, and initial intelligence insights.
+6.  **Fix the Intelligence Pipeline:** The primary user frustration was that connected integrations (HubSpot, Xero, Outlook) were not producing any intelligence. The task was to diagnose and fix the entire data extraction and analysis pipeline, from data emission to Watchtower analysis, ensuring intelligence is generated and displayed.
+7.  **Stabilize Critical Endpoints:** The  endpoint was too slow (>30s), causing frontend timeouts. It needed to be refactored for performance (<8s) and made strictly read-only.
+8.  **Improve Chat UX:** Rebuild the Strategic Console's chat interface to have a modern, light theme and smooth, bottom-anchored scrolling similar to ChatGPT.
+9.  **Secure the System:** Make the data ingestion process idempotent to prevent duplicates and lock down the heavy-processing  endpoint to be admin-only.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The agent has successfully executed a massive platform-wide refactoring and integrity enforcement effort.
--   **Data Plane Remediated:** MongoDB is fully decommissioned at the app level. Supabase is the single source of truth.  has been purged of all business state.
--   **Onboarding/Calibration Fixed:**  is now the sole authority for calibration and onboarding state, with progress stored in its  JSONB column. The frontend fetches this state once and caches it in React Context, eliminating redundant API calls and routing loops.
--   **Global Fact Authority Implemented:** A new service, , consolidates user data from all Supabase tables and integrations. All key AI prompts (chat, boardroom) and UI components (Onboarding, Business DNA) are now required to check this service before rendering questions, preventing duplication.
--   **Security Hardened:**  routes are now correctly enforced in the  component and validated on the backend.
--   **Reliability Improved:** The Supabase Python client version is pinned. A  wrapper and a startup assertion have been added to  to prevent silent SDK attribute errors from recurring.
--   **Codebase Modularized (Phase 2 complete):** The monolithic  has been significantly refactored. Seven major route groups (admin, boardroom, calibration, facts, intelligence, onboarding, watchtower) have been extracted into a new  directory with a shared  for dependency injection.
--   **Audited & Validated:** The platform has undergone multiple audits and a rigorous adversarial validation phase, which uncovered and led to the fixing of critical bugs, including a Supabase RLS issue and an SDK method name mismatch. The platform has been declared READY FOR LIVE DEMO.
+The agent successfully executed a massive series of architectural fixes and feature implementations, moving the platform from a buggy state to a largely coherent and functional system.
+-   **Lifecycle & Routing Fixed:** The calibration redirect loops are resolved. A strict, backend-driven state machine now governs the user lifecycle (Calibration -> Onboarding -> WOW Landing -> Main App), preventing users from skipping steps.
+-   **UX/UI Overhauled:** The Board Room now uses the Priority Compression UX. The Strategic Console chat has been rebuilt with a light theme and smooth scrolling. A WOW Landing page now serves as the main dashboard, summarizing the user's status.
+-   **Intelligence Pipeline Operational:** The core issue of no intelligence being generated has been fixed. The agent identified and repaired multiple broken stages:
+    -   The emission layer now correctly extracts data from connected integrations (HubSpot).
+    -   The Watchtower engine is now correctly integrated into the pipeline to analyze the extracted data.
+    -   The  endpoint has been refactored to be a fast (<3s), read-only endpoint.
+    -   A new, admin-only  endpoint now handles all heavy processing (data extraction and analysis).
+-   **Data Integrity Enforced:** The Strategic Console no longer re-asks for known information. Business DNA fields now auto-save to the database. Disconnect buttons have been added to integration cards.
+-   **System Hardened:** The data ingestion process is now idempotent using a fingerprinting mechanism to prevent duplicate data. The  endpoint is secured and accessible only by admins.
 
 **Last working item**:
--   Last item agent was working: A forensic audit of 12 Category C routes, which were identified as likely being dead code. The agent analyzed each route's function, references, and database interactions to produce a detailed report assessing the risk of deletion.
--   Status: FINISHED
--   Agent Testing Done: N/A
--   Which testing method agent to use? backend testing agent
--   User Testing Done: N/A
+-   Last item agent was working: The agent performed a complete end-to-end test for the user  after all the architectural fixes were deployed. This involved logging in and taking screenshots of every major page (Login, WOW Landing, Settings, Business DNA, Integrations, Email, Operator View, Board Room) to verify the full lifecycle and data pipeline were working correctly.
+-   Status: USER VERIFICATION PENDING
+-   Agent Testing Done: Y
+-   Which testing method agent to use? NA
+-   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Performance Lag on Data-Heavy Pages (Priority: P2)
--   Issue 2: War Room's Lack of Fact Authority Integration (Priority: P3)
+-   Issue 1: Complete Modularization of  (Priority: P1)
+-   Issue 2: Delete SAFE TO DELETE Category C Routes (Priority: P1)
+-   Issue 3: Performance Lag on Data-Heavy Pages (Priority: P2)
+-   Issue 4: Remove Dead  Writes (Priority: P2)
 
 Issues Detail:
--   **Issue 1: Performance Lag on Data-Heavy Pages**
-    -   Description: The adversarial validation phase noted that the Business DNA and Settings pages exhibit slow load times, showing a loading spinner for an extended period. This is suspected to be caused by the  endpoint being slow.
-    -   Next debug checklist:
-        1.  Profile the  endpoint to identify bottlenecks.
-        2.  Analyze the queries within the  function, which is called by this endpoint, and check for missing indexes or inefficient joins in the underlying Supabase tables.
-        3.  Investigate if the frontend can render a partial view with initial data while the full context is being fetched.
-    -   Why fix this issue and what will be achieved with the fix?: Fixing this will improve the user experience by making core pages feel more responsive.
-    -   Status: NOT STARTED
-    -   Is recurring issue?: N
-    -   Should Test frontend/backend/both after fix?: Both
+-   **Issue 1: Complete Modularization of **
+    -   **Description**: The main  file is still over 10,000 lines long. The original plan to break it down into smaller, domain-specific modules in the  directory is still incomplete.
+    -   **Next debug checklist**:
+        1.  Identify the remaining large route blocks in  (e.g., chat, business profile, settings).
+        2.  Extract them into new files under , following the existing pattern.
+        3.  Update  to import and register the new s.
+    -   **Why fix this issue and what will be achieved with the fix?**: Completing this will make the backend codebase significantly more maintainable, easier to debug, and less prone to conflicts.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Backend (full regression suite).
+    -   **Blocked on other issue**: None.
 
--   **Issue 2: War Room's Lack of Fact Authority Integration**
-    -   Description: The Strategic Operations Console (War Room) is a separate strategic extraction flow that does not currently use the Global Fact Authority layer. It can therefore ask the user for information the system already knows (e.g., business name).
-    -   Next debug checklist:
-        1.  Investigate the War Room component's data flow.
-        2.  Modify its backend logic to call  and inject the  into its initial prompt, similar to how the Board Room and other agents were fixed.
-    -   Why fix this issue and what will be achieved with the fix?: This will bring all user-facing questioning flows under the Global Fact Authority umbrella, ensuring a perfectly consistent user experience with no repeated questions anywhere on the platform.
-    -   Status: NOT STARTED
-    -   Is recurring issue?: N
-    -   Should Test frontend/backend/both after fix?: Both
+-   **Issue 2: Delete SAFE TO DELETE Category C Routes**
+    -   **Description**: A forensic audit () identified 10 routes in  as dead code that are safe to delete. This cleanup was never performed.
+    -   **Next debug checklist**:
+        1.  Review the report to confirm the list of routes.
+        2.  Search for and delete the corresponding route handler code blocks from .
+        3.  Run a full regression test to ensure no functionality was accidentally removed.
+    -   **Why fix this issue and what will be achieved with the fix?**: Reduces code clutter and technical debt, making the application easier to understand.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Backend.
+    -   **Blocked on other issue**: None.
+
+-   **Issue 3: Performance Lag on Data-Heavy Pages**
+    -   **Description**: The Business DNA and Settings pages are reported to load slowly. While the  endpoint was optimized, the original suspect () was not investigated.
+    -   **Next debug checklist**:
+        1.  Profile the  endpoint.
+        2.  Analyze queries within the  function for inefficiencies.
+        3.  Check for missing database indexes.
+    -   **Why fix this issue and what will be achieved with the fix?**: Improves user experience on core application pages.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Both.
+    -   **Blocked on other issue**: None.
+
+-   **Issue 4: Remove Dead  Writes**
+    -   **Description**: The file  contains  blocks that attempt to write to a non-existent  column. This is dead code.
+    -   **Next debug checklist**:
+        1.  Locate the  blocks in  that reference .
+        2.  Remove these blocks.
+    -   **Why fix this issue and what will be achieved with the fix?**: Code cleanup and removal of confusing, non-functional logic.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Backend.
+    -   **Blocked on other issue**: None.
 
 **In progress Task List**:
--   Task 1: Complete Modularization of  (Priority: P1)
+-   Task 1: Complete Modularization of 
 
-Task Detail:
--   **Task 1: Complete Modularization of **
-    -   Where to resume: Continue extracting the remaining large route blocks from  (e.g., chat, business profile, settings, legacy integrations) into the  directory. Follow the established pattern of using  for shared dependencies and registering the  in the main app file.
-    -   What will be achieved with this?: A fully modularized, more maintainable backend codebase where  acts as a clean orchestrator, significantly reducing technical debt.
-    -   Status: IN PROGRESS
-    -   Should Test frontend/backend/both after fix?: Backend (full regression suite)
-    -   Blocked on something: No
+ Task Detail:
+  -   **Task 1: Complete Modularization of **
+     -   **Where to resume**: Continue extracting large route blocks from  into the  directory, following the established  pattern.
+     -   **What will be achieved with this?**: A fully modularized, maintainable backend where  is a clean orchestrator.
+     -   **Status**: IN PROGRESS
+     -   **Should Test frontend/backend/both after fix?**: Backend
+     -   **Blocked on something**: No.
 
 **Upcoming and Future Tasks**
-Upcoming Tasks:
--   (P0) **Delete SAFE TO DELETE Category C Routes**: Based on the completed forensic audit (), delete the 10 routes marked as  from  and run the full test suite to ensure no regressions.
--   (P2) **Remove Dead  Writes**: The agent discovered that the column  never existed, meaning all writes to it are dead code. Remove these  blocks from the  file to clean up the code.
+-   **(P1) Website Enrichment UI (Requirement F)**: The Full Lifecycle Coherence task included a requirement (F) to fix the website enrichment flow by adding a server-side fetch, a sanitization step, and a preview UI with Confirm, Edit, and Re-scan options. This was not implemented.
+-   **(P3) Automatic Ingestion Trigger**: The intelligence pipeline now relies on a manual call to the admin-only  endpoint. A mechanism (e.g., cron job, webhook) should be implemented to trigger this automatically to keep intelligence fresh.
 
 **Completed work in this session**
-A massive amount of platform stabilization and refactoring has been completed.
--   **Data Plane Remediation**: Decommissioned MongoDB, purged state from , and enforced Supabase as the single source of truth. (DONE)
--   **Onboarding & Calibration Fix**: Eliminated dual-authority bugs and routing loops, making  the sole authority for this state. (DONE)
--   **Global Fact Authority**: Implemented and enforced a system () to prevent re-asking for known information across all major UI/AI interfaces. (DONE)
--   **Security Hardening**: Fixed and verified  route enforcement. (DONE)
--   **SDK Reliability Guardrails**: Implemented wrappers and startup assertions to prevent silent SDK failures. (DONE)
--   **Codebase Modularization**: Extracted 7 major route groups from the monolithic  into a new  directory. (IN PROGRESS, Phase 2 complete)
--   **Critical Bug Fixes**: Found and fixed a Supabase RLS bug blocking user state reads and a fatal Supabase Python SDK method name mismatch ( vs ). (DONE)
--   **Comprehensive Auditing**: Performed and acted upon multiple audits for data plane, UX, security, and code structure. (DONE)
--   **Adversarial Validation**: Completed a rigorous end-to-end testing phase, bringing the platform to a Ready for Live Demo state. (DONE)
+-   **Priority Compression UX**: Implemented a new UI in the Board Room to focus on the most critical intelligence. (DONE)
+-   **Lifecycle Routing Fixed**: Eliminated all calibration and onboarding redirect loops by implementing a strict, backend-driven state machine. (DONE)
+-   **Service Worker Bug Fixed**: Diagnosed and fixed a critical bug where the frontend service worker was incorrectly caching API calls, causing the UI to receive HTML instead of JSON. (DONE)
+-   **Full Lifecycle Coherence**: Implemented a large set of features to create a seamless user journey:
+    -   **Settings Page (A, E)**: Shows correct calibration status and a Recalibrate Agent button.
+    -   **Strategic Console (B)**: Injects known facts to avoid re-asking questions.
+    -   **Business DNA (C)**: Renamed from Business Profile and implemented debounced auto-saving.
+    -   **Integrations UX (D)**: Added Disconnect buttons to integration cards.
+    -   **Operator View (G)**: Now explains *why* there is no intelligence data if the pipeline is empty.
+    -   **WOW Landing (H)**: A new summary dashboard is shown after login, displaying the user's complete status.
+-   **Intelligence Pipeline Re-architected**:
+    -   Diagnosed and fixed the entire broken data pipeline.
+    -   Separated heavy processing into an admin-only  endpoint.
+    -   Refactored  to be a fast (<3s), read-only endpoint.
+    -   Made data ingestion idempotent with fingerprinting to prevent duplicates.
+-   **UI/UX Improvements**: Rebuilt the Strategic Console chat UI with a light, professional theme and smooth, bottom-anchored scrolling.
+-   **E2E Validation**: Performed multiple comprehensive end-to-end tests with screenshots to validate all fixes and new features.
 
 **Earlier issues found/mentioned but not fixed**
--   See All Pending/In progress Issue list.
+-   See All Pending/In progress Issue list and Upcoming and Future Tasks.
 
 **Code Architecture**
--   **Backend**: A FastAPI application. It was originally a single 10,000+ line  file, but is now being modularized. Core logic is being extracted into a  directory (e.g., , ), with shared dependencies in . A key service module is .
--   **Frontend**: A React application using  for navigation. Global state (auth, calibration, onboarding status) is managed in . Access control is handled by .
+-   **Backend**: FastAPI. The monolithic  still exists but a significant amount of logic has been moved to services and other modules. A key architectural change is the strict separation between the fast, read-only  endpoint and the heavy, admin-only  endpoint.
+-   **Frontend**: React. State management relies heavily on  which now powers a strict state machine for routing. API calls have been hardened with content-type guards.
 -   **Database**: Supabase (PostgreSQL).
 
 **Key Technical Concepts**
--   **Single Source of Truth (SSOT)**: A core principle enforced throughout the project, with Supabase being the only authoritative datastore.
--   **Global Fact Authority**: A custom-built service () that acts as a system-wide cache and source for all known user/business facts, preventing redundant questions.
--   **Defensive Programming**: Implemented via SDK Guardrails, including a  wrapper and startup assertions in  to prevent silent runtime errors from library updates.
--   **Code Modularization**: The ongoing effort to refactor a large monolithic application () into smaller, domain-focused modules under the  directory, using FastAPI's .
--   **React Context API**: Used for managing global, session-wide state on the frontend to avoid prop-drilling and redundant API calls ().
+-   **Lifecycle Coherence**: The principle that the entire application should guide the user through a deterministic sequence of states (Calibration -> Onboarding -> App).
+-   **Strict State Machine Routing**: Using backend-authoritative status flags (, ) to control all routing and prevent users from accessing parts of the app out of sequence.
+-   **Read/Write Separation for Performance**: A critical architectural pattern where user-facing API endpoints () are strictly fast and read-only, while slow, heavy data processing () is moved to separate, asynchronous, or admin-triggered endpoints.
+-   **Idempotency**: Ensuring that repeated calls to the data ingestion endpoint do not create duplicate records, achieved through data fingerprinting and database constraints.
 
 **key DB schema**
--   : 
--   :  (The  JSONB column contains  and the ).
--   : 
--   : 
--   : Not a physical table. Implemented as a JSONB object within .
-
-**changes in tech stack**
--   **MongoDB Decommissioned**: All dependencies and client code for MongoDB have been removed from the application. It is no longer part of the tech stack.
+-   : Added a  text column with a unique constraint () to ensure idempotency.
+-   : Used to persist the  state, confirming that the analysis engine has run at least once.
+-   : The  JSONB column was extended to store  to persist the user's progress in the Strategic Console.
 
 **All files of reference**
--   : The main application file, still containing some routes but now orchestrating the modular  directory.
--   : Directory containing all newly extracted, domain-specific route modules (, , , , , , ).
--   : Manages shared dependencies (like , ) for the modular routes.
--   : The core logic for the Global Fact Authority layer.
--   : Handles Supabase client initialization and reliability guardrails.
--   : Manages session state on the frontend, preventing redundant API calls for user status.
--   : Central component for frontend access control (auth, calibration, onboarding, admin).
--   : Contains new unit tests to validate the SDK guardrails.
+-   : Heavily modified to refactor the intelligence pipeline, secure endpoints, and fix state logic. Still the main monolithic file.
+-   : Updated to add fingerprinting for idempotency.
+-   : Core of the frontend state machine for routing.
+-   : Enforces the routing rules from the state machine.
+-   : The WOW Landing page, which now serves as the main dashboard.
+-   : The Strategic Console component, completely rewritten for better UX and state management.
+-   : Updated to show correct calibration status.
+-   : Updated to use debounced auto-saving.
+-   : Updated to add disconnect buttons.
+-   : Modified to prevent caching of API routes.
 
 **Areas that need refactoring**:
--   : The file is still over 9,000 lines long and needs the modularization effort to be completed.
--   : Contains dead code that attempts to write to a non-existent  column. This should be removed.
+-   : This remains the highest priority for refactoring. Completing its modularization is critical for long-term maintainability.
 
 **key api endpoints**
--   : Gets the current user's profile from the authoritative  table.
--   : Checks the user's calibration status from the single source of truth ().
--   : Checks the user's onboarding status.
--   : Persists onboarding progress.
--   : A key endpoint that fetches the business profile combined with resolved facts for populating UIs.
--   : The dedicated endpoint for the Global Fact Authority service.
--   : The main AI chat endpoint, now integrated with fact resolution.
--   All modularized endpoints under , , , etc.
+-    (Refactored): Now a fast, read-only endpoint that returns pre-computed intelligence.
+-    (New): An admin-only endpoint that triggers the heavy data extraction and analysis pipeline.
+-    (New): Allows a user to reset their calibration status.
+-    (New/Refactored): Provides the frontend with the user's complete lifecycle status (calibration, onboarding, etc.).
+-    (New): Persists the user's progress in the Strategic Console.
+-    (New): Handles disconnecting Merge.dev integrations.
 
 **Critical Info for New Agent**
--   **The  vs  Bug Was Critical**: A mismatch in the Supabase Python SDK method name caused silent failures in production. This has been fixed and guardrailed with  and startup assertions in . Be extremely cautious with direct Supabase client calls; use the provided wrappers where possible.
--   **RLS Policies Are Active**: A previous critical bug was caused by Row Level Security blocking client-side reads of . Backend endpoints using the  key are the reliable way to access cross-user or sensitive data. Do not assume frontend Supabase queries will work without verifying RLS policies.
--   **Modularization Pattern is Established**: When continuing the refactor of , follow the existing pattern: extract routes into a new file in , import dependencies from , and include the new  in .
--   **JSONB for Schema Evolution**: The agent successfully used JSONB columns () to add new data structures (, ) without requiring manual schema migrations. This is a valid pattern to use for new, non-relational user state.
+-   **The Intelligence Pipeline is a Two-Step Process**: This is the most critical new concept. User-facing pages should **only** call the fast, read-only  endpoint. To generate new intelligence, a separate, authorized call must be made to . Intelligence data will become stale without this second call.
+-   **Routing is a Strict State Machine**: Do not attempt to bypass routing logic on the frontend. All navigation is controlled by the user's lifecycle status, which is fetched from the backend () and stored in .
+-   **Service Worker Risks**: The application has a service worker () that has previously caused critical bugs by caching API calls. Any changes to frontend fetching logic should be tested to ensure the service worker isn't interfering.
 
 **documents and test reports created in this job**
 -   
 -   
 -   
--   
--   
--   
--   
 
 **Last 10 User Messages and any pending HUMAN messages**
-The last several user messages defined a sequence of tasks for platform reliability, modularization, and auditing, culminating in a request for a comprehensive review document of all work performed. There are no pending human messages requiring an answer.
+1.  **User**: Perform a production integrity audit, checking if cold-read is read-only, ingest is secure, idempotent, and triggered.
+2.  **Agent**: Delivered the audit, confirming cold-read is read-only, but ingest is unsecured, not idempotent, and not auto-triggered.
+3.  **User**: Issued three surgical tasks: 1) Make emission idempotent. 2) Lock down ingest to admin-only. 3) Remove snapshot writes from cold-read.
+4.  **Agent**: Implemented all three fixes, provided migration SQL, and test proof.
+5.  **User**: Confirmed deployment and requested a full E2E test with screenshots for .
+6.  **Agent**: Began the E2E test, providing screenshots for Login and the WOW Landing page.
+7.  **Agent**: Continued test, providing screenshots for Settings, Business DNA, and Integrations.
+8.  **Agent**: Provided screenshots for Email and noted Operator View was loading slowly.
+9.  **Agent**: Provided screenshot of the Board Room showing CRITICAL intelligence, completing the visual test.
+10. **Agent**: Delivered the final E2E test summary report.
 
 **Project Health Check:**
--   **Broken**: None. All known critical and high-priority functional bugs have been fixed.
--   **Mocked**: None.
+-   **Broken**: None. All major known bugs and architectural flaws have been addressed. The Xero integration failed to authenticate during testing, which may require re-authentication by the user.
+-   **Mocked**: None. The UI now reflects real database state.
 
 **3rd Party Integrations**
 -   **Supabase (PostgreSQL, Auth)**: Core platform dependency.
--   **OpenAI GPT**: Used for AI-driven intelligence (chat, boardroom, etc.). Uses Emergent LLM Key.
--   **Merge.dev**: Service for integrating with other platforms like HubSpot. Requires User API Key.
--   **Xero, Outlook, Google Drive**: Listed as connectable integrations. Requires User OAuth/API Keys.
+-   **OpenAI GPT**: Used for AI-driven intelligence. Uses Emergent LLM Key.
+-   **Merge.dev**: Used for HubSpot and Xero integrations. Connection logic fixed.
+-   **Microsoft Outlook**: Native integration. Connection logic fixed.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES
--   **Troubleshoot agent used after agent stuck in loop**: YES
+-   **Testing agent used after significant changes**: YES. Used multiple times to validate fixes.
+-   **Troubleshoot agent used after agent stuck in loop**: YES. Used to diagnose the initial intelligence pipeline failure.
 -   **Test files created**: []
--   **Known regressions**: None. All identified regressions during development were fixed.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
--   Test user: . A password was set during the session to allow login.
+-   **User**: 
+-   **Password**: The agent reset the password during the session. A new password will need to be set via magic link if direct login is required.
 
 **What agent forgot to execute**
--   The agent completed the forensic audit to identify which of the 12 Category C routes were safe to delete but did not perform the actual deletion. This is the most immediate upcoming task.</analysis>
+-   **Website Enrichment UI (Requirement F)**: From the Full Lifecycle Coherence task list, the agent was supposed to implement a UI for website enrichment that allowed the user to preview, edit, or re-scan fetched website metadata. This was completely overlooked.</analysis>

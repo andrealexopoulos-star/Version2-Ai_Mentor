@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://biqc-integrity.preview.emergentagent.com
+https://full-stack-upgrade-5.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://biqc-integrity.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://biqc-integrity.preview.emergentagent.com
+https://full-stack-upgrade-5.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://biqc-integrity.preview.emergentagent.com/**
-https://biqc-integrity.preview.emergentagent.com/auth/callback
-https://biqc-integrity.preview.emergentagent.com/auth-callback-supabase
-https://biqc-integrity.preview.emergentagent.com/connect-email
-https://biqc-integrity.preview.emergentagent.com/integrations
+https://full-stack-upgrade-5.preview.emergentagent.com/**
+https://full-stack-upgrade-5.preview.emergentagent.com/auth/callback
+https://full-stack-upgrade-5.preview.emergentagent.com/auth-callback-supabase
+https://full-stack-upgrade-5.preview.emergentagent.com/connect-email
+https://full-stack-upgrade-5.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://biqc-integrity.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback
+https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://biqc-integrity.preview.emergentagent.com
+https://full-stack-upgrade-5.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback
+https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

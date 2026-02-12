@@ -3,7 +3,7 @@
 ## User Information
 - **Test User**: andre.alexopoulos@gmail.com
 - **Connected Provider**: Gmail
-- **Application URL**: https://biqc-integrity.preview.emergentagent.com
+- **Application URL**: https://full-stack-upgrade-5.preview.emergentagent.com
 - **Test Page**: /email-inbox
 
 ---
@@ -22,10 +22,10 @@ Before starting the test, verify the following:
 ## Test Scenario 1: Navigate to Priority Inbox
 
 ### Steps:
-1. Open browser and navigate to: https://biqc-integrity.preview.emergentagent.com/login-supabase
+1. Open browser and navigate to: https://full-stack-upgrade-5.preview.emergentagent.com/login-supabase
 2. Click "Continue with Google" button
 3. Complete Google OAuth authentication
-4. After successful login, navigate to: https://biqc-integrity.preview.emergentagent.com/email-inbox
+4. After successful login, navigate to: https://full-stack-upgrade-5.preview.emergentagent.com/email-inbox
 
 ### Expected Results:
 - ✅ Page loads without errors

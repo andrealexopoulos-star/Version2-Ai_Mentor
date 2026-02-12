@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://biqc-integrity.preview.emergentagent.com/advisor
+## For: https://full-stack-upgrade-5.preview.emergentagent.com/advisor
 
 ---
 

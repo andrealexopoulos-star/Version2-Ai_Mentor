@@ -22,7 +22,7 @@
 
 **Callback URL (Frontend):**
 ```
-https://biqc-integrity.preview.emergentagent.com/auth/callback
+https://full-stack-upgrade-5.preview.emergentagent.com/auth/callback
 ```
 
 **Callback Handler:**
@@ -35,7 +35,7 @@ https://biqc-integrity.preview.emergentagent.com/auth/callback
   4. Redirects to `/onboarding` or `/advisor`
 
 **Supabase Configuration:**
-- **Callback URL in Supabase Dashboard:** Must include `https://biqc-integrity.preview.emergentagent.com/auth/callback`
+- **Callback URL in Supabase Dashboard:** Must include `https://full-stack-upgrade-5.preview.emergentagent.com/auth/callback`
 - **OAuth Flow:** Authorization Code with PKCE
 - **Scopes:** Managed by Supabase
 - **Refresh Token:** Yes
@@ -56,7 +56,7 @@ https://biqc-integrity.preview.emergentagent.com/auth/callback
 
 **Callback URL (Backend):**
 ```
-https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback
+https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 **Callback Handler:**
@@ -70,7 +70,7 @@ https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback
 - **Redirect:** Returns to `/integrations?outlook_connected=true`
 
 **Microsoft Azure App Registration:**
-- **Redirect URI:** `https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback`
+- **Redirect URI:** `https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/outlook/callback`
 - **Application Type:** Web
 - **OAuth Flow:** Authorization Code (not PKCE)
 - **Scopes:** `offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic`
@@ -104,7 +104,7 @@ https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback
 
 **Callback URL (Backend):**
 ```
-https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback
+https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 **Callback Handler:**
@@ -118,7 +118,7 @@ https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback
 - **Redirect:** Returns to `/integrations?gmail_connected=true`
 
 **Google Cloud Console:**
-- **Redirect URI:** `https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback`
+- **Redirect URI:** `https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/gmail/callback`
 - **Application Type:** Web application
 - **OAuth Flow:** Authorization Code
 - **Scopes:** (Check backend for exact scopes)
@@ -198,15 +198,15 @@ https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback
 
 **From `/app/backend/.env`:**
 ```
-BACKEND_URL=https://biqc-integrity.preview.emergentagent.com
-FRONTEND_URL=https://biqc-integrity.preview.emergentagent.com
+BACKEND_URL=https://full-stack-upgrade-5.preview.emergentagent.com
+FRONTEND_URL=https://full-stack-upgrade-5.preview.emergentagent.com
 SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 ```
 
 **Derived Callback URLs:**
-- Supabase OAuth: `https://biqc-integrity.preview.emergentagent.com/auth/callback` (React route)
-- Outlook: `https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback`
-- Gmail: `https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback`
+- Supabase OAuth: `https://full-stack-upgrade-5.preview.emergentagent.com/auth/callback` (React route)
+- Outlook: `https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/outlook/callback`
+- Gmail: `https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/gmail/callback`
 - Merge: N/A (SDK-managed)
 
 ---
@@ -243,12 +243,12 @@ SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 For each provider, verify in third-party console:
 
 **Microsoft Azure AD (Supabase Auth):**
-- [ ] Redirect URI: `https://biqc-integrity.preview.emergentagent.com/auth/callback`
+- [ ] Redirect URI: `https://full-stack-upgrade-5.preview.emergentagent.com/auth/callback`
 - [ ] Application ID matches `GOOGLE_CLIENT_ID` / Azure equiv in env
 - [ ] Client secret configured
 
 **Microsoft Azure AD (Outlook Integration - SEPARATE APP):**
-- [ ] Redirect URI: `https://biqc-integrity.preview.emergentagent.com/api/auth/outlook/callback`
+- [ ] Redirect URI: `https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/outlook/callback`
 - [ ] Application ID matches `AZURE_CLIENT_ID` in env
 - [ ] Client secret matches `AZURE_CLIENT_SECRET`
 - [ ] Scopes granted: `offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic`
@@ -258,7 +258,7 @@ For each provider, verify in third-party console:
 - [ ] Client ID matches Supabase config
 
 **Google Cloud Console (Gmail Integration):**
-- [ ] Redirect URI: `https://biqc-integrity.preview.emergentagent.com/api/auth/gmail/callback`
+- [ ] Redirect URI: `https://full-stack-upgrade-5.preview.emergentagent.com/api/auth/gmail/callback`
 - [ ] Client ID configured in backend env
 - [ ] Scopes configured
 
