@@ -23,6 +23,30 @@ TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "BiqcTest2026!"
 
 
+def get_auth_token():
+    """Helper function to get auth token."""
+    response = requests.post(
+        f"{BASE_URL}/api/auth/supabase/login",
+        json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
+    )
+    if response.status_code == 200:
+        data = response.json()
+        session = data.get("session", {})
+        token = session.get("access_token") or data.get("access_token") or data.get("token")
+        if token:
+            return token
+    return None
+
+
+@pytest.fixture(scope="session")
+def auth_token():
+    """Session-scoped auth token fixture."""
+    token = get_auth_token()
+    if not token:
+        pytest.skip("Could not authenticate with test credentials")
+    return token
+
+
 class TestHealthAndBasics:
     """Basic health checks to ensure API is up."""
 
@@ -38,42 +62,6 @@ class TestHealthAndBasics:
 class TestAuthentication:
     """Authentication tests for the test user."""
 
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Authenticate and get token for andre@thestrategysquad.com.au."""
-        # Try Supabase auth first
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        print(f"Supabase login attempt: {response.status_code}")
-        
-        if response.status_code == 200:
-            data = response.json()
-            # Token is nested under session.access_token
-            session = data.get("session", {})
-            token = session.get("access_token") or data.get("access_token") or data.get("token")
-            if token:
-                print(f"Got Supabase auth token")
-                return token
-        
-        # Fallback to regular login
-        response = requests.post(
-            f"{BASE_URL}/api/auth/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        print(f"Regular login attempt: {response.status_code}")
-        
-        if response.status_code == 200:
-            data = response.json()
-            session = data.get("session", {})
-            token = session.get("access_token") or data.get("access_token") or data.get("token")
-            if token:
-                print(f"Got regular auth token")
-                return token
-        
-        pytest.skip(f"Could not authenticate with {TEST_EMAIL}")
-
     def test_auth_successful(self, auth_token):
         """Confirm we have a valid auth token."""
         assert auth_token is not None
@@ -84,27 +72,13 @@ class TestAuthentication:
 class TestLifecycleState:
     """Test lifecycle/state endpoint for integration status."""
 
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get auth token for authenticated tests."""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("access_token") or data.get("token")
-            if token:
-                return token
-        pytest.skip("Could not authenticate")
-
     def test_lifecycle_state_returns_integrations(self, auth_token):
         """GET /api/lifecycle/state should return integration count."""
         headers = {"Authorization": f"Bearer {auth_token}"}
         response = requests.get(f"{BASE_URL}/api/lifecycle/state", headers=headers)
         print(f"Lifecycle state: {response.status_code}")
         
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Failed: {response.text}"
         data = response.json()
         
         # Verify structure
@@ -118,7 +92,7 @@ class TestLifecycleState:
         print(f"Integrations connected: {integration_count}")
         print(f"Providers: {providers}")
         
-        # The test user should have 3 integrations (HubSpot, Xero, Outlook)
+        # The test user should have integrations (HubSpot, Xero, Outlook)
         assert integration_count >= 0  # At least verify it returns a number
         
     def test_lifecycle_state_has_events(self, auth_token):
@@ -141,20 +115,6 @@ class TestLifecycleState:
 class TestColdReadPipeline:
     """Test the main cold-read pipeline (emission → watchtower → cold-read)."""
 
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get auth token for authenticated tests."""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("access_token") or data.get("token")
-            if token:
-                return token
-        pytest.skip("Could not authenticate")
-
     def test_cold_read_triggers_3_stage_pipeline(self, auth_token):
         """
         POST /api/intelligence/cold-read should trigger the 3-stage pipeline.
@@ -165,7 +125,7 @@ class TestColdReadPipeline:
         3. generate_cold_read() is called
         """
         headers = {"Authorization": f"Bearer {auth_token}"}
-        response = requests.post(f"{BASE_URL}/api/intelligence/cold-read", headers=headers)
+        response = requests.post(f"{BASE_URL}/api/intelligence/cold-read", headers=headers, timeout=60)
         
         print(f"Cold-read response: {response.status_code}")
         
@@ -173,7 +133,7 @@ class TestColdReadPipeline:
         assert response.status_code == 200, f"Cold-read failed with {response.status_code}: {response.text}"
         
         data = response.json()
-        print(f"Cold-read data: {data}")
+        print(f"Cold-read data keys: {data.keys()}")
         
         # Verify success
         assert data.get("success") is True, "Cold-read should return success: true"
@@ -181,6 +141,7 @@ class TestColdReadPipeline:
         # Verify cold_read result is present
         assert "cold_read" in data, "Response should include cold_read field"
         cold_read = data["cold_read"]
+        print(f"Cold-read result: {cold_read}")
         
         # Verify signals_extracted is present (emission layer ran)
         signals = data.get("signals_extracted", 0)
@@ -200,20 +161,6 @@ class TestColdReadPipeline:
 
 class TestWatchtowerPositions:
     """Test Watchtower positions endpoint."""
-
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get auth token for authenticated tests."""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("access_token") or data.get("token")
-            if token:
-                return token
-        pytest.skip("Could not authenticate")
 
     def test_watchtower_positions_endpoint(self, auth_token):
         """
@@ -259,20 +206,6 @@ class TestWatchtowerPositions:
 class TestDataReadiness:
     """Test data-readiness endpoint for integration observation counts."""
 
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get auth token for authenticated tests."""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("access_token") or data.get("token")
-            if token:
-                return token
-        pytest.skip("Could not authenticate")
-
     def test_data_readiness_shows_integrations(self, auth_token):
         """
         GET /api/intelligence/data-readiness should show integrations with observation counts.
@@ -306,20 +239,6 @@ class TestDataReadiness:
 class TestBaselineSnapshot:
     """Test baseline snapshot endpoint."""
 
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get auth token for authenticated tests."""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("access_token") or data.get("token")
-            if token:
-                return token
-        pytest.skip("Could not authenticate")
-
     def test_baseline_snapshot_returns_record(self, auth_token):
         """
         GET /api/intelligence/baseline-snapshot should return baseline_initialized record.
@@ -342,20 +261,6 @@ class TestBaselineSnapshot:
 
 class TestConsoleState:
     """Test console state persistence."""
-
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get auth token for authenticated tests."""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("access_token") or data.get("token")
-            if token:
-                return token
-        pytest.skip("Could not authenticate")
 
     def test_console_state_save_and_read(self, auth_token):
         """
@@ -404,20 +309,6 @@ class TestConsoleState:
 class TestEmissionLayerFix:
     """Verify the emission layer fix (removed status filter)."""
 
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get auth token for authenticated tests."""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/login",
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get("access_token") or data.get("token")
-            if token:
-                return token
-        pytest.skip("Could not authenticate")
-
     def test_emission_layer_code_fix_verified(self):
         """
         Verify the emission layer code fix at line 581.
@@ -425,8 +316,6 @@ class TestEmissionLayerFix:
         The fix removed the .eq('status', 'active') filter because the
         integration_accounts table doesn't have a status column.
         """
-        import os
-        
         emission_file = "/app/backend/merge_emission_layer.py"
         
         with open(emission_file, 'r') as f:
@@ -446,8 +335,6 @@ class TestEmissionLayerFix:
         """
         Verify cold-read endpoint calls emission_layer.run_emission().
         """
-        import os
-        
         server_file = "/app/backend/server.py"
         
         with open(server_file, 'r') as f:
@@ -463,8 +350,6 @@ class TestEmissionLayerFix:
         """
         Verify cold-read endpoint calls watchtower_engine.run_analysis().
         """
-        import os
-        
         server_file = "/app/backend/server.py"
         
         with open(server_file, 'r') as f:
@@ -475,6 +360,30 @@ class TestEmissionLayerFix:
             "Cold-read should call watchtower_engine.run_analysis()"
         
         print("Cold-read endpoint correctly calls watchtower_engine.run_analysis()")
+
+
+class TestWatchtowerFindings:
+    """Test Watchtower findings endpoint."""
+
+    def test_watchtower_findings_endpoint(self, auth_token):
+        """GET /api/watchtower/findings should return position change history."""
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        response = requests.get(f"{BASE_URL}/api/watchtower/findings", headers=headers)
+        
+        print(f"Watchtower findings: {response.status_code}")
+        
+        assert response.status_code == 200
+        
+        data = response.json()
+        findings = data.get("findings", [])
+        count = data.get("count", 0)
+        
+        print(f"Findings count: {count}")
+        for finding in findings[:5]:
+            domain = finding.get("domain")
+            position = finding.get("position")
+            confidence = finding.get("confidence")
+            print(f"  - {domain}: {position} (confidence: {confidence})")
 
 
 if __name__ == "__main__":
