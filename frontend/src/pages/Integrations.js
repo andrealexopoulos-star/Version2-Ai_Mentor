@@ -75,6 +75,7 @@ const Integrations = () => {
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [mergeIntegrations, setMergeIntegrations] = useState({});
+  const [mergeLoading, setMergeLoading] = useState(true);
   
   // Merge Link integration
   const [mergeLinkToken, setMergeLinkToken] = useState(null);
@@ -251,8 +252,8 @@ const Integrations = () => {
       setMergeIntegrations(integrations);
     } catch (error) {
       console.warn('⚠️ Could not fetch Merge integrations - failing open:', error);
-      // FAIL OPEN: Keep existing Merge state on error
-      // Do NOT reset to empty object - preserve current connection state
+    } finally {
+      setMergeLoading(false);
     }
   };
 
@@ -1046,8 +1047,8 @@ const Integrations = () => {
               </div>
             )}
 
-            {/* Empty State */}
-            {!outlookStatus.connected && !gmailStatus.connected && Object.keys(mergeIntegrations).length === 0 && (
+            {/* Empty State — only show after loading completes */}
+            {!mergeLoading && !outlookStatus.connected && !gmailStatus.connected && Object.keys(mergeIntegrations).length === 0 && (
               <div className="text-center py-16">
                 <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
                      style={{ background: 'var(--bg-tertiary)' }}>
