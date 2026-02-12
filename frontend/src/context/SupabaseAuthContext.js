@@ -245,7 +245,12 @@ export const SupabaseAuthProvider = ({ children }) => {
           console.log(`[CALIBRATION ROUTING] Fetching: ${calUrl}`);
           const calRes = await fetch(calUrl, {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+            }
           });
           const contentType = calRes.headers.get('content-type') || '';
           if (calRes.ok && contentType.includes('application/json')) {
