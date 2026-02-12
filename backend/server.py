@@ -9554,6 +9554,8 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     from workspace_helpers import get_user_account
     
     user_id = current_user["id"]
+    import time as _time
+    _t0 = _time.monotonic()
     
     # Get workspace
     account = await get_user_account(supabase_admin, user_id)
@@ -9562,42 +9564,99 @@ async def trigger_cold_read(current_user: dict = Depends(get_current_user)):
     
     account_id = account["id"]
     
-    logger.info(f"🔍 Watchtower Cold Read (RPC) triggered for account {account_id}, user {user_id}")
+    logger.info(f"🔍 Cold Read for account {account_id}, user {user_id}")
     
-    # STAGE 1: Run emission layer to extract data from integrations → observation_events
-    emission_signals = 0
-    if emission_layer:
-        try:
-            emission_result = await emission_layer.run_emission(user_id, account_id)
-            emission_signals = emission_result.get("signals_emitted", 0)
-            logger.info(f"📡 Emission layer: {emission_signals} signals extracted from integrations")
-        except Exception as emission_err:
-            logger.warning(f"📡 Emission layer failed (non-fatal): {emission_err}")
-    else:
-        logger.warning("📡 Emission layer not initialized — skipping integration extraction")
+    # FAST PATH: Check if any observation_events exist first
+    try:
+        obs_check = supabase_admin.table("observation_events").select("id", count="exact").eq("user_id", user_id).limit(1).execute()
+        obs_count = obs_check.count or 0
+    except Exception:
+        obs_count = 0
 
-    # STAGE 2: Run Watchtower Engine to analyze observation_events → positions/insights
-    watchtower_result = None
+    if obs_count == 0:
+        _elapsed = round((_time.monotonic() - _t0) * 1000)
+        logger.info(f"⚡ Cold Read fast-path: no observation events ({_elapsed}ms)")
+        return {
+            "success": True,
+            "cold_read": {
+                "status": "NO_DATA",
+                "events_created": 0,
+                "signals": [],
+                "message": "No material changes detected.",
+                "method": "fast_path",
+            }
+        }
+
+    # ANALYSIS PATH: Read from precomputed positions + existing insights
+    positions = {}
+    findings = []
     try:
         from watchtower_engine import get_watchtower_engine
         engine = get_watchtower_engine()
-        watchtower_result = await engine.run_analysis(user_id)
-        logger.info(f"🔭 Watchtower Engine: {watchtower_result}")
+        positions = await engine.get_positions(user_id)
+        findings_data = await engine.get_findings(user_id, limit=10)
+        findings = findings_data if isinstance(findings_data, list) else []
     except Exception as wt_err:
-        logger.warning(f"🔭 Watchtower Engine failed (non-fatal): {wt_err}")
+        logger.warning(f"🔭 Positions read failed: {wt_err}")
 
-    # STAGE 3: Execute Cold Read analysis via RPCs (email/calendar patterns)
-    result = await generate_cold_read(
-        user_id=user_id,
-        account_id=account_id,
-        supabase_admin=supabase_admin,
-        watchtower_store=get_watchtower_store()
-    )
+    # 8-second fail-safe check
+    _elapsed_s = _time.monotonic() - _t0
+    if _elapsed_s > 8.0:
+        logger.warning(f"⏱ Cold Read exceeded 8s ({round(_elapsed_s, 1)}s) — returning partial")
+        return {
+            "success": True,
+            "cold_read": {
+                "status": "TIMEOUT",
+                "events_created": 0,
+                "signals": [],
+                "message": "Analysis timeout — partial results returned.",
+                "method": "fail_safe",
+                "positions": positions,
+            }
+        }
+
+    # Run Watchtower Engine analysis on existing observation_events
+    watchtower_result = None
+    try:
+        watchtower_result = await engine.run_analysis(user_id)
+        logger.info(f"🔭 Watchtower: {watchtower_result.get('position_changes', 0)} position changes")
+    except Exception as wt_err:
+        logger.warning(f"🔭 Watchtower analysis failed: {wt_err}")
+
+    # 8-second fail-safe check again
+    _elapsed_s = _time.monotonic() - _t0
+    if _elapsed_s > 8.0:
+        logger.warning(f"⏱ Cold Read exceeded 8s after watchtower ({round(_elapsed_s, 1)}s)")
+        return {
+            "success": True,
+            "cold_read": {
+                "status": "PARTIAL",
+                "events_created": watchtower_result.get("position_changes", 0) if watchtower_result else 0,
+                "signals": [],
+                "message": "Watchtower analysis complete. Skipping deep read.",
+                "method": "watchtower_only",
+                "watchtower_analysis": watchtower_result,
+            }
+        }
+
+    # Generate cold read from canonical moments (skip if already over 6s)
+    result = {"events_created": 0, "status": "no_patterns", "method": "canonical_moments"}
+    if _elapsed_s < 6.0:
+        try:
+            result = await generate_cold_read(
+                user_id=user_id,
+                account_id=account_id,
+                supabase_admin=supabase_admin,
+                watchtower_store=get_watchtower_store()
+            )
+        except Exception as cr_err:
+            logger.warning(f"Cold read generation failed: {cr_err}")
     
-    # Add emission + watchtower context to result
     if isinstance(result, dict):
-        result["signals_extracted"] = emission_signals
         result["watchtower_analysis"] = watchtower_result
+
+    _elapsed = round((_time.monotonic() - _t0) * 1000)
+    logger.info(f"⚡ Cold Read completed in {_elapsed}ms")
 
     # PART 1: If no events created, persist baseline_initialized snapshot
     events_created = result.get("events_created", 0) if isinstance(result, dict) else 0
