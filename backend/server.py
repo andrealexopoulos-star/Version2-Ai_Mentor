@@ -2672,15 +2672,6 @@ async def get_lifecycle_state(request: Request):
         except Exception:
             pass
 
-        try:
-            op_cs = safe_query_single(
-                supabase_admin.table("user_operator_profile").select("operator_profile").eq("user_id", user_id)
-            )
-            if op_cs.data:
-                console_state = (op_cs.data.get("operator_profile") or {}).get("console_state", {})
-        except Exception:
-            pass
-
         return {
             "calibration": {"status": calibration_status, "complete": calibration_complete},
             "onboarding": {"complete": onboarding_complete, "step": onboarding_step},
