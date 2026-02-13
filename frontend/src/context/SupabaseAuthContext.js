@@ -241,7 +241,7 @@ export const SupabaseAuthProvider = ({ children }) => {
         // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
         // No direct Supabase REST queries. No fallback chains. No cached state.
         try {
-          const calUrl = `${process.env.REACT_APP_BACKEND_URL}/api/calibration/status`;
+          const calUrl = `${process.env.REACT_APP_BACKEND_URL}/api/calibration/status?_t=${Date.now()}`;
           console.log(`[CALIBRATION ROUTING] Fetching: ${calUrl}`);
           const calRes = await fetch(calUrl, {
             method: 'GET',
