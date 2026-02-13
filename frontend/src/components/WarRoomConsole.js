@@ -47,7 +47,7 @@ const WarRoomConsoleInner = () => {
         if (!session || cancelled) return;
         setSessionReady(true);
 
-        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lifecycle/state`, {
+        const res = await fetch(`${getBackendUrl()}/api/lifecycle/state`, {
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
         });
         const ct = res.headers.get('content-type') || '';
@@ -91,7 +91,7 @@ const WarRoomConsoleInner = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/console/state`, {
+      await fetch(`${getBackendUrl()}/api/console/state`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
         body: JSON.stringify({ current_step: step, status: stepStatus }),
@@ -114,7 +114,7 @@ const WarRoomConsoleInner = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/calibration/brain`, {
+      const response = await fetch(`${getBackendUrl()}/api/calibration/brain`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

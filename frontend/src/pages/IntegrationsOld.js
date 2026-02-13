@@ -46,7 +46,7 @@ const Integrations = () => {
         
         console.log('🔄 Exchanging token...', { category, provider });
         
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/exchange-account-token`, {
+        const response = await fetch(`${getBackendUrl()}/api/integrations/merge/exchange-account-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -565,7 +565,7 @@ const Integrations = () => {
     
     // Direct browser navigation to backend OAuth endpoint
     // This bypasses axios interceptor and allows backend to handle OAuth flow
-    window.location.assign(`${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?returnTo=/integrations`);
+    window.location.assign(`${getBackendUrl()}/api/auth/outlook/login?returnTo=/integrations`);
   };
 
   const handleOutlookDisconnect = async () => {
@@ -598,7 +598,7 @@ const Integrations = () => {
     
     // Direct browser navigation to backend OAuth endpoint
     // This bypasses axios interceptor and allows backend to handle OAuth flow
-    window.location.assign(`${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?returnTo=/integrations`);
+    window.location.assign(`${getBackendUrl()}/api/auth/gmail/login?returnTo=/integrations`);
   };
 
   const handleGmailTest = async () => {
@@ -757,7 +757,7 @@ const Integrations = () => {
       console.log('✅ Active session found with valid token');
       
       // Call backend endpoint with session token
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/link-token`, {
+      const response = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -821,7 +821,7 @@ const Integrations = () => {
       console.log('✅ Session validated, requesting link token...');
       
       // Step 2: Call backend to get link_token
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/link-token`, {
+      const response = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

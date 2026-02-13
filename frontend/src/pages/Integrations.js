@@ -100,7 +100,7 @@ const Integrations = () => {
         
         console.log('🔄 Exchanging token...', { category, provider });
         
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/exchange-account-token`, {
+        const response = await fetch(`${getBackendUrl()}/api/integrations/merge/exchange-account-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -540,7 +540,7 @@ const Integrations = () => {
     
     // Pass token as query parameter (browser redirects can't send headers)
     window.location.assign(
-      `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/integrations`
+      `${getBackendUrl()}/api/auth/outlook/login?token=${token}&returnTo=/integrations`
     );
   };
 
@@ -582,7 +582,7 @@ const Integrations = () => {
     
     // Pass token as query parameter (browser redirects can't send headers)
     window.location.assign(
-      `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/integrations`
+      `${getBackendUrl()}/api/auth/gmail/login?token=${token}&returnTo=/integrations`
     );
   };
 
@@ -641,7 +641,7 @@ const Integrations = () => {
         return;
       }
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/integrations/merge/link-token`, {
+      const response = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

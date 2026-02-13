@@ -143,7 +143,7 @@ const ConnectEmail = () => {
       
       // EXPLICIT: Pass provider parameter
       window.location.assign(
-        `${process.env.REACT_APP_BACKEND_URL}/api/auth/outlook/login?token=${token}&returnTo=/connect-email&provider=outlook`
+        `${getBackendUrl()}/api/auth/outlook/login?token=${token}&returnTo=/connect-email&provider=outlook`
       );
       
     } catch (error) {
@@ -189,7 +189,7 @@ const ConnectEmail = () => {
       
       // EXPLICIT: Pass provider parameter
       window.location.assign(
-        `${process.env.REACT_APP_BACKEND_URL}/api/auth/gmail/login?token=${token}&returnTo=/connect-email&provider=gmail`
+        `${getBackendUrl()}/api/auth/gmail/login?token=${token}&returnTo=/connect-email&provider=gmail`
       );
       
     } catch (error) {

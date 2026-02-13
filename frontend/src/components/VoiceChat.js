@@ -31,7 +31,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
   const analyserRef = useRef(null);
   const callTimerRef = useRef(null);
 
-  const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
+  const API_BASE = getBackendUrl() || '';
 
   // Format call duration
   const formatDuration = (seconds) => {
