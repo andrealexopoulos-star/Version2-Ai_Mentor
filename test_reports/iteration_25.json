@@ -1,0 +1,66 @@
+{
+  "summary": "Platform Stability RCA VERIFIED: All 6 previously-failing endpoints now return JSON (NOT HTML). 3-layer defense against service worker caching is working: SW kill on boot (index.js), cache-busting headers on apiClient (api.js), cache-busting on raw fetch calls. Backend: 13/13 tests passed. Frontend: Login + 4 page navigation tests passed with no HTML errors in console.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration25_html_stability.py",
+    "/app/test_reports/pytest/pytest_results_iteration25.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "3-layer SW defense properly implemented: Layer 1 (index.js line 11-39), Layer 2 (api.js interceptors), Layer 3 (individual component fetch calls)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration25_html_stability.py"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "Biqc#Cert2026!xQ9z"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Platform stability issue RESOLVED. All 6 originally failing endpoints verified: /api/calibration/status, /api/intelligence/baseline-snapshot, /api/outlook/status, /api/facts/resolve, /api/lifecycle/state, /api/intelligence/watchtower?status=active. All return application/json content-type, not text/html. 3-layer service worker defense in place. Additional endpoints tested: /api/watchtower/positions, /api/watchtower/findings, /api/boardroom/respond, /api/soundboard/chat, /api/auth/supabase/me, /api/onboarding/status, /api/health.",
+  "features_verified": {
+    "api_json_responses": {
+      "calibration_status": "PASS - Returns JSON with status field",
+      "intelligence_baseline_snapshot": "PASS - Returns JSON snapshot data",
+      "outlook_status": "PASS - Returns JSON with connected field",
+      "facts_resolve": "PASS - Returns JSON with facts data",
+      "lifecycle_state": "PASS - Returns JSON with calibration/workspace data",
+      "intelligence_watchtower": "PASS - Returns JSON with events array",
+      "watchtower_positions": "PASS - Returns JSON with positions",
+      "watchtower_findings": "PASS - Returns JSON with findings",
+      "boardroom_respond": "PASS - Returns JSON response (200)",
+      "soundboard_chat": "PASS - Returns JSON with reply",
+      "auth_me": "PASS - Returns JSON with user data",
+      "onboarding_status": "PASS - Returns JSON",
+      "health_check": "PASS - Returns JSON"
+    },
+    "frontend_pages": {
+      "login_flow": "PASS - Supabase auth redirects to /advisor",
+      "integrations_page": "PASS - Shows 'BIQC is learning from 2 connected systems'",
+      "board_room_page": "PASS - Shows BOARD ROOM with CRITICAL content",
+      "settings_page": "PASS - Loads without HTML errors",
+      "soundboard_page": "PASS - Loads without HTML errors"
+    },
+    "no_html_errors_in_console": "PASS - No 'HTML response' or 'STILL HTML' errors during any navigation"
+  },
+  "api_test_details": {
+    "test_count": 13,
+    "passed": 13,
+    "failed": 0,
+    "duration": "35.65s"
+  }
+}
