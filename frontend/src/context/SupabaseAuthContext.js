@@ -124,7 +124,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       if (existingSession?.access_token) {
         try {
           const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/supabase/me`, {
-            headers: { 'Authorization': `Bearer ${existingSession.access_token}` }
+            headers: { 'Authorization': `Bearer ${existingSession.access_token}`, 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
           });
           if (res.ok) {
             const data = await res.json();
