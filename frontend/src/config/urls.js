@@ -20,9 +20,15 @@ export const getAppBaseUrl = () => {
 /**
  * Get the backend API base URL
  * Prioritizes REACT_APP_BACKEND_URL env var, falls back to current origin
+ * VALIDATES the URL has proper protocol — prevents UUID-only or relative URLs
  */
 export const getBackendUrl = () => {
-  return process.env.REACT_APP_BACKEND_URL || getAppBaseUrl();
+  const envUrl = process.env.REACT_APP_BACKEND_URL;
+  if (envUrl && (envUrl.startsWith('http://') || envUrl.startsWith('https://'))) {
+    return envUrl;
+  }
+  // Env var is missing, empty, or malformed (no protocol) — use origin
+  return getAppBaseUrl();
 };
 
 /**
