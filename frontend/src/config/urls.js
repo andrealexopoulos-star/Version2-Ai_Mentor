@@ -19,16 +19,16 @@ export const getAppBaseUrl = () => {
 
 /**
  * Get the backend API base URL
- * Prioritizes REACT_APP_BACKEND_URL env var, falls back to current origin
- * VALIDATES the URL has proper protocol — prevents UUID-only or relative URLs
+ * ALWAYS uses the current page origin — this ensures API calls go to the
+ * same domain the page is loaded from, which has proper /api proxy routing.
+ * 
+ * CRITICAL: process.env.REACT_APP_BACKEND_URL is baked at BUILD TIME by webpack.
+ * In production, the build happens in the preview container, so it contains the
+ * PREVIEW URL, not the production URL. Using it would send API calls to the
+ * wrong server. window.location.origin is ALWAYS correct.
  */
 export const getBackendUrl = () => {
-  const envUrl = process.env.REACT_APP_BACKEND_URL;
-  if (envUrl && (envUrl.startsWith('http://') || envUrl.startsWith('https://'))) {
-    return envUrl;
-  }
-  // Env var is missing, empty, or malformed (no protocol) — use origin
-  return getAppBaseUrl();
+  return window.location.origin;
 };
 
 /**
