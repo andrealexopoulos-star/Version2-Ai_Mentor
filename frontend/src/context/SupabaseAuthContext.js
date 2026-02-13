@@ -260,12 +260,6 @@ export const SupabaseAuthProvider = ({ children }) => {
             console.log(`[CALIBRATION ROUTING] Backend status: ${cal.status} → calibrationComplete=${calibrationComplete}`);
           } else if (calRes.ok && !contentType.includes('application/json')) {
             console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType}) → fail-open to READY`);
-            // LAYER 3: Emergency hard reload if SW poisoning detected
-            const reloadFlag = sessionStorage.getItem('biqc_cache_kill_reload');
-            if (!reloadFlag) {
-              return;
-            }
-            sessionStorage.removeItem('biqc_cache_kill_reload');
             calibrationComplete = true;
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status} → fail-open to READY`);
