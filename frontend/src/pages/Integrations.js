@@ -909,16 +909,24 @@ const Integrations = () => {
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                               {integration.description}
                             </p>
-                            {isConnected && connectionState.source === 'merge' && (
+                            {isConnected && (
                               <button
                                 data-testid={`disconnect-${integration.id}`}
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   if (!window.confirm(`Disconnect ${integration.name}? This will stop data collection.`)) return;
                                   try {
-                                    await apiClient.post('/merge/disconnect', { provider: integration.id, category: integration.category });
+                                    if (connectionState.source === 'merge') {
+                                      await apiClient.post('/merge/disconnect', { provider: integration.id, category: integration.category });
+                                      setMergeIntegrations(prev => { const n = {...prev}; delete n[integration.id?.toLowerCase()]; delete n[integration.name?.toLowerCase()]; return n; });
+                                    } else if (integration.isOutlook || integration.id === 'outlook') {
+                                      await apiClient.post('/outlook/disconnect');
+                                      setOutlookStatus({ connected: false });
+                                    } else if (integration.isGmail || integration.id === 'gmail') {
+                                      await apiClient.post('/gmail/disconnect');
+                                      setGmailStatus({ connected: false });
+                                    }
                                     toast.success(`${integration.name} disconnected`);
-                                    setMergeIntegrations(prev => { const n = {...prev}; delete n[integration.id?.toLowerCase()]; delete n[integration.name?.toLowerCase()]; return n; });
                                   } catch (err) {
                                     toast.error(`Disconnect failed: ${err.response?.data?.detail || err.message}`);
                                   }
