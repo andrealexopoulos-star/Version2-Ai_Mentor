@@ -105,7 +105,7 @@ const AuthCallbackSupabase = () => {
                 console.log(`[CALIBRATION ROUTING] Auth callback fetching: ${calUrl}`);
                 const calRes = await fetch(calUrl, {
                   method: 'GET',
-                  headers: { 'Authorization': `Bearer ${sessionData.session.access_token}`, 'Accept': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+                  headers: { 'Authorization': `Bearer ${sessionData.session.access_token}`, 'Accept': 'application/json', 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate', 'Pragma': 'no-cache', 'Expires': '0' }
                 });
                 const contentType = calRes.headers.get('content-type') || '';
                 if (calRes.ok && contentType.includes('application/json')) {
@@ -114,6 +114,15 @@ const AuthCallbackSupabase = () => {
                   console.log(`[CALIBRATION ROUTING] Auth callback: status=${calData.status} → needsCalibration=${needsCalibration}`);
                 } else if (calRes.ok && !contentType.includes('application/json')) {
                   console.warn(`[CALIBRATION ROUTING] Auth callback: got HTML not JSON (${contentType}) → fail-open`);
+                  // LAYER 3: Emergency hard reload
+                  const reloadFlag = sessionStorage.getItem('biqc_cache_kill_reload');
+                  if (!reloadFlag) {
+                    sessionStorage.setItem('biqc_cache_kill_reload', Date.now().toString());
+                    console.error('%c AUTH CALLBACK: Executing emergency hard reload', 'color:red;font-weight:bold');
+                    window.location.reload(true);
+                    return;
+                  }
+                  sessionStorage.removeItem('biqc_cache_kill_reload');
                   needsCalibration = false;
                 } else {
                   console.warn(`[CALIBRATION ROUTING] Auth callback: backend error ${calRes.status} → fail-open`);
