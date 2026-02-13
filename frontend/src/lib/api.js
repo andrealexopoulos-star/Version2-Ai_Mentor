@@ -10,7 +10,10 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor — Supabase session token + cache-busting on ALL requests
+// ═══════════════════════════════════════════════════════════════
+// OPERATION "CACHE KILL" — LAYER 2: THE ARMOR
+// Every request gets cache-busting headers AND timestamp param.
+// ═══════════════════════════════════════════════════════════════
 apiClient.interceptors.request.use(async (config) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -22,13 +25,14 @@ apiClient.interceptors.request.use(async (config) => {
     console.warn('Failed to get Supabase session:', error.message);
   }
   
-  // ALWAYS add cache-busting headers + accept JSON
+  // ARMOR: Cache-busting on every single request
   config.headers = config.headers || {};
-  config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+  config.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate';
   config.headers['Pragma'] = 'no-cache';
+  config.headers['Expires'] = '0';
   config.headers['Accept'] = 'application/json';
   
-  // Add cache-busting query param to bypass CDN/proxy caching
+  // Timestamp busting: append ?_t=<timestamp> to bypass ALL caching layers
   config.params = config.params || {};
   config.params._t = Date.now();
   
@@ -37,50 +41,71 @@ apiClient.interceptors.request.use(async (config) => {
   return Promise.reject(error);
 });
 
-// Response interceptor — detect HTML responses and auto-retry
+// ═══════════════════════════════════════════════════════════════
+// OPERATION "CACHE KILL" — LAYER 3: THE RETRY GUARD
+// If HTML is detected, kill SW and force hard reload ONCE.
+// Uses sessionStorage to prevent infinite reload loops.
+// ═══════════════════════════════════════════════════════════════
+const RELOAD_FLAG = 'biqc_cache_kill_reload';
+
 apiClient.interceptors.response.use(
   async (response) => {
     const ct = response.headers?.['content-type'] || '';
-    const apiServer = response.headers?.['x-api-server'];
     
-    // If response has X-API-Server header, it came from our backend — trust it
-    if (apiServer) return response;
+    // If response has our backend marker, it's genuine — trust it
+    if (response.headers?.['x-api-server']) return response;
     
-    if (ct.includes('text/html') && !response.config?._htmlRetried) {
-      console.warn(`[apiClient] HTML response for ${response.config?.url} — killing SW and retrying`);
+    // CRITICAL: HTML detected on an API call
+    if (ct.includes('text/html')) {
+      const url = response.config?.url || 'unknown';
+      console.error(
+        '%c CRITICAL: API returned HTML. Service Worker Poisoning detected.',
+        'color: red; font-weight: bold; font-size: 14px',
+        url
+      );
       
-      // Kill service workers and caches
+      // Kill all service workers immediately
       if ('serviceWorker' in navigator) {
         try {
           const regs = await navigator.serviceWorker.getRegistrations();
           await Promise.all(regs.map(r => r.unregister()));
+          console.log('%c Emergency SW kill executed', 'color: orange; font-weight: bold');
         } catch {}
       }
+      
+      // Nuke all caches
       if ('caches' in window) {
         try {
           const names = await caches.keys();
           await Promise.all(names.map(n => caches.delete(n)));
         } catch {}
       }
-
-      // Retry with fresh cache-busting timestamp
-      const retryConfig = {
-        ...response.config,
-        _htmlRetried: true,
-        params: { ...response.config.params, _t: Date.now() },
-        headers: {
-          ...response.config.headers,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-        },
-      };
-      return apiClient.request(retryConfig);
+      
+      // LAYER 3 FAIL-SAFE: Force hard reload ONCE to break zombie state
+      const alreadyReloaded = sessionStorage.getItem(RELOAD_FLAG);
+      if (!alreadyReloaded) {
+        sessionStorage.setItem(RELOAD_FLAG, Date.now().toString());
+        console.error(
+          '%c EXECUTING HARD RELOAD to break Service Worker Poisoning',
+          'color: red; font-weight: bold; font-size: 16px'
+        );
+        window.location.reload(true);
+        // Execution stops here — page reloads
+        return new Promise(() => {}); // Never resolves
+      }
+      
+      // Already reloaded once — don't loop. Clear flag for next session.
+      sessionStorage.removeItem(RELOAD_FLAG);
+      
+      // Reject with clear error
+      return Promise.reject(
+        new Error(`API returned HTML instead of JSON for ${url}. Service Worker killed. Please refresh manually if issue persists.`)
+      );
     }
     
-    // Still HTML after retry — reject with clear error
-    if (ct.includes('text/html')) {
-      console.error(`[apiClient] STILL HTML after retry for ${response.config?.url}`);
-      return Promise.reject(new Error(`API returned HTML instead of JSON for ${response.config?.url}`));
+    // Valid JSON response — clear reload flag if it exists
+    if (sessionStorage.getItem(RELOAD_FLAG)) {
+      sessionStorage.removeItem(RELOAD_FLAG);
     }
     
     return response;
