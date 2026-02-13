@@ -226,6 +226,24 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 app = FastAPI(title="Strategic Advisor API")
 
+# ═══ ANTI-CACHING MIDDLEWARE ═══
+# Forces ALL API responses to include explicit no-cache headers.
+# Prevents CDN, reverse proxy, and browser from caching API responses as HTML.
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class NoCacheAPIMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        # Mark every response from this backend explicitly
+        response.headers["X-API-Server"] = "biqc-backend"
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+app.add_middleware(NoCacheAPIMiddleware)
+
 # CRITICAL: Add CORS middleware FIRST, before any routers
 app.add_middleware(
     CORSMiddleware,
@@ -233,6 +251,7 @@ app.add_middleware(
     allow_origins=["*"],  # Allow all origins for development
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-API-Server"],
 )
 
 # Add session middleware for OAuth
