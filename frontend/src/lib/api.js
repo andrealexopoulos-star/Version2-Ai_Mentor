@@ -38,9 +38,15 @@ apiClient.interceptors.response.use(
   async (response) => {
     const ct = response.headers?.['content-type'] || '';
     if (ct.includes('text/html') && !response.config?._htmlRetried) {
-      console.warn(`[apiClient] HTML response for ${response.config?.url} — retrying direct`);
+      console.warn(`[apiClient] HTML response for ${response.config?.url} — killing SW and retrying`);
       
-      // Force clear any remaining service worker caches
+      // Aggressively kill service workers AND caches
+      if ('serviceWorker' in navigator) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        } catch {}
+      }
       if ('caches' in window) {
         try {
           const names = await caches.keys();
@@ -48,7 +54,7 @@ apiClient.interceptors.response.use(
         } catch {}
       }
 
-      // Retry the request once with cache-busting headers
+      // Retry with cache-busting
       const retryConfig = {
         ...response.config,
         _htmlRetried: true,
