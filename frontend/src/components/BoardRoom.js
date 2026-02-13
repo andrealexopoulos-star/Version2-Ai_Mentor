@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../context/SupabaseAuthContext';
+import { getBackendUrl } from '../config/urls';
 
 const POSITION_COLORS = {
   STABLE: { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)', text: '#4ade80', dot: '#22c55e' },
