@@ -115,12 +115,6 @@ const AuthCallbackSupabase = () => {
                   console.log(`[CALIBRATION ROUTING] Auth callback: status=${calData.status} → needsCalibration=${needsCalibration}`);
                 } else if (calRes.ok && !contentType.includes('application/json')) {
                   console.warn(`[CALIBRATION ROUTING] Auth callback: got HTML not JSON (${contentType}) → fail-open`);
-                  // LAYER 3: Emergency hard reload
-                  const reloadFlag = sessionStorage.getItem('biqc_cache_kill_reload');
-                  if (!reloadFlag) {
-                    return;
-                  }
-                  sessionStorage.removeItem('biqc_cache_kill_reload');
                   needsCalibration = false;
                 } else {
                   console.warn(`[CALIBRATION ROUTING] Auth callback: backend error ${calRes.status} → fail-open`);
