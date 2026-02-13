@@ -1,3 +1,4 @@
+import { getBackendUrl } from '../config/urls';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, Component } from 'react';
 import { supabase } from '../context/SupabaseAuthContext';
+import { getBackendUrl } from '../config/urls';
 
 /* ─── Error Boundary ─── */
 class WarRoomErrorBoundary extends Component {
