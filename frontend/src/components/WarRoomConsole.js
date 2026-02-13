@@ -47,7 +47,7 @@ const WarRoomConsoleInner = () => {
         setSessionReady(true);
 
         const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lifecycle/state`, {
-          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json' },
+          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
         });
         const ct = res.headers.get('content-type') || '';
         if (res.ok && ct.includes('application/json')) {
