@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { getBackendUrl } from '../config/urls';
 import { Loader2 } from 'lucide-react';
 
 const AuthCallbackSupabase = () => {
