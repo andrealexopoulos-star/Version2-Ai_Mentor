@@ -92,7 +92,7 @@ const WarRoomConsoleInner = () => {
       if (!session) return;
       await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/console/state`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
         body: JSON.stringify({ current_step: step, status: stepStatus }),
       });
     } catch {}
