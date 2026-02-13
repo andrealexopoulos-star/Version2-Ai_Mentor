@@ -2,8 +2,6 @@ import axios from 'axios';
 import { supabase } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
 
-// BULLETPROOF: Use centralized URL resolver — falls back to window.location.origin
-// if REACT_APP_BACKEND_URL is missing, empty, or malformed (no https://)
 export const API_BASE = `${getBackendUrl()}/api`;
 
 export const apiClient = axios.create({
@@ -11,7 +9,6 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-// LAYER 2: Cache-busting on every request
 apiClient.interceptors.request.use(async (config) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -36,8 +33,6 @@ apiClient.interceptors.request.use(async (config) => {
   return Promise.reject(error);
 });
 
-// LAYER 3: HTML detection + hard reload fail-safe
-
 apiClient.interceptors.response.use(
   async (response) => {
     const ct = response.headers?.['content-type'] || '';
@@ -46,26 +41,8 @@ apiClient.interceptors.response.use(
     
     if (ct.includes('text/html')) {
       const url = response.config?.url || 'unknown';
-      console.error('%c CRITICAL: API returned HTML for ' + url, 'color:red;font-weight:bold;font-size:14px');
-      
-      if ('serviceWorker' in navigator) {
-        try {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map(r => r.unregister()));
-        } catch {}
-      }
-      if ('caches' in window) {
-        try {
-          const names = await caches.keys();
-          await Promise.all(names.map(n => caches.delete(n)));
-        } catch {}
-      }
-      
-      }
-      
+      console.error('[apiClient] API returned HTML for', url);
       return Promise.reject(new Error(`API returned HTML instead of JSON for ${url}`));
-    }
-    
     }
     
     return response;
