@@ -239,7 +239,6 @@ export const SupabaseAuthProvider = ({ children }) => {
         let calibrationComplete = false;
 
         // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
-        // No direct Supabase REST queries. No fallback chains. No cached state.
         try {
           const calUrl = `${process.env.REACT_APP_BACKEND_URL}/api/calibration/status?_t=${Date.now()}`;
           console.log(`[CALIBRATION ROUTING] Fetching: ${calUrl}`);
@@ -248,8 +247,9 @@ export const SupabaseAuthProvider = ({ children }) => {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Accept': 'application/json',
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
               'Pragma': 'no-cache',
+              'Expires': '0',
             }
           });
           const contentType = calRes.headers.get('content-type') || '';
@@ -259,6 +259,15 @@ export const SupabaseAuthProvider = ({ children }) => {
             console.log(`[CALIBRATION ROUTING] Backend status: ${cal.status} → calibrationComplete=${calibrationComplete}`);
           } else if (calRes.ok && !contentType.includes('application/json')) {
             console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType}) → fail-open to READY`);
+            // LAYER 3: Emergency hard reload if SW poisoning detected
+            const reloadFlag = sessionStorage.getItem('biqc_cache_kill_reload');
+            if (!reloadFlag) {
+              sessionStorage.setItem('biqc_cache_kill_reload', Date.now().toString());
+              console.error('%c CALIBRATION: Executing emergency hard reload', 'color:red;font-weight:bold');
+              window.location.reload(true);
+              return;
+            }
+            sessionStorage.removeItem('biqc_cache_kill_reload');
             calibrationComplete = true;
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status} → fail-open to READY`);
