@@ -114,6 +114,8 @@ const BoardRoom = () => {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
         },
         body: JSON.stringify({
           message: text,
