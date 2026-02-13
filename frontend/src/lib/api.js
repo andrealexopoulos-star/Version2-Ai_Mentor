@@ -37,7 +37,6 @@ apiClient.interceptors.request.use(async (config) => {
 });
 
 // LAYER 3: HTML detection + hard reload fail-safe
-const RELOAD_FLAG = 'biqc_cache_kill_reload';
 
 apiClient.interceptors.response.use(
   async (response) => {
@@ -62,20 +61,11 @@ apiClient.interceptors.response.use(
         } catch {}
       }
       
-      const alreadyReloaded = sessionStorage.getItem(RELOAD_FLAG);
-      if (!alreadyReloaded) {
-        sessionStorage.setItem(RELOAD_FLAG, Date.now().toString());
-        console.error('%c HARD RELOAD to break zombie state', 'color:red;font-weight:bold;font-size:16px');
-        window.location.reload(true);
-        return new Promise(() => {});
       }
       
-      sessionStorage.removeItem(RELOAD_FLAG);
       return Promise.reject(new Error(`API returned HTML instead of JSON for ${url}`));
     }
     
-    if (sessionStorage.getItem(RELOAD_FLAG)) {
-      sessionStorage.removeItem(RELOAD_FLAG);
     }
     
     return response;

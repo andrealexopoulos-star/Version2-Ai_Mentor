@@ -118,9 +118,6 @@ const AuthCallbackSupabase = () => {
                   // LAYER 3: Emergency hard reload
                   const reloadFlag = sessionStorage.getItem('biqc_cache_kill_reload');
                   if (!reloadFlag) {
-                    sessionStorage.setItem('biqc_cache_kill_reload', Date.now().toString());
-                    console.error('%c AUTH CALLBACK: Executing emergency hard reload', 'color:red;font-weight:bold');
-                    window.location.reload(true);
                     return;
                   }
                   sessionStorage.removeItem('biqc_cache_kill_reload');
