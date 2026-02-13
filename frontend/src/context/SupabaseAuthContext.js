@@ -124,7 +124,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       // Then enrich from users table (authoritative source for role, subscription_tier)
       if (existingSession?.access_token) {
         try {
-          const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/supabase/me`, {
+          const res = await fetch(`${getBackendUrl()}/api/auth/supabase/me`, {
             headers: { 'Authorization': `Bearer ${existingSession.access_token}`, 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
           });
           if (res.ok) {
@@ -241,7 +241,7 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
         try {
-          const calUrl = `${process.env.REACT_APP_BACKEND_URL}/api/calibration/status?_t=${Date.now()}`;
+          const calUrl = `${getBackendUrl()}/api/calibration/status?_t=${Date.now()}`;
           console.log(`[CALIBRATION ROUTING] Fetching: ${calUrl}`);
           const calRes = await fetch(calUrl, {
             method: 'GET',
@@ -290,7 +290,7 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         // Calibration complete — now fetch onboarding status ONCE
         try {
-          const obRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding/status`, {
+          const obRes = await fetch(`${getBackendUrl()}/api/onboarding/status`, {
             method: 'GET', headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Cache-Control': 'no-cache, no-store, must-revalidate',
