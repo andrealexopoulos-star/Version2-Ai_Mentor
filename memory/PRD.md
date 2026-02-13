@@ -17,12 +17,13 @@ Build and maintain a Business Intelligence & Cognitive platform (BIQC) that prov
 ## What's Been Implemented
 
 ### Platform Stability — 3-Layer Service Worker Defense ✅ (Fixed 2026-02-13)
-**Root Cause**: Stale service workers on production browsers intercept ALL API requests and serve cached HTML (React SPA index.html) instead of proxying to the backend.
-**Fix**: 3-layer defense:
+**Root Cause**: Server-side proxy/CDN caching HTML responses for API routes. Stale service workers on production browsers compound the issue.
+**Fix**: 4-layer defense:
 - **Layer 1** (`index.js`): Force-unregister ALL service workers + clear ALL caches on every page load
-- **Layer 2** (`lib/api.js`): Cache-busting headers (`Cache-Control: no-cache, no-store, must-revalidate`) on EVERY apiClient request + aggressive SW kill on HTML detection retry
-- **Layer 3** (all files with raw `fetch()`): Cache-busting headers added to ALL raw fetch calls across 7 files
-**Verified**: All 6 previously-failing endpoints return JSON (200 OK, application/json)
+- **Layer 2** (`lib/api.js`): Cache-busting `?_t=timestamp` query param on EVERY request + `Cache-Control: no-cache` headers + `X-API-Server` header detection
+- **Layer 3** (all files with raw `fetch()`): Cache-busting timestamp + headers on ALL raw fetch calls
+- **Layer 4** (backend `server.py`): `NoCacheAPIMiddleware` adds `X-API-Server: biqc-backend`, `Cache-Control: no-cache, no-store`, `X-Content-Type-Options: nosniff` to ALL API responses
+**Verified**: All endpoints return JSON with correct headers on preview
 
 ### Core Intelligence Pipeline ✅
 - Observation events ingestion from multiple sources (CRM, email, manual)
