@@ -164,8 +164,8 @@ class TestHtmlVsJsonStability:
     def test_09_boardroom_respond_returns_json(self, auth_token):
         """POST /api/boardroom/respond returns JSON with response field"""
         payload = {
-            "domain": "sales",
-            "query": "What is the current status?"
+            "message": "What is the current status of sales?",
+            "history": []
         }
         response = self._make_request("/api/boardroom/respond", method="POST", 
                                        auth_token=auth_token, json_data=payload)
