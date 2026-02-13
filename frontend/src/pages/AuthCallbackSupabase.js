@@ -98,7 +98,7 @@ const AuthCallbackSupabase = () => {
             
             try {
               // CALIBRATION CHECK — backend only (service_role key, bypasses RLS)
-              const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+              const BACKEND_URL = getBackendUrl();
               let needsCalibration = false;
 
               try {
