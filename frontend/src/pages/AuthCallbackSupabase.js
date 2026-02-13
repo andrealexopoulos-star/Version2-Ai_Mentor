@@ -101,7 +101,7 @@ const AuthCallbackSupabase = () => {
               let needsCalibration = false;
 
               try {
-                const calUrl = `${BACKEND_URL}/api/calibration/status`;
+                const calUrl = `${BACKEND_URL}/api/calibration/status?_t=${Date.now()}`;
                 console.log(`[CALIBRATION ROUTING] Auth callback fetching: ${calUrl}`);
                 const calRes = await fetch(calUrl, {
                   method: 'GET',
