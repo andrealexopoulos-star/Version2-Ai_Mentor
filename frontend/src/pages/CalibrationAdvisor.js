@@ -64,8 +64,6 @@ const CalibrationAdvisor = () => {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
         "apikey": ANON_KEY,
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
       },
       body: JSON.stringify({ message }),
     });
