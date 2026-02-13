@@ -1,0 +1,363 @@
+{
+  "edge_functions": [
+    {
+      "name": "calibration-psych",
+      "purpose": "AI-driven persona calibration conversation — determines operator communication preferences",
+      "tables_read": ["user_operator_profile", "business_profiles"],
+      "tables_written": ["user_operator_profile"],
+      "external_apis": ["OpenAI"],
+      "uses_openai": "Y",
+      "returns": "prose",
+      "triggered_by": "route: /calibration (frontend CalibrationAdvisor.js)"
+    },
+    {
+      "name": "gmail_prod",
+      "purpose": "Gmail OAuth authentication and email fetching via Google API",
+      "tables_read": ["email_connections"],
+      "tables_written": ["email_connections"],
+      "external_apis": ["Google Gmail API"],
+      "uses_openai": "N",
+      "returns": "structured JSON",
+      "triggered_by": "route: /integrations, /connect-email (Gmail connect flow)"
+    },
+    {
+      "name": "outlook-auth",
+      "purpose": "Microsoft Outlook OAuth authentication flow",
+      "tables_read": ["outlook_oauth_tokens"],
+      "tables_written": ["outlook_oauth_tokens", "email_connections"],
+      "external_apis": ["Microsoft Graph API"],
+      "uses_openai": "N",
+      "returns": "redirect",
+      "triggered_by": "route: /connect-email, /integrations (Outlook connect flow)"
+    },
+    {
+      "name": "email_priority",
+      "purpose": "AI-powered email priority analysis and categorization",
+      "tables_read": ["outlook_emails", "email_connections"],
+      "tables_written": [],
+      "external_apis": ["OpenAI"],
+      "uses_openai": "Y",
+      "returns": "structured JSON",
+      "triggered_by": "route: /email-inbox (EmailInbox.js)"
+    },
+    {
+      "name": "intelligence-snapshot",
+      "purpose": "Generates intelligence snapshot from integrated data sources for advisor context",
+      "tables_read": ["observation_events", "watchtower_insights", "business_profiles", "integration_accounts"],
+      "tables_written": ["intelligence_snapshots"],
+      "external_apis": ["OpenAI"],
+      "uses_openai": "Y",
+      "returns": "structured JSON",
+      "triggered_by": "backend: get_ai_response() helper function (called by multiple advisor routes)"
+    }
+  ],
+  "frontend_routes": {
+    "public": [
+      {"path": "/", "component": "LandingIntelligent", "edge_functions": [], "tables_read": [], "calls_llm": false},
+      {"path": "/pricing", "component": "Pricing", "edge_functions": [], "tables_read": [], "calls_llm": false},
+      {"path": "/terms", "component": "TermsAndConditions", "edge_functions": [], "tables_read": [], "calls_llm": false},
+      {"path": "/login", "component": "LoginSupabase", "edge_functions": [], "tables_read": [], "calls_llm": false},
+      {"path": "/register", "component": "RegisterSupabase", "edge_functions": [], "tables_read": [], "calls_llm": false},
+      {"path": "/auth/callback", "component": "AuthCallbackSupabase", "edge_functions": [], "tables_read": ["users", "user_operator_profile"], "calls_llm": false}
+    ],
+    "sidebar_menu": [
+      {
+        "path": "/advisor",
+        "label": "BIQc Insights",
+        "component": "AdvisorWatchtower",
+        "edge_functions": [],
+        "tables_read": ["observation_events", "watchtower_insights", "watchtower_events", "business_profiles", "email_connections", "outlook_oauth_tokens", "intelligence_snapshots"],
+        "api_endpoints": ["/lifecycle/state", "/facts/resolve", "/intelligence/baseline-snapshot", "/outlook/status", "/intelligence/watchtower", "/intelligence/cold-read"],
+        "calls_llm": false
+      },
+      {
+        "path": "/war-room",
+        "label": "Strategic Console",
+        "component": "WarRoomConsole",
+        "edge_functions": [],
+        "tables_read": ["user_operator_profile", "business_profiles", "cognitive_profiles"],
+        "api_endpoints": ["/lifecycle/state", "/console/state", "/calibration/brain"],
+        "calls_llm": true,
+        "llm_endpoint": "/calibration/brain → get_ai_response() → OpenAI gpt-4o"
+      },
+      {
+        "path": "/board-room",
+        "label": "Board Room",
+        "component": "BoardRoom",
+        "edge_functions": [],
+        "tables_read": ["watchtower_insights", "observation_events", "escalation_memory", "contradiction_memory", "decision_pressure", "evidence_freshness", "business_profiles", "user_operator_profile"],
+        "api_endpoints": ["/watchtower/positions", "/boardroom/respond", "/boardroom/escalation-action"],
+        "calls_llm": true,
+        "llm_endpoint": "/boardroom/respond → LlmChat → OpenAI gpt-4o"
+      },
+      {
+        "path": "/operator",
+        "label": "Operator View",
+        "component": "OperatorDashboard",
+        "edge_functions": [],
+        "tables_read": ["watchtower_insights", "observation_events", "intelligence_snapshots"],
+        "api_endpoints": ["/watchtower/positions", "/watchtower/findings", "/snapshot/latest", "/lifecycle/state", "/intelligence/data-readiness"],
+        "calls_llm": false
+      },
+      {
+        "path": "/soundboard",
+        "label": "SoundBoard",
+        "component": "MySoundBoard",
+        "edge_functions": [],
+        "tables_read": ["soundboard_conversations", "cognitive_profiles", "business_profiles", "user_operator_profile"],
+        "api_endpoints": ["/soundboard/conversations", "/soundboard/chat"],
+        "calls_llm": true,
+        "llm_endpoint": "/soundboard/chat → LlmChat → OpenAI gpt-4o"
+      },
+      {
+        "path": "/intelligence-baseline",
+        "label": "Intelligence Baseline",
+        "component": "IntelligenceBaseline",
+        "edge_functions": [],
+        "tables_read": ["business_profiles"],
+        "api_endpoints": ["/baseline"],
+        "calls_llm": false
+      },
+      {
+        "path": "/business-profile",
+        "label": "Business DNA",
+        "component": "BusinessProfile",
+        "edge_functions": [],
+        "tables_read": ["business_profiles", "business_profiles_versioned", "users"],
+        "api_endpoints": ["/business-profile/context", "/business-profile/scores", "/business-profile"],
+        "calls_llm": false
+      },
+      {
+        "path": "/integrations",
+        "label": "Integrations",
+        "component": "Integrations",
+        "edge_functions": ["gmail_prod"],
+        "tables_read": ["email_connections", "outlook_oauth_tokens", "integration_accounts"],
+        "api_endpoints": ["/outlook/status", "/gmail/status", "/integrations/merge/connected", "/integrations/merge/link-token", "/integrations/merge/exchange-account-token"],
+        "calls_llm": false,
+        "uses_merge": true
+      },
+      {
+        "path": "/connect-email",
+        "label": "Email",
+        "component": "ConnectEmail",
+        "edge_functions": ["gmail_prod", "outlook-auth"],
+        "tables_read": ["email_connections", "outlook_oauth_tokens"],
+        "api_endpoints": ["/auth/outlook/login", "/auth/gmail/login"],
+        "calls_llm": false
+      },
+      {
+        "path": "/calendar",
+        "label": "Calendar",
+        "component": "CalendarView",
+        "edge_functions": [],
+        "tables_read": ["outlook_oauth_tokens"],
+        "api_endpoints": ["/outlook/calendar/events", "/outlook/intelligence", "/outlook/calendar/sync"],
+        "calls_llm": false
+      },
+      {
+        "path": "/settings",
+        "label": "Settings",
+        "component": "Settings",
+        "edge_functions": [],
+        "tables_read": ["user_operator_profile", "business_profiles"],
+        "api_endpoints": ["/calibration/status", "/business-profile/context", "/business-profile", "/calibration/reset"],
+        "calls_llm": false
+      }
+    ],
+    "hidden_routes": [
+      {
+        "path": "/calibration",
+        "component": "CalibrationAdvisor",
+        "edge_functions": ["calibration-psych"],
+        "calls_llm": true,
+        "llm_note": "Via calibration-psych edge function"
+      },
+      {
+        "path": "/email-inbox",
+        "component": "EmailInbox",
+        "edge_functions": ["email_priority"],
+        "api_endpoints": ["/email/suggest-reply/{email_id}"],
+        "calls_llm": true,
+        "llm_note": "email_priority edge function + /email/suggest-reply backend LLM"
+      },
+      {
+        "path": "/analysis",
+        "component": "Analysis",
+        "edge_functions": [],
+        "api_endpoints": ["/analyses", "/documents"],
+        "calls_llm": true
+      },
+      {
+        "path": "/market-analysis",
+        "component": "MarketAnalysis",
+        "edge_functions": [],
+        "api_endpoints": ["/analyses", "/documents"],
+        "calls_llm": true
+      },
+      {
+        "path": "/sop-generator",
+        "component": "SOPGenerator",
+        "edge_functions": [],
+        "api_endpoints": ["/generate/sop", "/generate/checklist", "/generate/action-plan"],
+        "calls_llm": true
+      },
+      {
+        "path": "/data-center",
+        "component": "DataCenter",
+        "edge_functions": [],
+        "api_endpoints": ["/data-center/files", "/data-center/stats", "/data-center/upload"],
+        "calls_llm": false
+      },
+      {
+        "path": "/intel-centre",
+        "component": "IntelCentre",
+        "edge_functions": [],
+        "api_endpoints": ["/business-profile/scores"],
+        "calls_llm": false
+      },
+      {
+        "path": "/diagnosis",
+        "component": "Diagnosis",
+        "edge_functions": [],
+        "api_endpoints": ["/email/priority-inbox"],
+        "calls_llm": false
+      },
+      {
+        "path": "/onboarding",
+        "component": "OnboardingWizard",
+        "edge_functions": [],
+        "calls_llm": false
+      },
+      {
+        "path": "/admin",
+        "component": "AdminDashboard",
+        "edge_functions": [],
+        "calls_llm": false,
+        "access": "admin only"
+      }
+    ]
+  },
+  "database_tables": [
+    {"table": "users", "purpose": "User accounts and auth metadata", "key_columns": ["id", "email", "role", "subscription_tier", "account_id", "is_master_account"], "intelligence_related": false},
+    {"table": "accounts", "purpose": "Workspace/tenant container for multi-user isolation", "key_columns": ["id", "name"], "intelligence_related": false},
+    {"table": "cognitive_profiles", "purpose": "User cognitive model — immutable reality, behavioural truth, delivery preferences", "key_columns": ["user_id", "immutable_reality", "behavioural_truth", "delivery_preference", "consequence_memory"], "intelligence_related": true},
+    {"table": "user_operator_profile", "purpose": "Operator calibration — persona, agent instructions, calibration status", "key_columns": ["user_id", "operator_profile", "agent_persona", "agent_instructions", "persona_calibration_status"], "intelligence_related": false},
+    {"table": "business_profiles", "purpose": "Core business profile — industry, stage, goals, intelligence configuration", "key_columns": ["user_id", "business_name", "industry", "business_stage", "intelligence_configuration"], "intelligence_related": false},
+    {"table": "business_profiles_versioned", "purpose": "Versioned business profile history for change tracking", "key_columns": ["user_id", "version"], "intelligence_related": false},
+    {"table": "observation_events", "purpose": "Raw signal ingestion — every detected business event from integrations", "key_columns": ["id", "user_id", "domain", "event_type", "payload", "source", "severity", "fingerprint", "created_at"], "intelligence_related": true},
+    {"table": "watchtower_insights", "purpose": "Processed domain positions — CRITICAL/DETERIORATING/ELEVATED/STABLE per domain", "key_columns": ["id", "user_id", "domain", "position", "confidence", "finding", "detected_at"], "intelligence_related": true},
+    {"table": "watchtower_events", "purpose": "Structured intelligence events for UI display (account-scoped)", "key_columns": ["id", "account_id", "fingerprint", "headline", "domain", "status"], "intelligence_related": true},
+    {"table": "escalation_memory", "purpose": "Tracks escalation persistence — how many times a critical state has been detected and user response", "key_columns": ["user_id", "domain", "position", "times_detected", "last_user_action", "active"], "intelligence_related": true},
+    {"table": "decision_pressure", "purpose": "Calculated decision urgency per domain — pressure level and decision window", "key_columns": ["user_id", "domain", "pressure_level", "window_days_remaining"], "intelligence_related": true},
+    {"table": "evidence_freshness", "purpose": "Confidence decay tracking — how stale is the evidence for each domain", "key_columns": ["user_id", "domain", "confidence_state", "current_confidence", "last_evidence_at"], "intelligence_related": true},
+    {"table": "contradiction_memory", "purpose": "Detected misalignments between declared priority and observed behaviour", "key_columns": ["user_id", "domain", "contradiction_type", "declared_priority", "observed_state"], "intelligence_related": true},
+    {"table": "intelligence_snapshots", "purpose": "Point-in-time intelligence summaries for advisor context injection", "key_columns": ["user_id", "snapshot_type", "summary", "domains", "open_risks"], "intelligence_related": true},
+    {"table": "soundboard_conversations", "purpose": "MySoundBoard chat conversation history", "key_columns": ["id", "user_id", "title", "messages"], "intelligence_related": false},
+    {"table": "advisory_log", "purpose": "Tracks advice given and whether user acted on it", "key_columns": ["user_id", "recommendation", "acted_upon"], "intelligence_related": true},
+    {"table": "email_connections", "purpose": "Active email provider connections (Outlook/Gmail)", "key_columns": ["user_id", "provider", "connected", "connected_email", "sync_status"], "intelligence_related": false},
+    {"table": "outlook_oauth_tokens", "purpose": "Microsoft OAuth tokens for Outlook/M365 access", "key_columns": ["user_id", "access_token", "refresh_token", "expires_at"], "intelligence_related": false},
+    {"table": "m365_tokens", "purpose": "Microsoft 365 tokens (alternative storage)", "key_columns": ["user_id"], "intelligence_related": false},
+    {"table": "outlook_emails", "purpose": "Synced Outlook email messages", "key_columns": ["user_id", "message_id", "subject", "from_address", "received_date"], "intelligence_related": false},
+    {"table": "integration_accounts", "purpose": "Merge.dev integration account tokens and metadata", "key_columns": ["user_id", "provider", "category", "account_token"], "intelligence_related": false},
+    {"table": "system_prompt_versions", "purpose": "Versioned system prompts for edge functions", "key_columns": ["id", "prompt_name", "content", "active"], "intelligence_related": false}
+  ],
+  "integration_flows": {
+    "gmail": {
+      "trigger": "User clicks 'Connect Gmail' on /integrations or /connect-email",
+      "flow": "Frontend → Edge Function gmail_prod → Google OAuth → callback → store tokens in email_connections",
+      "data_storage": "Stored in email_connections table",
+      "ingestion": "Email sync worker polls connected accounts every 60 seconds"
+    },
+    "outlook": {
+      "trigger": "User clicks 'Connect Outlook' on /integrations or /connect-email",
+      "flow": "Frontend → Backend /auth/outlook/login → Edge Function outlook-auth → Microsoft OAuth → callback → store tokens in outlook_oauth_tokens + email_connections",
+      "data_storage": "Stored in outlook_oauth_tokens and email_connections tables. Emails stored in outlook_emails",
+      "ingestion": "Email sync worker polls every 60 seconds. Comprehensive sync available via /outlook/comprehensive-sync"
+    },
+    "merge_crm": {
+      "trigger": "User clicks CRM category on /integrations → Merge Link modal → selects HubSpot/Salesforce/etc",
+      "flow": "Frontend → /integrations/merge/link-token → Merge Link UI → /integrations/merge/exchange-account-token → store in integration_accounts",
+      "data_storage": "Account token stored in integration_accounts. CRM data fetched live via Merge API during emission",
+      "ingestion": "Triggered by /intelligence/ingest (admin only). Merge Emission Layer pulls deals, contacts, invoices via Merge API → writes observation_events"
+    },
+    "merge_accounting": {
+      "trigger": "User clicks Financial category on /integrations → Merge Link modal → selects Xero/QuickBooks/etc",
+      "flow": "Same as CRM: link-token → Merge Link → exchange-account-token → integration_accounts",
+      "data_storage": "Account token stored. Financial data (invoices, payments) fetched live during emission",
+      "ingestion": "Same as CRM: /intelligence/ingest triggers Merge Emission Layer → pulls invoices → writes observation_events"
+    },
+    "data_ingestion_triggers": {
+      "automatic": [
+        "email_sync_worker: runs every 60 seconds, syncs emails for all connected accounts",
+        "intelligence_automation_worker: runs daily, triggers cold-read and silence detection"
+      ],
+      "manual": [
+        "/intelligence/ingest: admin-only endpoint, triggers Merge Emission Layer + watchtower analysis",
+        "/watchtower/analyse: user-triggered, runs watchtower analysis on existing observation_events",
+        "/intelligence/cold-read: user-triggered from BIQc Insights page 'Run Analysis' button"
+      ]
+    }
+  },
+  "intelligence_flow": {
+    "system_brain": {
+      "function": "watchtower_engine.py → WatchtowerEngine.run_analysis()",
+      "purpose": "Analyses observation_events, computes domain positions (CRITICAL/DETERIORATING/ELEVATED/STABLE), detects contradictions, calculates pressure, tracks freshness",
+      "triggered_by": [
+        "/watchtower/analyse (user-triggered)",
+        "/intelligence/ingest (admin-triggered, post-emission)",
+        "intelligence_automation_worker (daily cron)"
+      ]
+    },
+    "writes_to_intelligence_snapshots": {
+      "writer": "snapshot_agent.py → SnapshotAgent",
+      "trigger": "Called by get_ai_response() when building advisor context; also by intelligence-snapshot edge function",
+      "purpose": "Creates point-in-time intelligence summaries from watchtower positions + findings"
+    },
+    "writes_to_decision_pressure": {
+      "writer": "pressure_calibration.py → PressureCalibration",
+      "trigger": "Called during watchtower_engine.run_analysis()",
+      "logic": "Calculates pressure level (LOW/MODERATE/HIGH/CRITICAL) based on position persistence, contradiction count, and time since first detection. Sets window_days_remaining."
+    },
+    "writes_to_watchtower_tables": {
+      "observation_events": {
+        "writers": ["watchtower_engine.py (emit_event)", "merge_emission_layer.py (run_emission)"],
+        "purpose": "Raw signal ingestion from CRM, email, financial integrations"
+      },
+      "watchtower_insights": {
+        "writers": ["watchtower_engine.py (run_analysis)"],
+        "purpose": "Computed domain positions after analysing observation_events"
+      },
+      "watchtower_events": {
+        "writers": ["watchtower_store.py (create_event)"],
+        "purpose": "Structured UI-facing intelligence events"
+      }
+    },
+    "inevitability_detection": {
+      "location": "boardroom_prompt.py + routes/boardroom.py",
+      "mechanism": "Board Room LLM prompt injects watchtower positions, escalation history, contradiction records, decision pressure, and evidence freshness into the system prompt. The LLM is instructed to assert trajectory — 'what becomes inevitable if unchanged'. Inevitability is NOT computed algorithmically; it is synthesized by GPT-4o from the injected signal data.",
+      "supporting_engines": {
+        "escalation_memory.py": "Tracks persistence — how many times a CRITICAL state has been surfaced without resolution",
+        "contradiction_engine.py": "Detects when declared priority conflicts with observed inaction",
+        "pressure_calibration.py": "Calculates decision window narrowing based on persistence + severity",
+        "evidence_freshness.py": "Degrades confidence when evidence becomes stale, preventing false urgency"
+      }
+    }
+  },
+  "background_workers": [
+    {
+      "name": "email_sync_worker",
+      "file": "email_sync_worker.py",
+      "interval": "60 seconds",
+      "purpose": "Syncs emails for ALL connected email accounts (Outlook, Gmail)",
+      "writes_to": ["outlook_emails"]
+    },
+    {
+      "name": "intelligence_automation_worker",
+      "file": "intelligence_automation_worker.py",
+      "interval": "86400 seconds (daily)",
+      "purpose": "Runs cold-read intelligence generation, silence detection, and regeneration governance",
+      "writes_to": ["watchtower_events", "observation_events"]
+    }
+  ]
+}
