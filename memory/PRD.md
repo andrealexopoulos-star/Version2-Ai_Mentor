@@ -16,14 +16,10 @@ Build and maintain a Business Intelligence & Cognitive platform (BIQC) that prov
 
 ## What's Been Implemented
 
-### Platform Stability — 3-Layer Service Worker Defense ✅ (Fixed 2026-02-13)
-**Root Cause**: Server-side proxy/CDN caching HTML responses for API routes. Stale service workers on production browsers compound the issue.
-**Fix**: 4-layer defense:
-- **Layer 1** (`index.js`): Force-unregister ALL service workers + clear ALL caches on every page load
-- **Layer 2** (`lib/api.js`): Cache-busting `?_t=timestamp` query param on EVERY request + `Cache-Control: no-cache` headers + `X-API-Server` header detection
-- **Layer 3** (all files with raw `fetch()`): Cache-busting timestamp + headers on ALL raw fetch calls
-- **Layer 4** (backend `server.py`): `NoCacheAPIMiddleware` adds `X-API-Server: biqc-backend`, `Cache-Control: no-cache, no-store`, `X-Content-Type-Options: nosniff` to ALL API responses
-**Verified**: All endpoints return JSON with correct headers on preview
+### Platform Stability — REACT_APP_BACKEND_URL Fix ✅ (Fixed 2026-02-13)
+**Root Cause**: `process.env.REACT_APP_BACKEND_URL` resolves to a malformed value (UUID without protocol) in the production build. ALL 25 API call sites used this directly, making every request hit a relative/broken URL → SPA serves index.html.
+**Fix**: Centralized ALL URL construction through `getBackendUrl()` in `config/urls.js` which validates the URL has `https://` protocol and falls back to `window.location.origin` if missing/malformed. Replaced ALL 25 direct `process.env.REACT_APP_BACKEND_URL` references across 8 files.
+**Additional layers**: SW kill on boot, cache-busting headers, `?_t=timestamp`, hard reload on HTML detection, backend `NoCacheAPIMiddleware`.
 
 ### Core Intelligence Pipeline ✅
 - Observation events ingestion from multiple sources (CRM, email, manual)
