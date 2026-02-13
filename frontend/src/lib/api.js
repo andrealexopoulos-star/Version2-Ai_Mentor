@@ -10,7 +10,7 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor — Supabase session token only
+// Request interceptor — Supabase session token + cache-busting on ALL requests
 apiClient.interceptors.request.use(async (config) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -21,6 +21,11 @@ apiClient.interceptors.request.use(async (config) => {
   } catch (error) {
     console.warn('Failed to get Supabase session:', error.message);
   }
+  
+  // ALWAYS add cache-busting headers to prevent stale service worker/CDN caching
+  config.headers = config.headers || {};
+  config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+  config.headers['Pragma'] = 'no-cache';
   
   return config;
 }, (error) => {
