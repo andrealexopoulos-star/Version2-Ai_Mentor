@@ -1,80 +1,55 @@
-# BIQC Platform — Product Requirements Document
+# BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-Build and maintain a Business Intelligence & Cognitive platform (BIQC) that provides:
-- Real-time business intelligence through connected integrations (CRM, Email, Financial)
-- Watchtower analysis engine for domain-level position tracking
-- Board Room cognitive delivery with human-grade strategic reasoning
-- SoundBoard thinking partner for Socratic decision support
-- Deep Research + Inference Engine for website analysis
+Full-stack AI-powered Business Intelligence platform (React + FastAPI + Supabase). Core features include persona calibration, intelligence gathering, advisory dashboards, and integrations.
 
 ## Architecture
-- **Frontend**: React + Shadcn/UI, Supabase Auth
-- **Backend**: FastAPI + Supabase (PostgreSQL)
-- **AI**: OpenAI GPT-4o via Emergent LLM Key
-- **Integrations**: Supabase Auth, Merge.dev (CRM/Financial), Microsoft Outlook, Google (OAuth/Drive)
+- **Frontend**: React (port 3000)
+- **Backend**: FastAPI (port 8001)
+- **Database**: Supabase (PostgreSQL)
+- **AI**: Supabase Edge Functions (`calibration-psych`, `intelligence-snapshot`), OpenAI via emergentintegrations
+- **Auth**: Supabase Auth (Google, Microsoft, email/password)
+
+## Key Files
+- `frontend/src/config/urls.js` — Uses `window.location.origin` (NOT `process.env.REACT_APP_BACKEND_URL`)
+- `frontend/src/context/SupabaseAuthContext.js` — Auth bootstrap with dedup via `lastBootstrapUserId` ref
+- `frontend/src/pages/CalibrationAdvisor.js` — Pure transport mode: sends to Edge Function, renders response, redirects on COMPLETE
+- `backend/server.py` — Monolithic FastAPI app (needs modularization)
 
 ## What's Been Implemented
 
-### Platform Stability — REACT_APP_BACKEND_URL Fix ✅ (Fixed 2026-02-13)
-**Root Cause**: `process.env.REACT_APP_BACKEND_URL` resolves to a malformed value (UUID without protocol) in the production build. ALL 25 API call sites used this directly, making every request hit a relative/broken URL → SPA serves index.html.
-**Fix**: Centralized ALL URL construction through `getBackendUrl()` in `config/urls.js` which validates the URL has `https://` protocol and falls back to `window.location.origin` if missing/malformed. Replaced ALL 25 direct `process.env.REACT_APP_BACKEND_URL` references across 8 files.
-**Additional layers**: SW kill on boot, cache-busting headers, `?_t=timestamp`, hard reload on HTML detection, backend `NoCacheAPIMiddleware`.
+### Feb 2026
+- **HTML vs JSON bug fix**: Forced all API calls to use `window.location.origin`
+- **Calibration loop-back bug fix**: Prevented auth bootstrap re-trigger on Supabase token refresh by tracking `lastBootstrapUserId`
+- **Calibration transport mode**: Rebuilt CalibrationAdvisor as pure transport/renderer/redirect handler — no generated questions, no step counters, no progress bars, no narrative overlays. Edge Function is sole conversational authority.
+- **Executive Memo**: Driven by `intelligence-snapshot` Edge Function
+- **Disconnect button**: Added to all connected integration cards
+- **Zero-state flow**: Verified signup-to-calibration works on empty DB
+- **CORS fix**: Removed Cache-Control headers from Edge Function calls
+- **Platform audits**: Cognitive Intelligence Certification, architectural audit
 
-### Core Intelligence Pipeline ✅
-- Observation events ingestion from multiple sources (CRM, email, manual)
-- Watchtower engine with domain position tracking (CRITICAL/DETERIORATING/ELEVATED/STABLE)
-- Escalation memory with persistence tracking
-- Contradiction detection engine
-- Decision pressure calibration
-- Evidence freshness governance
+## Prioritized Backlog
 
-### Board Room Cognitive Delivery ✅ (Enhanced 2026-02-12)
-- Human-grade strategic reasoning with causal analysis
-- Follow-up protocol for multi-turn depth (why-critical, consequences, resolution pathways)
-- Raw signal telemetry injection for richer LLM context
-- Priority compression with ranked domain presentation
-- Escalation action handling (acknowledge/defer)
+### P0 — Critical
+- Verify HTML/JSON fix on production deployment (user confirmation pending)
 
-### SoundBoard ✅ (Bug fixed 2026-02-12)
-- Fixed argument mismatch bug in conversation storage (server.py:5630)
-- Socratic thinking partner with session persistence
-- Voice call capability
+### P1 — High
+- Modularize `server.py` into route files under `/app/backend/routes/`
+- Fix "No intelligence events yet" display bug on AdvisorWatchtower.js
 
-### Deep Research Engine ✅
-- POST /api/research/analyze-website endpoint
-- Scraping + LLM synthesis with domain inference fallback
+### P2 — Medium
+- Research Findings Card + Trust Moment UI (POST /api/research/analyze-website)
+- Website Enrichment UI
+- Performance optimization for data-heavy pages
 
-### Platform Stability ✅
-- Service worker decommissioned
-- Cache-busting headers on all API calls
-- Defensive UI rendering with optional chaining
-- Auto-retry mechanism for HTML-instead-of-JSON errors
+### P3 — Low
+- Automatic Ingestion Trigger (cron for /api/intelligence/ingest)
 
-## Section 4 Certification Results (2026-02-12)
-- All 12 API tests PASSED (100%)
-- All frontend pages verified (100%)
-- Board Room cognitive depth certified
-- Real-time intelligence update pipeline confirmed
-
-## Pending Issues
-1. **P1**: Complete modularization of server.py into route modules
-2. **P1**: Delete "SAFE TO DELETE" Category C dead routes
-3. **P2**: Performance optimization for data-heavy pages
-4. **P2**: Remove dead calibration_status writes
-
-## Upcoming Tasks
-1. **P0**: Research Findings Card + Trust Moment UI (Prompt 02)
-2. **P1**: Website Enrichment UI (Requirement F)
-3. **P3**: Automatic Ingestion Trigger (cron job)
-
-## Key API Endpoints
-- POST /api/boardroom/respond — Board Room cognitive delivery
-- POST /api/boardroom/escalation-action — Escalation handling
-- GET /api/watchtower/positions — Domain position state
-- GET /api/watchtower/findings — Analysis findings
-- POST /api/watchtower/emit — Ingest observation events
-- POST /api/watchtower/analyse — Trigger analysis
-- GET /api/cognitive/escalation — Escalation state
-- POST /api/soundboard/chat — SoundBoard conversation
-- POST /api/research/analyze-website — Deep Research Engine
+## Calibration Directive (ACTIVE)
+CalibrationAdvisor operates in TRANSPORT MODE:
+- Sends empty payload to Edge Function on init
+- Sends exact user messages without alteration
+- Renders Edge Function response as-is (message + status)
+- Redirects to /advisor on status === "COMPLETE"
+- Error display: "Calibration engine temporarily unavailable."
+- No step framing, no progress indicators, no narrative overlays
