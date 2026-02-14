@@ -9698,6 +9698,61 @@ async def get_baseline_snapshot(current_user: dict = Depends(get_current_user)):
         return {"snapshot": None}
 
 
+@api_router.get("/executive-mirror")
+async def get_executive_mirror(request: Request):
+    """
+    The Executive Mirror — single endpoint for the /advisor landing.
+    Returns: agent_persona, fact_ledger (from user_operator_profile),
+    and executive_memo (from intelligence_snapshots).
+    This is the Cognitive Output. No filtering. No generation. Pure read.
+    """
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    result = {
+        "agent_persona": None,
+        "fact_ledger": None,
+        "executive_memo": None,
+        "resolution_status": None,
+    }
+
+    # 1. Read agent_persona + fact_ledger from user_operator_profile
+    try:
+        op = safe_query_single(
+            supabase_admin.table("user_operator_profile").select(
+                "agent_persona, fact_ledger, persona_calibration_status"
+            ).eq("user_id", user_id)
+        )
+        if op.data:
+            result["agent_persona"] = op.data.get("agent_persona")
+            result["fact_ledger"] = op.data.get("fact_ledger")
+            result["calibration_status"] = op.data.get("persona_calibration_status")
+    except Exception as e:
+        logger.error(f"[executive-mirror] operator_profile read failed: {e}")
+
+    # 2. Read latest executive_memo from intelligence_snapshots
+    try:
+        snap = supabase_admin.table("intelligence_snapshots").select(
+            "executive_memo, resolution_score, snapshot_type, generated_at"
+        ).eq("user_id", user_id).order(
+            "generated_at", desc=True
+        ).limit(1).execute()
+        if snap.data and len(snap.data) > 0:
+            row = snap.data[0]
+            result["executive_memo"] = row.get("executive_memo")
+            result["resolution_status"] = row.get("resolution_score")
+            result["snapshot_type"] = row.get("snapshot_type")
+            result["snapshot_generated_at"] = row.get("generated_at")
+    except Exception as e:
+        logger.error(f"[executive-mirror] intelligence_snapshots read failed: {e}")
+
+    return result
+
+
+
 @api_router.get("/intelligence/data-readiness")
 async def get_data_readiness(current_user: dict = Depends(get_current_user)):
     """Data readiness for each integration — real state from DB."""
