@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://stability-verify.preview.emergentagent.com/advisor
+## For: https://html-bug-fixed.preview.emergentagent.com/advisor
 
 ---
 

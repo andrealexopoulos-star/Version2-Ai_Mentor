@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://stability-verify.preview.emergentagent.com
+https://html-bug-fixed.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://stability-verify.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://stability-verify.preview.emergentagent.com
+https://html-bug-fixed.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://stability-verify.preview.emergentagent.com/**
-https://stability-verify.preview.emergentagent.com/auth/callback
-https://stability-verify.preview.emergentagent.com/auth-callback-supabase
-https://stability-verify.preview.emergentagent.com/connect-email
-https://stability-verify.preview.emergentagent.com/integrations
+https://html-bug-fixed.preview.emergentagent.com/**
+https://html-bug-fixed.preview.emergentagent.com/auth/callback
+https://html-bug-fixed.preview.emergentagent.com/auth-callback-supabase
+https://html-bug-fixed.preview.emergentagent.com/connect-email
+https://html-bug-fixed.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://stability-verify.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://stability-verify.preview.emergentagent.com/api/auth/outlook/callback
+https://html-bug-fixed.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://stability-verify.preview.emergentagent.com
+https://html-bug-fixed.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://stability-verify.preview.emergentagent.com/api/auth/gmail/callback
+https://html-bug-fixed.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

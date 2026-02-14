@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://stability-verify.preview.emergentagent.com`
-- **Backend:** `https://stability-verify.preview.emergentagent.com/api`
+- **Frontend:** `https://html-bug-fixed.preview.emergentagent.com`
+- **Backend:** `https://html-bug-fixed.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

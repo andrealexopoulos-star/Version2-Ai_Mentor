@@ -36,7 +36,7 @@ Capture detailed diagnostic logs for the HubSpot Merge.dev integration to identi
 ## 📋 Manual Testing Steps
 
 ### Step 1: Login
-1. Navigate to: https://stability-verify.preview.emergentagent.com/login-supabase
+1. Navigate to: https://html-bug-fixed.preview.emergentagent.com/login-supabase
 2. Click **"Continue with Google"**
 3. Login with: **andre@thestrategysquad.com.au**
 4. Wait for redirect to dashboard/advisor page
@@ -50,7 +50,7 @@ Capture detailed diagnostic logs for the HubSpot Merge.dev integration to identi
 4. Keep the console open throughout the test
 
 ### Step 3: Navigate to Integrations Page
-1. Navigate to: https://stability-verify.preview.emergentagent.com/integrations
+1. Navigate to: https://html-bug-fixed.preview.emergentagent.com/integrations
 2. Wait for page to fully load
 3. Verify you see the "Merge Unified Integrations" card
 

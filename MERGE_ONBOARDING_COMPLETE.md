@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://stability-verify.preview.emergentagent.com/login-supabase
+https://html-bug-fixed.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://stability-verify.preview.emergentagent.com/integrations
+https://html-bug-fixed.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

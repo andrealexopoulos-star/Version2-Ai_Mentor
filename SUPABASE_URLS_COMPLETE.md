@@ -34,7 +34,7 @@ https://app.supabase.com/project/uxyqpdfftxpkzeppqtvk
 
 **Site URL (Primary App URL):**
 ```
-https://stability-verify.preview.emergentagent.com
+https://html-bug-fixed.preview.emergentagent.com
 ```
 
 **Where to Set:**
@@ -42,8 +42,8 @@ https://stability-verify.preview.emergentagent.com
 
 **Redirect URLs (OAuth Callbacks):**
 ```
-https://stability-verify.preview.emergentagent.com/auth/callback
-https://stability-verify.preview.emergentagent.com/**
+https://html-bug-fixed.preview.emergentagent.com/auth/callback
+https://html-bug-fixed.preview.emergentagent.com/**
 ```
 
 **Where to Set:**
@@ -191,13 +191,13 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4eXFwZGZ
 
 | Setting | Value | Status |
 |---------|-------|--------|
-| **Site URL** | `https://stability-verify.preview.emergentagent.com` | ⏳ Verify |
+| **Site URL** | `https://html-bug-fixed.preview.emergentagent.com` | ⏳ Verify |
 | **Redirect URLs** | See below | ⏳ Verify |
 
 **Redirect URLs (Add All):**
 ```
-https://stability-verify.preview.emergentagent.com/auth/callback
-https://stability-verify.preview.emergentagent.com/**
+https://html-bug-fixed.preview.emergentagent.com/auth/callback
+https://html-bug-fixed.preview.emergentagent.com/**
 ```
 
 **Screenshot for Reference:**
@@ -373,7 +373,7 @@ https://uxyqpdfftxpkzeppqtvk.supabase.co/auth/v1/callback
 ### For Third-Party Callbacks:
 **Your app redirects users back to:**
 ```
-https://stability-verify.preview.emergentagent.com/auth/callback
+https://html-bug-fixed.preview.emergentagent.com/auth/callback
 ```
 **NOT** to Supabase URLs directly.
 
@@ -382,9 +382,9 @@ https://stability-verify.preview.emergentagent.com/auth/callback
 ## ✅ WHAT TO CONFIGURE IN SUPABASE DASHBOARD
 
 ### 1. Authentication → URL Configuration
-- [x] Site URL: `https://stability-verify.preview.emergentagent.com`
-- [ ] **ADD** Redirect URL: `https://stability-verify.preview.emergentagent.com/auth/callback`
-- [ ] **ADD** Redirect URL: `https://stability-verify.preview.emergentagent.com/**`
+- [x] Site URL: `https://html-bug-fixed.preview.emergentagent.com`
+- [ ] **ADD** Redirect URL: `https://html-bug-fixed.preview.emergentagent.com/auth/callback`
+- [ ] **ADD** Redirect URL: `https://html-bug-fixed.preview.emergentagent.com/**`
 
 ### 2. Authentication → Providers
 - [ ] **Enable Google** (for account login)
@@ -480,13 +480,13 @@ curl https://uxyqpdfftxpkzeppqtvk.supabase.co/rest/v1/users?select=id,email&limi
 
 2. **Verify/Add Site URL:**
    ```
-   https://stability-verify.preview.emergentagent.com
+   https://html-bug-fixed.preview.emergentagent.com
    ```
 
 3. **Verify/Add Redirect URLs:**
    ```
-   https://stability-verify.preview.emergentagent.com/auth/callback
-   https://stability-verify.preview.emergentagent.com/**
+   https://html-bug-fixed.preview.emergentagent.com/auth/callback
+   https://html-bug-fixed.preview.emergentagent.com/**
    ```
 
 4. **Check Edge Functions:**
@@ -519,8 +519,8 @@ Gmail Check: https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/gmail_prod
 
 **Your App URLs:**
 ```
-Site URL: https://stability-verify.preview.emergentagent.com
-Auth Callback: https://stability-verify.preview.emergentagent.com/auth/callback
+Site URL: https://html-bug-fixed.preview.emergentagent.com
+Auth Callback: https://html-bug-fixed.preview.emergentagent.com/auth/callback
 ```
 
 ---
