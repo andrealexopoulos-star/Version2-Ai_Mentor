@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
