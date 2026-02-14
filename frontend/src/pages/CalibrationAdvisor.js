@@ -46,9 +46,10 @@ const CalibrationAdvisor = () => {
 
   /** Call the Supabase Edge Function */
   const callEdgeFunction = async (message) => {
-    console.log('[calibration-psych] Getting session...');
-    const { data: { session: activeSession } } = await supabase.auth.getSession();
-    const token = activeSession?.access_token;
+    console.log('[calibration-psych] Using session from context...');
+    // Use session from auth context directly — avoids calling supabase.auth.getSession()
+    // which can trigger a token refresh → onAuthStateChange → bootstrap re-run → component unmount
+    const token = session?.access_token;
     if (!token) {
       console.error('[calibration-psych] No session token available');
       throw new Error("No session");
