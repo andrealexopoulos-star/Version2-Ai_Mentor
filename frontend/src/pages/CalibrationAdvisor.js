@@ -33,20 +33,36 @@ const CalibrationAdvisor = () => {
   useEffect(() => {
     if (!loading && user && session && !initCalled.current) {
       initCalled.current = true;
-      apiClient.get('/calibration/status')
-        .then(res => {
+
+      const init = async () => {
+        try {
+          const res = await apiClient.get('/calibration/status');
           if (res.data?.status === 'COMPLETE') {
             window.location.href = '/advisor';
-          } else {
-            initCalibration();
+            return;
           }
-        })
-        .catch(() => {
-          // Fail-open: attempt calibration init
-          initCalibration();
-        });
+        } catch { /* proceed to calibration */ }
+
+        // Start calibration — send empty payload
+        setError(null);
+        try {
+          const data = await callEdge({});
+          if (data.status === "COMPLETE") {
+            window.location.href = "/advisor";
+            return;
+          }
+          if (data.message) {
+            setMessages([{ role: "edge", text: data.message }]);
+          }
+          setPhase("active");
+        } catch {
+          setError("Calibration engine temporarily unavailable.");
+        }
+      };
+
+      init();
     }
-  }, [loading, user, session]);
+  }, [loading, user, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Transport: POST to Edge Function. Returns { message, status } */
   const callEdge = async (payload) => {
