@@ -221,9 +221,22 @@ export const SupabaseAuthProvider = ({ children }) => {
     setOnboardingStatus(prev => ({ ...prev, completed: true, deferred: true }));
   }, []);
 
+  // Track which user ID we've already bootstrapped for.
+  // Prevents re-running calibration check on token refresh (same user, new token).
+  const lastBootstrapUserId = useRef(null);
+
   // CALIBRATION + ONBOARDING CHECK — runs once after auth hydration
   useEffect(() => {
     if (!authHydrated) return;
+
+    const currentUserId = session?.user?.id || null;
+
+    // Skip re-bootstrap if we've already resolved this exact user session.
+    // Token refreshes change the session object but keep the same user ID.
+    if (lastBootstrapUserId.current === currentUserId && currentUserId !== null) {
+      return;
+    }
+
     let cancelled = false;
 
     const bootstrap = async () => {
@@ -232,7 +245,10 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         const activeSession = session || (await supabase.auth.getSession()).data.session;
         if (!activeSession?.access_token) {
-          if (!cancelled) setAuthState(AUTH_STATE.READY);
+          if (!cancelled) {
+            lastBootstrapUserId.current = null;
+            setAuthState(AUTH_STATE.READY);
+          }
           return;
         }
 
