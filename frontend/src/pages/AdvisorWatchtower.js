@@ -66,6 +66,8 @@ const AdvisorWatchtower = () => {
   const [lifecycle, setLifecycle] = useState(null);
   const [resolvedFacts, setResolvedFacts] = useState(null);
   const [baselineSnapshot, setBaselineSnapshot] = useState(null);
+  const [executiveMemo, setExecutiveMemo] = useState(null);
+  const [memoLoading, setMemoLoading] = useState(false);
 
   // Check for "Do Later" tutorial flag
   useEffect(() => {
