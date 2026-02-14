@@ -94,6 +94,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       } else {
         setUser(null);
         setOnboardingStatus(null); // Clear cached onboarding on logout
+        lastBootstrapUserId.current = null; // Reset so bootstrap runs on next login
         setLoading(false);
       }
     });
