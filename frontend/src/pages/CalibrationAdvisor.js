@@ -9,7 +9,7 @@ const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
 const CalibrationAdvisor = () => {
   const navigate = useNavigate();
-  const { user, session, loading, supabase } = useSupabaseAuth();
+  const { user, session, loading } = useSupabaseAuth();
 
   const [phase, setPhase] = useState("welcome");
   const [messages, setMessages] = useState([]);
