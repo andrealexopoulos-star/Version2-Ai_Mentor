@@ -86,7 +86,6 @@ const AdvisorWatchtower = () => {
           apiClient.get('/facts/resolve').catch(() => ({ data: null })),
           apiClient.get('/intelligence/baseline-snapshot').catch(() => ({ data: null })),
         ]);
-        // Validate lifecycle response has the expected shape before setting
         const lc = lcRes.data;
         if (lc && lc.calibration && lc.integrations && lc.intelligence) {
           setLifecycle(lc);
@@ -96,7 +95,45 @@ const AdvisorWatchtower = () => {
       } catch {}
     };
     fetchLifecycle();
+    triggerSnapshot();
   }, []);
+
+  // Trigger intelligence-snapshot edge function — transport only, no AI generation
+  const triggerSnapshot = async () => {
+    setMemoLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const res = await fetch(`${supabaseUrl}/functions/v1/intelligence-snapshot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.executive_memo) {
+          setExecutiveMemo(data.executive_memo);
+        } else if (data.status === 'snapshot_updated' || data.snapshot) {
+          // Re-fetch snapshot from backend to get rendered memo
+          const snapRes = await apiClient.get('/intelligence/baseline-snapshot').catch(() => ({ data: null }));
+          if (snapRes.data?.snapshot) {
+            setBaselineSnapshot(snapRes.data.snapshot);
+            if (snapRes.data.snapshot.executive_memo) {
+              setExecutiveMemo(snapRes.data.snapshot.executive_memo);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[snapshot] Edge function call failed:', err.message);
+    } finally {
+      setMemoLoading(false);
+    }
+  };
 
   // Post-calibration activation — disabled (legacy endpoint removed)
   // Activation data now comes from user_operator_profile.agent_persona
