@@ -87,26 +87,6 @@ const CalibrationAdvisor = () => {
     return await res.json();
   };
 
-  /** Init: send empty payload to Edge Function */
-  const initCalibration = async () => {
-    setError(null);
-    try {
-      const data = await callEdge({});
-
-      if (data.status === "COMPLETE") {
-        window.location.href = "/advisor";
-        return;
-      }
-
-      if (data.message) {
-        setMessages([{ role: "edge", text: data.message }]);
-      }
-      setPhase("active");
-    } catch {
-      setError("Calibration engine temporarily unavailable.");
-    }
-  };
-
   /** Submit: send exact user message to Edge Function */
   const handleSubmit = async (event) => {
     event.preventDefault();
