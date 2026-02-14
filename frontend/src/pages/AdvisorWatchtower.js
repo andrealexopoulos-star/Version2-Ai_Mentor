@@ -331,16 +331,41 @@ const AdvisorWatchtower = () => {
               </div>
             </div>
 
-            {/* Executive Memo — data-bound, no hallucination */}
-            {resolvedFacts && lifecycle && (
+            {/* Executive Memo — driven by intelligence-snapshot edge function */}
+            {(executiveMemo || (resolvedFacts && lifecycle)) && (
               <div className="col-span-full px-5 py-4 border-t" style={{ borderColor: 'var(--border-light)' }}>
                 <p className="text-xs font-medium tracking-wide uppercase mb-2" style={{ color: 'var(--text-muted)' }}>Executive Memo</p>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-                  {user?.full_name ? `${user.full_name.split(' ')[0]}, b` : 'B'}ased on your confirmed {resolvedFacts['business.industry']?.value || 'business'} focus
-                  {lifecycle.integrations?.count > 0 && ` and ${lifecycle.integrations.count} connected data source${lifecycle.integrations.count > 1 ? 's' : ''} (${lifecycle.integrations.providers.join(', ')})`}
-                  , {baselineSnapshot ? 'I have initialized monitoring' : 'I am preparing to monitor'} across {lifecycle.intelligence?.domains_enabled?.length > 0 ? lifecycle.intelligence.domains_enabled.join(', ') : 'your enabled domains'}.
-                  {baselineSnapshot && ' Baseline established — I will surface material changes as they occur.'}
-                </p>
+                {memoLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-3 h-3 animate-spin" style={{ color: 'var(--text-muted)' }} />
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Intelligence layer refreshing...</span>
+                  </div>
+                ) : executiveMemo ? (
+                  <div className="space-y-2">
+                    {executiveMemo.primary_tension && (
+                      <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{executiveMemo.primary_tension}</p>
+                    )}
+                    {executiveMemo.force_summary && (
+                      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{executiveMemo.force_summary}</p>
+                    )}
+                    {executiveMemo.drift_projection && (
+                      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{executiveMemo.drift_projection}</p>
+                    )}
+                    {executiveMemo.strategic_direction && (
+                      <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{executiveMemo.strategic_direction}</p>
+                    )}
+                    {executiveMemo.platform_guidance && (
+                      <p className="text-xs leading-relaxed mt-1" style={{ color: 'var(--text-muted)' }}>{executiveMemo.platform_guidance}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                    {user?.full_name ? `${user.full_name.split(' ')[0]}, b` : 'B'}ased on your confirmed {resolvedFacts?.['business.industry']?.value || 'business'} focus
+                    {lifecycle?.integrations?.count > 0 && ` and ${lifecycle.integrations.count} connected data source${lifecycle.integrations.count > 1 ? 's' : ''} (${lifecycle.integrations.providers.join(', ')})`}
+                    , {baselineSnapshot ? 'I have initialized monitoring' : 'I am preparing to monitor'} across {lifecycle?.intelligence?.domains_enabled?.length > 0 ? lifecycle.intelligence.domains_enabled.join(', ') : 'your enabled domains'}.
+                    {baselineSnapshot && ' Baseline established — I will surface material changes as they occur.'}
+                  </p>
+                )}
               </div>
             )}
 
