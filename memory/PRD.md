@@ -1,46 +1,38 @@
-# BIQc Platform — Product Requirements Document
+# Strategic Advisor Platform (BIQC) - PRD
 
 ## Original Problem Statement
-Full-stack AI-powered Business Intelligence platform. Cognitive Infrastructure where Supabase is the brain and Emergent is the high-resolution interface. The UI is Integration-Agnostic — it only cares about Signal Classes (Revenue, Capital, Human Velocity), not data sources.
+A full-stack strategic advisor platform (React + FastAPI + Supabase) with a "Gilded Advisor" premium theme. The application provides AI-powered business advisory services with calibration, intelligence feeds, and business DNA analysis.
 
 ## Architecture
-- **Frontend**: React — Transport + Renderer of Cognitive Outputs
-- **Backend**: FastAPI — Reads from Supabase, no local AI
-- **Database**: Supabase (PostgreSQL) — Intelligence Authority
-- **AI**: Supabase Edge Functions (calibration-psych, intelligence-snapshot, gmail_prod, outlook-auth)
-- **Integrations**: Merge.dev (mapped to Standardized Signal Schema)
+- **Frontend**: React (CRA with CRACO), Shadcn UI, Supabase Auth
+- **Backend**: FastAPI (Python), Supabase PostgreSQL, Edge Functions
+- **3rd Party**: Supabase, OpenAI GPT-4o, Merge.dev, Google/Microsoft OAuth
 
-## Master Agent Directive (ACTIVE)
-- Primary objective: Visualization of Strategic Contradiction (Drift Detection)
-- UI renders delta between Fact Ledger (Psychology/Goals) and Force Signals (Business Reality)
-- Integration-Agnostic: Data source irrelevant. Only Signal Classes matter.
-- Zero-Noise Policy: OPTIMIZED (>0.9) minimizes feed. Only drift amplified.
-- Response Template: STATUS → SIGNAL → COST OF SILENCE → FORESIGHT
+## What's Been Implemented
+- Calibration loop bug fixed
+- "Gilded Advisor" UI overhaul (cream background, serif fonts)
+- 3-state Executive Entry Protocol (Welcome Room, Continuity Suite, Welcome Back Lounge)
+- Intelligence Handshake (website URL audit)
+- Resilient CalibrationAdvisor component
+- Authentication flow hardened with identity bar
+- Admin field restructuring (Business DNA → Settings)
+- Root-level `/health` endpoint for K8s deployment probes
 
-## UI Architecture
-1. **Status Header**: OPTIMIZED / DRIFT / DECAY (from resolution_score)
-2. **Executive Mirror**: Master Agent declaration + agent_persona + fact_ledger
-3. **Intelligence Feed**: executive_memo rendered as Signal Schema
-4. **Signal Classes**: Revenue / Capital / Human Velocity
-5. **Valuation Decay**: risk_quantification as primary metric
+## Deployment Fixes (Feb 2026)
+1. Added root `/health` endpoint on `app` object (K8s probes check `/health`, not `/api/health`)
+2. Moved `include_router()` after all route definitions (Google Drive routes were inaccessible)
+3. Removed corrupted `=2.45.0` file
+4. Removed stale backup files (server.py.backup, etc.)
+5. Updated requirements.txt with accurate pip freeze
 
-## Key Endpoints
-- `GET /api/executive-mirror` — Returns agent_persona, fact_ledger, executive_memo, resolution_score
-- `POST /functions/v1/calibration-psych` — Wizard-mode calibration (Edge Function)
-- `POST /functions/v1/intelligence-snapshot` — Generates Force Memo (Edge Function)
-- SQL Webhook: calibration complete → auto-triggers intelligence-snapshot
+## Pending Issues
+- P0: Edge Function compatibility for website audit (BLOCKED on user)
+- P1: Missing `abn`/`years_operating` columns in Supabase (BLOCKED on user)
+- P2: HTML vs JSON bug fix verification (USER VERIFICATION PENDING)
+- P3: "No intelligence events yet" display bug
+- P4: Performance lag on data-heavy pages
 
-## What's Been Implemented (Feb 2026)
-- Calibration wizard mode (transport for Edge Function)
-- Auth bootstrap loop-back fix
-- Executive Mirror rendering (agent_persona + fact_ledger)
-- Intelligence Feed with Signal Schema template
-- Zero-Noise Policy
-- `/api/executive-mirror` backend endpoint
-
-## Prioritized Backlog
-- P0: Verify SQL webhook triggers intelligence-snapshot on calibration complete
-- P1: Valuation Decay formula in signal-evaluator Edge Function
-- P1: Server.py modularization
-- P2: Merge.dev → Standardized Signal Schema mapping
-- P2: RPC engine (ghosted VIPs, burnout risk) into intelligence_snapshots
+## Backlog
+- P1: Modularize server.py (10K+ lines)
+- P1: Refactor CalibrationAdvisor.js into sub-components
+- P2: Automatic ingestion trigger (cron job)
