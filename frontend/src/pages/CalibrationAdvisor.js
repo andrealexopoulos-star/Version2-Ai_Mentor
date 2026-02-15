@@ -187,7 +187,24 @@ const CalibrationAdvisor = () => {
     setEntry("analyzing");
 
     try {
-      const data = await callEdge({ step: 1, website_url: url });
+      // Save website to backend business profile
+      try {
+        await apiClient.put('/business-profile', { website: url });
+      } catch { /* non-blocking */ }
+
+      // Send to Edge Function — try with website_url first, fallback to step-only
+      let data;
+      try {
+        data = await callEdge({ step: 1, website_url: url });
+      } catch {
+        // Fallback: Edge Function may not support website_url — send step only
+        try {
+          data = await callEdge({ step: 1 });
+        } catch {
+          // Final fallback: send as message
+          data = await callEdge({ message: url });
+        }
+      }
 
       if (data.status === "COMPLETE") { triggerComplete(); return; }
 
