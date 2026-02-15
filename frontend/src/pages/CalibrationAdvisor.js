@@ -467,14 +467,13 @@ const CalibrationAdvisor = () => {
 
             <form onSubmit={handleAuditSubmit} className="max-w-md mx-auto space-y-4">
               <input
-                type="url"
+                type="text"
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
-                placeholder="www.yourcompany.com"
+                placeholder="thestrategysquad.com"
                 className="w-full rounded-xl px-5 py-3.5 text-base text-center focus:outline-none transition-colors"
                 style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, color: CHARCOAL }}
                 autoFocus
-                required
                 data-testid="website-url-input"
               />
               <button
