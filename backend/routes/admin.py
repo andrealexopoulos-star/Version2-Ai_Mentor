@@ -149,3 +149,93 @@ async def list_prompts(admin: dict = Depends(get_super_admin)):
     ).order("agent").execute()
     return {"prompts": result.data or []}
 
+
+@router.get("/admin/prompts/{prompt_key}")
+async def get_prompt_detail(prompt_key: str, admin: dict = Depends(get_super_admin)):
+    """Get full prompt content by key."""
+    sb = get_sb()
+    result = sb.table("system_prompts").select("*").eq("prompt_key", prompt_key).maybe_single().execute()
+    if not result or not result.data:
+        raise HTTPException(status_code=404, detail=f"Prompt '{prompt_key}' not found")
+    row = result.data
+    row.pop("id", None)
+    return {"prompt": row}
+
+
+class PromptUpdateRequest(BaseModel):
+    raw_content: str
+    description: Optional[str] = None
+    version: Optional[str] = None
+
+
+@router.put("/admin/prompts/{prompt_key}")
+async def update_prompt(prompt_key: str, payload: PromptUpdateRequest, admin: dict = Depends(get_super_admin)):
+    """Update a prompt and invalidate the cache. Creates audit log entry."""
+    sb = get_sb()
+
+    # Fetch current version for audit trail
+    current = sb.table("system_prompts").select("raw_content, version").eq("prompt_key", prompt_key).maybe_single().execute()
+    if not current or not current.data:
+        raise HTTPException(status_code=404, detail=f"Prompt '{prompt_key}' not found")
+
+    old_content = current.data.get("raw_content", "")
+    old_version = current.data.get("version", "1.0")
+    new_version = payload.version or old_version
+
+    # Update the prompt
+    update_data = {
+        "raw_content": payload.raw_content,
+        "version": new_version,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if payload.description is not None:
+        update_data["description"] = payload.description
+
+    sb.table("system_prompts").update(update_data).eq("prompt_key", prompt_key).execute()
+
+    # Create audit log entry
+    try:
+        sb.table("prompt_audit_logs").insert({
+            "prompt_key": prompt_key,
+            "action": "update",
+            "old_version": old_version,
+            "new_version": new_version,
+            "old_content_preview": old_content[:200],
+            "new_content_preview": payload.raw_content[:200],
+            "changed_by": admin.get("id"),
+            "changed_by_email": admin.get("email"),
+            "changed_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception as e:
+        logger.warning(f"[admin] Audit log write failed (non-fatal): {e}")
+
+    # Invalidate cache
+    from prompt_registry import invalidate_cache
+    invalidate_cache(prompt_key)
+
+    logger.info(f"[admin] Prompt '{prompt_key}' updated by {admin.get('email')} (v{old_version} → v{new_version})")
+    return {"status": "updated", "prompt_key": prompt_key, "version": new_version}
+
+
+@router.post("/admin/prompts/{prompt_key}/test")
+async def test_prompt_connection(prompt_key: str, admin: dict = Depends(get_super_admin)):
+    """Test that a prompt is correctly loaded in the prompt_registry cache."""
+    from prompt_registry import get_prompt, _cache
+
+    # Check cache status
+    cached = prompt_key in _cache
+
+    # Fetch from DB
+    content = await get_prompt(prompt_key)
+    loaded = content is not None
+    length = len(content) if content else 0
+    preview = content[:150] + "..." if content and len(content) > 150 else content
+
+    return {
+        "prompt_key": prompt_key,
+        "loaded": loaded,
+        "cached": cached,
+        "content_length": length,
+        "preview": preview,
+    }
+
