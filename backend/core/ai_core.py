@@ -555,6 +555,10 @@ CONTEXT:
     # This context is used ONLY when MyAdvisor is triggered proactively
     # All proactive messages MUST follow this strict contract
     if context_type == "proactive":
+        db_prompt = await get_prompt("myadvisor_proactive_v1")
+        if db_prompt:
+            formatted = db_prompt.replace("{metadata.trigger_source}", str(metadata.get('trigger_source', 'Unknown'))).replace("{metadata.focus_area}", str(metadata.get('focus_area', 'Unknown'))).replace("{metadata.confidence_level}", str(metadata.get('confidence_level', 'Limited')))
+            return f"""{constitution}\n\n{formatted}\n\nCONTEXT:\n{user_context}\n{knowledge_context}"""
         return f"""{constitution}
 
 You are MyAdvisor generating a PROACTIVE advisory message.
