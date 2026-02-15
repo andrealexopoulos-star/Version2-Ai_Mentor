@@ -18,7 +18,18 @@ const WOW_CATEGORIES = ['Profile', 'Market', 'Product', 'Team', 'Strategy'];
 
 const CalibrationAdvisor = () => {
   const navigate = useNavigate();
-  const { user, session, loading } = useSupabaseAuth();
+  const { user, session, loading, signOut } = useSupabaseAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/login-supabase';
+    } catch {
+      window.location.href = '/login-supabase';
+    }
+  };
 
   // Flow: loading → welcome → analyzing → wow_summary → continuity → calibrating
   const [entry, setEntry] = useState("loading");
