@@ -6534,6 +6534,18 @@ api_router.include_router(soundboard_router)
 from routes.data_center import router as data_center_router
 api_router.include_router(data_center_router)
 
+# ═══════════════════════════════════════════════════════════════
+# CALIBRATION — Extracted to routes/calibration.py
+# ═══════════════════════════════════════════════════════════════
+from routes.calibration import router as calibration_router
+api_router.include_router(calibration_router)
+
+# ═══════════════════════════════════════════════════════════════
+# EMAIL & CALENDAR — Extracted to routes/email.py
+# ═══════════════════════════════════════════════════════════════
+from routes.email import router as email_router
+api_router.include_router(email_router)
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     pass  # MongoDB client removed — no cleanup needed
