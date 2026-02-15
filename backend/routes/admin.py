@@ -164,7 +164,7 @@ async def get_prompt_detail(prompt_key: str, admin: dict = Depends(get_super_adm
 
 class PromptUpdateRequest(BaseModel):
     content: str
-    version: Optional[str] = None
+    version: Optional[int] = None
 
 
 @router.put("/admin/prompts/{prompt_key}")
