@@ -31,7 +31,16 @@ const AdvisorWatchtower = () => {
     return () => clearInterval(interval);
   }, [mirrorLoading]);
 
-  const firstName = user?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || '';
+  // Extract first name — never show raw email
+  const extractName = (raw) => {
+    if (!raw) return '';
+    if (raw.includes('@')) {
+      const namePart = raw.split('@')[0].split(/[._-]/)[0];
+      return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    }
+    return raw.split(' ')[0];
+  };
+  const firstName = extractName(user?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '');
 
   const LOADING_PHASES = [
     `${firstName ? firstName + ', finalizing' : 'Finalizing'} your Executive Brief...`,
