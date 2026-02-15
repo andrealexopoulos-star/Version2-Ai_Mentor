@@ -282,44 +282,81 @@ const CalibrationAdvisor = () => {
   const ringCirc = 2 * Math.PI * ringRadius;
   const ringOffset = ringCirc - (progressPercent / 100) * ringCirc;
 
-  // Parse WOW summary into categories
-  const renderWowCategories = () => {
+  // Sparkle icon (AI-generated)
+  const SparkleIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
+      <path d="M8 0L9.8 6.2L16 8L9.8 9.8L8 16L6.2 9.8L0 8L6.2 6.2L8 0Z" fill={GOLD} />
+    </svg>
+  );
+
+  // Shield icon (user-verified)
+  const ShieldIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
+      <path d="M8 1L2 4V7.5C2 11.1 4.5 14.4 8 15.5C11.5 14.4 14 11.1 14 7.5V4L8 1Z" fill="#2D6A4F" />
+      <path d="M6.5 10.5L4.5 8.5L5.2 7.8L6.5 9.1L10.8 4.8L11.5 5.5L6.5 10.5Z" fill="white" />
+    </svg>
+  );
+
+  // Render a single WOW field with inline editing
+  const WowField = ({ fieldKey, label, value }) => {
+    const isEditing = editingKey === fieldKey;
+    const isUserEdited = editedFields[fieldKey] !== undefined;
+    const displayVal = typeof value === 'object' ? (value.summary || value.description || JSON.stringify(value)) : String(value);
+
+    return (
+      <div className="rounded-xl px-5 py-4 transition-all duration-300" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+        <div className="flex items-center gap-2 mb-2">
+          <h4 className="text-xs font-medium uppercase tracking-wider" style={{ color: GOLD, letterSpacing: '0.12em' }}>{label}</h4>
+          {isUserEdited ? <ShieldIcon /> : <SparkleIcon />}
+        </div>
+        {isEditing ? (
+          <textarea
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => commitEdit(fieldKey)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(fieldKey); } }}
+            className="w-full text-sm leading-relaxed focus:outline-none resize-none bg-transparent"
+            style={{ color: CHARCOAL, fontFamily: 'inherit', minHeight: 60 }}
+            autoFocus
+            rows={3}
+          />
+        ) : (
+          <p
+            className="text-sm leading-relaxed cursor-text transition-colors hover:bg-gray-50 rounded px-1 -mx-1 py-0.5"
+            style={{ color: CHARCOAL }}
+            onClick={() => startEdit(fieldKey, displayVal)}
+            title="Click to edit"
+          >
+            {displayVal}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // Render WOW summary fields
+  const renderWowFields = () => {
     if (!wowSummary) return null;
     if (typeof wowSummary === 'string') {
-      return <p className="text-sm leading-relaxed" style={{ color: MUTED }}>{wowSummary}</p>;
+      return <WowField fieldKey="summary" label="Summary" value={wowSummary} />;
     }
-    return WOW_CATEGORIES.map(cat => {
+
+    // Try standard categories first
+    const standardFields = WOW_CATEGORIES.map(cat => {
       const key = cat.toLowerCase();
       const val = wowSummary[key] || wowSummary[cat] || wowSummary[`${key}_summary`];
       if (!val) return null;
-      const text = typeof val === 'object' ? (val.summary || val.description || JSON.stringify(val)) : String(val);
-      return (
-        <div key={cat} className="rounded-xl px-5 py-4" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-          <h4 className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: GOLD, letterSpacing: '0.12em' }}>{cat}</h4>
-          <p className="text-sm leading-relaxed" style={{ color: CHARCOAL }}>{text}</p>
-        </div>
-      );
+      return <WowField key={key} fieldKey={key} label={cat} value={val} />;
     }).filter(Boolean);
-  };
 
-  // If summary has no matching categories, render all keys
-  const renderWowFallback = () => {
-    if (!wowSummary || typeof wowSummary !== 'object') return null;
-    const rendered = renderWowCategories();
-    if (rendered && rendered.length > 0) return rendered;
+    if (standardFields.length > 0) return standardFields;
+
+    // Fallback: render all object keys
     return Object.entries(wowSummary)
       .filter(([, v]) => v && (typeof v === 'string' || typeof v === 'object'))
-      .map(([key, val]) => {
-        const text = typeof val === 'object' ? (val.summary || val.description || JSON.stringify(val)) : String(val);
-        return (
-          <div key={key} className="rounded-xl px-5 py-4" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-            <h4 className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: GOLD, letterSpacing: '0.12em' }}>
-              {key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())}
-            </h4>
-            <p className="text-sm leading-relaxed" style={{ color: CHARCOAL }}>{text}</p>
-          </div>
-        );
-      });
+      .map(([key, val]) => (
+        <WowField key={key} fieldKey={key} label={key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())} value={val} />
+      ));
   };
 
   return (
