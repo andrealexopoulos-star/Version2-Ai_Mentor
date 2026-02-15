@@ -1469,7 +1469,7 @@ Proceed directly with advice using this snapshot.
                 "context_type": context_type
             })
         
-        system_prompt = get_system_prompt(context_type, user_data, business_knowledge, metadata)
+        system_prompt = await get_system_prompt(context_type, user_data, business_knowledge, metadata)
         
         # Use emergentintegrations for reliable AI access
         chat = LlmChat(
