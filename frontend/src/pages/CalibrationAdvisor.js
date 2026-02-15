@@ -51,6 +51,8 @@ const CalibrationAdvisor = () => {
   // Edited fields tracking — sparkle (AI) vs shield (user-verified)
   const [editedFields, setEditedFields] = useState({});
   const [editingKey, setEditingKey] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
   const [editValue, setEditValue] = useState("");
 
   // Transition state
