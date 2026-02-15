@@ -266,8 +266,9 @@ You have access to detailed information about this business. Use this knowledge 
 ---
 """
 
-    # Get BIQC Constitution (mandatory rules)
-    constitution = get_constitution_prompt()
+    # Get BIQC Constitution (mandatory rules) — try DB first, fall back to file
+    db_constitution = await get_prompt("biqc_constitution_v1")
+    constitution = db_constitution if db_constitution else get_constitution_prompt()
 
     # MENTOR MODE for MyAdvisor/general context - Now Chief Business Advisor
     # Agent Constitution: OUTPUT SHAPE = Situation → Decision → Immediate next step
