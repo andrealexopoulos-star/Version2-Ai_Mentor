@@ -953,7 +953,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
     advisor_response = None
     try:
         # Fetch from DB or use inline fallback
-        cal_system_prompt = (
+        _voice_fallback = (
             'You are the "Emergent Advisor" (System Name: BIQc). '
             'Your status is: FAIL-SAFE | MASTER CONNECTED. '
             'You are a strategic, executive-level AI designed to "Calibrate" the user before granting them access to the "Watchtower."\n\n'
