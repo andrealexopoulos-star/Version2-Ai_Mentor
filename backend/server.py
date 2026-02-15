@@ -9333,6 +9333,12 @@ api_router.include_router(research_router)
 from routes.soundboard import router as soundboard_router
 api_router.include_router(soundboard_router)
 
+# ═══════════════════════════════════════════════════════════════
+# DATA CENTER — Extracted to routes/data_center.py
+# ═══════════════════════════════════════════════════════════════
+from routes.data_center import router as data_center_router
+api_router.include_router(data_center_router)
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     pass  # MongoDB client removed — no cleanup needed
