@@ -176,7 +176,7 @@ const CalibrationAdvisor = () => {
     try {
       const data = await callEdge({ step: 1, website_url: url });
 
-      if (data.status === "COMPLETE") { window.location.href = "/advisor"; return; }
+      if (data.status === "COMPLETE") { triggerComplete(); return; }
 
       // Check if Edge returned a WOW_SUMMARY
       if (data.wow_summary || data.audit || data.summary) {
@@ -221,7 +221,7 @@ const CalibrationAdvisor = () => {
         payload.user_edits = editedFields;
       }
       const data = await callEdge(payload);
-      if (data.status === "COMPLETE") { window.location.href = "/advisor"; return; }
+      if (data.status === "COMPLETE") { triggerComplete(); return; }
       setTransitioning(false);
       applyResponse(data);
     } catch {
@@ -282,7 +282,7 @@ const CalibrationAdvisor = () => {
     setEntry("calibrating");
     try {
       const data = await callEdge({ step: calStep > 0 ? calStep : 1 });
-      if (data.status === "COMPLETE") { window.location.href = "/advisor"; return; }
+      if (data.status === "COMPLETE") { triggerComplete(); return; }
       applyResponse(data);
     } catch { setError("Calibration engine temporarily unavailable."); }
   };
@@ -304,7 +304,7 @@ const CalibrationAdvisor = () => {
 
     try {
       const data = await callEdge(payload);
-      if (data.status === "COMPLETE") { window.location.href = "/advisor"; return; }
+      if (data.status === "COMPLETE") { triggerComplete(); return; }
 
       // Brief pause for slide transition feel
       await new Promise(r => setTimeout(r, 400));
@@ -322,7 +322,7 @@ const CalibrationAdvisor = () => {
     try {
       const data = await callEdge({ message: msg });
       if (data.message) setMessages(prev => [...prev, { role: "edge", text: data.message }]);
-      if (data.status === "COMPLETE") { window.location.href = "/advisor"; return; }
+      if (data.status === "COMPLETE") { triggerComplete(); return; }
       if (data.question && data.options?.length > 0) applyResponse(data);
     } catch { setError("Calibration engine temporarily unavailable."); setInputValue(msg); }
     finally { setIsSubmitting(false); inputRef.current?.focus(); }
