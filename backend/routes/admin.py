@@ -60,14 +60,14 @@ async def admin_backfill_calibration(request: Request):
 
 
 @router.get("/admin/users")
-async def admin_get_users(admin: dict = Depends(get_admin_user)):
+async def admin_get_users(admin: dict = Depends(get_super_admin)):
     sb = get_sb()
     result = sb.table("users").select("*").order("created_at", desc=True).limit(1000).execute()
     return result.data if result.data else []
 
 
 @router.get("/admin/stats")
-async def admin_get_stats(admin: dict = Depends(get_admin_user)):
+async def admin_get_stats(admin: dict = Depends(get_super_admin)):
     sb = get_sb()
     return {
         "total_users": (sb.table("users").select("id", count="exact").execute()).count or 0,
@@ -80,7 +80,7 @@ async def admin_get_stats(admin: dict = Depends(get_admin_user)):
 
 
 @router.put("/admin/users/{user_id}")
-async def admin_update_user(user_id: str, update: AdminUserUpdate, admin: dict = Depends(get_admin_user)):
+async def admin_update_user(user_id: str, update: AdminUserUpdate, admin: dict = Depends(get_super_admin)):
     sb = get_sb()
     update_dict = {k: v for k, v in update.model_dump().items() if v is not None}
     if not update_dict:
@@ -94,7 +94,7 @@ async def admin_update_user(user_id: str, update: AdminUserUpdate, admin: dict =
 
 
 @router.delete("/admin/users/{user_id}")
-async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user)):
+async def admin_delete_user(user_id: str, admin: dict = Depends(get_super_admin)):
     sb = get_sb()
     if user_id == admin["id"]:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
@@ -114,7 +114,7 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
 @router.post("/admin/prompts/invalidate")
 async def invalidate_prompt_cache(
     request: dict = None,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_super_admin)
 ):
     """
     Hot-swap AI personalities by invalidating the prompt cache.
@@ -141,7 +141,7 @@ async def invalidate_prompt_cache(
 
 
 @router.get("/admin/prompts")
-async def list_prompts(admin: dict = Depends(get_admin_user)):
+async def list_prompts(admin: dict = Depends(get_super_admin)):
     """List all active prompts from the system_prompts table."""
     sb = get_sb()
     result = sb.table("system_prompts").select(
