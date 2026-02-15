@@ -1775,18 +1775,53 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
 from routes.facts import router as facts_router
 api_router.include_router(facts_router)
 
-
-
 # ═══ GENERATION — Extracted to routes/generation.py ═══
-
+from routes.generation import router as generation_router
+api_router.include_router(generation_router)
 
 # ═══ PROFILE/DASHBOARD/OAC — Extracted to routes/profile.py ═══
-
-
-
+from routes.profile import router as profile_router
+api_router.include_router(profile_router)
 
 # ═══ INTEGRATIONS — Extracted to routes/integrations.py ═══
+from routes.integrations import router as integrations_router
+api_router.include_router(integrations_router)
 
+# ═══ ADMIN — Extracted to routes/admin.py ═══
+from routes.admin import router as admin_router
+api_router.include_router(admin_router)
+
+# ═══ WATCHTOWER — Extracted to routes/watchtower.py ═══
+from routes.watchtower import router as watchtower_router
+api_router.include_router(watchtower_router)
+
+# ═══ BOARD ROOM — Extracted to routes/boardroom.py ═══
+from routes.boardroom import router as boardroom_router
+api_router.include_router(boardroom_router)
+
+# ═══ INTELLIGENCE — Extracted to routes/intelligence.py ═══
+from routes.intelligence import router as intelligence_router
+api_router.include_router(intelligence_router)
+
+# ═══ RESEARCH — Extracted to routes/research.py ═══
+from routes.research import router as research_router
+api_router.include_router(research_router)
+
+# ═══ SOUNDBOARD — Extracted to routes/soundboard.py ═══
+from routes.soundboard import router as soundboard_router
+api_router.include_router(soundboard_router)
+
+# ═══ DATA CENTER — Extracted to routes/data_center.py ═══
+from routes.data_center import router as data_center_router
+api_router.include_router(data_center_router)
+
+# ═══ CALIBRATION — Extracted to routes/calibration.py ═══
+from routes.calibration import router as calibration_router
+api_router.include_router(calibration_router)
+
+# ═══ EMAIL & CALENDAR — Extracted to routes/email.py ═══
+from routes.email import router as email_router
+api_router.include_router(email_router)
 
 # ═══ REGISTER ALL ROUTERS (must be AFTER all route definitions) ═══
 app.include_router(api_router)
