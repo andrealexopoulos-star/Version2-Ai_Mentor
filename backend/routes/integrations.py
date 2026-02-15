@@ -2,7 +2,7 @@
 Integrations Routes — Merge.dev, CRM, Google Drive, Intelligence cold-read/ingest/watchtower.
 Extracted from server.py.
 """
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
