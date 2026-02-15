@@ -90,11 +90,20 @@ export const SupabaseAuthProvider = ({ children }) => {
       if (!isMounted) return;
       setSession(session);
       if (session?.user) {
+        // Reset authState to LOADING on new login so ProtectedRoute/PublicRoute
+        // wait for the calibration check before routing the user
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          const isNewLogin = lastBootstrapUserId.current !== session.user.id;
+          if (isNewLogin) {
+            setAuthState(AUTH_STATE.LOADING);
+          }
+        }
         fetchUserProfile(session.user.id, session);
       } else {
         setUser(null);
-        setOnboardingStatus(null); // Clear cached onboarding on logout
-        lastBootstrapUserId.current = null; // Reset so bootstrap runs on next login
+        setOnboardingStatus(null);
+        lastBootstrapUserId.current = null;
+        setAuthState(AUTH_STATE.LOADING);
         setLoading(false);
       }
     });
