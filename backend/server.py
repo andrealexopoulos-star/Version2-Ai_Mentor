@@ -217,6 +217,10 @@ OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
 from routes.deps import init_route_deps
 init_route_deps(supabase_admin, OPENAI_KEY)
 
+# Initialize Prompt Registry — fetches prompts from Supabase system_prompts table
+from prompt_registry import init_prompt_registry
+init_prompt_registry(supabase_admin)
+
 # AGI-Ready Model Configuration  
 AI_MODEL = "gpt-4o"  # Latest model for regular chat
 AI_MODEL_ADVANCED = "gpt-4o"  # For complex analysis tasks
