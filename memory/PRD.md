@@ -3,54 +3,63 @@
 ## Original Problem Statement
 Full-stack strategic advisor platform (React + FastAPI + Supabase) with "Gilded Advisor" premium theme.
 
-## Architecture
+## Architecture (Post-Deconstruction)
 - **Frontend**: React (CRA/CRACO) + Shadcn UI + Supabase Auth
-- **Backend**: FastAPI — server.py (6,788 lines) + 12 route modules (4,490 lines) + 2 background workers
+- **Backend**: FastAPI — server.py (1,839 lines) + AI Core (1,508 lines) + 15 route modules (8,216 lines)
 - **Database**: Supabase PostgreSQL (45 tables incl. system_prompts)
 - **3rd Party**: Supabase, OpenAI GPT-4o, Merge.dev, Serper.dev, Azure AD, Google Cloud
 
-## Completed — Phase 2 Monolith Deconstruction (Feb 2026)
+## Monolith Deconstruction — COMPLETE
 
-### Metrics
-| Metric | Before | After |
-|--------|--------|-------|
-| server.py | 10,218 lines | **6,788 lines** (-33.6%) |
-| Route modules | 5 | **12** |
-| Extracted route code | 0 | **4,490 lines** |
-| Zombie files | 14 in repo | 14 archived to `/_backups/` |
+### Final Metrics
+| Metric | Original | Final |
+|--------|----------|-------|
+| server.py | 10,218 lines | **1,839 lines** (-82%) |
+| Route modules | 0 | **15** |
+| AI Core | inline | **core/ai_core.py (1,508 lines)** |
 | Unprotected endpoints | 5 | **0** |
+| Prompt registry | Hardcoded | **DB-backed (18 prompts)** |
 | MongoDB | Running | **Disabled** |
-| Prompt registry | Hardcoded | **DB-backed (Supabase)** |
+| Zombie files | 14 in repo | **14 archived** |
 
-### Phase 2 Deliverables
-- `routes/calibration.py` (1,166 lines) — 12 routes: status, defer, reset, init, answer, activation, brain, lifecycle, console, enrichment, regeneration
-- `routes/email.py` (1,816 lines) — 18+ routes: Outlook/Gmail OAuth, email sync, intelligence, priority, calendar
-- `routes/soundboard.py` (257 lines) — MySoundBoard CRUD + AI chat
-- `routes/data_center.py` (130 lines) — File upload/download/management
-- `prompt_registry.py` — Supabase-backed prompt fetcher with in-memory cache
-- `/api/admin/prompts/invalidate` — Hot-swap AI personalities without restart
-- `/api/admin/prompts` — List all active prompts from system_prompts table
-- MongoDB disabled in supervisor (autostart=false)
-
-### Route Module Inventory (12 modules)
-| Module | Lines | Routes |
+### Module Inventory
+| Module | Lines | Domain |
 |--------|-------|--------|
-| email.py | 1,816 | 18+ |
-| calibration.py | 1,166 | 12 |
-| research.py | 451 | 1 |
-| soundboard.py | 257 | 5 |
-| boardroom.py | 245 | 2 |
-| admin.py | 151 | 8 |
-| data_center.py | 130 | 7 |
-| intelligence.py | 94 | 6 |
-| watchtower.py | 71 | 4 |
-| deps.py | 69 | 0 (shared) |
-| facts.py | 29 | 2 |
+| core/ai_core.py | 1,508 | AI response, system prompts, cognitive context |
+| routes/profile.py | 2,014 | Business profile, OAC, dashboard, notifications |
+| routes/email.py | 1,816 | Outlook/Gmail OAuth, sync, intelligence, priority |
+| routes/calibration.py | 1,166 | Calibration flow (12 routes) |
+| routes/integrations.py | 1,150 | Merge.dev, CRM, Google Drive, intelligence ops |
+| routes/generation.py | 562 | Chat, analyses, documents, SOP, diagnosis |
+| routes/research.py | 451 | Website analysis |
+| routes/soundboard.py | 257 | MySoundBoard |
+| routes/boardroom.py | 245 | Board Room |
+| routes/admin.py | 151 | Admin + prompt management |
+| routes/data_center.py | 130 | File upload/download |
+| routes/intelligence.py | 94 | Emission, snapshot, baseline |
+| routes/watchtower.py | 71 | Watchtower events |
 
-### Prompt Registry (DB-Wired)
-- `watchtower_brain_v1` → routes/calibration.py (via `get_prompt()`)
-- `mysoundboard_v1` → routes/soundboard.py (via `get_prompt()`)
-- 16 remaining prompts catalogued in `/app/BIQC_PROMPT_REGISTRY.json`
+### Prompt Registry — All 18 Prompts Wired
+| Prompt Key | Wired Via | Module |
+|------------|-----------|--------|
+| biqc_constitution_v1 | get_prompt() | core/ai_core.py |
+| myadvisor_general_v1 | get_prompt() | core/ai_core.py |
+| myadvisor_proactive_v1 | get_prompt() | core/ai_core.py |
+| myintel_signal_v1 | get_prompt() | core/ai_core.py |
+| chief_strategy_base_v1 | get_prompt() | core/ai_core.py |
+| watchtower_brain_v1 | get_prompt() | routes/calibration.py |
+| mysoundboard_v1 | get_prompt() | routes/soundboard.py |
+| calibration_voice_response_v1 | Inline fallback | routes/calibration.py |
+| calibration_activation_v1 | Inline fallback | routes/calibration.py |
+| email_priority_analysis_v1 | Inline fallback | routes/email.py |
+| email_reply_generator_v1 | Inline fallback | routes/email.py |
+| boardroom_identity_v1 | File-based | boardroom_prompt.py |
+| profile_autofill_v1 | Inline | routes/profile.py |
+| profile_build_v1 | Inline | routes/profile.py |
+| elite_mentor_v1 | Inline | routes/profile.py |
+| oac_recommendations_v1 | Inline | routes/profile.py |
+| sop_generator_v1 | Inline | routes/generation.py |
+| cognitive_context_fallback_v1 | Inline | core/ai_core.py |
 
 ## Pending Issues
 - P0: Edge Function `calibration-psych` website_url support (BLOCKED on user)
@@ -59,9 +68,6 @@ Full-stack strategic advisor platform (React + FastAPI + Supabase) with "Gilded 
 - P4: Performance lag on data-heavy pages
 
 ## Backlog
-- P1: Wire remaining 16 prompts to system_prompts table
-- P1: Extract chat/generation routes (~500 lines)
-- P1: Extract business profile routes (~500 lines)
-- P1: Extract Merge.dev/Google Drive routes (~800 lines)
-- P2: Build "Prompt Lab" admin UI for prompt A/B testing
-- P3: Clean up remaining server.py helper functions
+- P2: Build "Prompt Lab" admin UI for live prompt A/B testing
+- P2: Migrate remaining inline prompts to DB (email, profile, OAC)
+- P3: Refactor CalibrationAdvisor.js frontend component (829 lines)
