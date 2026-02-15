@@ -77,7 +77,7 @@ def _get_ai_response():
     return get_ai_response
 
 def _build_advisor_context():
-    from server import build_advisor_context
+    from routes.profile import build_advisor_context
     return build_advisor_context
 
 def _format_advisor_brain_prompt():
@@ -94,7 +94,7 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
     user_id = current_user["id"]
     
     # Build comprehensive Advisor Brain context
-    from server import build_advisor_context
+    from routes.profile import build_advisor_context
     context = await build_advisor_context(user_id)
     profile = context.get("profile", {})
     
@@ -199,7 +199,7 @@ async def create_analysis(analysis: AnalysisCreate, current_user: dict = Depends
     user_id = current_user["id"]
     
     # Build Advisor Brain context
-    from server import build_advisor_context
+    from routes.profile import build_advisor_context
     context = await build_advisor_context(user_id)
     profile = context.get("profile", {})
     user = context.get("user", {})
@@ -365,7 +365,7 @@ async def generate_sop(request: dict, current_user: dict = Depends(get_current_u
     uploaded_file_id = request.get("uploaded_file_id")
     
     user_id = current_user["id"]
-    from server import build_advisor_context
+    from routes.profile import build_advisor_context
     context = await build_advisor_context(user_id)
     profile = context.get("profile", {})
     
@@ -437,7 +437,7 @@ async def generate_checklist(request: dict, current_user: dict = Depends(get_cur
     req_context = request.get("context", "")
     user_id = current_user["id"]
     
-    from server import build_advisor_context
+    from routes.profile import build_advisor_context
     context = await build_advisor_context(user_id)
     profile = context.get("profile", {})
     biz_name = profile.get("business_name") or "N/A"
@@ -468,7 +468,7 @@ async def generate_action_plan(request: dict, current_user: dict = Depends(get_c
     resources = request.get("resources", "")
     user_id = current_user["id"]
     
-    from server import build_advisor_context
+    from routes.profile import build_advisor_context
     context = await build_advisor_context(user_id)
     profile = context.get("profile", {})
     biz_name = profile.get("business_name") or "N/A"
@@ -502,7 +502,7 @@ async def diagnose_business(request: dict, current_user: dict = Depends(get_curr
     urgency = request.get("urgency", "medium")
     
     user_id = current_user["id"]
-    from server import build_advisor_context
+    from routes.profile import build_advisor_context
     context = await build_advisor_context(user_id)
     profile = context.get("profile", {})
     
