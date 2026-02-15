@@ -366,7 +366,11 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
         website_text = await fetch_website_text(website)
         website_text = website_text[:8000]
 
-    prompt = f"""You are building a structured Australian SMB business profile for a Personalised AI Business Advisory platform.
+    db_build = await get_prompt("profile_build_v1")
+    if db_build:
+        prompt = db_build
+    else:
+        prompt = f"""You are building a structured Australian SMB business profile for a Personalised AI Business Advisory platform.
 
 Return ONLY valid JSON.
 Do not include markdown.
