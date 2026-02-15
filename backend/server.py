@@ -9905,13 +9905,6 @@ api_router.include_router(intelligence_router)
 from routes.research import router as research_router
 api_router.include_router(research_router)
 
-# Include router and middleware
-app.include_router(api_router)
-app.include_router(voice_router, prefix="/api/voice")
-
-# CORS middleware already added at app initialization (line ~160)
-# Removed duplicate CORS configuration from here
-
 @app.on_event("shutdown")
 async def shutdown_db_client():
     pass  # MongoDB client removed — no cleanup needed
