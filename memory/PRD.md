@@ -1,60 +1,46 @@
 # BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-Full-stack AI-powered Business Intelligence platform (React + FastAPI + Supabase). Core features include persona calibration, intelligence gathering, advisory dashboards, and integrations. The platform operates as a Cognitive Infrastructure where Supabase is the brain and Emergent is the high-resolution interface.
+Full-stack AI-powered Business Intelligence platform. Cognitive Infrastructure where Supabase is the brain and Emergent is the high-resolution interface. The UI is Integration-Agnostic — it only cares about Signal Classes (Revenue, Capital, Human Velocity), not data sources.
 
 ## Architecture
-- **Frontend**: React (port 3000) — Transport + Renderer only
-- **Backend**: FastAPI (port 8001) — Reads cognitive outputs from Supabase
+- **Frontend**: React — Transport + Renderer of Cognitive Outputs
+- **Backend**: FastAPI — Reads from Supabase, no local AI
 - **Database**: Supabase (PostgreSQL) — Intelligence Authority
-- **AI**: Supabase Edge Functions (`calibration-psych`, `intelligence-snapshot`, `gmail_prod`, `outlook-auth`)
-- **Auth**: Supabase Auth (Google, Microsoft, email/password)
-- **Integrations**: Merge.dev (CRM, Financial, HRIS)
+- **AI**: Supabase Edge Functions (calibration-psych, intelligence-snapshot, gmail_prod, outlook-auth)
+- **Integrations**: Merge.dev (mapped to Standardized Signal Schema)
 
-## Master Agent Operating Directive
-- Frontend is Transport + Renderer only. No local AI generation.
-- All intelligence derived from Supabase Edge Functions.
-- The Fact Ledger (in `user_operator_profile`) is the intelligence filter.
-- `executive_memo` from `intelligence_snapshots` is the Force Memo.
-- Calibration triggers intelligence-snapshot via SQL webhook.
+## Master Agent Directive (ACTIVE)
+- Primary objective: Visualization of Strategic Contradiction (Drift Detection)
+- UI renders delta between Fact Ledger (Psychology/Goals) and Force Signals (Business Reality)
+- Integration-Agnostic: Data source irrelevant. Only Signal Classes matter.
+- Zero-Noise Policy: OPTIMIZED (>0.9) minimizes feed. Only drift amplified.
+- Response Template: STATUS → SIGNAL → COST OF SILENCE → FORESIGHT
 
-## Key Files
-- `frontend/src/config/urls.js` — Uses `window.location.origin`
-- `frontend/src/context/SupabaseAuthContext.js` — Auth bootstrap with dedup
-- `frontend/src/pages/CalibrationAdvisor.js` — Wizard mode transport
-- `frontend/src/pages/AdvisorWatchtower.js` — Executive Mirror + Watchtower
-- `backend/server.py` — Includes `/api/executive-mirror` endpoint
+## UI Architecture
+1. **Status Header**: OPTIMIZED / DRIFT / DECAY (from resolution_score)
+2. **Executive Mirror**: Master Agent declaration + agent_persona + fact_ledger
+3. **Intelligence Feed**: executive_memo rendered as Signal Schema
+4. **Signal Classes**: Revenue / Capital / Human Velocity
+5. **Valuation Decay**: risk_quantification as primary metric
 
-## What's Been Implemented
+## Key Endpoints
+- `GET /api/executive-mirror` — Returns agent_persona, fact_ledger, executive_memo, resolution_score
+- `POST /functions/v1/calibration-psych` — Wizard-mode calibration (Edge Function)
+- `POST /functions/v1/intelligence-snapshot` — Generates Force Memo (Edge Function)
+- SQL Webhook: calibration complete → auto-triggers intelligence-snapshot
 
-### Feb 14-15, 2026
-- **Executive Mirror** (`/advisor`): Reads `agent_persona`, `fact_ledger`, `executive_memo` from Supabase. Renders Strategic DNA, Confirmed Signals, Force Memo. Recalculate button triggers `intelligence-snapshot` Edge Function.
-- **`/api/executive-mirror` endpoint**: Single read from `user_operator_profile` + `intelligence_snapshots`. No filtering, no generation.
-- **Status Header**: OPTIMIZED / DRIFT / DECAY based on `resolution_score` from intelligence_snapshots.
-- **Calibration Wizard Mode**: Pure transport for `calibration-psych` Edge Function.
-- **Auth Bootstrap Fix**: Token refresh no longer unmounts components.
-
-## UI Hierarchy (Active)
-1. Status Header: OPTIMIZED / DRIFT / DECAY
-2. Executive Mirror: agent_persona + fact_ledger
-3. Force Memo: executive_memo from intelligence_snapshots
-4. Strategic Console: Link to War Room
-5. Watchtower: Emerging signals feed
+## What's Been Implemented (Feb 2026)
+- Calibration wizard mode (transport for Edge Function)
+- Auth bootstrap loop-back fix
+- Executive Mirror rendering (agent_persona + fact_ledger)
+- Intelligence Feed with Signal Schema template
+- Zero-Noise Policy
+- `/api/executive-mirror` backend endpoint
 
 ## Prioritized Backlog
-
-### P0 — Immediate
-- SQL Webhook: Verify `calibration complete → intelligence-snapshot` trigger is live in Supabase
-- User to complete full calibration and verify Executive Mirror with real data
-
-### P1 — High
-- Strike/Closer buttons: Call `gmail_prod` or `rapid-task` Edge Functions
-- Cost of Silence: Render `risk_quantification` from executive_memo
-- Modularize `server.py`
-
-### P2 — Medium
-- Merge.dev data synthesis through Fact Ledger lens
-- RPC engine integration (ghosted VIPs, burnout risk)
-
-### P3 — Low
-- Automatic Ingestion Trigger
+- P0: Verify SQL webhook triggers intelligence-snapshot on calibration complete
+- P1: Valuation Decay formula in signal-evaluator Edge Function
+- P1: Server.py modularization
+- P2: Merge.dev → Standardized Signal Schema mapping
+- P2: RPC engine (ghosted VIPs, burnout risk) into intelligence_snapshots
