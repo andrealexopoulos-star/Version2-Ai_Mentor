@@ -1787,6 +1787,15 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
 from routes.facts import router as facts_router
 api_router.include_router(facts_router)
 
+# ═══ API ROOT + HEALTH ═══
+@api_router.get("/")
+async def api_root():
+    return {"message": "Strategic Advisor API", "version": "1.0.0"}
+
+@api_router.get("/health")
+async def api_health():
+    return {"status": "healthy"}
+
 # ═══ GENERATION — Extracted to routes/generation.py ═══
 from routes.generation import router as generation_router
 api_router.include_router(generation_router)
