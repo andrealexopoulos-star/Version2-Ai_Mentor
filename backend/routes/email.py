@@ -1585,10 +1585,11 @@ Prioritize based on:
 Return ONLY valid JSON, no markdown."""
 
     try:
+        email_sys = await get_prompt("email_priority_analysis_v1", _EMAIL_PRIORITY_FALLBACK)
         chat = LlmChat(
             api_key=OPENAI_KEY,
             session_id=f"email_priority_{user_id}_{datetime.now().timestamp()}",
-            system_message="You are a strategic business email analyst. Always respond with valid JSON only."
+            system_message=email_sys
         )
         chat.with_model("openai", AI_MODEL)
         
