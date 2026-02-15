@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
-import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
-import { RefreshCw, Loader2, Eye, AlertCircle, ArrowRight } from 'lucide-react';
+import { RefreshCw, Loader2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import WatchtowerEvent from '../components/WatchtowerEvent';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
@@ -16,18 +14,10 @@ const AdvisorWatchtower = () => {
 
   const [mirror, setMirror] = useState(null);
   const [mirrorLoading, setMirrorLoading] = useState(true);
-  const [watchtowerEvents, setWatchtowerEvents] = useState([]);
-  const [loadingEvents, setLoadingEvents] = useState(true);
-  const [runningAnalysis, setRunningAnalysis] = useState(false);
   const [snapshotRefreshing, setSnapshotRefreshing] = useState(false);
 
-  // Fetch Executive Mirror + Watchtower Events on mount
-  useEffect(() => {
-    fetchMirror();
-    fetchWatchtowerEvents();
-  }, []);
+  useEffect(() => { fetchMirror(); }, []);
 
-  /** Read cognitive outputs from /api/executive-mirror */
   const fetchMirror = async () => {
     setMirrorLoading(true);
     try {
@@ -40,13 +30,12 @@ const AdvisorWatchtower = () => {
     }
   };
 
-  /** Trigger intelligence-snapshot Edge Function to refresh memo */
   const refreshSnapshot = async () => {
     setSnapshotRefreshing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
+      await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -55,11 +44,7 @@ const AdvisorWatchtower = () => {
         },
         body: JSON.stringify({}),
       });
-      if (res.ok) {
-        // Re-fetch mirror to get updated executive_memo
-        await fetchMirror();
-        toast.success('Intelligence snapshot refreshed');
-      }
+      await fetchMirror();
     } catch (err) {
       console.warn('[snapshot] refresh failed:', err.message);
     } finally {
@@ -67,283 +52,238 @@ const AdvisorWatchtower = () => {
     }
   };
 
-  /** Fetch watchtower events */
-  const fetchWatchtowerEvents = async () => {
-    setLoadingEvents(true);
-    try {
-      const res = await apiClient.get('/intelligence/watchtower?status=active');
-      setWatchtowerEvents(res.data?.events || []);
-    } catch {
-      console.error('[watchtower] Failed to fetch events');
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
-
-  /** Run cold read analysis */
-  const runColdRead = async () => {
-    setRunningAnalysis(true);
-    toast.loading('Running analysis...', { id: 'cold-read' });
-    try {
-      const res = await apiClient.post('/intelligence/cold-read', {});
-      const result = res.data?.cold_read;
-      if (result?.events_created > 0) {
-        toast.success(`${result.events_created} signal${result.events_created > 1 ? 's' : ''} detected`, { id: 'cold-read' });
-      } else {
-        toast.success('Baseline initialized. Monitoring active domains.', { id: 'cold-read' });
-      }
-      await fetchWatchtowerEvents();
-      await fetchMirror();
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Analysis failed', { id: 'cold-read' });
-    } finally {
-      setRunningAnalysis(false);
-    }
-  };
-
-  const handleEventAction = async (eventId) => {
-    try {
-      await apiClient.patch(`/intelligence/watchtower/${eventId}/handle`);
-      toast.success('Event handled');
-      await fetchWatchtowerEvents();
-    } catch {
-      toast.error('Failed to update event');
-    }
-  };
-
-  // Derive resolution status
   const persona = mirror?.agent_persona;
   const factLedger = mirror?.fact_ledger;
   const memo = mirror?.executive_memo;
   const resolutionScore = mirror?.resolution_status;
+  const calibrated = mirror?.calibration_status === 'complete';
 
-  const statusLabel = resolutionScore >= 80 ? 'OPTIMIZED' : resolutionScore >= 50 ? 'DRIFT' : resolutionScore > 0 ? 'DECAY' : null;
-  const statusColor = statusLabel === 'OPTIMIZED' ? 'text-emerald-400' : statusLabel === 'DRIFT' ? 'text-amber-400' : statusLabel === 'DECAY' ? 'text-red-400' : 'text-white/40';
+  // Resolution status derivation
+  const resolveStatus = (score) => {
+    if (score === null || score === undefined) return null;
+    if (score >= 0.9 || score >= 90) return 'OPTIMIZED';
+    if (score >= 0.5 || score >= 50) return 'DRIFT';
+    return 'DECAY';
+  };
+  const status = resolveStatus(resolutionScore);
 
-  // Group events by domain
-  const eventsByDomain = watchtowerEvents.reduce((acc, event) => {
-    const domain = event.domain || 'other';
-    if (!acc[domain]) acc[domain] = [];
-    acc[domain].push(event);
-    return acc;
-  }, {});
+  // Calibrated style label from persona
+  const styleLabel = persona?.decision_style || persona?.style || null;
+
+  // Zero-Noise Policy: if OPTIMIZED, feed is minimal
+  const isOptimized = status === 'OPTIMIZED';
+
+  // Extract signal classes from memo if structured
+  const signals = memo?.signals || [];
+  const hasMemo = memo && (memo.primary_tension || memo.force_summary || signals.length > 0);
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-0">
 
         {/* ─── STATUS HEADER ─── */}
-        {statusLabel && (
-          <div className="flex items-center gap-3 px-1" data-testid="resolution-status">
-            <div className={`text-xs font-mono font-bold tracking-[0.2em] ${statusColor}`}>{statusLabel}</div>
-            {resolutionScore > 0 && (
-              <div className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-                Resolution: {resolutionScore}
-              </div>
+        <div className="flex items-center justify-between px-1 py-3" data-testid="status-header">
+          <div className="flex items-center gap-3">
+            {status && (
+              <span className={`text-[11px] font-mono font-bold tracking-[0.25em] ${
+                status === 'OPTIMIZED' ? 'text-emerald-400' :
+                status === 'DRIFT' ? 'text-amber-400' :
+                'text-red-400'
+              }`} data-testid="resolution-label">{status}</span>
             )}
+            {resolutionScore != null && (
+              <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                Resolution {typeof resolutionScore === 'number' && resolutionScore < 1 ? (resolutionScore * 100).toFixed(0) : resolutionScore}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={refreshSnapshot}
+            disabled={snapshotRefreshing}
+            className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 rounded border transition-colors"
+            style={{ color: 'var(--text-muted)', borderColor: 'var(--border-light)' }}
+            data-testid="recalculate-btn"
+          >
+            <RefreshCw className={`w-3 h-3 ${snapshotRefreshing ? 'animate-spin' : ''}`} />
+            Recalculate
+          </button>
+        </div>
+
+        {/* ─── LOADING ─── */}
+        {mirrorLoading && (
+          <div className="flex items-center justify-center py-20" data-testid="mirror-loading">
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--text-muted)' }} />
           </div>
         )}
 
-        {/* ─── EXECUTIVE MIRROR: Strategic DNA ─── */}
-        {mirrorLoading ? (
-          <div className="flex items-center justify-center py-12" data-testid="mirror-loading">
-            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--text-muted)' }} />
-          </div>
-        ) : mirror && (persona || factLedger) ? (
-          <div className="rounded-xl border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }} data-testid="executive-mirror">
-            <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-light)' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Executive Mirror</h2>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Your strategic DNA as mapped by BIQc</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={refreshSnapshot}
-                  disabled={snapshotRefreshing}
-                  className="text-xs gap-1"
-                  data-testid="refresh-snapshot-btn"
-                >
-                  <RefreshCw className={`w-3 h-3 ${snapshotRefreshing ? 'animate-spin' : ''}`} />
-                  {snapshotRefreshing ? 'Refreshing...' : 'Recalculate'}
-                </Button>
-              </div>
-            </div>
-
-            {/* Agent Persona — Strategic DNA Summary */}
-            {persona && (
-              <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-light)' }} data-testid="agent-persona">
-                {persona.decision_style && (
-                  <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-                    Decision style mapped as <span className="font-bold">{persona.decision_style}</span>.
-                    {persona.risk_posture && <> Risk posture: <span className="font-bold">{persona.risk_posture}</span>.</>}
+        {!mirrorLoading && (
+          <>
+            {/* ─── EXECUTIVE MIRROR ─── */}
+            {calibrated && (persona || factLedger) && (
+              <div className="border-t" style={{ borderColor: 'var(--border-light)' }} data-testid="executive-mirror">
+                {/* Master Agent Declaration */}
+                <div className="px-5 py-4">
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                    I am operating as your Master Agent
+                    {styleLabel && <> under a <span className="font-bold">{styleLabel}</span> lens</>}.
+                    {persona?.risk_posture && <> Risk posture: <span className="font-bold">{persona.risk_posture}</span>.</>}
                   </p>
-                )}
-                {persona.bluntness && (
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                    Communication calibrated to {persona.bluntness} bluntness.
-                  </p>
-                )}
-                {persona.summary && (
-                  <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {persona.summary}
-                  </p>
-                )}
-                {/* Render any persona fields the Edge Function provides */}
-                {!persona.decision_style && !persona.summary && typeof persona === 'object' && (
-                  <div className="space-y-1">
-                    {Object.entries(persona).map(([key, val]) => (
-                      val && typeof val === 'string' && (
-                        <p key={key} className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                          <span className="text-xs font-mono uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{key.replace(/_/g, ' ')}: </span>
-                          {val}
+                  {persona?.bluntness && (
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                      Communication: {persona.bluntness} bluntness.
+                    </p>
+                  )}
+                  {persona?.summary && (
+                    <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{persona.summary}</p>
+                  )}
+                  {/* Generic persona fields fallback */}
+                  {!persona?.decision_style && !persona?.summary && persona && typeof persona === 'object' && (
+                    <div className="space-y-1 mt-2">
+                      {Object.entries(persona).filter(([, v]) => v && typeof v === 'string').map(([k, v]) => (
+                        <p key={k} className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          <span className="text-[10px] font-mono uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{k.replace(/_/g, ' ')}: </span>{v}
                         </p>
-                      )
-                    ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Fact Ledger — Strategic Truths */}
+                {factLedger && typeof factLedger === 'object' && Object.keys(factLedger).length > 0 && (
+                  <div className="px-5 py-4 border-t" style={{ borderColor: 'var(--border-light)' }} data-testid="fact-ledger">
+                    <p className="text-[10px] font-mono uppercase tracking-[0.15em] mb-3" style={{ color: 'var(--text-muted)' }}>Fact ledger</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                      {Object.entries(factLedger).map(([key, val]) => {
+                        const v = typeof val === 'object' ? (val.value || JSON.stringify(val)) : String(val);
+                        return (
+                          <div key={key} className="flex items-baseline gap-2">
+                            <span className="text-[10px] font-mono shrink-0" style={{ color: 'var(--text-muted)' }}>
+                              {key.replace(/\./g, ' > ')}
+                            </span>
+                            <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{v}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Fact Ledger — Confirmed Strategic Truths */}
-            {factLedger && typeof factLedger === 'object' && Object.keys(factLedger).length > 0 && (
-              <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-light)' }} data-testid="fact-ledger">
-                <p className="text-xs font-mono uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Confirmed signals</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {Object.entries(factLedger).slice(0, 12).map(([key, val]) => {
-                    const displayVal = typeof val === 'object' ? (val.value || JSON.stringify(val)) : String(val);
-                    return (
-                      <div key={key} className="flex items-baseline gap-2 text-sm">
-                        <span className="text-xs font-mono shrink-0" style={{ color: 'var(--text-muted)' }}>
-                          {key.replace(/\./g, ' > ')}
-                        </span>
-                        <span style={{ color: 'var(--text-primary)' }}>{displayVal}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Executive Memo — Force Resolution from intelligence-snapshot */}
-            {memo && (
-              <div className="px-5 py-4" data-testid="executive-memo">
-                <p className="text-xs font-mono uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Force memo</p>
-                <div className="space-y-2">
-                  {memo.primary_tension && (
-                    <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{memo.primary_tension}</p>
-                  )}
-                  {memo.force_summary && (
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{memo.force_summary}</p>
-                  )}
-                  {memo.drift_projection && (
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{memo.drift_projection}</p>
-                  )}
-                  {memo.risk_quantification && (
-                    <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--accent-primary, #3b82f6)' }}>{memo.risk_quantification}</p>
-                  )}
-                  {memo.strategic_direction && (
-                    <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{memo.strategic_direction}</p>
-                  )}
-                  {/* Render any additional memo fields the Edge Function provides */}
-                  {Object.entries(memo).filter(([k]) => !['primary_tension','force_summary','drift_projection','risk_quantification','strategic_direction','platform_guidance'].includes(k)).map(([key, val]) => (
-                    val && typeof val === 'string' && (
-                      <p key={key} className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{val}</p>
-                    )
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* No memo yet — prompt recalculate */}
-            {!memo && mirror?.calibration_status === 'complete' && (
-              <div className="px-5 py-4" data-testid="memo-empty">
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Intelligence snapshot pending. Click Recalculate to generate your first Force Memo.
+            {/* ─── INTELLIGENCE FEED ─── */}
+            <div className="border-t" style={{ borderColor: 'var(--border-light)' }} data-testid="intelligence-feed">
+              <div className="px-5 py-4">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] mb-4" style={{ color: 'var(--text-muted)' }}>
+                  Intelligence feed
                 </p>
-              </div>
-            )}
-          </div>
-        ) : null}
 
-        {/* ─── STRATEGIC CONSOLE ─── */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>BIQc</h2>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Strategic operations console</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => navigate('/war-room')} className="text-xs gap-1">
-              <ArrowRight className="w-3 h-3" /> Full Screen
-            </Button>
-          </div>
-          <div
-            className="w-full border rounded-xl shadow-sm overflow-hidden cursor-pointer transition-colors hover:border-blue-300"
-            style={{ background: 'var(--bg-tertiary, #F6F7F9)' }}
-            onClick={() => navigate('/war-room')}
-            data-testid="strategic-console"
-          >
-            <div className="flex items-center justify-between px-5 py-4">
-              <div className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Open Strategic Console</span>
-              </div>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Click to begin or continue your session</span>
-            </div>
-          </div>
-        </div>
+                {/* Zero-Noise: OPTIMIZED state */}
+                {isOptimized && !hasMemo && (
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    All signals resolved. No drift detected.
+                  </p>
+                )}
 
-        {/* ─── WATCHTOWER: Emerging Inevitabilities ─── */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Watchtower</h2>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Emerging signals across your business</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={fetchWatchtowerEvents} variant="outline" size="sm" disabled={loadingEvents} className="gap-1 text-xs">
-                <RefreshCw className={`w-3 h-3 ${loadingEvents ? 'animate-spin' : ''}`} /> Refresh
-              </Button>
-              <Button onClick={runColdRead} size="sm" disabled={runningAnalysis} className="bg-slate-900 hover:bg-slate-800 text-white gap-1 text-xs"
-                data-testid="run-analysis-btn">
-                {runningAnalysis ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />} Run Analysis
-              </Button>
-            </div>
-          </div>
+                {/* Force Memo — rendered as Signal Template */}
+                {hasMemo && (
+                  <div className="space-y-5">
+                    {/* Structured memo: STATUS → SIGNAL → COST → FORESIGHT */}
+                    {memo.primary_tension && (
+                      <div className="space-y-2" data-testid="force-signal">
+                        {/* THE SIGNAL */}
+                        <div>
+                          <p className="text-[10px] font-mono uppercase tracking-[0.15em] mb-1" style={{ color: 'var(--text-muted)' }}>The signal</p>
+                          <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{memo.primary_tension}</p>
+                        </div>
 
-          {loadingEvents && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--text-muted)' }} />
-            </div>
-          )}
+                        {/* Force Summary */}
+                        {memo.force_summary && (
+                          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{memo.force_summary}</p>
+                        )}
 
-          {!loadingEvents && watchtowerEvents.length === 0 && (
-            <div className="text-center py-10 px-4 rounded-lg border" style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}
-              data-testid="watchtower-empty">
-              <Eye className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>No intelligence events yet</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Events appear as BIQc analyses your connected data.</p>
-            </div>
-          )}
+                        {/* COST OF SILENCE */}
+                        {(memo.risk_quantification || memo.cost_of_silence) && (
+                          <div>
+                            <p className="text-[10px] font-mono uppercase tracking-[0.15em] mb-1" style={{ color: 'var(--text-muted)' }}>Cost of silence</p>
+                            <p className="text-sm font-medium leading-relaxed" style={{ color: '#ef4444' }}>
+                              {memo.risk_quantification || memo.cost_of_silence}
+                            </p>
+                          </div>
+                        )}
 
-          {!loadingEvents && watchtowerEvents.length > 0 && (
-            <div className="space-y-4" data-testid="watchtower-events">
-              {Object.keys(eventsByDomain).map(domain => (
-                <div key={domain} className="space-y-3">
-                  <h3 className="text-sm font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
-                    {domain}
-                  </h3>
-                  <div className="space-y-2">
-                    {eventsByDomain[domain].map(event => (
-                      <WatchtowerEvent key={event.id} event={event} onHandle={handleEventAction} />
+                        {/* FORESIGHT */}
+                        {(memo.drift_projection || memo.foresight) && (
+                          <div>
+                            <p className="text-[10px] font-mono uppercase tracking-[0.15em] mb-1" style={{ color: 'var(--text-muted)' }}>Foresight</p>
+                            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                              {memo.drift_projection || memo.foresight}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Strategic Direction */}
+                        {memo.strategic_direction && (
+                          <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>{memo.strategic_direction}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Structured signals array (if Edge Function returns signal_class hierarchy) */}
+                    {signals.length > 0 && signals.map((sig, i) => (
+                      <div key={i} className="border-t pt-4" style={{ borderColor: 'var(--border-light)' }} data-testid={`signal-${i}`}>
+                        {sig.signal_class && (
+                          <span className="text-[10px] font-mono uppercase tracking-[0.2em] px-2 py-0.5 rounded" style={{
+                            color: sig.signal_class === 'Revenue' ? '#f59e0b' : sig.signal_class === 'Capital' ? '#ef4444' : '#8b5cf6',
+                            background: sig.signal_class === 'Revenue' ? 'rgba(245,158,11,0.1)' : sig.signal_class === 'Capital' ? 'rgba(239,68,68,0.1)' : 'rgba(139,92,246,0.1)',
+                          }}>{sig.signal_class}</span>
+                        )}
+                        {sig.tension && (
+                          <p className="text-sm font-medium mt-2 leading-relaxed" style={{ color: 'var(--text-primary)' }}>{sig.tension}</p>
+                        )}
+                        {sig.cost_of_silence && (
+                          <p className="text-sm mt-1" style={{ color: '#ef4444' }}>{sig.cost_of_silence}</p>
+                        )}
+                        {sig.foresight && (
+                          <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{sig.foresight}</p>
+                        )}
+                      </div>
                     ))}
+
+                    {/* Render any additional unstructured memo fields */}
+                    {Object.entries(memo)
+                      .filter(([k]) => !['primary_tension','force_summary','drift_projection','risk_quantification','cost_of_silence','foresight','strategic_direction','platform_guidance','signals','signal_class'].includes(k))
+                      .filter(([, v]) => v && typeof v === 'string')
+                      .map(([key, val]) => (
+                        <p key={key} className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{val}</p>
+                      ))
+                    }
                   </div>
-                </div>
-              ))}
+                )}
+
+                {/* No memo — pending state */}
+                {!hasMemo && !isOptimized && calibrated && (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Intelligence snapshot pending. Recalculate to generate Force Memo.
+                  </p>
+                )}
+
+                {/* Not calibrated */}
+                {!calibrated && !mirrorLoading && (
+                  <div className="text-center py-8">
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Calibration required to activate Intelligence Feed.</p>
+                    <button
+                      onClick={() => navigate('/calibration')}
+                      className="mt-3 text-xs font-mono uppercase tracking-wider px-4 py-2 rounded border transition-colors"
+                      style={{ color: 'var(--text-primary)', borderColor: 'var(--border-medium)' }}
+                    >
+                      Begin Calibration
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
