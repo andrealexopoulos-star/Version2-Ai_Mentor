@@ -888,7 +888,7 @@ def format_email_priority(email_priority: dict) -> str:
     return priority_text if priority_text else "No email priority data available"
 
 
-def format_advisor_brain_prompt(
+async def format_advisor_brain_prompt(
     task_description: str,
     context: dict,
     output_format: str = "recommendations",
