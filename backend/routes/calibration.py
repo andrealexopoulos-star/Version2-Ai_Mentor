@@ -778,7 +778,8 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 f"Growth raw: {strategy_profile.get('raw_growth_input')}\n"
             )
 
-            ai_text = await get_ai_response(raw_prompt, "general", f"calibration_{user_id}", user_id=user_id)
+            from server import get_ai_response
+        ai_text = await get_ai_response(raw_prompt, "general", f"calibration_{user_id}", user_id=user_id)
             ai_payload = {}
             try:
                 ai_payload = json.loads(ai_text)
@@ -951,6 +952,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
     # Generate Emergent Advisor calibration voice response
     advisor_response = None
     try:
+        # Fetch from DB or use inline fallback
         cal_system_prompt = (
             'You are the "Emergent Advisor" (System Name: BIQc). '
             'Your status is: FAIL-SAFE | MASTER CONNECTED. '
@@ -975,6 +977,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             f"User answered: \"{answer}\"\n\n"
             "Respond with JSON only."
         )
+        from server import get_ai_response
         raw_ai = await get_ai_response(cal_user_msg, "general", f"calibration_{user_id}", user_id=user_id)
         if raw_ai:
             raw_ai = raw_ai.strip()
@@ -1027,6 +1030,7 @@ async def get_calibration_activation(request: Request):
             f'Business context: {context_summary}\n\n'
             'Return ONLY valid JSON. No markdown. No explanation.'
         )
+        from server import get_ai_response
         ai_text = await get_ai_response(activation_prompt, "general", f"activation_{user_id}", user_id=user_id)
         activation = json.loads(ai_text)
         return activation
@@ -1064,7 +1068,7 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
         facts_prompt = build_known_facts_prompt(resolved_facts)
 
         # Build messages array matching OpenAI format
-        system_with_facts = WATCHTOWER_BRAIN_PROMPT
+        system_with_facts = await get_prompt("watchtower_brain_v1", _WATCHTOWER_BRAIN_FALLBACK)
         if facts_prompt:
             system_with_facts += f"\n\nKNOWN BUSINESS FACTS (DO NOT ask for these again):\n{facts_prompt}\nIf you need any of these facts, use the provided values. Do not re-ask.\n"
 
