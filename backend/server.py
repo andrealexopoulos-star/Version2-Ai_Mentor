@@ -342,74 +342,7 @@ class GoogleExchangeRequest(BaseModel):
 class MergeLinkTokenRequest(BaseModel):
     categories: Optional[List[str]] = None
 
-class CalibrationAnswerRequest(BaseModel):
-    question_id: int
-    answer: str
-
-QUESTIONS_TEXT = {
-    1: "What's the name of the business you're operating, and what industry does it sit in?",
-    2: "Where would you place the business today — idea, early-stage, established, or enterprise — and roughly how long has it been operating?",
-    3: "Where is the business primarily based? City and state is fine.",
-    4: "Who do you primarily sell to, and what problem are they hiring you to solve?",
-    5: "What do you actually sell today — and why do clients choose you over alternatives?",
-    6: "How big is the team today, and where do you personally spend most of your time?",
-    7: "In plain terms — why does this business exist, and what would success look like in three years?",
-    8: "What are the most important goals for the next 12 months — and what's getting in the way right now?",
-    9: "How do you expect the business to grow — new markets, new offers, partnerships, or scale?",
-}
-
-
-class RegenerationRequestPayload(BaseModel):
-    layer: Optional[str] = None
-    reason: Optional[str] = None
-
-class CalibrationBrainRequest(BaseModel):
-    message: str
-    history: Optional[List[Dict[str, str]]] = []
-
-WATCHTOWER_BRAIN_PROMPT = """
-### SYSTEM_PROMPT_WATCHTOWER_BRAIN (HARDENED)
-
-**CORE DIRECTIVE:**
-You are **BIQc-02**, the Senior Strategic Architect.
-**YOU ARE IN CONTROL.** The user is the client. You lead; they follow.
-Do NOT be passive. Do NOT let the user skip steps. Do NOT answer off-topic questions.
-
-**YOUR MISSION:**
-Extract the "17-Point Strategic Map" with absolute precision.
-
-**THE MAP (Do not deviate):**
-1. Identity (Name, Industry)      10. Pricing Strategy
-2. Current Stage                  11. Team Size
-3. Location                       12. Founder Context
-4. Website URL                    13. Team Gaps
-5. Target Market                  14. Mission
-6. Business Model                 15. Vision
-7. Geographic Focus               16. Current Obstacles
-8. Products/Services              17. Strategic Goals
-9. Differentiation
-
-**PROTOCOL (The Iron Rules):**
-1. **Mental Audit:** Before replying, scan the history. CHECK OFF every completed step.
-2. **Identify the Gap:** Find the *first* incomplete step. This is your ONLY focus.
-3. **The Interrogation:** Ask *one* targeted question to fill that gap.
-   - *Weak:* "Tell me about your business." (Too broad, user will ramble)
-   - *Strong:* "Step 6: How exactly do you make money? Subscription, one-time fee, or ad-based?"
-4. **Drift Protection:** If the user asks about something else (e.g., "What do you think of AI?"), REJECT IT politely but firmly.
-   - *Response:* "We can discuss that later. First, I need your Pricing Strategy."
-
-**CRITICAL OUTPUT FORMAT (JSON ONLY):**
-{
-  "message": "Your strategic question or feedback.",
-  "status": "IN_PROGRESS" | "COMPLETE",
-  "current_step_number": 1,
-  "percentage_complete": 5
-}
-"""
-
-class RegenerationResponsePayload(BaseModel):
-    proposal_id: str
-    action: str
+# Calibration models + WATCHTOWER_BRAIN_PROMPT + QUESTIONS_TEXT moved to routes/calibration.py
 
 class ChatRequest(BaseModel):
     message: str
