@@ -436,8 +436,8 @@ const CalibrationAdvisor = () => {
       )}
 
       {/* ── WOW SUMMARY: The Revelation ── */}
-      {entry === "wow_summary" && wowSummary && (
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-8">
+      {entry === "wow_summary" && wowSummary && !transitioning && (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-8" style={{ animation: 'fadeIn 0.6s ease' }}>
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center mb-8">
               <h1 className="text-2xl sm:text-3xl mb-3" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
@@ -445,16 +445,22 @@ const CalibrationAdvisor = () => {
               </h1>
               <p className="text-sm leading-relaxed" style={{ color: MUTED, maxWidth: 440, margin: '0 auto' }}>
                 {firstName ? `${firstName}, I` : 'I'} have mapped your digital footprint to your Business DNA.
-                Please review this summary.
+                Click any field to refine it.
               </p>
+              <div className="flex items-center justify-center gap-4 mt-3">
+                <span className="flex items-center gap-1 text-[11px]" style={{ color: MUTED }}>
+                  <SparkleIcon /> AI-generated
+                </span>
+                <span className="flex items-center gap-1 text-[11px]" style={{ color: MUTED }}>
+                  <ShieldIcon /> Verified by you
+                </span>
+              </div>
             </div>
 
-            {/* WOW Categories */}
             <div className="space-y-4" data-testid="wow-categories">
-              {renderWowFallback()}
+              {renderWowFields()}
             </div>
 
-            {/* Confirmation */}
             <div className="text-center pt-6">
               <p className="text-sm mb-6" style={{ color: MUTED }}>
                 Is this the foundation we should use for your intelligence memos?
@@ -467,8 +473,22 @@ const CalibrationAdvisor = () => {
                 style={{ background: CHARCOAL, color: '#FFFFFF' }}
                 data-testid="confirm-wow-btn"
               >
-                {isSubmitting ? 'Processing...' : 'Confirm & Continue'}
+                Confirm & Continue
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DISSOLVE TRANSITION ── */}
+      {transitioning && (
+        <div className="flex-1 flex items-center justify-center px-6" style={{ animation: 'fadeIn 0.8s ease' }}>
+          <div className="max-w-md text-center">
+            <p className="text-lg leading-relaxed" style={{ fontFamily: SERIF, color: CHARCOAL }}>
+              Thank you, {firstName || 'there'}. With your foundation verified, I now need to understand how you navigate high-stakes decisions.
+            </p>
+            <div className="mt-6">
+              <div className="w-5 h-5 border rounded-full animate-spin mx-auto" style={{ borderColor: CARD_BORDER, borderTopColor: GOLD }} />
             </div>
           </div>
         </div>
