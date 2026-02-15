@@ -215,7 +215,7 @@ OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
 
 # Initialize route dependencies — makes supabase_admin and OPENAI_KEY available to route modules
 from routes.deps import init_route_deps
-init_route_deps(supabase_admin, OPENAI_KEY)
+init_route_deps(supabase_admin, OPENAI_KEY, cognitive_core)
 
 # Initialize Prompt Registry — fetches prompts from Supabase system_prompts table
 from prompt_registry import init_prompt_registry
