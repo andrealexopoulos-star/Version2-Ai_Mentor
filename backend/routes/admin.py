@@ -163,8 +163,7 @@ async def get_prompt_detail(prompt_key: str, admin: dict = Depends(get_super_adm
 
 
 class PromptUpdateRequest(BaseModel):
-    raw_content: str
-    description: Optional[str] = None
+    content: str
     version: Optional[str] = None
 
 
@@ -174,22 +173,19 @@ async def update_prompt(prompt_key: str, payload: PromptUpdateRequest, admin: di
     sb = get_sb()
 
     # Fetch current version for audit trail
-    current = sb.table("system_prompts").select("raw_content, version").eq("prompt_key", prompt_key).maybe_single().execute()
+    current = sb.table("system_prompts").select("content, version").eq("prompt_key", prompt_key).maybe_single().execute()
     if not current or not current.data:
         raise HTTPException(status_code=404, detail=f"Prompt '{prompt_key}' not found")
 
-    old_content = current.data.get("raw_content", "")
+    old_content = current.data.get("content", "")
     old_version = current.data.get("version", "1.0")
     new_version = payload.version or old_version
 
-    # Update the prompt
     update_data = {
-        "raw_content": payload.raw_content,
+        "content": payload.content,
         "version": new_version,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
-    if payload.description is not None:
-        update_data["description"] = payload.description
 
     sb.table("system_prompts").update(update_data).eq("prompt_key", prompt_key).execute()
 
@@ -201,7 +197,7 @@ async def update_prompt(prompt_key: str, payload: PromptUpdateRequest, admin: di
             "old_version": old_version,
             "new_version": new_version,
             "old_content_preview": old_content[:200],
-            "new_content_preview": payload.raw_content[:200],
+            "new_content_preview": payload.content[:200],
             "changed_by": admin.get("id"),
             "changed_by_email": admin.get("email"),
             "changed_at": datetime.now(timezone.utc).isoformat(),
