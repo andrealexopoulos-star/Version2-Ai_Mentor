@@ -21,6 +21,41 @@ from supabase_remaining_helpers import (
 
 router = APIRouter()
 
+# ─── Models needed at module level for response_model= ───
+
+class InviteCreateRequest(BaseModel):
+    email: EmailStr
+    name: str
+    role: str = "member"
+
+class InviteAcceptRequest(BaseModel):
+    token: str
+    temp_password: str
+    new_password: str
+
+class InviteResponse(BaseModel):
+    invite_link: str
+    temp_password: str
+    expires_at: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    business_name: Optional[str] = None
+    industry: Optional[str] = None
+    role: str = "user"
+    subscription_tier: Optional[str] = None
+    is_master_account: Optional[bool] = False
+    is_admin: Optional[bool] = False
+    features: Optional[Dict[str, bool]] = None
+    created_at: str = ""
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
 # Import shared dependencies from server.py lazily to avoid circular imports
 def _get_deps():
     from server import (
