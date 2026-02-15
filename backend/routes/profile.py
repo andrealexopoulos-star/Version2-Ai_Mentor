@@ -1686,10 +1686,6 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
     }
 
 
-# ==================== ADMIN — Extracted to routes/admin.py ====================
-from routes.admin import router as admin_router
-api_router.include_router(admin_router)
-
 # ==================== DASHBOARD STATS ====================
 
 @router.get("/dashboard/stats")
