@@ -27,6 +27,49 @@ from supabase_remaining_helpers import (
 
 router = APIRouter()
 
+
+# ─── Models (mirrored from server.py) ───
+
+class ChatRequest(BaseModel):
+    message: str
+    context_type: Optional[str] = "general"
+    session_id: Optional[str] = None
+    trigger_source: Optional[str] = None
+    focus_area: Optional[str] = None
+    confidence_level: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    response: str
+    session_id: str
+
+class AnalysisCreate(BaseModel):
+    title: str
+    analysis_type: str
+    business_context: str
+    content: Optional[str] = None
+
+class AnalysisResponse(BaseModel):
+    id: str
+    analysis: str
+    insights: Optional[List[Dict[str, Any]]] = None
+    created_at: str
+
+class DocumentCreate(BaseModel):
+    title: str
+    document_type: str
+    content: str
+    tags: List[str] = []
+
+class DocumentResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    document_type: str
+    content: str
+    tags: List[str]
+    created_at: str
+    updated_at: str
+
 # Import these lazily to avoid circular imports
 def _get_ai_response():
     from core.ai_core import get_ai_response
