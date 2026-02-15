@@ -25,9 +25,10 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { apiClient } from '../lib/api';
-import { Users, BarChart3, FileText, MessageSquare, Trash2, Shield, User, Loader2 } from 'lucide-react';
+import { Users, BarChart3, FileText, MessageSquare, Trash2, Shield, User, Loader2, Zap } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { user } = useSupabaseAuth();
