@@ -839,60 +839,6 @@ async def handle_watchtower_event(
     return {
         "success": success
     }
-
-
-# ═══════════════════════════════════════════════════════════════
-# WATCHTOWER ENGINE V2 — Extracted to routes/watchtower.py
-# ═══════════════════════════════════════════════════════════════
-from routes.watchtower import router as watchtower_router
-api_router.include_router(watchtower_router)
-
-
-
-# ═══════════════════════════════════════════════════════════════
-# BOARD ROOM — Extracted to routes/boardroom.py
-# ═══════════════════════════════════════════════════════════════
-from routes.boardroom import router as boardroom_router
-api_router.include_router(boardroom_router)
-
-# ═══════════════════════════════════════════════════════════════
-# EMISSION, SNAPSHOT, BASELINE — Extracted to routes/intelligence.py
-# ═══════════════════════════════════════════════════════════════
-from routes.intelligence import router as intelligence_router
-api_router.include_router(intelligence_router)
-
-# ═══════════════════════════════════════════════════════════════
-# DEEP RESEARCH + INFERENCE ENGINE — routes/research.py
-# ═══════════════════════════════════════════════════════════════
-from routes.research import router as research_router
-api_router.include_router(research_router)
-
-# ═══════════════════════════════════════════════════════════════
-# MYSOUNDBOARD — Extracted to routes/soundboard.py
-# ═══════════════════════════════════════════════════════════════
-from routes.soundboard import router as soundboard_router
-api_router.include_router(soundboard_router)
-
-# ═══════════════════════════════════════════════════════════════
-# DATA CENTER — Extracted to routes/data_center.py
-# ═══════════════════════════════════════════════════════════════
-from routes.data_center import router as data_center_router
-api_router.include_router(data_center_router)
-
-# ═══════════════════════════════════════════════════════════════
-# CALIBRATION — Extracted to routes/calibration.py
-# ═══════════════════════════════════════════════════════════════
-from routes.calibration import router as calibration_router
-api_router.include_router(calibration_router)
-
-# ═══════════════════════════════════════════════════════════════
-# EMAIL & CALENDAR — Extracted to routes/email.py
-# ═══════════════════════════════════════════════════════════════
-from routes.email import router as email_router
-api_router.include_router(email_router)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
     pass  # MongoDB client removed — no cleanup needed
 
 
