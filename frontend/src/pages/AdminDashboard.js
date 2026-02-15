@@ -162,6 +162,29 @@ const AdminDashboard = () => {
             </Card>
           </div>
 
+          {/* Prompt Lab Quick-Access */}
+          <div
+            className="mb-8 rounded-xl p-5 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            onClick={() => navigate('/admin/prompt-lab')}
+            data-testid="prompt-lab-link"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: '#6366f1' }}>
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Prompt Lab</h3>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Manage AI personalities, test connections, and hot-swap prompts in real-time
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" className="gap-2">
+              <Zap className="w-4 h-4" /> Open Lab
+            </Button>
+          </div>
+
           {/* Tabs */}
           <Tabs defaultValue="users">
             <TabsList className="bg-[#f5f5f0] p-1 mb-6">
