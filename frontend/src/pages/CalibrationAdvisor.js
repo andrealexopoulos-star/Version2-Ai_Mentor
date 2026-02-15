@@ -290,6 +290,7 @@ const CalibrationAdvisor = () => {
   const handleWizardContinue = async () => {
     if (isSubmitting || !selectedOption) return;
     setError(null); setIsSubmitting(true);
+    setLastResponse(selectedOption);
 
     // Fade out current step
     setCalMode(null);
