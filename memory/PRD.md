@@ -5,38 +5,18 @@ Full-stack strategic advisor platform (React + FastAPI + Supabase) with "Gilded 
 
 ## Architecture (Post-Deconstruction — COMPLETE)
 - **Frontend**: React (CRA/CRACO) + Shadcn UI + Supabase Auth
-- **Backend**: FastAPI — server.py (1,839 lines) + AI Core (1,508 lines) + 15 route modules (8,216 lines)
-- **Database**: Supabase PostgreSQL (45 tables incl. system_prompts)
+- **Backend**: FastAPI — server.py (1,839 lines) + AI Core (1,508 lines) + 15 route modules
+- **Database**: Supabase PostgreSQL (46 tables incl. system_prompts + prompt_audit_logs)
 - **Prompt Registry**: 15/18 prompts DB-wired, 3 cache-lookup fallback
 - **RBAC**: 3-tier (super_admin, client_admin, user)
 
-## Route Synchronization Audit — VERIFIED
-
-### Frontend → Backend Route Map (52/52 verified)
-| Frontend Page | API Paths | Backend Module |
-|--------------|-----------|----------------|
-| AdvisorWatchtower | /executive-mirror | integrations.py |
-| CalibrationAdvisor | /calibration/status, /calibration/init | calibration.py |
-| MySoundBoard | /soundboard/conversations, /soundboard/chat | soundboard.py |
-| DataCenter | /data-center/files, /data-center/upload | data_center.py |
-| Integrations | /integrations/merge/*, /outlook/*, /gmail/* | email.py, integrations.py |
-| BusinessProfile | /business-profile, /business-profile/scores | profile.py |
-| Dashboard | /dashboard/stats, /dashboard/focus | profile.py |
-| SOPGenerator | /generate/sop, /generate/checklist | generation.py |
-| AdminDashboard | /admin/stats, /admin/users, /admin/prompts | admin.py |
-| OperatorDashboard | /watchtower/positions, /snapshot/latest | watchtower.py, intelligence.py |
-| OpsAdvisoryCentre | /oac/recommendations | profile.py |
-
-### RBAC Visibility
-- Admin menu: visible only for `admin` or `superadmin` roles
-- ProtectedRoute adminOnly: gated by `ADMIN_ROLES = ['admin', 'superadmin']`
-- Backend admin routes: `Depends(get_super_admin)` — strictly superadmin only
-- All standard routes: `Depends(get_current_user)` — any authenticated user
-
-### Zombie Status
-- Zero zombie file references in frontend code
-- 14 files archived in `/_backups/zombie_purge_Feb2026/`
-- MongoDB disabled in supervisor
+## Prompt Lab — COMPLETE
+- **Route**: `/admin/prompt-lab` (ProtectedRoute adminOnly)
+- **Backend**: 5 endpoints (GET list, GET detail, PUT update, POST test, POST invalidate)
+- **Features**: Searchable list, side-drawer editor, Save & Deploy (update → invalidate → audit log), Test Connection button per prompt
+- **RBAC**: All endpoints gated with `Depends(get_super_admin)`
+- **Audit**: Every edit logged to `prompt_audit_logs` table with old/new content preview
+- **Access**: Quick-access card on AdminDashboard
 
 ## Cumulative Test Results
 | Iteration | Tests | Passed | Phase |
@@ -46,7 +26,8 @@ Full-stack strategic advisor platform (React + FastAPI + Supabase) with "Gilded 
 | 28 | 51 | 51 | Final Cleanup |
 | 29 | 35 | 35 | Cognitive Migration |
 | 30 | 36 | 36 | Route Sync Audit |
-| **Total** | **175** | **175** | **100%** |
+| 31 | 9 | 9 | Prompt Lab |
+| **Total** | **184** | **184** | **100%** |
 
 ## Pending Issues
 - P0: Edge Function `calibration-psych` website_url (BLOCKED on user)
@@ -54,6 +35,6 @@ Full-stack strategic advisor platform (React + FastAPI + Supabase) with "Gilded 
 - P3: "No intelligence events yet" display bug
 
 ## Backlog
-- P2: Build "Prompt Lab" admin UI
+- P2: Run `012_prompt_audit_logs.sql` migration in Supabase
 - P3: Refactor CalibrationAdvisor.js (829 lines)
-- P3: Extract remaining server.py routes (auth/cognitive/onboarding) to ~500 lines
+- P3: Extract remaining server.py routes (auth/cognitive/onboarding)
