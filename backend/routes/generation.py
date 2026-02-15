@@ -10,6 +10,7 @@ import uuid
 import json
 
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
+from prompt_registry import get_prompt
 from supabase_intelligence_helpers import (
     create_chat_message_supabase, get_chat_history_supabase,
     create_analysis_supabase, get_user_analyses_supabase,
