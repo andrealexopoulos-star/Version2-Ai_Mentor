@@ -30,8 +30,9 @@ const LoginSupabase = () => {
     setLoading(true);
     try {
       await signIn(formData.email, formData.password);
+      // Do NOT navigate manually — PublicRoute detects authenticated state
+      // and redirects to /calibration or /advisor based on calibration status
       toast.success('Welcome back!');
-      navigate('/dashboard');
     } catch (error) {
       const errorMsg = error.message || 'Login failed. Please check your credentials.';
       toast.error(errorMsg);
