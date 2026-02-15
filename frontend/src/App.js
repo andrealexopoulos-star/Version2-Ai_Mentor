@@ -127,6 +127,7 @@ function AppRoutes() {
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><PromptLab /></ProtectedRoute>} />
 
       {/* Catch all - redirect to dashboard or landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
