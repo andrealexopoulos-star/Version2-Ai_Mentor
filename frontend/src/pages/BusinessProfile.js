@@ -30,7 +30,7 @@ const BusinessProfile = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({});
   const [scores, setScores] = useState({ completeness: 0, strength: 0 });
-  const [activeTab, setActiveTab] = useState('basics');
+  const [activeTab, setActiveTab] = useState('market');
   const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
   const saveTimerRef = useRef(null);
 
