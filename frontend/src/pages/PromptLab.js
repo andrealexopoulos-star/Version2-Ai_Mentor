@@ -73,7 +73,6 @@ export default function PromptLab() {
     try {
       await apiClient.put(`/admin/prompts/${selectedPrompt.prompt_key}`, {
         content: editContent,
-        description: editDescription,
         version: editVersion,
       });
       await apiClient.post('/admin/prompts/invalidate', {
