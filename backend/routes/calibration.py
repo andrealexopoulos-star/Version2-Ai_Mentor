@@ -21,7 +21,7 @@ from routes.deps import (
 )
 from supabase_client import safe_query_single
 from prompt_registry import get_prompt
-from auth_supabase import get_user_by_id, get_current_user_supabase
+from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import get_business_profile_supabase
 from regeneration_governance import request_regeneration, record_regeneration_response
 from fact_resolution import resolve_facts, build_known_facts_prompt
@@ -1154,12 +1154,12 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
 
 
 @router.post("/strategy/regeneration/request")
-async def queue_regeneration_request(payload: RegenerationRequestPayload, current_user: dict = Depends(get_current_user_supabase)):
+async def queue_regeneration_request(payload: RegenerationRequestPayload, current_user: dict = Depends(get_current_user)):
     return await request_regeneration(current_user["id"], payload.layer, payload.reason, supabase_admin)
 
 
 @router.post("/strategy/regeneration/response")
-async def handle_regeneration_response(payload: RegenerationResponsePayload, current_user: dict = Depends(get_current_user_supabase)):
+async def handle_regeneration_response(payload: RegenerationResponsePayload, current_user: dict = Depends(get_current_user)):
     action = payload.action.lower()
     if action not in {"accept", "refine", "keep"}:
         raise HTTPException(status_code=400, detail="Invalid response action")
