@@ -1,6 +1,6 @@
 """Onboarding, Invites, Website Enrichment, Business Profile Context Routes."""
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone, timedelta
 import uuid
@@ -20,6 +20,24 @@ from supabase_remaining_helpers import (
 )
 
 router = APIRouter()
+
+# Import shared dependencies from server.py lazily to avoid circular imports
+def _get_deps():
+    from server import (
+        require_owner_or_admin, get_current_account, get_email_domain,
+        hash_password, verify_password, create_token,
+        InviteResponse, TokenResponse, UserResponse,
+        InviteCreateRequest, InviteAcceptRequest,
+    )
+    return {
+        "require_owner_or_admin": require_owner_or_admin,
+        "get_current_account": get_current_account,
+        "get_email_domain": get_email_domain,
+        "hash_password": hash_password,
+        "verify_password": verify_password,
+        "create_token": create_token,
+    }
+
 
 
 # ==================== INVITES (ENTERPRISE ONLY) ====================
