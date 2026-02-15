@@ -18,6 +18,7 @@ from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, OPENAI_KEY, AI_MODEL, AI_MODEL_ADVANCED, cognitive_core, logger,
 )
+from routes.deps import get_admin_user
 from supabase_client import safe_query_single
 from prompt_registry import get_prompt
 from auth_supabase import get_user_by_id
