@@ -53,6 +53,13 @@ const CalibrationAdvisor = () => {
   const [editingKey, setEditingKey] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  // Executive Reveal (completion transition)
+  const [completing, setCompleting] = useState(false);
+  const [revealPhase, setRevealPhase] = useState(0);
+
+  // Last user response (for acknowledgment copy)
+  const [lastResponse, setLastResponse] = useState("");
   const [editValue, setEditValue] = useState("");
 
   // Transition state
