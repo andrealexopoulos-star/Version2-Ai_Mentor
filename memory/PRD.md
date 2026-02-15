@@ -7,59 +7,53 @@ Full-stack strategic advisor platform (React + FastAPI + Supabase) with "Gilded 
 - **Frontend**: React (CRA/CRACO) + Shadcn UI + Supabase Auth
 - **Backend**: FastAPI — server.py (1,839 lines) + AI Core (1,508 lines) + 15 route modules (8,216 lines)
 - **Database**: Supabase PostgreSQL (45 tables incl. system_prompts)
-- **Prompt Registry**: 15/18 prompts DB-wired via `get_prompt()`, 3 with cache-lookup fallback
-- **RBAC**: super_admin (admin routes), client_admin (profile management), get_current_user (all routes)
+- **Prompt Registry**: 15/18 prompts DB-wired, 3 cache-lookup fallback
+- **RBAC**: 3-tier (super_admin, client_admin, user)
 
-## Monolith Deconstruction — 100% COMPLETE
+## Route Synchronization Audit — VERIFIED
 
-### Final Metrics
-| Metric | Original | Final |
-|--------|----------|-------|
-| server.py | 10,218 lines | **1,839 lines** (-82%) |
-| Route modules | 0 | **15** |
-| AI Core | inline | **core/ai_core.py** (1,508 lines) |
-| Prompts | 18 hardcoded | **15 DB-wired + 3 cache-fallback** |
-| RBAC gates | 0 | **3 tiers** (super_admin, client_admin, user) |
-| Unprotected endpoints | 5 | **0** |
-| MongoDB | Running | **Disabled** |
-| Zombie files | 14 in repo | **14 archived** |
+### Frontend → Backend Route Map (52/52 verified)
+| Frontend Page | API Paths | Backend Module |
+|--------------|-----------|----------------|
+| AdvisorWatchtower | /executive-mirror | integrations.py |
+| CalibrationAdvisor | /calibration/status, /calibration/init | calibration.py |
+| MySoundBoard | /soundboard/conversations, /soundboard/chat | soundboard.py |
+| DataCenter | /data-center/files, /data-center/upload | data_center.py |
+| Integrations | /integrations/merge/*, /outlook/*, /gmail/* | email.py, integrations.py |
+| BusinessProfile | /business-profile, /business-profile/scores | profile.py |
+| Dashboard | /dashboard/stats, /dashboard/focus | profile.py |
+| SOPGenerator | /generate/sop, /generate/checklist | generation.py |
+| AdminDashboard | /admin/stats, /admin/users, /admin/prompts | admin.py |
+| OperatorDashboard | /watchtower/positions, /snapshot/latest | watchtower.py, intelligence.py |
+| OpsAdvisoryCentre | /oac/recommendations | profile.py |
 
-### Prompt Registry — 18/18 Wired
-| # | Prompt Key | Via | Module |
-|---|------------|-----|--------|
-| 1 | biqc_constitution_v1 | get_prompt() | core/ai_core.py |
-| 2 | myadvisor_general_v1 | get_prompt() | core/ai_core.py |
-| 3 | myadvisor_proactive_v1 | get_prompt() | core/ai_core.py |
-| 4 | myintel_signal_v1 | get_prompt() | core/ai_core.py |
-| 5 | chief_strategy_base_v1 | get_prompt() | core/ai_core.py |
-| 6 | watchtower_brain_v1 | get_prompt() | routes/calibration.py |
-| 7 | mysoundboard_v1 | get_prompt() | routes/soundboard.py |
-| 8 | calibration_voice_response_v1 | get_prompt() | routes/calibration.py |
-| 9 | calibration_activation_v1 | get_prompt() | routes/calibration.py |
-| 10 | email_priority_analysis_v1 | get_prompt() | routes/email.py |
-| 11 | email_reply_generator_v1 | get_prompt() | routes/email.py |
-| 12 | profile_autofill_v1 | get_prompt() | routes/profile.py |
-| 13 | profile_build_v1 | get_prompt() | routes/profile.py |
-| 14 | elite_mentor_v1 | get_prompt() | routes/profile.py |
-| 15 | oac_recommendations_v1 | get_prompt() | routes/profile.py |
-| 16 | boardroom_identity_v1 | cache lookup | boardroom_prompt.py |
-| 17 | sop_generator_v1 | inline fallback | routes/generation.py |
-| 18 | cognitive_context_fallback_v1 | inline fallback | core/ai_core.py |
+### RBAC Visibility
+- Admin menu: visible only for `admin` or `superadmin` roles
+- ProtectedRoute adminOnly: gated by `ADMIN_ROLES = ['admin', 'superadmin']`
+- Backend admin routes: `Depends(get_super_admin)` — strictly superadmin only
+- All standard routes: `Depends(get_current_user)` — any authenticated user
 
-### RBAC Tiers
-| Tier | Gate | Used By |
-|------|------|---------|
-| super_admin | `Depends(get_super_admin)` | admin routes, subscription management |
-| client_admin | `Depends(get_client_admin)` | owner/admin/client_admin role gating |
-| user | `Depends(get_current_user)` | all standard routes |
+### Zombie Status
+- Zero zombie file references in frontend code
+- 14 files archived in `/_backups/zombie_purge_Feb2026/`
+- MongoDB disabled in supervisor
+
+## Cumulative Test Results
+| Iteration | Tests | Passed | Phase |
+|-----------|-------|--------|-------|
+| 26 | 14 | 14 | Security P0 |
+| 27 | 39 | 39 | Phase 2 Extraction |
+| 28 | 51 | 51 | Final Cleanup |
+| 29 | 35 | 35 | Cognitive Migration |
+| 30 | 36 | 36 | Route Sync Audit |
+| **Total** | **175** | **175** | **100%** |
 
 ## Pending Issues
-- P0: Edge Function `calibration-psych` website_url support (BLOCKED on user)
+- P0: Edge Function `calibration-psych` website_url (BLOCKED on user)
 - P1: Missing `abn`/`years_operating` Supabase columns (BLOCKED on user)
 - P3: "No intelligence events yet" display bug
-- P4: Performance lag on data-heavy pages
 
 ## Backlog
-- P2: Build "Prompt Lab" admin UI for live prompt A/B testing
-- P3: Refactor CalibrationAdvisor.js frontend (829 lines)
-- P3: Extract remaining server.py auth/cognitive/onboarding routes (1,839 lines → ~500 lines)
+- P2: Build "Prompt Lab" admin UI
+- P3: Refactor CalibrationAdvisor.js (829 lines)
+- P3: Extract remaining server.py routes (auth/cognitive/onboarding) to ~500 lines
