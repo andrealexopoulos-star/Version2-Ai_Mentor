@@ -49,6 +49,7 @@ import WarRoomConsole from './components/WarRoomConsole';
 import BoardRoom from './components/BoardRoom';
 import IntelligenceBaseline from './pages/IntelligenceBaseline';
 import OperatorDashboard from './pages/OperatorDashboard';
+import PromptLab from './pages/PromptLab';
 
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
