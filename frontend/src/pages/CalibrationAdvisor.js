@@ -456,9 +456,31 @@ const CalibrationAdvisor = () => {
       ));
   };
 
+  const userEmail = user?.email || session?.user?.email || '';
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: CREAM }} data-testid="calibration-page">
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
+      {/* ── IDENTITY BAR — Authenticated session indicator ── */}
+      {entry !== "loading" && user && (
+        <div className="flex items-center justify-between px-5 py-2.5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} data-testid="identity-bar">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />
+            <span className="text-xs" style={{ color: MUTED }}>
+              Signed in as <span style={{ color: CHARCOAL }}>{userEmail}</span>
+            </span>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="text-xs px-3 py-1 rounded-full transition-colors"
+            style={{ color: MUTED, border: `1px solid ${CARD_BORDER}` }}
+            data-testid="sign-out-btn"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
 
       {/* LOADING */}
       {entry === "loading" && (
