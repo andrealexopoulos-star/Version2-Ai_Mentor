@@ -883,6 +883,18 @@ def require_owner_or_admin(current_user: dict = Depends(get_current_user)):
 # (get_ai_response, get_system_prompt, build_cognitive_context_for_prompt, etc.)
 from core.ai_core import get_ai_response, get_system_prompt, get_business_context, build_business_knowledge_context
 
+# ═══ VOICE CHAT (REALTIME) ═══
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+voice_chat = None
+voice_router = APIRouter()
+if OPENAI_API_KEY:
+    try:
+        voice_chat = OpenAIChatRealtime(api_key=OPENAI_API_KEY)
+        OpenAIChatRealtime.register_openai_realtime_router(voice_router, voice_chat)
+        logger.info("Voice chat initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize voice chat: {e}")
+
 # ==================== AUTH ROUTES ====================
 
 # ==================== SUPABASE AUTH ROUTES (NEW) ====================
