@@ -102,6 +102,7 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
     communication_style = profile.get("advice_style", "conversational")
     
     # Enhanced prompt with business context
+    from routes.profile import format_advisor_brain_prompt
     enhanced_message = await format_advisor_brain_prompt(
         f"User message: {request.message}\n\nProvide a personalized, specific response that references their business situation. Ask clarifying questions if needed.",
         context,
