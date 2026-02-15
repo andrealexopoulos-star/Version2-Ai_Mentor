@@ -224,6 +224,47 @@ const Settings = () => {
                   </div>
 
                   <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
+                    <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Business Profile</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Business Name</Label>
+                          <Input value={profile.business_name || ''} onChange={(e) => updateProfile('business_name', e.target.value)} placeholder="Your Company Name" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label>Industry</Label>
+                          <Input value={profile.industry || ''} onChange={(e) => updateProfile('industry', e.target.value)} placeholder="e.g., Technology" className="mt-1" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>ABN</Label>
+                          <Input value={profile.abn || ''} onChange={(e) => updateProfile('abn', e.target.value)} placeholder="12 345 678 901" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label>Location</Label>
+                          <Input value={profile.location || ''} onChange={(e) => updateProfile('location', e.target.value)} placeholder="City, State" className="mt-1" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Website</Label>
+                          <Input value={profile.website || ''} onChange={(e) => updateProfile('website', e.target.value)} placeholder="www.company.com" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label>Years Operating</Label>
+                          <Input value={profile.years_operating || ''} onChange={(e) => updateProfile('years_operating', e.target.value)} placeholder="e.g., 2-5 years" className="mt-1" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        <Button onClick={handleSaveProfile} variant="outline" size="sm" disabled={saving}>
+                          {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />} Save
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
                     <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Account Details</h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
