@@ -41,6 +41,52 @@ from supabase_email_helpers import count_user_emails_supabase
 router = APIRouter()
 
 
+# ─── Models needed by profile routes ───
+
+class BusinessProfileAutofillRequest(BaseModel):
+    business_name: Optional[str] = None
+    abn: Optional[str] = None
+    website_url: Optional[str] = None
+    data_file_ids: Optional[List[str]] = None
+
+class BusinessProfileAutofillResponse(BaseModel):
+    patch: Dict[str, Any]
+    missing_fields: List[str]
+    sources: Dict[str, Any]
+
+class BusinessProfileUpdate(BaseModel):
+    business_name: Optional[str] = None
+    industry: Optional[str] = None
+    business_type: Optional[str] = None
+    business_stage: Optional[str] = None
+    year_founded: Optional[int] = None
+    website: Optional[str] = None
+    location: Optional[str] = None
+    abn: Optional[str] = None
+    acn: Optional[str] = None
+    target_market: Optional[str] = None
+    target_country: Optional[str] = None
+    ideal_customer_profile: Optional[str] = None
+    main_products_services: Optional[str] = None
+    unique_value_proposition: Optional[str] = None
+    employee_count: Optional[str] = None
+    annual_revenue: Optional[str] = None
+    business_model: Optional[str] = None
+    mission_statement: Optional[str] = None
+    vision_statement: Optional[str] = None
+    short_term_goals: Optional[str] = None
+    long_term_goals: Optional[str] = None
+    main_challenges: Optional[str] = None
+    growth_strategy: Optional[str] = None
+    retention_known: Optional[bool] = None
+    retention_rate_range: Optional[str] = None
+    retention_rag: Optional[str] = None
+    founder_background: Optional[str] = None
+    team_size: Optional[str] = None
+    years_operating: Optional[str] = None
+    products_services: Optional[str] = None
+
+
 # ==================== BUSINESS PROFILE ROUTES ====================
 
 @router.get("/business-profile")
