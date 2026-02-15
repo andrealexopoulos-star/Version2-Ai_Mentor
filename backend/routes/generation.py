@@ -81,7 +81,7 @@ def _build_advisor_context():
     return build_advisor_context
 
 def _format_advisor_brain_prompt():
-    from server import format_advisor_brain_prompt
+    from routes.profile import format_advisor_brain_prompt
     return format_advisor_brain_prompt
 
 
@@ -102,7 +102,7 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
     communication_style = profile.get("advice_style", "conversational")
     
     # Enhanced prompt with business context
-    enhanced_message = format_advisor_brain_prompt(
+    enhanced_message = await format_advisor_brain_prompt(
         f"User message: {request.message}\n\nProvide a personalized, specific response that references their business situation. Ask clarifying questions if needed.",
         context,
         "chat",
@@ -223,8 +223,8 @@ Each insight MUST include:
 
 Be specific to their situation. Reference actual business details."""
 
-    from server import format_advisor_brain_prompt
-    prompt = format_advisor_brain_prompt(task_prompt, context, "analysis", communication_style)
+    from routes.profile import format_advisor_brain_prompt
+    prompt = await format_advisor_brain_prompt(task_prompt, context, "analysis", communication_style)
     
     session_id = f"analysis_{uuid.uuid4()}"
     ai_response = await get_ai_response(
@@ -403,8 +403,8 @@ Include:
 
 Format using clear markdown with headers and numbered lists."""
 
-    from server import format_advisor_brain_prompt
-    prompt = format_advisor_brain_prompt(task_prompt, context, "sop", communication_style)
+    from routes.profile import format_advisor_brain_prompt
+    prompt = await format_advisor_brain_prompt(task_prompt, context, "sop", communication_style)
     
     session_id = f"sop_{uuid.uuid4()}"
     from core.ai_core import get_ai_response
@@ -452,8 +452,8 @@ Industry: {industry}
 Provide: title, categorized items, priority indicators, time estimates, dependencies, success criteria.
 Make it industry-specific and actionable."""
 
-    from server import format_advisor_brain_prompt
-    prompt = format_advisor_brain_prompt(task, context, "checklist")
+    from routes.profile import format_advisor_brain_prompt
+    prompt = await format_advisor_brain_prompt(task, context, "checklist")
     session_id = f"checklist_{uuid.uuid4()}"
     from core.ai_core import get_ai_response
     response = await get_ai_response(prompt, "sop_generator", session_id, user_id=user_id, use_advanced=True)
@@ -482,8 +482,8 @@ Provide: executive summary, SMART goals, milestones, activities, resource alloca
 risk assessment, success metrics, review checkpoints, contingency plans, quick wins.
 Make it specific to their industry and realistic."""
 
-    from server import format_advisor_brain_prompt
-    prompt = format_advisor_brain_prompt(task, context, "action_plan")
+    from routes.profile import format_advisor_brain_prompt
+    prompt = await format_advisor_brain_prompt(task, context, "action_plan")
     session_id = f"action_plan_{uuid.uuid4()}"
     from core.ai_core import get_ai_response
     response = await get_ai_response(prompt, "business_analysis", session_id, user_id=user_id, use_advanced=True)
@@ -519,8 +519,8 @@ Symptoms/Issues:
 Provide 3-5 diagnostic insights with root causes and solutions.
 Each insight must include Why explanation, Confidence level, Actions, and Citations."""
     
-    from server import format_advisor_brain_prompt
-    prompt = format_advisor_brain_prompt(task_prompt, context, "diagnosis", communication_style)
+    from routes.profile import format_advisor_brain_prompt
+    prompt = await format_advisor_brain_prompt(task_prompt, context, "diagnosis", communication_style)
     
     session_id = f"diagnosis_{uuid.uuid4()}"
     response_text = await get_ai_response(
