@@ -31,6 +31,12 @@ from supabase_drive_helpers import (
 router = APIRouter()
 
 
+# ─── Models ───
+
+class MergeLinkTokenRequest(BaseModel):
+    categories: Optional[List[str]] = None
+
+
 # ==================== MERGE.DEV INTEGRATION ====================
 
 @router.post("/integrations/merge/link-token")
