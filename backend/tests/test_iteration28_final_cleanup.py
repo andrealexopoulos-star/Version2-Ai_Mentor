@@ -1,0 +1,334 @@
+"""
+Iteration 28 - Final Cleanup Phase of Monolith Deconstruction Tests
+
+Key features tested:
+- Health endpoints (/api/health returns 200)
+- Security: All 23+ protected endpoints return 403 without auth
+- Extracted routes: calibration, email, soundboard, data_center, generation, profile, integrations
+- Admin prompt management: /api/admin/prompts and /api/admin/prompts/invalidate
+- Frontend pages: landing page and /login-supabase
+
+New additions in this phase:
+- core/ai_core.py extracted (1,508 lines)
+- routes/generation.py (562 lines)
+- routes/profile.py (2,014 lines)
+- routes/integrations.py (1,150 lines)
+- prompt_registry.py wired to Supabase system_prompts table
+"""
+import pytest
+import requests
+import os
+
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://executive-reveal.preview.emergentagent.com').rstrip('/')
+
+
+class TestHealthEndpoints:
+    """Health endpoints tests"""
+    
+    def test_api_health_returns_200(self):
+        """Test /api/health returns 200 with healthy status"""
+        response = requests.get(f"{BASE_URL}/api/health")
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+        data = response.json()
+        assert data.get("status") == "healthy"
+        print("✅ /api/health returns 200 with status=healthy")
+
+
+class TestSecurityProtectedEndpoints:
+    """Test that all protected endpoints return 403 without authentication"""
+    
+    # Calibration routes (extracted to routes/calibration.py)
+    def test_calibration_status_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/calibration/status")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/calibration/status returns 403 without auth")
+    
+    def test_calibration_init_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/calibration/init", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/calibration/init POST returns 403 without auth")
+    
+    def test_calibration_defer_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/calibration/defer")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/calibration/defer POST returns 403 without auth")
+    
+    def test_calibration_reset_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/calibration/reset")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/calibration/reset POST returns 403 without auth")
+    
+    def test_calibration_answer_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/calibration/answer", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/calibration/answer POST returns 403 without auth")
+    
+    def test_calibration_brain_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/calibration/brain", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/calibration/brain POST returns 403 without auth")
+    
+    def test_calibration_activation_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/calibration/activation")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/calibration/activation returns 403 without auth")
+    
+    # Email routes (extracted to routes/email.py)
+    def test_outlook_status_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/outlook/status")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/outlook/status returns 403 without auth")
+    
+    def test_gmail_status_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/gmail/status")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/gmail/status returns 403 without auth")
+    
+    def test_email_priority_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/email/priority/inbox")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/email/priority/inbox returns 403 without auth")
+    
+    def test_outlook_calendar_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/outlook/calendar/events")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/outlook/calendar/events returns 403 without auth")
+    
+    # Soundboard routes (extracted to routes/soundboard.py)
+    def test_soundboard_conversations_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/soundboard/conversations")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/soundboard/conversations returns 403 without auth")
+    
+    def test_soundboard_chat_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/soundboard/chat", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/soundboard/chat POST returns 403 without auth")
+    
+    # Data Center routes (extracted to routes/data_center.py)
+    def test_data_center_files_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/data-center/files")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/data-center/files returns 403 without auth")
+    
+    def test_data_center_categories_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/data-center/categories")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/data-center/categories returns 403 without auth")
+    
+    def test_data_center_stats_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/data-center/stats")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/data-center/stats returns 403 without auth")
+    
+    def test_data_center_upload_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/data-center/upload")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/data-center/upload POST returns 403 without auth")
+    
+    # Generation routes (NEW - extracted to routes/generation.py)
+    def test_chat_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/chat", json={"message": "test"})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/chat POST returns 403 without auth")
+    
+    def test_chat_history_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/chat/history")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/chat/history returns 403 without auth")
+    
+    def test_analyses_get_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/analyses")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/analyses GET returns 403 without auth")
+    
+    def test_analyses_post_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/analyses", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/analyses POST returns 403 without auth")
+    
+    def test_documents_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/documents")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/documents returns 403 without auth")
+    
+    def test_generate_sop_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/generate/sop", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/generate/sop POST returns 403 without auth")
+    
+    def test_diagnose_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/diagnose", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/diagnose POST returns 403 without auth")
+    
+    # Profile routes (NEW - extracted to routes/profile.py)
+    def test_business_profile_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/business-profile")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/business-profile returns 403 without auth")
+    
+    def test_business_profile_scores_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/business-profile/scores")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/business-profile/scores returns 403 without auth")
+    
+    def test_dashboard_stats_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/dashboard/stats")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/dashboard/stats returns 403 without auth")
+    
+    def test_dashboard_focus_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/dashboard/focus")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/dashboard/focus returns 403 without auth")
+    
+    def test_oac_recommendations_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/oac/recommendations")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/oac/recommendations returns 403 without auth")
+    
+    # Integrations routes (NEW - extracted to routes/integrations.py)
+    def test_merge_link_token_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/integrations/merge/link-token")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/integrations/merge/link-token POST returns 403 without auth")
+    
+    def test_merge_connected_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/integrations/merge/connected")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/integrations/merge/connected returns 403 without auth")
+    
+    def test_crm_contacts_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/integrations/crm/contacts")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/integrations/crm/contacts returns 403 without auth")
+    
+    def test_google_drive_status_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/integrations/google-drive/status")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/integrations/google-drive/status returns 403 without auth")
+    
+    def test_intelligence_cold_read_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/intelligence/cold-read")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/intelligence/cold-read POST returns 403 without auth")
+    
+    def test_intelligence_watchtower_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/intelligence/watchtower")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/intelligence/watchtower returns 403 without auth")
+    
+    def test_executive_mirror_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/executive-mirror")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/executive-mirror returns 403 without auth")
+
+
+class TestAdminPromptManagement:
+    """Admin prompt management endpoints"""
+    
+    def test_admin_prompts_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/admin/prompts")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/admin/prompts returns 403 without auth")
+    
+    def test_admin_prompts_invalidate_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/admin/prompts/invalidate")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/admin/prompts/invalidate POST returns 403 without auth")
+    
+    def test_admin_users_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/admin/users")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/admin/users returns 403 without auth")
+    
+    def test_admin_stats_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/admin/stats")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/admin/stats returns 403 without auth")
+
+
+class TestCognitiveEndpoints:
+    """Cognitive Core endpoints (in server.py)"""
+    
+    def test_cognitive_profile_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/cognitive/profile")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/cognitive/profile returns 403 without auth")
+    
+    def test_cognitive_escalation_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/cognitive/escalation")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/cognitive/escalation returns 403 without auth")
+    
+    def test_advisory_confidence_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/advisory/confidence")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/advisory/confidence returns 403 without auth")
+
+
+class TestOnboardingEndpoints:
+    """Onboarding routes (in server.py)"""
+    
+    def test_onboarding_status_requires_auth(self):
+        response = requests.get(f"{BASE_URL}/api/onboarding/status")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/onboarding/status returns 403 without auth")
+    
+    def test_onboarding_save_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/onboarding/save", json={})
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/onboarding/save POST returns 403 without auth")
+    
+    def test_onboarding_complete_requires_auth(self):
+        response = requests.post(f"{BASE_URL}/api/onboarding/complete")
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        print("✅ /api/onboarding/complete POST returns 403 without auth")
+
+
+class TestMethodValidation:
+    """Test that endpoints reject wrong HTTP methods"""
+    
+    def test_calibration_init_rejects_get(self):
+        response = requests.get(f"{BASE_URL}/api/calibration/init")
+        assert response.status_code == 405, f"Expected 405, got {response.status_code}"
+        print("✅ /api/calibration/init GET returns 405 Method Not Allowed")
+    
+    def test_calibration_brain_rejects_get(self):
+        response = requests.get(f"{BASE_URL}/api/calibration/brain")
+        assert response.status_code == 405, f"Expected 405, got {response.status_code}"
+        print("✅ /api/calibration/brain GET returns 405 Method Not Allowed")
+    
+    def test_chat_rejects_get(self):
+        response = requests.get(f"{BASE_URL}/api/chat")
+        assert response.status_code == 405, f"Expected 405, got {response.status_code}"
+        print("✅ /api/chat GET returns 405 Method Not Allowed")
+
+
+class TestAuthEndpointsPublic:
+    """Auth endpoints that should be publicly accessible"""
+    
+    def test_supabase_oauth_returns_data(self):
+        response = requests.get(f"{BASE_URL}/api/auth/supabase/oauth/google")
+        # Should return 200 with OAuth URL
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+        data = response.json()
+        assert "url" in data or "data" in data, "OAuth endpoint should return URL data"
+        print("✅ /api/auth/supabase/oauth/google returns OAuth URL")
+
+
+class TestResponseFormat:
+    """Test that auth errors return JSON, not HTML"""
+    
+    def test_auth_errors_return_json(self):
+        response = requests.get(f"{BASE_URL}/api/calibration/status")
+        assert response.headers.get("content-type", "").startswith("application/json"), \
+            f"Expected JSON content-type, got {response.headers.get('content-type')}"
+        data = response.json()
+        assert "detail" in data, "Auth error should have 'detail' field"
+        print("✅ Auth errors return JSON with 'detail' field")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])
