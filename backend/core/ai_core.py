@@ -273,6 +273,10 @@ You have access to detailed information about this business. Use this knowledge 
     # MENTOR MODE for MyAdvisor/general context - Now Chief Business Advisor
     # Agent Constitution: OUTPUT SHAPE = Situation → Decision → Immediate next step
     if context_type == "general" or context_type == "mentor" or context_type == "advisor":
+        # Try DB prompt first, fall back to hardcoded
+        db_prompt = await get_prompt("myadvisor_general_v1")
+        if db_prompt:
+            return f"""{constitution}\n\n{db_prompt}\n\nCONTEXT:\n{user_context}\n{knowledge_context}"""
         return f"""{constitution}
 
 You are MyAdvisor.
