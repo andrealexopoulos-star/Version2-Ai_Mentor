@@ -32,6 +32,7 @@ import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { user } = useSupabaseAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
