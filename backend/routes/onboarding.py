@@ -1,0 +1,540 @@
+"""Onboarding, Invites, Website Enrichment, Business Profile Context Routes."""
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone, timedelta
+import uuid
+import re
+import httpx
+import logging
+
+from routes.deps import get_current_user, get_sb, logger
+from supabase_client import safe_query_single
+from auth_supabase import get_user_by_id
+from supabase_intelligence_helpers import (
+    get_business_profile_supabase, update_business_profile_supabase,
+)
+from supabase_remaining_helpers import (
+    get_onboarding_supabase, update_onboarding_supabase,
+    create_invite_supabase, get_invite_supabase, delete_invite_supabase,
+)
+
+router = APIRouter()
+
+
+# ==================== INVITES (ENTERPRISE ONLY) ====================
+
+def tier_allows_seats(account: dict) -> bool:
+    # Per your instruction: only Enterprise can create users
+    return (account.get("subscription_tier") or "").lower() == "enterprise"
+
+
+def generate_temp_password() -> str:
+    # Simple temp password (shown once)
+    return f"Temp!{uuid.uuid4().hex[:10]}"
+
+
+@router.post("/account/users/invite", response_model=InviteResponse)
+async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(require_owner_or_admin), account: dict = Depends(get_current_account)):
+    if not tier_allows_seats(account):
+        raise HTTPException(status_code=403, detail="User seats are available on Enterprise only")
+
+    # Enforce same-domain (enterprise policy)
+    owner_domain = get_email_domain(account.get("email"))
+    invite_domain = get_email_domain(req.email)
+    if owner_domain and invite_domain and owner_domain != invite_domain:
+        raise HTTPException(status_code=400, detail="Invited user must use the same email domain as the account")
+
+    # Check if email already exists in Supabase (MongoDB removed)
+    try:
+        existing_user = get_sb().table("users").select("id, email").eq("email", req.email.lower().strip()).execute()
+        if existing_user.data and len(existing_user.data) > 0:
+            raise HTTPException(status_code=400, detail="Email already exists")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking existing user: {e}")
+        # Continue - allow creation attempt
+
+    now = datetime.now(timezone.utc)
+    token = uuid.uuid4().hex
+    temp_password = generate_temp_password()
+
+    invite = {
+        "id": str(uuid.uuid4()),
+        "account_id": account["id"],
+        "email": req.email.lower().strip(),
+        "name": req.name,
+        "role": req.role if req.role in {"member", "admin"} else "member",
+        "token": token,
+        "temp_password_hash": hash_password(temp_password),
+        "expires_at": (now + timedelta(days=7)).isoformat(),
+        "created_at": now.isoformat(),
+    }
+    await create_invite_supabase(get_sb(), invite)
+
+    invite_link = f"/invite/accept?token={token}"
+    return InviteResponse(invite_link=invite_link, temp_password=temp_password, expires_at=invite["expires_at"])
+
+
+@router.post("/account/users/accept", response_model=TokenResponse)
+async def accept_invite(req: InviteAcceptRequest):
+    invite = await get_invite_supabase(get_sb(), req.token)
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invite not found")
+
+    now = datetime.now(timezone.utc)
+    try:
+        exp = datetime.fromisoformat(invite["expires_at"])
+        if exp < now:
+            raise HTTPException(status_code=400, detail="Invite expired")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invite expired")
+
+    if not verify_password(req.temp_password, invite["temp_password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid temporary password")
+
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    user_id = str(uuid.uuid4())
+    created_at = now.isoformat()
+    user_doc = {
+        "id": user_id,
+        "email": invite["email"],
+        "password": hash_password(req.new_password),
+        "name": invite.get("name") or "User",
+        "business_name": None,
+        "industry": None,
+        "subscription_tier": "free",
+        "subscription_started_at": created_at,
+        "role": invite.get("role") or "member",
+        "account_id": invite["account_id"],
+        "is_active": True,
+        "created_at": created_at,
+        "updated_at": created_at,
+        "auth_provider": "invite",
+    }
+
+    user_profile = {
+        "id": user_id,
+        "email": invite["email"],
+        "full_name": invite.get("name") or "User",
+        "company_name": None,
+        "industry": None,
+        "role": invite.get("role") or "member",
+        "subscription_tier": "free",
+        "subscription_started_at": created_at,
+        "account_id": invite["account_id"],
+        "is_master_account": False,
+        "created_at": created_at,
+        "updated_at": created_at
+    }
+
+    insert_result = get_sb().table("users").insert(user_profile).execute()
+    if not insert_result.data:
+        raise HTTPException(status_code=500, detail="Failed to create user profile")
+
+    # Consume invite
+    await delete_invite_supabase(get_sb(), invite["token"])
+
+    access_token = create_token(user_id, user_doc["email"], user_doc["role"], account_id=user_doc.get("account_id"))
+    return TokenResponse(
+        access_token=access_token,
+        user=UserResponse(
+            id=user_id,
+            email=user_doc["email"],
+            name=user_doc["name"],
+            business_name=None,
+            industry=None,
+            role=user_doc["role"],
+            subscription_tier=user_doc.get("subscription_tier"),
+            created_at=user_doc["created_at"],
+        ),
+    )
+
+# ==================== ONBOARDING MODELS ====================
+
+class OnboardingSave(BaseModel):
+    current_step: int
+    business_stage: Optional[str] = None
+    data: Dict[str, Any]
+    completed: bool = False
+
+class OnboardingStatusResponse(BaseModel):
+    completed: bool
+    current_step: Optional[int] = None
+    business_stage: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None
+
+# ==================== ONBOARDING ROUTES ====================
+
+async def _read_onboarding_state(user_id: str) -> dict:
+    """Read onboarding state from user_operator_profile.operator_profile.onboarding_state (authoritative).
+    Falls back to onboarding table for migration, then writes back to user_operator_profile."""
+    # PRIMARY: Read from user_operator_profile
+    try:
+        op_result = get_sb().table("user_operator_profile").select(
+            "operator_profile"
+        ).eq("user_id", user_id).maybe_single().execute()
+        
+        if op_result.data:
+            op = op_result.data.get("operator_profile") or {}
+            ob_state = op.get("onboarding_state")
+            if ob_state is not None:
+                return ob_state
+    except Exception as e:
+        logger.warning(f"[onboarding] user_operator_profile read failed: {e}")
+    
+    # FALLBACK: Read from legacy onboarding table, then migrate
+    onboarding = await get_onboarding_supabase(get_sb(), user_id)
+    if onboarding:
+        state = {
+            "completed": onboarding.get("completed", False),
+            "current_step": onboarding.get("current_step", 0),
+            "business_stage": onboarding.get("business_stage"),
+            "data": onboarding.get("onboarding_data", {})
+        }
+        # Migrate to user_operator_profile
+        await _write_onboarding_state(user_id, state)
+        return state
+    
+    return None
+
+
+async def _write_onboarding_state(user_id: str, state: dict):
+    """Write onboarding state to user_operator_profile.operator_profile.onboarding_state."""
+    try:
+        op_result = get_sb().table("user_operator_profile").select(
+            "operator_profile"
+        ).eq("user_id", user_id).maybe_single().execute()
+        
+        if op_result.data:
+            existing_op = op_result.data.get("operator_profile") or {}
+            existing_op["onboarding_state"] = state
+            get_sb().table("user_operator_profile").update({
+                "operator_profile": existing_op,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }).eq("user_id", user_id).execute()
+        else:
+            get_sb().table("user_operator_profile").insert({
+                "user_id": user_id,
+                "operator_profile": {"onboarding_state": state},
+                "persona_calibration_status": "incomplete"
+            }).execute()
+    except Exception as e:
+        logger.error(f"[onboarding] user_operator_profile write failed: {e}")
+    
+    # Also keep onboarding table in sync for backward compat
+    try:
+        await update_onboarding_supabase(get_sb(), user_id, {
+            "current_step": state.get("current_step", 0),
+            "business_stage": state.get("business_stage"),
+            "onboarding_data": state.get("data", {}),
+            "completed": state.get("completed", False)
+        })
+    except Exception:
+        pass
+
+
+@router.get("/onboarding/status", response_model=OnboardingStatusResponse)
+async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
+    """Check if user has completed onboarding.
+    Authoritative source: user_operator_profile.operator_profile.onboarding_state
+    No auto-complete. No heuristics."""
+    user_id = current_user["id"]
+    
+    state = await _read_onboarding_state(user_id)
+    
+    if not state:
+        return OnboardingStatusResponse(
+            completed=False,
+            current_step=0,
+            business_stage=None,
+            data={}
+        )
+    
+    return OnboardingStatusResponse(
+        completed=state.get("completed", False),
+        current_step=state.get("current_step", 0),
+        business_stage=state.get("business_stage"),
+        data=state.get("data", {})
+    )
+
+@router.post("/onboarding/save")
+async def save_onboarding_progress(
+    request: OnboardingSave,
+    current_user: dict = Depends(get_current_user)
+):
+    """Save onboarding progress to user_operator_profile (authoritative).
+    Also persists answered fields to the fact_ledger and business_profiles."""
+    from fact_resolution import persist_facts_batch, ONBOARDING_FIELD_TO_FACT
+    
+    user_id = current_user["id"]
+    
+    # Read current state to enforce anti-regression
+    current_state = await _read_onboarding_state(user_id)
+    current_step_saved = current_state.get("current_step", 0) if current_state else 0
+    
+    new_step = request.current_step
+    if new_step < current_step_saved and new_step != 0:
+        new_step = current_step_saved
+    
+    new_state = {
+        "current_step": new_step,
+        "business_stage": request.business_stage,
+        "data": request.data,
+        "completed": request.completed
+    }
+    
+    await _write_onboarding_state(user_id, new_state)
+    
+    if request.data:
+        # Persist to business_profiles
+        profile_fields = {}
+        field_mapping = {
+            "business_name": "business_name",
+            "industry": "industry",
+            "business_stage": None,
+            "abn": "abn",
+            "website": "website",
+            "products_services": "products_services",
+            "business_model": "business_model",
+            "target_customer": "ideal_customer_profile",
+            "unique_value": "unique_value_proposition",
+            "team_size": "team_size",
+            "hiring_status": "hiring_status",
+            "revenue_range": "revenue_range",
+            "customer_count": "customer_count",
+            "growth_challenge": "main_challenges",
+            "years_operating": "years_operating",
+            "location": "location",
+            "geographic_focus": "geographic_focus",
+            "product_description": "products_services",
+            "problem_statement": "mission_statement",
+            "growth_goals": "short_term_goals",
+            "funding_status": "funding_status",
+            "funding_stage": "funding_stage",
+        }
+        
+        for src_field, dest_field in field_mapping.items():
+            if dest_field and src_field in request.data and request.data[src_field]:
+                val = request.data[src_field]
+                if isinstance(val, list):
+                    val = ", ".join(val)
+                profile_fields[dest_field] = val
+        
+        if request.business_stage:
+            profile_fields["business_stage"] = request.business_stage
+        
+        if profile_fields:
+            await update_business_profile_supabase(get_sb(), user_id, profile_fields)
+        
+        # Persist to fact_ledger — every answered field becomes a confirmed fact
+        fact_map = {}
+        for form_field, value in request.data.items():
+            if value and form_field in ONBOARDING_FIELD_TO_FACT:
+                fact_map[ONBOARDING_FIELD_TO_FACT[form_field]] = value
+        if fact_map:
+            await persist_facts_batch(get_sb(), user_id, fact_map, source="onboarding")
+    
+    return {"status": "saved", "current_step": new_step}
+
+@router.post("/onboarding/complete")
+async def complete_onboarding(current_user: dict = Depends(get_current_user)):
+    """
+    Mark onboarding as completed.
+    Writes to user_operator_profile (authoritative) and onboarding table (compat).
+    """
+    from workspace_helpers import get_or_create_user_account
+    
+    user_id = current_user["id"]
+    user_email = current_user.get("email")
+    
+    # Mark onboarding complete in user_operator_profile (authoritative)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    current_state = await _read_onboarding_state(user_id) or {}
+    current_state["completed"] = True
+    current_state["completed_at"] = now_iso
+    await _write_onboarding_state(user_id, current_state)
+    
+    # Get business profile created during onboarding
+    profile = await get_business_profile_supabase(get_sb(), user_id)
+    business_profile_id = profile.get("id") if profile else None
+    company_name = profile.get("business_name") if profile else None
+    
+    # STEP 1: CREATE PARENT ACCOUNT (if doesn't exist)
+    try:
+        account = await get_or_create_user_account(
+            supabase_admin, 
+            user_id, 
+            user_email, 
+            company_name
+        )
+        account_id = account["id"]
+        
+        logger.info(f"✅ Parent account ensured for user {user_id}: {account_id}")
+        
+        # STEP 2: Link business profile to account (if exists)
+        if business_profile_id:
+            try:
+                # Update business_profile with account_id if not already set
+                profile_update = await get_business_profile_supabase(get_sb(), user_id)
+                
+                if profile_update and not profile_update.get('account_id'):
+                    await update_business_profile_supabase(
+                        supabase_admin,
+                        user_id,
+                        {"account_id": account_id}
+                    )
+                    logger.info(f"✅ Business profile linked to account {account_id}")
+                    
+            except Exception as e:
+                logger.error(f"⚠️ Failed to link business profile to account: {e}")
+                # Non-blocking - continue with completion
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to create/get parent account: {e}")
+        # Non-blocking - onboarding completion continues
+        account_id = None
+        business_profile_id = None
+    
+    # STEP 3: Create calibration schedule (if account + profile exist)
+    if account_id and business_profile_id:
+        try:
+            now = datetime.now(timezone.utc)
+            next_weekly = now + timedelta(days=7)
+            next_quarterly = now + timedelta(days=90)
+            
+            schedule_data = {
+                "business_profile_id": business_profile_id,
+                "user_id": user_id,
+                "account_id": account_id,
+                "schedule_status": "active",
+                "weekly_pulse_enabled": True,
+                "quarterly_calibration_enabled": True,
+                "created_at": now.isoformat(),
+                "next_weekly_due_at": next_weekly.isoformat(),
+                "next_quarterly_due_at": next_quarterly.isoformat(),
+                "weekly_completion_count": 0,
+                "quarterly_completion_count": 0
+            }
+            
+            # UPSERT: Prevent duplicates
+            result = get_sb().table("calibration_schedules").upsert(
+                schedule_data,
+                on_conflict="business_profile_id"
+            ).execute()
+            
+            if result.data:
+                logger.info(f"✅ Calibration schedule created")
+            else:
+                logger.warning(f"⚠️ Calibration schedule upsert returned no data")
+                
+        except Exception as e:
+            # Non-blocking: Log error but don't fail onboarding completion
+            logger.error(f"❌ Failed to create calibration schedule: {e}")
+    
+    return {"status": "completed"}
+
+
+# ==================== WEBSITE ENRICHMENT ====================
+
+class WebsiteEnrichRequest(BaseModel):
+    url: str
+
+@router.post("/website/enrich")
+async def enrich_website(request: WebsiteEnrichRequest, current_user: dict = Depends(get_current_user)):
+    """Fetch website metadata and infer business details from a URL"""
+    url = request.url.strip()
+    if not url.startswith("http"):
+        url = f"https://{url}"
+    
+    result = {"url": url, "title": None, "description": None, "inferred_name": None, "inferred_category": None}
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 BIQC-Bot/1.0"})
+            html = resp.text[:50000]  # limit to first 50KB
+            
+            # Extract title
+            title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+            if title_match:
+                result["title"] = title_match.group(1).strip()[:200]
+            
+            # Extract meta description
+            desc_match = re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE)
+            if not desc_match:
+                desc_match = re.search(r'<meta[^>]+content=["\'](.*?)["\'][^>]+name=["\']description["\']', html, re.IGNORECASE)
+            if desc_match:
+                result["description"] = desc_match.group(1).strip()[:500]
+            
+            # Infer business name from title (before separator)
+            if result["title"]:
+                for sep in [" | ", " - ", " – ", " — ", " :: "]:
+                    if sep in result["title"]:
+                        result["inferred_name"] = result["title"].split(sep)[0].strip()
+                        break
+                if not result["inferred_name"]:
+                    result["inferred_name"] = result["title"]
+            
+            # Extract og:type or keywords for category hint
+            og_match = re.search(r'<meta[^>]+property=["\']og:type["\'][^>]+content=["\'](.*?)["\']', html, re.IGNORECASE)
+            if og_match:
+                result["inferred_category"] = og_match.group(1).strip()
+            
+    except Exception as e:
+        logger.warning(f"Website enrichment failed for {url}: {e}")
+        result["error"] = str(e)
+    
+    return result
+
+
+@router.get("/business-profile/context")
+async def get_business_profile_context(current_user: dict = Depends(get_current_user)):
+    """Get existing business profile + onboarding state + resolved facts.
+    Onboarding state reads from user_operator_profile (authoritative).
+    Facts resolved from all Supabase sources."""
+    from fact_resolution import resolve_facts, resolve_onboarding_fields
+    
+    user_id = current_user["id"]
+    
+    profile = await get_business_profile_supabase(get_sb(), user_id)
+    ob_state = await _read_onboarding_state(user_id)
+    
+    # Resolve all known facts
+    facts = await resolve_facts(get_sb(), user_id)
+    resolved_fields = resolve_onboarding_fields(facts)
+    
+    # Get intelligence baseline if it exists
+    baseline = None
+    try:
+        bl_result = get_sb().table("intelligence_baseline").select("*").eq("user_id", user_id).maybe_single().execute()
+        baseline = bl_result.data if bl_result.data else None
+    except Exception:
+        pass
+    
+    # Get calibration status
+    calibration_status = "incomplete"
+    try:
+        op_result = get_sb().table("user_operator_profile").select(
+            "persona_calibration_status"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if op_result.data:
+            calibration_status = op_result.data.get("persona_calibration_status", "incomplete")
+    except Exception:
+        pass
+    
+    return {
+        "profile": profile or {},
+        "onboarding": {
+            "completed": ob_state.get("completed", False) if ob_state else False,
+            "current_step": ob_state.get("current_step", 0) if ob_state else 0,
+            "business_stage": ob_state.get("business_stage") if ob_state else None,
+            "data": ob_state.get("data", {}) if ob_state else {}
+        },
+        "resolved_fields": resolved_fields,
+        "intelligence_baseline": baseline,
+        "calibration_status": calibration_status
+    }
+
