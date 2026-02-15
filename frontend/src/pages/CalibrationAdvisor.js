@@ -194,13 +194,13 @@ const CalibrationAdvisor = () => {
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="max-w-lg w-full text-center">
             <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
-              {firstName ? `Welcome, ${firstName}.` : 'Welcome to BIQc.'}
+              {firstName ? `Welcome to BIQc, ${firstName}.` : 'Welcome to BIQc.'}
             </h1>
             <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 440, margin: '0 auto' }}>
-              I am your strategic advisor. Before I can serve you effectively, I need to understand how you operate — your decision style, your risk tolerance, and what matters most to you.
+              We are initializing your Strategic DNA. This begins with a 9-step calibration of your business pulse — your decision style, your risk tolerance, and what drives your growth.
             </p>
             <p className="text-sm mb-10" style={{ color: '#94A3B8' }}>
-              This takes a few minutes. Your responses shape every insight I deliver.
+              Your responses shape every insight I deliver.
             </p>
             {error && <p className="text-sm text-red-500 mb-4" data-testid="calibration-error">{error}</p>}
             <button
