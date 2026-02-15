@@ -139,6 +139,14 @@ const CalibrationAdvisor = () => {
     } catch { setEntry("welcome"); }
   };
 
+  /** Executive Reveal — triggered on COMPLETE */
+  const triggerComplete = () => {
+    setCompleting(true);
+    setEntry("completing");
+    setRevealPhase(0);
+  };
+
+
   const callEdge = async (payload) => {
     const token = session?.access_token;
     if (!token) throw new Error("No session");
