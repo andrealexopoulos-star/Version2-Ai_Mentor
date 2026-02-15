@@ -213,17 +213,25 @@ const CalibrationAdvisor = () => {
         await apiClient.put('/business-profile', { website: url });
       } catch { /* non-blocking */ }
 
-      // Send to Edge Function — try with website_url first, fallback to step-only
+      // SMART-RETRY: 3-tier fallback for website audits
       let data;
       try {
+        // Tier 1: Full audit with website_url
         data = await callEdge({ step: 1, website_url: url });
       } catch {
-        // Fallback: Edge Function may not support website_url — send step only
         try {
+          // Tier 2: Step-only (Edge Function may not support website_url)
           data = await callEdge({ step: 1 });
         } catch {
-          // Final fallback: send as message
-          data = await callEdge({ message: url });
+          try {
+            // Tier 3: Message format
+            data = await callEdge({ message: url });
+          } catch {
+            // All tiers failed → prompt for manual summary
+            setEntry("manual_summary");
+            setIsSubmitting(false);
+            return;
+          }
         }
       }
 
@@ -239,8 +247,39 @@ const CalibrationAdvisor = () => {
       // If Edge returns structured question/options or message, proceed to calibrating
       applyResponse(data);
     } catch {
-      setError("Calibration engine temporarily unavailable.");
-      setEntry("welcome");
+      // Catch-all → manual summary fallback
+      setEntry("manual_summary");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /** Smart-Retry Tier 3: Manual business summary */
+  const handleManualSummary = async (summary) => {
+    setIsSubmitting(true);
+    setEntry("analyzing");
+    try {
+      // Save summary to business profile
+      await apiClient.put('/business-profile', { mission_statement: summary });
+      // Try calibration with summary as message
+      let data;
+      try {
+        data = await callEdge({ step: 1, message: summary });
+      } catch {
+        try {
+          data = await callEdge({ message: summary });
+        } catch {
+          // Proceed directly to calibration step 2
+          setEntry("calibrating");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      if (data.status === "COMPLETE") { triggerComplete(); return; }
+      applyResponse(data);
+    } catch {
+      // Fallback: skip audit, go straight to calibration
+      setEntry("calibrating");
     } finally {
       setIsSubmitting(false);
     }
