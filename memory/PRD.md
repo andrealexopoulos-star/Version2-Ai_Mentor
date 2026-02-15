@@ -5,48 +5,59 @@ Full-stack strategic advisor platform (React + FastAPI + Supabase) providing AI-
 
 ## Architecture
 - **Frontend**: React (CRA/CRACO) + Shadcn UI + Supabase Auth
-- **Backend**: FastAPI 10,218-line monolith + 2 background workers
-- **Database**: Supabase PostgreSQL (44 tables), MongoDB (idle/legacy)
+- **Backend**: FastAPI (server.py 9,648 lines, down from 10,218) + 10 route modules + 2 background workers
+- **Database**: Supabase PostgreSQL (44 tables + system_prompts), MongoDB (idle/legacy)
 - **3rd Party**: Supabase, OpenAI GPT-4o, Merge.dev, Serper.dev, Azure AD, Google Cloud
 
-## Completed Work
-- Deployment fix: Root `/health` endpoint for K8s probes
-- Route registration order fix
-- Removed dead files
-- **Galaxy-Scale Infrastructure Audit** → `/app/BIQC_TECHNICAL_DOSSIER.md`
-- **AI Prompt Extraction** → `/app/BIQC_PROMPT_REGISTRY.json` (18 prompts, structured JSON)
-- **Supabase migration SQL** → `/app/backend/migrations/011_system_prompts_table.sql`
+## Completed Work (Feb 2026)
 
-## AI Prompt Inventory (18 extracted)
-| Agent | Prompts |
-|-------|---------|
-| ALL (Constitution) | biqc_constitution_v1, cognitive_context_fallback_v1 |
-| MyAdvisor | myadvisor_general_v1, myadvisor_proactive_v1 |
-| MyIntel | myintel_signal_v1 |
-| ChiefOfStrategy | chief_strategy_base_v1 |
-| MySoundBoard | mysoundboard_v1 |
-| BoardRoom | boardroom_identity_v1 |
-| BIQc-02 (Calibration) | watchtower_brain_v1 |
-| EmergentAdvisor | calibration_voice_response_v1, calibration_activation_v1 |
-| Email | email_priority_analysis_v1, email_reply_generator_v1 |
-| Profile | profile_autofill_v1, profile_build_v1 |
-| OAC/Mentor | elite_mentor_v1, oac_recommendations_v1 |
-| SOP | sop_generator_v1 |
+### Phase 1A: Security P0 (VERIFIED - 14/14 tests passed)
+- `/api/calibration/status` — Locked with `Depends(get_current_user)`
+- `/api/calibration/init` — Locked with `Depends(get_current_user)`
+- `/api/calibration/brain` — Locked with `Depends(get_current_user)`
+- `/api/executive-mirror` — Locked with `Depends(get_current_user)`
+- `/api/data-center/upload` — Already had auth (confirmed)
+
+### Phase 1B: Zombie Purge (14 files archived)
+- 8 backend files → `/_backups/zombie_purge_Feb2026/backend/`
+- 6 frontend files → `/_backups/zombie_purge_Feb2026/frontend/`
+- `motor`, `pymongo` removed from requirements.txt
+
+### Phase 1C: Modularization (server.py reduced by 570 lines)
+- `routes/soundboard.py` (257 lines) — MySoundBoard routes extracted, wired to system_prompts DB
+- `routes/data_center.py` (130 lines) — Data center file management extracted
+- `prompt_registry.py` — Supabase-backed prompt fetcher with in-memory cache
+- Existing modules: admin.py, boardroom.py, facts.py, intelligence.py, research.py, watchtower.py
+
+### Prior Work
+- Deployment fix: Root `/health` endpoint for K8s probes
+- AI Prompt Extraction: 18 prompts catalogued in `/app/BIQC_PROMPT_REGISTRY.json`
+- SQL migration: `011_system_prompts_table.sql` executed
+
+## Route Module Inventory (10 modules)
+| Module | Lines | Routes |
+|--------|-------|--------|
+| research.py | 451 | 1 |
+| soundboard.py | 257 | 5 (NEW) |
+| boardroom.py | 245 | 2 |
+| data_center.py | 130 | 7 (NEW) |
+| admin.py | 109 | 5 |
+| intelligence.py | 94 | 6 |
+| watchtower.py | 71 | 4 |
+| deps.py | 69 | 0 (shared) |
+| facts.py | 29 | 2 |
 
 ## Pending Issues
-- P0: Edge Function `calibration-psych` doesn't accept `website_url` (BLOCKED)
-- P1: Missing `abn`/`years_operating` Supabase columns (BLOCKED)
+- P0: Edge Function `calibration-psych` doesn't accept `website_url` (BLOCKED on user)
+- P1: Missing `abn`/`years_operating` Supabase columns (BLOCKED on user)
 - P3: "No intelligence events yet" display bug
 - P4: Performance lag on data-heavy pages
 
-## Security Findings
-- 5 unprotected endpoints need auth
-- MongoDB running but unused
-
-## Backlog
-- P0: Fix unprotected endpoints
-- P1: Modularize server.py
-- P1: Refactor CalibrationAdvisor.js
-- P2: Migrate prompts from JSON registry to live Supabase table
-- P2: Remove zombie code
-- P3: Remove MongoDB from supervisor
+## Backlog (Continuing Modularization)
+- P1: Extract calibration routes (~900 lines) to routes/calibration.py
+- P1: Extract email/outlook/gmail routes (~2000 lines) to routes/email.py
+- P1: Extract chat/generation routes (~500 lines) to routes/generation.py
+- P1: Extract business profile routes (~500 lines) to routes/profile.py
+- P1: Extract Merge.dev/Google Drive routes (~800 lines) to routes/integrations.py
+- P2: Wire remaining prompts (MyAdvisor, BoardRoom, etc.) to system_prompts table
+- P3: Remove MongoDB from supervisor config
