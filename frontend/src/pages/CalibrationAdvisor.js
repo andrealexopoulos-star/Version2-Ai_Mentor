@@ -68,7 +68,22 @@ const CalibrationAdvisor = () => {
   const inputRef = useRef(null);
   const initCalled = useRef(false);
 
-  const firstName = userName?.split(' ')[0] || user?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || '';
+  // Extract first name — never show raw email
+  const extractFirstName = (raw) => {
+    if (!raw) return '';
+    // If it's an email address, extract the name part before @
+    if (raw.includes('@')) {
+      const local = raw.split('@')[0];
+      // Convert "andre.alexopoulos" or "andre_alexopoulos" to "André" (capitalize first segment)
+      const namePart = local.split(/[._-]/)[0];
+      return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    }
+    return raw.split(' ')[0];
+  };
+
+  const firstName = extractFirstName(
+    userName || user?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || ''
+  );
 
   useEffect(() => {
     if (!loading && !user) navigate("/login-supabase");
