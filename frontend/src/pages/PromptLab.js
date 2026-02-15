@@ -1,0 +1,396 @@
+import { useState, useEffect, useCallback } from 'react';
+import { apiClient } from '../lib/api';
+import DashboardLayout from '../components/DashboardLayout';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { toast } from 'sonner';
+import {
+  Zap, Search, Save, RefreshCw, X, CheckCircle, AlertCircle,
+  Clock, FileText, ChevronRight, Loader2, Play
+} from 'lucide-react';
+
+const AGENT_COLORS = {
+  ALL: '#6366f1',
+  MyAdvisor: '#2563eb',
+  MyIntel: '#0891b2',
+  ChiefOfStrategy: '#7c3aed',
+  MySoundBoard: '#059669',
+  BoardRoom: '#dc2626',
+  'BIQc-02': '#d97706',
+  EmergentAdvisor: '#ea580c',
+  EmailAnalyst: '#4f46e5',
+  BIQC: '#0d9488',
+  ProfileAnalyst: '#8b5cf6',
+  ProfileBuilder: '#6d28d9',
+  EliteMentor: '#b91c1c',
+  OAC: '#15803d',
+  SOPGenerator: '#0369a1',
+};
+
+export default function PromptLab() {
+  const [prompts, setPrompts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPrompt, setSelectedPrompt] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editVersion, setEditVersion] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState({});
+  const [testResults, setTestResults] = useState({});
+
+  const fetchPrompts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get('/admin/prompts');
+      setPrompts(res.data.prompts || []);
+    } catch (err) {
+      toast.error('Failed to load prompts');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchPrompts(); }, [fetchPrompts]);
+
+  const openEditor = async (promptKey) => {
+    try {
+      const res = await apiClient.get(`/admin/prompts/${promptKey}`);
+      const p = res.data.prompt;
+      setSelectedPrompt(p);
+      setEditContent(p.raw_content || '');
+      setEditDescription(p.description || '');
+      setEditVersion(p.version || '1.0');
+    } catch {
+      toast.error('Failed to load prompt detail');
+    }
+  };
+
+  const savePrompt = async () => {
+    if (!selectedPrompt) return;
+    setSaving(true);
+    try {
+      await apiClient.put(`/admin/prompts/${selectedPrompt.prompt_key}`, {
+        raw_content: editContent,
+        description: editDescription,
+        version: editVersion,
+      });
+      await apiClient.post('/admin/prompts/invalidate', {
+        prompt_key: selectedPrompt.prompt_key,
+      });
+      toast.success(`Prompt "${selectedPrompt.prompt_key}" saved and cache invalidated`);
+      setSelectedPrompt(null);
+      fetchPrompts();
+    } catch (err) {
+      toast.error('Failed to save prompt');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const testConnection = async (promptKey) => {
+    setTesting(prev => ({ ...prev, [promptKey]: true }));
+    try {
+      const res = await apiClient.post(`/admin/prompts/${promptKey}/test`);
+      setTestResults(prev => ({ ...prev, [promptKey]: res.data }));
+      if (res.data.loaded) {
+        toast.success(`"${promptKey}" loaded (${res.data.content_length} chars, cached: ${res.data.cached})`);
+      } else {
+        toast.error(`"${promptKey}" NOT loaded from DB`);
+      }
+    } catch {
+      setTestResults(prev => ({ ...prev, [promptKey]: { loaded: false, error: true } }));
+      toast.error(`Test failed for "${promptKey}"`);
+    } finally {
+      setTesting(prev => ({ ...prev, [promptKey]: false }));
+    }
+  };
+
+  const invalidateAll = async () => {
+    try {
+      await apiClient.post('/admin/prompts/invalidate', {});
+      toast.success('Full prompt cache invalidated');
+      setTestResults({});
+    } catch {
+      toast.error('Failed to invalidate cache');
+    }
+  };
+
+  const filtered = prompts.filter(p =>
+    p.prompt_key?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.agent?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto" data-testid="prompt-lab-page">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              Prompt Lab
+            </h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              Manage AI personalities in real-time. Changes take effect instantly.
+            </p>
+          </div>
+          <Button
+            onClick={invalidateAll}
+            variant="outline"
+            className="gap-2"
+            data-testid="invalidate-all-btn"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Invalidate All Caches
+          </Button>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          <Input
+            placeholder="Search by key, agent, or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="prompt-search-input"
+          />
+        </div>
+
+        {/* Prompt List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--text-muted)' }} />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-20">
+            <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+            <p style={{ color: 'var(--text-muted)' }}>
+              {searchQuery ? 'No prompts match your search' : 'No prompts found in system_prompts table'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filtered.map((p) => {
+              const color = AGENT_COLORS[p.agent] || '#6b7280';
+              const result = testResults[p.prompt_key];
+              return (
+                <div
+                  key={p.prompt_key}
+                  className="rounded-xl p-4 flex items-center gap-4 transition-all hover:shadow-md cursor-pointer group"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-light)',
+                  }}
+                  onClick={() => openEditor(p.prompt_key)}
+                  data-testid={`prompt-row-${p.prompt_key}`}
+                >
+                  {/* Agent badge */}
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                    style={{ background: color }}
+                  >
+                    {p.agent?.charAt(0) || '?'}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {p.prompt_key}
+                      </span>
+                      <Badge variant="outline" className="text-xs" style={{ borderColor: color, color }}>
+                        {p.agent}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        v{p.version}
+                      </Badge>
+                    </div>
+                    <p className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+                      {p.description || 'No description'}
+                    </p>
+                  </div>
+
+                  {/* Test button + result */}
+                  <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {result && (
+                      result.loaded ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                      )
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1.5 text-xs"
+                      onClick={() => testConnection(p.prompt_key)}
+                      disabled={testing[p.prompt_key]}
+                      data-testid={`test-btn-${p.prompt_key}`}
+                    >
+                      {testing[p.prompt_key] ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Play className="w-3 h-3" />
+                      )}
+                      Test
+                    </Button>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-muted)' }} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Editor Drawer */}
+        {selectedPrompt && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/40 z-[60]"
+              onClick={() => setSelectedPrompt(null)}
+            />
+            <div
+              className="fixed right-0 top-0 h-full w-full sm:w-[640px] lg:w-[780px] z-[70] flex flex-col shadow-2xl"
+              style={{ background: 'var(--bg-primary)' }}
+              data-testid="prompt-editor-drawer"
+            >
+              {/* Drawer header */}
+              <div
+                className="flex items-center justify-between p-4 border-b flex-shrink-0"
+                style={{ borderColor: 'var(--border-light)' }}
+              >
+                <div>
+                  <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {selectedPrompt.prompt_key}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge style={{ background: AGENT_COLORS[selectedPrompt.agent] || '#6b7280', color: '#fff' }}>
+                      {selectedPrompt.agent}
+                    </Badge>
+                    {selectedPrompt.updated_at && (
+                      <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                        <Clock className="w-3 h-3" />
+                        {new Date(selectedPrompt.updated_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedPrompt(null)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Drawer body */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Description */}
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
+                    Description
+                  </label>
+                  <Input
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="Prompt description..."
+                    data-testid="prompt-description-input"
+                  />
+                </div>
+
+                {/* Version */}
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
+                    Version
+                  </label>
+                  <Input
+                    value={editVersion}
+                    onChange={(e) => setEditVersion(e.target.value)}
+                    placeholder="e.g. 1.1"
+                    className="w-32"
+                    data-testid="prompt-version-input"
+                  />
+                </div>
+
+                {/* Content editor */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      Prompt Content
+                    </label>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {editContent.length.toLocaleString()} chars
+                    </span>
+                  </div>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full rounded-lg p-4 font-mono text-sm leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-light)',
+                      minHeight: '400px',
+                    }}
+                    spellCheck={false}
+                    data-testid="prompt-content-editor"
+                  />
+                </div>
+
+                {/* Dynamic variables info */}
+                {selectedPrompt.dynamic_variables && selectedPrompt.dynamic_variables.length > 0 && (
+                  <div className="rounded-lg p-3" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Dynamic Variables</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedPrompt.dynamic_variables.map((v, i) => (
+                        <code key={i} className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-primary)', color: 'var(--accent-primary)' }}>
+                          {v}
+                        </code>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Drawer footer */}
+              <div
+                className="flex items-center justify-between p-4 border-t flex-shrink-0"
+                style={{ borderColor: 'var(--border-light)' }}
+              >
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => testConnection(selectedPrompt.prompt_key)}
+                  disabled={testing[selectedPrompt.prompt_key]}
+                  data-testid="prompt-test-btn"
+                >
+                  {testing[selectedPrompt.prompt_key] ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Play className="w-4 h-4" />
+                  )}
+                  Test Connection
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" onClick={() => setSelectedPrompt(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={savePrompt}
+                    disabled={saving}
+                    className="gap-2"
+                    data-testid="prompt-save-btn"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save & Deploy
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
