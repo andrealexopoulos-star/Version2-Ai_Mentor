@@ -63,6 +63,22 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
     return current_user
 
 
+async def get_super_admin(current_user: dict = Depends(get_current_user)):
+    """Super-admin only. Strictest gate — for system-level operations."""
+    if current_user.get("role") != "superadmin":
+        raise HTTPException(status_code=403, detail="Super-admin access required")
+    return current_user
+
+
+async def get_client_admin(current_user: dict = Depends(get_current_user)):
+    """Client-admin gate — for profile/workspace management routes.
+    Accepts: owner, admin, superadmin, client_admin, user_admin."""
+    allowed = {"owner", "admin", "superadmin", "client_admin", "user_admin"}
+    if current_user.get("role") not in allowed:
+        raise HTTPException(status_code=403, detail="Insufficient permissions — admin or owner role required")
+    return current_user
+
+
 async def get_current_user_from_request(request: Request):
     """Extract user from raw Request object (for endpoints that don't use Depends)."""
     from auth_supabase import get_current_user_from_request as _impl
