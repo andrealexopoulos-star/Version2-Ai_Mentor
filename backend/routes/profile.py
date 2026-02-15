@@ -213,7 +213,12 @@ async def business_profile_autofill(req: BusinessProfileAutofillRequest, current
 
     existing_profile = await get_business_profile_supabase(get_sb(), current_user["id"])
 
-    prompt = f"""You are a business analyst helping autofill a structured business profile.
+    # Try DB prompt first, fall back to inline
+    db_autofill = await get_prompt("profile_autofill_v1")
+    if db_autofill:
+        prompt = db_autofill
+    else:
+        prompt = f"""You are a business analyst helping autofill a structured business profile.
 Return ONLY a valid JSON object with keys matching the profile schema.
 Do not include markdown or commentary.
 
