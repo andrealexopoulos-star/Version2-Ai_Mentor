@@ -543,14 +543,7 @@ async def get_crm_owners(
         logger.error(f"❌ Error fetching owners: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.get("/")
-async def root():
-    return {"message": "Strategic Advisor API", "version": "1.0.0"}
-
-@router.get("/health")
-async def health():
-    return {"status": "healthy"}
+# ═══ Root + Health handled in server.py ═══
 
 # ═══ Voice chat handled in server.py ═══
 
