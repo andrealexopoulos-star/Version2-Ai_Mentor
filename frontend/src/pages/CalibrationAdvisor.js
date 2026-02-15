@@ -83,6 +83,30 @@ const CalibrationAdvisor = () => {
     if (entry !== "analyzing") return;
     const interval = setInterval(() => setAnalyzePhase(p => (p + 1) % 5), 2400);
     return () => clearInterval(interval);
+
+  // Executive Reveal phase animation
+  const REVEAL_PHASES = [
+    'Assembling your Intelligence Dashboard...',
+    'Calibrating for Revenue Velocity...',
+    'Preparing Strategy Memos...',
+    'Finalizing your Executive Brief...',
+  ];
+  useEffect(() => {
+    if (!completing) return;
+    const interval = setInterval(() => {
+      setRevealPhase(p => {
+        if (p >= REVEAL_PHASES.length - 1) {
+          clearInterval(interval);
+          // Redirect after final phase
+          setTimeout(() => { window.location.href = '/advisor'; }, 1200);
+          return p;
+        }
+        return p + 1;
+      });
+    }, 1800);
+    return () => clearInterval(interval);
+  }, [completing]); // eslint-disable-line react-hooks/exhaustive-deps
+
   }, [entry]);
 
   const ANALYZE_PHASES = [
