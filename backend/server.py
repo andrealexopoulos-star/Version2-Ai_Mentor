@@ -2497,16 +2497,12 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 
 
 @api_router.get("/calibration/status")
-async def get_calibration_status(request: Request):
+async def get_calibration_status(current_user: dict = Depends(get_current_user)):
     """
     Calibration status with granularity for the Executive Entry Protocol.
     Returns: status (COMPLETE | IN_PROGRESS | NEEDS_CALIBRATION), calibration_step, user_name.
     """
-    try:
-        current_user = await get_current_user_from_request(request)
-        user_id = current_user.get("id")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user.get("id")
 
     try:
         op_result = safe_query_single(
@@ -2885,16 +2881,12 @@ def _extract_team_size(answer: str) -> Optional[int]:
 
 
 @api_router.post("/calibration/init")
-async def init_calibration_session(request: Request):
+async def init_calibration_session(current_user: dict = Depends(get_current_user)):
     """
     Initialize calibration: ensure business_profile shell exists.
     Called when user clicks 'Begin Calibration' — BEFORE any answers.
     """
-    try:
-        current_user = await get_current_user_from_request(request)
-        user_id = current_user.get("id")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user.get("id")
     try:
         profile = await get_business_profile_supabase(supabase_admin, user_id)
         if not profile:
@@ -3437,16 +3429,12 @@ async def get_calibration_activation(request: Request):
 
 
 @api_router.post("/calibration/brain")
-async def calibration_brain(request: Request, payload: CalibrationBrainRequest):
+async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict = Depends(get_current_user)):
     """
     Watchtower Brain — AI-driven 17-step strategic calibration.
     Replaces fixed question flow with intelligent interrogation.
     """
-    try:
-        current_user = await get_current_user_from_request(request)
-        user_id = current_user.get("id")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user.get("id")
 
     message = payload.message.strip()
     history = payload.history or []
@@ -9731,18 +9719,14 @@ async def get_baseline_snapshot(current_user: dict = Depends(get_current_user)):
 
 
 @api_router.get("/executive-mirror")
-async def get_executive_mirror(request: Request):
+async def get_executive_mirror(current_user: dict = Depends(get_current_user)):
     """
     The Executive Mirror — single endpoint for the /advisor landing.
     Returns: agent_persona, fact_ledger (from user_operator_profile),
     and executive_memo (from intelligence_snapshots).
     This is the Cognitive Output. No filtering. No generation. Pure read.
     """
-    try:
-        current_user = await get_current_user_from_request(request)
-        user_id = current_user.get("id")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user.get("id")
 
     result = {
         "agent_persona": None,
