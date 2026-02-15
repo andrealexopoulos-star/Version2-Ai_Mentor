@@ -107,3 +107,45 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user))
     await delete_user_documents_supabase(sb, user_id)
     await delete_user_chats_supabase(sb, user_id)
     return {"message": "User and all associated data deleted"}
+
+
+# ─── Prompt Registry Management ───
+
+@router.post("/admin/prompts/invalidate")
+async def invalidate_prompt_cache(
+    request: dict = None,
+    admin: dict = Depends(get_admin_user)
+):
+    """
+    Hot-swap AI personalities by invalidating the prompt cache.
+    After invalidation, next request fetches fresh prompts from system_prompts table.
+    
+    Body (optional):
+      {"prompt_key": "mysoundboard_v1"}  → invalidate specific prompt
+      {} or no body                      → invalidate ALL prompts
+    """
+    from prompt_registry import invalidate_cache
+    
+    prompt_key = None
+    if request and isinstance(request, dict):
+        prompt_key = request.get("prompt_key")
+    
+    invalidate_cache(prompt_key)
+    
+    if prompt_key:
+        logger.info(f"[admin] Prompt cache invalidated for: {prompt_key}")
+        return {"status": "invalidated", "prompt_key": prompt_key}
+    else:
+        logger.info("[admin] Full prompt cache invalidated")
+        return {"status": "invalidated", "scope": "all"}
+
+
+@router.get("/admin/prompts")
+async def list_prompts(admin: dict = Depends(get_admin_user)):
+    """List all active prompts from the system_prompts table."""
+    sb = get_sb()
+    result = sb.table("system_prompts").select(
+        "prompt_key, version, agent, description, is_active, updated_at"
+    ).order("agent").execute()
+    return {"prompts": result.data or []}
+
