@@ -145,8 +145,8 @@ async def list_prompts(admin: dict = Depends(get_super_admin)):
     """List all active prompts from the system_prompts table."""
     sb = get_sb()
     result = sb.table("system_prompts").select(
-        "prompt_key, version, agent, description, is_active, updated_at"
-    ).order("agent").execute()
+        "prompt_key, version, agent_identity, is_active, updated_at"
+    ).order("agent_identity").execute()
     return {"prompts": result.data or []}
 
 
