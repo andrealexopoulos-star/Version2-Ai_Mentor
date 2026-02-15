@@ -100,9 +100,25 @@ def build_boardroom_prompt(
 ) -> str:
     """
     Build the full Board Room system prompt with context injected
-    in strict priority order.
+    in strict priority order. Tries DB prompt first, falls back to hardcoded.
     """
-    sections = [BOARDROOM_IDENTITY]
+    # Try DB prompt for boardroom identity
+    try:
+        from prompt_registry import get_prompt
+        import asyncio
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # We're in an async context — can't await here (sync function)
+            # Use the cached version if available
+            from prompt_registry import _cache
+            db_identity = _cache.get("boardroom_identity_v1")
+        else:
+            db_identity = None
+    except Exception:
+        db_identity = None
+    
+    identity = db_identity if db_identity else BOARDROOM_IDENTITY
+    sections = [identity]
 
     # ─── 1. WATCHTOWER STATE (highest priority) ──────────────
     sections.append(_build_watchtower_section(watchtower_positions, watchtower_findings))
