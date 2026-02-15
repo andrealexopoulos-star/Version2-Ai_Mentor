@@ -986,7 +986,12 @@ Only ask about topics marked 'Not yet known' that are relevant to the current ta
     }
     style_guide = style_examples.get(communication_style, style_examples["conversational"])
     
-    base_prompt = f"""You are an ELITE AI Business Mentor for {biz_name}.
+    # Try DB prompt, fall back to inline
+    db_mentor = await get_prompt("elite_mentor_v1")
+    if db_mentor:
+        base_prompt = db_mentor.replace("{biz_name}", biz_name).replace("{fact_authority_block}", fact_authority_block).replace("{detailed_profile}", detailed_profile).replace("{style_guide}", style_guide).replace("{task_description}", task_description)
+    else:
+        base_prompt = f"""You are an ELITE AI Business Mentor for {biz_name}.
 
 {fact_authority_block}
 {detailed_profile}
