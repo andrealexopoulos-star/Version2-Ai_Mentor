@@ -226,6 +226,11 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 app = FastAPI(title="Strategic Advisor API")
 
+# ═══ ROOT HEALTH CHECK (must be on app, not api_router, for K8s probes) ═══
+@app.get("/health")
+async def root_health():
+    return {"status": "healthy"}
+
 # ═══ ANTI-CACHING MIDDLEWARE ═══
 # Forces ALL API responses to include explicit no-cache headers.
 # Prevents CDN, reverse proxy, and browser from caching API responses as HTML.
