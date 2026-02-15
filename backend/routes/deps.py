@@ -16,13 +16,18 @@ security = HTTPBearer()
 # ─── Globals injected by server.py at startup ───
 supabase_admin = None
 OPENAI_KEY = None
+cognitive_core = None
+AI_MODEL = "gpt-4o"
+AI_MODEL_ADVANCED = "gpt-4o"
 
 
-def init_route_deps(sb_admin, openai_key):
+def init_route_deps(sb_admin, openai_key, cog_core=None):
     """Called once by server.py after initialization."""
-    global supabase_admin, OPENAI_KEY
+    global supabase_admin, OPENAI_KEY, cognitive_core
     supabase_admin = sb_admin
     OPENAI_KEY = openai_key
+    if cog_core is not None:
+        cognitive_core = cog_core
 
 
 def get_sb():
