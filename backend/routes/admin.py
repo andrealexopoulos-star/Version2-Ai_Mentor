@@ -1,9 +1,9 @@
-"""Admin routes — extracted from server.py. Zero logic changes."""
+"""Admin routes — super_admin restricted. Prompt management + user management."""
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
-from routes.deps import get_admin_user, get_current_user_from_request, get_sb, logger
+from routes.deps import get_super_admin, get_admin_user, get_current_user_from_request, get_sb, logger
 
 router = APIRouter()
 
