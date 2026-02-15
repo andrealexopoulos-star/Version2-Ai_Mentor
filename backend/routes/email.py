@@ -450,7 +450,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
 
 
 @router.get("/gmail/status")
-async def gmail_status(current_user: dict = Depends(get_current_user_supabase)):
+async def gmail_status(current_user: dict = Depends(get_current_user)):
     """Get Gmail connection status"""
     try:
         user_id = current_user["id"]
@@ -481,7 +481,7 @@ async def gmail_status(current_user: dict = Depends(get_current_user_supabase)):
 
 
 @router.post("/gmail/disconnect")
-async def gmail_disconnect(current_user: dict = Depends(get_current_user_supabase)):
+async def gmail_disconnect(current_user: dict = Depends(get_current_user)):
     """Disconnect Gmail and remove all stored tokens"""
     try:
         user_id = current_user["id"]
