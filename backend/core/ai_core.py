@@ -811,8 +811,12 @@ CONTEXT:
 {knowledge_context}
 """
 
-    # Original system prompt for other contexts
-    base_prompt = f"""You are the Chief of Strategy — a senior executive-level business strategist and strategic counsellor.
+    # Original system prompt for other contexts — try DB first
+    db_base = await get_prompt("chief_strategy_base_v1")
+    if db_base:
+        base_prompt = f"""{db_base}\n\nBUSINESS CONTEXT:\n{user_context}\n{knowledge_context}"""
+    else:
+        base_prompt = f"""You are the Chief of Strategy — a senior executive-level business strategist and strategic counsellor.
 
 You speak like a real C-suite advisor in a private strategy session.
 You do not speak like AI.
