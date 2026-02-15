@@ -251,12 +251,24 @@ const CalibrationAdvisor = () => {
   const handleWizardContinue = async () => {
     if (isSubmitting || !selectedOption) return;
     setError(null); setIsSubmitting(true);
-    const payload = { step: currentStep, selected: selectedOption };
+
+    // Fade out current step
+    setCalMode(null);
+
+    const payload = {
+      step: currentStep,
+      selected: selectedOption,
+      user_response: selectedOption,
+    };
     if (textValue.trim()) payload.text = textValue.trim();
     if (isProbe) payload.probe = true;
+
     try {
       const data = await callEdge(payload);
       if (data.status === "COMPLETE") { window.location.href = "/advisor"; return; }
+
+      // Brief pause for slide transition feel
+      await new Promise(r => setTimeout(r, 400));
       applyResponse(data);
     } catch { setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
