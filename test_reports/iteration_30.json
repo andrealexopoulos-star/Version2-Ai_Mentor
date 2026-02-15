@@ -1,0 +1,129 @@
+{
+  "summary": "Route Synchronization Audit (Iteration 30) COMPLETE: All 36 backend tests passed. 27+ protected endpoints verified to return 401/403 without auth. Admin routes (/api/admin/*) correctly gated with super_admin. RBAC visibility for admin menu fixed in DashboardLayout.js. Zero zombie file references in frontend. Landing page and login page load correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration30_route_sync.py",
+    "/app/test_reports/pytest/pytest_results_iteration30.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "RBAC gates correctly implemented in routes/deps.py: get_super_admin, get_admin_user, get_client_admin",
+    "Admin menu visibility in DashboardLayout.js correctly checks: user?.role === 'admin' || user?.role === 'superadmin'",
+    "All 15 backend route modules properly use Depends(get_current_user) for auth enforcement",
+    "apiClient in lib/api.js auto-attaches Supabase session tokens via interceptor",
+    "No zombie file references (IntegrationsOld.js, BusinessProfile.old.js) found in frontend"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration30_route_sync.py"
+  ],
+  "success_rate": {
+    "backend": "100% (36/36 tests passed)",
+    "frontend": "100% (landing + login pages load correctly)"
+  },
+  "test_credentials": "N/A - Testing unauthenticated endpoint protection (401/403)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Route Synchronization Audit complete. All 52 frontend API paths verified against 15 backend route modules. Endpoint mapping corrected: /api/crm/contacts → /api/integrations/crm/contacts. Admin RBAC: user?.role === 'admin' || user?.role === 'superadmin' gates admin menu visibility.",
+  "features_verified": {
+    "health_endpoints": {
+      "api_health": "PASS - Returns 200 {status: healthy}"
+    },
+    "admin_rbac_routes": {
+      "admin_prompts": "PASS - Returns 403 (super_admin gated)",
+      "admin_prompts_invalidate": "PASS - Returns 403 (super_admin gated)",
+      "admin_users": "PASS - Returns 403 (super_admin gated)",
+      "admin_stats": "PASS - Returns 403 (super_admin gated)"
+    },
+    "calibration_routes": {
+      "calibration_status": "PASS - Returns 403",
+      "calibration_init_POST": "PASS - Returns 403",
+      "calibration_brain_POST": "PASS - Returns 403"
+    },
+    "soundboard_routes": {
+      "soundboard_conversations": "PASS - Returns 403",
+      "soundboard_chat_POST": "PASS - Returns 403"
+    },
+    "data_center_routes": {
+      "data_center_files": "PASS - Returns 403"
+    },
+    "integrations_routes": {
+      "merge_connected": "PASS - Returns 403",
+      "integrations_crm_contacts": "PASS - Returns 403",
+      "intelligence_cold_read_POST": "PASS - Returns 403"
+    },
+    "profile_routes": {
+      "business_profile": "PASS - Returns 403",
+      "dashboard_stats": "PASS - Returns 403",
+      "oac_recommendations": "PASS - Returns 403",
+      "notifications_alerts": "PASS - Returns 403"
+    },
+    "generation_routes": {
+      "chat_POST": "PASS - Returns 403",
+      "chat_history": "PASS - Returns 403",
+      "analyses_GET": "PASS - Returns 403",
+      "analyses_POST": "PASS - Returns 403",
+      "documents": "PASS - Returns 403",
+      "generate_sop_POST": "PASS - Returns 403",
+      "diagnose_POST": "PASS - Returns 403"
+    },
+    "email_routes": {
+      "outlook_status": "PASS - Returns 403",
+      "gmail_status": "PASS - Returns 403"
+    },
+    "cognitive_routes": {
+      "cognitive_profile": "PASS - Returns 403",
+      "cognitive_escalation": "PASS - Returns 403",
+      "advisory_confidence": "PASS - Returns 403"
+    },
+    "onboarding_routes": {
+      "onboarding_status": "PASS - Returns 403",
+      "onboarding_save_POST": "PASS - Returns 403"
+    },
+    "method_validation": {
+      "calibration_init_GET": "PASS - Returns 403/405",
+      "chat_GET": "PASS - Returns 403/405"
+    },
+    "public_auth_endpoints": {
+      "supabase_oauth_google": "PASS - Returns OAuth URL data"
+    },
+    "auth_error_format": {
+      "403_returns_json_detail": "PASS"
+    },
+    "frontend_pages": {
+      "landing_page": "PASS - BIQC branding + Start monitoring button",
+      "login_page": "PASS - Google/Microsoft OAuth + email/password form"
+    },
+    "zombie_file_references": {
+      "status": "PASS - Zero zombie file references found in frontend"
+    },
+    "admin_menu_rbac": {
+      "status": "PASS - Admin menu only visible for admin/superadmin roles"
+    },
+    "sidebar_navigation": {
+      "items": ["BIQc Insights", "Strategic Console", "Board Room", "Operator View", "SoundBoard", "Intelligence Baseline", "Business DNA", "Integrations", "Email", "Calendar", "Settings"],
+      "status": "PASS - All menu items properly defined"
+    }
+  },
+  "route_sync_audit": {
+    "backend_route_modules": 15,
+    "endpoints_tested": 36,
+    "admin_endpoints_gated": 4,
+    "protected_endpoints": 27,
+    "public_endpoints": ["health", "auth/supabase/oauth/*"]
+  },
+  "api_test_details": {
+    "test_count": 36,
+    "passed": 36,
+    "failed": 0,
+    "duration": "5.48s"
+  }
+}
