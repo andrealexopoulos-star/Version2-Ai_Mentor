@@ -1208,7 +1208,12 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
     # Build a compact evidence list for citations
     evidence_web = await get_web_sources_supabase(get_sb(), user_id)
 
-    prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
+    # Try DB prompt, fall back to inline
+    db_oac = await get_prompt("oac_recommendations_v1")
+    if db_oac:
+        prompt = db_oac
+    else:
+        prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
 Your job: produce deeply customised operational recommendations that are SPECIFIC to this business and NOT generic.
 
 Business name: {biz_name}
