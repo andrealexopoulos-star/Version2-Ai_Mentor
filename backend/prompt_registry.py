@@ -38,13 +38,13 @@ async def get_prompt(prompt_key: str, fallback: Optional[str] = None) -> Optiona
 
     try:
         result = _sb.table("system_prompts").select(
-            "raw_content"
+            "content"
         ).eq("prompt_key", prompt_key).eq(
             "is_active", True
         ).maybe_single().execute()
 
         if result and result.data:
-            content = result.data.get("raw_content")
+            content = result.data.get("content")
             if content:
                 _cache[prompt_key] = content
                 logger.info(f"[PromptRegistry] Loaded prompt: {prompt_key}")
