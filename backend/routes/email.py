@@ -1756,10 +1756,11 @@ Return ONLY valid JSON in this exact format:
 }}"""
 
         # 6. Generate with LLM
+        reply_sys = await get_prompt("email_reply_generator_v1", _EMAIL_REPLY_FALLBACK)
         chat = LlmChat(
             api_key=OPENAI_KEY,
             session_id=f"biqc_reply_{user_id}_{email_id}",
-            system_message="You are BIQC, a decisive business intelligence advisor. Generate concise, action-oriented email replies that sound like a real executive wrote them. Never use generic pleasantries."
+            system_message=reply_sys
         )
         chat.with_model("openai", AI_MODEL)
         
