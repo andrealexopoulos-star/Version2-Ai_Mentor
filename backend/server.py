@@ -2494,8 +2494,8 @@ async def check_user_profile(current_user: dict = Depends(get_current_user_supab
 @api_router.get("/calibration/status")
 async def get_calibration_status(request: Request):
     """
-    Calibration status — deterministic 200 for authenticated users.
-    Single source of truth: user_operator_profile.persona_calibration_status
+    Calibration status with granularity for the Executive Entry Protocol.
+    Returns: status (COMPLETE | IN_PROGRESS | NEEDS_CALIBRATION), calibration_step, user_name.
     """
     try:
         current_user = await get_current_user_from_request(request)
@@ -2506,17 +2506,44 @@ async def get_calibration_status(request: Request):
     try:
         op_result = safe_query_single(
             supabase_admin.table("user_operator_profile").select(
-                "persona_calibration_status"
+                "persona_calibration_status, operator_profile"
             ).eq("user_id", user_id)
         )
-        
-        if op_result.data and op_result.data.get("persona_calibration_status") == "complete":
-            return JSONResponse(status_code=200, content={"status": "COMPLETE"})
 
-        return JSONResponse(status_code=200, content={"status": "NEEDS_CALIBRATION", "mode": "INCOMPLETE"})
+        # Get user name for personalized UI
+        user_name = None
+        try:
+            user_row = await get_user_by_id(user_id)
+            user_name = user_row.get("full_name") if user_row else None
+        except Exception:
+            pass
+
+        if op_result.data:
+            pcs = op_result.data.get("persona_calibration_status")
+            op = op_result.data.get("operator_profile") or {}
+            cal_step = op.get("calibration_step", 0)
+
+            if pcs == "complete":
+                return JSONResponse(status_code=200, content={
+                    "status": "COMPLETE", "user_name": user_name
+                })
+
+            if pcs in ("in_progress", "recalibrating") or cal_step > 0:
+                return JSONResponse(status_code=200, content={
+                    "status": "IN_PROGRESS",
+                    "calibration_step": cal_step,
+                    "user_name": user_name,
+                    "mode": "PARTIAL"
+                })
+
+        return JSONResponse(status_code=200, content={
+            "status": "NEEDS_CALIBRATION",
+            "calibration_step": 0,
+            "user_name": user_name,
+            "mode": "NEW"
+        })
 
     except RuntimeError as e:
-        # SDK mismatch — fail loud, not silent
         logger.error(f"FATAL: Calibration status SDK error: {e}")
         raise HTTPException(status_code=500, detail="Internal SDK error — contact support")
     except Exception as e:
