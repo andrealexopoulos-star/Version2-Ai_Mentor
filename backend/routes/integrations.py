@@ -552,22 +552,7 @@ async def root():
 async def health():
     return {"status": "healthy"}
 
-# ==================== VOICE CHAT (REALTIME) ====================
-
-# Initialize OpenAI Realtime Voice Chat
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-voice_chat = None
-voice_router = APIRouter()
-
-if OPENAI_API_KEY:
-    try:
-        voice_chat = OpenAIChatRealtime(api_key=OPENAI_API_KEY)
-        OpenAIChatRealtime.register_openai_realtime_router(voice_router, voice_chat)
-        logger.info("Voice chat initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize voice chat: {e}")
-
-
+# ═══ Voice chat handled in server.py ═══
 
 # ==================== TRUTH ENGINE: COLD READ PROTOCOL ====================
 
