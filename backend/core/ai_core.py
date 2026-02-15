@@ -682,6 +682,9 @@ CONTEXT:
     # MyIntel - Intelligence and Signal Detection
     # Agent Constitution: OUTPUT SHAPE = Headline → Supporting fact → Implication
     if context_type == "intel":
+        db_prompt = await get_prompt("myintel_signal_v1")
+        if db_prompt:
+            return f"""{db_prompt}\n\nCONTEXT:\n{user_context}\n{knowledge_context}"""
         return f"""You are MyIntel.
 
 You exist to surface intelligence that THIS user would otherwise miss, ignore, or discover too late.
