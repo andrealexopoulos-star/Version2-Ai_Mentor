@@ -897,8 +897,16 @@ if OPENAI_API_KEY:
 
 
 # ═══ AUTH — Extracted to routes/auth.py ═══
+from routes.auth import router as auth_router
+api_router.include_router(auth_router)
+
 # ═══ COGNITIVE — Extracted to routes/cognitive.py ═══
+from routes.cognitive import router as cognitive_router
+api_router.include_router(cognitive_router)
+
 # ═══ ONBOARDING — Extracted to routes/onboarding.py ═══
+from routes.onboarding import router as onboarding_router
+api_router.include_router(onboarding_router)
 
 
 # ==================== FACT RESOLUTION — Extracted to routes/facts.py ====================
