@@ -26,10 +26,10 @@ from supabase_intelligence_helpers import (
     get_email_intelligence_supabase, get_calendar_intelligence_supabase,
     get_chat_history_supabase, get_user_data_files_supabase,
     get_user_analyses_supabase, get_soundboard_conversation_supabase,
-    get_oac_usage_supabase, update_oac_usage_supabase,
-    get_oac_recommendations_supabase, update_oac_recommendations_supabase,
 )
 from supabase_remaining_helpers import (
+    get_oac_usage_supabase, update_oac_usage_supabase,
+    get_oac_recommendations_supabase, update_oac_recommendations_supabase,
     get_web_sources_supabase, get_setting_supabase,
     update_setting_supabase, dismiss_notification_supabase,
 )
