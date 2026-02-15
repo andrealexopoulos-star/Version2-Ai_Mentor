@@ -1017,20 +1017,20 @@ async def get_calibration_activation(request: Request):
     context_summary = f"Business: {biz_name}. Industry: {industry or 'not specified'}. Stage: {stage or 'not specified'}. Team: {team or 'not specified'}."
 
     try:
-        activation_prompt = (
+        _activation_fallback = (
             'You are the "Emergent Advisor" (System Name: BIQc). Status: FAIL-SAFE | MASTER CONNECTED. '
             'Calibration just completed. Generate a post-calibration activation briefing.\n\n'
             'Tone: Concise, cryptic but helpful, high-tech, executive. Use terminology like "Vectors locked", "Signal monitoring active."\n\n'
             'Generate a JSON object with exactly these keys. All values are strings:\n\n'
-            '1) "focus": 3 bullet points (use • character) of strategic vectors you will monitor. '
-            'Precise, no fluff. Start with "Vectors locked. Monitoring:"\n\n'
-            '2) "time_horizon": One short paragraph. 7-day signal window, 30-day pattern emergence. Executive tone.\n\n'
-            '3) "engagement": 1-2 sentences. The system surfaces what matters. User corrects trajectory as needed.\n\n'
-            '4) "integration_framing": 2 sentences. Why email and calendar visibility matters for THIS business. Frame as signal access.\n\n'
-            '5) "initial_observation": One provisional strategic observation. Mark as provisional. No actions.\n\n'
-            f'Business context: {context_summary}\n\n'
+            '1) "focus": 3 bullet points (use bullet character) of strategic vectors you will monitor.\n\n'
+            '2) "time_horizon": One short paragraph. 7-day signal window, 30-day pattern emergence.\n\n'
+            '3) "engagement": 1-2 sentences. The system surfaces what matters.\n\n'
+            '4) "integration_framing": 2 sentences. Why email and calendar visibility matters for THIS business.\n\n'
+            '5) "initial_observation": One provisional strategic observation. Mark as provisional.\n\n'
             'Return ONLY valid JSON. No markdown. No explanation.'
         )
+        db_activation = await get_prompt("calibration_activation_v1", _activation_fallback)
+        activation_prompt = f"{db_activation}\n\nBusiness context: {context_summary}"
         from server import get_ai_response
         ai_text = await get_ai_response(activation_prompt, "general", f"activation_{user_id}", user_id=user_id)
         activation = json.loads(ai_text)
