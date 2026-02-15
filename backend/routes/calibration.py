@@ -972,6 +972,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             '- Do not repeat the user answer back verbatim.\n'
             '- Do not include the next question.\n'
         )
+        cal_system_prompt = await get_prompt("calibration_voice_response_v1", _voice_fallback)
         cal_user_msg = (
             f"Question {question_id} of 9: \"{QUESTIONS_TEXT.get(question_id, '')}\"\n"
             f"User answered: \"{answer}\"\n\n"
