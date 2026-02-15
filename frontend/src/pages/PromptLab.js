@@ -59,8 +59,8 @@ export default function PromptLab() {
       const res = await apiClient.get(`/admin/prompts/${promptKey}`);
       const p = res.data.prompt;
       setSelectedPrompt(p);
-      setEditContent(p.raw_content || '');
-      setEditDescription(p.description || '');
+      setEditContent(p.content || '');
+      setEditDescription(p.agent_identity || '');
       setEditVersion(p.version || '1.0');
     } catch {
       toast.error('Failed to load prompt detail');
@@ -72,7 +72,7 @@ export default function PromptLab() {
     setSaving(true);
     try {
       await apiClient.put(`/admin/prompts/${selectedPrompt.prompt_key}`, {
-        raw_content: editContent,
+        content: editContent,
         description: editDescription,
         version: editVersion,
       });
@@ -119,8 +119,8 @@ export default function PromptLab() {
 
   const filtered = prompts.filter(p =>
     p.prompt_key?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.agent?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    p.agent_identity?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.agent_identity?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -174,7 +174,7 @@ export default function PromptLab() {
         ) : (
           <div className="space-y-2">
             {filtered.map((p) => {
-              const color = AGENT_COLORS[p.agent] || '#6b7280';
+              const color = AGENT_COLORS[p.agent_identity] || '#6b7280';
               const result = testResults[p.prompt_key];
               return (
                 <div
@@ -192,7 +192,7 @@ export default function PromptLab() {
                     className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
                     style={{ background: color }}
                   >
-                    {p.agent?.charAt(0) || '?'}
+                    {p.agent_identity?.charAt(0) || '?'}
                   </div>
 
                   {/* Info */}
@@ -202,14 +202,14 @@ export default function PromptLab() {
                         {p.prompt_key}
                       </span>
                       <Badge variant="outline" className="text-xs" style={{ borderColor: color, color }}>
-                        {p.agent}
+                        {p.agent_identity}
                       </Badge>
                       <Badge variant="secondary" className="text-xs">
                         v{p.version}
                       </Badge>
                     </div>
                     <p className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
-                      {p.description || 'No description'}
+                      {p.agent_identity || 'No description'}
                     </p>
                   </div>
 
@@ -268,8 +268,8 @@ export default function PromptLab() {
                     {selectedPrompt.prompt_key}
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge style={{ background: AGENT_COLORS[selectedPrompt.agent] || '#6b7280', color: '#fff' }}>
-                      {selectedPrompt.agent}
+                    <Badge style={{ background: AGENT_COLORS[selectedPrompt.agent_identity] || '#6b7280', color: '#fff' }}>
+                      {selectedPrompt.agent_identity}
                     </Badge>
                     {selectedPrompt.updated_at && (
                       <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
