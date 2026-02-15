@@ -48,8 +48,13 @@ const CalibrationAdvisor = () => {
   const [calMode, setCalMode] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  // Edited fields tracking — sparkle (AI) vs shield (user-verified)
+  const [editedFields, setEditedFields] = useState({});
+  const [editingKey, setEditingKey] = useState(null);
+  const [editValue, setEditValue] = useState("");
+
+  // Transition state
+  const [transitioning, setTransitioning] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const initCalled = useRef(false);
