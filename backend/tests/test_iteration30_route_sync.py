@@ -95,8 +95,8 @@ class TestIntegrationsRoutes:
         assert response.status_code == 403
         
     def test_crm_contacts_requires_auth(self):
-        """GET /api/crm/contacts - requires current_user"""
-        response = requests.get(f"{BASE_URL}/api/crm/contacts", timeout=10)
+        """GET /api/integrations/crm/contacts - requires current_user"""
+        response = requests.get(f"{BASE_URL}/api/integrations/crm/contacts", timeout=10)
         assert response.status_code == 403
         
     def test_intelligence_cold_read_requires_auth(self):
