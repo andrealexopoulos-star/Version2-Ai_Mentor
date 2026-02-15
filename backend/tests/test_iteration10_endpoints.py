@@ -10,7 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://html-bug-fixed.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://executive-reveal.preview.emergentagent.com')
 
 class TestCalibrationStatus:
     """Test GET /api/calibration/status endpoint - requires auth but should return 401 if not authenticated"""
@@ -156,7 +156,7 @@ class TestHealthAndAPIAccess:
         """Verify CORS headers are set"""
         response = requests.options(
             f"{BASE_URL}/api/calibration/status",
-            headers={"Origin": "https://html-bug-fixed.preview.emergentagent.com"}
+            headers={"Origin": "https://executive-reveal.preview.emergentagent.com"}
         )
         # Check for CORS header presence (may be wildcard or specific)
         cors_header = response.headers.get("access-control-allow-origin", "")

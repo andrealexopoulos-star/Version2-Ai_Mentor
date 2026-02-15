@@ -133,7 +133,7 @@ App 29819397
 
 **Test in BIQC:**
 
-1. Navigate to: https://html-bug-fixed.preview.emergentagent.com/integrations
+1. Navigate to: https://executive-reveal.preview.emergentagent.com/integrations
 2. Login as: andre@thestrategysquad.com.au
 3. Click **"Connect"** on HubSpot card
 4. Merge modal should open
