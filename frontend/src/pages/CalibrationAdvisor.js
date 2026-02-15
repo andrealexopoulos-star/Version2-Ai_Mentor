@@ -180,7 +180,11 @@ const CalibrationAdvisor = () => {
   const handleAuditSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting || !websiteUrl.trim()) return;
-    const url = websiteUrl.trim();
+    // Normalize URL — auto-prepend https:// if missing
+    let url = websiteUrl.trim();
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
     setAnalyzeUrl(url);
     setError(null);
     setIsSubmitting(true);
