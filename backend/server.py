@@ -10209,3 +10209,7 @@ async def google_drive_status(current_user: dict = Depends(get_current_user)):
         "status": drive_integration.get("status", "active")
     }
 
+
+# ═══ REGISTER ALL ROUTERS (must be AFTER all route definitions) ═══
+app.include_router(api_router)
+app.include_router(voice_router, prefix="/api/voice")
