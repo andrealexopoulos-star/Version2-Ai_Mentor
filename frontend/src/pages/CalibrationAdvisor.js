@@ -36,6 +36,8 @@ const CalibrationAdvisor = () => {
   };
 
   // Flow: loading → welcome → analyzing → wow_summary → continuity → calibrating
+  //                   ↓ (smart-retry fallback)
+  //           manual_summary → calibrating
   const [entry, setEntry] = useState("loading");
   const [userName, setUserName] = useState("");
   const [calStep, setCalStep] = useState(0);
