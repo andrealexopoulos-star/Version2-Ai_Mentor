@@ -779,7 +779,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             )
 
             from server import get_ai_response
-        ai_text = await get_ai_response(raw_prompt, "general", f"calibration_{user_id}", user_id=user_id)
+            ai_text = await get_ai_response(raw_prompt, "general", f"calibration_{user_id}", user_id=user_id)
             ai_payload = {}
             try:
                 ai_payload = json.loads(ai_text)
