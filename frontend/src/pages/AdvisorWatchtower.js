@@ -34,9 +34,9 @@ const AdvisorWatchtower = () => {
   const firstName = user?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || '';
 
   const LOADING_PHASES = [
-    `${firstName ? firstName + ', I am' : 'I am'} reviewing your strategic position...`,
-    'Mapping growth signals and identifying areas that need your attention...',
-    'Preparing your advisory brief...',
+    `${firstName ? firstName + ', finalizing' : 'Finalizing'} your Executive Brief...`,
+    'Synthesizing Revenue Velocity and Capital Signals...',
+    'Mapping Leadership Cadence across your connected platforms...',
   ];
 
   const fetchMirror = async () => {
