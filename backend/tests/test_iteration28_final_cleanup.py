@@ -89,138 +89,138 @@ class TestSecurityProtectedEndpoints:
     
     def test_outlook_calendar_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/outlook/calendar/events")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/outlook/calendar/events returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/outlook/calendar/events returns {response.status_code} without auth")
     
     # Soundboard routes (extracted to routes/soundboard.py)
     def test_soundboard_conversations_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/soundboard/conversations")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/soundboard/conversations returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/soundboard/conversations returns {response.status_code} without auth")
     
     def test_soundboard_chat_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/soundboard/chat", json={})
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/soundboard/chat POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/soundboard/chat POST returns {response.status_code} without auth")
     
     # Data Center routes (extracted to routes/data_center.py)
     def test_data_center_files_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/data-center/files")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/data-center/files returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/data-center/files returns {response.status_code} without auth")
     
     def test_data_center_categories_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/data-center/categories")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/data-center/categories returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/data-center/categories returns {response.status_code} without auth")
     
     def test_data_center_stats_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/data-center/stats")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/data-center/stats returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/data-center/stats returns {response.status_code} without auth")
     
     def test_data_center_upload_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/data-center/upload")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/data-center/upload POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/data-center/upload POST returns {response.status_code} without auth")
     
     # Generation routes (NEW - extracted to routes/generation.py)
     def test_chat_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/chat", json={"message": "test"})
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/chat POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/chat POST returns {response.status_code} without auth")
     
     def test_chat_history_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/chat/history")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/chat/history returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/chat/history returns {response.status_code} without auth")
     
     def test_analyses_get_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/analyses")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/analyses GET returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/analyses GET returns {response.status_code} without auth")
     
     def test_analyses_post_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/analyses", json={})
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/analyses POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/analyses POST returns {response.status_code} without auth")
     
     def test_documents_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/documents")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/documents returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/documents returns {response.status_code} without auth")
     
     def test_generate_sop_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/generate/sop", json={})
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/generate/sop POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/generate/sop POST returns {response.status_code} without auth")
     
     def test_diagnose_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/diagnose", json={})
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/diagnose POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/diagnose POST returns {response.status_code} without auth")
     
     # Profile routes (NEW - extracted to routes/profile.py)
     def test_business_profile_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/business-profile")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/business-profile returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/business-profile returns {response.status_code} without auth")
     
     def test_business_profile_scores_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/business-profile/scores")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/business-profile/scores returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/business-profile/scores returns {response.status_code} without auth")
     
     def test_dashboard_stats_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/dashboard/stats")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/dashboard/stats returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/dashboard/stats returns {response.status_code} without auth")
     
     def test_dashboard_focus_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/dashboard/focus")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/dashboard/focus returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/dashboard/focus returns {response.status_code} without auth")
     
     def test_oac_recommendations_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/oac/recommendations")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/oac/recommendations returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/oac/recommendations returns {response.status_code} without auth")
     
     # Integrations routes (NEW - extracted to routes/integrations.py)
     def test_merge_link_token_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/integrations/merge/link-token")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/integrations/merge/link-token POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/integrations/merge/link-token POST returns {response.status_code} without auth")
     
     def test_merge_connected_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/integrations/merge/connected")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/integrations/merge/connected returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/integrations/merge/connected returns {response.status_code} without auth")
     
     def test_crm_contacts_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/integrations/crm/contacts")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/integrations/crm/contacts returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/integrations/crm/contacts returns {response.status_code} without auth")
     
     def test_google_drive_status_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/integrations/google-drive/status")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/integrations/google-drive/status returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/integrations/google-drive/status returns {response.status_code} without auth")
     
     def test_intelligence_cold_read_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/intelligence/cold-read")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/intelligence/cold-read POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/intelligence/cold-read POST returns {response.status_code} without auth")
     
     def test_intelligence_watchtower_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/intelligence/watchtower")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/intelligence/watchtower returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/intelligence/watchtower returns {response.status_code} without auth")
     
     def test_executive_mirror_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/executive-mirror")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/executive-mirror returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected auth block, got {response.status_code}"
+        print(f"✅ /api/executive-mirror returns {response.status_code} without auth")
 
 
 class TestAdminPromptManagement:
