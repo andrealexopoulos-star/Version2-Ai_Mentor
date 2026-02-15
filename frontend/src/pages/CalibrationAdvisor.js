@@ -156,20 +156,58 @@ const CalibrationAdvisor = () => {
     }
   };
 
-  /** Confirm WOW summary → proceed to Step 2 */
+  /** Confirm WOW summary → dissolve transition → Step 2 */
   const handleConfirmWow = async () => {
     setError(null);
+    setTransitioning(true);
+
+    // Apply any user edits to the wowSummary
+    if (Object.keys(editedFields).length > 0 && wowSummary && typeof wowSummary === 'object') {
+      const updated = { ...wowSummary };
+      for (const [key, val] of Object.entries(editedFields)) {
+        if (updated[key] !== undefined) {
+          updated[key] = val;
+        }
+      }
+      setWowSummary(updated);
+    }
+
+    // Show transition copy for 2.5s
+    await new Promise(r => setTimeout(r, 2500));
+
     setIsSubmitting(true);
-    setEntry("calibrating");
     try {
-      const data = await callEdge({ step: 2, confirmed_summary: true });
+      const payload = { step: 2, confirmed_summary: true };
+      if (Object.keys(editedFields).length > 0) {
+        payload.user_edits = editedFields;
+      }
+      const data = await callEdge(payload);
       if (data.status === "COMPLETE") { window.location.href = "/advisor"; return; }
+      setTransitioning(false);
       applyResponse(data);
     } catch {
+      setTransitioning(false);
       setError("Calibration engine temporarily unavailable.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  /** Inline edit handlers */
+  const startEdit = (key, currentValue) => {
+    setEditingKey(key);
+    setEditValue(typeof currentValue === 'object' ? (currentValue.summary || currentValue.description || JSON.stringify(currentValue)) : String(currentValue));
+  };
+
+  const commitEdit = (key) => {
+    if (editValue.trim()) {
+      setEditedFields(prev => ({ ...prev, [key]: editValue.trim() }));
+      if (wowSummary && typeof wowSummary === 'object') {
+        setWowSummary(prev => ({ ...prev, [key]: editValue.trim() }));
+      }
+    }
+    setEditingKey(null);
+    setEditValue("");
   };
 
   const applyResponse = (data) => {
