@@ -272,9 +272,9 @@ def _add_advisory_outcomes(parts, issues, history):
     if history.get("lessons"):
         available = True
         parts.append("Lessons learned:")
-        for l in history["lessons"][:2]:
-            if isinstance(l, dict) and l.get("lesson"):
-                parts.append(f"  • {l['lesson']}")
+        for lesson in history["lessons"][:2]:
+            if isinstance(lesson, dict) and lesson.get("lesson"):
+                parts.append(f"  • {lesson['lesson']}")
     if history.get("deferred_decisions"):
         available = True
         parts.append("Deferred decisions:")
@@ -356,8 +356,8 @@ async def _add_agent_context(parts, agent, core_context, user_id):
         focus = core_context["soundboard_focus"]
         parts.append("\n═══ SOUNDBOARD-SPECIFIC ═══")
         if focus.get("unresolved_loops"):
-            for l in focus["unresolved_loops"][:3]:
-                parts.append(f"  ↻ {l}")
+            for loop in focus["unresolved_loops"][:3]:
+                parts.append(f"  ↻ {loop}")
         if focus.get("recent_sentiment"):
             sentiments = [s.get("sentiment") for s in focus["recent_sentiment"] if isinstance(s, dict)]
             if sentiments:

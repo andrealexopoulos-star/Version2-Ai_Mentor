@@ -17,7 +17,7 @@ def _check_supabase():
         from supabase_client import init_supabase
         client = init_supabase()
         if client:
-            result = client.table("users").select("id").limit(1).execute()
+            client.table("users").select("id").limit(1).execute()
             return {"status": "connected", "reachable": True}
         return {"status": "no_client", "reachable": False}
     except Exception as e:
