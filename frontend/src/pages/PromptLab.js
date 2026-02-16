@@ -152,15 +152,40 @@ export default function PromptLab() {
               Manage AI personalities in real-time. Changes take effect instantly.
             </p>
           </div>
-          <Button
-            onClick={invalidateAll}
-            variant="outline"
-            className="gap-2"
-            data-testid="invalidate-all-btn"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Invalidate All Caches
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={invalidateAll}
+              variant="outline"
+              className="gap-2"
+              data-testid="invalidate-all-btn"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Invalidate All Caches
+            </Button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6 p-1 rounded-lg w-fit" style={{ background: 'var(--bg-secondary)' }}>
+          {[
+            { key: 'prompts', label: 'Prompts', icon: FileText },
+            { key: 'audit', label: 'Audit Trail', icon: History },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all"
+              style={{
+                background: activeTab === tab.key ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-muted)',
+                boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+              data-testid={`tab-${tab.key}`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Search */}
