@@ -39,6 +39,9 @@ export default function PromptLab() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState({});
   const [testResults, setTestResults] = useState({});
+  const [activeTab, setActiveTab] = useState('prompts');
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const fetchPrompts = useCallback(async () => {
     try {
