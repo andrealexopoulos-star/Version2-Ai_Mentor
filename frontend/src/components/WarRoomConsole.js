@@ -35,6 +35,8 @@ const WarRoomConsoleInner = () => {
   const [initError, setInitError] = useState(null);
   const [workspaceId, setWorkspaceId] = useState(null);
   const [contextResolved, setContextResolved] = useState(false);
+  const [actions, setActions] = useState([]);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
