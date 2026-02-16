@@ -169,6 +169,9 @@ api_router.include_router(email_router)
 from routes.health import router as health_router
 api_router.include_router(health_router)
 
+from routes.intelligence_actions import router as intelligence_actions_router
+api_router.include_router(intelligence_actions_router)
+
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
