@@ -184,8 +184,10 @@ class TestAuthenticatedEndpoints:
         )
         assert response.status_code == 200
         data = response.json()
-        assert "email" in data
-        print(f"PASS: /api/auth/supabase/me returns user email: {data.get('email')}")
+        # User info is nested under "user" key
+        user = data.get("user", data)
+        assert "email" in user, f"User should have email. Got: {list(data.keys())}"
+        print(f"PASS: /api/auth/supabase/me returns user email: {user.get('email')}")
 
 
 if __name__ == "__main__":
