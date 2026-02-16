@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import {
   Zap, Search, Save, RefreshCw, X, CheckCircle, AlertCircle,
-  Clock, FileText, ChevronRight, Loader2, Play
+  Clock, FileText, ChevronRight, Loader2, Play, History
 } from 'lucide-react';
 
 const AGENT_COLORS = {
