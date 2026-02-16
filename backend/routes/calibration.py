@@ -357,6 +357,7 @@ async def get_lifecycle_state(request: Request):
         return {
             "calibration": {"status": calibration_status, "complete": calibration_complete},
             "onboarding": {"complete": onboarding_complete, "step": onboarding_step},
+            "console": {"status": console_status, "step": console_step},
             "integrations": {"count": integrations_connected, "providers": integration_names},
             "intelligence": {"has_events": has_intelligence, "domains_enabled": domains_enabled},
             "workspace_id": workspace_id,
