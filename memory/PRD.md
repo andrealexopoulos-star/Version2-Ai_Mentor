@@ -1,13 +1,16 @@
 # BIQC Strategic Advisor Platform - PRD
 
-## Architecture — FINAL
-- **server.py**: 974 lines (pure orchestrator — init, middleware, router registration)
+## Architecture — FINAL (Post Clean Sweep)
+- **server.py**: 171 lines (pure orchestrator — init, middleware, router registration)
+- **core/models.py**: 362 lines (all Pydantic models)
+- **core/helpers.py**: 215 lines (file parsing, search, auth utilities)
+- **core/config.py**: 139 lines (middleware, env vars, service initialization)
 - **core/ai_core.py**: 1,508 lines (AI response generation, system prompts, cognitive context)
 - **Route modules**: 16 files, 9,204 lines total
-- **Frontend**: CalibrationAdvisor refactored with CalibrationComponents sub-components
-- **Smart-Retry**: 3-tier fallback (website_url → step-only → manual summary)
+- **Frontend CalibrationAdvisor.js**: 323 lines (state manager, uses 5 sub-components)
+- **Calibration sub-components**: CalibrationComponents.js (160), WowSummary.js (137), CalibratingSession.js (142), ExecutiveReveal.js (54), ContinuitySuite.js (48)
 
-## Cumulative Test Results: 224/224 (100%)
+## Cumulative Test Results: 240/240 (100%)
 | Iteration | Tests | Phase |
 |-----------|-------|-------|
 | 26 | 14 | Security P0 |
@@ -18,6 +21,7 @@
 | 31 | 9 | Prompt Lab |
 | 32 | 9 | Beta Launch Clearance |
 | 33 | 31 | Final Slice |
+| 34 | 16 | Clean Sweep Refactoring |
 
 ## Route Module Inventory (16 modules)
 | Module | Lines | Routes |
@@ -40,5 +44,6 @@
 | facts.py | 29 | 2 |
 
 ## Backlog
-- P3: Run `012_prompt_audit_logs.sql` migration
-- P3: Further decompose CalibrationAdvisor.js WOW summary + calibrating states
+- P1: Implement Live Integrations (Outlook, Google Drive, Xero, Stripe, HubSpot)
+- P2: Performance optimization on data-heavy pages
+- P3: Further decompose CalibrationAdvisor.js remaining inline logic
