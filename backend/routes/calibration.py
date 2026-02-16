@@ -1157,28 +1157,20 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
             # SEED business_profiles from users table if no profile exists
             try:
                 profile = await get_business_profile_supabase(get_sb(), user_id)
-                if profile:
-                    get_sb().table("business_profiles").update({
-                        "calibration_status": "complete",
-                        "updated_at": now_iso
-                    }).eq("id", profile.get("id")).execute()
-                else:
-                    # No business_profiles row — seed from users table
+                if not profile:
                     user_data = await get_user_by_id(user_id)
                     if user_data:
+                        from supabase_intelligence_helpers import update_business_profile_supabase
                         seed = {
-                            "user_id": user_id,
                             "business_name": user_data.get("company_name") or user_data.get("business_name"),
                             "industry": user_data.get("industry"),
-                            "calibration_status": "complete",
-                            "created_at": now_iso,
-                            "updated_at": now_iso,
+                            "target_country": "Australia",
                         }
                         seed = {k: v for k, v in seed.items() if v is not None}
-                        get_sb().table("business_profiles").insert(seed).execute()
+                        await update_business_profile_supabase(get_sb(), user_id, seed)
                         logger.info(f"[calibration/brain] Seeded business_profiles from users table for {user_id}")
             except Exception as comp_err:
-                logger.warning(f"[calibration/brain] business_profiles seed/update failed: {comp_err}")
+                logger.warning(f"[calibration/brain] business_profiles seed failed: {comp_err}")
 
         return brain_response
 
