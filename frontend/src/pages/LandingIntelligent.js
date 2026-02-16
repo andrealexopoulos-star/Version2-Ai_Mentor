@@ -37,6 +37,7 @@ const TitanStyles = () => (
     .titan-card{position:relative;overflow:hidden}
     .titan-card::before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.15) 45%,rgba(255,255,255,0.25) 50%,rgba(255,255,255,0.15) 55%,transparent 60%);background-size:200% 100%;opacity:0;transition:opacity .4s}
     .titan-card:hover::before{opacity:1;animation:shimmer 1.2s ease-in-out}
+    .hero-glass-pulse{transition:box-shadow 1s ease}
     .living-bg{background:radial-gradient(ellipse at 20% 0%,rgba(0,122,255,0.06),transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(0,217,149,0.05),transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(0,122,255,0.03),transparent 40%);background-size:400% 400%;animation:float-bg 20s ease infinite}
   `}</style>
 );
