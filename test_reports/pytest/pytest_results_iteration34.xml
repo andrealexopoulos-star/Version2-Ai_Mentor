@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="18" time="8.856" timestamp="2026-02-16T02:19:10.435666+00:00" hostname="agent-env-f6320f70-6854-4b82-89c5-d609841ba090"><testcase classname="tests.test_iteration34_clean_sweep.TestBackendHealth" name="test_api_health_returns_200" time="0.198" /><testcase classname="tests.test_iteration34_clean_sweep.TestBackendHealth" name="test_root_health_returns_200" time="5.216"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">/root/.venv/lib/python3.11/site-packages/requests/models.py:976: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+tests/test_iteration34_clean_sweep.py:31: in test_root_health_returns_200
+    data = response.json()
+           ^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/models.py:980: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_calibration_status_requires_auth" time="0.157" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_admin_prompts_requires_auth" time="0.143" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_business_profile_requires_auth" time="0.146" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_soundboard_conversations_requires_auth" time="0.127" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_cognitive_profile_requires_auth" time="0.149" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_executive_mirror_requires_auth" time="0.133" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_dashboard_stats_requires_auth" time="0.130" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_chat_history_requires_auth" time="0.133" /><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_intelligence_baseline_requires_auth" time="0.147"><failure message="assert 404 == 403&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration34_clean_sweep.py:97: in test_intelligence_baseline_requires_auth
+    assert response.status_code == 403
+E   assert 404 == 403
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_data_files_requires_auth" time="0.156"><failure message="assert 404 == 403&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration34_clean_sweep.py:102: in test_data_files_requires_auth
+    assert response.status_code == 403
+E   assert 404 == 403
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_facts_requires_auth" time="0.281"><failure message="assert 404 == 403&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration34_clean_sweep.py:107: in test_facts_requires_auth
+    assert response.status_code == 403
+E   assert 404 == 403
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration34_clean_sweep.TestAuthProtection" name="test_onboarding_status_requires_auth" time="0.123" /><testcase classname="tests.test_iteration34_clean_sweep.TestOAuthEndpoints" name="test_google_oauth_returns_auth_url" time="0.123" /><testcase classname="tests.test_iteration34_clean_sweep.TestCoreModuleIntegrity" name="test_server_is_running_with_all_imports" time="0.152" /><testcase classname="tests.test_iteration34_clean_sweep.TestCoreModuleIntegrity" name="test_all_16_routes_loaded" time="1.015"><failure message="assert 404 == 403&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration34_clean_sweep.py:166: in test_all_16_routes_loaded
+    assert r7.status_code == 403  # auth required but route exists
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 404 == 403
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration34_clean_sweep.TestAPIRootEndpoint" name="test_api_root_returns_info" time="0.192" /></testsuite></testsuites>
