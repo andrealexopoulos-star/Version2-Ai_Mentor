@@ -30,12 +30,14 @@ const LoginSupabase = () => {
     setLoading(true);
     try {
       await signIn(formData.email, formData.password);
-      // Do NOT navigate manually — PublicRoute detects authenticated state
-      // and redirects to /calibration or /advisor based on calibration status
       toast.success('Welcome back!');
     } catch (error) {
-      const errorMsg = error.message || 'Login failed. Please check your credentials.';
-      toast.error(errorMsg);
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('not found')) {
+        toast.error("Invalid email or password. Don't have an account? Sign up below.");
+      } else {
+        toast.error(error.message || 'Login failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
