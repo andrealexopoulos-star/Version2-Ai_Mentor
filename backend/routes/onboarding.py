@@ -59,14 +59,13 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
-# Import shared dependencies from server.py lazily to avoid circular imports
+# Import shared dependencies — now from core modules
 def _get_deps():
-    from server import (
-        require_owner_or_admin, get_current_account, get_email_domain,
-        hash_password, verify_password, create_token,
-        InviteResponse, TokenResponse, UserResponse,
-        InviteCreateRequest, InviteAcceptRequest,
+    from core.helpers import (
+        get_email_domain, hash_password, verify_password, create_token,
     )
+    from server import require_owner_or_admin, get_current_account
+    from core.models import InviteResponse, TokenResponse, UserResponse, InviteCreateRequest, InviteAcceptRequest
     return {
         "require_owner_or_admin": require_owner_or_admin,
         "get_current_account": get_current_account,
