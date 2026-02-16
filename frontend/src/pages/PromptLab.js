@@ -119,6 +119,20 @@ export default function PromptLab() {
     }
   };
 
+  const fetchAuditLogs = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      const res = await apiClient.get('/admin/prompts/audit-log');
+      setAuditLogs(res.data.logs || []);
+    } catch {
+      toast.error('Failed to load audit logs');
+    } finally {
+      setAuditLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { if (activeTab === 'audit') fetchAuditLogs(); }, [activeTab, fetchAuditLogs]);
+
   const filtered = prompts.filter(p =>
     p.prompt_key?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.agent_identity?.toLowerCase().includes(searchQuery.toLowerCase()) ||
