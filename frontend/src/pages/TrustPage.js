@@ -25,6 +25,27 @@ const CARDS = [
 
 const TrustPage = () => {
   const nav = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Trust & Data Sovereignty | BIQc - Australian Business Intelligence';
+    const metas = [
+      { name: 'description', content: 'BIQc guarantees 100% Australian data sovereignty with AES-256 encryption, zero-leakage AI, and compliance with Australian Privacy Principles (APP) 2026. Your business intelligence never leaves Australian jurisdiction.' },
+      { name: 'keywords', content: 'Australian data sovereignty, business data security Australia, AES-256 encryption, zero leakage AI, Australian Privacy Principles, data residency Australia, sovereign cloud Australia, business intelligence security, SME data protection' },
+      { property: 'og:title', content: 'Trust & Data Sovereignty | BIQc' },
+      { property: 'og:description', content: '100% Australian data sovereignty. AES-256 encryption. Zero-leakage AI. Your business intelligence is sovereign — never subject to the U.S. Cloud Act.' },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:title', content: 'Trust & Data Sovereignty | BIQc' },
+      { name: 'twitter:description', content: '100% Australian data sovereignty. AES-256 encryption. Zero-leakage AI instances. Protected under Australian Privacy Principles 2026.' },
+    ];
+    const created = metas.map(attrs => {
+      const el = document.createElement('meta');
+      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+      document.head.appendChild(el);
+      return el;
+    });
+    return () => created.forEach(el => el.remove());
+  }, []);
+
   return (
     <div className="min-h-screen bg-white relative" style={{ color: SLATE }}>
       <div className="fixed inset-0 pointer-events-none z-0" style={{ background: 'radial-gradient(ellipse at 85% -5%, #F0FFF4 0%, transparent 55%)' }} />
