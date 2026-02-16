@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiClient } from '../../lib/api';
 
 const CREAM = '#FBFBF9';
 const CHARCOAL = '#1E293B';
@@ -7,6 +8,7 @@ const GOLD = '#B8860B';
 const CARD_BG = '#FFFFFF';
 const CARD_BORDER = '#E8E6E1';
 const SERIF = "'Playfair Display', serif";
+const AZ = '#007AFF';
 
 const ANALYZE_PHASES = [
   'Scanning market presence...',
