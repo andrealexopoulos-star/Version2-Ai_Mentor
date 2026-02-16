@@ -18,8 +18,9 @@ from supabase_remaining_helpers import (
     get_onboarding_supabase, update_onboarding_supabase,
     create_invite_supabase, get_invite_supabase, delete_invite_supabase,
 )
-# Import auth helpers from server.py (top-level needed for Depends)
-from server import require_owner_or_admin, get_current_account, get_email_domain, hash_password, verify_password, create_token
+# Import auth helpers from core modules
+from core.helpers import get_email_domain, hash_password, verify_password, create_token
+from server import require_owner_or_admin, get_current_account
 
 router = APIRouter()
 

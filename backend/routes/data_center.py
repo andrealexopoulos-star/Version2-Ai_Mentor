@@ -39,7 +39,7 @@ async def upload_data_file(
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"File type not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
 
-    from server import extract_file_content
+    from core.helpers import extract_file_content
     extracted_text = await extract_file_content(file.filename, content)
 
     now = datetime.now(timezone.utc).isoformat()
