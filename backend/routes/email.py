@@ -39,6 +39,8 @@ from supabase_intelligence_helpers import (
 )
 from config.urls import get_backend_url, get_frontend_url
 
+JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret')
+
 router = APIRouter()
 
 # OAuth config from environment
