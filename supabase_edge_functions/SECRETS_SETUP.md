@@ -1,44 +1,65 @@
 # EDGE FUNCTION SECRETS SETUP
 
-## Required Secrets for `gmail_test` Edge Function
+## Required Secrets for ALL Edge Functions
 
-You MUST set these secrets in Supabase:
+You MUST set these secrets in Supabase Dashboard → Edge Functions → Secrets.
 
-### 1. Navigate to Supabase Dashboard
-- Go to: **Edge Functions** → **Secrets**
-
-### 2. Add These Secrets
-
+### Core Secrets (ALL Edge Functions)
 ```bash
 SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4eXFwZGZmdHhwa3plcHBxdHZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0MzcwNDcsImV4cCI6MjA4NDAxMzA0N30.Xu9Wg5M638qJSgDpJKwFYlr9YZDiYPLv4Igh69KHJ0k
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4eXFwZGZmdHhwa3plcHBxdHZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODQzNzA0NywiZXhwIjoyMDg0MDEzMDQ3fQ.Of8sBhmza-QMmtlQ-EN7kpqcDuiy512TlY2Gku9YuX4
-GOOGLE_CLIENT_ID=903194754324-ife21qnmrokplbcu2ck5afce0kjd6j10.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+SUPABASE_ANON_KEY=<your-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 ```
 
-### 3. CLI Method (Alternative)
+### deep-web-recon (SWOT + Social Intelligence)
+```bash
+OPENAI_API_KEY=<your-openai-key>
+FIRECRAWL_API_KEY=<your-firecrawl-key>
+```
 
-If using Supabase CLI:
+### calibration-psych (Persona Calibration)
+```bash
+OPENAI_API_KEY=<your-openai-key>    # Same key
+FIRECRAWL_API_KEY=<your-firecrawl-key>  # Same key
+```
+
+### Gmail OAuth (gmail_prod)
+```bash
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+```
+
+### Outlook OAuth (outlook-auth)
+```bash
+AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_SECRET=<your-azure-secret>
+BACKEND_URL=https://beta.thestrategysquad.com
+```
+
+## CLI Deployment
 
 ```bash
-supabase secrets set SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
-supabase secrets set SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-supabase secrets set GOOGLE_CLIENT_ID=903194754324-ife21qnmrokplbcu2ck5afce0kjd6j10.apps.googleusercontent.com
-supabase secrets set GOOGLE_CLIENT_SECRET=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
+# Deploy deep-web-recon
+supabase functions deploy deep-web-recon --no-verify-jwt
+
+# Deploy all secrets at once
+supabase secrets set \
+  SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co \
+  SUPABASE_ANON_KEY=<key> \
+  SUPABASE_SERVICE_ROLE_KEY=<key> \
+  OPENAI_API_KEY=<key> \
+  FIRECRAWL_API_KEY=<key>
 ```
 
-## Verification
+## Edge Functions Inventory
 
-After setting secrets, you can verify they're set:
+| Function | Purpose | Tables Written |
+|---|---|---|
+| `deep-web-recon` | SWOT + social recon | `biqc_insights`, `intelligence_actions`, `observation_events`, `business_profiles` |
+| `outlook-auth` | Outlook OAuth token storage | `outlook_oauth_tokens`, `email_connections` |
+| `gmail_prod` | Gmail OAuth token storage | `gmail_connections`, `email_connections` |
+| `email_priority` | Email triage + AI classification | `email_priority_analysis` |
+| `integration-status` | Connection health check | (read-only) |
+| `calibration-psych` | 9-step persona profiling | `user_operator_profile` |
 
-```bash
-supabase secrets list
-```
-
-Should show all 5 secrets (values will be hidden).
-
----
-
-**IMPORTANT:** Never commit these secrets to git. They are managed separately by Supabase.
+**IMPORTANT:** Never commit secrets to git. They are managed separately by Supabase.
