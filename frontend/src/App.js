@@ -12,6 +12,7 @@ import InstallPrompt from './components/InstallPrompt';
 // Pages
 import Landing from "./pages/Landing";
 import LandingIntelligent from "./pages/LandingIntelligent";
+import TrustPage from "./pages/TrustPage";
 import LoginSupabase from "./pages/LoginSupabase";
 import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
@@ -79,6 +80,7 @@ function AppRoutes() {
       <Route path="/" element={<LandingIntelligent />} />
       <Route path="/landing-original" element={<Landing />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/trust" element={<TrustPage />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
