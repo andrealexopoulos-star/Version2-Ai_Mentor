@@ -41,6 +41,15 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
       const clean = {};
       for (const [k, v] of Object.entries(handles)) { if (v.trim()) clean[k] = v.trim(); }
       await apiClient.put('/intelligence/social-handles', clean);
+      // Trigger deep-web-recon Edge Function immediately
+      try {
+        const reconRes = await apiClient.post('/intelligence/recon', {});
+        if (reconRes.data?.ok) {
+          console.log('[Recon] SWOT generated:', reconRes.data.signals_created, 'signals');
+        }
+      } catch (e) {
+        console.warn('[Recon] Edge function trigger failed (non-blocking):', e);
+      }
       setHandlesSaved(true);
       setTimeout(() => setDrawerOpen(false), 800);
     } catch (e) {
