@@ -1,0 +1,102 @@
+{
+  "summary": "Iteration 34: Clean Sweep Refactoring Verification - ALL 16 backend tests passed, frontend pages load correctly. server.py reduced from 975→171 lines, CalibrationAdvisor.js reduced from 831→323 lines. All core modules (models.py, helpers.py, config.py) and 16 route modules import correctly at runtime.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration34_clean_sweep.py",
+    "/app/test_reports/pytest/pytest_results_iteration34.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_iteration34_clean_sweep.py"
+  ],
+  "success_rate": {
+    "backend": "100% (16/16 tests passed)",
+    "frontend": "100% (all pages load, data-testid attributes verified)"
+  },
+  "test_credentials": "N/A - Testing unauthenticated endpoint protection",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Clean Sweep refactoring VERIFIED. Code extraction complete: server.py=171 lines (pure orchestrator), core/models.py=362 lines, core/helpers.py=215 lines, core/config.py=139 lines. CalibrationAdvisor.js=323 lines with sub-components: WowSummary.js (137), CalibratingSession.js (142), ExecutiveReveal.js (54), ContinuitySuite.js (48), CalibrationComponents.js (160). All data-testid attributes present. No functional changes - behavior identical to iteration_33.",
+  "features_verified": {
+    "backend_health": {
+      "GET_api_health": "PASS - Returns 200 {status: healthy}",
+      "GET_api_root": "PASS - Returns API info with version"
+    },
+    "auth_protection": {
+      "GET_calibration_status": "PASS - Returns 403 (Not authenticated)",
+      "GET_admin_prompts": "PASS - Returns 403 (Not authenticated)",
+      "GET_business_profile": "PASS - Returns 403 (Not authenticated)",
+      "GET_soundboard_conversations": "PASS - Returns 403 (Not authenticated)",
+      "GET_cognitive_profile": "PASS - Returns 403 (Not authenticated)",
+      "GET_executive_mirror": "PASS - Returns 403 (Not authenticated)",
+      "GET_dashboard_stats": "PASS - Returns 403 (Not authenticated)",
+      "GET_chat_history": "PASS - Returns 403 (Not authenticated)",
+      "GET_data_center_files": "PASS - Returns 403 (Not authenticated)",
+      "GET_onboarding_status": "PASS - Returns 403 (Not authenticated)"
+    },
+    "oauth_endpoints": {
+      "GET_auth_supabase_oauth_google": "PASS - Returns 200 with OAuth URL"
+    },
+    "core_module_integrity": {
+      "core_models_py": "PASS - 362 lines, all Pydantic models extracted",
+      "core_helpers_py": "PASS - 215 lines, all helper functions extracted",
+      "core_config_py": "PASS - 139 lines, middleware and service init extracted"
+    },
+    "route_modules_loaded": {
+      "routes_auth": "PASS - OAuth endpoint works",
+      "routes_calibration": "PASS - Returns 403",
+      "routes_profile": "PASS - Returns 403",
+      "routes_admin": "PASS - Returns 403",
+      "routes_soundboard": "PASS - Returns 403",
+      "routes_cognitive": "PASS - Returns 403",
+      "routes_data_center": "PASS - Returns 403",
+      "routes_onboarding": "PASS - Returns 403"
+    },
+    "frontend_pages": {
+      "landing_page": "PASS - / loads with BIQC branding, 'Start monitoring' button visible",
+      "login_page": "PASS - /login-supabase loads with Google/Microsoft OAuth + email/password form",
+      "calibration_redirect": "PASS - /calibration redirects to login when unauthenticated"
+    },
+    "data_testid_attributes": {
+      "calibration_page": "PASS - CalibrationAdvisor.js:264",
+      "website_url_input": "PASS - CalibrationComponents.js:48",
+      "manual_fallback_btn": "PASS - CalibrationComponents.js:65",
+      "begin_audit_btn": "PASS - CalibrationComponents.js:55",
+      "manual_summary_input": "PASS - CalibrationComponents.js:100",
+      "submit_summary_btn": "PASS - CalibrationComponents.js:107",
+      "executive_reveal": "PASS - ExecutiveReveal.js:18",
+      "continuity_suite": "PASS - ContinuitySuite.js:16",
+      "calibration_question": "PASS - CalibratingSession.js:50",
+      "calibration_options": "PASS - CalibratingSession.js:57",
+      "calibration_continue_btn": "PASS - CalibratingSession.js:94"
+    }
+  },
+  "file_line_counts_verified": {
+    "server_py": "171 lines (pure orchestrator - reduced from 975)",
+    "core_models_py": "362 lines",
+    "core_helpers_py": "215 lines",
+    "core_config_py": "139 lines",
+    "CalibrationAdvisor_js": "323 lines (reduced from 831)",
+    "WowSummary_js": "137 lines",
+    "CalibratingSession_js": "142 lines",
+    "ExecutiveReveal_js": "54 lines",
+    "ContinuitySuite_js": "48 lines",
+    "CalibrationComponents_js": "160 lines"
+  },
+  "api_test_details": {
+    "test_count": 16,
+    "passed": 16,
+    "failed": 0,
+    "duration": "3.24s"
+  }
+}
