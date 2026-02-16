@@ -154,6 +154,66 @@ async def fetch_gmail_emails(access_token: str, label: str, lookback_days: int =
         return []
 
 
+async def trigger_biqc_intelligence(user_id: str):
+    """
+    Closes the 24-hour Intelligence Gap.
+    Triggers deep-web-recon Edge Function after email sync completes.
+    Uses httpx (async) — NOT requests.
+    """
+    import httpx
+
+    edge_url = f"{os.environ.get('SUPABASE_URL')}/functions/v1/deep-web-recon"
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not edge_url or not service_key:
+        logger.warning(f"[INTEL] Missing SUPABASE_URL or SERVICE_ROLE_KEY — skipping trigger")
+        return
+
+    # Get social handles + website from business_profiles
+    website = ""
+    handles = {}
+    try:
+        bp = supabase_admin.table("business_profiles").select(
+            "website, social_handles"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if bp.data:
+            website = bp.data.get("website") or ""
+            handles = bp.data.get("social_handles") or {}
+    except Exception:
+        pass
+
+    payload = {
+        "user_id": user_id,
+        "trigger_source": "real_time_email_sync",
+        "website": website,
+        "linkedin": handles.get("linkedin", ""),
+        "twitter": handles.get("twitter", ""),
+        "instagram": handles.get("instagram", ""),
+        "facebook": handles.get("facebook", ""),
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(
+                edge_url,
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {service_key}",
+                    "Content-Type": "application/json",
+                },
+            )
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("suppressed"):
+                    logger.info(f"[INTEL] Signal Stable for {user_id[:8]}... — Executive Attention Preserved")
+                else:
+                    logger.info(f"[INTEL] Intelligence triggered for {user_id[:8]}... — {result.get('signals_created', 0)} signals")
+            else:
+                logger.warning(f"[INTEL] Edge Function returned {response.status_code}: {response.text[:100]}")
+    except Exception as e:
+        logger.error(f"[INTEL] Edge Function call failed for {user_id[:8]}...: {e}")
+
+
 async def sync_account_emails(account: Dict[str, Any]):
     """Sync emails for a single connected account (provider-agnostic)"""
     try:
