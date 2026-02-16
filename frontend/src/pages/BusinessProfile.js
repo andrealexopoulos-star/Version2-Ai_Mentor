@@ -107,6 +107,21 @@ const BusinessProfile = () => {
     });
   };
 
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await apiClient.put('/business-profile', profile);
+      toast.success('Profile saved');
+      fetchScores();
+    } catch (e) {
+      toast.error('Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
