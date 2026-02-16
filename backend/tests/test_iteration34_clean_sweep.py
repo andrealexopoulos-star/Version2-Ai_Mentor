@@ -24,12 +24,12 @@ class TestBackendHealth:
         data = response.json()
         assert data["status"] == "healthy"
     
-    def test_root_health_returns_200(self):
-        """GET /health should return 200 with status: healthy"""
-        response = requests.get(f"{BASE_URL}/health")
+    def test_api_root_returns_info(self):
+        """GET /api/ should return API info"""
+        response = requests.get(f"{BASE_URL}/api/")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "healthy"
+        assert "Strategic Advisor API" in data.get("message", "")
 
 
 class TestAuthProtection:
