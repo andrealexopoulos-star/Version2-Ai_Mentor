@@ -1708,7 +1708,11 @@ async def calculate_business_score(profile: dict, onboarding: dict = None, user_
 async def get_profile_scores(current_user: dict = Depends(get_current_user)):
     """Get profile scores — reads from business_profiles (authoritative)"""
     user_id = current_user["id"]
-    
+    cache_key = f"profile_scores_{user_id}"
+    cached = _get_cached(cache_key)
+    if cached:
+        return cached
+
     profile = await get_business_profile_supabase(get_sb(), user_id)
     onboarding = await get_onboarding_supabase(get_sb(), user_id)
     files_count = await count_user_data_files_supabase(get_sb(), user_id)
@@ -1716,7 +1720,7 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
     completeness = calculate_profile_completeness(profile) if profile else 0
     business_score = await calculate_business_score(profile, onboarding, user_id) if profile else 0
     
-    return {
+    result = {
         "completeness": completeness,
         "strength": business_score,
         "business_score": business_score,
@@ -1724,6 +1728,8 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
         "document_count": files_count,
         "onboarding_completed": onboarding.get("completed", False) if onboarding else False
     }
+    _set_cached(cache_key, result)
+    return result
 
 
 # ==================== DASHBOARD STATS ====================
