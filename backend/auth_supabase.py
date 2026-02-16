@@ -8,7 +8,9 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
 import os
 import logging
-from supabase_client import supabase_admin
+from supabase_client import init_supabase
+
+supabase_admin = init_supabase()
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
