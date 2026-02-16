@@ -298,7 +298,7 @@ async def _add_confidence_assessment(parts, issues, user_id):
         level, score, guidance = "low", 0, "Operate with maximum caution."
         factors, limiting = [], ["Confidence calculation failed"]
 
-    parts.append(f"\n═══ 4. CONFIDENCE ASSESSMENT ═══")
+    parts.append("\n═══ 4. CONFIDENCE ASSESSMENT ═══")
     parts.append(f"CONFIDENCE LEVEL: {level.upper()} ({score}%)")
     if factors:
         for f in factors:
