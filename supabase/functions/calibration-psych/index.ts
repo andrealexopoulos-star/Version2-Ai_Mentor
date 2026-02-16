@@ -187,6 +187,14 @@ serve(async (req: Request) => {
       updated_at: new Date().toISOString(),
     };
 
+    // When calibration completes, also mark onboarding and console as complete
+    // This prevents the redirect loop: /advisor → /onboarding → /calibration
+    if (isComplete) {
+      updated["onboarding_state"] = { completed: true, current_step: 14, completed_at: new Date().toISOString() };
+      updated["console_state"] = { status: "COMPLETE", current_step: 17, updated_at: new Date().toISOString() };
+      patch.operator_profile = updated;
+    }
+
     if (isComplete && parsed.agent_persona) {
       try { patch.agent_persona = JSON.parse(parsed.agent_persona as string); } catch { patch.agent_persona = parsed.agent_persona; }
     }
