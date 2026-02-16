@@ -230,6 +230,55 @@ const WarRoomConsoleInner = () => {
         <div style={{ height: '100%', width: `${progress}%`, background: '#3B82F6', transition: 'width 0.8s ease-out', borderRadius: '0 2px 2px 0' }} />
       </div>
 
+      {/* INTELLIGENCE ACTIONS PANEL */}
+      {actions.length > 0 && (
+        <div style={{ borderBottom: '1px solid #E5E7EB', flexShrink: 0, background: '#FAFBFC' }}>
+          <button
+            onClick={() => setActionsOpen(!actionsOpen)}
+            style={{ width: '100%', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            data-testid="actions-panel-toggle"
+          >
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              Intelligence Signals ({actions.filter(a => a.status !== 'ignored').length})
+            </span>
+            <span style={{ fontSize: 11, color: '#9CA3AF' }}>{actionsOpen ? '▲' : '▼'}</span>
+          </button>
+          {actionsOpen && (
+            <div style={{ padding: '0 20px 12px', maxHeight: 200, overflowY: 'auto' }}>
+              {actions.filter(a => a.status !== 'ignored').map(action => (
+                <div key={action.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: '1px solid #F3F4F6' }} data-testid={`action-row-${action.id}`}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, color: '#1F2937', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {action.content_summary || 'Signal detected'}
+                    </p>
+                    <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>
+                      {action.signal_source || 'unknown'} · {action.created_at ? new Date(action.created_at).toLocaleDateString() : ''}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                    {['read', 'action_required', 'ignored'].map(s => (
+                      <button
+                        key={s}
+                        onClick={() => toggleAction(action.id, s)}
+                        style={{
+                          padding: '3px 8px', fontSize: 10, fontWeight: 600, borderRadius: 4, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                          background: action.status === s ? (s === 'read' ? '#DBEAFE' : s === 'action_required' ? '#FEF3C7' : '#F3F4F6') : '#F9FAFB',
+                          color: action.status === s ? (s === 'read' ? '#1D4ED8' : s === 'action_required' ? '#92400E' : '#6B7280') : '#9CA3AF',
+                          border: `1px solid ${action.status === s ? (s === 'read' ? '#93C5FD' : s === 'action_required' ? '#FCD34D' : '#D1D5DB') : '#E5E7EB'}`,
+                        }}
+                        data-testid={`action-${action.id}-${s}`}
+                      >
+                        {s === 'read' ? 'Read' : s === 'action_required' ? 'Action' : 'Ignore'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* CHAT AREA — single scroll container */}
       <div
         ref={chatContainerRef}
