@@ -41,7 +41,7 @@ def build_business_knowledge_context(business_context: dict) -> str:
         context_parts.append(f"## Business Owner: {user.get('full_name') or user.get('name', 'Unknown')}")
         biz_name = user.get('company_name') or user.get('business_name')
         if biz_name:
-            context_parts.append(f"## Business Name: {user.get('business_name')}")
+            context_parts.append(f"## Business Name: {biz_name}")
         if user.get('industry'):
             context_parts.append(f"## Industry: {user.get('industry')}")
 
