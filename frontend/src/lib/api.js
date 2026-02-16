@@ -13,8 +13,26 @@ apiClient.interceptors.request.use(async (config) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${session.access_token}`;
+      // Check if token expires within 60 seconds — refresh proactively
+      const expiry = session.expires_at ? session.expires_at * 1000 : 0;
+      if (expiry && expiry - Date.now() < 60000) {
+        try {
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          if (refreshed?.session?.access_token) {
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${refreshed.session.access_token}`;
+          } else {
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${session.access_token}`;
+          }
+        } catch {
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${session.access_token}`;
+        }
+      } else {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+      }
     }
   } catch (error) {
     console.warn('Failed to get Supabase session:', error.message);
