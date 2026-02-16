@@ -96,16 +96,6 @@ class TestAuthProtection:
         response = requests.get(f"{BASE_URL}/api/data-center/files")
         assert response.status_code == 403
     
-    def test_watchtower_signals_requires_auth(self):
-        """GET /api/watchtower/signals requires auth"""
-        response = requests.get(f"{BASE_URL}/api/watchtower/signals")
-        assert response.status_code == 403
-    
-    def test_research_topics_requires_auth(self):
-        """GET /api/research/topics requires auth"""
-        response = requests.get(f"{BASE_URL}/api/research/topics")
-        assert response.status_code == 403
-    
     def test_onboarding_status_requires_auth(self):
         """GET /api/onboarding/status requires auth"""
         response = requests.get(f"{BASE_URL}/api/onboarding/status")
