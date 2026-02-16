@@ -1,0 +1,180 @@
+"""
+Intelligence Actions & Social Recon — BIQc Master Agent Directive.
+
+Enforces:
+- auth.uid() for all queries (no hardcoding)
+- company_name (users) → business_name (business_profiles) mapping
+- intelligence_actions table for [Read/Action/Ignore] toggles
+- Attention protection: suppress if no material change
+"""
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime, timezone
+import logging
+
+from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
+from supabase_intelligence_helpers import get_business_profile_supabase
+from auth_supabase import get_user_by_id
+
+router = APIRouter()
+
+
+# ═══ INTELLIGENCE ACTIONS (Read / Action Required / Ignore) ═══
+
+@router.get("/intelligence/actions")
+async def get_intelligence_actions(current_user: dict = Depends(get_current_user)):
+    """Get all intelligence actions for the authenticated user.
+    Uses auth.uid() — no hardcoded user IDs."""
+    user_id = current_user["id"]
+    result = get_sb().table("intelligence_actions").select("*").eq(
+        "user_id", user_id
+    ).order("created_at", desc=True).limit(50).execute()
+
+    actions = result.data or []
+    summary = {
+        "total": len(actions),
+        "unread": sum(1 for a in actions if a.get("status") == "read"),
+        "action_required": sum(1 for a in actions if a.get("status") == "action_required"),
+        "addressed": sum(1 for a in actions if a.get("status") == "addressed"),
+        "ignored": sum(1 for a in actions if a.get("status") == "ignored"),
+    }
+    return {"actions": actions, "summary": summary}
+
+
+class ActionStatusUpdate(BaseModel):
+    status: str  # read | action_required | addressed | ignored
+
+
+@router.patch("/intelligence/actions/{action_id}")
+async def update_action_status(action_id: str, update: ActionStatusUpdate, current_user: dict = Depends(get_current_user)):
+    """Update an intelligence action's status. Enforces ownership via user_id."""
+    if update.status not in ("read", "action_required", "addressed", "ignored"):
+        raise HTTPException(status_code=400, detail="Status must be: read, action_required, addressed, ignored")
+
+    result = get_sb().table("intelligence_actions").update(
+        {"status": update.status}
+    ).eq("id", action_id).eq("user_id", current_user["id"]).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Action not found or not owned by user")
+    return {"ok": True, "action": result.data[0]}
+
+
+# ═══ BUSINESS PROFILE SEEDING (company_name → business_name) ═══
+
+@router.post("/intelligence/seed-profile")
+async def seed_business_profile(current_user: dict = Depends(get_current_user)):
+    """Seed business_profiles from users table if no profile exists.
+    Maps users.company_name → business_profiles.business_name.
+    Uses auth.uid() — no hardcoding."""
+    user_id = current_user["id"]
+
+    profile = await get_business_profile_supabase(get_sb(), user_id)
+    if profile:
+        return {"status": "exists", "business_name": profile.get("business_name")}
+
+    user = await get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    seed = {
+        "user_id": user_id,
+        "business_name": user.get("company_name") or user.get("full_name", ""),
+        "industry": user.get("industry"),
+        "target_country": "Australia",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    seed = {k: v for k, v in seed.items() if v is not None}
+
+    from supabase_intelligence_helpers import update_business_profile_supabase
+    success = await update_business_profile_supabase(get_sb(), user_id, seed)
+    if success:
+        logger.info(f"[seed-profile] Seeded business_profiles for {user_id}: company_name→business_name = {seed.get('business_name')}")
+        return {"status": "seeded", "business_name": seed.get("business_name")}
+    return {"status": "failed", "error": "RLS policy may be blocking INSERT — fix in Supabase Dashboard"}
+
+
+# ═══ SOCIAL HANDLES MANAGEMENT ═══
+
+class SocialHandlesUpdate(BaseModel):
+    linkedin: Optional[str] = None
+    twitter: Optional[str] = None
+    instagram: Optional[str] = None
+    facebook: Optional[str] = None
+
+
+@router.put("/intelligence/social-handles")
+async def update_social_handles(handles: SocialHandlesUpdate, current_user: dict = Depends(get_current_user)):
+    """Update social handles for social recon crawling.
+    Stored in business_profiles.social_handles JSONB column."""
+    user_id = current_user["id"]
+    profile = await get_business_profile_supabase(get_sb(), user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Business profile not found — seed it first via /intelligence/seed-profile")
+
+    social = {k: v for k, v in handles.model_dump().items() if v is not None}
+    get_sb().table("business_profiles").update(
+        {"social_handles": social, "updated_at": datetime.now(timezone.utc).isoformat()}
+    ).eq("user_id", user_id).execute()
+
+    return {"ok": True, "social_handles": social}
+
+
+@router.get("/intelligence/social-handles")
+async def get_social_handles(current_user: dict = Depends(get_current_user)):
+    """Get current social handles for the user."""
+    profile = await get_business_profile_supabase(get_sb(), current_user["id"])
+    if not profile:
+        return {"social_handles": {}}
+    return {"social_handles": profile.get("social_handles") or {}}
+
+
+# ═══ INTELLIGENCE BRIEF (Interactive, Suppressible) ═══
+
+@router.get("/intelligence/brief")
+async def get_intelligence_brief(current_user: dict = Depends(get_current_user)):
+    """Generate the daily intelligence brief.
+    ATTENTION PROTECTION: Returns suppressed=true if no material changes detected.
+    Uses intelligence_actions for interactive [Read/Action/Ignore] toggles."""
+    user_id = current_user["id"]
+
+    # Gather signals
+    actions = get_sb().table("intelligence_actions").select("*").eq(
+        "user_id", user_id
+    ).neq("status", "ignored").order("created_at", desc=True).limit(20).execute()
+
+    observations = get_sb().table("observation_events").select("*").eq(
+        "user_id", user_id
+    ).order("observed_at", desc=True).limit(10).execute()
+
+    insights = get_sb().table("watchtower_insights").select("*").eq(
+        "user_id", user_id
+    ).order("detected_at", desc=True).limit(5).execute()
+
+    action_count = len(actions.data or [])
+    observation_count = len(observations.data or [])
+    insight_count = len(insights.data or [])
+    action_required = sum(1 for a in (actions.data or []) if a.get("status") == "action_required")
+
+    # ATTENTION PROTECTION: suppress if nothing material
+    if action_count == 0 and observation_count == 0 and insight_count == 0:
+        return {
+            "suppressed": True,
+            "reason": "No material changes detected. Your business intelligence is stable.",
+            "actions": [],
+            "observations": [],
+            "insights": [],
+        }
+
+    return {
+        "suppressed": False,
+        "summary": {
+            "actions_pending": action_required,
+            "observations_new": observation_count,
+            "insights_generated": insight_count,
+        },
+        "actions": actions.data or [],
+        "observations": observations.data or [],
+        "insights": insights.data or [],
+    }
