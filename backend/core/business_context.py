@@ -38,8 +38,9 @@ def build_business_knowledge_context(business_context: dict) -> str:
     data_files = business_context.get("data_files", [])
 
     if user:
-        context_parts.append(f"## Business Owner: {user.get('name', 'Unknown')}")
-        if user.get('business_name'):
+        context_parts.append(f"## Business Owner: {user.get('full_name') or user.get('name', 'Unknown')}")
+        biz_name = user.get('company_name') or user.get('business_name')
+        if biz_name:
             context_parts.append(f"## Business Name: {user.get('business_name')}")
         if user.get('industry'):
             context_parts.append(f"## Industry: {user.get('industry')}")
