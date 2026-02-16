@@ -1114,24 +1114,26 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
             now_iso = datetime.now(timezone.utc).isoformat()
             # PRIMARY: Write to user_operator_profile (authoritative)
             try:
-                existing = get_sb().table("user_operator_profile").select("user_id").eq("user_id", user_id).maybe_single().execute()
+                existing = get_sb().table("user_operator_profile").select("user_id, operator_profile").eq("user_id", user_id).maybe_single().execute()
+                update_data = {
+                    "persona_calibration_status": "complete",
+                    "calibration_completed_at": now_iso
+                }
+                # Auto-complete console_state when brain finishes
                 if existing.data:
-                    get_sb().table("user_operator_profile").update({
-                        "persona_calibration_status": "complete",
-                        "calibration_completed_at": now_iso
-                    }).eq("user_id", user_id).execute()
+                    op = existing.data.get("operator_profile") or {}
+                    op["console_state"] = {"status": "COMPLETE", "current_step": 17, "updated_at": now_iso}
+                    update_data["operator_profile"] = op
+                    get_sb().table("user_operator_profile").update(update_data).eq("user_id", user_id).execute()
                 else:
-                    get_sb().table("user_operator_profile").insert({
-                        "user_id": user_id,
-                        "persona_calibration_status": "complete",
-                        "calibration_completed_at": now_iso,
-                        "operator_profile": {}
-                    }).execute()
-                logger.info(f"[calibration/brain] user_operator_profile.persona_calibration_status = complete for {user_id}")
+                    update_data["operator_profile"] = {"console_state": {"status": "COMPLETE", "current_step": 17, "updated_at": now_iso}}
+                    update_data["user_id"] = user_id
+                    get_sb().table("user_operator_profile").insert(update_data).execute()
+                logger.info(f"[calibration/brain] persona_calibration_status = complete, console_state = COMPLETE for {user_id}")
             except Exception as op_err:
                 logger.error(f"[calibration/brain] user_operator_profile write failed: {op_err}")
 
-            # SECONDARY: Also update business_profiles for backward compat
+            # SEED business_profiles from users table if no profile exists
             try:
                 profile = await get_business_profile_supabase(get_sb(), user_id)
                 if profile:
@@ -1139,8 +1141,23 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
                         "calibration_status": "complete",
                         "updated_at": now_iso
                     }).eq("id", profile.get("id")).execute()
+                else:
+                    # No business_profiles row — seed from users table
+                    user_data = await get_user_by_id(user_id)
+                    if user_data:
+                        seed = {
+                            "user_id": user_id,
+                            "business_name": user_data.get("company_name") or user_data.get("business_name"),
+                            "industry": user_data.get("industry"),
+                            "calibration_status": "complete",
+                            "created_at": now_iso,
+                            "updated_at": now_iso,
+                        }
+                        seed = {k: v for k, v in seed.items() if v is not None}
+                        get_sb().table("business_profiles").insert(seed).execute()
+                        logger.info(f"[calibration/brain] Seeded business_profiles from users table for {user_id}")
             except Exception as comp_err:
-                logger.warning(f"[calibration/brain] business_profiles update failed: {comp_err}")
+                logger.warning(f"[calibration/brain] business_profiles seed/update failed: {comp_err}")
 
         return brain_response
 
