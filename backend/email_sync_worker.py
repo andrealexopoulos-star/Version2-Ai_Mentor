@@ -268,6 +268,10 @@ async def sync_account_emails(account: Dict[str, Any]):
                 synced_count += 1
         
         logger.info(f"✅ {provider.upper()} {account_email}: synced {synced_count} emails")
+
+        # TRIGGER: Close the 24-hour intelligence gap
+        if synced_count > 0:
+            await trigger_biqc_intelligence(user_id)
         
     except Exception as e:
         logger.error(f"❌ Error syncing account {account.get('account_email', 'unknown')}: {e}")
