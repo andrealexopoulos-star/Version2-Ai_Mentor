@@ -11,6 +11,8 @@ import json
 import asyncio
 import logging
 import re
+import jwt
+from urllib.parse import quote
 
 import httpx
 from emergentintegrations.llm.chat import LlmChat, UserMessage
