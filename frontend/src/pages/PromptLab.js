@@ -288,6 +288,57 @@ export default function PromptLab() {
             })}
           </div>
         )}
+        </>
+        )}
+
+        {/* Audit Trail Tab */}
+        {activeTab === 'audit' && (
+          <div data-testid="audit-trail-section">
+            {auditLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--text-muted)' }} />
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="text-center py-20">
+                <History className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+                <p style={{ color: 'var(--text-muted)' }}>No audit entries yet. Changes to prompts will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {auditLogs.map((log, i) => (
+                  <div key={i} className="rounded-xl p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs font-mono">{log.prompt_key}</Badge>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>by {log.updated_by || 'system'}</span>
+                      </div>
+                      <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                        <Clock className="w-3 h-3" />
+                        {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Unknown'}
+                      </span>
+                    </div>
+                    {log.old_content && (
+                      <div className="mt-2">
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#EF4444' }}>Removed:</p>
+                        <pre className="text-xs p-2 rounded overflow-x-auto max-h-24" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
+                          {(log.old_content || '').substring(0, 200)}{log.old_content?.length > 200 ? '...' : ''}
+                        </pre>
+                      </div>
+                    )}
+                    {log.new_content && (
+                      <div className="mt-2">
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#22C55E' }}>Added:</p>
+                        <pre className="text-xs p-2 rounded overflow-x-auto max-h-24" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
+                          {(log.new_content || '').substring(0, 200)}{log.new_content?.length > 200 ? '...' : ''}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Editor Drawer */}
         {selectedPrompt && (
