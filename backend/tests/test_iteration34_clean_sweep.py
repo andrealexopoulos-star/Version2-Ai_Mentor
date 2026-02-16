@@ -135,8 +135,8 @@ class TestCoreModuleIntegrity:
         response = requests.get(f"{BASE_URL}/api/health")
         assert response.status_code == 200
     
-    def test_all_16_routes_loaded(self):
-        """Verify all route modules loaded by checking various endpoints"""
+    def test_all_route_modules_loaded(self):
+        """Verify route modules loaded by checking various endpoints"""
         # auth router
         r1 = requests.get(f"{BASE_URL}/api/auth/supabase/oauth/google")
         assert r1.status_code == 200
@@ -162,21 +162,22 @@ class TestCoreModuleIntegrity:
         assert r6.status_code == 403  # auth required but route exists
         
         # data_center router
-        r7 = requests.get(f"{BASE_URL}/api/data-files")
+        r7 = requests.get(f"{BASE_URL}/api/data-center/files")
         assert r7.status_code == 403  # auth required but route exists
         
-        # facts router
-        r8 = requests.get(f"{BASE_URL}/api/facts")
+        # watchtower router
+        r8 = requests.get(f"{BASE_URL}/api/watchtower/signals")
         assert r8.status_code == 403  # auth required but route exists
 
 
-class TestAPIRootEndpoint:
+class TestAPIVersionEndpoint:
     """Test API root endpoint"""
     
-    def test_api_root_returns_info(self):
-        """GET /api/ returns API info"""
+    def test_api_root_returns_version_info(self):
+        """GET /api/ returns API version info"""
         response = requests.get(f"{BASE_URL}/api/")
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
         assert "Strategic Advisor API" in data["message"]
+        assert "version" in data
