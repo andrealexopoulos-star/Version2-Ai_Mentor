@@ -49,8 +49,13 @@ const RegisterSupabase = () => {
       toast.success('Account created! Please check your email to confirm.');
       navigate('/login-supabase');
     } catch (error) {
-      const errorMsg = error.message || 'Registration failed. Please try again.';
-      toast.error(errorMsg);
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('already') || msg.includes('exists') || msg.includes('registered') || msg.includes('duplicate')) {
+        toast.error('An account with this email already exists. Please sign in instead.');
+        setTimeout(() => navigate('/login-supabase'), 2000);
+      } else {
+        toast.error(error.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
