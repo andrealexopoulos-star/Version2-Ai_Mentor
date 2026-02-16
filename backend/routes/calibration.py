@@ -778,7 +778,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 f"Growth raw: {strategy_profile.get('raw_growth_input')}\n"
             )
 
-            from server import get_ai_response
+            from core.ai_core import get_ai_response
             ai_text = await get_ai_response(raw_prompt, "general", f"calibration_{user_id}", user_id=user_id)
             ai_payload = {}
             try:
@@ -978,7 +978,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             f"User answered: \"{answer}\"\n\n"
             "Respond with JSON only."
         )
-        from server import get_ai_response
+        from core.ai_core import get_ai_response
         raw_ai = await get_ai_response(cal_user_msg, "general", f"calibration_{user_id}", user_id=user_id)
         if raw_ai:
             raw_ai = raw_ai.strip()
@@ -1031,7 +1031,7 @@ async def get_calibration_activation(request: Request):
         )
         db_activation = await get_prompt("calibration_activation_v1", _activation_fallback)
         activation_prompt = f"{db_activation}\n\nBusiness context: {context_summary}"
-        from server import get_ai_response
+        from core.ai_core import get_ai_response
         ai_text = await get_ai_response(activation_prompt, "general", f"activation_{user_id}", user_id=user_id)
         activation = json.loads(ai_text)
         return activation
