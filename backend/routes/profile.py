@@ -115,12 +115,13 @@ class BusinessProfileUpdate(BaseModel):
 
 @router.get("/business-profile")
 async def get_business_profile(current_user: dict = Depends(get_current_user)):
-    """Get user's business profile — reads from business_profiles (authoritative)"""
+    """Get user's business profile — reads from business_profiles (authoritative).
+    Falls back to users table, mapping company_name → business_name."""
     profile = await get_business_profile_supabase(get_sb(), current_user["id"])
     if not profile:
         return {
             "user_id": current_user["id"],
-            "business_name": current_user.get("business_name"),
+            "business_name": current_user.get("company_name") or current_user.get("business_name"),
             "industry": current_user.get("industry")
         }
     return profile
