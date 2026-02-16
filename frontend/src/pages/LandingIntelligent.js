@@ -240,25 +240,22 @@ const LandingIntelligent = () => {
             <div className="space-y-7">
               <motion.div variants={up} className="space-y-5">
                 <p className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ fontFamily: MONO, color: AZ }}>Sovereign Business Intelligence</p>
-                <h1 className="text-[2.8rem] sm:text-[3.2rem] lg:text-[3.5rem] font-bold leading-[1.08]" style={{ fontFamily: HEAD, letterSpacing: '-0.02em', color: '#0A0F1E' }}>
-                  Stop Monitoring.<br />Start Commanding.
-                </h1>
+                <RotatingHeadline />
               </motion.div>
-              <motion.p variants={up} className="text-[1.25rem] leading-[1.75] max-w-lg" style={{ color: MU }}>
-                Your business is talking. BIQc is listening.<br />
-                We fused 3 years of Executive Strategy with a 24/7 Sentinel Swarm. The result isn't just software — it's a <span className="font-semibold" style={{ color: AZ }}>Sovereign Digital Double</span> that hunts for profit leaks, enforces your standards, and defends your life's work on Australian soil.
+              <motion.p variants={up} className="text-[1.15rem] leading-[1.75] max-w-lg" style={{ color: MU }}>
+                Don't wait for end-of-month surprises. BIQc is the always-on mentor that alerts you to risks and opportunities in real-time. <span className="font-medium" style={{ color: SL }}>See it coming. Fix it fast. Get back to business.</span>
               </motion.p>
               <motion.div variants={up} className="flex flex-col sm:flex-row gap-3">
-                <button onClick={() => nav('/register-supabase')} className="px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5 text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 8px 24px rgba(0,122,255,0.3)' }} data-testid="hero-cta-primary">Deploy Active Defense <ArrowRight className="w-4 h-4" /></button>
-                <button onClick={() => nav('/trust')} className="titan-card px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5" style={{ ...titanGlass, color: SL, fontFamily: HEAD }} data-testid="hero-cta-mentor"><Brain className="w-4 h-4" style={{ color: AZ }} /> Meet Your Mentor</button>
+                <button onClick={() => nav('/register-supabase')} className="px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5 text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 8px 24px rgba(0,122,255,0.3)' }} data-testid="hero-cta-primary">Start My Defense <ArrowRight className="w-4 h-4" /></button>
+                <button onClick={() => nav('/trust')} className="titan-card px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5" style={{ ...titanGlass, color: SL, fontFamily: HEAD }} data-testid="hero-cta-mentor"><Shield className="w-4 h-4" style={{ color: AZ }} /> Meet Your Mentor</button>
               </motion.div>
-              <motion.div variants={up} className="flex items-center gap-4">
-                <Lock className="w-3.5 h-3.5" style={{ color: MU }} strokeWidth={1.5} />
-                <span className="text-[0.875rem]" style={{ fontFamily: MONO, color: '#64748B' }}>100% Australian Data Residency. AES-256 Encryption. Zero-Leakage AI.</span>
+              <motion.div variants={up} className="flex items-center gap-3">
+                <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: MU }} strokeWidth={1.5} />
+                <span className="text-[0.875rem]" style={{ fontFamily: MONO, color: '#64748B' }}>100% Sovereign. 0% Blind Spots.</span>
               </motion.div>
             </div>
             <motion.div variants={up}>
-              <div className="rounded-2xl p-6 titan-card" style={{ ...titanGlass }}>
+              <div className="rounded-2xl p-6 titan-card hero-glass-pulse" style={{ ...titanGlass }}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full animate-pulse" style={{ background: MINT }} /><span className="text-[11px] font-semibold tracking-[0.15em] uppercase" style={{ fontFamily: MONO, color: MU }}>Live Sentinel Feed</span></div>
                   <span className="text-[10px]" style={{ fontFamily: MONO, color: '#94A3B8' }}>AEST</span>
