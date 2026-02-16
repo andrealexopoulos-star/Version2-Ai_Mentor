@@ -166,7 +166,7 @@ async def trigger_biqc_intelligence(user_id: str):
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
     if not edge_url or not service_key:
-        logger.warning(f"[INTEL] Missing SUPABASE_URL or SERVICE_ROLE_KEY — skipping trigger")
+        logger.warning("[INTEL] Missing SUPABASE_URL or SERVICE_ROLE_KEY — skipping trigger")
         return
 
     # Get social handles + website from business_profiles
@@ -351,7 +351,7 @@ async def sync_loop():
     logger.info("🚀 Email Sync Worker Started (Provider-Agnostic)")
     logger.info(f"📅 Sync Interval: {SYNC_INTERVAL_SECONDS} seconds")
     logger.info(f"📊 Lookback Window: {LOOKBACK_DAYS} days")
-    logger.info(f"🌐 Supported Providers: Outlook, Gmail")
+    logger.info("🌐 Supported Providers: Outlook, Gmail")
     
     while True:
         try:
