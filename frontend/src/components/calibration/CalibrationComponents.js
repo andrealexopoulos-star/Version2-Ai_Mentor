@@ -25,52 +25,141 @@ export const CalibrationLoading = () => (
   </div>
 );
 
-/** Welcome screen — URL input + manual fallback */
-export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmit, onManualFallback, isSubmitting, error }) => (
-  <div className="flex-1 flex items-center justify-center px-6">
-    <div className="max-w-lg w-full text-center">
-      <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
-        {firstName ? `Welcome to BIQc, ${firstName}.` : 'Welcome to BIQc.'}
-      </h1>
-      <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 460, margin: '0 auto' }}>
-        Provide your website URL for an instant strategic audit — or describe your business in a few sentences.
-      </p>
+/** Welcome screen — URL input + manual fallback + Strategic Expansion drawer */
+export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmit, onManualFallback, isSubmitting, error }) => {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [handles, setHandles] = useState({ linkedin: '', twitter: '', instagram: '', facebook: '' });
+  const [savingHandles, setSavingHandles] = useState(false);
+  const [handlesSaved, setHandlesSaved] = useState(false);
 
-      {error && <p className="text-sm text-red-500 mb-4" data-testid="calibration-error">{error}</p>}
+  const hasAnyHandle = Object.values(handles).some(v => v.trim());
 
-      <form onSubmit={onSubmit} className="max-w-md mx-auto space-y-4">
-        <input
-          type="text"
-          value={websiteUrl}
-          onChange={(e) => setWebsiteUrl(e.target.value)}
-          placeholder="thestrategysquad.com"
-          className="w-full rounded-xl px-5 py-3.5 text-base text-center focus:outline-none transition-colors"
-          style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, color: CHARCOAL }}
-          autoFocus
-          data-testid="website-url-input"
-        />
+  const saveHandles = async () => {
+    if (!hasAnyHandle) return;
+    setSavingHandles(true);
+    try {
+      const clean = {};
+      for (const [k, v] of Object.entries(handles)) { if (v.trim()) clean[k] = v.trim(); }
+      await apiClient.put('/intelligence/social-handles', clean);
+      setHandlesSaved(true);
+      setTimeout(() => setDrawerOpen(false), 800);
+    } catch (e) {
+      console.error('Failed to save handles:', e);
+    } finally {
+      setSavingHandles(false);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex items-center justify-center px-6">
+      <div className="max-w-lg w-full text-center">
+        <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
+          {firstName ? `Welcome to BIQc, ${firstName}.` : 'Welcome to BIQc.'}
+        </h1>
+        <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 460, margin: '0 auto' }}>
+          Provide your website URL for an instant strategic audit — or describe your business in a few sentences.
+        </p>
+
+        {error && <p className="text-sm text-red-500 mb-4" data-testid="calibration-error">{error}</p>}
+
+        <form onSubmit={onSubmit} className="max-w-md mx-auto space-y-4">
+          <input
+            type="text"
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+            placeholder="thestrategysquad.com"
+            className="w-full rounded-xl px-5 py-3.5 text-base text-center focus:outline-none transition-colors"
+            style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, color: CHARCOAL }}
+            autoFocus
+            data-testid="website-url-input"
+          />
+          <button
+            type="submit"
+            disabled={isSubmitting || !websiteUrl.trim()}
+            className="w-full px-8 py-3.5 rounded-full text-sm font-medium transition-opacity disabled:opacity-40"
+            style={{ background: CHARCOAL, color: '#FFFFFF' }}
+            data-testid="begin-audit-btn"
+          >
+            Begin Audit
+          </button>
+        </form>
+
+        {/* Strategic Expansion Toggle */}
         <button
-          type="submit"
-          disabled={isSubmitting || !websiteUrl.trim()}
-          className="w-full px-8 py-3.5 rounded-full text-sm font-medium transition-opacity disabled:opacity-40"
-          style={{ background: CHARCOAL, color: '#FFFFFF' }}
-          data-testid="begin-audit-btn"
+          onClick={() => setDrawerOpen(!drawerOpen)}
+          className="mt-6 text-xs font-medium cursor-pointer transition-colors inline-flex items-center gap-1.5"
+          style={{ color: AZ }}
+          data-testid="strategic-expansion-toggle"
         >
-          Begin Audit
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          Strategic Expansion — Add Social Handles
         </button>
-      </form>
 
-      <button
-        onClick={onManualFallback}
-        className="mt-6 text-xs underline cursor-pointer"
-        style={{ color: MUTED }}
-        data-testid="manual-fallback-btn"
-      >
-        I don't have a website — describe my business instead
-      </button>
+        {/* Strategic Expansion Drawer */}
+        {drawerOpen && (
+          <div
+            className="max-w-md mx-auto mt-4 rounded-2xl p-5 text-left"
+            style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, animation: 'fadeIn 0.3s ease' }}
+            data-testid="strategic-expansion-drawer"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: MUTED }}>
+              Social Intelligence Handles
+            </p>
+            <p className="text-xs mb-4" style={{ color: MUTED }}>
+              Optional. BIQc will crawl these for competitor news, staff sentiment, and SWOT signals.
+            </p>
+            <div className="space-y-3">
+              {[
+                { key: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/company/your-company', icon: 'in' },
+                { key: 'twitter', label: 'X (Twitter)', placeholder: '@yourhandle', icon: 'X' },
+                { key: 'instagram', label: 'Instagram', placeholder: '@yourhandle', icon: 'IG' },
+                { key: 'facebook', label: 'Facebook', placeholder: 'facebook.com/yourpage', icon: 'fb' },
+              ].map(s => (
+                <div key={s.key} className="flex items-center gap-2">
+                  <span
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: `${AZ}10`, color: AZ }}
+                  >
+                    {s.icon}
+                  </span>
+                  <input
+                    type="text"
+                    value={handles[s.key]}
+                    onChange={(e) => setHandles(p => ({ ...p, [s.key]: e.target.value }))}
+                    placeholder={s.placeholder}
+                    className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                    style={{ background: CREAM, border: `1px solid ${CARD_BORDER}`, color: CHARCOAL }}
+                    data-testid={`social-handle-${s.key}`}
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={saveHandles}
+              disabled={!hasAnyHandle || savingHandles}
+              className="mt-4 w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+              style={{ background: handlesSaved ? '#22C55E' : AZ, color: '#fff' }}
+              data-testid="save-social-handles-btn"
+            >
+              {savingHandles ? 'Saving...' : handlesSaved ? 'Saved' : 'Save & Activate Recon'}
+            </button>
+          </div>
+        )}
+
+        <button
+          onClick={onManualFallback}
+          className="mt-4 text-xs underline cursor-pointer"
+          style={{ color: MUTED }}
+          data-testid="manual-fallback-btn"
+        >
+          I don't have a website — describe my business instead
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /** Manual business summary fallback (Smart-Retry tier 3) */
 export const ManualSummaryFallback = ({ firstName, onSubmit, isSubmitting }) => {
