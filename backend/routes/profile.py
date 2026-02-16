@@ -1731,7 +1731,11 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
 @router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
-    
+    cache_key = f"dashboard_stats_{user_id}"
+    cached = _get_cached(cache_key)
+    if cached:
+        return cached
+
     analysis_result = get_sb().table("analyses").select("id", count="exact").eq("user_id", user_id).execute()
     analysis_count = analysis_result.count if analysis_result.count is not None else 0
     document_count = await count_user_documents_supabase(get_sb(), user_id)
@@ -1741,17 +1745,18 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     recent_analyses_result = get_sb().table("analyses").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
     recent_analyses = recent_analyses_result.data if recent_analyses_result.data else []
     
-    # Get recent documents using Supabase
     recent_docs_result = get_sb().table("documents").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
     recent_documents = recent_docs_result.data if recent_docs_result.data else []
     
-    return {
+    result = {
         "total_analyses": analysis_count,
         "total_documents": document_count,
         "total_chat_sessions": len(session_ids),
         "recent_analyses": recent_analyses,
         "recent_documents": recent_documents
     }
+    _set_cached(cache_key, result)
+    return result
 
 
 @router.get("/dashboard/focus")
