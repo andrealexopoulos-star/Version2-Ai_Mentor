@@ -167,6 +167,38 @@ const BoardroomGrid = () => {
   );
 };
 
+/* ═══ ROTATING HEADLINE ═══ */
+const PHRASES = [
+  { text: 'dodge the chaos.', glow: '#EF4444' },
+  { text: 'spot the cash leak.', glow: MINT },
+  { text: 'fix the drift.', glow: AZ },
+  { text: 'own your time.', glow: '#8B5CF6' },
+];
+const RotatingHeadline = () => {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => { const t = setInterval(() => setIdx(p => (p + 1) % PHRASES.length), 3000); return () => clearInterval(t); }, []);
+  return (
+    <h1 className="text-[2.6rem] sm:text-[3rem] lg:text-[3.5rem] font-bold" style={{ fontFamily: HEAD, letterSpacing: '-0.02em', color: '#0A0F1E', lineHeight: 1.1 }} data-testid="rotating-headline">
+      <span>The insight to</span>
+      <br />
+      <span className="relative inline-block overflow-hidden" style={{ height: '1.15em' }}>
+        {PHRASES.map((p, i) => (
+          <span key={i} className="absolute left-0 transition-all duration-500 ease-in-out" style={{
+            opacity: i === idx ? 1 : 0,
+            transform: i === idx ? 'translateY(0)' : i === (idx - 1 + PHRASES.length) % PHRASES.length ? 'translateY(-100%)' : 'translateY(100%)',
+            background: `linear-gradient(135deg, ${AZ}, ${p.glow})`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            {p.text}
+          </span>
+        ))}
+      </span>
+    </h1>
+  );
+};
+
 /* ═══ INTEGRATION MARQUEE ═══ */
 const LOGOS = ['HubSpot','Salesforce','Xero','Stripe','BambooHR','Slack','Microsoft 365','Google Workspace','Jira','Asana','Monday','Shopify','Zoom','Teams','QuickBooks'];
 const IntegrationMarquee = () => (
