@@ -138,101 +138,65 @@ class ReconRequest(BaseModel):
 
 @router.post("/intelligence/recon")
 async def trigger_social_recon(req: ReconRequest = ReconRequest(), current_user: dict = Depends(get_current_user)):
-    """Trigger deep-web recon using social handles. Generates SWOT brief and
-    writes actionable signals to intelligence_actions with [Read/Action/Ignore] status.
-    Attention protection: suppresses if no material change since last recon."""
+    """Proxy to deep-web-recon Edge Function. All intelligence generation
+    happens at the Edge — backend only forwards the request and returns results.
+    Edge Function enforces: SWOT, [Read/Action/Ignore] signals, delta <2% suppression."""
+    import os
+    import httpx
+
     user_id = current_user["id"]
 
-    # Get social handles
+    # Get social handles + website from business_profiles
     profile = await get_business_profile_supabase(get_sb(), user_id)
     handles = (profile or {}).get("social_handles") or {}
-    business_name = (profile or {}).get("business_name") or current_user.get("company_name") or "Unknown Business"
-    industry = (profile or {}).get("industry") or current_user.get("industry") or ""
+    website = (profile or {}).get("website") or ""
 
-    if not handles:
-        return {"status": "no_handles", "message": "No social handles configured. Add them via /intelligence/social-handles."}
+    # Fallback: get handles from users table (company_name → business_name mapping)
+    if not handles and not website:
+        user = await get_user_by_id(user_id)
+        if not user:
+            return {"status": "no_data", "message": "No social handles or website configured."}
 
-    # Build the recon prompt
-    handle_list = "\n".join([f"- {k}: {v}" for k, v in handles.items() if v])
+    # Build Edge Function payload
+    payload = {
+        "user_id": user_id,
+        "website": website,
+        "linkedin": handles.get("linkedin", ""),
+        "twitter": handles.get("twitter", ""),
+        "instagram": handles.get("instagram", ""),
+        "facebook": handles.get("facebook", ""),
+    }
 
-    prompt = f"""You are a strategic business intelligence analyst conducting a deep recon for an Australian SME.
+    if not any([payload["website"], payload["linkedin"], payload["twitter"], payload["instagram"], payload["facebook"]]):
+        return {"status": "no_handles", "message": "No social handles or website configured. Add them via /intelligence/social-handles."}
 
-BUSINESS: {business_name}
-INDUSTRY: {industry}
-SOCIAL HANDLES:
-{handle_list}
-
-Generate a concise SWOT analysis based on the business context. Include:
-1. **Strengths** — What the business appears to do well based on their digital presence
-2. **Weaknesses** — Gaps or vulnerabilities visible from public data
-3. **Opportunities** — Market trends, competitor gaps, or growth vectors
-4. **Threats** — Competitive pressure, industry shifts, or regulatory risks
-
-Then generate 3-5 actionable intelligence signals. Each signal should be a specific, time-sensitive observation that requires the operator's attention.
-
-Respond with JSON only:
-{{
-  "swot": {{
-    "strengths": ["..."],
-    "weaknesses": ["..."],
-    "opportunities": ["..."],
-    "threats": ["..."]
-  }},
-  "signals": [
-    {{"source": "linkedin|twitter|instagram|facebook|market", "summary": "...", "severity": "high|medium|low"}}
-  ],
-  "executive_summary": "One paragraph strategic assessment"
-}}"""
+    # Call deep-web-recon Edge Function
+    supabase_url = os.environ.get("SUPABASE_URL")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        chat = LlmChat(api_key=OPENAI_KEY, session_id=f"recon_{user_id}", system_message="You are a strategic business intelligence analyst. Respond with valid JSON only.")
-        chat.with_model("openai", AI_MODEL)
-        raw = await chat.send_message(UserMessage(text=prompt))
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{supabase_url}/functions/v1/deep-web-recon",
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {service_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=60.0,
+            )
 
-        # Parse response
-        import json
-        cleaned = raw.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
-        recon_data = json.loads(cleaned)
-
-        # Write signals to intelligence_actions
-        now = datetime.now(timezone.utc).isoformat()
-        signals_written = 0
-        for sig in recon_data.get("signals", []):
-            get_sb().table("intelligence_actions").insert({
-                "user_id": user_id,
-                "signal_source": sig.get("source", "recon"),
-                "content_summary": sig.get("summary", ""),
-                "status": "action_required" if sig.get("severity") == "high" else "read",
-                "created_at": now,
-            }).execute()
-            signals_written += 1
-
-        # Store SWOT in observation_events
-        try:
-            get_sb().table("observation_events").insert({
-                "user_id": user_id,
-                "domain": "market",
-                "event_type": "swot_recon",
-                "payload": recon_data.get("swot", {}),
-                "source": "social_recon",
-                "severity": "info",
-                "observed_at": now,
-            }).execute()
-        except Exception as e:
-            logger.warning(f"[recon] Failed to store SWOT observation: {e}")
-
-        return {
-            "status": "complete",
-            "swot": recon_data.get("swot"),
-            "executive_summary": recon_data.get("executive_summary"),
-            "signals_created": signals_written,
-        }
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"[recon] Edge Function returned: ok={result.get('ok')}, signals={result.get('signals_created', 0)}")
+                return result
+            else:
+                error_text = response.text[:200]
+                logger.error(f"[recon] Edge Function failed: {response.status_code} — {error_text}")
+                return {"status": "error", "message": f"Edge Function returned {response.status_code}", "detail": error_text}
 
     except Exception as e:
-        logger.error(f"[recon] Error: {e}")
+        logger.error(f"[recon] Edge Function call failed: {e}")
         return {"status": "error", "message": str(e)}
 
 @router.get("/intelligence/brief")
