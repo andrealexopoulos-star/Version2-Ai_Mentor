@@ -66,6 +66,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Auto-retry once on 401 with a refreshed token
+    if (error.response?.status === 401 && !error.config._retried) {
+      error.config._retried = true;
+      return supabase.auth.refreshSession().then(({ data }) => {
+        if (data?.session?.access_token) {
+          error.config.headers.Authorization = `Bearer ${data.session.access_token}`;
+          return apiClient.request(error.config);
+        }
+        return Promise.reject(error);
+      }).catch(() => Promise.reject(error));
+    }
     return Promise.reject(error);
   }
 );
