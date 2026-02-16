@@ -188,7 +188,9 @@ export default function PromptLab() {
           ))}
         </div>
 
-        {/* Search */}
+        {/* Search - Prompts tab only */}
+        {activeTab === 'prompts' && (
+        <>
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           <Input
