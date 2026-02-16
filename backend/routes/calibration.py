@@ -1140,17 +1140,21 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
                     "persona_calibration_status": "complete",
                     "calibration_completed_at": now_iso
                 }
-                # Auto-complete console_state when brain finishes
+                # Auto-complete console_state AND onboarding_state when brain finishes
                 if existing.data:
                     op = existing.data.get("operator_profile") or {}
                     op["console_state"] = {"status": "COMPLETE", "current_step": 17, "updated_at": now_iso}
+                    op["onboarding_state"] = {"completed": True, "current_step": 14, "completed_at": now_iso}
                     update_data["operator_profile"] = op
                     get_sb().table("user_operator_profile").update(update_data).eq("user_id", user_id).execute()
                 else:
-                    update_data["operator_profile"] = {"console_state": {"status": "COMPLETE", "current_step": 17, "updated_at": now_iso}}
+                    update_data["operator_profile"] = {
+                        "console_state": {"status": "COMPLETE", "current_step": 17, "updated_at": now_iso},
+                        "onboarding_state": {"completed": True, "current_step": 14, "completed_at": now_iso}
+                    }
                     update_data["user_id"] = user_id
                     get_sb().table("user_operator_profile").insert(update_data).execute()
-                logger.info(f"[calibration/brain] persona_calibration_status = complete, console_state = COMPLETE for {user_id}")
+                logger.info(f"[calibration/brain] calibration COMPLETE + onboarding auto-completed for {user_id}")
             except Exception as op_err:
                 logger.error(f"[calibration/brain] user_operator_profile write failed: {op_err}")
 
