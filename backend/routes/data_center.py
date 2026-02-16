@@ -120,7 +120,7 @@ async def get_data_center_stats(current_user: dict = Depends(get_current_user)):
     total_size = sum([r.get("file_size", 0) or 0 for r in (size_result.data or [])])
     categories = await get_data_categories(current_user)
     profile = await get_business_profile_supabase(sb, current_user["id"])
-    from server import calculate_profile_completeness
+    from routes.profile import calculate_profile_completeness
     return {
         "total_files": total_files, "total_size_bytes": total_size,
         "total_size_mb": round(total_size / (1024 * 1024), 2),
