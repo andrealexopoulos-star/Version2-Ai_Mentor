@@ -55,7 +55,7 @@ async def create_merge_link_token(
     
     user_id = current_user["id"]
     user_email = current_user.get("email", "user@biqc.com")
-    company_name = current_user.get("company_name")
+    company_name = current_user.get("company_name") or current_user.get("business_name")
     
     # P0 FIX: Get or create workspace for user
     try:
