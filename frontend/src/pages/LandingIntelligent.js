@@ -240,21 +240,21 @@ const LandingIntelligent = () => {
             <div className="space-y-7">
               <motion.div variants={up} className="space-y-5">
                 <p className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ fontFamily: MONO, color: AZ }}>Sovereign Business Intelligence</p>
-                <h1 className="text-[2.6rem] sm:text-[3.2rem] lg:text-[3.8rem] font-semibold leading-[1.08]" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>
-                  Business Clarity,<br />Mastered.
+                <h1 className="text-[2.8rem] sm:text-[3.2rem] lg:text-[3.5rem] font-bold leading-[1.08]" style={{ fontFamily: HEAD, letterSpacing: '-0.02em', color: '#0A0F1E' }}>
+                  Stop Monitoring.<br />Start Commanding.
                 </h1>
-                <p className="text-xl font-medium" style={{ fontFamily: HEAD }}>Your Sovereign AI Mentor.</p>
               </motion.div>
-              <motion.p variants={up} className="text-base leading-[1.75] max-w-lg" style={{ color: MU }}>
-                Coupling real-time Intelligence Insights with 3 years of Executive Mentoring. BIQc protects your operations, optimises cashflow, and reclaims your time — with 100% Australian Data Sovereignty.
+              <motion.p variants={up} className="text-[1.25rem] leading-[1.75] max-w-lg" style={{ color: MU }}>
+                Your business is talking. BIQc is listening.<br />
+                We fused 3 years of Executive Strategy with a 24/7 Sentinel Swarm. The result isn't just software — it's a <span className="font-semibold" style={{ color: AZ }}>Sovereign Digital Double</span> that hunts for profit leaks, enforces your standards, and defends your life's work on Australian soil.
               </motion.p>
               <motion.div variants={up} className="flex flex-col sm:flex-row gap-3">
-                <button onClick={() => nav('/register-supabase')} className="px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5 text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 8px 24px rgba(0,122,255,0.25)' }} data-testid="hero-cta-primary">Deploy My Intelligence <ArrowRight className="w-4 h-4" /></button>
+                <button onClick={() => nav('/register-supabase')} className="px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5 text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 8px 24px rgba(0,122,255,0.3)' }} data-testid="hero-cta-primary">Deploy Active Defense <ArrowRight className="w-4 h-4" /></button>
                 <button onClick={() => nav('/trust')} className="titan-card px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5" style={{ ...titanGlass, color: SL, fontFamily: HEAD }} data-testid="hero-cta-mentor"><Brain className="w-4 h-4" style={{ color: AZ }} /> Meet Your Mentor</button>
               </motion.div>
-              <motion.div variants={up} className="flex items-center gap-5">
-                <span className="flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: MONO, color: MU }}><Lock className="w-3 h-3" style={{ color: AZ }} /> AES-256</span>
-                <span className="flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: MONO, color: MU }}><Shield className="w-3 h-3" style={{ color: MINT }} /> AU Sovereign</span>
+              <motion.div variants={up} className="flex items-center gap-4">
+                <Lock className="w-3.5 h-3.5" style={{ color: MU }} strokeWidth={1.5} />
+                <span className="text-[0.875rem]" style={{ fontFamily: MONO, color: '#64748B' }}>100% Australian Data Residency. AES-256 Encryption. Zero-Leakage AI.</span>
               </motion.div>
             </div>
             <motion.div variants={up}>
