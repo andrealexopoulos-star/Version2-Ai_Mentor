@@ -32,21 +32,8 @@ async def get_ai_response(
         # STEP 1: Get Business Intelligence Snapshot (MANDATORY)
         intelligence_snapshot = await get_intelligence_snapshot(user_id, user_access_token)
 
-        snapshot_context = ""
         if intelligence_snapshot:
             logger.info(f"Retrieved intelligence snapshot for user {user_id}")
-            snapshot_context = f"""
-════════════════════════════════════════
-BUSINESS INTELLIGENCE SNAPSHOT (AUTHORITATIVE)
-════════════════════════════════════════
-
-{intelligence_snapshot}
-
-This is the current validated business state. Use this as your primary context.
-Do NOT ask clarifying questions about this data.
-
-════════════════════════════════════════
-"""
         else:
             logger.warning(f"Intelligence snapshot unavailable for user {user_id}")
 
