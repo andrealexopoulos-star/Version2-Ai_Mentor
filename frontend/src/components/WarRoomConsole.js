@@ -80,8 +80,37 @@ const WarRoomConsoleInner = () => {
     if (history.length === 0) {
       processMessage('[SYSTEM_INIT_STRATEGY]', true);
     }
+    fetchActions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionReady, contextResolved]);
+
+  const fetchActions = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`${getBackendUrl()}/api/intelligence/actions`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setActions(data.actions || []);
+        if (data.actions?.length > 0) setActionsOpen(true);
+      }
+    } catch {}
+  };
+
+  const toggleAction = async (actionId, newStatus) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await fetch(`${getBackendUrl()}/api/intelligence/actions/${actionId}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setActions(prev => prev.map(a => a.id === actionId ? { ...a, status: newStatus } : a));
+    } catch {}
+  };
 
   // Auto-scroll
   useEffect(() => {
