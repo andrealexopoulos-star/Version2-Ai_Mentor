@@ -198,7 +198,7 @@ BIQc is an AI-powered Business Intelligence platform for Australian SME leaders.
 - **Blocker**: Platform base image `fastapi_react_mongo_shadcn_base_image_cloud_arm` forces MongoDB migration gate
 - **Action**: Support ticket submitted to Emergent (support@emergent.sh)
 - **Job ID**: fa996e15-1a91-4190-badd-f26be80beac0
-- **Preview URL**: https://beta-ready-deploy.preview.emergentagent.com (fully functional)
+- **Preview URL**: https://titan-glass.preview.emergentagent.com (fully functional)
 
 ## Backlog
 

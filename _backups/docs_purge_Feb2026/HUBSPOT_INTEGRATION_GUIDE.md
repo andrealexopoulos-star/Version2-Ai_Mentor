@@ -55,7 +55,7 @@ BIQC uses **Merge.dev Unified API** to connect to HubSpot. This means:
 
 **A. In BIQC Application:**
 
-1. **Navigate to**: https://beta-ready-deploy.preview.emergentagent.com/integrations
+1. **Navigate to**: https://titan-glass.preview.emergentagent.com/integrations
 
 2. **Find HubSpot card**:
    - Should be in the "CRM" category

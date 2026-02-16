@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://beta-ready-deploy.preview.emergentagent.com
+https://titan-glass.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://beta-ready-deploy.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://beta-ready-deploy.preview.emergentagent.com
+https://titan-glass.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://beta-ready-deploy.preview.emergentagent.com/**
-https://beta-ready-deploy.preview.emergentagent.com/auth/callback
-https://beta-ready-deploy.preview.emergentagent.com/auth-callback-supabase
-https://beta-ready-deploy.preview.emergentagent.com/connect-email
-https://beta-ready-deploy.preview.emergentagent.com/integrations
+https://titan-glass.preview.emergentagent.com/**
+https://titan-glass.preview.emergentagent.com/auth/callback
+https://titan-glass.preview.emergentagent.com/auth-callback-supabase
+https://titan-glass.preview.emergentagent.com/connect-email
+https://titan-glass.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://beta-ready-deploy.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://beta-ready-deploy.preview.emergentagent.com/api/auth/outlook/callback
+https://titan-glass.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://beta-ready-deploy.preview.emergentagent.com
+https://titan-glass.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://beta-ready-deploy.preview.emergentagent.com/api/auth/gmail/callback
+https://titan-glass.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

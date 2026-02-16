@@ -33,7 +33,7 @@
 
 2. **Open a new tab and go to:**
    ```
-   https://beta-ready-deploy.preview.emergentagent.com/integrations
+   https://titan-glass.preview.emergentagent.com/integrations
    ```
 
 3. **Find the Gmail card** (red GM logo)
@@ -48,7 +48,7 @@
 
 7. **You should be redirected back to:**
    ```
-   https://beta-ready-deploy.preview.emergentagent.com/integrations?gmail_connected=true&connected_email=YOUR_EMAIL
+   https://titan-glass.preview.emergentagent.com/integrations?gmail_connected=true&connected_email=YOUR_EMAIL
    ```
 
 8. **You should see:**

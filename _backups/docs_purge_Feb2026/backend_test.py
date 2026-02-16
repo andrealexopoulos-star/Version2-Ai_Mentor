@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 class CalibrationAPITester:
-    def __init__(self, base_url="https://beta-ready-deploy.preview.emergentagent.com"):
+    def __init__(self, base_url="https://titan-glass.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0
