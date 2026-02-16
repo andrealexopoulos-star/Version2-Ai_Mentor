@@ -1,147 +1,161 @@
 {
   "brand_identity": {
-    "name": "The Strategy Squad",
-    "archetype": "The Digital Consigliere",
-    "vibe": "Eco-Cyberpunk / High-Voltage Wisdom",
-    "core_values": ["Unfiltered Clarity", "Radical Speed", "Organic Growth"],
-    "emotional_tone": "Energetic, Sharp, unexpected, NOT Corporate"
+    "name": "BIQc",
+    "archetype": "Sovereign Command",
+    "core_values": [
+      "Authority",
+      "Intelligence",
+      "Sovereignty",
+      "Precision"
+    ],
+    "mood": "Cinematic, High-Density, secure, Australian-Executive"
   },
-  "typography": {
-    "font_family": {
-      "headings": "Syne, sans-serif",
-      "body": "Manrope, sans-serif",
-      "mono": "JetBrains Mono, monospace",
-      "accent": "Covered By Your Grace, cursive"
+  "design_system": {
+    "colors": {
+      "palette": {
+        "background": {
+          "primary": "#0A0F1E",
+          "secondary": "#0f1629",
+          "tertiary": "#151e32"
+        },
+        "foreground": {
+          "primary": "#FFFFFF",
+          "secondary": "#94A3B8",
+          "muted": "#475569"
+        },
+        "accent": {
+          "cyan": "#00F0FF",
+          "cyan_dim": "rgba(0, 240, 255, 0.1)",
+          "alert": "#FF3B30",
+          "gold": "#D4AF37"
+        },
+        "border": {
+          "subtle": "rgba(255, 255, 255, 0.08)",
+          "active": "#00F0FF"
+        }
+      },
+      "usage_rules": "Background must be #0A0F1E (Midnight Navy). Text is Titanium White (#FFFFFF). Glows are Sentinel Cyan (#00F0FF). Use 'Threat Red' (#FF3B30) sparingly for threat indicators."
     },
-    "google_fonts_import": "https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400&family=Covered+By+Your+Grace&display=swap",
-    "usage_rules": {
-      "h1": "font-heading font-extrabold text-6xl md:text-8xl tracking-tighter leading-[0.9] uppercase",
-      "h2": "font-heading font-bold text-4xl md:text-5xl tracking-tight",
-      "h3": "font-heading font-bold text-2xl md:text-3xl",
-      "body": "font-body text-base md:text-lg leading-relaxed text-foreground/90",
-      "label": "font-mono text-xs uppercase tracking-widest text-muted-foreground",
-      "handwritten": "font-accent text-xl text-primary rotate-[-2deg]"
+    "typography": {
+      "font_families": {
+        "headings": "Playfair Display, serif",
+        "body": "Inter, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "styles": {
+        "h1": "font-serif text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]",
+        "h2": "font-serif text-4xl md:text-5xl font-semibold tracking-tight",
+        "h3": "font-serif text-2xl md:text-3xl font-medium",
+        "body": "font-sans text-base md:text-lg leading-relaxed text-slate-300",
+        "label": "font-mono text-xs uppercase tracking-[0.2em] text-cyan-400",
+        "ticker": "font-mono text-sm text-cyan-400"
+      },
+      "rules": "Use Playfair Display for all Headings to evoke 'Old Money/Sovereignty'. Use Inter for dense data. Use JetBrains Mono for the 'Threat Ticker' and data values."
+    },
+    "spacing": {
+      "scale": "Relaxed. Use p-8, p-12, p-16 for containers. Gap-8 minimum for grids.",
+      "container_padding": "px-6 md:px-12 lg:px-24"
+    },
+    "visual_enhancers": {
+      "glassmorphism": "backdrop-blur-xl bg-navy-900/40 border border-white/10",
+      "glows": "box-shadow: 0 0 40px -10px rgba(0, 240, 255, 0.3)",
+      "borders": "1px solid rgba(255, 255, 255, 0.05)",
+      "textures": "Use subtle noise overlay on the #0A0F1E background to prevent banding and add 'film' quality."
     }
   },
-  "colors": {
-    "palette": {
-      "primary": {
-        "DEFAULT": "#CCFF00",
-        "foreground": "#000000",
-        "description": "Electric Lime - The energy source. Use for CTAs and key highlights."
-      },
-      "secondary": {
-        "DEFAULT": "#051F1A",
-        "foreground": "#FFFFFF",
-        "description": "Deep Void Forest - The structure. Darker than standard black."
-      },
-      "background": {
-        "light": "#F3F3EE",
-        "dark": "#020A08",
-        "description": "Warm Sand (Light) / Abyssal Green (Dark)"
-      },
-      "accent": {
-        "DEFAULT": "#FF0099",
-        "foreground": "#FFFFFF",
-        "description": "Hot Pink - The AI spark. Use sparingly for 'magic' moments."
-      },
-      "muted": {
-        "DEFAULT": "#E5E5E0",
-        "foreground": "#525252"
-      }
-    },
-    "gradients": {
-      "hero_glow": "bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/20 via-background to-background",
-      "glass_surface": "bg-white/10 backdrop-blur-xl border border-white/10"
-    }
-  },
-  "visual_enhancers": {
-    "border_radius": {
-      "default": "0px",
-      "buttons": "9999px",
-      "cards": "0px"
-    },
-    "shadows": {
-      "brutal": "4px 4px 0px 0px #000000",
-      "neon": "0 0 20px -5px var(--primary)"
-    },
-    "textures": {
-      "noise": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")"
-    }
-  },
-  "layout_strategies": {
-    "marketing": {
-      "grid": "grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8",
-      "container": "max-w-[1400px] mx-auto px-4 md:px-8",
-      "section_spacing": "py-24 md:py-32"
-    },
-    "dashboard": {
-      "grid": "grid grid-cols-1 md:grid-cols-4 gap-4",
-      "sidebar_width": "w-64",
-      "card_style": "bg-card border border-border/50 p-6 hover:border-primary/50 transition-colors duration-300"
+  "layout_strategy": {
+    "grid_system": "Bento Grid (Mode A). Asymmetric layouts. Avoid centering everything.",
+    "hero_structure": "Split screen or 2/3 Grid. Left: Sovereign Value Prop. Right/Bottom: Interactive Threat Ticker.",
+    "z_index_layers": {
+      "base": 0,
+      "content": 10,
+      "overlays": 20,
+      "sticky_nav": 50,
+      "modals": 100
     }
   },
   "components": {
-    "buttons": {
-      "primary": "bg-primary text-primary-foreground hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_#000] transition-all font-bold uppercase tracking-wide px-8 py-4 rounded-full text-sm",
-      "secondary": "bg-transparent border-2 border-foreground text-foreground hover:bg-foreground hover:text-background transition-all font-bold uppercase tracking-wide px-8 py-4 rounded-full text-sm",
-      "ghost": "text-foreground/70 hover:text-foreground hover:bg-muted/50 px-4 py-2 rounded-md"
+    "hero_section": {
+      "name": "Sovereign Command Hero",
+      "elements": [
+        {
+          "type": "Background",
+          "spec": "Midnight Navy #0A0F1E with faint 'World Map' or 'Data Points' texture. Overlay Sydney Skyline image with heavy blue/navy duotone."
+        },
+        {
+          "type": "Headline",
+          "spec": "Playfair Display. 'Command Your Business Sovereignty'. Titanium White."
+        },
+        {
+          "type": "Threat Ticker",
+          "spec": "A horizontal or vertical scrolling marquee. Font: JetBrains Mono. Content: 'THREAT BLOCKED: 14:02 AEST', 'INTELLIGENCE ACQUIRED: SYDNEY NODE'. Color: Cyan/Red."
+        },
+        {
+          "type": "CTA",
+          "spec": "Solid White pill button with Navy text (High Contrast) OR Cyan Glow button."
+        }
+      ]
     },
-    "cards": {
-      "feature": "group relative overflow-hidden border border-border bg-background p-8 hover:bg-muted/20 transition-all",
-      "stat": "flex flex-col gap-2 p-6 border-r border-b border-border/50 bg-background/50 backdrop-blur-sm"
+    "trust_architecture": {
+      "name": "The Vault (/trust)",
+      "elements": [
+        {
+          "type": "Visual",
+          "spec": "Server Room Image (Darkened). Overlay lock icons or shield vectors."
+        },
+        {
+          "type": "Encryption Badge",
+          "spec": "Large typographic badge: 'AES-256'. Animated glowing border."
+        },
+        {
+          "type": "Sovereignty Statement",
+          "spec": "Text emphasizing 'Australian Data Sovereignty'. Data stays in Oz."
+        }
+      ]
     },
-    "inputs": {
-      "default": "bg-transparent border-b-2 border-border focus:border-primary rounded-none px-0 py-4 transition-colors placeholder:text-muted-foreground/50"
+    "comparison_table": {
+      "name": "Value Logic (6 Sigma vs BIQc)",
+      "structure": "2-Column Comparison. Left: 'Traditional 6 Sigma' (Grey/Muted). Right: 'BIQc AI' (Cyan/White/Glow).",
+      "rows": [
+        "Speed to Insight",
+        "Data Sovereignty",
+        "Cost per Analysis",
+        "Predictive Capability"
+      ]
+    },
+    "pricing": {
+      "name": "Strategy Squad Pricing",
+      "tiers": [
+        "Analyst (Starter)",
+        "Strategist (Pro)",
+        "Sovereign (Enterprise)"
+      ],
+      "style": "Cards. 'Sovereign' tier must use the 'Tracing Beam' border effect (Cyan glow moving around the card)."
     }
   },
-  "image_assets": {
-    "hero_bg": {
-      "url": "https://images.pexels.com/photos/18545023/pexels-photo-18545023.jpeg",
-      "alt": "Abstract neon data flow",
-      "usage": "Hero section background with heavy overlay (opacity 0.1)"
+  "assets": {
+    "images": {
+      "hero_bg": "https://images.unsplash.com/photo-1599352525889-6af336596438?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "trust_bg": "https://images.unsplash.com/photo-1680992046617-e2e35451bcdb?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "server_detail": "https://images.unsplash.com/photo-1680992046626-418f7e910589?crop=entropy&cs=srgb&fm=jpg&q=85"
     },
-    "entrepreneur_focus": {
-      "url": "https://images.pexels.com/photos/5332442/pexels-photo-5332442.jpeg",
-      "alt": "Focused entrepreneur in cafe",
-      "usage": "Feature section - 'Your Personal Advisor'"
-    },
-    "team_collab": {
-      "url": "https://images.pexels.com/photos/20447503/pexels-photo-20447503.jpeg",
-      "alt": "Modern team collaboration",
-      "usage": "About/Mission section"
-    },
-    "abstract_tech": {
-      "url": "https://images.pexels.com/photos/8168563/pexels-photo-8168563.png",
-      "alt": "Geometric tech shapes",
-      "usage": "Decorative elements / Card backgrounds"
-    }
-  },
-  "motion": {
-    "page_transition": {
-      "initial": { "opacity": 0, "y": 20 },
-      "animate": { "opacity": 1, "y": 0 },
-      "exit": { "opacity": 0, "y": -20 },
-      "transition": { "duration": 0.4, "ease": "easeOut" }
-    },
-    "hover_lift": "hover:-translate-y-1 transition-transform duration-300 ease-out",
-    "text_reveal": "overflow-hidden"
+    "icons": "Use Lucide React. stroke-width=1.5 for elegance. Colors: Cyan or White."
   },
   "instructions_to_main_agent": [
-    "1. INSTALL FONTS: Add the Google Fonts link to the <head> of index.html immediately.",
-    "2. CONFIGURE TAILWIND: Update tailwind.config.js to extend the theme with the colors and font families defined above. Map 'primary' to '#CCFF00' and 'forest' to '#051F1A'.",
-    "3. GLOBAL CSS: Update index.css. Remove 'Cormorant Garamond'. Add the noise texture to the body background.",
-    "4. SHADCN OVERRIDES: Customize Shadcn components. Remove default rounded-md from cards/inputs. Use sharp edges (rounded-none) for inputs/cards, but full rounded (rounded-full) for buttons.",
-    "5. LAYOUT: For the Landing Page, use the 'Tetris Grid' (bento style) for the features section. Do not stack everything in a single column.",
-    "6. DARK MODE: The Dashboard MUST be Dark Mode by default. Use the 'secondary' color (#051F1A) as the background for the dashboard.",
-    "7. IMAGES: Use the provided image URLs. Do not use placeholders.",
-    "8. ANTI-PATTERNS: Do not use standard blue/purple gradients. Do not use 'Inter' font. Do not center text in the hero section (align left with massive font size)."
+    "INSTALL_DEPENDENCIES: Run 'yarn add framer-motion clsx tailwind-merge' immediately.",
+    "THEME_SETUP: Update tailwind.config.js to include the specific Midnight Navy (#0A0F1E) and Sentinel Cyan (#00F0FF) colors.",
+    "FONT_SETUP: Ensure Playfair Display and JetBrains Mono are imported (via Google Fonts in index.html or CSS).",
+    "CLEANUP: Remove any default light mode variables in index.css. Force Dark Mode by default.",
+    "EXECUTION: Build the Landing Page components first (Hero, Ticker, Pricing), then the Trust page.",
+    "ANIMATION: Use framer-motion for the 'Threat Ticker' (infinite loop) and entrance animations (fade up).",
+    "GLASSMORPHISM: Use the specific backdrop-blur-xl classes defined in design_system.visual_enhancers."
   ],
-  "universal_guidelines": [
-    "Avoid generic 'AI slop' aesthetics.",
-    "Use 2-3x more spacing than typical designs.",
-    "Every interaction needs micro-animations.",
-    "Use 'sonner' for toasts.",
-    "Prioritize 'Syne' font for all headings to give character."
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not use gradients for backgrounds. Use solid #0A0F1E.",
+    "Use Playfair Display for ALL Headings. NO EXCEPTIONS.",
+    "Buttons must be rounded-full (pill) or sharp (rounded-sm) - decide on one. Recommendation: Sharp for 'Command' feel.",
+    "All interactive elements must have hover states (text-cyan-400 or bg-white/10).",
+    "Use 'sonner' for any toast notifications.",
+    "Respect the Australian context (AEST timezones, AUD currency, Australian English spelling)."
   ]
 }
