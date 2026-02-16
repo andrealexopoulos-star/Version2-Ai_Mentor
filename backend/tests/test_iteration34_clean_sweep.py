@@ -125,8 +125,8 @@ class TestCoreModuleIntegrity:
         response = requests.get(f"{BASE_URL}/api/health")
         assert response.status_code == 200
     
-    def test_all_route_modules_loaded(self):
-        """Verify route modules loaded by checking various endpoints"""
+    def test_main_route_modules_loaded(self):
+        """Verify key route modules loaded by checking various endpoints"""
         # auth router
         r1 = requests.get(f"{BASE_URL}/api/auth/supabase/oauth/google")
         assert r1.status_code == 200
@@ -155,8 +155,8 @@ class TestCoreModuleIntegrity:
         r7 = requests.get(f"{BASE_URL}/api/data-center/files")
         assert r7.status_code == 403  # auth required but route exists
         
-        # watchtower router
-        r8 = requests.get(f"{BASE_URL}/api/watchtower/signals")
+        # onboarding router
+        r8 = requests.get(f"{BASE_URL}/api/onboarding/status")
         assert r8.status_code == 403  # auth required but route exists
 
 
