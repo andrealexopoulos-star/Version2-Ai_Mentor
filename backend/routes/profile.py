@@ -33,6 +33,7 @@ from supabase_remaining_helpers import (
     get_oac_recommendations_supabase, update_oac_recommendations_supabase,
     get_web_sources_supabase, get_setting_supabase,
     update_setting_supabase, dismiss_notification_supabase,
+    get_onboarding_supabase,
 )
 from supabase_document_helpers import (
     get_user_documents_supabase, count_user_documents_supabase,
