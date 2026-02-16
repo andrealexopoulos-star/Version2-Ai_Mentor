@@ -1,57 +1,41 @@
 # BIQC Strategic Advisor Platform - PRD
 
-## Architecture — FINAL (Post Clean Sweep)
-- **server.py**: 171 lines (pure orchestrator — init, middleware, router registration)
-- **core/models.py**: 362 lines (all Pydantic models)
-- **core/helpers.py**: 215 lines (file parsing, search, auth utilities)
-- **core/config.py**: 139 lines (middleware, env vars, service initialization)
-- **core/ai_core.py**: 1,508 lines (AI response generation, system prompts, cognitive context)
+## Architecture — FINAL
+- **server.py**: 171 lines (pure orchestrator)
+- **core/**: models.py (362), helpers.py (215), config.py (139), ai_core.py (1,508)
 - **Route modules**: 16 files, 9,204 lines total
-- **Frontend CalibrationAdvisor.js**: 323 lines (state manager, uses 5 sub-components)
-- **Calibration sub-components**: CalibrationComponents.js (160), WowSummary.js (137), CalibratingSession.js (142), ExecutiveReveal.js (54), ContinuitySuite.js (48)
+- **Frontend**: Midnight Navy dark theme, Playfair Display + JetBrains Mono typography
+- **Calibration sub-components**: 5 files (CalibrationComponents, WowSummary, CalibratingSession, ExecutiveReveal, ContinuitySuite)
 
-## Cumulative Test Results: 269/269 (100%)
+## Brand Identity — Sovereign Command
+- Background: Midnight Navy #0A0F1E
+- Accents: Sentinel Cyan #00F0FF
+- Typography: Playfair Display (headings), Inter (body), JetBrains Mono (data/ticker)
+- Aesthetic: Cinematic, high-density, Australian-executive
+
+## Cumulative Test Results: 286/286 (100%)
 | Iteration | Tests | Phase |
 |-----------|-------|-------|
-| 26 | 14 | Security P0 |
-| 27 | 39 | Phase 2 Extraction |
-| 28 | 51 | Final Cleanup |
-| 29 | 35 | Cognitive Migration |
-| 30 | 36 | Route Sync Audit |
-| 31 | 9 | Prompt Lab |
-| 32 | 9 | Beta Launch Clearance |
-| 33 | 31 | Final Slice |
+| 26-33 | 224 | Monolith deconstruction |
 | 34 | 16 | Clean Sweep Refactoring |
 | 35 | 29 | Deployment Readiness |
+| 36 | 17 | Brand Overhaul |
+
+## Pages
+- `/` — Landing (Sovereign Command hero, Threat Ticker, 6 Sigma comparison, 3-tier pricing, Trust teaser)
+- `/trust` — The Vault (AES-256 badge, Australian sovereignty, 6 security principles)
+- `/login-supabase` — Auth (Google, Microsoft, email)
+- `/calibration` — Onboarding wizard
+- `/advisor` — Main dashboard
+- `/admin/prompts` — Prompt Lab (super-admin)
 
 ## Deployment Status
 - **Code**: 100% functional, all tests pass
-- **Blocker**: Platform base image `fastapi_react_mongo_shadcn_base_image_cloud_arm` triggers MongoDB migration gate
-- **Resolution**: Contact Emergent support to change base image to non-MongoDB variant
-- **Job ID**: fa996e15-1a91-4190-badd-f26be80beac0
-
-## Route Module Inventory (16 modules)
-| Module | Lines | Routes |
-|--------|-------|--------|
-| profile.py | 2,033 | 14 |
-| email.py | 1,818 | 18 |
-| calibration.py | 1,167 | 12 |
-| integrations.py | 1,128 | 20 |
-| onboarding.py | 595 | 8 |
-| generation.py | 564 | 17 |
-| research.py | 451 | 1 |
-| cognitive.py | 273 | 9 |
-| soundboard.py | 257 | 5 |
-| boardroom.py | 245 | 2 |
-| admin.py | 237 | 10 |
-| data_center.py | 130 | 7 |
-| auth.py | 112 | 5 |
-| intelligence.py | 94 | 6 |
-| watchtower.py | 71 | 4 |
-| facts.py | 29 | 2 |
+- **Blocker**: Platform base image needs change from mongo variant (Emergent support ticket)
 
 ## Backlog
-- P0: Resolve deployment base image (Emergent support ticket)
-- P1: Implement Live Integrations (Outlook, Google Drive, Xero, Stripe, HubSpot)
+- P0: Resolve deployment base image (Emergent support)
+- P1: Implement live integrations (Outlook, Google Drive, Xero, Stripe, HubSpot)
 - P2: Performance optimization on data-heavy pages
+- P2: Slim core/ai_core.py (1,508 lines)
 - P3: Further decompose CalibrationAdvisor.js remaining inline logic
