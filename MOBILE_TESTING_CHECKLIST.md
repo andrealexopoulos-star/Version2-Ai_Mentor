@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://executive-reveal.preview.emergentagent.com
+**Test URL:** https://beta-ready-deploy.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://executive-reveal.preview.emergentagent.com/advisor
+- [ ] Navigate to https://beta-ready-deploy.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://executive-reveal.preview.emergentagent.com/
+**Landing:** https://beta-ready-deploy.preview.emergentagent.com/
 
-**Login:** https://executive-reveal.preview.emergentagent.com/login-supabase
+**Login:** https://beta-ready-deploy.preview.emergentagent.com/login-supabase
 
-**Register:** https://executive-reveal.preview.emergentagent.com/register-supabase
+**Register:** https://beta-ready-deploy.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://executive-reveal.preview.emergentagent.com/pricing
+**Pricing:** https://beta-ready-deploy.preview.emergentagent.com/pricing
 
-**Terms:** https://executive-reveal.preview.emergentagent.com/terms
+**Terms:** https://beta-ready-deploy.preview.emergentagent.com/terms
 
-**Advisor:** https://executive-reveal.preview.emergentagent.com/advisor
+**Advisor:** https://beta-ready-deploy.preview.emergentagent.com/advisor
 
 ---
 

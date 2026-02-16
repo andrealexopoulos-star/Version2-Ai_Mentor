@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://executive-reveal.preview.emergentagent.com/login-supabase
+https://beta-ready-deploy.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://executive-reveal.preview.emergentagent.com/integrations
+https://beta-ready-deploy.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

@@ -9,12 +9,12 @@ All code has been implemented with proper timing guards and session validation.
 ## 🧪 Testing Instructions for User (andre.alexopoulos@gmail.com)
 
 ### Step 1: Log In
-1. Navigate to: https://executive-reveal.preview.emergentagent.com/login-supabase
+1. Navigate to: https://beta-ready-deploy.preview.emergentagent.com/login-supabase
 2. Log in using your Google account (Continue with Google)
 3. Wait for authentication to complete
 
 ### Step 2: Access Integrations Page
-1. Navigate to: https://executive-reveal.preview.emergentagent.com/integrations
+1. Navigate to: https://beta-ready-deploy.preview.emergentagent.com/integrations
 2. You should see the Integrations page load successfully
 3. Look for a **"Merge.dev Integration Test"** section at the top of the page
 4. You will see a button labeled **"Test Merge Link Token"**

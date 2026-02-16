@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://executive-reveal.preview.emergentagent.com/advisor
+## For: https://beta-ready-deploy.preview.emergentagent.com/advisor
 
 ---
 
