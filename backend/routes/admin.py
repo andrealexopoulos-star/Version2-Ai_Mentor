@@ -235,3 +235,19 @@ async def test_prompt_connection(prompt_key: str, admin: dict = Depends(get_supe
         "preview": preview,
     }
 
+
+
+@router.get("/admin/prompts/audit-log")
+async def get_prompt_audit_log(admin: dict = Depends(get_super_admin)):
+    """Get prompt change audit trail from prompt_audit_logs table."""
+    sb = get_sb()
+    try:
+        result = sb.table("prompt_audit_logs").select("*").order("timestamp", desc=True).limit(50).execute()
+        logs = result.data if result.data else []
+        for log in logs:
+            log.pop("id", None)
+        return {"logs": logs, "total": len(logs)}
+    except Exception as e:
+        logger.warning(f"Audit log fetch failed: {e}")
+        return {"logs": [], "total": 0}
+
