@@ -296,18 +296,35 @@ async def _write_onboarding_state(user_id: str, state: dict):
 async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
     """Check if user has completed onboarding.
     Authoritative source: user_operator_profile.operator_profile.onboarding_state
-    No auto-complete. No heuristics."""
+    Auto-completes onboarding if calibration is already done (prevents redirect loop)."""
     user_id = current_user["id"]
     
     state = await _read_onboarding_state(user_id)
     
+    if not state or not state.get("completed", False):
+        # Check if calibration is complete — if so, auto-complete onboarding
+        try:
+            op = get_sb().table("user_operator_profile").select(
+                "persona_calibration_status, operator_profile"
+            ).eq("user_id", user_id).maybe_single().execute()
+            if op.data and op.data.get("persona_calibration_status") == "complete":
+                # Calibration done but onboarding not — auto-complete to prevent loop
+                op_profile = op.data.get("operator_profile") or {}
+                op_profile["onboarding_state"] = {
+                    "completed": True,
+                    "current_step": 14,
+                    "completed_at": datetime.now(timezone.utc).isoformat()
+                }
+                get_sb().table("user_operator_profile").update(
+                    {"operator_profile": op_profile}
+                ).eq("user_id", user_id).execute()
+                logger.info(f"[onboarding/status] Auto-completed onboarding for calibrated user {user_id}")
+                return OnboardingStatusResponse(completed=True, current_step=14, business_stage=None, data={})
+        except Exception as e:
+            logger.warning(f"[onboarding/status] Auto-complete check failed: {e}")
+    
     if not state:
-        return OnboardingStatusResponse(
-            completed=False,
-            current_step=0,
-            business_stage=None,
-            data={}
-        )
+        return OnboardingStatusResponse(completed=False, current_step=0, business_stage=None, data={})
     
     return OnboardingStatusResponse(
         completed=state.get("completed", False),
