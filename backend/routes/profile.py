@@ -286,8 +286,8 @@ Rules:
         session_id,
         user_id=current_user["id"],
         user_data={
-            "name": current_user.get("name"),
-            "business_name": current_user.get("business_name"),
+            "name": current_user.get("full_name") or current_user.get("name"),
+            "business_name": current_user.get("company_name") or current_user.get("business_name"),
             "industry": current_user.get("industry"),
         },
         use_advanced=True,
