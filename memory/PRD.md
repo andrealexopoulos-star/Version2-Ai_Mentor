@@ -6,33 +6,26 @@
 - **Routes**: 16 modular files
 - **Frontend**: Glass House + WIIFM Sovereign Sentinel design
 
-## Brand — Sovereign Sentinel (WIIFM)
-- Background: Pure White + Mint Spring (#F0FFF4) radial gradient
-- Primary: Electric Azure (#007AFF), Success: Mint Green (#00D995)
-- Glassmorphism: blur(12px), rgba(255,255,255,0.3) border, 0 24px 48px shadow
-- Headlines: Inter Tight (Semi-bold, -0.02em)
-- Data: Geist Mono, Body: Inter (1.6 line-height)
+## Critical Fix Applied (Feb 2026)
+- **auth_supabase.py**: Changed `from supabase_client import supabase_admin` to `from supabase_client import init_supabase; supabase_admin = init_supabase()`
+- **api.js**: Added proactive token refresh (60s before expiry) + 401 retry with refresh
 
-## Landing Page Flow
-1. Hero: "Business Clarity, Mastered. Your Sovereign AI Mentor." + Live Sentinel Feed
-2. Outcome Matrix (WIIFM): TIME (15+ hrs/week) / CASH (8-12% bleed) / STRENGTH (97% SOP)
-3. Data Sanctuary: "Your Business DNA is yours" + siloed AI + zero leakage
-4. Beyond 6 Sigma: 6-row comparison table
-5. Pricing: The Pulse ($149) / The Strategist ($1,950) / The Sovereign ($5,500)
-6. Sovereign Badge: Sticky gold/azure bottom-right
-
-## Trust Page (/trust)
-- AES-256 badge, Australian Privacy Principles (APP) 2026
-- Zero-Leakage Guarantee (siloed LLM instances)
-- U.S. Cloud Act protection statement
-- 6 security architecture cards
+## Test Results: 300/300 (100%)
+| Iteration | Tests | Phase |
+|-----------|-------|-------|
+| 26-33 | 224 | Monolith deconstruction |
+| 34 | 16 | Clean Sweep Refactoring |
+| 35 | 29 | Deployment Readiness |
+| 36 | 17 | Brand Overhaul |
+| 37 | 14 | Auth Crisis Fix + E2E |
 
 ## Deployment
-- Code: 100% functional
+- Code: 100% functional, auth working end-to-end
 - Blocker: Platform base image (support ticket submitted)
 
 ## Backlog
 - P0: Resolve deployment base image
 - P1: Login/register visual alignment to Sovereign theme
-- P1: Implement live integrations
-- P2: Mobile responsive testing
+- P1: Implement live integrations (Outlook, Google Drive, Xero, Stripe, HubSpot)
+- P2: Mobile responsive testing (detailed)
+- P3: Performance optimization
