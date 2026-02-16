@@ -43,6 +43,25 @@ from core.ai_core import get_ai_response
 
 router = APIRouter()
 
+# ─── In-memory cache for dashboard stats (short TTL) ───
+_dashboard_cache = {}
+_CACHE_TTL = 30  # seconds
+
+
+def _get_cached(key):
+    """Get value from cache if not expired."""
+    import time
+    entry = _dashboard_cache.get(key)
+    if entry and (time.time() - entry["ts"]) < _CACHE_TTL:
+        return entry["val"]
+    return None
+
+
+def _set_cached(key, val):
+    """Set value in cache."""
+    import time
+    _dashboard_cache[key] = {"val": val, "ts": time.time()}
+
 
 # ─── Models needed by profile routes ───
 
