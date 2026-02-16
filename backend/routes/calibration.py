@@ -272,6 +272,8 @@ async def get_lifecycle_state(request: Request):
     try:
         calibration_complete = False
         calibration_status = "incomplete"
+        console_status = "NOT_STARTED"
+        console_step = 0
         try:
             op_result = safe_query_single(
                 get_sb().table("user_operator_profile").select(
@@ -281,6 +283,24 @@ async def get_lifecycle_state(request: Request):
             if op_result.data:
                 calibration_status = op_result.data.get("persona_calibration_status", "incomplete")
                 calibration_complete = calibration_status == "complete"
+                op_profile = op_result.data.get("operator_profile") or {}
+                cs = op_profile.get("console_state", {})
+                console_status = cs.get("status", "NOT_STARTED")
+                console_step = cs.get("current_step", 0)
+
+                # Auto-complete console if calibration is done but console is stuck
+                if calibration_complete and console_status == "IN_PROGRESS":
+                    op_profile["console_state"] = {
+                        "status": "COMPLETE",
+                        "current_step": 17,
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }
+                    get_sb().table("user_operator_profile").update(
+                        {"operator_profile": op_profile}
+                    ).eq("user_id", user_id).execute()
+                    console_status = "COMPLETE"
+                    console_step = 17
+                    logger.info(f"[lifecycle/state] Auto-completed console_state for calibrated user {user_id}")
         except Exception:
             pass
 
