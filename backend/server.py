@@ -166,6 +166,9 @@ api_router.include_router(calibration_router)
 from routes.email import router as email_router
 api_router.include_router(email_router)
 
+from routes.health import router as health_router
+api_router.include_router(health_router)
+
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
