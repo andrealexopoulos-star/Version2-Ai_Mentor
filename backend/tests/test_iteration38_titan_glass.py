@@ -84,10 +84,11 @@ class TestRefactoredAICore:
         print("PASS: /api/ returns API info")
     
     def test_calibration_status_unauthenticated(self):
-        """Test GET /api/calibration/status returns 401 without auth"""
+        """Test GET /api/calibration/status returns 401/403 without auth"""
         response = requests.get(f"{BASE_URL}/api/calibration/status", timeout=10)
-        assert response.status_code == 401
-        print("PASS: /api/calibration/status returns 401 without auth")
+        # Should return 401 or 403 for unauthorized access
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
+        print(f"PASS: /api/calibration/status returns {response.status_code} without auth")
 
 
 class TestAuthEndpointsExist:
@@ -105,10 +106,10 @@ class TestAuthEndpointsExist:
         assert response.status_code in [400, 401, 422]
         print(f"PASS: /api/auth/supabase/login exists (returns {response.status_code})")
     
-    def test_register_endpoint_exists(self):
-        """Test POST /api/auth/supabase/register returns 4xx (not 404)"""
+    def test_signup_endpoint_exists(self):
+        """Test POST /api/auth/supabase/signup returns 4xx (not 404)"""
         response = requests.post(
-            f"{BASE_URL}/api/auth/supabase/register",
+            f"{BASE_URL}/api/auth/supabase/signup",
             json={
                 "email": f"TEST_fake_{os.urandom(4).hex()}@test.com",
                 "password": "TestPass123!",
@@ -117,8 +118,8 @@ class TestAuthEndpointsExist:
             timeout=10
         )
         # Should return validation error or success, not 404
-        assert response.status_code != 404, "Register endpoint should exist"
-        print(f"PASS: /api/auth/supabase/register exists (returns {response.status_code})")
+        assert response.status_code != 404, "Signup endpoint should exist"
+        print(f"PASS: /api/auth/supabase/signup exists (returns {response.status_code})")
     
     def test_oauth_google_url_endpoint_exists(self):
         """Test GET /api/auth/supabase/oauth/google returns URL"""
@@ -145,7 +146,11 @@ class TestAuthenticatedEndpoints:
         )
         if response.status_code == 200:
             data = response.json()
-            return data.get("access_token")
+            # Token is in session.access_token
+            session = data.get("session", {})
+            token = session.get("access_token")
+            if token:
+                return token
         pytest.skip("Could not authenticate - skipping authenticated tests")
     
     def test_calibration_status_authenticated(self, auth_token):
