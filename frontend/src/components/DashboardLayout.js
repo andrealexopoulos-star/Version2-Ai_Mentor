@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
