@@ -237,7 +237,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
 
 
 @router.get("/auth/gmail/login")
-async def gmail_login(returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
+async def gmail_login(request: Request, returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
     """
     Initiate Google OAuth flow for Gmail
     Accepts authentication token as query parameter (for browser redirects)
@@ -246,18 +246,14 @@ async def gmail_login(returnTo: str = "/connect-email", token: Optional[str] = N
     import hashlib
     import hmac
     
-    # VALIDATION: Provider must be explicit
     if not provider or provider != "gmail":
         logger.error(f"❌ Invalid provider for Gmail endpoint: {provider}")
         raise HTTPException(status_code=400, detail="Provider must be 'gmail' for this endpoint")
     
-    logger.info(f"📧 Email connect provider: {provider}")  # LOGGING
+    logger.info(f"📧 Email connect provider: {provider}")
     
-    # Manual token validation (browser redirects can't send Authorization header)
     current_user = None
-    
     if token:
-        # Try Supabase token first
         try:
             from auth_supabase import get_user_by_id
             payload = jwt.decode(token, options={"verify_signature": False})
@@ -274,7 +270,20 @@ async def gmail_login(returnTo: str = "/connect-email", token: Optional[str] = N
     
     user_id = current_user['id']
     
-    redirect_uri = f"{os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))}/api/auth/gmail/callback"
+    # Derive redirect URI from request origin (not env vars)
+    referer = request.headers.get("referer", "")
+    origin = request.headers.get("origin", "")
+    if referer:
+        from urllib.parse import urlparse
+        parsed = urlparse(referer)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+    elif origin:
+        base_url = origin
+    else:
+        base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    
+    redirect_uri = f"{base_url}/api/auth/gmail/callback"
+    logger.info(f"📧 Gmail OAuth redirect_uri: {redirect_uri}")
     
     # Gmail scopes - readonly access only
     scopes = [
