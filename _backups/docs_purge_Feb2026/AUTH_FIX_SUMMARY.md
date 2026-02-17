@@ -2,15 +2,15 @@
 
 **Issue:** User redirected back to login-supabase after OAuth  
 **Status:** FIXED  
-**URL:** https://titan-glass.preview.emergentagent.com
+**URL:** https://data-harmony-fix.preview.emergentagent.com
 
 ---
 
 ## ✅ FIXES APPLIED
 
 ### Fix #1: Supabase Dashboard Configuration
-- Updated Site URL to: `https://titan-glass.preview.emergentagent.com`
-- Added Redirect URL wildcard: `https://titan-glass.preview.emergentagent.com/**`
+- Updated Site URL to: `https://data-harmony-fix.preview.emergentagent.com`
+- Added Redirect URL wildcard: `https://data-harmony-fix.preview.emergentagent.com/**`
 - **Status:** ✅ User completed this
 
 ### Fix #2: OAuth Callback Session Creation
@@ -34,18 +34,18 @@
 ## 🧪 TESTING INSTRUCTIONS
 
 ### Email Login (Should Work):
-1. Visit: https://titan-glass.preview.emergentagent.com/login-supabase
+1. Visit: https://data-harmony-fix.preview.emergentagent.com/login-supabase
 2. Enter: `testing@biqc.demo` / `TestPass123!`
 3. Click "Sign in"
 4. Expected: Redirect to /advisor or /dashboard
 5. Should NOT redirect back to login
 
 ### Google/Microsoft OAuth (Test This):
-1. Visit: https://titan-glass.preview.emergentagent.com/login-supabase
+1. Visit: https://data-harmony-fix.preview.emergentagent.com/login-supabase
 2. Click "Continue with Google" OR "Continue with Microsoft"
 3. Complete OAuth on Google/Microsoft
 4. Expected flow:
-   - Redirect to: `https://titan-glass.preview.emergentagent.com/auth/callback#access_token=...`
+   - Redirect to: `https://data-harmony-fix.preview.emergentagent.com/auth/callback#access_token=...`
    - Process tokens
    - Create session
    - Redirect to: `/dashboard` or `/advisor`
@@ -86,7 +86,7 @@ Open browser console (F12) and look for error messages during OAuth flow
 ## 🎯 WHAT TO TEST ON YOUR MOBILE
 
 1. Clear browser cache and cookies
-2. Visit: https://titan-glass.preview.emergentagent.com
+2. Visit: https://data-harmony-fix.preview.emergentagent.com
 3. Try BOTH:
    - Email login
    - Google OAuth login
@@ -104,4 +104,4 @@ Open browser console (F12) and look for error messages during OAuth flow
 - ✅ Hamburger menu works (screenshot shows all menu items)
 - ✅ Chat works (AI responses visible)
 
-**URL:** https://titan-glass.preview.emergentagent.com
+**URL:** https://data-harmony-fix.preview.emergentagent.com

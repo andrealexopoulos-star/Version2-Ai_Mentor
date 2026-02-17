@@ -31,7 +31,7 @@ GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 
 ### Outlook OAuth (outlook-auth)
 ```bash
-AZURE_CLIENT_ID=5d6e3cbb-cd88-4694-aa19-9b7115666866
+AZURE_CLIENT_ID=data-harmony-fix
 AZURE_CLIENT_SECRET=<your-azure-secret>
 BACKEND_URL=https://beta.thestrategysquad.com
 ```

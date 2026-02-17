@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 # Test configuration
-BASE_URL = "https://titan-glass.preview.emergentagent.com/api"
+BASE_URL = "https://data-harmony-fix.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "andre@thestrategysquad.com.au"
 TEST_USER_ID = "c80b456f-1e3e-4a07-ac89-68eec7355e3b"
 
@@ -171,22 +171,22 @@ def main():
         print("   3. Run these commands:")
         print("")
         print("   // Test Contacts")
-        print("   fetch('https://titan-glass.preview.emergentagent.com/api/integrations/crm/contacts', {")
+        print("   fetch('https://data-harmony-fix.preview.emergentagent.com/api/integrations/crm/contacts', {")
         print("     headers: {'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token}")
         print("   }).then(r => r.json()).then(console.log)")
         print("")
         print("   // Test Companies")
-        print("   fetch('https://titan-glass.preview.emergentagent.com/api/integrations/crm/companies', {")
+        print("   fetch('https://data-harmony-fix.preview.emergentagent.com/api/integrations/crm/companies', {")
         print("     headers: {'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token}")
         print("   }).then(r => r.json()).then(console.log)")
         print("")
         print("   // Test Deals")
-        print("   fetch('https://titan-glass.preview.emergentagent.com/api/integrations/crm/deals', {")
+        print("   fetch('https://data-harmony-fix.preview.emergentagent.com/api/integrations/crm/deals', {")
         print("     headers: {'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token}")
         print("   }).then(r => r.json()).then(console.log)")
         print("")
         print("   // Test Owners")
-        print("   fetch('https://titan-glass.preview.emergentagent.com/api/integrations/crm/owners', {")
+        print("   fetch('https://data-harmony-fix.preview.emergentagent.com/api/integrations/crm/owners', {")
         print("     headers: {'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token}")
         print("   }).then(r => r.json()).then(console.log)")
         return 1

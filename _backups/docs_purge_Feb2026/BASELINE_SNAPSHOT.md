@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://titan-glass.preview.emergentagent.com`
-- **Backend:** `https://titan-glass.preview.emergentagent.com/api`
+- **Frontend:** `https://data-harmony-fix.preview.emergentagent.com`
+- **Backend:** `https://data-harmony-fix.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

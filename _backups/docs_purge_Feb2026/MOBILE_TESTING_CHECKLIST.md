@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://titan-glass.preview.emergentagent.com
+**Test URL:** https://data-harmony-fix.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://titan-glass.preview.emergentagent.com/advisor
+- [ ] Navigate to https://data-harmony-fix.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://titan-glass.preview.emergentagent.com/
+**Landing:** https://data-harmony-fix.preview.emergentagent.com/
 
-**Login:** https://titan-glass.preview.emergentagent.com/login-supabase
+**Login:** https://data-harmony-fix.preview.emergentagent.com/login-supabase
 
-**Register:** https://titan-glass.preview.emergentagent.com/register-supabase
+**Register:** https://data-harmony-fix.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://titan-glass.preview.emergentagent.com/pricing
+**Pricing:** https://data-harmony-fix.preview.emergentagent.com/pricing
 
-**Terms:** https://titan-glass.preview.emergentagent.com/terms
+**Terms:** https://data-harmony-fix.preview.emergentagent.com/terms
 
-**Advisor:** https://titan-glass.preview.emergentagent.com/advisor
+**Advisor:** https://data-harmony-fix.preview.emergentagent.com/advisor
 
 ---
 

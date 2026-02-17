@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://titan-glass.preview.emergentagent.com
+https://data-harmony-fix.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://titan-glass.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://titan-glass.preview.emergentagent.com
+https://data-harmony-fix.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://titan-glass.preview.emergentagent.com/**
-https://titan-glass.preview.emergentagent.com/auth/callback
-https://titan-glass.preview.emergentagent.com/auth-callback-supabase
-https://titan-glass.preview.emergentagent.com/connect-email
-https://titan-glass.preview.emergentagent.com/integrations
+https://data-harmony-fix.preview.emergentagent.com/**
+https://data-harmony-fix.preview.emergentagent.com/auth/callback
+https://data-harmony-fix.preview.emergentagent.com/auth-callback-supabase
+https://data-harmony-fix.preview.emergentagent.com/connect-email
+https://data-harmony-fix.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://titan-glass.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://titan-glass.preview.emergentagent.com/api/auth/outlook/callback
+https://data-harmony-fix.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://titan-glass.preview.emergentagent.com
+https://data-harmony-fix.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://titan-glass.preview.emergentagent.com/api/auth/gmail/callback
+https://data-harmony-fix.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---
