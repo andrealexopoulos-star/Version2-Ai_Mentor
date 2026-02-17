@@ -22,8 +22,9 @@ import {
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useSupabaseAuth();
+  const { user, signOut, authState } = useSupabaseAuth();
   const { isNavOpen, openNav, closeAll } = useMobileDrawer();
+  const isCalibrated = authState === AUTH_STATE.READY;
   
   const logout = async () => {
     try {
