@@ -1114,7 +1114,7 @@ STRATEGIC_DIMENSIONS = [
     {"id": 3,  "key": "industry",                "label": "Industry Sector",          "question": "What industry does the business operate in?"},
     {"id": 4,  "key": "location",                "label": "Operating Geography",      "question": "Where is the business based?"},
     {"id": 5,  "key": "target_market",           "label": "Target Market",            "question": "Who does the business sell to?"},
-    {"id": 6,  "key": "products_services",       "label": "Core Offering",            "question": "What products or services does the business sell?"},
+    {"id": 6,  "key": "main_products_services",  "label": "Core Offering",            "question": "What products or services does the business sell?"},
     {"id": 7,  "key": "unique_value_proposition", "label": "Competitive Moat",        "question": "What differentiates the business from competitors?"},
     {"id": 8,  "key": "team_size",               "label": "Team Capacity",            "question": "How big is the team?"},
     {"id": 9,  "key": "years_operating",         "label": "Operational Maturity",     "question": "How long has the business been running?"},
