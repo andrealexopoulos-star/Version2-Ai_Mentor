@@ -153,7 +153,7 @@ const OnboardingWizard = () => {
   // Card Persistence: upsert selected fields directly to business_profiles
   const PROFILE_SYNC_FIELDS = [
     'business_name', 'industry', 'business_stage', 'location', 'website',
-    'target_market', 'business_model', 'products_services', 'unique_value_proposition',
+    'target_market', 'business_model', 'main_products_services', 'unique_value_proposition',
     'team_size', 'years_operating', 'short_term_goals', 'long_term_goals',
     'main_challenges', 'growth_strategy', 'growth_goals', 'risk_profile'
   ];
