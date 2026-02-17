@@ -64,6 +64,25 @@ const WarRoomConsoleInner = () => {
           }
         }
 
+        // Fetch business_profiles — if business_stage exists, skip Step 2
+        try {
+          const bpRes = await fetch(`${getBackendUrl()}/api/business-profile`, { headers });
+          const bpCt = bpRes.headers.get('content-type') || '';
+          if (bpRes.ok && bpCt.includes('application/json')) {
+            const bp = await bpRes.json();
+            const profile = bp.profile || bp;
+            if (profile.business_stage) {
+              // business_stage already known — advance past Step 2
+              if (currentStep <= 2) {
+                setCurrentStep(prev => Math.max(prev, 3));
+                setProgress(prev => Math.max(prev, Math.round((3 / 17) * 100)));
+              }
+            }
+          }
+        } catch (bpErr) {
+          console.warn('[Console] business_profiles fetch failed:', bpErr.message);
+        }
+
         // Fetch intelligence actions for the signal panel
         fetchActions();
 
