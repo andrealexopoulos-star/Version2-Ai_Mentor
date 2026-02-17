@@ -334,7 +334,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
     import hashlib
     import hmac
     
-    frontend_url = os.environ['FRONTEND_URL']
+    frontend_url = _get_oauth_base_url()
     
     # Handle OAuth errors
     if error:
@@ -531,7 +531,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     import hashlib
     import hmac
     
-    frontend_url = os.environ['FRONTEND_URL']
+    frontend_url = _get_oauth_base_url()
     
     # Handle OAuth errors
     if error:
