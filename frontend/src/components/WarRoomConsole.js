@@ -40,7 +40,7 @@ const WarRoomConsoleInner = () => {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Resolve workspace context — no auto-resume, no frontend-derived step
+  // Resolve workspace context + business intelligence
   useEffect(() => {
     let cancelled = false;
     const resolveContext = async () => {
@@ -48,20 +48,26 @@ const WarRoomConsoleInner = () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session || cancelled) return;
         setSessionReady(true);
+        const headers = { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json', 'Cache-Control': 'no-cache' };
 
-        const res = await fetch(`${getBackendUrl()}/api/lifecycle/state`, {
-          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
-        });
+        // Fetch lifecycle state
+        const res = await fetch(`${getBackendUrl()}/api/lifecycle/state`, { headers });
         const ct = res.headers.get('content-type') || '';
         if (res.ok && ct.includes('application/json')) {
           const lc = await res.json();
-          if (lc.workspace_id) {
-            setWorkspaceId(lc.workspace_id);
+          if (lc.workspace_id) setWorkspaceId(lc.workspace_id);
+          // If console is already COMPLETED, skip the 17-question flow
+          if (lc.console?.status === 'COMPLETED' || lc.console?.status === 'COMPLETE') {
+            setStatus('COMPLETE');
+            setProgress(100);
+            setCurrentStep(17);
           }
-          if (!cancelled) setContextResolved(true);
-        } else {
-          if (!cancelled) setContextResolved(true);
         }
+
+        // Fetch intelligence actions for the signal panel
+        fetchActions();
+
+        if (!cancelled) setContextResolved(true);
       } catch (e) {
         console.warn('[Console] Context resolution failed:', e.message);
         if (!cancelled) { setSessionReady(true); setContextResolved(true); }
