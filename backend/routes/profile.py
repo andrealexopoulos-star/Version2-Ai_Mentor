@@ -109,6 +109,8 @@ class BusinessProfileUpdate(BaseModel):
     team_size: Optional[str] = None
     years_operating: Optional[str] = None
     products_services: Optional[str] = None
+    growth_goals: Optional[str] = None
+    risk_profile: Optional[str] = None
 
 
 # ==================== BUSINESS PROFILE ROUTES ====================

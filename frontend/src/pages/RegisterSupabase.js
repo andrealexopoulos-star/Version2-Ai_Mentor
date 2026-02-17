@@ -279,10 +279,10 @@ const RegisterSupabase = () => {
         </div>
       </div>
 
-      {/* Right Panel — Platform-Aligned */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 30% 20%, rgba(0,122,255,0.10), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,217,149,0.06), transparent 50%)` }} />
-        <div className="absolute inset-0" style={{ background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.03\'/%3E%3C/svg%3E")', opacity: 0.4 }} />
+      {/* Right Panel — Titan Glass */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: SL }}>
+        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 30% 20%, rgba(0,122,255,0.12), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,217,149,0.08), transparent 50%)` }} />
+        <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'rgba(30,41,59,0.4)' }} />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="mb-12">
             <p className="text-[11px] uppercase tracking-[0.3em] font-semibold mb-6" style={{ fontFamily: MONO, color: MINT }}>Sovereign Intelligence</p>
