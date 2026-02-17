@@ -43,6 +43,19 @@ JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret')
 
 router = APIRouter()
 
+
+def _get_oauth_base_url() -> str:
+    """Get the custom domain base URL for OAuth redirects.
+    On Emergent deployments, env vars resolve to *.emergent.host which OAuth providers reject.
+    This function strips the internal domain and returns the public custom domain."""
+    url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    if '.emergent.host' in url:
+        url = url.replace('.emergent.host', '.com')
+    if 'preview.emergentagent.com' in url:
+        url = 'https://biqc.thestrategysquad.com'
+    return url
+
+
 # OAuth config from environment
 AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID", "common")
 AZURE_TENANT_URL = os.environ.get("AZURE_TENANT_URL", "https://login.microsoftonline.com/common")
