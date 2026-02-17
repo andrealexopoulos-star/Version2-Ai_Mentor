@@ -544,14 +544,17 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     # Update business profile in Supabase
     await update_business_profile_supabase(get_sb(), user_id, profile_data)
     
-    # Create new versioned profile
-    await create_profile_version(
-        user_id=user_id,
-        profile_data=profile_data,
-        change_type="minor",
-        reason="Profile update via UI",
-        initiated_by=user_id
-    )
+    # Create new versioned profile (non-blocking — schema may differ)
+    try:
+        await create_profile_version(
+            user_id=user_id,
+            profile_data=profile_data,
+            change_type="minor",
+            reason="Profile update via UI",
+            initiated_by=user_id
+        )
+    except Exception as ver_err:
+        logger.warning(f"[business-profile] Versioning failed (non-blocking): {ver_err}")
     
     return await get_business_profile(current_user)
 
