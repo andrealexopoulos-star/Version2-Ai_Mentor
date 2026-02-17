@@ -226,9 +226,10 @@ async def trigger_intelligence_synthesis(current_user: dict = Depends(get_curren
             for email in emails.data[:20]:
                 # Create observation event from email signal
                 try:
-                    sb.table("observation_events").upsert({
+                    sb.table("observation_events").insert({
                         "user_id": user_id,
                         "signal_name": "email.received",
+                        "event_type": "email_signal",
                         "source": "outlook",
                         "domain": "communications",
                         "payload": {
@@ -238,7 +239,7 @@ async def trigger_intelligence_synthesis(current_user: dict = Depends(get_curren
                         },
                         "confidence": 0.9,
                         "observed_at": email.get("received_date", datetime.now(timezone.utc).isoformat()),
-                    }, on_conflict="user_id,signal_name,observed_at").execute()
+                    }).execute()
                     results["signals_created"] += 1
                 except Exception:
                     pass
