@@ -255,15 +255,16 @@ async def trigger_intelligence_synthesis(current_user: dict = Depends(get_curren
             results["sources_processed"].append(f"crm ({len(crm.data)} providers)")
             for provider in crm.data:
                 try:
-                    sb.table("observation_events").upsert({
+                    sb.table("observation_events").insert({
                         "user_id": user_id,
                         "signal_name": f"crm.connected.{provider['provider']}",
+                        "event_type": "integration_signal",
                         "source": provider["provider"],
                         "domain": "sales",
                         "payload": {"status": "connected", "provider": provider["provider"]},
                         "confidence": 1.0,
                         "observed_at": datetime.now(timezone.utc).isoformat(),
-                    }, on_conflict="user_id,signal_name,observed_at").execute()
+                    }).execute()
                     results["signals_created"] += 1
                 except Exception:
                     pass
