@@ -111,13 +111,15 @@ const OnboardingWizard = () => {
   const updateField = useCallback((field, value) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
-      // Debounced auto-save
+      // Debounced auto-save to onboarding state
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
         persistProgress(updated, currentStep);
       }, 1500);
       return updated;
     });
+    // Immediate upsert to business_profiles for card selections
+    syncToBusinessProfile(field, value);
   }, [currentStep]);
 
   const toggleArrayItem = useCallback((field, item) => {
