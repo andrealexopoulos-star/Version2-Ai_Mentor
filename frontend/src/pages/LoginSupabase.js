@@ -235,7 +235,7 @@ const LoginSupabase = () => {
       {/* Right Panel — Titan Glass */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #1a2744 0%, #243b5c 40%, #1e3350 100%)' }}>
         <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 20% 10%, rgba(0,122,255,0.18), transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(0,217,149,0.12), transparent 55%), radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.06), transparent 60%)` }} />
-        <div className="absolute inset-0" style={{ backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', background: 'rgba(26,39,68,0.3)' }} />
+        <div className="absolute inset-0 titan-glass-blur" style={{ backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', background: 'rgba(26,39,68,0.3)' }} />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="mb-12">
             <p className="text-[11px] uppercase tracking-[0.3em] font-semibold mb-6" style={{ fontFamily: MONO, color: AZ }}>Sovereign Intelligence</p>
