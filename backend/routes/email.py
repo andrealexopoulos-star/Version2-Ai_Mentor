@@ -589,7 +589,8 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     # Exchange code for tokens
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
     
-    redirect_uri = f"{os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))}/api/auth/outlook/callback"
+    # redirect_uri MUST match what was sent in the login request
+    redirect_uri = f"{frontend_url}/api/auth/outlook/callback"
     
     payload = {
         "client_id": AZURE_CLIENT_ID,
