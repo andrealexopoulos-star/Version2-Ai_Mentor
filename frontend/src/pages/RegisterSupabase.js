@@ -300,21 +300,21 @@ const RegisterSupabase = () => {
               { icon: Activity, label: '8-12% cash bleed detected', sub: 'Revenue protection on autopilot', accent: MINT },
               { icon: Shield, label: '97% SOP compliance', sub: 'Operational consistency assured', accent: AZ },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${item.accent}12` }}>
+              <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${item.accent}15` }}>
                   <item.icon className="w-4 h-4" style={{ color: item.accent }} strokeWidth={1.5} />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white" style={{ fontFamily: HEAD }}>{item.label}</p>
-                  <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)', fontFamily: MONO }}>{item.sub}</p>
+                  <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: MONO }}>{item.sub}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 flex items-center gap-3 px-5 py-3 rounded-xl" style={{ background: 'rgba(0,122,255,0.08)', border: '1px solid rgba(0,122,255,0.12)' }}>
-            <Lock className="w-4 h-4" style={{ color: AZ }} />
-            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontFamily: MONO }}>
+          <div className="mt-12 flex items-center gap-3 px-5 py-3 rounded-xl" style={{ background: 'rgba(0,217,149,0.1)', border: '1px solid rgba(0,217,149,0.15)' }}>
+            <Lock className="w-4 h-4" style={{ color: MINT }} />
+            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.7)', fontFamily: MONO }}>
               100% Australian data sovereignty guaranteed
             </span>
           </div>
