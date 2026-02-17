@@ -28,10 +28,11 @@ const RegisterSupabase = () => {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '', password: '', full_name: '', company_name: '', industry: ''
+    email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });
 
-  const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name;
+  const passwordsMatch = formData.password === formData.confirmPassword;
+  const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name && formData.confirmPassword && passwordsMatch;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
