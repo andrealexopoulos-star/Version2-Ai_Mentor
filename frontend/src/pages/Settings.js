@@ -256,6 +256,51 @@ const Settings = () => {
                           <Input value={profile.years_operating || ''} onChange={(e) => updateProfile('years_operating', e.target.value)} placeholder="e.g., 2-5 years" className="mt-1" />
                         </div>
                       </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label>Business Stage</Label>
+                          <Select value={profile.business_stage || ''} onValueChange={(val) => updateProfile('business_stage', val)}>
+                            <SelectTrigger className="mt-1" data-testid="settings-select-stage">
+                              <SelectValue placeholder="Select stage" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="idea">Idea</SelectItem>
+                              <SelectItem value="startup">Startup</SelectItem>
+                              <SelectItem value="established">Established</SelectItem>
+                              <SelectItem value="enterprise">Enterprise</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Growth Goals</Label>
+                          <Select value={profile.growth_goals || ''} onValueChange={(val) => updateProfile('growth_goals', val)}>
+                            <SelectTrigger className="mt-1" data-testid="settings-select-growth-goals">
+                              <SelectValue placeholder="Select goal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="revenue_growth">Revenue Growth</SelectItem>
+                              <SelectItem value="market_expansion">Market Expansion</SelectItem>
+                              <SelectItem value="product_diversification">Product Diversification</SelectItem>
+                              <SelectItem value="operational_efficiency">Operational Efficiency</SelectItem>
+                              <SelectItem value="team_scaling">Team Scaling</SelectItem>
+                              <SelectItem value="profitability">Profitability Focus</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Risk Profile</Label>
+                          <Select value={profile.risk_profile || ''} onValueChange={(val) => updateProfile('risk_profile', val)}>
+                            <SelectTrigger className="mt-1" data-testid="settings-select-risk-profile">
+                              <SelectValue placeholder="Select profile" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="conservative">Conservative</SelectItem>
+                              <SelectItem value="moderate">Moderate</SelectItem>
+                              <SelectItem value="aggressive">Aggressive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                       <div className="flex justify-end pt-2">
                         <Button onClick={handleSaveProfile} variant="outline" size="sm" disabled={saving}>
                           {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />} Save
