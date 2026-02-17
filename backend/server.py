@@ -172,6 +172,10 @@ api_router.include_router(health_router)
 from routes.intelligence_actions import router as intelligence_actions_router
 api_router.include_router(intelligence_actions_router)
 
+from routes.strategic_console import router as strategic_console_router
+api_router.include_router(strategic_console_router)
+
+
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
