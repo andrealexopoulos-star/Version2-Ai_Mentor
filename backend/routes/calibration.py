@@ -965,6 +965,19 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
           except Exception as comp_err:
             logger.warning(f"[calibration/answer] Q9 calibration_status=complete failed: {comp_err}")
 
+          # LOOP-BREAKER: Write to strategic_console_state (authoritative for routing)
+          try:
+            get_sb().table("strategic_console_state").upsert({
+                "user_id": user_id,
+                "status": "COMPLETED",
+                "current_step": 17,
+                "is_complete": True,
+                "updated_at": now_iso
+            }, on_conflict="user_id").execute()
+            logger.info(f"[calibration/answer] strategic_console_state = COMPLETED for {user_id}")
+          except Exception as scs_err:
+            logger.warning(f"[calibration/answer] strategic_console_state write failed: {scs_err}")
+
           return {"status": "complete", "calibration_complete": True}
 
       except Exception as strategy_err:
