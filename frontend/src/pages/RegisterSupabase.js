@@ -233,6 +233,25 @@ const RegisterSupabase = () => {
               </div>
             </div>
 
+            <div>
+              <Label htmlFor="confirmPassword" className="text-xs font-semibold uppercase tracking-wider" style={{ color: MU }}>
+                Confirm Password <span style={{ color: '#EF4444' }}>*</span>
+              </Label>
+              <div className="relative mt-1.5">
+                <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword}
+                  onChange={(e) => set('confirmPassword', e.target.value)} placeholder="Re-enter password"
+                  className="h-11 text-sm rounded-xl auth-input"
+                  style={{
+                    border: `1px solid ${formData.confirmPassword && !passwordsMatch ? '#EF4444' : 'rgba(0,0,0,0.08)'}`,
+                    background: 'rgba(255,255,255,0.7)', fontFamily: HEAD
+                  }}
+                  required minLength={6} data-testid="register-confirm-password-input" />
+              </div>
+              {formData.confirmPassword && !passwordsMatch && (
+                <p className="text-xs mt-1" style={{ color: '#EF4444' }} data-testid="password-mismatch-error">Passwords do not match</p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={loading || oauthLoading || !isFormValid}
