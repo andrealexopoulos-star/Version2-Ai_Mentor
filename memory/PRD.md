@@ -1,40 +1,42 @@
 # BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-BIQc is a Sovereign Strategic Partner for Australian SMEs. AI-powered intelligence with Operational Sovereignty.
-
-## Core Mandates
-1. Data Harmony — Calibration data flows to all intelligence modules
-2. Zero-Question Mandate — No redundant surveys
-3. Edge-First Intelligence — Heavy AI offloaded to Edge Functions
-4. Actionable Intelligence — [Read/Action/Ignore] briefs
-5. Zero-Redirect Protocol — No redirect loops
-6. Dynamic Gap-Filling — Only ask questions where data is NULL
-7. Operational Sovereignty — 24-node sidebar, 53-table schema, indexed
+BIQc is a Sovereign Strategic Partner for Australian SMEs with Operational Sovereignty.
 
 ## What's Been Implemented
 
-### Performance Purge (Latest)
-- **Index Migration:** SQL script with 43 indexes across 31 user_id-queried tables + 3 account_id indexes + 3 composite indexes at `/app/supabase_migrations/performance_indexes.sql`
-- **Skeleton Loaders:** Reusable `PageSkeleton` component replaces spinners on Advisor, BusinessProfile, Settings pages
-- **Mobile Titan Glass Fix:** `@media(max-width:1023px)` reduces backdrop-filter blur from 40px→12px on mobile
-- **Sidebar Visibility Logic:** Calibration-locked nodes hidden until `authState === READY`
+### Serial Bottleneck Broken (Latest)
+- **Parallel Fetch:** `/api/executive-mirror` now executes 4 Supabase queries concurrently via `asyncio.gather` (operator_profile, intelligence_snapshots, business_profiles, strategic_console_state)
+- **SWR Caching:** `useSWR` hook at `/app/frontend/src/hooks/useSWR.js` — in-memory cache, stale-while-revalidate, deduping, focus revalidation. AdvisorWatchtower now uses SWR.
+- **Edge Offloading:** SWOT synthesis already in `deep-web-recon` Edge Function. Scoring logic extracted from profile.py (2,070 lines) to `core/scoring.py` (compute_retention_rag, calculate_business_score).
+- **Skeleton Loaders:** PageSkeleton replaces spinners on Advisor, BusinessProfile, Settings
+- **Mobile Titan Glass:** Blur reduced 40px→12px on mobile via `.titan-glass-blur` media query
 
-### Architecture Summary
-- 24-Node Sidebar: 5 sections (INTELLIGENCE, ANALYSIS, TOOLS, CONFIGURATION, SETTINGS)
-- 53 Supabase Tables: Full schema reference at /app/memory/SCHEMA_REFERENCE.md
-- Dynamic Gap-Filling: /api/calibration/strategic-audit audits 17 dimensions
-- Persistence Hooks: Upserts on card selections, onboarding completion, settings save
-- Fact Resolution: 3-layer authority (Supabase → Integrations → Fact Ledger)
+### Performance Index (5 Layers)
+1. Layer 1: 37 user_id + 3 account_id indexes across 31 tables
+2. Layer 2: 7 GIN indexes for JSONB deep-search (payload, cognitive_profiles, social_handles, etc.)
+3. Layer 3: 6 chronological DESC indexes for latest-first queries
+4. Layer 4: 3 full-text search indexes (SOPs, documents, analyses)
+5. Layer 5: 5 composite hot-path indexes
 
-## User Action Required
-- Run `/app/supabase_migrations/performance_indexes.sql` in Supabase SQL Editor
+### Previous Work
+- 24-Node Sidebar with visibility logic
+- Dynamic Gap-Filling (17-point Strategic Audit)
+- Persistence Hooks (card upserts, strategic_console_state sync)
+- Zero-Redirect Protocol
+- Titan Glass UI
+
+## Architecture
+- SWR Cache: Frontend in-memory, stale-while-revalidate
+- Parallel Backend: asyncio.gather for multi-table reads
+- Scoring Module: core/scoring.py (extracted from profile.py)
+- Edge Functions: calibration-psych, deep-web-recon
 
 ## Backlog
 ### P1
 - [ ] E2E calibration flow
-- [ ] Extract compute_retention_rag + calculate_business_score from profile.py to shared module
+- [ ] Run performance_indexes.sql in Supabase
 ### P2
-- [ ] Refactor routes/profile.py (2,070 lines)
+- [ ] Continue profile.py decomposition
 - [ ] Video call feature
-- [ ] Full mobile responsive audit
+- [ ] Mobile responsive audit
