@@ -280,16 +280,16 @@ const RegisterSupabase = () => {
       </div>
 
       {/* Right Panel — Titan Glass */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: SL }}>
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 30% 20%, rgba(0,122,255,0.12), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,217,149,0.08), transparent 50%)` }} />
-        <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'rgba(30,41,59,0.4)' }} />
+      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #1a2744 0%, #243b5c 40%, #1e3350 100%)' }}>
+        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 20% 10%, rgba(0,122,255,0.18), transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(0,217,149,0.12), transparent 55%), radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.06), transparent 60%)` }} />
+        <div className="absolute inset-0" style={{ backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', background: 'rgba(26,39,68,0.3)' }} />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="mb-12">
             <p className="text-[11px] uppercase tracking-[0.3em] font-semibold mb-6" style={{ fontFamily: MONO, color: MINT }}>Sovereign Intelligence</p>
             <h2 className="text-3xl font-semibold leading-tight tracking-tight mb-4" style={{ fontFamily: HEAD }}>
               Transform chaos into<br/>strategic clarity.
             </h2>
-            <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
               Join forward-thinking leaders leveraging sovereign AI for competitive advantage.
             </p>
           </div>
@@ -300,19 +300,19 @@ const RegisterSupabase = () => {
               { icon: Activity, label: '8-12% cash bleed detected', sub: 'Revenue protection on autopilot', accent: MINT },
               { icon: Shield, label: '97% SOP compliance', sub: 'Operational consistency assured', accent: AZ },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${item.accent}15` }}>
+              <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${item.accent}18` }}>
                   <item.icon className="w-4 h-4" style={{ color: item.accent }} strokeWidth={1.5} />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white" style={{ fontFamily: HEAD }}>{item.label}</p>
-                  <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: MONO }}>{item.sub}</p>
+                  <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: MONO }}>{item.sub}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 flex items-center gap-3 px-5 py-3 rounded-xl" style={{ background: 'rgba(0,217,149,0.1)', border: '1px solid rgba(0,217,149,0.15)' }}>
+          <div className="mt-12 flex items-center gap-3 px-5 py-3 rounded-xl" style={{ background: 'rgba(0,217,149,0.1)', border: '1px solid rgba(0,217,149,0.18)' }}>
             <Lock className="w-4 h-4" style={{ color: MINT }} />
             <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.7)', fontFamily: MONO }}>
               100% Australian data sovereignty guaranteed
