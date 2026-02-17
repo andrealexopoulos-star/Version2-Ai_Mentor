@@ -1567,7 +1567,7 @@ async def get_profile_scores(current_user: dict = Depends(get_current_user)):
     files_count = await count_user_data_files_supabase(get_sb(), user_id)
     
     completeness = calculate_profile_completeness(profile) if profile else 0
-    business_score = await calculate_business_score(profile, onboarding, user_id) if profile else 0
+    business_score = await calculate_business_score(profile, onboarding, user_id, sb_client=get_sb()) if profile else 0
     
     result = {
         "completeness": completeness,
