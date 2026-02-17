@@ -414,7 +414,7 @@ const DashboardLayout = ({ children }) => {
         </button>
 
         <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto h-full bg-white">
-          {navItems.map((item, index) => {
+          {visibleNavItems.map((item, index) => {
             if (item.type === 'divider') {
               return (
                 <div key={index} className="pt-6 pb-2">
