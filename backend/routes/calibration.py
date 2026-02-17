@@ -95,12 +95,8 @@ def _parse_business_stage(answer: str) -> Dict[str, Optional[str]]:
     return {"business_stage": stage, "years_operating": years}
 
 def _parse_location(answer: str) -> Dict[str, Optional[str]]:
-    parts = [p.strip() for p in answer.split(",") if p.strip()]
-    if len(parts) >= 3:
-        return {"location": parts[0], # location_state removed: parts[1], # location_country removed: parts[2]}
-    if len(parts) == 2:
-        return {"location": parts[0], # location_state removed: parts[1], # location_country removed: None}
-    return {"location": parts[0] if parts else None, # location_state removed: None, # location_country removed: None}
+    """Parse location into a single 'location' string."""
+    return {"location": answer.strip()}
 
 def _extract_team_size(answer: str) -> Optional[int]:
     match = re.search(r"(\d+)", answer)
