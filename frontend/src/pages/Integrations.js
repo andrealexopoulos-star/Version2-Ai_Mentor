@@ -438,8 +438,9 @@ const Integrations = () => {
       category: 'financial',
       logo: 'ST',
       color: '#635BFF',
-      tier: 'pro',
-      popular: true
+      tier: 'free',
+      popular: true,
+      viaMerge: true
     },
     // Knowledge Base (File Storage)
     {
