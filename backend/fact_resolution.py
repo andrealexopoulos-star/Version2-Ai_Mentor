@@ -41,7 +41,7 @@ FACT_SOURCES = {
     "business.growth_goals": ("business_profiles", "growth_goals"),
     "business.risk_profile": ("business_profiles", "risk_profile"),
     "business.competitive_advantages": ("business_profiles", "competitive_advantages"),
-    "business.products_services": ("business_profiles", "products_services"),
+    "business.products_services": ("business_profiles", "main_products_services"),
     "business.team_size": ("business_profiles", "team_size"),
     "business.years_operating": ("business_profiles", "years_operating"),
     "business.target_country": ("business_profiles", "target_country"),
