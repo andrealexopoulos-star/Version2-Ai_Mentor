@@ -64,22 +64,30 @@ const WarRoomConsoleInner = () => {
           }
         }
 
-        // Fetch business_profiles — if business_stage exists, skip entire 17-point survey
+        // Dynamic Gap-Filling: Audit business_profiles against the 17-point Strategic Map
         try {
-          const bpRes = await fetch(`${getBackendUrl()}/api/business-profile`, { headers });
-          const bpCt = bpRes.headers.get('content-type') || '';
-          if (bpRes.ok && bpCt.includes('application/json')) {
-            const bp = await bpRes.json();
-            const profile = bp.profile || bp;
-            if (profile.business_stage) {
-              // business_stage known — skip entire 17-point manual survey, go to Intelligence
+          const auditRes = await fetch(`${getBackendUrl()}/api/calibration/strategic-audit`, { headers });
+          const auditCt = auditRes.headers.get('content-type') || '';
+          if (auditRes.ok && auditCt.includes('application/json')) {
+            const audit = await auditRes.json();
+            if (audit.gap_count === 0) {
+              // All 17 dimensions known — skip survey entirely
               setStatus('COMPLETE');
               setProgress(100);
               setCurrentStep(17);
+            } else if (audit.known_count > 0) {
+              // Partial coverage — auto-advance past known dimensions
+              setCurrentStep(prev => Math.max(prev, audit.auto_advance_to_step));
+              setProgress(prev => Math.max(prev, audit.completion_pct));
+            }
+            // Store gap context so the brain knows what to ask
+            if (audit.known_count > 0 && audit.gaps?.length > 0) {
+              const gapSummary = audit.gaps.map(g => g.label).join(', ');
+              console.log(`[Console] Strategic Audit: ${audit.known_count}/${audit.total} known. Gaps: ${gapSummary}`);
             }
           }
-        } catch (bpErr) {
-          console.warn('[Console] business_profiles fetch failed:', bpErr.message);
+        } catch (auditErr) {
+          console.warn('[Console] Strategic audit failed:', auditErr.message);
         }
 
         // Fetch intelligence actions for the signal panel
