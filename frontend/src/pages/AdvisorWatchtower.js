@@ -52,18 +52,6 @@ const AdvisorWatchtower = () => {
     'Mapping Leadership Cadence across your connected platforms...',
   ];
 
-  const fetchMirror = async () => {
-    setMirrorLoading(true);
-    try {
-      const res = await apiClient.get('/executive-mirror');
-      setMirror(res.data);
-    } catch (err) {
-      console.error('[advisor] Failed:', err);
-    } finally {
-      setMirrorLoading(false);
-    }
-  };
-
   const refreshSnapshot = async () => {
     setSnapshotRefreshing(true);
     try {
@@ -78,7 +66,8 @@ const AdvisorWatchtower = () => {
         },
         body: JSON.stringify({}),
       });
-      await fetchMirror();
+      // SWR: trigger background revalidation
+      mutateMirror();
     } catch (err) {
       console.warn('[advisor] refresh failed:', err.message);
     } finally {
