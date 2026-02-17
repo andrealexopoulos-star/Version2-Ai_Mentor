@@ -244,6 +244,12 @@ const WarRoomConsoleInner = () => {
       {/* HEADER */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #E5E7EB', background: '#fff', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <a href="/advisor" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#6B7280', fontSize: 13, textDecoration: 'none', padding: '4px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#F9FAFB', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }} data-testid="console-home-btn"
+            onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
+            onMouseLeave={e => e.currentTarget.style.background = '#F9FAFB'}
+          >
+            <span style={{ fontSize: 14 }}>&#8592;</span> Dashboard
+          </a>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
           <span style={{ fontSize: 15, fontWeight: 600, color: '#111827', letterSpacing: '-0.01em' }}>
             BIQc Strategic Console
