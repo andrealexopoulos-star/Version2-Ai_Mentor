@@ -332,33 +332,19 @@ async def get_lifecycle_state(request: Request):
             except Exception:
                 pass
 
-        onboarding_complete = False
-        onboarding_step = 0
-        try:
-            op_result2 = safe_query_single(
-                get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id)
-            )
-            if op_result2.data:
-                op_profile2 = op_result2.data.get("operator_profile") or {}
-                ob_state = op_profile2.get("onboarding_state", {})
-                onboarding_complete = ob_state.get("completed", False)
-                onboarding_step = ob_state.get("current_step", 0)
-
-                # Auto-complete onboarding if calibration is done but onboarding is not
-                if calibration_complete and not onboarding_complete:
-                    op_profile2["onboarding_state"] = {
-                        "completed": True,
-                        "current_step": 14,
-                        "completed_at": datetime.now(timezone.utc).isoformat()
-                    }
-                    get_sb().table("user_operator_profile").update(
-                        {"operator_profile": op_profile2}
-                    ).eq("user_id", user_id).execute()
-                    onboarding_complete = True
-                    onboarding_step = 14
-                    logger.info(f"[lifecycle/state] Auto-completed onboarding for calibrated user {user_id}")
-        except Exception:
-            pass
+        onboarding_complete = calibration_complete  # If calibration done, onboarding is done
+        onboarding_step = 14 if calibration_complete else 0
+        if not calibration_complete:
+            try:
+                op_result2 = safe_query_single(
+                    get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id)
+                )
+                if op_result2.data:
+                    ob_state = (op_result2.data.get("operator_profile") or {}).get("onboarding_state", {})
+                    onboarding_complete = ob_state.get("completed", False)
+                    onboarding_step = ob_state.get("current_step", 0)
+            except Exception:
+                pass
 
         integrations_connected = 0
         integration_names = []
