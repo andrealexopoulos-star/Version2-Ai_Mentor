@@ -1,7 +1,7 @@
 # BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-The BIQc (Business Intelligence Quotient) platform is a sovereign AI-powered strategic intelligence system for Australian SMEs. Uses Supabase for Auth, PostgreSQL, Edge Functions; React frontend; FastAPI backend.
+BIQc is a Sovereign Strategic Partner for Australian SMEs — AI-powered business intelligence that only asks what it doesn't already know.
 
 ## Core Mandates
 1. Data Harmony — Calibration data flows to all intelligence modules
@@ -9,7 +9,8 @@ The BIQc (Business Intelligence Quotient) platform is a sovereign AI-powered str
 3. Edge-First Intelligence — Heavy AI/scraping offloaded to Edge Functions
 4. Actionable Intelligence — Interactive insight briefs [Read/Action/Ignore]
 5. Attention Protection — Only surface briefs when >2% delta detected
-6. Zero-Redirect Protocol — No redirect loops between calibration and dashboard
+6. Zero-Redirect Protocol — No redirect loops
+7. Dynamic Gap-Filling — Only ask questions where data is NULL in the DB
 
 ## Tech Stack
 - Frontend: React + Tailwind + Shadcn/UI
@@ -19,42 +20,33 @@ The BIQc (Business Intelligence Quotient) platform is a sovereign AI-powered str
 - AI: OpenAI GPT-4o via emergentintegrations
 - Edge Functions: Supabase Deno (calibration-psych, deep-web-recon)
 - Integrations: Merge.dev (CRM, Financial, HRIS, ATS, Knowledge Base)
+- Fact Resolution: 3-layer fact authority (Supabase → Integrations → Fact Ledger)
 
 ## What's Been Implemented
 
-### Completed (Feb 2026)
+### Dynamic Gap-Filling Architecture
+- **Strategic Audit Endpoint:** `GET /api/calibration/strategic-audit` audits 17 strategic dimensions against business_profiles
+- **17-Point Strategic Map:** business_name, business_stage, industry, location, target_market, products_services, unique_value_proposition, team_size, years_operating, short_term_goals, long_term_goals, main_challenges, growth_strategy, growth_goals, risk_profile, competitive_advantages, business_model
+- **WarRoomConsole:** Fetches audit on load → gap_count=0 → COMPLETE; gaps exist → auto-advance past known dimensions
+- **Fact Resolution:** Pulls from business_profiles, users, user_operator_profile, intelligence_baseline, observation_events, fact_ledger
 
-**Zero-Redirect Protocol:**
-- Password Confirmation field on signup
-- Metadata seeding (company_name, industry) to auth.users
-- strategic_console_state write on calibration Q9 + brain COMPLETE + onboarding complete
-- Three routing endpoints prioritize strategic_console_state as authoritative
-- ProtectedRoute blocks /calibration for calibrated users
+### Persistence Hooks
+- **Card Persistence:** OnboardingWizard upserts to business_profiles on every card selection (16+ fields incl. growth_goals, risk_profile)
+- **State Machine Sync:** POST /onboarding/complete writes strategic_console_state.is_complete=true, current_step=17
+- **Settings Save:** All 3 tabs (Profile, Preferences, Tools) execute PUT /api/business-profile
+- **Settings Fields:** business_stage, growth_goals, risk_profile selects added to Account tab
 
-**Persistence Hooks (Onboarding → Console):**
-- Card Persistence: OnboardingWizard upserts to business_profiles on every card selection (16+ fields)
-- Goals step: growth_goals select field (revenue_growth, market_expansion, etc.)
-- State Machine Sync: /onboarding/complete writes strategic_console_state.is_complete=true, current_step=17
-- Console Skip: WarRoomConsole fetches business_stage — if found, skips ENTIRE 17-point survey → Intelligence Dashboard
+### Zero-Redirect Protocol
+- Password Confirmation on signup, metadata seeding, strategic_console_state as routing authority
 
-**Titan Glass UI:**
-- Register + Login right panels: gradient blue (#1a2744→#243b5c) with 40px glass blur + luminous radials
-
-**Live Integrations (P1):**
-- Merge.dev wired for: HubSpot, Salesforce, Pipedrive (CRM), Xero, QuickBooks, Stripe (Financial), Google Drive, OneDrive (Knowledge)
-- Stripe upgraded from tier:pro to tier:free with viaMerge:true
-- Email via Edge Functions (Outlook, Gmail)
-
-**Previous work:**
-- Redirect loop fixes (new users + andre.alexopoulos@gmail.com)
-- Deep-Web Recon Edge Function, Strategic Console UI
-- ai_core.py modularized, in-memory caching, background workers
-- timedelta import fix, handleSave bug fix, OAuth flow fix
+### Live Integrations
+- Merge.dev: HubSpot, Salesforce, Pipedrive, Xero, QuickBooks, Stripe, Google Drive, OneDrive
+- Email: Outlook + Gmail via Edge Functions
 
 ## Prioritized Backlog
 
 ### P1 (High)
-- [ ] Full E2E new user test: signup → calibration → advisor
+- [ ] Full E2E new user test: signup → onboarding → calibration → advisor
 - [ ] Performance optimization on data-heavy pages
 
 ### P2 (Medium)
@@ -63,20 +55,10 @@ The BIQc (Business Intelligence Quotient) platform is a sovereign AI-powered str
 
 ### P3 (Low)
 - [ ] Health monitoring for background workers
+- [ ] Executive Pulse SQL for real-time signal scores
 
 ## Key Architecture
-- Routing Authority: strategic_console_state.is_complete=true → calibrated
-- Card Persistence: OnboardingWizard → PUT /api/business-profile on field change
-- Console Skip: WarRoomConsole → GET /api/business-profile → if business_stage exists, status=COMPLETE, skip survey
-- State Sync: POST /api/onboarding/complete → upsert strategic_console_state
-
-## Key DB Tables
-- strategic_console_state — Authoritative calibration completion flag
-- user_operator_profile — Legacy calibration + onboarding state
-- business_profiles — Company data (growth_goals, risk_profile columns added)
-- biqc_insights — AI-generated intelligence
-- intelligence_actions — User interactions with insights
-
-## Test Accounts
-- andre@thestrategysquad.com.au (master)
-- andre.alexopoulos@gmail.com (redirect loop test)
+- Routing: strategic_console_state.is_complete=true → calibrated
+- Gap-Filling: /api/calibration/strategic-audit → audit 17 dimensions → auto-advance
+- Fact Authority: fact_resolution.py resolves facts from 3 layers → injects into AI brain
+- Card Persistence: OnboardingWizard → PUT /api/business-profile per field change
