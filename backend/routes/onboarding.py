@@ -436,6 +436,19 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
     current_state["completed"] = True
     current_state["completed_at"] = now_iso
     await _write_onboarding_state(user_id, current_state)
+
+    # LOOP-BREAKER: Write to strategic_console_state (authoritative for routing)
+    try:
+        get_sb().table("strategic_console_state").upsert({
+            "user_id": user_id,
+            "status": "COMPLETED",
+            "current_step": 17,
+            "is_complete": True,
+            "updated_at": now_iso
+        }, on_conflict="user_id").execute()
+        logger.info(f"[onboarding/complete] strategic_console_state = COMPLETED for {user_id}")
+    except Exception as scs_err:
+        logger.warning(f"[onboarding/complete] strategic_console_state write failed: {scs_err}")
     
     # Get business profile created during onboarding
     profile = await get_business_profile_supabase(get_sb(), user_id)
