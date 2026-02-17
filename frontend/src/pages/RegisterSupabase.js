@@ -44,6 +44,10 @@ const RegisterSupabase = () => {
       toast.error('Password must be at least 6 characters');
       return;
     }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
     setLoading(true);
     try {
       await signUp(formData.email, formData.password, {
