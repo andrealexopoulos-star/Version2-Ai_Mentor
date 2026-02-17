@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
+import { useSWR } from '../hooks/useSWR';
 import { TrendingUp, Shield, Activity, RefreshCw, Loader2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
