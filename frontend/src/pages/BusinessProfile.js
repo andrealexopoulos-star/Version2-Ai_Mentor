@@ -266,8 +266,8 @@ const BusinessProfile = () => {
                   <div>
                     <Label>Main Products/Services</Label>
                     <Textarea
-                      value={profile.products_services || profile.main_products_services || ''}
-                      onChange={(e) => updateProfile('products_services', e.target.value)}
+                      value={profile.main_products_services || ''}
+                      onChange={(e) => updateProfile('main_products_services', e.target.value)}
                       placeholder="List and describe your main products or services..."
                       rows={4}
                       className="mt-2"
