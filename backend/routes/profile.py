@@ -500,6 +500,18 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     
     profile_data = {k: v for k, v in profile.model_dump().items() if v is not None}
 
+    # FIELD NORMALIZATION: map model fields to actual DB column names
+    if "products_services" in profile_data:
+        profile_data["main_products_services"] = profile_data.pop("products_services")
+    if "annual_revenue" in profile_data:
+        profile_data["annual_revenue_range"] = profile_data.pop("annual_revenue")
+    if "acn" in profile_data:
+        profile_data.pop("acn")  # column doesn't exist in DB
+    if "retention_known" in profile_data:
+        profile_data.pop("retention_known")  # not a DB column
+    if "retention_rate_range" in profile_data:
+        profile_data.pop("retention_rate_range")  # not a DB column
+
     # Compute retention score (AU baselines) if inputs are present
     computed_rag = compute_retention_rag(
         profile_data.get("industry"),
