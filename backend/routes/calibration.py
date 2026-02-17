@@ -97,10 +97,10 @@ def _parse_business_stage(answer: str) -> Dict[str, Optional[str]]:
 def _parse_location(answer: str) -> Dict[str, Optional[str]]:
     parts = [p.strip() for p in answer.split(",") if p.strip()]
     if len(parts) >= 3:
-        return {"location_city": parts[0], "location_state": parts[1], "location_country": parts[2]}
+        return {"location": parts[0], # location_state removed: parts[1], # location_country removed: parts[2]}
     if len(parts) == 2:
-        return {"location_city": parts[0], "location_state": parts[1], "location_country": None}
-    return {"location_city": parts[0] if parts else None, "location_state": None, "location_country": None}
+        return {"location": parts[0], # location_state removed: parts[1], # location_country removed: None}
+    return {"location": parts[0] if parts else None, # location_state removed: None, # location_country removed: None}
 
 def _extract_team_size(answer: str) -> Optional[int]:
     match = re.search(r"(\d+)", answer)
@@ -213,19 +213,19 @@ async def defer_calibration(request: Request):
             profile_data = {
                 "id": str(uuid.uuid4()),
                 "user_id": user_id,
-                "calibration_status": "deferred",
+                "last_calibration_step": 0,
                 "created_at": now_iso,
                 "updated_at": now_iso
             }
             try:
                 get_sb().table("business_profiles").insert(profile_data).execute()
             except Exception:
-                profile_data.pop("calibration_status", None)
+                # calibration_status column removed
                 get_sb().table("business_profiles").insert(profile_data).execute()
         else:
             try:
                 get_sb().table("business_profiles").update({
-                    "calibration_status": "deferred",
+                    "last_calibration_step": 0,
                     "updated_at": now_iso
                 }).eq("id", profile.get("id")).execute()
             except Exception:
@@ -531,12 +531,12 @@ def _parse_business_stage(answer: str) -> Dict[str, Optional[str]]:
 def _parse_location(answer: str) -> Dict[str, Optional[str]]:
     parts = [p.strip() for p in answer.split(",") if p.strip()]
     if len(parts) >= 3:
-        return {"location_city": parts[0], "location_state": parts[1], "location_country": parts[2]}
+        return {"location": parts[0], # location_state removed: parts[1], # location_country removed: parts[2]}
     if len(parts) == 2:
-        return {"location_city": parts[0], "location_state": parts[1], "location_country": None}
+        return {"location": parts[0], # location_state removed: parts[1], # location_country removed: None}
     if len(parts) == 1:
-        return {"location_city": parts[0], "location_state": None, "location_country": None}
-    return {"location_city": None, "location_state": None, "location_country": None}
+        return {"location": parts[0], # location_state removed: None, # location_country removed: None}
+    return {"location": None, # location_state removed: None, # location_country removed: None}
 
 
 def _extract_team_size(answer: str) -> Optional[int]:
@@ -621,7 +621,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 profile = result.data[0] if result.data else profile_data
             except Exception as insert_err:
                 logger.warning(f"[calibration/answer] Insert failed, retrying minimal: {insert_err}")
-                profile_data.pop("calibration_status", None)
+                # calibration_status column removed
                 profile_data.pop("industry", None)
                 try:
                     result = get_sb().table("business_profiles").insert(profile_data).execute()
@@ -653,7 +653,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 get_sb().table("business_profiles").update(update_fields).eq("id", profile.get("id")).execute()
             except Exception as update_err:
                 logger.warning(f"[calibration/answer] Update failed, retrying minimal: {update_err}")
-                update_fields.pop("calibration_status", None)
+                # calibration_status column removed
                 update_fields.pop("industry", None)
                 try:
                     get_sb().table("business_profiles").update(update_fields).eq("id", profile.get("id")).execute()
@@ -689,7 +689,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 update["calibration_status"] = "in_progress"
                 get_sb().table("business_profiles").update(update).eq("id", business_profile_id).execute()
             except Exception:
-                update.pop("calibration_status", None)
+                # calibration_status column removed
                 try:
                     get_sb().table("business_profiles").update(update).eq("id", business_profile_id).execute()
                 except Exception as e:
@@ -705,7 +705,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 update["calibration_status"] = "in_progress"
                 get_sb().table("business_profiles").update(update).eq("id", business_profile_id).execute()
             except Exception:
-                update.pop("calibration_status", None)
+                # calibration_status column removed
                 try:
                     get_sb().table("business_profiles").update(update).eq("id", business_profile_id).execute()
                 except Exception as e:
@@ -718,7 +718,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             parts = _split_two_parts(answer)
             market = parts[0] if parts else answer
             pain = parts[1] if len(parts) > 1 else answer
-            update = {"target_market": market, "customer_pain_points": pain, "updated_at": datetime.now(timezone.utc).isoformat()}
+            update = {"target_market": market, "value_proposition": pain, "updated_at": datetime.now(timezone.utc).isoformat()}
             try:
                 update["ideal_customer_profile"] = market
                 update["calibration_status"] = "in_progress"
@@ -736,7 +736,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             parts = _split_two_parts(answer)
             products = parts[0] if parts else answer
             differentiation = parts[1] if len(parts) > 1 else answer
-            update = {"products_services": products, "updated_at": datetime.now(timezone.utc).isoformat()}
+            update = {"main_products_services": products, "updated_at": datetime.now(timezone.utc).isoformat()}
             try:
                 update["unique_value_proposition"] = differentiation
                 update["competitive_advantages"] = differentiation
@@ -744,7 +744,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 get_sb().table("business_profiles").update(update).eq("id", business_profile_id).execute()
             except Exception:
                 try:
-                    get_sb().table("business_profiles").update({"products_services": products, "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", business_profile_id).execute()
+                    get_sb().table("business_profiles").update({"main_products_services": products, "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", business_profile_id).execute()
                 except Exception as e:
                     logger.warning(f"[calibration/answer] Q5 write failed: {e}")
         except Exception as e:
@@ -760,7 +760,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
                 update["calibration_status"] = "in_progress"
                 get_sb().table("business_profiles").update(update).eq("id", business_profile_id).execute()
             except Exception:
-                update.pop("calibration_status", None)
+                # calibration_status column removed
                 update.pop("team_size", None)
                 try:
                     get_sb().table("business_profiles").update(update).eq("id", business_profile_id).execute()
@@ -942,13 +942,11 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             if existing_op.data:
                 get_sb().table("user_operator_profile").update({
                     "persona_calibration_status": "complete",
-                    "calibration_completed_at": now_iso
                 }).eq("user_id", user_id).execute()
             else:
                 get_sb().table("user_operator_profile").insert({
                     "user_id": user_id,
                     "persona_calibration_status": "complete",
-                    "calibration_completed_at": now_iso,
                     "operator_profile": {}
                 }).execute()
             logger.info(f"[calibration/answer] user_operator_profile.persona_calibration_status = complete for {user_id}")
@@ -958,7 +956,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
           # SECONDARY: Also update business_profiles for backward compat
           try:
             get_sb().table("business_profiles").update({
-                "calibration_status": "complete",
+                "last_calibration_step": 9,
                 "updated_at": now_iso,
                 "account_id": account_id
             }).eq("id", business_profile_id).execute()
@@ -991,13 +989,11 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             if existing_op2.data:
                 get_sb().table("user_operator_profile").update({
                     "persona_calibration_status": "complete",
-                    "calibration_completed_at": now_iso_fallback
                 }).eq("user_id", user_id).execute()
             else:
                 get_sb().table("user_operator_profile").insert({
                     "user_id": user_id,
                     "persona_calibration_status": "complete",
-                    "calibration_completed_at": now_iso_fallback,
                     "operator_profile": {}
                 }).execute()
           except Exception:
@@ -1005,7 +1001,7 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
           # SECONDARY: business_profiles
           try:
             get_sb().table("business_profiles").update({
-                "calibration_status": "complete",
+                "last_calibration_step": 9,
                 "updated_at": now_iso_fallback
             }).eq("id", business_profile_id).execute()
           except Exception:
@@ -1263,7 +1259,6 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
                 existing = get_sb().table("user_operator_profile").select("user_id, operator_profile").eq("user_id", user_id).maybe_single().execute()
                 update_data = {
                     "persona_calibration_status": "complete",
-                    "calibration_completed_at": now_iso
                 }
                 # Auto-complete console_state AND onboarding_state when brain finishes
                 if existing.data:
