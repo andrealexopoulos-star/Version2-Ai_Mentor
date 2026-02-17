@@ -1120,6 +1120,78 @@ async def get_calibration_activation(request: Request):
         }
 
 
+# ─── 17-Point Strategic Audit ───
+# Maps 17 strategic dimensions to business_profiles columns
+STRATEGIC_DIMENSIONS = [
+    {"id": 1,  "key": "business_name",          "label": "Business Identity",        "question": "What's the name and nature of the business?"},
+    {"id": 2,  "key": "business_stage",          "label": "Business Stage",           "question": "What stage is the business at?"},
+    {"id": 3,  "key": "industry",                "label": "Industry Sector",          "question": "What industry does the business operate in?"},
+    {"id": 4,  "key": "location",                "label": "Operating Geography",      "question": "Where is the business based?"},
+    {"id": 5,  "key": "target_market",           "label": "Target Market",            "question": "Who does the business sell to?"},
+    {"id": 6,  "key": "products_services",       "label": "Core Offering",            "question": "What products or services does the business sell?"},
+    {"id": 7,  "key": "unique_value_proposition", "label": "Competitive Moat",        "question": "What differentiates the business from competitors?"},
+    {"id": 8,  "key": "team_size",               "label": "Team Capacity",            "question": "How big is the team?"},
+    {"id": 9,  "key": "years_operating",         "label": "Operational Maturity",     "question": "How long has the business been running?"},
+    {"id": 10, "key": "short_term_goals",        "label": "12-Month Priorities",      "question": "What are the goals for the next 12 months?"},
+    {"id": 11, "key": "long_term_goals",         "label": "Long-term Vision",         "question": "What does success look like in 3-5 years?"},
+    {"id": 12, "key": "main_challenges",         "label": "Active Constraints",       "question": "What obstacles are blocking progress?"},
+    {"id": 13, "key": "growth_strategy",         "label": "Growth Strategy",          "question": "How does the business plan to grow?"},
+    {"id": 14, "key": "growth_goals",            "label": "Growth Objectives",        "question": "What are the primary growth objectives?"},
+    {"id": 15, "key": "risk_profile",            "label": "Risk Profile",             "question": "What is the risk tolerance and exposure?"},
+    {"id": 16, "key": "competitive_advantages",  "label": "Competitive Advantages",   "question": "What advantages does the business hold?"},
+    {"id": 17, "key": "business_model",          "label": "Revenue Model",            "question": "How does the business make money?"},
+]
+
+
+@router.get("/calibration/strategic-audit")
+async def get_strategic_audit(current_user: dict = Depends(get_current_user)):
+    """
+    Dynamic Gap-Filling: Audit business_profiles against the 17-point Strategic Map.
+    Returns known dimensions (auto-advance) and gaps (need questioning).
+    """
+    user_id = current_user.get("id")
+    try:
+        profile = await get_business_profile_supabase(get_sb(), user_id)
+        bp = profile or {}
+
+        known = []
+        gaps = []
+        for dim in STRATEGIC_DIMENSIONS:
+            val = bp.get(dim["key"])
+            if val and str(val).strip():
+                known.append({
+                    "id": dim["id"],
+                    "key": dim["key"],
+                    "label": dim["label"],
+                    "value": str(val)[:200]
+                })
+            else:
+                gaps.append({
+                    "id": dim["id"],
+                    "key": dim["key"],
+                    "label": dim["label"],
+                    "question": dim["question"]
+                })
+
+        total = len(STRATEGIC_DIMENSIONS)
+        known_count = len(known)
+        completion_pct = round((known_count / total) * 100)
+
+        return {
+            "total": total,
+            "known_count": known_count,
+            "gap_count": len(gaps),
+            "completion_pct": completion_pct,
+            "known": known,
+            "gaps": gaps,
+            "auto_advance_to_step": known_count + 1 if known_count < total else total,
+        }
+    except Exception as e:
+        logger.error(f"[calibration/strategic-audit] Error: {e}")
+        return {"total": 17, "known_count": 0, "gap_count": 17, "completion_pct": 0, "known": [], "gaps": STRATEGIC_DIMENSIONS, "auto_advance_to_step": 1}
+
+
+
 
 
 @router.post("/calibration/brain")
