@@ -218,8 +218,8 @@ async def trigger_intelligence_synthesis(current_user: dict = Depends(get_curren
     # 1. Process emails into observation_events
     try:
         emails = sb.table("outlook_emails").select(
-            "id, subject, from_address, received_at, body_preview, is_read"
-        ).eq("user_id", user_id).order("received_at", desc=True).limit(50).execute()
+            "id, subject, from_address, received_date, body_preview, is_read"
+        ).eq("user_id", user_id).order("received_date", desc=True).limit(50).execute()
 
         if emails.data:
             results["sources_processed"].append(f"outlook_emails ({len(emails.data)})")
@@ -237,7 +237,7 @@ async def trigger_intelligence_synthesis(current_user: dict = Depends(get_curren
                             "is_read": email.get("is_read", False),
                         },
                         "confidence": 0.9,
-                        "observed_at": email.get("received_at", datetime.now(timezone.utc).isoformat()),
+                        "observed_at": email.get("received_date", datetime.now(timezone.utc).isoformat()),
                     }, on_conflict="user_id,signal_name,observed_at").execute()
                     results["signals_created"] += 1
                 except Exception:
