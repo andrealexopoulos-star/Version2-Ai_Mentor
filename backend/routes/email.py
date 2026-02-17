@@ -541,7 +541,6 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     return_to = "/connect-email"  # Default fallback
     
     if state and state.startswith("outlook_auth_"):
-        # State format: outlook_auth_{user_id}_return_{returnTo}_sig_{hmac_signature}
         state_parts = state.replace("outlook_auth_", "").split("_sig_")
         if len(state_parts) != 2:
             logger.error(f"Invalid state format: {state}")
@@ -550,17 +549,28 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         state_data = state_parts[0]
         provided_signature = state_parts[1]
         
-        # Parse state_data to extract user_id and returnTo
-        # Format: {user_id}_return_{returnTo}
-        if "_return_" in state_data:
+        # Parse: {user_id}_return_{returnTo}_base_{base_url}
+        callback_base_url = None
+        if "_base_" in state_data:
+            pre_base, callback_base_url = state_data.rsplit("_base_", 1)
+            if "_return_" in pre_base:
+                parts = pre_base.split("_return_")
+                user_id = parts[0]
+                return_to = parts[1] if len(parts) > 1 else "/connect-email"
+            else:
+                user_id = pre_base
+        elif "_return_" in state_data:
             parts = state_data.split("_return_")
             user_id = parts[0]
             return_to = parts[1] if len(parts) > 1 else "/connect-email"
         else:
-            # Legacy format support: just user_id
             user_id = state_data
         
-        # Verify the signature to prevent tampering
+        # Use callback_base_url for frontend redirect if available
+        if callback_base_url:
+            frontend_url = callback_base_url
+        
+        # Verify signature
         expected_signature = hmac.new(
             JWT_SECRET.encode(),
             f"outlook_auth_{state_data}".encode(),
