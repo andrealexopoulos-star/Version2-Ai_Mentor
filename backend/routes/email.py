@@ -146,7 +146,7 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
 # ==================== MICROSOFT OUTLOOK INTEGRATION ====================
 
 @router.get("/auth/outlook/login")
-async def outlook_login(returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
+async def outlook_login(request: Request, returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
     """
     Initiate Microsoft OAuth flow for Outlook
     Accepts authentication token as query parameter (for browser redirects)
@@ -160,13 +160,12 @@ async def outlook_login(returnTo: str = "/connect-email", token: Optional[str] =
         logger.error(f"❌ Invalid provider for Outlook endpoint: {provider}")
         raise HTTPException(status_code=400, detail="Provider must be 'outlook' for this endpoint")
     
-    logger.info(f"📧 Email connect provider: {provider}")  # LOGGING
+    logger.info(f"📧 Email connect provider: {provider}")
     
     # Manual token validation (browser redirects can't send Authorization header)
     current_user = None
     
     if token:
-        # Try Supabase token first
         try:
             from auth_supabase import get_user_by_id
             payload = jwt.decode(token, options={"verify_signature": False})
@@ -183,10 +182,21 @@ async def outlook_login(returnTo: str = "/connect-email", token: Optional[str] =
     
     user_id = current_user['id']
     
-    # CRITICAL: Use FRONTEND_URL for OAuth redirect (matches the custom domain the user sees)
-    # BACKEND_URL on Emergent deployments resolves to *.emergent.host which Azure won't accept
-    base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    # CRITICAL: Derive redirect URI from the ACTUAL request origin
+    # This ensures it matches the domain the user is on (custom domain, not emergent.host)
+    referer = request.headers.get("referer", "")
+    origin = request.headers.get("origin", "")
+    if referer:
+        from urllib.parse import urlparse
+        parsed = urlparse(referer)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+    elif origin:
+        base_url = origin
+    else:
+        base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    
     redirect_uri = f"{base_url}/api/auth/outlook/callback"
+    logger.info(f"📧 Outlook OAuth redirect_uri: {redirect_uri}")
     
     # URL encode parameters to prevent malformed URLs
     scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
