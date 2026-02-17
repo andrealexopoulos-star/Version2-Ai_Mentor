@@ -1010,6 +1010,17 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             }).eq("id", business_profile_id).execute()
           except Exception:
             pass
+          # LOOP-BREAKER: strategic_console_state (fallback path)
+          try:
+            get_sb().table("strategic_console_state").upsert({
+                "user_id": user_id,
+                "status": "COMPLETED",
+                "current_step": 17,
+                "is_complete": True,
+                "updated_at": now_iso_fallback
+            }, on_conflict="user_id").execute()
+          except Exception:
+            pass
           return {"status": "complete", "calibration_complete": True}
 
     # Generate Emergent Advisor calibration voice response
