@@ -264,7 +264,7 @@ async def gmail_login(returnTo: str = "/connect-email", token: Optional[str] = N
     
     user_id = current_user['id']
     
-    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/gmail/callback"
+    redirect_uri = f"{os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))}/api/auth/gmail/callback"
     
     # Gmail scopes - readonly access only
     scopes = [
@@ -365,7 +365,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
     # Exchange code for tokens
     token_url = "https://oauth2.googleapis.com/token"
     
-    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/gmail/callback"
+    redirect_uri = f"{os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))}/api/auth/gmail/callback"
     
     payload = {
         "client_id": GOOGLE_CLIENT_ID,
@@ -563,7 +563,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     # Exchange code for tokens
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
     
-    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
+    redirect_uri = f"{os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))}/api/auth/outlook/callback"
     
     payload = {
         "client_id": AZURE_CLIENT_ID,
