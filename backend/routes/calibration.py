@@ -1211,6 +1211,19 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
             except Exception as op_err:
                 logger.error(f"[calibration/brain] user_operator_profile write failed: {op_err}")
 
+            # LOOP-BREAKER: Write to strategic_console_state (authoritative for routing)
+            try:
+                get_sb().table("strategic_console_state").upsert({
+                    "user_id": user_id,
+                    "status": "COMPLETED",
+                    "current_step": 17,
+                    "is_complete": True,
+                    "updated_at": now_iso
+                }, on_conflict="user_id").execute()
+                logger.info(f"[calibration/brain] strategic_console_state = COMPLETED for {user_id}")
+            except Exception as scs_err:
+                logger.warning(f"[calibration/brain] strategic_console_state write failed: {scs_err}")
+
             # SEED business_profiles from users table if no profile exists
             try:
                 profile = await get_business_profile_supabase(get_sb(), user_id)
