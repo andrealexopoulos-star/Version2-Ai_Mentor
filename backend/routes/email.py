@@ -182,19 +182,15 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     
     user_id = current_user['id']
     
-    # CRITICAL: Derive redirect URI from the ACTUAL request origin
-    # This ensures it matches the domain the user is on (custom domain, not emergent.host)
-    referer = request.headers.get("referer", "")
-    origin = request.headers.get("origin", "")
-    if referer:
-        from urllib.parse import urlparse
-        parsed = urlparse(referer)
-        base_url = f"{parsed.scheme}://{parsed.netloc}"
-    elif origin:
-        base_url = origin
-    else:
-        base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
-    
+    # CRITICAL: Force custom domain for OAuth redirect URI
+    # On Emergent deployments, all domains resolve to *.emergent.host internally
+    # But Azure/Google only accept the custom domain
+    base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    # Strip emergent.host — always use the custom domain
+    if '.emergent.host' in base_url:
+        base_url = base_url.replace('.emergent.host', '.com')
+    if 'preview.emergentagent.com' in base_url:
+        base_url = 'https://biqc.thestrategysquad.com'
     redirect_uri = f"{base_url}/api/auth/outlook/callback"
     logger.info(f"📧 Outlook OAuth redirect_uri: {redirect_uri}")
     
