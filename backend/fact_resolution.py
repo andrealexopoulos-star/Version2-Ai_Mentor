@@ -37,6 +37,13 @@ FACT_SOURCES = {
     "business.main_challenges": ("business_profiles", "main_challenges"),
     "business.short_term_goals": ("business_profiles", "short_term_goals"),
     "business.long_term_goals": ("business_profiles", "long_term_goals"),
+    "business.growth_strategy": ("business_profiles", "growth_strategy"),
+    "business.growth_goals": ("business_profiles", "growth_goals"),
+    "business.risk_profile": ("business_profiles", "risk_profile"),
+    "business.competitive_advantages": ("business_profiles", "competitive_advantages"),
+    "business.products_services": ("business_profiles", "products_services"),
+    "business.team_size": ("business_profiles", "team_size"),
+    "business.years_operating": ("business_profiles", "years_operating"),
     "business.target_country": ("business_profiles", "target_country"),
     # From users table
     "user.full_name": ("users", "full_name"),
