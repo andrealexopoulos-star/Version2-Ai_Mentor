@@ -73,6 +73,7 @@ const LoginSupabase = () => {
         @keyframes shimmer-line{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
         .auth-living-bg{background:radial-gradient(ellipse at 20% 0%,rgba(0,122,255,0.06),transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(0,217,149,0.05),transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(0,122,255,0.03),transparent 40%);background-size:400% 400%;animation:float-bg 20s ease infinite}
         .auth-input:focus{border-color:${AZ}!important;box-shadow:0 0 0 3px rgba(0,122,255,0.1)!important}
+        @media(max-width:1023px){.titan-glass-blur{backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}}
       `}</style>
 
       {/* Form Side */}
