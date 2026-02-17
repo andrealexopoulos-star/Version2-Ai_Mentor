@@ -263,18 +263,12 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     
     user_id = current_user['id']
     
-    # Derive redirect URI from request origin (not env vars)
-    referer = request.headers.get("referer", "")
-    origin = request.headers.get("origin", "")
-    if referer:
-        from urllib.parse import urlparse
-        parsed = urlparse(referer)
-        base_url = f"{parsed.scheme}://{parsed.netloc}"
-    elif origin:
-        base_url = origin
-    else:
-        base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
-    
+    # CRITICAL: Force custom domain for OAuth redirect URI
+    base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    if '.emergent.host' in base_url:
+        base_url = base_url.replace('.emergent.host', '.com')
+    if 'preview.emergentagent.com' in base_url:
+        base_url = 'https://biqc.thestrategysquad.com'
     redirect_uri = f"{base_url}/api/auth/gmail/callback"
     logger.info(f"📧 Gmail OAuth redirect_uri: {redirect_uri}")
     
