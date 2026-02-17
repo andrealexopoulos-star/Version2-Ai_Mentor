@@ -684,9 +684,7 @@ async def get_baseline_snapshot(current_user: dict = Depends(get_current_user)):
 async def get_executive_mirror(current_user: dict = Depends(get_current_user)):
     """
     The Executive Mirror — single endpoint for the /advisor landing.
-    Returns: agent_persona, fact_ledger (from user_operator_profile),
-    and executive_memo (from intelligence_snapshots).
-    This is the Cognitive Output. No filtering. No generation. Pure read.
+    PARALLEL FETCH: All queries execute concurrently via asyncio.gather.
     """
     user_id = current_user.get("id")
 
@@ -697,35 +695,72 @@ async def get_executive_mirror(current_user: dict = Depends(get_current_user)):
         "resolution_status": None,
     }
 
-    # 1. Read agent_persona + fact_ledger from user_operator_profile
-    try:
-        op = safe_query_single(
-            get_sb().table("user_operator_profile").select(
-                "agent_persona, fact_ledger, persona_calibration_status"
-            ).eq("user_id", user_id)
-        )
-        if op.data:
-            result["agent_persona"] = op.data.get("agent_persona")
-            result["fact_ledger"] = op.data.get("fact_ledger")
-            result["calibration_status"] = op.data.get("persona_calibration_status")
-    except Exception as e:
-        logger.error(f"[executive-mirror] operator_profile read failed: {e}")
+    async def fetch_operator_profile():
+        try:
+            op = safe_query_single(
+                get_sb().table("user_operator_profile").select(
+                    "agent_persona, fact_ledger, persona_calibration_status"
+                ).eq("user_id", user_id)
+            )
+            return op.data if op.data else None
+        except Exception as e:
+            logger.error(f"[executive-mirror] operator_profile read failed: {e}")
+            return None
 
-    # 2. Read latest executive_memo from intelligence_snapshots
-    try:
-        snap = get_sb().table("intelligence_snapshots").select(
-            "executive_memo, resolution_score, snapshot_type, generated_at"
-        ).eq("user_id", user_id).order(
-            "generated_at", desc=True
-        ).limit(1).execute()
-        if snap.data and len(snap.data) > 0:
-            row = snap.data[0]
-            result["executive_memo"] = row.get("executive_memo")
-            result["resolution_status"] = row.get("resolution_score")
-            result["snapshot_type"] = row.get("snapshot_type")
-            result["snapshot_generated_at"] = row.get("generated_at")
-    except Exception as e:
-        logger.error(f"[executive-mirror] intelligence_snapshots read failed: {e}")
+    async def fetch_latest_snapshot():
+        try:
+            snap = get_sb().table("intelligence_snapshots").select(
+                "executive_memo, resolution_score, snapshot_type, generated_at"
+            ).eq("user_id", user_id).order(
+                "generated_at", desc=True
+            ).limit(1).execute()
+            return snap.data[0] if snap.data else None
+        except Exception as e:
+            logger.error(f"[executive-mirror] intelligence_snapshots read failed: {e}")
+            return None
+
+    async def fetch_business_profile():
+        try:
+            bp = await get_business_profile_supabase(get_sb(), user_id)
+            return bp
+        except Exception:
+            return None
+
+    async def fetch_console_state():
+        try:
+            scs = get_sb().table("strategic_console_state").select(
+                "status, is_complete, current_step"
+            ).eq("user_id", user_id).maybe_single().execute()
+            return scs.data if scs.data else None
+        except Exception:
+            return None
+
+    # PARALLEL: All 4 queries execute concurrently
+    op_data, snap_data, bp_data, scs_data = await asyncio.gather(
+        fetch_operator_profile(),
+        fetch_latest_snapshot(),
+        fetch_business_profile(),
+        fetch_console_state(),
+    )
+
+    if op_data:
+        result["agent_persona"] = op_data.get("agent_persona")
+        result["fact_ledger"] = op_data.get("fact_ledger")
+        result["calibration_status"] = op_data.get("persona_calibration_status")
+
+    if snap_data:
+        result["executive_memo"] = snap_data.get("executive_memo")
+        result["resolution_status"] = snap_data.get("resolution_score")
+        result["snapshot_type"] = snap_data.get("snapshot_type")
+        result["snapshot_generated_at"] = snap_data.get("generated_at")
+
+    if bp_data:
+        result["business_name"] = bp_data.get("business_name")
+        result["business_stage"] = bp_data.get("business_stage")
+        result["industry"] = bp_data.get("industry")
+
+    if scs_data:
+        result["console_complete"] = scs_data.get("is_complete", False)
 
     return result
 
