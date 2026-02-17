@@ -75,6 +75,8 @@ ONBOARDING_FIELD_TO_FACT = {
     "pricing_model": "business.pricing_model",
     "competitive_advantages": "business.competitive_advantages",
     "growth_strategy": "business.growth_strategy",
+    "growth_goals": "business.growth_goals",
+    "risk_profile": "business.risk_profile",
     "advice_style": "user.advice_style",
 }
 
