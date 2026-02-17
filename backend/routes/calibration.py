@@ -114,25 +114,38 @@ def _extract_team_size(answer: str) -> Optional[int]:
 @router.get("/calibration/status")
 async def get_calibration_status(current_user: dict = Depends(get_current_user)):
     """
-    Calibration status with granularity for the Executive Entry Protocol.
-    Returns: status (COMPLETE | IN_PROGRESS | NEEDS_CALIBRATION), calibration_step, user_name.
+    Calibration status — checks strategic_console_state FIRST (authoritative),
+    then falls back to user_operator_profile.
     """
     user_id = current_user.get("id")
 
     try:
-        op_result = safe_query_single(
-            get_sb().table("user_operator_profile").select(
-                "persona_calibration_status, operator_profile"
-            ).eq("user_id", user_id)
-        )
-
-        # Get user name for personalized UI
         user_name = None
         try:
             user_row = await get_user_by_id(user_id)
             user_name = user_row.get("full_name") if user_row else None
         except Exception:
             pass
+
+        # PRIORITY 1: Check strategic_console_state (new authoritative table)
+        try:
+            scs = get_sb().table("strategic_console_state").select(
+                "status, current_step, is_complete"
+            ).eq("user_id", user_id).maybe_single().execute()
+            if scs.data and scs.data.get("is_complete"):
+                logger.info(f"[calibration/status] User {user_id} COMPLETE via strategic_console_state")
+                return JSONResponse(status_code=200, content={
+                    "status": "COMPLETE", "user_name": user_name
+                })
+        except Exception:
+            pass
+
+        # PRIORITY 2: Check user_operator_profile (legacy)
+        op_result = safe_query_single(
+            get_sb().table("user_operator_profile").select(
+                "persona_calibration_status, operator_profile"
+            ).eq("user_id", user_id)
+        )
 
         if op_result.data:
             pcs = op_result.data.get("persona_calibration_status")
