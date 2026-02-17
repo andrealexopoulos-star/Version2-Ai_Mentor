@@ -287,35 +287,50 @@ async def get_lifecycle_state(request: Request):
         calibration_status = "incomplete"
         console_status = "NOT_STARTED"
         console_step = 0
-        try:
-            op_result = safe_query_single(
-                get_sb().table("user_operator_profile").select(
-                    "persona_calibration_status, operator_profile, agent_persona"
-                ).eq("user_id", user_id)
-            )
-            if op_result.data:
-                calibration_status = op_result.data.get("persona_calibration_status", "incomplete")
-                calibration_complete = calibration_status == "complete"
-                op_profile = op_result.data.get("operator_profile") or {}
-                cs = op_profile.get("console_state", {})
-                console_status = cs.get("status", "NOT_STARTED")
-                console_step = cs.get("current_step", 0)
 
-                # Auto-complete console if calibration is done but console is stuck
-                if calibration_complete and console_status == "IN_PROGRESS":
-                    op_profile["console_state"] = {
-                        "status": "COMPLETE",
-                        "current_step": 17,
-                        "updated_at": datetime.now(timezone.utc).isoformat()
-                    }
-                    get_sb().table("user_operator_profile").update(
-                        {"operator_profile": op_profile}
-                    ).eq("user_id", user_id).execute()
-                    console_status = "COMPLETE"
-                    console_step = 17
-                    logger.info(f"[lifecycle/state] Auto-completed console_state for calibrated user {user_id}")
+        # PRIORITY 1: Check strategic_console_state (authoritative)
+        try:
+            scs = get_sb().table("strategic_console_state").select(
+                "status, current_step, is_complete"
+            ).eq("user_id", user_id).maybe_single().execute()
+            if scs.data and scs.data.get("is_complete"):
+                calibration_complete = True
+                calibration_status = "complete"
+                console_status = scs.data.get("status", "COMPLETED")
+                console_step = scs.data.get("current_step", 17)
+                logger.info(f"[lifecycle/state] User {user_id} resolved via strategic_console_state")
         except Exception:
             pass
+
+        # PRIORITY 2: Check user_operator_profile (fallback)
+        if not calibration_complete:
+            try:
+                op_result = safe_query_single(
+                    get_sb().table("user_operator_profile").select(
+                        "persona_calibration_status, operator_profile, agent_persona"
+                    ).eq("user_id", user_id)
+                )
+                if op_result.data:
+                    calibration_status = op_result.data.get("persona_calibration_status", "incomplete")
+                    calibration_complete = calibration_status == "complete"
+                    op_profile = op_result.data.get("operator_profile") or {}
+                    cs = op_profile.get("console_state", {})
+                    console_status = cs.get("status", "NOT_STARTED")
+                    console_step = cs.get("current_step", 0)
+
+                    if calibration_complete and console_status == "IN_PROGRESS":
+                        op_profile["console_state"] = {
+                            "status": "COMPLETE",
+                            "current_step": 17,
+                            "updated_at": datetime.now(timezone.utc).isoformat()
+                        }
+                        get_sb().table("user_operator_profile").update(
+                            {"operator_profile": op_profile}
+                        ).eq("user_id", user_id).execute()
+                        console_status = "COMPLETE"
+                        console_step = 17
+            except Exception:
+                pass
 
         onboarding_complete = False
         onboarding_step = 0
