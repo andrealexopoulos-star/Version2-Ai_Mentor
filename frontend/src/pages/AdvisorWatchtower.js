@@ -4,6 +4,7 @@ import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { TrendingUp, Shield, Activity, RefreshCw, Loader2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageSkeleton } from '../components/ui/skeleton-loader';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
@@ -130,13 +131,8 @@ const AdvisorWatchtower = () => {
 
         {/* ── LOADING ── */}
         {mirrorLoading && (
-          <div className="flex flex-col items-center justify-center py-32 px-6" data-testid="advisor-loading">
-            <div className="w-6 h-6 border rounded-full animate-spin mb-8"
-              style={{ borderColor: '#E8E6E1', borderTopColor: '#1a1a1a' }} />
-            <p className="text-base text-center leading-relaxed transition-opacity duration-1000"
-              style={{ fontFamily: "'Playfair Display', serif", color: '#1a1a1a', maxWidth: 420 }}>
-              {LOADING_PHASES[loadingPhase]}
-            </p>
+          <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8" data-testid="advisor-loading">
+            <PageSkeleton cards={3} lines={5} />
           </div>
         )}
 
