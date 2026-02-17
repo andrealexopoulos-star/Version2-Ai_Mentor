@@ -198,7 +198,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     # CRITICAL: Force custom domain for OAuth redirect URI
     # On Emergent deployments, all domains resolve to *.emergent.host internally
     # But Azure/Google only accept the custom domain
-    base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    base_url = _get_oauth_base_url()
     # Strip emergent.host — always use the custom domain
     if '.emergent.host' in base_url:
         base_url = base_url.replace('.emergent.host', '.com')
@@ -277,7 +277,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     user_id = current_user['id']
     
     # CRITICAL: Force custom domain for OAuth redirect URI
-    base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    base_url = _get_oauth_base_url()
     if '.emergent.host' in base_url:
         base_url = base_url.replace('.emergent.host', '.com')
     if 'preview.emergentagent.com' in base_url:
@@ -384,7 +384,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
     # Exchange code for tokens
     token_url = "https://oauth2.googleapis.com/token"
     
-    redirect_uri = f"{os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))}/api/auth/gmail/callback"
+    redirect_uri = f"{_get_oauth_base_url()}/api/auth/gmail/callback"
     
     payload = {
         "client_id": GOOGLE_CLIENT_ID,
@@ -593,7 +593,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
     
     # redirect_uri MUST match what was sent in the login request
-    redirect_uri = f"{frontend_url}/api/auth/outlook/callback"
+    redirect_uri = f"{_get_oauth_base_url()}/api/auth/outlook/callback"
     
     payload = {
         "client_id": AZURE_CLIENT_ID,
