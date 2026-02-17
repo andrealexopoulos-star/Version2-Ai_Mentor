@@ -1,154 +1,80 @@
-# BIQc Strategic Advisor Platform — PRD
+# BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-BIQc is an AI-powered Business Intelligence platform for Australian SME leaders. It couples real-time operational monitoring with executive mentoring to protect operations, optimise cashflow, and reclaim time — with 100% Australian Data Sovereignty.
+The user initiated a "Galaxy-Scale" overhaul of the BIQc (Business Intelligence Quotient) platform — a sovereign AI-powered strategic intelligence system for Australian SMEs. The platform uses Supabase for Auth, PostgreSQL, and Edge Functions, with a React frontend and FastAPI backend.
 
-## Architecture — Final State
+Core mandates:
+1. **Data Harmony** — Calibration data flows seamlessly to all intelligence modules
+2. **Zero-Question Mandate** — No redundant surveys for calibrated users
+3. **Edge-First Intelligence** — Heavy AI/scraping offloaded to Supabase Edge Functions
+4. **Actionable Intelligence** — Interactive insight briefs with [Read/Action/Ignore]
+5. **Attention Protection** — Only surface briefs when >2% delta detected
+6. **Zero-Redirect Protocol** — Eliminate all redirect loops between calibration and dashboard
 
-### Backend (175 lines orchestrator)
-```
-/app/backend/
-├── server.py                  # 175 lines — pure routing hub
-├── core/
-│   ├── ai_core.py             # 75 lines — thin orchestrator (imports sub-modules)
-│   ├── business_context.py    # 136 lines — business context building
-│   ├── cognitive_context.py   # 364 lines — cognitive context for AI prompts
-│   ├── prompt_builder.py      # 314 lines — system prompt generation
-│   ├── config.py              # middleware, env vars, service initialization
-│   ├── helpers.py             # file parsing, search, auth utilities
-│   └── models.py              # all Pydantic request/response schemas
-├── routes/                    # 17 modular route files
-│   ├── admin.py               # prompt CRUD + audit log endpoint
-│   ├── auth.py                # Supabase signup, login, OAuth
-│   ├── calibration.py         # calibration wizard + status
-│   ├── health.py              # NEW: health monitoring endpoints
-│   ├── profile.py             # business profile, dashboard, OAC (with caching)
-│   └── [12 more route files]
-├── auth_supabase.py           # Authentication + user profile management
-├── supabase_client.py         # Supabase SDK client initialization
-└── prompt_registry.py         # DB-driven AI prompt management with caching
-```
+## Tech Stack
+- **Frontend:** React + Tailwind + Shadcn/UI
+- **Backend:** FastAPI (Python)
+- **Database:** Supabase PostgreSQL
+- **Auth:** Supabase Auth (Google/Microsoft OAuth + email/password)
+- **AI:** OpenAI GPT-4o via emergentintegrations
+- **Edge Functions:** Supabase Deno (calibration-psych, deep-web-recon)
 
-### Frontend
-```
-/app/frontend/src/
-├── pages/
-│   ├── LandingIntelligent.js  # Titan CSS landing page
-│   ├── TrustPage.js           # /trust — SEO optimized
-│   ├── LoginSupabase.js       # Titan Glass themed login
-│   ├── RegisterSupabase.js    # Titan Glass themed registration
-│   ├── CalibrationAdvisor.js  # 80 lines — uses useCalibrationState hook
-│   ├── PromptLab.js           # Admin prompt management + audit trail
-│   └── [15+ additional pages]
-├── hooks/
-│   └── useCalibrationState.js # 255 lines — calibration state management
-├── components/
-│   ├── calibration/           # Sub-components for CalibrationAdvisor
-│   ├── landing/               # Landing page components
-│   └── ui/                    # Shadcn components
-├── lib/
-│   └── api.js                 # Axios client with token refresh + 401 retry
-└── context/
-    └── SupabaseAuthContext.js  # Auth provider with OAuth
-```
+## What's Been Implemented
 
-## Features Implemented
+### Completed (Feb 2026)
+- Auth pages with Titan Glass theme (Login + Register)
+- **Zero-Redirect Protocol** (Feb 2026):
+  - Password Confirmation field on signup
+  - Register + Login right panels unified with dark (#0A0A0A) platform theme
+  - Metadata seeding (company_name, industry) to auth.users on signup
+  - `strategic_console_state` write on calibration Q9 completion AND brain COMPLETE
+  - Three routing endpoints prioritize `strategic_console_state` as authoritative source
+  - ProtectedRoute blocks /calibration access for calibrated users
+- Redirect loop fixes for new users and `andre.alexopoulos@gmail.com`
+- Deep-Web Recon Edge Function created
+- Strategic Console UI with [Read/Action/Ignore] toggles
+- ai_core.py modularized into core/ modules
+- CalibrationAdvisor refactored with custom hook
+- In-memory caching layer on key endpoints
+- Background workers for email sync and intelligence automation
+- Missing `timedelta` import fix in calibration.py
 
-### Authentication & Security
-- [x] Supabase Auth with Google + Microsoft OAuth
-- [x] Email/password signup and login
-- [x] JWT token validation via Supabase service role
-- [x] Proactive token refresh (60s before expiry)
-- [x] Automatic 401 retry with fresh token
-- [x] Role-Based Access Control (super_admin, client_admin, admin, user)
-- [x] Duplicate signup guard + invalid login guard
-- [x] ID mismatch auto-merge — 3-tier fallback
-- [x] Titan Glass themed auth pages (Feb 2026)
+### Known Blockers
+- **RLS Policy on `business_profiles`** — Backend cannot INSERT user profile data. User must update RLS policy in Supabase SQL Editor.
+- **Edge Functions not deployed** — `calibration-psych` and `deep-web-recon` must be deployed to Supabase project.
 
-### Health Monitoring (Feb 2026)
-- [x] GET /api/health/detailed — comprehensive health check
-- [x] GET /api/health/workers — background worker status
-- [x] Supabase connectivity check
-- [x] Worker status via supervisorctl
-- [x] Integration config validation (OpenAI, Supabase, Serper)
+## Prioritized Backlog
 
-### Performance Optimization (Feb 2026)
-- [x] In-memory caching for dashboard stats (30s TTL)
-- [x] In-memory caching for profile scores (30s TTL)
-- [x] Dashboard stats cache invalidation on data changes
+### P0 (Critical)
+- [ ] User: Fix RLS policy on `business_profiles` table
+- [ ] User: Deploy Edge Functions to Supabase
 
-### Prompt Lab (Feb 2026)
-- [x] Prompt management with search and edit
-- [x] Audit Trail tab — view prompt_audit_logs history
-- [x] Test prompt connection from UI
-- [x] Cache invalidation controls
+### P1 (High)
+- [ ] E2E new user calibration test (full signup → calibration → advisor flow)
+- [ ] Wire up live integrations (Google Drive, Xero, Stripe, HubSpot)
+- [ ] Performance optimization on data-heavy pages
 
-### SEO (Feb 2026)
-- [x] Trust page meta tags (description, og:title, twitter)
-- [x] Dynamic document.title on trust page
-- [x] Australian Data Sovereignty keywords
+### P2 (Medium)
+- [ ] Refactor `routes/profile.py` (2,000+ lines → domain-specific routers)
+- [ ] Deep mobile responsive test (375px viewport)
 
-### Calibration Onboarding
-- [x] CalibrationAdvisor with 6 states
-- [x] Smart-Retry 3-tier fallback: Edge Function → step-only → manual
-- [x] WOW Summary with inline editing
-- [x] Wizard mode + Chat mode
-- [x] Refactored with useCalibrationState custom hook (Feb 2026)
+### P3 (Low)
+- [ ] Health monitoring for background workers
+- [ ] Add Health Monitoring for email_sync_worker and intelligence_automation_worker
 
-### AI Intelligence Core
-- [x] Refactored ai_core.py → 4 sub-modules (Feb 2026)
-- [x] Centralized GPT-4o via emergentintegrations
-- [x] Database-driven prompt management
-- [x] Prompt audit trail logging
-- [x] Cognitive Core — per-user intelligence profiles
+## Key Architecture
+- **Routing Authority:** `strategic_console_state.is_complete = true` → user is calibrated
+- **Fallback:** `user_operator_profile.persona_calibration_status = 'complete'`
+- **Frontend Gate:** SupabaseAuthContext bootstrap → /api/calibration/status → AUTH_STATE decision
+- **Route Guard:** ProtectedRoute reads authState (LOADING/NEEDS_CALIBRATION/READY)
 
-### Landing Page — Titan CSS
-- [x] Glean-style rotating headline
-- [x] Live Sentinel Feed
-- [x] Titan Glass cards with shimmer
-- [x] Passive vs Active interactive slider
-- [x] 15-logo integration marquee
-- [x] WIIFM Outcome Matrix
-- [x] 3-tier pricing
+## Key DB Tables
+- `strategic_console_state` — Authoritative calibration completion flag
+- `user_operator_profile` — Legacy calibration + onboarding state
+- `business_profiles` — Company data (RLS blocked)
+- `biqc_insights` — AI-generated intelligence
+- `intelligence_actions` — User interactions with insights
 
-### Trust Page (/trust)
-- [x] AES-256 encryption badge
-- [x] Australian Data Sovereignty
-- [x] Zero-Leakage Guarantee
-- [x] SEO meta tags (Feb 2026)
-
-## Backlog
-
-### P0 — Resolved
-- [x] Deployment base image switch (resolved by support)
-- [x] Edge Function calibration-psych redeployed
-
-### P1 — Completed (Feb 2026)
-- [x] Login/Register pages — Titan Glass aesthetic
-- [x] Health monitoring endpoints
-- [x] ai_core.py refactored (1,508 → 75 lines + 3 sub-modules)
-- [x] CalibrationAdvisor.js refactored (323 → 80 lines + hook)
-- [x] SEO meta tags for /trust page
-- [x] Prompt Lab audit trail UI
-- [x] Performance caching for dashboard/profile endpoints
-
-### P2 — Remaining
-- [ ] E2E Calibration flow test with live Edge Function
-- [ ] Live integrations: Outlook, Gmail, Google Drive, Xero, Stripe, HubSpot
-- [ ] Deep mobile responsive test — all pages at 375px
-- [ ] Decompose routes/profile.py (2,067 lines) into sub-modules
-
-### P3 — Future
-- [ ] Background worker health alerting (email/Slack)
-- [ ] Prune old test iterations (39 files in /app/test_reports/)
-
-## 3rd Party Integrations
-- **Supabase**: PostgreSQL database, Auth (Google/Microsoft OAuth), Edge Functions
-- **OpenAI GPT-4o**: Via emergentintegrations library (Emergent LLM key)
-- **Firecrawl**: Website scraping for calibration (Edge Function)
-- **Serper.dev**: Google search API for web source discovery
-- **Merge.dev**: Unified API scaffold (CRM, financial, HR)
-
-## Test Credentials
-- **Test user**: e2e-rca-test@test.com / Sovereign!Test2026#
-- **Primary user**: andre@thestrategysquad.com.au (Google OAuth)
+## Test Accounts
+- `andre@thestrategysquad.com.au` (master account)
+- `andre.alexopoulos@gmail.com` (redirect loop test)
