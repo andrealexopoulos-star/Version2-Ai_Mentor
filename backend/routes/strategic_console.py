@@ -231,7 +231,7 @@ async def trigger_intelligence_synthesis(current_user: dict = Depends(get_curren
                         "signal_name": "email.received",
                         "event_type": "email_signal",
                         "source": "outlook",
-                        "domain": "communications",
+                        "domain": "operations",
                         "payload": {
                             "subject": email.get("subject", "")[:200],
                             "from": email.get("from_address", ""),
@@ -260,7 +260,7 @@ async def trigger_intelligence_synthesis(current_user: dict = Depends(get_curren
                         "signal_name": f"crm.connected.{provider['provider']}",
                         "event_type": "integration_signal",
                         "source": provider["provider"],
-                        "domain": "sales",
+                        "domain": "revenue",
                         "payload": {"status": "connected", "provider": provider["provider"]},
                         "confidence": 1.0,
                         "observed_at": datetime.now(timezone.utc).isoformat(),
