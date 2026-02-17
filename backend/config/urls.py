@@ -32,16 +32,11 @@ def get_frontend_url() -> str:
 
 def get_oauth_redirect_uri(endpoint: str = '/api/auth/outlook/callback') -> str:
     """
-    Construct OAuth redirect URI for Microsoft/Google OAuth
-    
-    Args:
-        endpoint: The callback endpoint path
-        
-    Returns:
-        Full redirect URI using backend URL
+    Construct OAuth redirect URI using FRONTEND_URL (custom domain).
+    BACKEND_URL on Emergent resolves to *.emergent.host which OAuth providers reject.
     """
-    backend = get_backend_url()
-    return f"{backend}{endpoint}"
+    frontend = get_frontend_url()
+    return f"{frontend}{endpoint}"
 
 def get_frontend_redirect_url(path: str = '/') -> str:
     """
