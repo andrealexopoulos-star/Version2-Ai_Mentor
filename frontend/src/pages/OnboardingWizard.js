@@ -148,6 +148,23 @@ const OnboardingWizard = () => {
     }
   };
 
+  // Card Persistence: upsert selected fields directly to business_profiles
+  const PROFILE_SYNC_FIELDS = [
+    'business_name', 'industry', 'business_stage', 'location', 'website',
+    'target_market', 'business_model', 'products_services', 'unique_value_proposition',
+    'team_size', 'years_operating', 'short_term_goals', 'long_term_goals',
+    'main_challenges', 'growth_strategy', 'growth_goals', 'risk_profile'
+  ];
+
+  const syncToBusinessProfile = async (field, value) => {
+    if (!PROFILE_SYNC_FIELDS.includes(field) || !value) return;
+    try {
+      await apiClient.put('/business-profile', { [field]: value });
+    } catch (err) {
+      console.warn('[Onboarding] business_profiles sync failed:', err);
+    }
+  };
+
   const handleNext = async () => {
     // Save current step
     await persistProgress(formData, currentStep + 1);
