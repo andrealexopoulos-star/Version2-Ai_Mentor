@@ -203,16 +203,13 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
     
-    # Create a signed state parameter to prevent CSRF and tampering
-    # Include returnTo path in state for post-auth redirect
-    # Format: outlook_auth_{user_id}_return_{returnTo}_sig_{hmac_signature}
-    user_id = current_user['id']
-    state_data = f"outlook_auth_{user_id}_return_{returnTo}"
+    # Store the base_url in state so callback can reconstruct the exact same redirect_uri
+    state_data = f"outlook_auth_{user_id}_return_{returnTo}_base_{base_url}"
     signature = hmac.new(
         JWT_SECRET.encode(),
         state_data.encode(),
         hashlib.sha256
-    ).hexdigest()[:16]  # Use first 16 chars for shorter URL
+    ).hexdigest()[:16]
     
     state = f"{state_data}_sig_{signature}"
     
