@@ -1,42 +1,50 @@
 # BIQc Platform — Product Requirements Document
 
-## Original Problem Statement
-BIQc is a Sovereign Strategic Partner for Australian SMEs with Operational Sovereignty.
+## Core Identity
+BIQc is the Executive Cognitive Layer — a Sovereign Strategic Partner for Australian SMEs.
+Brand tone: Premium, Calm, Sovereign. Focus on Strategic Clarity, Inevitability Detection, Decision Velocity.
 
 ## What's Been Implemented
 
-### Serial Bottleneck Broken (Latest)
-- **Parallel Fetch:** `/api/executive-mirror` now executes 4 Supabase queries concurrently via `asyncio.gather` (operator_profile, intelligence_snapshots, business_profiles, strategic_console_state)
-- **SWR Caching:** `useSWR` hook at `/app/frontend/src/hooks/useSWR.js` — in-memory cache, stale-while-revalidate, deduping, focus revalidation. AdvisorWatchtower now uses SWR.
-- **Edge Offloading:** SWOT synthesis already in `deep-web-recon` Edge Function. Scoring logic extracted from profile.py (2,070 lines) to `core/scoring.py` (compute_retention_rag, calculate_business_score).
-- **Skeleton Loaders:** PageSkeleton replaces spinners on Advisor, BusinessProfile, Settings
-- **Mobile Titan Glass:** Blur reduced 40px→12px on mobile via `.titan-glass-blur` media query
+### BIQc Insights Command Surface (Latest)
+- **Intelligence Status Bar:** Sticky top panel with Stable/Elevated/Critical badges, color-coded (green/amber/red)
+- **Priority Compression:** Center-focused, max 3 compressed signals, generous whitespace, executive typography (Inter Tight + Playfair Display)
+- **Opportunity Monitor:** Vertical stack for mobile, Cost of Waiting + Drift Projection cards
+- **Executive Memo:** Strategic direction rendered as high-trust briefing, calm typography, wide margins, zero charts
+- **Pulse Baselines:** Fact ledger grid display (2-col on desktop, 1-col on mobile)
+- **Quick Nav:** 3 action tiles (Strategic Console, Business DNA, Integrations) for calibrated users
+- **SWR-powered:** Stale-while-revalidate caching for instant loads + background refresh
+- **Data Pipeline:** Bound to /api/executive-mirror which parallel-fetches: user_operator_profile, intelligence_snapshots, business_profiles, strategic_console_state
 
-### Performance Index (5 Layers)
-1. Layer 1: 37 user_id + 3 account_id indexes across 31 tables
-2. Layer 2: 7 GIN indexes for JSONB deep-search (payload, cognitive_profiles, social_handles, etc.)
-3. Layer 3: 6 chronological DESC indexes for latest-first queries
-4. Layer 4: 3 full-text search indexes (SOPs, documents, analyses)
-5. Layer 5: 5 composite hot-path indexes
-
-### Previous Work
-- 24-Node Sidebar with visibility logic
+### Previous Implementations
+- ASI-Grade Forensic Audit completed (FORENSIC_AUDIT_20260217.md)
+- 24-Node Sidebar with calibration visibility gating
 - Dynamic Gap-Filling (17-point Strategic Audit)
-- Persistence Hooks (card upserts, strategic_console_state sync)
-- Zero-Redirect Protocol
-- Titan Glass UI
+- Performance indexes (5 layers, 50+ indexes)
+- Skeleton loaders, SWR caching, mobile Titan Glass optimization
+- Parallel backend fetches (asyncio.gather)
+- Scoring logic extracted to core/scoring.py
 
-## Architecture
-- SWR Cache: Frontend in-memory, stale-while-revalidate
-- Parallel Backend: asyncio.gather for multi-table reads
-- Scoring Module: core/scoring.py (extracted from profile.py)
-- Edge Functions: calibration-psych, deep-web-recon
+### Sidebar Data Anchors
+| Node | Executive Job | Data Anchor |
+|------|-------------|-------------|
+| Intel Centre | Signal Aggregation | observation_events |
+| SOP Generator | Strategic Discipline | sops |
+| Data Center | Structural Awareness | data_files |
+| Diagnosis | Inevitability Detection | diagnoses |
+| Email Inbox | Priority Compression | email_intelligence |
+
+## System Status: PARTIALLY CONNECTED
+**Single Blocker:** business_profiles RLS policy prevents INSERT/SELECT.
+Fix RLS → SYSTEM SOVEREIGN.
 
 ## Backlog
+### P0 (User Action)
+- [ ] Fix RLS on business_profiles
 ### P1
 - [ ] E2E calibration flow
-- [ ] Run performance_indexes.sql in Supabase
+- [ ] Seed test data for BIQc Insights visual verification
 ### P2
 - [ ] Continue profile.py decomposition
 - [ ] Video call feature
-- [ ] Mobile responsive audit
+- [ ] Mobile responsive full audit
