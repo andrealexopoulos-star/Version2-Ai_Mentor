@@ -243,5 +243,6 @@ class TestHealthEndpoints:
         """Test frontend is accessible"""
         response = requests.get(f"{BASE_URL}/register-supabase", timeout=10)
         assert response.status_code == 200
-        assert "BIQc" in response.text or "Get started" in response.text
-        print("✓ Frontend /register-supabase loads correctly")
+        # React SPA: check for the HTML shell (content rendered by JS)
+        assert "BIQC" in response.text or "root" in response.text
+        print("✓ Frontend /register-supabase loads correctly (React SPA)")
