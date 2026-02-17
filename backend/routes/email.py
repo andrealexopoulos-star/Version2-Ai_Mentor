@@ -183,7 +183,10 @@ async def outlook_login(returnTo: str = "/connect-email", token: Optional[str] =
     
     user_id = current_user['id']
     
-    redirect_uri = f"{os.environ['BACKEND_URL']}/api/auth/outlook/callback"
+    # CRITICAL: Use FRONTEND_URL for OAuth redirect (matches the custom domain the user sees)
+    # BACKEND_URL on Emergent deployments resolves to *.emergent.host which Azure won't accept
+    base_url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
+    redirect_uri = f"{base_url}/api/auth/outlook/callback"
     
     # URL encode parameters to prevent malformed URLs
     scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
