@@ -96,8 +96,8 @@ const Settings = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+        <div className="p-8 max-w-4xl mx-auto">
+          <PageSkeleton cards={2} lines={5} />
         </div>
       </DashboardLayout>
     );
