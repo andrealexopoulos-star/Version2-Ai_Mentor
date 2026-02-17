@@ -126,12 +126,12 @@ const DashboardLayout = ({ children }) => {
   const navItems = [
     { type: 'divider', label: 'INTELLIGENCE' },
     { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
-    { icon: Terminal, label: 'Strategic Console', path: '/war-room' },
-    { icon: Crosshair, label: 'Board Room', path: '/board-room' },
-    { icon: Activity, label: 'Operator View', path: '/operator' },
+    { icon: Terminal, label: 'Strategic Console', path: '/war-room', requiresCalibration: true },
+    { icon: Crosshair, label: 'Board Room', path: '/board-room', requiresCalibration: true },
+    { icon: Activity, label: 'Operator View', path: '/operator', requiresCalibration: true },
     { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
     { type: 'divider', label: 'ANALYSIS' },
-    { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis' },
+    { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis', requiresCalibration: true },
     { icon: TrendingUp, label: 'Analysis', path: '/analysis' },
     { icon: Search, label: 'Market Analysis', path: '/market-analysis' },
     { icon: Radar, label: 'Intel Centre', path: '/intel-centre' },
@@ -149,6 +149,15 @@ const DashboardLayout = ({ children }) => {
     { type: 'divider', label: 'SETTINGS' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
+
+  // Filter: hide calibration-locked items when not calibrated
+  const visibleNavItems = useMemo(() => {
+    return navItems.filter(item => {
+      if (item.type === 'divider') return true;
+      if (item.requiresCalibration && !isCalibrated) return false;
+      return true;
+    });
+  }, [isCalibrated]);
 
   const handleLogout = () => {
     logout();
