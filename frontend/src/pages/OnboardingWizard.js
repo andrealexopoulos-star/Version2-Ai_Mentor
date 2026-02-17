@@ -682,6 +682,24 @@ const OnboardingWizard = () => {
                     data-testid="input-growth"
                   />
                 )}
+
+                {renderField('growth_goals', 'Growth Goals',
+                  <Select value={formData.growth_goals || ''} onValueChange={(val) => updateField('growth_goals', val)}>
+                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-growth-goals">
+                      <SelectValue placeholder="Select primary growth goal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="revenue_growth">Revenue Growth</SelectItem>
+                      <SelectItem value="market_expansion">Market Expansion</SelectItem>
+                      <SelectItem value="product_diversification">Product Diversification</SelectItem>
+                      <SelectItem value="operational_efficiency">Operational Efficiency</SelectItem>
+                      <SelectItem value="team_scaling">Team Scaling</SelectItem>
+                      <SelectItem value="profitability">Profitability Focus</SelectItem>
+                      <SelectItem value="customer_retention">Customer Retention</SelectItem>
+                      <SelectItem value="brand_building">Brand Building</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
 
