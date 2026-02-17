@@ -279,41 +279,42 @@ const RegisterSupabase = () => {
         </div>
       </div>
 
-      {/* Right Panel - Hidden on mobile */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: SL }}>
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 30% 20%, rgba(0,122,255,0.12), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,217,149,0.08), transparent 50%)` }} />
+      {/* Right Panel — Platform-Aligned */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: '#0A0A0A' }}>
+        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 30% 20%, rgba(0,122,255,0.10), transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,217,149,0.06), transparent 50%)` }} />
+        <div className="absolute inset-0" style={{ background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.03\'/%3E%3C/svg%3E")', opacity: 0.4 }} />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="mb-12">
-            <p className="text-[11px] uppercase tracking-[0.3em] font-semibold mb-6" style={{ fontFamily: MONO, color: MINT }}>Built for Australian SMEs</p>
+            <p className="text-[11px] uppercase tracking-[0.3em] font-semibold mb-6" style={{ fontFamily: MONO, color: MINT }}>Sovereign Intelligence</p>
             <h2 className="text-3xl font-semibold leading-tight tracking-tight mb-4" style={{ fontFamily: HEAD }}>
               Transform chaos into<br/>strategic clarity.
             </h2>
-            <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
+            <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Join forward-thinking leaders leveraging sovereign AI for competitive advantage.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
               { icon: Zap, label: '15+ hours saved weekly', sub: 'Automated intelligence gathering', accent: AZ },
               { icon: Activity, label: '8-12% cash bleed detected', sub: 'Revenue protection on autopilot', accent: MINT },
               { icon: Shield, label: '97% SOP compliance', sub: 'Operational consistency assured', accent: AZ },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${item.accent}15` }}>
+              <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${item.accent}12` }}>
                   <item.icon className="w-4 h-4" style={{ color: item.accent }} strokeWidth={1.5} />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white" style={{ fontFamily: HEAD }}>{item.label}</p>
-                  <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: MONO }}>{item.sub}</p>
+                  <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)', fontFamily: MONO }}>{item.sub}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 flex items-center gap-3 px-5 py-3 rounded-xl" style={{ background: 'rgba(0,217,149,0.1)', border: '1px solid rgba(0,217,149,0.15)' }}>
-            <Lock className="w-4 h-4" style={{ color: MINT }} />
-            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.7)', fontFamily: MONO }}>
+          <div className="mt-12 flex items-center gap-3 px-5 py-3 rounded-xl" style={{ background: 'rgba(0,122,255,0.08)', border: '1px solid rgba(0,122,255,0.12)' }}>
+            <Lock className="w-4 h-4" style={{ color: AZ }} />
+            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)', fontFamily: MONO }}>
               100% Australian data sovereignty guaranteed
             </span>
           </div>
