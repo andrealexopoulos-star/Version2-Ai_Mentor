@@ -1,64 +1,56 @@
 # BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-BIQc is a Sovereign Strategic Partner for Australian SMEs — AI-powered business intelligence that only asks what it doesn't already know.
+BIQc is a Sovereign Strategic Partner for Australian SMEs. AI-powered business intelligence that only asks what it doesn't already know.
 
 ## Core Mandates
 1. Data Harmony — Calibration data flows to all intelligence modules
-2. Zero-Question Mandate — No redundant surveys for calibrated users
-3. Edge-First Intelligence — Heavy AI/scraping offloaded to Edge Functions
-4. Actionable Intelligence — Interactive insight briefs [Read/Action/Ignore]
-5. Attention Protection — Only surface briefs when >2% delta detected
+2. Zero-Question Mandate — No redundant surveys
+3. Edge-First Intelligence — Heavy AI offloaded to Edge Functions
+4. Actionable Intelligence — [Read/Action/Ignore] briefs
+5. Attention Protection — >2% delta threshold
 6. Zero-Redirect Protocol — No redirect loops
-7. Dynamic Gap-Filling — Only ask questions where data is NULL in the DB
-
-## Tech Stack
-- Frontend: React + Tailwind + Shadcn/UI
-- Backend: FastAPI (Python)
-- Database: Supabase PostgreSQL
-- Auth: Supabase Auth (Google/Microsoft OAuth + email/password)
-- AI: OpenAI GPT-4o via emergentintegrations
-- Edge Functions: Supabase Deno (calibration-psych, deep-web-recon)
-- Integrations: Merge.dev (CRM, Financial, HRIS, ATS, Knowledge Base)
-- Fact Resolution: 3-layer fact authority (Supabase → Integrations → Fact Ledger)
+7. Dynamic Gap-Filling — Only ask questions where data is NULL
 
 ## What's Been Implemented
 
+### Neural Re-Link Protocol (Latest)
+- **Sidebar Restoration:** All 9 orphaned pages added to sidebar in 4 sections (INTELLIGENCE, ANALYSIS, TOOLS, CONFIGURATION)
+- **Home Button:** Added "← Dashboard" button to WarRoomConsole header (covers /war-room and /watchtower)
+- **Schema Reference:** Full table/column/usage document at /app/memory/SCHEMA_REFERENCE.md
+- **Titan Glass:** Login + Register right panels confirmed working
+
 ### Dynamic Gap-Filling Architecture
-- **Strategic Audit Endpoint:** `GET /api/calibration/strategic-audit` audits 17 strategic dimensions against business_profiles
-- **17-Point Strategic Map:** business_name, business_stage, industry, location, target_market, products_services, unique_value_proposition, team_size, years_operating, short_term_goals, long_term_goals, main_challenges, growth_strategy, growth_goals, risk_profile, competitive_advantages, business_model
-- **WarRoomConsole:** Fetches audit on load → gap_count=0 → COMPLETE; gaps exist → auto-advance past known dimensions
-- **Fact Resolution:** Pulls from business_profiles, users, user_operator_profile, intelligence_baseline, observation_events, fact_ledger
+- `GET /api/calibration/strategic-audit` audits 17 dimensions against business_profiles
+- WarRoomConsole: gap_count=0 → COMPLETE; gaps → auto-advance past known dimensions
+- fact_resolution.py: 3-layer authority (Supabase → Integrations → Fact Ledger)
 
 ### Persistence Hooks
-- **Card Persistence:** OnboardingWizard upserts to business_profiles on every card selection (16+ fields incl. growth_goals, risk_profile)
-- **State Machine Sync:** POST /onboarding/complete writes strategic_console_state.is_complete=true, current_step=17
-- **Settings Save:** All 3 tabs (Profile, Preferences, Tools) execute PUT /api/business-profile
-- **Settings Fields:** business_stage, growth_goals, risk_profile selects added to Account tab
-
-### Zero-Redirect Protocol
-- Password Confirmation on signup, metadata seeding, strategic_console_state as routing authority
+- OnboardingWizard upserts to business_profiles on card selection
+- POST /onboarding/complete writes strategic_console_state
+- Settings Save buttons execute PUT /api/business-profile
+- business_stage, growth_goals, risk_profile in Settings Account tab
 
 ### Live Integrations
 - Merge.dev: HubSpot, Salesforce, Pipedrive, Xero, QuickBooks, Stripe, Google Drive, OneDrive
 - Email: Outlook + Gmail via Edge Functions
 
+## Sidebar Navigation (24 items, 5 sections)
+- INTELLIGENCE: BIQc Insights, Strategic Console, Board Room, Operator View, SoundBoard
+- ANALYSIS: Diagnosis, Analysis, Market Analysis, Intel Centre
+- TOOLS: SOP Generator, Data Center, Documents
+- CONFIGURATION: Intelligence Baseline, Business DNA, Integrations, Email, Email Inbox, Calendar
+- SETTINGS: Settings
+
 ## Prioritized Backlog
+### P1
+- [ ] E2E calibration flow test with real data
+- [ ] Performance optimization
 
-### P1 (High)
-- [ ] Full E2E new user test: signup → onboarding → calibration → advisor
-- [ ] Performance optimization on data-heavy pages
+### P2
+- [ ] Refactor routes/profile.py
+- [ ] Mobile responsive test
+- [ ] Video call feature (not yet built)
 
-### P2 (Medium)
-- [ ] Refactor routes/profile.py (2,000+ lines → domain-specific routers)
-- [ ] Deep mobile responsive test (375px viewport)
-
-### P3 (Low)
-- [ ] Health monitoring for background workers
-- [ ] Executive Pulse SQL for real-time signal scores
-
-## Key Architecture
-- Routing: strategic_console_state.is_complete=true → calibrated
-- Gap-Filling: /api/calibration/strategic-audit → audit 17 dimensions → auto-advance
-- Fact Authority: fact_resolution.py resolves facts from 3 layers → injects into AI brain
-- Card Persistence: OnboardingWizard → PUT /api/business-profile per field change
+## 53 Supabase Tables Referenced
+See /app/memory/SCHEMA_REFERENCE.md for full table/column/usage mapping.
