@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 
