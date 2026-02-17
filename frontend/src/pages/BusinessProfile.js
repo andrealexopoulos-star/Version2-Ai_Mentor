@@ -13,6 +13,7 @@ import {
   Loader2, Save, CheckCircle, AlertCircle, Package
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 
@@ -125,8 +126,8 @@ const BusinessProfile = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+        <div className="p-8 max-w-5xl mx-auto">
+          <PageSkeleton cards={4} lines={6} />
         </div>
       </DashboardLayout>
     );
