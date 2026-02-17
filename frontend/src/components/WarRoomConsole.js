@@ -64,7 +64,7 @@ const WarRoomConsoleInner = () => {
           }
         }
 
-        // Fetch business_profiles — if business_stage exists, skip Step 2
+        // Fetch business_profiles — if business_stage exists, skip entire 17-point survey
         try {
           const bpRes = await fetch(`${getBackendUrl()}/api/business-profile`, { headers });
           const bpCt = bpRes.headers.get('content-type') || '';
@@ -72,11 +72,10 @@ const WarRoomConsoleInner = () => {
             const bp = await bpRes.json();
             const profile = bp.profile || bp;
             if (profile.business_stage) {
-              // business_stage already known — advance past Step 2
-              if (currentStep <= 2) {
-                setCurrentStep(prev => Math.max(prev, 3));
-                setProgress(prev => Math.max(prev, Math.round((3 / 17) * 100)));
-              }
+              // business_stage known — skip entire 17-point manual survey, go to Intelligence
+              setStatus('COMPLETE');
+              setProgress(100);
+              setCurrentStep(17);
             }
           }
         } catch (bpErr) {
