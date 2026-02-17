@@ -20,12 +20,14 @@ const AdvisorWatchtower = () => {
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
 
-  const [mirror, setMirror] = useState(null);
-  const [mirrorLoading, setMirrorLoading] = useState(true);
   const [snapshotRefreshing, setSnapshotRefreshing] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState(0);
 
-  useEffect(() => { fetchMirror(); }, []);
+  // SWR: Stale-While-Revalidate — serves cached data instantly, revalidates in background
+  const { data: mirror, isLoading: mirrorLoading, mutate: mutateMirror } = useSWR('/executive-mirror', {
+    revalidateOnFocus: true,
+    dedupingInterval: 10000,
+  });
 
   useEffect(() => {
     if (!mirrorLoading) return;
