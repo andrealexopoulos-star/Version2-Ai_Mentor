@@ -57,8 +57,8 @@ class BIQcPerformanceTest:
         """Test login performance and get auth token"""
         print("\n=== STEP 1: LOGIN PERFORMANCE ===")
         
-        # Test login endpoint
-        login_url = f"{API_BASE_URL}/auth/login"
+        # Test Supabase login endpoint
+        login_url = f"{API_BASE_URL}/auth/supabase/login"
         login_data = {
             "email": TEST_EMAIL,
             "password": TEST_PASSWORD
