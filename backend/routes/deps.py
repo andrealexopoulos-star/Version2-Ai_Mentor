@@ -40,12 +40,22 @@ def get_sb():
 # ─── Auth Dependencies ───
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """SUPABASE-ONLY Authentication."""
+    """SUPABASE-ONLY Authentication. Checks suspended status."""
     token = credentials.credentials
     try:
         from auth_supabase import verify_supabase_token
         user = await verify_supabase_token(token)
         if user:
+            # Check if user is suspended
+            try:
+                sb = get_sb()
+                row = sb.table("users").select("role").eq("id", user.get("id")).maybe_single().execute()
+                if row.data and row.data.get("role") == "suspended":
+                    raise HTTPException(status_code=403, detail="Account suspended. Contact support.")
+            except HTTPException:
+                raise
+            except Exception:
+                pass  # If check fails, let user through (fail-open for auth)
             return user
         else:
             raise HTTPException(status_code=401, detail="Invalid token")
