@@ -65,9 +65,19 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
         <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
           {firstName ? `Welcome to BIQc, ${firstName}.` : 'Welcome to BIQc.'}
         </h1>
-        <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 460, margin: '0 auto' }}>
+        <p className="text-base leading-relaxed mb-3" style={{ color: MUTED, maxWidth: 460, margin: '0 auto' }}>
           Provide your website URL for an instant strategic audit — or describe your business in a few sentences.
         </p>
+        {/* Expectation setting */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-7"
+          style={{ background: '#F0F4FF', border: '1px solid #BFDBFE' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span className="text-xs font-medium" style={{ color: '#2563EB' }}>
+            9 quick questions · Takes ~3 minutes · Helps BIQc profile you accurately
+          </span>
+        </div>
 
         {error && <p className="text-sm text-red-500 mb-4" data-testid="calibration-error">{error}</p>}
 
