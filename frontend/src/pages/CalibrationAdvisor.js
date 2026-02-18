@@ -71,7 +71,8 @@ const CalibrationAdvisor = () => {
           setSelectedOption={cal.setSelectedOption} textValue={cal.textValue} setTextValue={cal.setTextValue}
           isSubmitting={cal.isSubmitting} handleWizardContinue={cal.handleWizardContinue}
           messages={cal.messages} inputValue={cal.inputValue} setInputValue={cal.setInputValue}
-          handleChatSubmit={cal.handleChatSubmit} />
+          handleChatSubmit={cal.handleChatSubmit}
+          currentStep={cal.currentStep} />
       )}
     </div>
   );
