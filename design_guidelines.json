@@ -1,161 +1,177 @@
 {
-  "brand_identity": {
-    "name": "BIQc",
-    "archetype": "Sovereign Command",
-    "core_values": [
-      "Authority",
-      "Intelligence",
-      "Sovereignty",
-      "Precision"
+  "project_name": "BIQc Landing Page Redesign",
+  "design_philosophy": {
+    "identity": "E1: Anti-AI Designer",
+    "core_principles": [
+      "Fusion over Imitation: Swiss Style + Tactical SaaS",
+      "Emotion First: Sovereign = Trust, Intelligence = Clarity",
+      "Content is King: Directed storytelling",
+      "Zoom In: Focus on data details",
+      "Negative Space: Luxurious breathing room"
     ],
-    "mood": "Cinematic, High-Density, secure, Australian-Executive"
+    "anti_patterns": [
+      "No generic 'Inter' for headings",
+      "No center-aligned everything",
+      "No excessive gradients",
+      "No 'default' Shadcn look"
+    ]
   },
-  "design_system": {
-    "colors": {
-      "palette": {
-        "background": {
-          "primary": "#0A0F1E",
-          "secondary": "#0f1629",
-          "tertiary": "#151e32"
-        },
-        "foreground": {
-          "primary": "#FFFFFF",
-          "secondary": "#94A3B8",
-          "muted": "#475569"
-        },
-        "accent": {
-          "cyan": "#00F0FF",
-          "cyan_dim": "rgba(0, 240, 255, 0.1)",
-          "alert": "#FF3B30",
-          "gold": "#D4AF37"
-        },
-        "border": {
-          "subtle": "rgba(255, 255, 255, 0.08)",
-          "active": "#00F0FF"
-        }
-      },
-      "usage_rules": "Background must be #0A0F1E (Midnight Navy). Text is Titanium White (#FFFFFF). Glows are Sentinel Cyan (#00F0FF). Use 'Threat Red' (#FF3B30) sparingly for threat indicators."
+  "typography": {
+    "font_family": {
+      "headings": "Outfit, sans-serif",
+      "body": "DM Sans, sans-serif",
+      "mono": "JetBrains Mono, monospace"
     },
-    "typography": {
-      "font_families": {
-        "headings": "Playfair Display, serif",
-        "body": "Inter, sans-serif",
-        "mono": "JetBrains Mono, monospace"
-      },
-      "styles": {
-        "h1": "font-serif text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]",
-        "h2": "font-serif text-4xl md:text-5xl font-semibold tracking-tight",
-        "h3": "font-serif text-2xl md:text-3xl font-medium",
-        "body": "font-sans text-base md:text-lg leading-relaxed text-slate-300",
-        "label": "font-mono text-xs uppercase tracking-[0.2em] text-cyan-400",
-        "ticker": "font-mono text-sm text-cyan-400"
-      },
-      "rules": "Use Playfair Display for all Headings to evoke 'Old Money/Sovereignty'. Use Inter for dense data. Use JetBrains Mono for the 'Threat Ticker' and data values."
-    },
-    "spacing": {
-      "scale": "Relaxed. Use p-8, p-12, p-16 for containers. Gap-8 minimum for grids.",
-      "container_padding": "px-6 md:px-12 lg:px-24"
-    },
-    "visual_enhancers": {
-      "glassmorphism": "backdrop-blur-xl bg-navy-900/40 border border-white/10",
-      "glows": "box-shadow: 0 0 40px -10px rgba(0, 240, 255, 0.3)",
-      "borders": "1px solid rgba(255, 255, 255, 0.05)",
-      "textures": "Use subtle noise overlay on the #0A0F1E background to prevent banding and add 'film' quality."
+    "scale": {
+      "h1": "text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]",
+      "h2": "text-4xl md:text-5xl font-semibold tracking-tight",
+      "h3": "text-2xl md:text-3xl font-semibold",
+      "body_lg": "text-lg md:text-xl leading-relaxed text-slate-600",
+      "body_base": "text-base leading-relaxed text-slate-600",
+      "caption": "text-xs font-mono uppercase tracking-widest text-slate-500"
     }
   },
-  "layout_strategy": {
-    "grid_system": "Bento Grid (Mode A). Asymmetric layouts. Avoid centering everything.",
-    "hero_structure": "Split screen or 2/3 Grid. Left: Sovereign Value Prop. Right/Bottom: Interactive Threat Ticker.",
-    "z_index_layers": {
-      "base": 0,
-      "content": 10,
-      "overlays": 20,
-      "sticky_nav": 50,
-      "modals": 100
+  "colors": {
+    "palette": {
+      "primary": {
+        "base": "#0f172a",
+        "hover": "#1e293b",
+        "foreground": "#ffffff"
+      },
+      "accent": {
+        "blue": "#2563eb",
+        "blue_light": "#dbeafe",
+        "emerald": "#059669",
+        "emerald_light": "#d1fae5",
+        "amber": "#d97706",
+        "rose": "#e11d48"
+      },
+      "neutral": {
+        "white": "#ffffff",
+        "slate_50": "#f8fafc",
+        "slate_100": "#f1f5f9",
+        "slate_200": "#e2e8f0",
+        "slate_900": "#0f172a"
+      }
+    },
+    "usage": {
+      "background": "bg-slate-50",
+      "surface": "bg-white",
+      "text_main": "text-slate-900",
+      "text_muted": "text-slate-600",
+      "border": "border-slate-200"
     }
   },
   "components": {
-    "hero_section": {
-      "name": "Sovereign Command Hero",
-      "elements": [
-        {
-          "type": "Background",
-          "spec": "Midnight Navy #0A0F1E with faint 'World Map' or 'Data Points' texture. Overlay Sydney Skyline image with heavy blue/navy duotone."
-        },
-        {
-          "type": "Headline",
-          "spec": "Playfair Display. 'Command Your Business Sovereignty'. Titanium White."
-        },
-        {
-          "type": "Threat Ticker",
-          "spec": "A horizontal or vertical scrolling marquee. Font: JetBrains Mono. Content: 'THREAT BLOCKED: 14:02 AEST', 'INTELLIGENCE ACQUIRED: SYDNEY NODE'. Color: Cyan/Red."
-        },
-        {
-          "type": "CTA",
-          "spec": "Solid White pill button with Navy text (High Contrast) OR Cyan Glow button."
-        }
-      ]
+    "buttons": {
+      "primary": "bg-slate-900 text-white hover:bg-slate-800 rounded-lg px-8 py-4 font-semibold shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5",
+      "secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg px-8 py-4 font-medium transition-all",
+      "ghost": "text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg px-4 py-2 transition-all"
     },
-    "trust_architecture": {
-      "name": "The Vault (/trust)",
-      "elements": [
-        {
-          "type": "Visual",
-          "spec": "Server Room Image (Darkened). Overlay lock icons or shield vectors."
-        },
-        {
-          "type": "Encryption Badge",
-          "spec": "Large typographic badge: 'AES-256'. Animated glowing border."
-        },
-        {
-          "type": "Sovereignty Statement",
-          "spec": "Text emphasizing 'Australian Data Sovereignty'. Data stays in Oz."
-        }
-      ]
+    "cards": {
+      "base": "bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all",
+      "feature": "bg-white border border-slate-100 rounded-3xl p-8 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300",
+      "pricing_highlight": "bg-slate-900 text-white rounded-3xl p-8 shadow-2xl shadow-slate-900/30 relative overflow-hidden"
     },
-    "comparison_table": {
-      "name": "Value Logic (6 Sigma vs BIQc)",
-      "structure": "2-Column Comparison. Left: 'Traditional 6 Sigma' (Grey/Muted). Right: 'BIQc AI' (Cyan/White/Glow).",
-      "rows": [
-        "Speed to Insight",
-        "Data Sovereignty",
-        "Cost per Analysis",
-        "Predictive Capability"
-      ]
-    },
-    "pricing": {
-      "name": "Strategy Squad Pricing",
-      "tiers": [
-        "Analyst (Starter)",
-        "Strategist (Pro)",
-        "Sovereign (Enterprise)"
-      ],
-      "style": "Cards. 'Sovereign' tier must use the 'Tracing Beam' border effect (Cyan glow moving around the card)."
+    "badges": {
+      "base": "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-mono uppercase tracking-wider",
+      "blue": "bg-blue-50 text-blue-700 border border-blue-100",
+      "emerald": "bg-emerald-50 text-emerald-700 border border-emerald-100"
     }
   },
-  "assets": {
-    "images": {
-      "hero_bg": "https://images.unsplash.com/photo-1599352525889-6af336596438?crop=entropy&cs=srgb&fm=jpg&q=85",
-      "trust_bg": "https://images.unsplash.com/photo-1680992046617-e2e35451bcdb?crop=entropy&cs=srgb&fm=jpg&q=85",
-      "server_detail": "https://images.unsplash.com/photo-1680992046626-418f7e910589?crop=entropy&cs=srgb&fm=jpg&q=85"
+  "layout_strategies": {
+    "spacing": {
+      "section_y": "py-24 md:py-32",
+      "container_x": "px-6 md:px-12 lg:px-20",
+      "element_gap": "gap-8 md:gap-12"
     },
-    "icons": "Use Lucide React. stroke-width=1.5 for elegance. Colors: Cyan or White."
+    "grids": {
+      "hero": "grid grid-cols-1 lg:grid-cols-2 gap-16 items-center",
+      "bento": "grid grid-cols-1 md:grid-cols-3 gap-6",
+      "features": "grid grid-cols-1 md:grid-cols-2 gap-8"
+    }
   },
-  "instructions_to_main_agent": [
-    "INSTALL_DEPENDENCIES: Run 'yarn add framer-motion clsx tailwind-merge' immediately.",
-    "THEME_SETUP: Update tailwind.config.js to include the specific Midnight Navy (#0A0F1E) and Sentinel Cyan (#00F0FF) colors.",
-    "FONT_SETUP: Ensure Playfair Display and JetBrains Mono are imported (via Google Fonts in index.html or CSS).",
-    "CLEANUP: Remove any default light mode variables in index.css. Force Dark Mode by default.",
-    "EXECUTION: Build the Landing Page components first (Hero, Ticker, Pricing), then the Trust page.",
-    "ANIMATION: Use framer-motion for the 'Threat Ticker' (infinite loop) and entrance animations (fade up).",
-    "GLASSMORPHISM: Use the specific backdrop-blur-xl classes defined in design_system.visual_enhancers."
+  "motion": {
+    "library": "framer-motion",
+    "variants": {
+      "fadeInUp": {
+        "initial": { "opacity": 0, "y": 20 },
+        "whileInView": { "opacity": 1, "y": 0 },
+        "viewport": { "once": true },
+        "transition": { "duration": 0.5, "ease": "easeOut" }
+      },
+      "stagger": {
+        "initial": "hidden",
+        "animate": "visible",
+        "variants": {
+          "visible": { "transition": { "staggerChildren": 0.1 } }
+        }
+      }
+    }
+  },
+  "sections_breakdown": [
+    {
+      "name": "Navbar",
+      "type": "sticky",
+      "style": "glassmorphism",
+      "elements": ["Logo (BIQc)", "Trust Link", "Login", "Start Free (Primary CTA)"]
+    },
+    {
+      "name": "Hero",
+      "layout": "split",
+      "left": ["Eyebrow: Sovereign Intelligence", "Rotating Headline", "Subhead", "CTA Group", "Trust Badge"],
+      "right": ["Live Intelligence Panel (Mocked UI)", "Floating Elements"],
+      "fix": "Ensure right panel render"
+    },
+    {
+      "name": "Trust Strip",
+      "layout": "full-width",
+      "style": "marquee",
+      "content": "Marquee of integration logos"
+    },
+    {
+      "name": "Comparison",
+      "title": "Dashboards vs Agents",
+      "interaction": "Toggle Switch",
+      "visual": "Side-by-side comparison or Cross-fade based on toggle"
+    },
+    {
+      "name": "Features",
+      "layout": "Bento Grid",
+      "cards": ["The Boardroom", "Strategic Console", "SoundBoard", "BIQc Insights"]
+    },
+    {
+      "name": "WIIFM",
+      "layout": "3-Col Grid",
+      "cards": ["Time Reclaimed", "Profit Leaks Plugged", "SOP Compliance"]
+    },
+    {
+      "name": "Pricing",
+      "layout": "3-Col Grid",
+      "highlight": "The Strategist (Middle)"
+    },
+    {
+      "name": "Sovereignty",
+      "style": "Trust Badge/Banner",
+      "content": "Australian Data Sovereignty"
+    },
+    {
+      "name": "Footer",
+      "style": "Minimal",
+      "content": "Copyright, Disclaimer"
+    }
   ],
-  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
-    "Do not use gradients for backgrounds. Use solid #0A0F1E.",
-    "Use Playfair Display for ALL Headings. NO EXCEPTIONS.",
-    "Buttons must be rounded-full (pill) or sharp (rounded-sm) - decide on one. Recommendation: Sharp for 'Command' feel.",
-    "All interactive elements must have hover states (text-cyan-400 or bg-white/10).",
-    "Use 'sonner' for any toast notifications.",
-    "Respect the Australian context (AEST timezones, AUD currency, Australian English spelling)."
-  ]
+  "image_urls": {
+     "hero_bg": "generated-gradient-mesh",
+     "logos": [
+       "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Xero_software_logo.svg/2560px-Xero_software_logo.svg.png",
+       "https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg",
+       "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/HubSpot_Logo.svg/2560px-HubSpot_Logo.svg.png",
+       "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png",
+       "https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg",
+       "https://upload.wikimedia.org/wikipedia/commons/0/08/Microsoft_Office_365_%282019%E2%80%93present%29.svg",
+       "https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+     ]
+  },
+  "instructions_to_main_agent": "Refactor LandingIntelligent.js to use Tailwind classes instead of inline styles. Use Shadcn components for Buttons and Cards where possible, but customize them to match the E1 aesthetic. Ensure the Hero Right Panel is visible by fixing the animation logic (remove initial='hidden' if it blocks rendering). Preserve all existing text content and logic (toggle, etc.). Use 'Outfit' for headings and 'DM Sans' for body."
 }
