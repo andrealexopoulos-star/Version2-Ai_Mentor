@@ -220,6 +220,8 @@ export const useCalibrationState = () => {
     try {
       const data = await callEdge(payload);
       if (data.status === "COMPLETE") { triggerComplete(); return; }
+      // Fallback: if we've answered all 9 steps but backend didn't flag COMPLETE, force it
+      if (currentStep >= 9) { triggerComplete(); return; }
       await new Promise(r => setTimeout(r, 400));
       applyResponse(data);
     } catch { setError("Calibration engine temporarily unavailable."); }
