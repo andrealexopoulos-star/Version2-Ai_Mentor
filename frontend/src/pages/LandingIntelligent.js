@@ -482,37 +482,27 @@ const LandingIntelligent = () => {
         <div className="max-w-7xl mx-auto relative" style={{ zIndex: 1 }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
 
-            {/* Left */}
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={stagger}
-              className="space-y-7"
-            >
-              <motion.div variants={fadeUp}>
-                <span
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-widest"
-                  style={{ fontFamily: FONTS.mono }}
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                  Sovereign Business Intelligence
-                </span>
-              </motion.div>
+            {/* Left — No motion initial hiding so content is immediately visible */}
+            <div className="space-y-7">
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-widest"
+                style={{ fontFamily: FONTS.mono }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                Sovereign Business Intelligence
+              </span>
 
-              <motion.div variants={fadeUp}>
-                <RotatingHeadline />
-              </motion.div>
+              <RotatingHeadline />
 
-              <motion.p
-                variants={fadeUp}
+              <p
                 className="text-lg lg:text-xl leading-relaxed text-slate-600 max-w-lg"
                 style={{ fontFamily: FONTS.body }}
               >
                 Don't wait for end-of-month surprises. BIQc is the always-on intelligence layer that surfaces risks and opportunities in real time.{' '}
                 <strong className="text-slate-900 font-semibold">See it coming. Fix it fast. Get back to business.</strong>
-              </motion.p>
+              </p>
 
-              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => nav('/register-supabase')}
                   className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-0.5"
@@ -531,15 +521,15 @@ const LandingIntelligent = () => {
                   <Shield className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
                   Meet Your Mentor
                 </button>
-              </motion.div>
+              </div>
 
-              <motion.div variants={fadeUp} className="flex items-center gap-2.5 text-slate-500">
+              <div className="flex items-center gap-2.5 text-slate-500">
                 <Lock className="w-3.5 h-3.5" strokeWidth={1.5} />
                 <span className="text-sm" style={{ fontFamily: FONTS.mono }}>
                   100% Sovereign. 0% Blind Spots. Australian Owned.
                 </span>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
 
             {/* Right — Live Intelligence Panel */}
             <div className="relative">
