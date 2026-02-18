@@ -474,10 +474,10 @@ const LandingIntelligent = () => {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="pt-28 sm:pt-36 pb-20 px-6 lg:px-12 bg-white relative overflow-hidden" data-testid="hero-section">
+      <section className="pt-28 sm:pt-36 pb-20 px-6 lg:px-12 bg-white relative" data-testid="hero-section">
         {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-50 rounded-full blur-3xl opacity-60 -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-50 rounded-full blur-3xl opacity-40 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none" style={{ zIndex: 0 }} />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-violet-50 rounded-full blur-3xl opacity-30 pointer-events-none" style={{ zIndex: 0 }} />
 
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center relative z-10">
