@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../context/SupabaseAuthContext';
-import { useSWR } from '../hooks/useSWR';
+import { useSnapshot } from '../hooks/useSnapshot';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -32,15 +32,12 @@ const BoardRoom = () => {
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagError, setDiagError] = useState(null);
 
-  const { data: briefing, isLoading: briefingLoading } = useSWR('/strategic-console/briefing', {
-    revalidateOnFocus: true, dedupingInterval: 15000,
-  });
-
-  const st = STATE_CONFIG[briefing?.system_state] || STATE_CONFIG.STABLE;
-  const dpi = briefing?.decision_pressure_index || 0;
-  const narrative = briefing?.executive_narrative;
-  const forces = briefing?.compression || [];
-  const hasBrief = narrative && (narrative.primary_tension || typeof narrative === 'string');
+  const { cognitive: snapshot, loading: briefingLoading } = useSnapshot();
+  const narrative = snapshot ? { primary_tension: snapshot.executive_memo, force_summary: snapshot.system_state_interpretation, strategic_direction: snapshot.priority_compression?.primary_focus } : null;
+  const st = STATE_CONFIG[snapshot?.system_state] || STATE_CONFIG.STABLE;
+  const dpi = snapshot?.system_state === 'CRITICAL' ? 80 : snapshot?.system_state === 'COMPRESSION' ? 55 : snapshot?.system_state === 'DRIFT' ? 35 : 10;
+  const forces = (snapshot?.inevitabilities || []).map(function(inv) { return { domain: inv.domain, detail: inv.signal, position: inv.intensity }; });
+  const hasBrief = narrative && narrative.primary_tension;
 
   const runDiagnosis = async (area) => {
     setActiveDiagnosis(area.id);
