@@ -1,284 +1,261 @@
-import React, { useState, useEffect, Component } from 'react';
-import { useSWR } from '../hooks/useSWR';
-import { apiClient } from '../lib/api';
-import { RefreshCw, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../context/SupabaseAuthContext';
+import { Send, RefreshCw } from 'lucide-react';
 
-const MONO = "'JetBrains Mono', 'SF Mono', monospace";
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const HEAD = "'Inter Tight', 'Inter', -apple-system, sans-serif";
+const MONO = "'JetBrains Mono', 'SF Mono', monospace";
 
 const STATE_CONFIG = {
-  STABLE:      { label: 'STABLE',      color: '#22C55E', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.15)' },
-  DRIFT:       { label: 'DRIFT',       color: '#F59E0B', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.15)' },
-  COMPRESSION: { label: 'COMPRESSION', color: '#F97316', bg: 'rgba(249,115,22,0.06)', border: 'rgba(249,115,22,0.15)' },
-  CRITICAL:    { label: 'CRITICAL',    color: '#EF4444', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)' },
+  STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
+  DRIFT:       { label: 'Drift',       color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
+  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#F97316' },
+  CRITICAL:    { label: 'Critical',    color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
 };
 
-const POSITION_COLORS = {
-  STABLE: '#22C55E', ELEVATED: '#F59E0B', DETERIORATING: '#F97316',
-  CRITICAL: '#EF4444', PRESSURED: '#F97316', UNKNOWN: '#6B7280',
-};
+const WarRoomConsole = () => {
+  const [briefing, setBriefing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sources, setSources] = useState([]);
+  const [question, setQuestion] = useState('');
+  const [asking, setAsking] = useState(false);
+  const [conversation, setConversation] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
-class ConsoleBoundary extends Component {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() {
-    if (this.state.hasError) return (
-      <div className="flex items-center justify-center h-full" style={{ background: '#09090B' }}>
-        <div className="text-center space-y-3">
-          <p className="text-xs tracking-widest" style={{ color: '#555', fontFamily: MONO }}>SYSTEM FAULT</p>
-          <button onClick={() => this.setState({ hasError: false })} className="text-xs px-4 py-1.5 rounded" style={{ color: '#888', border: '1px solid #333', fontFamily: MONO }}>RETRY</button>
-        </div>
-      </div>
-    );
-    return this.props.children;
-  }
-}
-
-const StrategicConsoleInner = () => {
-  const [synthesizing, setSynthesizing] = useState(false);
-  const { data: briefing, isLoading, mutate } = useSWR('/strategic-console/briefing', { revalidateOnFocus: true, dedupingInterval: 15000 });
-
-  const triggerSynthesis = async () => {
-    setSynthesizing(true);
-    try {
-      await apiClient.post('/strategic-console/synthesize');
-      mutate();
-    } catch {} finally { setSynthesizing(false); }
+  const getToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token;
   };
 
-  const st = STATE_CONFIG[briefing?.system_state] || STATE_CONFIG.STABLE;
-  const dpi = briefing?.decision_pressure_index || 0;
-  const forces = briefing?.compression || [];
-  const narrative = briefing?.executive_narrative;
-  const drifts = briefing?.drift_vectors || [];
-  const signals = briefing?.signal_trace || [];
-  const sources = briefing?.data_sources || [];
-  const hasBrief = narrative && (narrative.primary_tension || typeof narrative === 'string');
-  const primaryFocus = briefing?.primary_focus_domain;
-  const now = new Date();
+  const callEdge = async (payload) => {
+    const token = await getToken();
+    if (!token) throw new Error('No session');
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/strategic-console-ai`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  };
+
+  const loadBrief = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await callEdge({ mode: 'brief' });
+      setBriefing(data.briefing);
+      setSources(data.data_sources || []);
+    } catch (e) {
+      setError(`Brief unavailable. ${e.message === '404' ? 'Deploy the strategic-console-ai Edge Function.' : 'Please try again.'}`);
+    } finally { setLoading(false); }
+  };
+
+  const refreshBrief = async () => {
+    setRefreshing(true);
+    await loadBrief();
+    setRefreshing(false);
+  };
+
+  const askQuestion = async () => {
+    if (!question.trim() || asking) return;
+    const q = question.trim();
+    setQuestion('');
+    setConversation(prev => [...prev, { role: 'user', text: q }]);
+    setAsking(true);
+    try {
+      const data = await callEdge({ mode: 'ask', question: q });
+      setConversation(prev => [...prev, { role: 'advisor', text: data.answer, sources: data.data_sources }]);
+    } catch {
+      setConversation(prev => [...prev, { role: 'advisor', text: "I wasn't able to process that right now. Please try again." }]);
+    } finally {
+      setAsking(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  };
+
+  useEffect(() => { loadBrief(); }, []);
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversation, asking]);
+
+  const b = briefing || {};
+  const st = STATE_CONFIG[b.state] || STATE_CONFIG.STABLE;
 
   return (
-    <div className="flex flex-col h-full" style={{ background: '#09090B', color: '#E4E4E7', fontFamily: HEAD }}>
+    <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: HEAD }}>
 
-      {/* ═══ TOP BAR ═══ */}
-      <header className="flex items-center justify-between px-5 md:px-8 py-3 shrink-0" style={{ borderBottom: '1px solid #1A1A1E' }} data-testid="console-header">
-        <div className="flex items-center gap-4">
-          <a href="/advisor" className="text-xs px-2.5 py-1 rounded" style={{ color: '#555', border: '1px solid #222', fontFamily: MONO, textDecoration: 'none' }} data-testid="console-home-btn">
-            ← Dashboard
-          </a>
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full" style={{ background: st.color, boxShadow: `0 0 8px ${st.color}40` }} />
-            <span className="text-[11px] font-semibold tracking-widest" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {primaryFocus && (
-            <span className="text-[10px] tracking-wider uppercase" style={{ color: '#666', fontFamily: MONO }}>
-              Focus: {primaryFocus}
-            </span>
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <div className="flex items-center gap-5">
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#6B7280', textDecoration: 'none' }} data-testid="console-home-btn">← Dashboard</a>
+          <div className="h-4 w-px" style={{ background: '#E5E7EB' }} />
+          <span className="text-sm font-semibold" style={{ color: '#111827' }}>Strategic Console</span>
+          {!loading && briefing && (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
+              <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+            </div>
           )}
-          <span className="text-[10px]" style={{ color: '#444', fontFamily: MONO }}>
-            {now.toISOString().slice(0, 10)}
-          </span>
-          <button onClick={() => { triggerSynthesis(); }} disabled={synthesizing} className="flex items-center gap-1.5 text-[10px] px-3 py-1 rounded transition-colors" style={{ color: '#666', border: '1px solid #222', fontFamily: MONO }} data-testid="synthesize-btn">
-            <RefreshCw className={`w-3 h-3 ${synthesizing ? 'animate-spin' : ''}`} />
-            {synthesizing ? 'Synthesizing...' : 'Synthesize'}
-          </button>
         </div>
+        <button onClick={refreshBrief} disabled={refreshing || loading} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#9CA3AF' }} data-testid="refresh-btn">
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh Brief'}
+        </button>
       </header>
 
-      {/* ═══ DECISION PRESSURE BAR ═══ */}
-      <div className="h-[3px] shrink-0" style={{ background: '#111' }}>
-        <div className="h-full transition-all duration-1000" style={{ width: `${dpi}%`, background: st.color, boxShadow: `0 0 12px ${st.color}30` }} />
-      </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-6 md:px-10 py-8 space-y-6">
 
-      {/* ═══ LOADING ═══ */}
-      {isLoading && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <div className="w-5 h-5 border border-zinc-700 border-t-zinc-400 rounded-full animate-spin mx-auto" />
-            <p className="text-xs" style={{ color: '#555', fontFamily: MONO }}>Loading strategic briefing...</p>
-          </div>
-        </div>
-      )}
+          {/* Loading */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mb-5" />
+              <p className="text-sm font-medium" style={{ color: '#374151' }}>Preparing your executive brief...</p>
+              <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>Reading emails, CRM, financials, and market signals</p>
+            </div>
+          )}
 
-      {!isLoading && (
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-6xl mx-auto px-5 md:px-8 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Error */}
+          {error && !loading && (
+            <div className="p-6 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.06)' }}>
+              <p className="text-sm" style={{ color: '#D97706' }}>{error}</p>
+              <button onClick={loadBrief} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #E5E7EB' }}>Retry</button>
+            </div>
+          )}
 
-              {/* ═══ LEFT COLUMN — Compression View ═══ */}
-              <div className="lg:col-span-3 space-y-6" data-testid="compression-view">
-                <div>
-                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#555', fontFamily: MONO }}>
-                    Active Forces
-                  </h3>
-                  {forces.length > 0 ? forces.map((f, i) => (
-                    <div key={i} className="mb-3 p-4 rounded-xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }} data-testid={`force-${i}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: POSITION_COLORS[f.position] || '#666' }} />
-                        <span className="text-xs font-medium" style={{ color: '#D4D4D8' }}>{f.domain}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px]" style={{ color: POSITION_COLORS[f.position] || '#666', fontFamily: MONO }}>{f.position || f.intensity}</span>
-                        {f.window_days && <span className="text-[10px]" style={{ color: '#F59E0B', fontFamily: MONO }}>{f.window_days}d window</span>}
-                      </div>
-                      {f.has_contradiction && <span className="text-[9px] mt-1 block" style={{ color: '#EF4444', fontFamily: MONO }}>Alignment gap detected</span>}
-                    </div>
-                  )) : (
-                    <div className="p-4 rounded-xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
-                      <p className="text-xs" style={{ color: '#555' }}>No active forces detected.</p>
-                      <p className="text-[10px] mt-1" style={{ color: '#444', fontFamily: MONO }}>Click Synthesize to process connected data.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Decision Pressure */}
-                <div>
-                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#555', fontFamily: MONO }}>
-                    Decision Pressure
-                  </h3>
-                  <div className="p-4 rounded-xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
-                    <div className="flex items-end justify-between mb-2">
-                      <span className="text-3xl font-light" style={{ color: st.color, fontFamily: MONO }}>{dpi}</span>
-                      <span className="text-[10px]" style={{ color: '#555', fontFamily: MONO }}>/100</span>
-                    </div>
-                    <div className="h-1 rounded-full" style={{ background: '#1A1A1E' }}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${dpi}%`, background: st.color }} />
-                    </div>
-                  </div>
-                </div>
+          {/* Briefing */}
+          {briefing && !loading && (
+            <>
+              {/* Greeting + State */}
+              <div>
+                <h1 className="text-2xl font-semibold mb-1" style={{ color: '#111827' }}>{b.greeting || 'Your Executive Brief'}</h1>
+                {b.state_reason && <p className="text-sm" style={{ color: '#6B7280' }}>{b.state_reason}</p>}
               </div>
 
-              {/* ═══ CENTER — Executive Briefing ═══ */}
-              <div className="lg:col-span-6 space-y-6" data-testid="executive-briefing">
-                <div>
-                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#555', fontFamily: MONO }}>
-                    Strategic Briefing
-                  </h3>
+              {/* What Matters */}
+              {b.what_matters && (
+                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#111827', fontFamily: MONO }}>What Matters Now</span>
+                  <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: '#1F2937' }}>{b.what_matters}</p>
+                </div>
+              )}
 
-                  {hasBrief ? (
-                    <div className="space-y-4">
-                      <div className="p-6 rounded-xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
-                        <p className="text-base leading-relaxed" style={{ color: '#D4D4D8', fontWeight: 400 }}>
-                          {typeof narrative === 'string' ? narrative : narrative.primary_tension}
-                        </p>
-                        {narrative.force_summary && (
-                          <p className="text-sm mt-4 leading-relaxed" style={{ color: '#71717A' }}>
-                            {narrative.force_summary}
-                          </p>
-                        )}
-                      </div>
+              {/* Decision Required */}
+              {b.decision_required && (
+                <div className="p-6 rounded-2xl" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#991B1B', fontFamily: MONO }}>Decision Required</span>
+                  <p className="text-sm leading-relaxed" style={{ color: '#7F1D1D' }}>{b.decision_required}</p>
+                </div>
+              )}
 
-                      {narrative.strategic_direction && (
-                        <div className="p-5 rounded-xl" style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.12)' }}>
-                          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#22C55E', fontFamily: MONO }}>
-                            Recommended Direction
-                          </span>
-                          <p className="text-sm leading-relaxed" style={{ color: '#A1A1AA' }}>
-                            {narrative.strategic_direction}
-                          </p>
-                        </div>
-                      )}
+              {/* What Is Forming */}
+              {b.what_is_forming && (
+                <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#92400E', fontFamily: MONO }}>What Is Forming</span>
+                  <p className="text-sm leading-relaxed" style={{ color: '#78350F' }}>{b.what_is_forming}</p>
+                </div>
+              )}
 
-                      {narrative.cost_of_silence && (
-                        <div className="p-5 rounded-xl" style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.12)' }}>
-                          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#EF4444', fontFamily: MONO }}>
-                            If Ignored
-                          </span>
-                          <p className="text-sm leading-relaxed" style={{ color: '#EF4444' }}>
-                            {narrative.cost_of_silence}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="p-8 rounded-xl text-center" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
-                      <p className="text-sm mb-2" style={{ color: '#71717A' }}>No intelligence briefing available yet.</p>
-                      <p className="text-xs mb-6" style={{ color: '#555', fontFamily: MONO }}>
-                        {sources.length > 0 ? `${sources.length} data sources connected. Click Synthesize to generate.` : 'Connect integrations to enable intelligence.'}
-                      </p>
-                      <button onClick={triggerSynthesis} disabled={synthesizing} className="text-xs px-5 py-2 rounded-lg transition-colors" style={{ color: '#D4D4D8', background: '#1A1A1E', border: '1px solid #27272A', fontFamily: HEAD }}>
-                        {synthesizing ? 'Synthesizing...' : 'Generate Briefing'}
-                      </button>
-                    </div>
-                  )}
+              {/* Market Context */}
+              {b.market_context && (
+                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#6B7280', fontFamily: MONO }}>Market Context</span>
+                  <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{b.market_context}</p>
+                </div>
+              )}
 
-                  {/* Drift Vectors */}
-                  {drifts.length > 0 && (
-                    <div>
-                      <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3 mt-6" style={{ color: '#555', fontFamily: MONO }}>
-                        Drift Vectors
-                      </h3>
-                      <div className="space-y-2">
-                        {drifts.map((d, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
-                            <div>
-                              <span className="text-xs font-medium" style={{ color: '#A1A1AA' }}>{d.domain}</span>
-                              <span className="text-[10px] ml-2" style={{ color: '#555', fontFamily: MONO }}>{d.signal_count} signals</span>
-                            </div>
-                            <ChevronRight className="w-3 h-3" style={{ color: '#333' }} />
-                          </div>
+              {/* What Can Wait */}
+              {b.what_can_wait && (
+                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>What Can Wait</span>
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{b.what_can_wait}</p>
+                </div>
+              )}
+
+              {/* Closing */}
+              {b.closing && (
+                <p className="text-sm text-center py-2" style={{ color: '#9CA3AF', fontStyle: 'italic' }}>{b.closing}</p>
+              )}
+
+              {/* Sources */}
+              {sources.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sources:</span>
+                  {sources.map((s, i) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Conversation */}
+          {conversation.length > 0 && (
+            <div className="space-y-4 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              {conversation.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className="max-w-[85%] p-4 rounded-2xl" style={msg.role === 'user'
+                    ? { background: '#111827', color: '#F9FAFB' }
+                    : { background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.06)', color: '#1F2937' }
+                  }>
+                    <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
+                    {msg.sources && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {msg.sources.map((s, j) => (
+                          <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.06)', color: '#9CA3AF', fontFamily: MONO }}>{s}</span>
                         ))}
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ═══ RIGHT COLUMN — Signal Trace ═══ */}
-              <div className="lg:col-span-3 space-y-6" data-testid="signal-trace">
-                <div>
-                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#555', fontFamily: MONO }}>
-                    Signal Trace
-                  </h3>
-                  {signals.length > 0 ? signals.map((s, i) => (
-                    <div key={i} className="mb-2 p-3 rounded-lg" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-medium" style={{ color: '#A1A1AA', fontFamily: MONO }}>{s.signal}</span>
-                        <span className="text-[9px]" style={{ color: '#444', fontFamily: MONO }}>{Math.round((s.confidence || 0) * 100)}%</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px]" style={{ color: '#555', fontFamily: MONO }}>{s.source}</span>
-                        <span className="text-[9px]" style={{ color: '#333' }}>|</span>
-                        <span className="text-[9px]" style={{ color: '#555', fontFamily: MONO }}>{s.domain}</span>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className="p-4 rounded-xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
-                      <p className="text-[10px]" style={{ color: '#555', fontFamily: MONO }}>No signals traced yet.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Data Sources */}
-                {sources.length > 0 && (
-                  <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#555', fontFamily: MONO }}>
-                      Data Sources
-                    </h3>
-                    {sources.map((s, i) => (
-                      <div key={i} className="flex items-center gap-2 mb-1.5">
-                        <span className="w-1 h-1 rounded-full" style={{ background: '#22C55E' }} />
-                        <span className="text-[10px]" style={{ color: '#555', fontFamily: MONO }}>{s}</span>
-                      </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-
+                </div>
+              ))}
+              {asking && (
+                <div className="flex justify-start">
+                  <div className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.06)' }}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse" />
+                      <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={scrollRef} />
             </div>
-          </div>
+          )}
+        </div>
+      </div>
+
+      {/* Ask Input */}
+      {!loading && briefing && (
+        <div className="shrink-0 px-6 md:px-10 py-4" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+          <form onSubmit={(e) => { e.preventDefault(); askQuestion(); }} className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: '#FFF', border: '1px solid rgba(0,0,0,0.08)' }}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Ask about your business... e.g. 'When was the last email to ric@harvestclinic.com.au?'"
+                disabled={asking}
+                className="flex-1 text-sm outline-none bg-transparent"
+                style={{ color: '#1F2937', fontFamily: HEAD }}
+                data-testid="ask-input"
+              />
+              <button type="submit" disabled={asking || !question.trim()} className="p-2 rounded-lg transition-colors" style={{ color: question.trim() ? '#111827' : '#D1D5DB' }} data-testid="ask-submit">
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-[10px] text-center mt-2" style={{ color: '#9CA3AF' }}>Ask about emails, deals, invoices, contacts, or anything in your connected systems</p>
+          </form>
         </div>
       )}
     </div>
   );
 };
-
-const WarRoomConsole = () => (
-  <ConsoleBoundary>
-    <StrategicConsoleInner />
-  </ConsoleBoundary>
-);
 
 export default WarRoomConsole;
