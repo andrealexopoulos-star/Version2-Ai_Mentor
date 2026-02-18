@@ -1,333 +1,662 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowRight, Shield, Lock, Eye, Brain, AlertTriangle, Check, X, ChevronRight,
+  ArrowRight, Shield, Lock, Brain, AlertTriangle, Check,
   Zap, TrendingUp, Activity, Clock, DollarSign, Users, BarChart3,
-  MessageSquare, Mic, Target, Radio, Crosshair, Gauge, FileText
+  Target, Gauge, FileText, ChevronRight, Mic, Radio
 } from 'lucide-react';
 
-const AZ = '#007AFF';
-const MINT = '#00D995';
-const SL = '#1E293B';
-const MU = '#64748B';
-const HEAD = "'Inter Tight',sans-serif";
-const MONO = "'JetBrains Mono',monospace";
-const up = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [.22,1,.36,1] } } };
-const stg = { visible: { transition: { staggerChildren: 0.07 } } };
-
-const titanGlass = {
-  background: 'rgba(255,255,255,0.45)',
-  backdropFilter: 'blur(24px)',
-  WebkitBackdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.35)',
-  boxShadow: '0 24px 48px -12px rgba(0,0,0,0.06)',
+/* ═══ DESIGN TOKENS ═══ */
+const FONTS = {
+  head: "'Outfit', sans-serif",
+  body: "'DM Sans', sans-serif",
+  mono: "'JetBrains Mono', 'Geist Mono', monospace",
 };
 
-/* ═══ GLOBAL STYLES ═══ */
-const TitanStyles = () => (
-  <style>{`
-    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-    @keyframes pulse-ring{0%{transform:scale(.95);opacity:.7}50%{transform:scale(1.05);opacity:1}100%{transform:scale(.95);opacity:.7}}
-    @keyframes radar{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-    @keyframes heartbeat{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.8)}}
-    @keyframes float-bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-    @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-    @keyframes slide-active{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
-    .titan-card{position:relative;overflow:hidden}
-    .titan-card::before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.15) 45%,rgba(255,255,255,0.25) 50%,rgba(255,255,255,0.15) 55%,transparent 60%);background-size:200% 100%;opacity:0;transition:opacity .4s}
-    .titan-card:hover::before{opacity:1;animation:shimmer 1.2s ease-in-out}
-    .hero-glass-pulse{transition:box-shadow 1s ease}
-    .living-bg{background:radial-gradient(ellipse at 20% 0%,rgba(0,122,255,0.06),transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(0,217,149,0.05),transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(0,122,255,0.03),transparent 40%);background-size:400% 400%;animation:float-bg 20s ease infinite}
-  `}</style>
-);
-
-/* ═══ LIVE FEED ═══ */
-const FEED = [
-  { icon: Shield, l: 'ATO Compliance Check', s: 'OK', c: MINT },
-  { icon: TrendingUp, l: 'Sales Velocity Deviation', s: 'Corrected', c: AZ },
-  { icon: AlertTriangle, l: 'Cash Flow Forecast', s: 'Attention', c: '#F59E0B' },
-  { icon: Activity, l: 'Client Retention Score', s: '94%', c: MINT },
-  { icon: DollarSign, l: 'CAC Leak Detection', s: 'Clean', c: MINT },
-];
-const LiveFeed = () => {
-  const [idx, setIdx] = useState(0);
-  useEffect(() => { const t = setInterval(() => setIdx(p => (p + 1) % FEED.length), 3000); return () => clearInterval(t); }, []);
-  return (
-    <div className="space-y-2">
-      {[0,1,2,3].map(i => {
-        const f = FEED[(idx + i) % FEED.length];
-        return (
-          <motion.div key={`${idx}-${i}`} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-            className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}>
-            <div className="flex items-center gap-3">
-              <f.icon className="w-4 h-4" style={{ color: AZ }} strokeWidth={1.5} />
-              <span className="text-[13px] font-medium" style={{ color: SL, fontFamily: HEAD }}>{f.l}</span>
-            </div>
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ fontFamily: MONO, color: f.c, background: `${f.c}10` }}>{f.s}</span>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
+/* ═══ ANIMATION VARIANTS ═══ */
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
 };
-
-/* ═══ PASSIVE vs ACTIVE SLIDER ═══ */
-const SigmaKiller = () => {
-  const [active, setActive] = useState(false);
-  return (
-    <div className="space-y-10">
-      <div className="flex items-center justify-center gap-4 mb-8">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ fontFamily: MONO, color: !active ? '#94A3B8' : MU }}>Passive Analytics</span>
-        <button onClick={() => setActive(!active)} className="relative w-16 h-8 rounded-full transition-all" style={{ background: active ? AZ : '#CBD5E1' }} data-testid="sigma-slider">
-          <div className="absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all" style={{ left: active ? 34 : 2 }} />
-        </button>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ fontFamily: MONO, color: active ? AZ : MU }}>Agentic Resolution</span>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[320px]">
-        {/* LEFT: Passive */}
-        <div className="rounded-2xl p-8 transition-all duration-500" style={{ background: !active ? 'rgba(241,245,249,0.9)' : 'rgba(241,245,249,0.4)', opacity: !active ? 1 : 0.5, border: '1px solid rgba(0,0,0,0.06)' }}>
-          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold mb-4" style={{ fontFamily: MONO, color: '#94A3B8' }}>Passive Analytics (Requires Questions)</p>
-          <div className="space-y-2">
-            {['Revenue by Region', 'Q3 Pipeline Report', 'Staff Utilisation %', 'Churn Rate Trend'].map((r, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.04)' }}>
-                <BarChart3 className="w-4 h-4" style={{ color: '#CBD5E1' }} strokeWidth={1.5} />
-                <span className="text-[13px]" style={{ color: '#94A3B8', fontFamily: MONO }}>{r}</span>
-                <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.04)', color: '#CBD5E1', fontFamily: MONO }}>Static</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-[12px] mt-6 italic" style={{ color: '#94A3B8' }}>You ask. It waits. You interpret. You decide.</p>
-        </div>
-        {/* RIGHT: Active */}
-        <div className="rounded-2xl p-8 transition-all duration-500 titan-card" style={{ background: active ? 'rgba(0,122,255,0.03)' : 'rgba(241,245,249,0.4)', opacity: active ? 1 : 0.5, border: `1px solid ${active ? 'rgba(0,122,255,0.15)' : 'rgba(0,0,0,0.06)'}`, boxShadow: active ? '0 0 40px -10px rgba(0,122,255,0.1)' : 'none' }}>
-          <p className="text-[10px] uppercase tracking-[0.2em] font-semibold mb-4" style={{ fontFamily: MONO, color: active ? AZ : '#94A3B8' }}>Agentic Resolution (Delivers Answers)</p>
-          <div className="space-y-2">
-            {[
-              { t: 'FORCE MEMO: Client #47 payment drift detected', s: 'Deploy Fix', c: '#F59E0B' },
-              { t: 'ALERT: Pipeline over-concentrated in 2 accounts', s: 'Mitigate', c: AZ },
-              { t: 'SOP BREACH: Onboarding step 3 skipped 4x', s: 'Enforce', c: '#EF4444' },
-              { t: 'OPPORTUNITY: Competitor pricing gap — act now', s: 'Capture', c: MINT },
-            ].map((r, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: active ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.02)', border: `1px solid ${active ? 'rgba(0,122,255,0.08)' : 'rgba(0,0,0,0.04)'}`, animation: active ? `slide-active 0.4s ease ${i * 0.1}s both` : 'none' }}>
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: active ? r.c : '#CBD5E1', boxShadow: active ? `0 0 6px ${r.c}` : 'none' }} />
-                <span className="text-[12px] flex-1" style={{ fontFamily: MONO, color: active ? SL : '#94A3B8' }}>{r.t}</span>
-                <button className="text-[10px] font-bold px-3 py-1 rounded-full transition-all" style={{ background: active ? `${r.c}15` : 'rgba(0,0,0,0.04)', color: active ? r.c : '#CBD5E1', fontFamily: MONO }}>{r.s}</button>
-              </div>
-            ))}
-          </div>
-          <p className="text-[12px] mt-6 font-medium" style={{ color: active ? AZ : '#94A3B8' }}>It watches. It decides. It pushes. You command.</p>
-        </div>
-      </div>
-    </div>
-  );
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
 };
-
-/* ═══ 4 PILLARS ═══ */
-const HeartbeatLine = ({ color = AZ }) => (
-  <div className="flex items-end gap-[2px] h-8">
-    {Array.from({ length: 24 }).map((_, i) => (
-      <div key={i} className="w-[3px] rounded-full" style={{ background: color, height: `${12 + Math.sin(i * 0.8) * 10 + Math.random() * 6}px`, opacity: 0.6 + Math.random() * 0.4, animation: `heartbeat ${0.8 + Math.random() * 0.4}s ease ${i * 0.05}s infinite` }} />
-    ))}
-  </div>
-);
-const RadarSweep = () => (
-  <div className="relative w-24 h-24 mx-auto">
-    <div className="absolute inset-0 rounded-full" style={{ border: `1px solid rgba(0,122,255,0.15)` }} />
-    <div className="absolute inset-3 rounded-full" style={{ border: `1px solid rgba(0,122,255,0.1)` }} />
-    <div className="absolute inset-6 rounded-full" style={{ border: `1px solid rgba(0,122,255,0.08)` }} />
-    <div className="absolute inset-0 rounded-full overflow-hidden" style={{ animation: 'radar 3s linear infinite' }}>
-      <div className="absolute top-0 left-1/2 w-1/2 h-1/2 origin-bottom-left" style={{ background: `conic-gradient(from 0deg, transparent, ${AZ}30)` }} />
-    </div>
-    <div className="absolute w-2 h-2 rounded-full" style={{ top: '25%', left: '60%', background: AZ, boxShadow: `0 0 6px ${AZ}` }} />
-    <div className="absolute w-1.5 h-1.5 rounded-full" style={{ top: '55%', left: '30%', background: '#F59E0B', boxShadow: '0 0 6px #F59E0B' }} />
-  </div>
-);
-const BoardroomGrid = () => {
-  const agents = [
-    { name: 'Finance', icon: DollarSign, x: 20, y: 15, color: MINT },
-    { name: 'Ops', icon: Gauge, x: 75, y: 15, color: AZ },
-    { name: 'Sales', icon: TrendingUp, x: 10, y: 70, color: '#F59E0B' },
-    { name: 'Risk', icon: AlertTriangle, x: 50, y: 50, color: '#EF4444' },
-    { name: 'Compliance', icon: Shield, x: 85, y: 70, color: MINT },
-  ];
-  return (
-    <div className="relative h-40">
-      {agents.map((a, i) => (
-        <div key={i} className="absolute flex flex-col items-center gap-1" style={{ left: `${a.x}%`, top: `${a.y}%`, transform: 'translate(-50%,-50%)' }}>
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full" style={{ animation: `pulse-ring 2s ease ${i * 0.3}s infinite`, background: `${a.color}20`, transform: 'scale(1.8)' }} />
-            <div className="w-10 h-10 rounded-full flex items-center justify-center relative z-10" style={{ background: `${a.color}15`, border: `1px solid ${a.color}30` }}>
-              <a.icon className="w-4 h-4" style={{ color: a.color }} strokeWidth={1.5} />
-            </div>
-          </div>
-          <span className="text-[9px] font-semibold" style={{ fontFamily: MONO, color: MU }}>{a.name}</span>
-        </div>
-      ))}
-    </div>
-  );
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } },
 };
 
 /* ═══ ROTATING HEADLINE ═══ */
 const PHRASES = [
-  { text: 'dodge the chaos.', color: '#EF4444' },
-  { text: 'spot the cash leak.', color: MINT },
-  { text: 'fix the drift.', color: AZ },
-  { text: 'own your time.', color: '#8B5CF6' },
+  { text: 'dodge the chaos.', color: '#e11d48' },
+  { text: 'spot the cash leak.', color: '#059669' },
+  { text: 'fix the drift.', color: '#2563eb' },
+  { text: 'own your time.', color: '#7c3aed' },
 ];
+
 const RotatingHeadline = () => {
   const [idx, setIdx] = useState(0);
-  const [show, setShow] = useState(true);
+  const [visible, setVisible] = useState(true);
+
   useEffect(() => {
     const t = setInterval(() => {
-      setShow(false);
-      setTimeout(() => { setIdx(p => (p + 1) % PHRASES.length); setShow(true); }, 400);
-    }, 3000);
+      setVisible(false);
+      setTimeout(() => {
+        setIdx(p => (p + 1) % PHRASES.length);
+        setVisible(true);
+      }, 350);
+    }, 3200);
     return () => clearInterval(t);
   }, []);
+
   return (
-    <h1 data-testid="rotating-headline" style={{ fontFamily: HEAD, letterSpacing: '-0.02em', color: '#0A0F1E' }}>
-      <span className="block text-[2.6rem] sm:text-[3rem] lg:text-[3.5rem] font-bold leading-[1.1]">The insight to</span>
-      <span className="block text-[2.6rem] sm:text-[3rem] lg:text-[3.5rem] font-bold leading-[1.1] h-[1.2em]">
-        <span className="inline-block transition-all duration-400" style={{
-          opacity: show ? 1 : 0,
-          transform: show ? 'translateY(0)' : 'translateY(20px)',
+    <h1
+      style={{ fontFamily: FONTS.head, letterSpacing: '-0.03em', lineHeight: 1.08 }}
+      data-testid="rotating-headline"
+    >
+      <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900">
+        The insight to
+      </span>
+      <span
+        className="block text-5xl sm:text-6xl lg:text-7xl font-bold"
+        style={{
           color: PHRASES[idx].color,
-        }}>
-          {PHRASES[idx].text}
-        </span>
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(16px)',
+          transition: 'opacity 0.35s ease, transform 0.35s ease',
+          minHeight: '1.15em',
+          display: 'block',
+        }}
+      >
+        {PHRASES[idx].text}
       </span>
     </h1>
   );
 };
 
-/* ═══ INTEGRATION MARQUEE ═══ */
-const LOGOS = ['HubSpot','Salesforce','Xero','Stripe','BambooHR','Slack','Microsoft 365','Google Workspace','Jira','Asana','Monday','Shopify','Zoom','Teams','QuickBooks'];
+/* ═══ LIVE INTELLIGENCE PANEL ═══ */
+const FEED_ITEMS = [
+  { icon: Shield, label: 'ATO Compliance Check', status: 'OK', color: '#059669', bg: '#d1fae5' },
+  { icon: TrendingUp, label: 'Sales Velocity Deviation', status: 'Corrected', color: '#2563eb', bg: '#dbeafe' },
+  { icon: AlertTriangle, label: 'Cash Flow Forecast', status: 'Attention', color: '#d97706', bg: '#fef3c7' },
+  { icon: Activity, label: 'Client Retention Score', status: '94%', color: '#059669', bg: '#d1fae5' },
+  { icon: DollarSign, label: 'CAC Leak Detection', status: 'Clean', color: '#059669', bg: '#d1fae5' },
+];
+
+const LiveIntelligencePanel = () => {
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setActiveIdx(p => (p + 1) % FEED_ITEMS.length), 2800);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="relative">
+      {/* Main card */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl shadow-slate-200/60">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500" style={{ fontFamily: FONTS.mono }}>
+              Live Sentinel Feed
+            </span>
+          </div>
+          <span className="text-xs text-slate-400" style={{ fontFamily: FONTS.mono }}>AEST</span>
+        </div>
+
+        {/* Feed items */}
+        <div className="space-y-2.5">
+          {FEED_ITEMS.map((item, i) => {
+            const Icon = item.icon;
+            const isActive = i === activeIdx;
+            return (
+              <div
+                key={i}
+                className="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-500"
+                style={{
+                  background: isActive ? item.bg : '#f8fafc',
+                  border: isActive ? `1px solid ${item.color}25` : '1px solid #f1f5f9',
+                  transform: isActive ? 'scale(1.01)' : 'scale(1)',
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon
+                    className="w-4 h-4 flex-shrink-0"
+                    style={{ color: isActive ? item.color : '#94a3b8' }}
+                    strokeWidth={1.8}
+                  />
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: isActive ? '#0f172a' : '#64748b', fontFamily: FONTS.body }}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+                <span
+                  className="text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{
+                    color: item.color,
+                    background: item.bg,
+                    fontFamily: FONTS.mono,
+                  }}
+                >
+                  {item.status}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom score bar */}
+        <div className="mt-5 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-slate-500" style={{ fontFamily: FONTS.mono }}>Business Health Score</span>
+            <span className="text-xs font-bold text-emerald-600" style={{ fontFamily: FONTS.mono }}>87/100</span>
+          </div>
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-1000"
+              style={{ width: '87%' }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Floating badge */}
+      <div className="absolute -bottom-4 -left-4 bg-slate-900 text-white rounded-2xl px-4 py-3 shadow-xl">
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-blue-400" strokeWidth={1.5} />
+          <span className="text-xs font-semibold" style={{ fontFamily: FONTS.body }}>AI Analysis Active</span>
+        </div>
+      </div>
+
+      {/* Floating alert */}
+      <div className="absolute -top-3 -right-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 shadow-lg">
+        <div className="flex items-center gap-1.5">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
+          <span className="text-xs font-semibold text-amber-700" style={{ fontFamily: FONTS.mono }}>1 Alert</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ═══ COMPARISON SECTION: PASSIVE vs ACTIVE ═══ */
+const ComparisonSection = () => {
+  const [isActive, setIsActive] = useState(false);
+
+  const passiveItems = ['Revenue by Region', 'Q3 Pipeline Report', 'Staff Utilisation %', 'Churn Rate Trend'];
+  const activeItems = [
+    { text: 'FORCE MEMO: Client #47 payment drift detected', action: 'Deploy Fix', color: '#d97706', bg: '#fef3c7' },
+    { text: 'ALERT: Pipeline over-concentrated in 2 accounts', action: 'Mitigate', color: '#2563eb', bg: '#dbeafe' },
+    { text: 'SOP BREACH: Onboarding step 3 skipped 4×', action: 'Enforce', color: '#e11d48', bg: '#ffe4e6' },
+    { text: 'OPPORTUNITY: Competitor pricing gap — act now', action: 'Capture', color: '#059669', bg: '#d1fae5' },
+  ];
+
+  return (
+    <div>
+      {/* Toggle */}
+      <div className="flex items-center justify-center gap-4 mb-10">
+        <span
+          className="text-xs font-semibold uppercase tracking-widest transition-colors"
+          style={{ fontFamily: FONTS.mono, color: !isActive ? '#0f172a' : '#94a3b8' }}
+        >
+          Passive Analytics
+        </span>
+        <button
+          onClick={() => setIsActive(!isActive)}
+          className="relative w-14 h-7 rounded-full transition-all duration-300"
+          style={{ background: isActive ? '#2563eb' : '#cbd5e1' }}
+          data-testid="sigma-slider"
+        >
+          <div
+            className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300"
+            style={{ left: isActive ? 32 : 2 }}
+          />
+        </button>
+        <span
+          className="text-xs font-semibold uppercase tracking-widest transition-colors"
+          style={{ fontFamily: FONTS.mono, color: isActive ? '#2563eb' : '#94a3b8' }}
+        >
+          Agentic Resolution
+        </span>
+      </div>
+
+      {/* Side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Passive */}
+        <div
+          className="rounded-2xl p-6 border transition-all duration-500"
+          style={{
+            background: isActive ? '#f8fafc' : '#ffffff',
+            borderColor: isActive ? '#f1f5f9' : '#e2e8f0',
+            opacity: isActive ? 0.45 : 1,
+          }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-slate-400" style={{ fontFamily: FONTS.mono }}>
+            Requires Questions
+          </p>
+          <div className="space-y-2">
+            {passiveItems.map((item, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
+                <BarChart3 className="w-4 h-4 text-slate-300" strokeWidth={1.5} />
+                <span className="text-sm text-slate-400" style={{ fontFamily: FONTS.mono }}>{item}</span>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-400" style={{ fontFamily: FONTS.mono }}>Static</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs mt-4 italic text-slate-400" style={{ fontFamily: FONTS.body }}>You ask. It waits. You interpret. You decide.</p>
+        </div>
+
+        {/* Active */}
+        <div
+          className="rounded-2xl p-6 border transition-all duration-500"
+          style={{
+            background: isActive ? '#eff6ff' : '#f8fafc',
+            borderColor: isActive ? '#bfdbfe' : '#f1f5f9',
+            opacity: isActive ? 1 : 0.45,
+            boxShadow: isActive ? '0 0 40px -10px rgba(37,99,235,0.15)' : 'none',
+          }}
+        >
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-4 transition-colors"
+            style={{ fontFamily: FONTS.mono, color: isActive ? '#2563eb' : '#94a3b8' }}
+          >
+            Delivers Answers
+          </p>
+          <div className="space-y-2">
+            {activeItems.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all"
+                style={{
+                  background: isActive ? '#ffffff' : '#f1f5f9',
+                  borderColor: isActive ? '#e0edff' : '#f1f5f9',
+                }}
+              >
+                <div
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: isActive ? item.color : '#cbd5e1', boxShadow: isActive ? `0 0 6px ${item.color}` : 'none' }}
+                />
+                <span className="text-xs flex-1 text-slate-600" style={{ fontFamily: FONTS.mono }}>{item.text}</span>
+                <span
+                  className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+                  style={{ color: isActive ? item.color : '#94a3b8', background: isActive ? item.bg : '#f1f5f9', fontFamily: FONTS.mono }}
+                >
+                  {item.action}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p
+            className="text-xs mt-4 font-semibold transition-colors"
+            style={{ color: isActive ? '#2563eb' : '#94a3b8', fontFamily: FONTS.body }}
+          >
+            It watches. It decides. It pushes. You command.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ═══ INTEGRATION LOGOS MARQUEE ═══ */
+const LOGOS = ['HubSpot', 'Salesforce', 'Xero', 'Stripe', 'BambooHR', 'Slack', 'Microsoft 365', 'Google Workspace', 'Jira', 'Asana', 'Monday', 'Shopify', 'Zoom', 'Teams', 'QuickBooks'];
+
 const IntegrationMarquee = () => (
-  <div className="overflow-hidden py-2">
-    <div className="flex whitespace-nowrap" style={{ animation: 'marquee 30s linear infinite' }}>
-      {[...LOGOS, ...LOGOS].map((l, i) => (
-        <div key={i} className="inline-flex items-center gap-2 mx-6 px-5 py-3 rounded-xl transition-all hover:opacity-100 hover:shadow-md cursor-default flex-shrink-0"
-          style={{ opacity: 0.5, background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}>
-          <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold" style={{ background: `${AZ}10`, color: AZ }}>{l[0]}</div>
-          <span className="text-[12px] font-medium" style={{ fontFamily: HEAD, color: SL }}>{l}</span>
+  <div className="overflow-hidden">
+    <div
+      className="flex whitespace-nowrap"
+      style={{ animation: 'marquee 32s linear infinite' }}
+    >
+      {[...LOGOS, ...LOGOS].map((logo, i) => (
+        <div
+          key={i}
+          className="inline-flex items-center gap-2.5 mx-4 px-5 py-3 rounded-xl bg-white border border-slate-100 shadow-sm flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+        >
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold text-white"
+            style={{ background: '#2563eb' }}
+          >
+            {logo[0]}
+          </div>
+          <span className="text-sm font-medium text-slate-700" style={{ fontFamily: FONTS.body }}>{logo}</span>
         </div>
       ))}
     </div>
+    <style>{`@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
   </div>
 );
 
-/* ═══ OUTCOMES (WIIFM) ═══ */
+/* ═══ FEATURES / PILLARS ═══ */
+const PILLARS = [
+  {
+    icon: Brain,
+    title: 'The Boardroom',
+    description: 'Five specialised AI agents — Finance, Ops, Sales, Risk, Compliance — continuously debate your data and push you the most critical decisions.',
+    color: '#2563eb',
+    bg: '#dbeafe',
+    span: 'md:col-span-1',
+  },
+  {
+    icon: Activity,
+    title: 'Strategic Console',
+    description: 'Live pulse tracking for Cash Velocity, Staff Sentiment, and Compliance Risk. See what\'s happening across your entire business in one view.',
+    color: '#059669',
+    bg: '#d1fae5',
+    span: 'md:col-span-1',
+  },
+  {
+    icon: Mic,
+    title: 'SoundBoard',
+    description: 'Voice-to-strategy calibration. Speak your challenges, get structured action plans built around your business context — not generic templates.',
+    color: '#7c3aed',
+    bg: '#ede9fe',
+    span: 'md:col-span-1',
+  },
+  {
+    icon: Target,
+    title: 'BIQc Insights',
+    description: 'Radar-sweep detection of "Silent Killers" — forgotten invoices, SOP drift, compliance gaps, and cash flow anomalies — before they become crises.',
+    color: '#e11d48',
+    bg: '#ffe4e6',
+    span: 'md:col-span-1',
+  },
+];
+
+/* ═══ OUTCOMES / WIIFM ═══ */
 const OUTCOMES = [
-  { icon: Clock, m: '15+', u: 'hours/week reclaimed', t: 'Reclaim Your Time', d: 'Stop being the "Chief Monitor." BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.', e: "Andre's frameworks prioritise your attention so you never waste a minute on noise.", a: AZ },
-  { icon: DollarSign, m: '8–12%', u: 'profit bleed plugged', t: 'Plug Cashflow Leaks', d: 'Real-time detection of high CAC, zombie subscriptions, and ATO liability mismatches — before they hit your bank balance.', e: 'Automated financial "Red Lines" based on 3 years of proven SME advisory.', a: MINT },
-  { icon: Users, m: '97%', u: 'SOP compliance', t: 'Enforce Operational Strength', d: 'AI detects when staff skip steps or leads go cold, triggering intervention before the client leaves a bad review. 24/7.', e: 'The tool enforces the Strategy Squad standard across your entire team.', a: AZ },
+  {
+    icon: Clock,
+    metric: '15+',
+    unit: 'hours/week reclaimed',
+    title: 'Reclaim Your Time',
+    desc: 'Stop being the Chief Monitor. BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.',
+    mentorEdge: "Andre's frameworks prioritise your attention so you never waste a minute on noise.",
+    color: '#2563eb',
+  },
+  {
+    icon: DollarSign,
+    metric: '8–12%',
+    unit: 'profit bleed plugged',
+    title: 'Plug Cashflow Leaks',
+    desc: 'Real-time detection of high CAC, zombie subscriptions, and tax liability mismatches — before they hit your bank balance.',
+    mentorEdge: 'Automated financial Red Lines based on proven SME advisory methodology.',
+    color: '#059669',
+  },
+  {
+    icon: Users,
+    metric: '97%',
+    unit: 'SOP compliance',
+    title: 'Enforce Operational Strength',
+    desc: 'AI detects when staff skip steps or leads go cold, triggering intervention before the client leaves a bad review. 24/7.',
+    mentorEdge: 'The tool enforces the Strategy Squad standard across your entire team.',
+    color: '#7c3aed',
+  },
 ];
 
-/* ═══ PRICING ═══ */
+/* ═══ PRICING TIERS ═══ */
 const TIERS = [
-  { n: 'The Pulse', p: '149', tg: 'Sentinel monitoring', f: ['24/7 Sentinel Monitoring','Risk & anomaly alerts','Business DNA profile','Weekly intelligence briefing','Email & calendar integration','1 user seat'], ct: 'Deploy My Intelligence', hl: false },
-  { n: 'The Strategist', p: '1,950', tg: 'Advisory calibration', f: ['Everything in The Pulse','Full BIQc Intelligence Matrix','Monthly Advisory Calibration with Andre','CRM & accounting integration','OAC recommendations engine','Board-ready intelligence memos','Up to 5 user seats'], ct: 'Deploy My Intelligence', hl: true },
-  { n: 'The Sovereign', p: '5,500', tg: 'Full sentinel integration', f: ['Everything in The Strategist','Weekly Force Memo Execution','Daily mentoring sessions','Custom integration pipeline','Dedicated Strategy Squad advisor','Unlimited seats','Priority sovereign support'], ct: 'Contact Sales', hl: false },
+  {
+    name: 'The Pulse',
+    price: '149',
+    tagline: 'Sentinel monitoring',
+    features: ['24/7 Sentinel Monitoring', 'Risk & anomaly alerts', 'Business DNA profile', 'Weekly intelligence briefing', 'Email & calendar integration', '1 user seat'],
+    cta: 'Deploy My Intelligence',
+    highlight: false,
+  },
+  {
+    name: 'The Strategist',
+    price: '1,950',
+    tagline: 'Advisory calibration',
+    features: ['Everything in The Pulse', 'Full BIQc Intelligence Matrix', 'Monthly Advisory Calibration', 'CRM & accounting integration', 'OAC recommendations engine', 'Board-ready intelligence memos', 'Up to 5 user seats'],
+    cta: 'Deploy My Intelligence',
+    highlight: true,
+  },
+  {
+    name: 'The Sovereign',
+    price: '5,500',
+    tagline: 'Full sentinel integration',
+    features: ['Everything in The Strategist', 'Weekly Force Memo Execution', 'Daily mentoring sessions', 'Custom integration pipeline', 'Dedicated Strategy Squad advisor', 'Unlimited seats'],
+    cta: 'Contact Sales',
+    highlight: false,
+  },
 ];
 
-/* ═══ BADGE ═══ */
-const SovereignBadge = () => (
-  <div className="fixed bottom-6 right-6 z-40" data-testid="sovereign-badge">
-    <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white/90 select-none" style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.06)' }}>
-      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, #D4AF37, ${AZ})` }}>
-        <Shield className="w-3 h-3 text-white" strokeWidth={2} />
-      </div>
-      <span className="text-[11px] font-semibold tracking-wide" style={{ fontFamily: MONO, color: SL }}>Australian Sovereign Data</span>
-    </div>
-  </div>
-);
-
-/* ═══════════════════════ PAGE ═══════════════════════ */
+/* ═══════════════ MAIN PAGE ═══════════════ */
 const LandingIntelligent = () => {
   const nav = useNavigate();
-  return (
-    <div className="min-h-screen bg-white relative living-bg" style={{ color: SL }}>
-      <TitanStyles />
-      <SovereignBadge />
 
-      {/* NAV */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-white/80" style={{ backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-16 py-4 flex items-center justify-between">
+  return (
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: FONTS.body, color: '#1e293b' }}>
+
+      {/* ── NAVBAR ── */}
+      <nav className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/60">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: AZ }}><span className="font-black text-sm text-white" style={{ fontFamily: HEAD }}>B</span></div>
-            <span className="font-bold text-base tracking-tight" style={{ fontFamily: HEAD }}>BIQc</span>
-            <span className="text-[9px] tracking-[0.18em] uppercase hidden sm:inline" style={{ fontFamily: MONO, color: MU }}>Sovereign Intelligence</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
+              <span className="text-sm font-black text-white" style={{ fontFamily: FONTS.head }}>B</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-base text-slate-900 leading-none" style={{ fontFamily: FONTS.head }}>BIQc</span>
+              <span className="text-[9px] uppercase tracking-widest text-slate-400 hidden sm:block" style={{ fontFamily: FONTS.mono }}>Sovereign Intelligence</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => nav('/trust')} className="text-[13px] font-medium px-4 py-2 rounded-lg hover:bg-slate-50 hidden sm:inline-flex" style={{ color: MU, fontFamily: HEAD }} data-testid="nav-trust-link">Trust</button>
-            <button onClick={() => nav('/login-supabase')} className="text-[13px] font-medium px-4 py-2 rounded-lg hover:bg-slate-50" style={{ color: MU, fontFamily: HEAD }} data-testid="nav-login">Log In</button>
-            <button onClick={() => nav('/register-supabase')} className="text-[13px] font-semibold px-5 py-2.5 rounded-lg text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }} data-testid="nav-start-free">Start Free</button>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => nav('/trust')}
+              className="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 rounded-lg hover:bg-slate-100 transition-all hidden sm:flex"
+              data-testid="nav-trust-link"
+            >
+              Trust
+            </button>
+            <button
+              onClick={() => nav('/login-supabase')}
+              className="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 rounded-lg hover:bg-slate-100 transition-all"
+              data-testid="nav-login"
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => nav('/register-supabase')}
+              className="text-sm font-semibold text-white px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/25 transition-all hover:-translate-y-0.5 ml-1"
+              data-testid="nav-start-free"
+            >
+              Start Free
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section className="relative z-10 pt-32 sm:pt-40 pb-16 px-6 lg:px-16" data-testid="hero-section">
+      {/* ── HERO ── */}
+      <section className="pt-28 sm:pt-36 pb-20 px-6 lg:px-12 bg-white relative overflow-hidden" data-testid="hero-section">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-50 rounded-full blur-3xl opacity-60 -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-50 rounded-full blur-3xl opacity-40 pointer-events-none" />
+
         <div className="max-w-7xl mx-auto">
-          <motion.div initial="hidden" animate="visible" variants={stg} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div className="space-y-7">
-              <motion.div variants={up} className="space-y-5">
-                <p className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ fontFamily: MONO, color: AZ }}>Sovereign Business Intelligence</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center relative z-10">
+
+            {/* Left */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={stagger}
+              className="space-y-7"
+            >
+              <motion.div variants={fadeUp}>
+                <span
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-widest"
+                  style={{ fontFamily: FONTS.mono }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  Sovereign Business Intelligence
+                </span>
+              </motion.div>
+
+              <motion.div variants={fadeUp}>
                 <RotatingHeadline />
               </motion.div>
-              <motion.p variants={up} className="text-[1.15rem] leading-[1.75] max-w-lg" style={{ color: MU }}>
-                Don't wait for end-of-month surprises. BIQc is the always-on mentor that alerts you to risks and opportunities in real-time. <span className="font-medium" style={{ color: SL }}>See it coming. Fix it fast. Get back to business.</span>
+
+              <motion.p
+                variants={fadeUp}
+                className="text-lg lg:text-xl leading-relaxed text-slate-600 max-w-lg"
+                style={{ fontFamily: FONTS.body }}
+              >
+                Don't wait for end-of-month surprises. BIQc is the always-on intelligence layer that surfaces risks and opportunities in real time.{' '}
+                <strong className="text-slate-900 font-semibold">See it coming. Fix it fast. Get back to business.</strong>
               </motion.p>
-              <motion.div variants={up} className="flex flex-col sm:flex-row gap-3">
-                <button onClick={() => nav('/register-supabase')} className="px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5 text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 8px 24px rgba(0,122,255,0.3)' }} data-testid="hero-cta-primary">Start My Defense <ArrowRight className="w-4 h-4" /></button>
-                <button onClick={() => nav('/trust')} className="titan-card px-8 py-4 text-[13px] font-semibold rounded-xl flex items-center justify-center gap-2.5" style={{ ...titanGlass, color: SL, fontFamily: HEAD }} data-testid="hero-cta-mentor"><Shield className="w-4 h-4" style={{ color: AZ }} /> Meet Your Mentor</button>
+
+              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => nav('/register-supabase')}
+                  className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-0.5"
+                  style={{ fontFamily: FONTS.head }}
+                  data-testid="hero-cta-primary"
+                >
+                  Start My Defense
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => nav('/trust')}
+                  className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all"
+                  style={{ fontFamily: FONTS.head }}
+                  data-testid="hero-cta-secondary"
+                >
+                  <Shield className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
+                  Meet Your Mentor
+                </button>
               </motion.div>
-              <motion.div variants={up} className="flex items-center gap-3">
-                <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: MU }} strokeWidth={1.5} />
-                <span className="text-[0.875rem]" style={{ fontFamily: MONO, color: '#64748B' }}>100% Sovereign. 0% Blind Spots.</span>
+
+              <motion.div variants={fadeUp} className="flex items-center gap-2.5 text-slate-500">
+                <Lock className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="text-sm" style={{ fontFamily: FONTS.mono }}>
+                  100% Sovereign. 0% Blind Spots. Australian Owned.
+                </span>
               </motion.div>
-            </div>
-            <motion.div variants={up}>
-              <div className="rounded-2xl p-6 titan-card hero-glass-pulse" style={{ ...titanGlass }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full animate-pulse" style={{ background: MINT }} /><span className="text-[11px] font-semibold tracking-[0.15em] uppercase" style={{ fontFamily: MONO, color: MU }}>Live Sentinel Feed</span></div>
-                  <span className="text-[10px]" style={{ fontFamily: MONO, color: '#94A3B8' }}>AEST</span>
-                </div>
-                <LiveFeed />
-              </div>
             </motion.div>
-          </motion.div>
+
+            {/* Right — Live Intelligence Panel */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="relative"
+            >
+              <LiveIntelligencePanel />
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* SIGMA KILLER: PASSIVE vs ACTIVE */}
-      <section className="relative z-10 py-24 sm:py-32 px-6 lg:px-16" style={{ background: '#FAFCFE' }} data-testid="sigma-comparison">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stg} className="max-w-6xl mx-auto">
-          <motion.div variants={up} className="text-center mb-10">
-            <p className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-4" style={{ fontFamily: MONO, color: AZ }}>Intelligence Evolution</p>
-            <h2 className="text-[2rem] sm:text-[2.8rem] font-semibold leading-[1.08]" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>
-              Dashboards Report the Past.<br /><span style={{ color: AZ }}>Agents Command the Future.</span>
+      {/* ── TRUST LOGOS STRIP ── */}
+      <section className="py-12 bg-slate-50 border-y border-slate-200" data-testid="trust-strip">
+        <div className="max-w-7xl mx-auto px-6">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400 mb-6" style={{ fontFamily: FONTS.mono }}>
+            BIQc speaks 500 languages. Your business is one.
+          </p>
+          <IntegrationMarquee />
+        </div>
+      </section>
+
+      {/* ── COMPARISON: DASHBOARDS VS AGENTS ── */}
+      <section className="py-24 px-6 lg:px-12 bg-white" data-testid="sigma-comparison">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={stagger}
+          className="max-w-6xl mx-auto"
+        >
+          <motion.div variants={fadeUp} className="text-center mb-12">
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+              Intelligence Evolution
+            </span>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+              Dashboards report the past.
+              <br />
+              <span className="text-blue-600">Agents command the future.</span>
             </h2>
-            <p className="text-base mt-4 max-w-2xl mx-auto" style={{ color: MU }}>
-              Tools like Sigma Computing are brilliant for analysts who want to ask questions. BIQc is for leaders who want the answers pushed to them before the crisis hits.
+            <p className="text-base text-slate-500 mt-4 max-w-2xl mx-auto" style={{ fontFamily: FONTS.body }}>
+              BI tools answer questions you ask. BIQc pushes answers to you before the crisis hits.
             </p>
           </motion.div>
-          <motion.div variants={up}><SigmaKiller /></motion.div>
+
+          <motion.div variants={fadeUp}>
+            <ComparisonSection />
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* WE DON'T REPLACE YOUR DATA */}
-      <section className="relative z-10 py-20 px-6 lg:px-16" data-testid="integration-layer">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stg} className="max-w-4xl mx-auto">
-          <motion.div variants={up} className="rounded-2xl p-10 titan-card" style={{ ...titanGlass }}>
-            <div className="flex items-start gap-6">
-              <div className="w-1 self-stretch flex-shrink-0 rounded-full" style={{ background: `linear-gradient(${AZ}, ${MINT})` }} />
-              <div className="space-y-4">
-                <p className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ fontFamily: MONO, color: AZ }}>AI SME Mentoring Australia</p>
-                <h2 className="text-2xl sm:text-3xl font-semibold" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>We don't replace your data. We wake it up.</h2>
-                <p className="text-sm leading-[1.8]" style={{ color: MU }}>
-                  BIQc connects to your existing data layers. While your BI tools store the history, BIQc scans it 24/7 for Threats, Drift, and Anomalies — turning raw rows into executive strategy.
+      {/* ── FOUR PILLARS ── */}
+      <section className="py-24 px-6 lg:px-12 bg-slate-50" data-testid="four-pillars">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={stagger}
+          className="max-w-7xl mx-auto"
+        >
+          <motion.div variants={fadeUp} className="text-center mb-14">
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+              The Functional Arsenal
+            </span>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+              Four pillars of sovereign intelligence
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {PILLARS.map((pillar, i) => {
+              const Icon = pillar.icon;
+              return (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  className="bg-white border border-slate-200 rounded-3xl p-8 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 group"
+                >
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300"
+                    style={{ background: pillar.bg }}
+                  >
+                    <Icon className="w-6 h-6" style={{ color: pillar.color }} strokeWidth={1.8} />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-3" style={{ fontFamily: FONTS.head }}>
+                    {pillar.title}
+                  </h3>
+                  <p className="text-base text-slate-500 leading-relaxed" style={{ fontFamily: FONTS.body }}>
+                    {pillar.desc || pillar.description}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* "We don't replace your data" callout */}
+          <motion.div
+            variants={fadeUp}
+            className="mt-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 text-white"
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-white" strokeWidth={1.8} />
+                </div>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-blue-200 mb-1 block" style={{ fontFamily: FONTS.mono }}>
+                  AI SME Mentoring
+                </span>
+                <h3 className="text-xl font-semibold mb-2" style={{ fontFamily: FONTS.head }}>
+                  We don't replace your data. We wake it up.
+                </h3>
+                <p className="text-blue-100 text-sm leading-relaxed" style={{ fontFamily: FONTS.body }}>
+                  BIQc connects to your existing tools and scans them 24/7 for threats, drift, and anomalies — turning raw rows into executive strategy.
                 </p>
               </div>
             </div>
@@ -335,122 +664,281 @@ const LandingIntelligent = () => {
         </motion.div>
       </section>
 
-      {/* 4 PILLARS */}
-      <section className="relative z-10 py-24 sm:py-32 px-6 lg:px-16" style={{ background: '#FAFCFE' }} data-testid="four-pillars">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stg} className="max-w-7xl mx-auto">
-          <motion.div variants={up} className="text-center mb-14">
-            <p className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-4" style={{ fontFamily: MONO, color: AZ }}>The Functional Arsenal</p>
-            <h2 className="text-[2rem] sm:text-[2.6rem] font-semibold" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>Four pillars of sovereign intelligence</h2>
+      {/* ── WIIFM / OUTCOMES ── */}
+      <section className="py-24 px-6 lg:px-12 bg-white" data-testid="outcome-matrix">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={stagger}
+          className="max-w-7xl mx-auto"
+        >
+          <motion.div variants={fadeUp} className="text-center mb-14">
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+              Real-World Impact
+            </span>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+              What's in it for you?
+            </h2>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { title: 'The Boardroom', desc: '5 AI Agents — Finance, Ops, Sales, Risk, Compliance — debating your data in real time.', content: <BoardroomGrid /> },
-              { title: 'The Strategic Console', desc: 'Live pulse lines for Cash Velocity, Staff Sentiment, and Compliance Risk.', content: <div className="space-y-3"><div className="flex items-center gap-3"><span className="text-[10px] w-20" style={{ fontFamily: MONO, color: MU }}>Cash</span><HeartbeatLine color={MINT} /></div><div className="flex items-center gap-3"><span className="text-[10px] w-20" style={{ fontFamily: MONO, color: MU }}>Sentiment</span><HeartbeatLine color={AZ} /></div><div className="flex items-center gap-3"><span className="text-[10px] w-20" style={{ fontFamily: MONO, color: MU }}>Compliance</span><HeartbeatLine color="#F59E0B" /></div></div> },
-              { title: 'SoundBoard', desc: 'Voice-to-Strategy calibration. Speak your challenges, get structured action plans.', content: <div className="flex items-end justify-center gap-[3px] h-16">{Array.from({ length: 32 }).map((_, i) => <div key={i} className="w-[3px] rounded-full" style={{ background: `linear-gradient(${AZ}, ${MINT})`, height: `${8 + Math.abs(Math.sin(i * 0.4)) * 40}px`, opacity: 0.4 + Math.abs(Math.sin(i * 0.4)) * 0.6, animation: `heartbeat ${1 + Math.random() * 0.5}s ease ${i * 0.03}s infinite` }} />)}</div> },
-              { title: 'BIQc Insights', desc: 'Radar-sweep detection of "Silent Killers" — forgotten invoices, SOP drift, compliance gaps.', content: <RadarSweep /> },
-            ].map((p, i) => (
-              <motion.div key={i} variants={up} className="rounded-2xl p-8 titan-card" style={{ ...titanGlass }}>
-                <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>{p.title}</h3>
-                <p className="text-[13px] mb-6" style={{ color: MU }}>{p.desc}</p>
-                {p.content}
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
 
-      {/* INTEGRATION MARQUEE */}
-      <section className="relative z-10 py-16 px-6 lg:px-16" data-testid="integration-marquee">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-semibold" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>BIQc speaks 500 languages. <span style={{ color: AZ }}>Your business is one.</span></h2>
-          </div>
-          <IntegrationMarquee />
-        </div>
-      </section>
-
-      {/* OUTCOME MATRIX (WIIFM) — PRESERVED */}
-      <section className="relative z-10 py-24 sm:py-32 px-6 lg:px-16" style={{ background: '#FAFCFE' }} data-testid="outcome-matrix">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stg} className="max-w-7xl mx-auto">
-          <motion.div variants={up} className="text-center mb-14">
-            <p className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-4" style={{ fontFamily: MONO, color: AZ }}>Real-time Operational Sentinel</p>
-            <h2 className="text-[2rem] sm:text-[2.6rem] font-semibold" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>What's in it for you?</h2>
-          </motion.div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {OUTCOMES.map((o, i) => (
-              <motion.div key={i} variants={up} className="rounded-2xl p-8 flex flex-col titan-card" style={{ ...titanGlass }}>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${o.a}10` }}><o.icon className="w-5 h-5" style={{ color: o.a }} strokeWidth={1.5} /></div>
-                  <div><span className="text-2xl font-bold" style={{ fontFamily: HEAD, color: o.a }}>{o.m}</span><span className="text-[11px] ml-1.5" style={{ fontFamily: MONO, color: MU }}>{o.u}</span></div>
-                </div>
-                <h3 className="text-lg font-semibold mb-3" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>{o.t}</h3>
-                <p className="text-[13px] leading-relaxed mb-5 flex-1" style={{ color: MU }}>{o.d}</p>
-                <div className="pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <p className="text-[12px] leading-relaxed italic" style={{ color: '#94A3B8' }}><span className="font-semibold not-italic" style={{ color: AZ }}>Mentor Edge:</span> {o.e}</p>
-                </div>
-              </motion.div>
-            ))}
+            {OUTCOMES.map((outcome, i) => {
+              const Icon = outcome.icon;
+              return (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${outcome.color}12` }}>
+                      <Icon className="w-5 h-5" style={{ color: outcome.color }} strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <span className="text-2xl font-bold" style={{ fontFamily: FONTS.head, color: outcome.color }}>{outcome.metric}</span>
+                      <span className="text-xs ml-1.5 text-slate-500" style={{ fontFamily: FONTS.mono }}>{outcome.unit}</span>
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3" style={{ fontFamily: FONTS.head }}>
+                    {outcome.title}
+                  </h3>
+                  <p className="text-sm text-slate-500 leading-relaxed mb-5 flex-1" style={{ fontFamily: FONTS.body }}>
+                    {outcome.desc}
+                  </p>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <p className="text-xs text-slate-400 leading-relaxed" style={{ fontFamily: FONTS.body }}>
+                      <span className="font-semibold not-italic" style={{ color: outcome.color }}>Mentor Edge: </span>
+                      {outcome.mentorEdge}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       </section>
 
-      {/* PRICING — PRESERVED */}
-      <section className="relative z-10 py-24 sm:py-32 px-6 lg:px-16" data-testid="pricing-section">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stg} className="max-w-6xl mx-auto">
-          <motion.div variants={up} className="text-center mb-14">
-            <p className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-4" style={{ fontFamily: MONO, color: AZ }}>Strategic Pricing Ladder</p>
-            <h2 className="text-[2rem] sm:text-[2.6rem] font-semibold mb-3" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>Intelligence at every scale</h2>
-            <p className="text-sm" style={{ color: MU }}>All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
+      {/* ── PRICING ── */}
+      <section className="py-24 px-6 lg:px-12 bg-slate-50" data-testid="pricing-section">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={stagger}
+          className="max-w-6xl mx-auto"
+        >
+          <motion.div variants={fadeUp} className="text-center mb-14">
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+              Strategic Pricing Ladder
+            </span>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+              Intelligence at every scale
+            </h2>
+            <p className="text-sm text-slate-500 mt-3" style={{ fontFamily: FONTS.body }}>
+              All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.
+            </p>
           </motion.div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TIERS.map((t, i) => (
-              <motion.div key={i} variants={up} className="relative rounded-2xl p-[1px] h-full" style={{ background: t.hl ? `linear-gradient(160deg, ${AZ}, ${MINT})` : 'transparent' }}>
-                <div className="rounded-2xl p-8 h-full flex flex-col bg-white" style={{ boxShadow: t.hl ? '0 24px 48px -12px rgba(0,122,255,0.1)' : '0 24px 48px -12px rgba(0,0,0,0.05)', border: t.hl ? 'none' : '1px solid rgba(0,0,0,0.06)' }}>
-                  {t.hl && <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[9px] font-bold tracking-[0.18em] uppercase text-white" style={{ fontFamily: MONO, background: AZ }}>Recommended</span>}
-                  <p className="text-[9px] uppercase tracking-[0.2em] font-semibold mb-2" style={{ fontFamily: MONO, color: t.hl ? AZ : MU }}>{t.tg}</p>
-                  <h3 className="text-xl font-semibold" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>{t.n}</h3>
-                  <div className="flex items-baseline gap-0.5 mt-3 mb-6"><span className="text-4xl font-bold" style={{ fontFamily: HEAD }}>${t.p}</span><span className="text-xs" style={{ color: MU }}>/mo</span></div>
-                  <ul className="space-y-2.5 mb-8 flex-1">
-                    {t.f.map((f, j) => <li key={j} className="flex items-start gap-2.5 text-[13px]" style={{ color: MU }}><Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: t.hl ? AZ : '#CBD5E1' }} />{f}</li>)}
-                  </ul>
-                  <button onClick={() => nav(t.n === 'The Sovereign' ? '/trust' : '/register-supabase')} className="w-full py-3.5 rounded-xl text-[13px] font-semibold" style={{ background: t.hl ? AZ : 'transparent', color: t.hl ? 'white' : SL, border: t.hl ? 'none' : '1px solid rgba(0,0,0,0.1)', fontFamily: HEAD, boxShadow: t.hl ? '0 4px 14px rgba(0,122,255,0.2)' : 'none' }} data-testid={`pricing-cta-${i}`}>{t.ct}</button>
+            {TIERS.map((tier, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                className={`relative rounded-3xl p-8 flex flex-col transition-all duration-300 ${
+                  tier.highlight
+                    ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/30'
+                    : 'bg-white border border-slate-200 hover:shadow-xl hover:shadow-slate-200/60'
+                }`}
+              >
+                {tier.highlight && (
+                  <span
+                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white bg-blue-600 shadow-lg"
+                    style={{ fontFamily: FONTS.mono }}
+                  >
+                    Recommended
+                  </span>
+                )}
+
+                <p
+                  className="text-xs font-semibold uppercase tracking-widest mb-2"
+                  style={{ fontFamily: FONTS.mono, color: tier.highlight ? '#93c5fd' : '#64748b' }}
+                >
+                  {tier.tagline}
+                </p>
+                <h3 className="text-xl font-semibold mb-4" style={{ fontFamily: FONTS.head }}>
+                  {tier.name}
+                </h3>
+
+                <div className="flex items-baseline gap-1 mb-7">
+                  <span className="text-4xl font-bold" style={{ fontFamily: FONTS.head }}>${tier.price}</span>
+                  <span className={`text-sm ${tier.highlight ? 'text-slate-400' : 'text-slate-500'}`}>/mo</span>
                 </div>
+
+                <ul className="space-y-3 mb-8 flex-1">
+                  {tier.features.map((feature, j) => (
+                    <li key={j} className="flex items-start gap-2.5 text-sm">
+                      <Check
+                        className="w-4 h-4 mt-0.5 flex-shrink-0"
+                        style={{ color: tier.highlight ? '#60a5fa' : '#2563eb' }}
+                        strokeWidth={2}
+                      />
+                      <span style={{ color: tier.highlight ? '#cbd5e1' : '#64748b', fontFamily: FONTS.body }}>
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => nav(tier.name === 'The Sovereign' ? '/trust' : '/register-supabase')}
+                  className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-all ${
+                    tier.highlight
+                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
+                      : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+                  style={{ fontFamily: FONTS.head }}
+                  data-testid={`pricing-cta-${i}`}
+                >
+                  {tier.cta}
+                </button>
               </motion.div>
             ))}
           </div>
         </motion.div>
       </section>
 
-      {/* TRUST TEASER — PRESERVED */}
-      <section className="relative z-10 py-16 px-6 lg:px-16" style={{ background: '#FAFCFE' }}>
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 p-8 rounded-2xl titan-card" style={{ ...titanGlass }}>
-          <div className="flex items-center gap-5">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `${AZ}10` }}><Lock className="w-5 h-5" style={{ color: AZ }} /></div>
-            <div>
-              <h3 className="text-base font-semibold" style={{ fontFamily: HEAD }}>Australian Data Sovereignty</h3>
-              <p className="text-xs mt-0.5" style={{ color: MU }}>Sydney/Melbourne nodes. AES-256. Zero leakage.</p>
+      {/* ── AUSTRALIAN DATA SOVEREIGNTY ── */}
+      <section className="py-16 px-6 lg:px-12 bg-white" data-testid="sovereignty-section">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 sm:p-10 text-white">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-7 h-7 text-white" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: FONTS.head }}>
+                    Australian Data Sovereignty
+                  </h3>
+                  <p className="text-sm text-slate-300" style={{ fontFamily: FONTS.body }}>
+                    Sydney/Melbourne nodes. AES-256 encryption. Zero data leakage. 100% Australian owned and operated.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => nav('/trust')}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all flex-shrink-0"
+                style={{ fontFamily: FONTS.head }}
+                data-testid="trust-teaser-cta"
+              >
+                Enter The Vault
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
-          <button onClick={() => nav('/trust')} className="px-5 py-2.5 rounded-xl text-[12px] font-semibold flex items-center gap-2 text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 4px 14px rgba(0,122,255,0.2)' }} data-testid="trust-teaser-cta">Enter The Vault <ChevronRight className="w-3.5 h-3.5" /></button>
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="relative z-10 py-28 sm:py-36 px-6 lg:px-16">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stg} className="max-w-3xl mx-auto text-center space-y-8">
-          <motion.h2 variants={up} className="text-[2.2rem] sm:text-[3rem] font-semibold leading-[1.08]" style={{ fontFamily: HEAD, letterSpacing: '-0.02em' }}>Business clarity, <span style={{ color: AZ }}>mastered.</span></motion.h2>
-          <motion.p variants={up} className="text-base" style={{ color: MU }}>Connect your systems. Let BIQc build context. Act with confidence.</motion.p>
-          <motion.div variants={up}><button onClick={() => nav('/register-supabase')} className="px-10 py-4 rounded-xl text-[13px] font-semibold inline-flex items-center gap-2.5 text-white" style={{ background: AZ, fontFamily: HEAD, boxShadow: '0 8px 24px rgba(0,122,255,0.25)' }} data-testid="final-cta">Deploy My Intelligence <ArrowRight className="w-4 h-4" /></button></motion.div>
-          <motion.p variants={up} className="text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: MONO, color: '#94A3B8' }}>Free to start · No credit card · Australian owned and operated</motion.p>
+      {/* ── FINAL CTA ── */}
+      <section className="py-28 px-6 lg:px-12 bg-slate-50">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={stagger}
+          className="max-w-3xl mx-auto text-center"
+        >
+          <motion.div variants={fadeUp}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-6 block" style={{ fontFamily: FONTS.mono }}>
+              Ready to take control?
+            </span>
+          </motion.div>
+          <motion.h2
+            variants={fadeUp}
+            className="text-5xl sm:text-6xl font-bold text-slate-900 leading-[1.08] tracking-tight mb-6"
+            style={{ fontFamily: FONTS.head }}
+          >
+            Business clarity,{' '}
+            <span className="text-blue-600">mastered.</span>
+          </motion.h2>
+          <motion.p
+            variants={fadeUp}
+            className="text-lg text-slate-500 mb-8 max-w-xl mx-auto"
+            style={{ fontFamily: FONTS.body }}
+          >
+            Connect your systems. Let BIQc build context. Act with confidence.
+          </motion.p>
+          <motion.div variants={fadeUp}>
+            <button
+              onClick={() => nav('/register-supabase')}
+              className="inline-flex items-center gap-2.5 px-10 py-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-0.5"
+              style={{ fontFamily: FONTS.head }}
+              data-testid="final-cta"
+            >
+              Deploy My Intelligence
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </motion.div>
+          <motion.p
+            variants={fadeUp}
+            className="text-xs text-slate-400 mt-5 uppercase tracking-widest"
+            style={{ fontFamily: FONTS.mono }}
+          >
+            Free to start · No credit card · Australian owned and operated
+          </motion.p>
         </motion.div>
       </section>
 
-      <footer className="relative z-10 py-8 px-6 lg:px-16" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[11px]" style={{ color: '#94A3B8', fontFamily: MONO }}>&copy; 2026 BIQc — Business IQ Centre. Powered by The Strategy Squad.</p>
-          <button onClick={() => nav('/trust')} className="text-[11px] hover:text-slate-600" style={{ color: '#94A3B8', fontFamily: MONO }}>Trust & Security</button>
+      {/* ── LEGAL DISCLAIMER ── */}
+      <section className="py-6 px-6 bg-slate-800">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-slate-400 text-xs leading-relaxed" style={{ fontFamily: FONTS.body }}>
+            <strong className="text-slate-300">Important:</strong> The Strategy Squad provides general information and educational content only.
+            It does not constitute financial, legal, tax, or professional advice. You should seek independent professional advice
+            before making any business decisions. See our{' '}
+            <button onClick={() => nav('/terms')} className="text-blue-400 hover:underline">Terms and Conditions</button> for full details.
+          </p>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="py-10 px-6 lg:px-12 bg-slate-900 border-t border-slate-800">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+              <span className="text-sm font-black text-white" style={{ fontFamily: FONTS.head }}>B</span>
+            </div>
+            <span className="text-sm font-semibold text-white" style={{ fontFamily: FONTS.head }}>BIQc</span>
+            <span className="text-slate-600 hidden sm:inline">—</span>
+            <span className="text-xs text-slate-500 hidden sm:inline" style={{ fontFamily: FONTS.body }}>Business IQ Centre. Powered by The Strategy Squad.</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <button onClick={() => nav('/pricing')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: FONTS.body }}>Pricing</button>
+            <button onClick={() => nav('/trust')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: FONTS.body }}>Trust & Security</button>
+            <button onClick={() => nav('/terms')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: FONTS.body }}>Terms</button>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto pt-6 mt-6 border-t border-slate-800">
+          <p className="text-xs text-slate-600 text-center" style={{ fontFamily: FONTS.mono }}>
+            © 2026 The Strategy Squad Pty Ltd. All rights reserved. · General Information Only · Not Professional Advice
+          </p>
         </div>
       </footer>
+
+      {/* ── SOVEREIGN BADGE (floating) ── */}
+      <div className="fixed bottom-6 right-6 z-40" data-testid="sovereign-badge">
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white border border-slate-200 shadow-lg">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-blue-600 flex items-center justify-center">
+            <Shield className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />
+          </div>
+          <span className="text-xs font-semibold text-slate-700" style={{ fontFamily: FONTS.mono }}>
+            Australian Sovereign Data
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
