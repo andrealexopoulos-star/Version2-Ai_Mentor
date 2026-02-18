@@ -74,20 +74,21 @@ class BIQcPerformanceTest:
             
             if response.status_code == 200:
                 token_data = response.json()
-                if "access_token" in token_data:
-                    self.auth_token = token_data["access_token"]
+                # Supabase auth response has session.access_token
+                if token_data.get("session") and token_data["session"].get("access_token"):
+                    self.auth_token = token_data["session"]["access_token"]
                     self.session.headers.update({
                         "Authorization": f"Bearer {self.auth_token}"
                     })
                     self.log_result(
                         "LOGIN", login_url, duration, response.status_code, True,
-                        "Login successful, token obtained"
+                        "Login successful, Supabase token obtained"
                     )
                     return True
                 else:
                     self.log_result(
                         "LOGIN", login_url, duration, response.status_code, False,
-                        "No access_token in response"
+                        f"No access_token in session: {list(token_data.keys())}"
                     )
             else:
                 self.log_result(
