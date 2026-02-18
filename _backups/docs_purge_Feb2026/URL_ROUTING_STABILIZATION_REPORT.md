@@ -41,7 +41,7 @@ This is causing OAuth redirect failures because:
 
 **APP_BASE_URL (Single Source of Truth):**
 ```
-https://data-harmony-fix.preview.emergentagent.com
+https://intelligence-hub-12.preview.emergentagent.com
 ```
 
 **Propagation Map:**
@@ -90,13 +90,13 @@ Navigate to: **Supabase Dashboard** → **Authentication** → **URL Configurati
 
 **Site URL:**
 ```
-https://data-harmony-fix.preview.emergentagent.com
+https://intelligence-hub-12.preview.emergentagent.com
 ```
 
 **Redirect URLs:** (Add all)
 ```
-https://data-harmony-fix.preview.emergentagent.com/auth/callback
-https://data-harmony-fix.preview.emergentagent.com/**
+https://intelligence-hub-12.preview.emergentagent.com/auth/callback
+https://intelligence-hub-12.preview.emergentagent.com/**
 ```
 
 ---

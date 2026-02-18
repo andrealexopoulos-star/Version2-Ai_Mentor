@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://data-harmony-fix.preview.emergentagent.com
+**Test URL:** https://intelligence-hub-12.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://data-harmony-fix.preview.emergentagent.com/advisor
+- [ ] Navigate to https://intelligence-hub-12.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://data-harmony-fix.preview.emergentagent.com/
+**Landing:** https://intelligence-hub-12.preview.emergentagent.com/
 
-**Login:** https://data-harmony-fix.preview.emergentagent.com/login-supabase
+**Login:** https://intelligence-hub-12.preview.emergentagent.com/login-supabase
 
-**Register:** https://data-harmony-fix.preview.emergentagent.com/register-supabase
+**Register:** https://intelligence-hub-12.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://data-harmony-fix.preview.emergentagent.com/pricing
+**Pricing:** https://intelligence-hub-12.preview.emergentagent.com/pricing
 
-**Terms:** https://data-harmony-fix.preview.emergentagent.com/terms
+**Terms:** https://intelligence-hub-12.preview.emergentagent.com/terms
 
-**Advisor:** https://data-harmony-fix.preview.emergentagent.com/advisor
+**Advisor:** https://intelligence-hub-12.preview.emergentagent.com/advisor
 
 ---
 

@@ -7,7 +7,7 @@ import requests
 import os
 
 # Use the preview endpoint URL for testing
-BASE_URL = os.environ.get('preview_endpoint', 'https://data-harmony-fix.preview.emergentagent.com')
+BASE_URL = os.environ.get('preview_endpoint', 'https://intelligence-hub-12.preview.emergentagent.com')
 
 
 class TestBackendHealthAndCalibration:

@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://data-harmony-fix.preview.emergentagent.com
+https://intelligence-hub-12.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://data-harmony-fix.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://data-harmony-fix.preview.emergentagent.com
+https://intelligence-hub-12.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://data-harmony-fix.preview.emergentagent.com/**
-https://data-harmony-fix.preview.emergentagent.com/auth/callback
-https://data-harmony-fix.preview.emergentagent.com/auth-callback-supabase
-https://data-harmony-fix.preview.emergentagent.com/connect-email
-https://data-harmony-fix.preview.emergentagent.com/integrations
+https://intelligence-hub-12.preview.emergentagent.com/**
+https://intelligence-hub-12.preview.emergentagent.com/auth/callback
+https://intelligence-hub-12.preview.emergentagent.com/auth-callback-supabase
+https://intelligence-hub-12.preview.emergentagent.com/connect-email
+https://intelligence-hub-12.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://data-harmony-fix.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://data-harmony-fix.preview.emergentagent.com/api/auth/outlook/callback
+https://intelligence-hub-12.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://data-harmony-fix.preview.emergentagent.com
+https://intelligence-hub-12.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://data-harmony-fix.preview.emergentagent.com/api/auth/gmail/callback
+https://intelligence-hub-12.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

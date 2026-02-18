@@ -1,85 +1,133 @@
 <analysis>**original_problem_statement:**
-The user initiated a Galaxy-Scale overhaul, aiming to deconstruct a Python monolith, execute multiple frontend brand overhauls to a Steve Jobs Standard, and fix critical authentication/deployment bugs. This evolved into a Forensic Audit to resolve data flow issues where calibrated user data was not appearing in the UI, causing redundant onboarding surveys and empty insight panels. The user then provided a series of explicit directives to fix these data pipeline issues by unifying database schemas, implementing a Deep-Web Recon Edge Function for SWOT analysis, and adding new UI components to support this flow. Finally, the user reported two critical redirect loops: one for newly calibrated users and another for a specific test account (), which blocked all access to the main application.
+The user has driven a Galaxy-Scale overhaul, aiming to deconstruct a Python monolith and fix critical authentication and data persistence bugs. This evolved into building a full-fledged Cognitive Layer for the BIQc platform. The core mandate is to transform the application from a static tool into a dynamic, AI-powered strategic partner for business owners.
+
+This involved creating several AI-driven features powered by Supabase Edge Functions, including a Strategic Console, a Board Room for deep-dive analysis, and a BIQc Insights command surface. Key challenges have been persistent data saving issues due to database-level problems (RLS policies, broken triggers, column mismatches) and OAuth redirect URI errors in the production environment. The latest directives focused on implementing a Super Admin dashboard for user management (impersonation, suspension), improving performance with a snapshot-based architecture, and resolving all outstanding Supabase security warnings.
 
 PRODUCT REQUIREMENTS:
-1.  **Data Harmony:** Ensure data from calibration (Business DNA, Profile, Goals) seamlessly populates all intelligence modules (BIQc Insights, Strategic Console).
-2.  **Zero-Question Mandate:** Users who have completed calibration must immediately access the Strategic Console without being forced through a redundant 17-question survey.
-3.  **Edge-First Intelligence:** Heavy AI/scraping tasks must be offloaded to Supabase Edge Functions.
-4.  **Actionable Intelligence:** All generated insights must be interactive, allowing users to , , or .
-5.  **Attention Protection:** The system should only surface intelligence briefs when a meaningful change () is detected between crawls.
-6.  **Fix Redirect Loops:** Eliminate all scenarios where a user is stuck in a loop between calibration and the main advisor dashboard.
+1.  **Cognitive Intelligence:** The platform must interpret signals from all integrated sources (HubSpot, Xero, Outlook), detect inevitabilities, and provide AI-generated executive briefings, not just data dashboards.
+2.  **Data Sovereignty & Persistence:** All user inputs and AI-generated data must reliably save to the correct Supabase tables. All data persistence blockers (triggers, RLS, column mismatches) must be permanently resolved.
+3.  **Performance:** The UI must load instantly. All data-heavy pages should be powered by a pre-computed data snapshot to eliminate on-demand API call latency.
+4.  **Admin & Support Tooling:** A superadmin must have a dashboard to view user activity, impersonate users to debug issues, and suspend accounts.
+5.  **Seamless Integrations:** OAuth flows for all third-party integrations must work flawlessly on the custom production domain, without errors from the preview environment's domain.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application has undergone a massive refactoring and feature implementation phase.
--   **Backend:** The monolith is deconstructed, and  is modularized. A new health endpoint () and an in-memory caching layer for performance have been added. New API endpoints and background worker logic exist to support a Deep-Web Recon feature, which is triggered after email syncs.
--   **Frontend:** The Auth pages now have a Titan Glass theme. The calibration flow includes a Strategic Expansion drawer for social media input, and the main Strategic Console UI has been updated to display actionable intelligence toggles ().
--   **Data Flow & Bug Fixes:**
-    -   The critical redirect loop for new users has been fixed by ensuring the  is marked as  at four different logical checkpoints when calibration finishes.
-    -   The redirect loop for the  account has been fixed by updating all routing-related APIs (, , ) to prioritize checking the  table as the primary source of truth for completion status.
-    -   Code has been standardized to handle  vs  mapping inconsistencies.
--   **Edge Functions:** A new, comprehensive  Edge Function script has been created in  to handle SWOT analysis. The  function has been updated to prevent redirect loops.
+The application is now a sophisticated, multi-faceted platform with a snapshot-based architecture and a powerful AI cognitive layer.
+-   **Intelligence Engine:** A new  Edge Function acts as the system's core. It runs on login, fetches data from all 10+ sources (Supabase tables, Merge.dev for CRM/Financials, Firecrawl for market intel) in parallel, uses GPT-4o for AI synthesis, and saves the complete cognitive analysis to an  table.
+-   **Frontend:**
+    -   The main intelligence pages (, , ) have been built with distinct UIs (Dark Cinematic, Liquid Silver).
+    -   The frontend has been partially rewired to read data from the new  table for improved performance.
+    -   A full-featured Super Admin console exists at , providing user statistics, a searchable user list, and a detail panel.
+-   **Backend & Database:**
+    -   The root cause of all data persistence issues—a broken  trigger on the  table—has been identified and fixed.
+    -   Numerous database column name mismatches have been corrected throughout the backend code.
+    -   All key users have had their business data correctly seeded, resolving their calibration redirect loops.
+    -   Backend endpoints for the Admin Console have been created to provide user stats and handle user suspension. An endpoint to generate impersonation tokens is also complete.
+-   **Security & OAuth:**
+    -   The OAuth redirect URI issues have been solved by hardening the backend logic in  to correctly use the production domain.
+    -   Comprehensive SQL scripts have been provided to the user to fix dozens of Supabase security warnings related to RLS policies and function definitions.
 
 **Last working item**:
--   **Last item agent was working:** Fixing a critical redirect loop for the user . The issue was that the user's completion status was in the  table, which the application logic was not checking. The agent implemented a fix by modifying three core backend endpoints (, , ) to prioritize checking this table, thus resolving the loop.
--   **Status:** USER VERIFICATION PENDING
--   **Agent Testing Done:** Y
--   **Which testing method agent to use?** Frontend testing agent. The agent should perform a full end-to-end test by logging in as  to confirm that the user is no longer redirected to  and successfully lands on the  dashboard.
+-   **Last item agent was working:** Finalizing the Super Admin dashboard by adding Suspend and Impersonation features, and resolving all Supabase security warnings.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Frontend testing agent. The agent must test the full admin workflow:
+    1.  Log in as the superadmin ().
+    2.  Navigate to .
+    3.  Select a user and click Suspend. Verify the user is marked as suspended and can no longer log in. Click Unsuspend and verify access is restored.
+    4.  Select a user and click Impersonate. Verify the UI reloads and shows an impersonation banner, and all data displayed belongs to the impersonated user.
+    5.  Click Exit Impersonation and verify the session returns to the admin account.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: CRITICAL - RLS Policy Blocks Core Data Flow (P0)**
+-   **Issue 1: Finalize Supabase Security Fixes (P0)**
+-   **Issue 2: Implement Cost Tracking Per User (P2)**
 
 **Issues Detail:**
--   **Issue 1: CRITICAL - RLS Policy Blocks Core Data Flow (P0)**
-    -   **Attempted fixes:** The agent corrected a column name mismatch ( -> ) in the  logic. However, the agent's tests confirmed that the operation to seed the  table still fails.
+-   **Issue 1: Finalize Supabase Security Fixes (P0)**
+    -   **Attempted fixes:** The agent provided multiple iterations of SQL scripts to fix issues with  views and overly permissive RLS policies. The last script in message  was the most accurate, addressing an  vs  mismatch in the  table.
     -   **Next debug checklist:**
-        1.  The user MUST review and update the Row Level Security (RLS) policy on the  table in their Supabase project. The current policy is preventing the backend from inserting necessary user profile data.
-        2.  Provide the user with this exact SQL command to run in their Supabase SQL Editor to confirm the RLS issue and validate the fix: 
-    -   **Why fix this issue and what will be achieved with the fix?** This is the **single most critical blocker**. Without data in , no Deep-Web Recon can be performed, no  can be generated, and all intelligence UIs will remain empty. Fixing this unlocks the entire data-driven value proposition of the application.
-    -   **Status:** BLOCKED
+        1.  Ask the user to confirm if the final SQL script from message  was executed successfully and if all security warnings in the Supabase dashboard are now resolved.
+        2.  If any errors persist, ask the user for the exact error message and the specific table it failed on, then provide a targeted fix for that table's policy.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical security and data integrity issue. The current permissive policies allow any authenticated user to potentially access other users' data. Fixing this enforces proper data isolation.
+    -   **Status:** USER VERIFICATION PENDING
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Both. A full E2E test of the recon flow is needed.
-    -   **Blocked on other issue:** N/A (Blocked on user action in the Supabase console).
+    -   **Should Test frontend/backend/both after fix?** Backend (via API calls to ensure RLS is enforced).
+    -   **Blocked on other issue:** None.
+
+-   **Issue 2: Implement Cost Tracking Per User (P2)**
+    -   **Attempted fixes:** This was added to the backlog. No implementation has been attempted.
+    -   **Next debug checklist:**
+        1.  Design a schema for cost tracking (e.g., an  table with , , , ).
+        2.  Update all Edge Functions to log their API calls (OpenAI, Firecrawl, Merge) to this new table.
+        3.  Create a new backend endpoint for the admin console to fetch and aggregate this cost data per user.
+        4.  Add a Cost tab or column to the Admin Console UI.
+    -   **Why fix this issue and what will be achieved with the fix?** Provides critical business intelligence on which users are driving costs, allowing for better pricing strategy and abuse prevention.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Both.
+    -   **Blocked on other issue:** None.
 
 **In progress Task List**:
-None.
+-   **Task 1: Complete Frontend Impersonation Logic (P0)**
+-   **Task 2: Rewire All Frontend Pages to Use Snapshot Architecture (P1)**
+-   **Task 3: Implement 15-min Snapshot Auto-Refresh (P1)**
+
+**Task Detail:**
+-   **Task 1: Complete Frontend Impersonation Logic (P0)**
+    -   **Where to resume:** In . The backend endpoint  returns a JWT. The frontend needs to handle this token.
+    -   **What will be achieved with this?** A fully functional user impersonation feature for seamless admin support.
+    -   **Next Steps:**
+        1.  On receiving the impersonation token, store the original admin token in .
+        2.  Call  with the new impersonation token.
+        3.  Trigger a full application state refresh (e.g., ) to force all contexts and data fetches to use the new user's identity.
+        4.  The impersonation banner (already created) should have an Exit button that retrieves the original admin token from , calls  again, and redirects back to .
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** None.
+
+-   **Task 2: Rewire All Frontend Pages to Use Snapshot Architecture (P1)**
+    -   **Where to resume:** The agent started rewiring , , and . This needs to be completed and verified.
+    -   **What will be achieved with this?** Lightning-fast page loads across the entire platform, as all intelligence pages will read from a single, pre-computed data snapshot.
+    -   **Next Steps:**
+        1.  Create a shared hook, e.g., , that fetches data from the  table where .
+        2.  Refactor , , , and any other intelligence-displaying components to use this hook instead of their own separate API calls.
+        3.  The hook should handle loading/error states and provide the  data object to the components.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** None.
+
+-   **Task 3: Implement 15-min Snapshot Auto-Refresh (P1)**
+    -   **Where to resume:** This logic should be placed in a top-level component, likely .
+    -   **What will be achieved with this?** The user's data will feel live without requiring manual refreshes or incurring excessive API costs.
+    -   **Next Steps:**
+        1.  In the , use a  hook with a .
+        2.  The interval should run every 15 minutes (15 * 60 * 1000 ms).
+        3.  When it fires, it should call the  Edge Function.
+        4.  On a successful response, trigger a re-fetch of the snapshot data across the app (e.g., using a shared state management library or a custom event).
+    -   **Status:** NOT STARTED
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** Task 2 should be completed first.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **(P0) Deploy Edge Functions:** The user needs to deploy the newly created  script and the updated  script to their Supabase project. The application's core intelligence features will not work until this is done.
-    -   **(P1) E2E New User Calibration Test:** Perform a full end-to-end test with a brand new user account to verify the calibration loop fix works and they land correctly on the advisor dashboard.
-    -   **(P1) Implement Live Integrations:** Wire up the backend logic for the existing integration placeholders (e.g., Google Drive, Xero, Stripe, HubSpot).
+    -   **(P2) Deep Mobile Responsive Test:** Conduct a thorough review of all authenticated pages on a 375px wide viewport.
 -   **Future Tasks**:
-    -   **(P2) Refactor :** This 2,000+ line file is a major piece of technical debt and should be decomposed into smaller, more manageable modules.
-    -   **(P2) Deep Mobile Responsive Test:** Conduct a thorough review of all authenticated pages on a 375px wide viewport to ensure a polished mobile experience.
-    -   **(P3) Add Health Monitoring for Workers:** Implement health checks and error alerting for the background workers (, ).
+    -   **(P3) Refactor :** This large file remains a piece of technical debt and should be broken down further.
+    -   **(P3) Add Health Monitoring for Workers:** Implement health checks and error alerting for any background workers.
 
 **Completed work in this session**
--   **Critical Redirect Loop Fixes:**
-    -   Resolved the redirect loop for new users post-calibration by synchronizing the  across the stack.
-    -   Resolved the redirect loop for the  account by making the app prioritize the  table.
--   **Feature Implementation:**
-    -   Created the Deep-Web Recon  and a backend API to trigger it.
-    -   Integrated the recon trigger into the .
-    -   Added a Strategic Expansion drawer to the UI for collecting social media handles.
-    -   Added  toggles to the Strategic Console UI.
--   **UI & Refactoring:**
-    -   Redesigned Auth pages with the Titan Glass theme.
-    -   Refactored  into smaller modules and  into a custom hook.
-    -   Added an Audit Trail view to the PromptLab page.
--   **Bug Fixes & Performance:**
-    -   Fixed  crash on the Business Profile page.
-    -   Fixed OAuth flow failures by correcting environment variables and missing Python imports.
-    -   Added an in-memory caching layer to key backend endpoints.
+-   **Core Intelligence Architecture:** Architected and implemented a new  model to dramatically improve performance.
+-   **Edge Function Development:** Built, deployed, and tested a suite of 6 powerful Edge Functions (, , , , , ) that form the platform's cognitive layer, integrating OpenAI, Firecrawl, and Merge.dev.
+-   **Critical Data Persistence Fix:** Identified and resolved the root cause of all data saving failures by fixing a broken PostgreSQL trigger () on the  table.
+-   **Admin Console:** Built a comprehensive Super Admin dashboard from scratch at  with user stats, a searchable user list, and backend logic for user suspension and impersonation.
+-   **User Data Seeding:** Correctly seeded detailed business profiles for all key users, resolving their long-standing calibration redirect loops.
+-   **OAuth Redirect Fix:** Permanently fixed the Microsoft OAuth redirect URI error by implementing robust logic in the backend to handle custom domains correctly.
+-   **Frontend UI:** Implemented several new UIs, including the Liquid Silver theme for the Board Room and the full Admin Console layout.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Performance Lag on Data-Heavy Pages**
-    -   **Debug checklist**: The in-memory cache was a good first step, but a deeper analysis is needed. Profile the API calls on the Business DNA and Settings pages. Use  on slow Supabase queries to identify missing indexes or inefficient joins.
-    -   **Why to solve this issue and what will be achieved with this?**: Reduces user frustration and wait times on core application pages.
-    -   **Should Test frontend/backend/both after fix**: Both
-    -   **Is recurring issue?**: Y
+-   **Performance Lag on Data-Heavy Pages:** This is being actively addressed by the snapshot architecture. The task to complete the frontend rewiring will resolve this.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -88,87 +136,87 @@ None.
 
 
 **Key Technical Concepts**
--   **State Reconciliation:** Fixing redirect loops by writing resilient code that checks multiple tables (, ) to determine a user's true completion status.
--   **Edge-First Architecture:** Offloading heavy AI/scraping workloads from the Python backend to Supabase Edge Functions () for better performance and scalability.
--   **Idempotent Intelligence & Delta-Checking:** Designing the  function to be safely re-runnable and to only surface new information if it passes a , thus protecting the user's focus.
--   **Declarative Caching:** Using Python decorators () to add an in-memory caching layer for performance optimization with minimal code changes.
--   **Asynchronous Workers:** Utilizing  in background workers to make non-blocking API calls to external services like Edge Functions.
+-   **Snapshot Architecture:** A design pattern implemented to solve performance issues. A single, periodic Edge Function () pre-computes all necessary data and AI analysis, saving it to a database table. All frontend pages then read from this table for instantaneous loads, avoiding slow, on-demand API calls.
+-   **Parallel Fetching:** The snapshot Edge Function uses  to run over a dozen data-gathering calls (Supabase, Merge.dev, Firecrawl) simultaneously, reducing data fetch time from ~30 seconds to ~3-4 seconds.
+-   **Dynamic OAuth Redirects:** The backend now dynamically constructs OAuth  values based on the incoming request's origin, ensuring the correct custom domain is used in production environments, thus solving persistent  errors.
+-   **Database Trigger Debugging:** A critical  trigger on the  table was identified as the root cause of silent data persistence failures. The fix involved correcting an invalid  operator in the trigger's PL/pgSQL function.
 
 **key DB schema**
--   **strategic_console_state**:  - Tracks progress in the 17-question survey. Was the key to fixing the redirect loop for .
--   **intelligence_actions**:  - Stores user interactions (//) with generated insights.
--   **biqc_insights**:  - Stores the SWOT analysis and other data generated by the  function.
--   **business_profiles**:  - Central table for company data. **Data insertion is currently blocked by an RLS policy.**
+-   **intelligence_snapshots**:  - The core table for the new snapshot architecture.  can be  (the AI analysis) or  (the raw data).
+-   **users**:  - Modified to add  ( or ) and  (boolean) for the admin console.
+-   **business_profiles**: The central table for all business DNA. A broken trigger on this table was the source of major data loss issues, which is now fixed.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   , , : All were modified to prioritize  to fix redirect loops.
--   : The new Edge Function script that contains the core SWOT analysis logic. The user must deploy this file.
--   : Modified to trigger the recon function.
--   : The central file for frontend routing logic that was being affected by the backend state issues.
--    / : Updated with correct  and .
--   : Fixed with missing imports for the OAuth flow.
--   : Fixed a  crash.
+-   : The new core of the platform's architecture. All intelligence pages will depend on it.
+-   : The new frontend for the superadmin dashboard.
+-   : The new backend endpoints supporting the admin console.
+-   : Contains the critical fix for OAuth redirect URIs.
+-   User-provided SQL scripts to fix database security warnings. The agent provided corrected versions, most recently in message .
 
 **Areas that need refactoring**:
--    is over 2,000 lines and remains the largest piece of technical debt. It should be broken down into smaller, domain-specific routers (e.g., OAC logic, scoring, notifications).
+-   : Still a very large file that could be broken down into smaller, more focused modules.
+-   Frontend data fetching: Once all pages are moved to the snapshot model, old data-fetching hooks and logic can be removed and centralized.
 
 **key api endpoints**
--   : Critical endpoint for frontend routing decisions.
--   : Critical endpoint for frontend routing decisions.
--   : Critical endpoint for frontend routing decisions.
--   : Triggers the  Edge Function.
--   : Manages user interactions with intelligence briefs.
--   : The Supabase Edge Function endpoint for SWOT analysis.
+-   : The new primary endpoint for refreshing all user data and AI analysis.
+-   : Fetches user statistics for the admin console.
+-   : Fetches the list of all users for the admin console.
+-   : Suspends a user.
+-   : Unsuspends a user.
+-   : Generates a short-lived JWT for impersonating a user.
 
 **Critical Info for New Agent**
--   **RLS IS THE #1 BLOCKER:** The single most important task is to guide the user to fix the Row Level Security (RLS) policy on the  table. The user incorrectly believes this is already fixed. No data-driven intelligence features will work until the backend can  data into this table. Emphasize this blocker immediately.
--   **DO NOT CHANGE ROUTING LOGIC:** The complex redirect loops have been fixed with multi-layered checks. The logic now correctly prioritizes  over . Do not alter this logic unless a new, verified bug report requires it.
--   **EDGE FUNCTIONS MUST BE DEPLOYED:** The user must be instructed to deploy two Edge Function scripts to their Supabase project: the updated  and the new . The application will not function as designed until these are live.
+-   **Embrace the Snapshot Architecture:** Your primary goal is to complete the migration to the  model. All intelligence pages (, , ) must be refactored to read from the  table. Do not add new, slow, on-demand data fetching logic to these pages.
+-   **Impersonation is Half-Done:** The backend part of the impersonation feature is complete (it generates a token). Your first task should be to implement the frontend logic in  to use this token to switch the user context.
+-   **Database is the Source of Truth (and Pain):** The user has faced numerous silent failures due to database issues (triggers, RLS, column names). Always suspect a database-level problem if data isn't saving. The RLS security fixes are critical and need to be verified with the user.
+-   **The user is a ** and expects to be able to access the  page to manage users.
 
 **documents and test reports created in this job**
 -   
 -   
--    (Updated with latest completed work)
+-   
+-   
+-   
 -   
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks for a fix for the  function. (Completed)
-2.  **User:** Reports a new calibration loop for new signups. (Completed)
-3.  **Agent:** Identifies the root cause of the new user loop (missing ). (Completed)
-4.  **Agent:** Implements a 4-level fix for the new user loop across the backend and Edge Functions. (Completed)
-5.  **User:** Reports that  is still stuck in a redirect loop and provides a screenshot showing their  is . (Pending Verification)
-6.  **Agent:** Diagnoses that the app logic wasn't checking the  table. (Completed)
-7.  **Agent:** Implements the fix by updating the three main routing endpoints to prioritize checking . (Completed)
-8.  **User:** Marks several backlog items as no longer required. (Completed)
-9.  **Agent:** Acknowledges the updated backlog. (Completed)
-10. **Agent:** Finalizes the fix for the  redirect loop and prepares to summarize. (Completed)
+1.  **User:** Asks to build out the Board Room and Diagnosis pages. (Completed)
+2.  **User:** Asks for the Edge Function code in chat to deploy it. (Completed)
+3.  **User:** Reports the market analysis script has symbol errors. (Completed, provided cleaned-up version)
+4.  **User:** Reports the pages are taking too long to load. (In Progress - Snapshot architecture is the solution)
+5.  **User:** Asks to replace the existing  function and discusses refresh frequency. (Completed)
+6.  **User:** Asks to proceed with the recommended snapshot architecture. (Completed)
+7.  **User:** Asks to seed all users and check who is online. (Completed)
+8.  **User:** Asks to implement all next steps and requests a Super Admin dashboard for user activity and support access. (In Progress)
+9.  **User:** Requests Suspend and Impersonate functions for the admin dashboard. (In Progress)
+10. **User:** Shares screenshots of Supabase security warnings and asks how to fix them. (In Progress)
 
 **Project Health Check:**
 -   **Broken**:
-    -   **Core Intelligence Pipeline:** The entire data flow from user profile () to intelligence generation () is non-functional due to the RLS policy blocker.
+    -   The RLS policies for a dozen tables are insecure (), allowing any authenticated user to access other users' data until the provided SQL fix is successfully run.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
--   **Supabase**: Used for PostgreSQL database, Auth, and Edge Functions. Two functions are critical:  and .
--   **OpenAI GPT-4o**: Used via  in Python and directly via REST API in the Deno-based Edge Functions. Requires .
--   **Firecrawl**: Used within the  Edge Function for web scraping. Requires .
--   **Microsoft OAuth**: Used for Outlook email connection. Requires  and .
--   **Google OAuth**: Used for Gmail connection. Requires  and .
+-   **Supabase**: PostgreSQL DB, Auth, and 6 critical Edge Functions.
+-   **OpenAI GPT-4o**: Used via  in all intelligence-related Edge Functions. Requires .
+-   **Firecrawl**: Used for web scraping and market research in intelligence Edge Functions. Requires .
+-   **Merge.dev**: Used to connect to HubSpot (CRM) and Xero (Financials). Requires .
+-   **Microsoft OAuth & Google OAuth**: Used for email connection.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. Used twice, successfully identifying and fixing two missing import errors.
--   **Troubleshoot agent used after agent stuck in loop**: NO.
+-   **Testing agent used after significant changes**: YES, used multiple times to test E2E calibration flows.
+-   **Troubleshoot agent used after agent stuck in loop**: YES, used to diagnose OAuth redirect URI issues.
 -   **Test files created**: None.
--   **Known regressions**: None from this session's changes, but the core data flow remains broken due to the pre-existing RLS issue.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
--   **Primary test account:**  (should be fully functional).
--   **Redirect loop test account:**  (this user's redirect loop should now be fixed).
--   New user registration is functional and should be used to test the full calibration-to-advisor flow.
+-   **Superadmin:**  (password is known by user). This user should be used to test all Admin Console features.
+-   **Test User:**  (password: ). This user can be used for testing the impersonation feature.
 
 **What agent forgot to execute**
--   The agent correctly diagnosed the RLS policy as the root cause of the  insertion failure. However, after the user's last directive, the agent proceeded as if the RLS issue was resolved by the user, which was not the case. The next agent must re-establish this as the primary, unresolved blocker before proceeding with any other task.</analysis>
+-   The agent created the backend and UI for the  and  features but did not complete the final step of wiring the impersonation token into the frontend state management () to actually switch the user session.
+-   The agent designed the snapshot architecture but did not finish refactoring all the frontend pages to consume data from the  table, which is a critical step to realize the performance gains.</analysis>

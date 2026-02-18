@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://data-harmony-fix.preview.emergentagent.com/advisor
+## For: https://intelligence-hub-12.preview.emergentagent.com/advisor
 
 ---
 
