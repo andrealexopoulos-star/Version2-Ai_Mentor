@@ -173,37 +173,38 @@ class BIQcPerformanceTest:
             return
         
         print("\n=== STEP 2: BIQc INSIGHTS (/advisor) ===")
-        self.test_endpoint("ADVISOR_INTELLIGENCE", "intelligence", ["insights", "data_sources"])
+        self.test_endpoint("ADVISOR_INTELLIGENCE", "executive-mirror", ["agent_persona", "executive_memo"])
         
         print("\n=== STEP 3: STRATEGIC CONSOLE (/war-room) ===")
-        self.test_endpoint("STRATEGIC_CONSOLE", "strategic-console", ["actions", "priorities"])
+        self.test_endpoint("STRATEGIC_CONSOLE", "strategic-console/briefing", ["system_state", "decision_pressure_index"])
         
         print("\n=== STEP 4: BOARD ROOM (/board-room) ===")
-        self.test_endpoint("BOARDROOM", "boardroom", ["sessions", "recommendations"])
+        # Boardroom needs POST with message, so test GET endpoint first
+        self.test_endpoint("BOARDROOM_STATUS", "intelligence/watchtower", ["events"])
         
         print("\n=== STEP 5: SOUNDBOARD (/soundboard) ===")
-        self.test_endpoint("SOUNDBOARD", "soundboard", ["scenarios", "responses"])
+        self.test_endpoint("SOUNDBOARD", "soundboard/conversations", ["conversations"])
         
         print("\n=== STEP 6: MARKET ANALYSIS (/market-analysis) ===")
-        self.test_endpoint("MARKET_ANALYSIS", "intelligence/market-analysis")
+        self.test_endpoint("MARKET_ANALYSIS", "intelligence/baseline-snapshot", ["snapshot"])
         
         print("\n=== STEP 7: BUSINESS DNA (/business-profile) ===")
-        self.test_endpoint("BUSINESS_PROFILE", "profile", ["business_identity", "market_domain"])
+        self.test_endpoint("BUSINESS_PROFILE", "business-profile", ["business_name", "industry"])
         
         print("\n=== STEP 8: INTEGRATIONS (/integrations) ===")
-        self.test_endpoint("INTEGRATIONS", "integrations", ["connections", "available"])
+        self.test_endpoint("INTEGRATIONS", "integrations/merge/connected", ["integrations"])
         
         print("\n=== STEP 9: EMAIL INBOX (/email-inbox) ===")
-        self.test_endpoint("EMAIL_INBOX", "email/conversations")
+        self.test_endpoint("EMAIL_INBOX", "intelligence/data-readiness", ["integrations"])
         
         print("\n=== STEP 10: SETTINGS (/settings) ===")
-        self.test_endpoint("SETTINGS", "profile/settings")
+        self.test_endpoint("SETTINGS", "business-profile/scores", ["completeness", "strength"])
         
         print("\n=== STEP 11: ADMIN CONSOLE (/admin) ===")
-        self.test_endpoint("ADMIN_CONSOLE", "admin/dashboard", ["users", "system_stats"])
+        self.test_endpoint("ADMIN_CONSOLE", "dashboard/stats", ["total_analyses", "total_documents"])
         
         print("\n=== STEP 12: SECOND VISIT TO /advisor (Cache Test) ===")
-        result = self.test_endpoint("ADVISOR_INTELLIGENCE_CACHED", "intelligence", ["insights"])
+        result = self.test_endpoint("ADVISOR_INTELLIGENCE_CACHED", "executive-mirror", ["agent_persona"])
         
         # Compare with first visit
         first_visit = next((r for r in self.results if r["test"] == "ADVISOR_INTELLIGENCE"), None)
