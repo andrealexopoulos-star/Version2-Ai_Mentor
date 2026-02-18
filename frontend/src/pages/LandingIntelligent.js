@@ -542,14 +542,9 @@ const LandingIntelligent = () => {
             </motion.div>
 
             {/* Right — Live Intelligence Panel */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="relative"
-            >
+            <div className="relative">
               <LiveIntelligencePanel />
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
