@@ -1,280 +1,228 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
-import { useSWR } from '../hooks/useSWR';
-import { RefreshCw, ArrowRight, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../context/SupabaseAuthContext';
 import DashboardLayout from '../components/DashboardLayout';
-import { PageSkeleton } from '../components/ui/skeleton-loader';
+import { RefreshCw } from 'lucide-react';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-
+const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const HEAD = "'Inter Tight', 'Inter', -apple-system, sans-serif";
-const SERIF = "'Playfair Display', Georgia, serif";
+const MONO = "'JetBrains Mono', 'SF Mono', monospace";
 
-const STATUS_MAP = {
-  STRONG:    { label: 'Stable',   color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
-  ATTENTION: { label: 'Elevated', color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
-  URGENT:    { label: 'Critical', color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
+const STATE_CFG = {
+  STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
+  DRIFT:       { label: 'Drift',       color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
+  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#F97316' },
+  CRITICAL:    { label: 'Critical',    color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
+};
+
+const INTENSITY_CFG = {
+  forming:      { color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
+  accelerating: { color: '#F97316', bg: '#FFF7ED', border: '#FED7AA' },
+  imminent:     { color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
 };
 
 const AdvisorWatchtower = () => {
-  const { user } = useSupabaseAuth();
-  const navigate = useNavigate();
+  const [cognitive, setCognitive] = useState(null);
+  const [sources, setSources] = useState([]);
+  const [owner, setOwner] = useState('');
+  const [timeOfDay, setTimeOfDay] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: mirror, isLoading, mutate } = useSWR('/executive-mirror', {
-    revalidateOnFocus: true,
-    dedupingInterval: 10000,
-  });
-
-  const firstName = (() => {
-    const raw = user?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '';
-    if (!raw) return '';
-    if (raw.includes('@')) return raw.split('@')[0].split(/[._-]/)[0].replace(/^./, c => c.toUpperCase());
-    return raw.split(' ')[0];
-  })();
-
-  const greeting = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening';
-
-  const refresh = async () => {
-    setRefreshing(true);
+  const loadCognitive = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': process.env.REACT_APP_SUPABASE_ANON_KEY },
-          body: '{}',
-        });
-      }
-      mutate();
-    } catch {} finally { setRefreshing(false); }
+      if (!session) throw new Error('No session');
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+        body: '{}',
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      const data = await res.json();
+      setCognitive(data.cognitive);
+      setSources(data.data_sources || []);
+      setOwner(data.owner || '');
+      setTimeOfDay(data.time_of_day || '');
+    } catch (e) {
+      setError(e.message === '404' ? 'Deploy the biqc-insights-cognitive Edge Function.' : 'Cognitive system unavailable. Please retry.');
+    } finally { setLoading(false); }
   };
 
-  const calibrated = mirror?.calibration_status === 'complete';
-  const memo = mirror?.executive_memo;
-  const persona = mirror?.agent_persona;
-  const factLedger = mirror?.fact_ledger;
-  const score = mirror?.resolution_status;
-  const signals = memo?.signals || [];
-  const hasMemo = memo && (memo.primary_tension || memo.force_summary || signals.length > 0);
+  const refresh = async () => { setRefreshing(true); await loadCognitive(); setRefreshing(false); };
 
-  const resolveStatus = (s) => {
-    if (s === null || s === undefined) return null;
-    const n = typeof s === 'number' && s <= 1 ? s * 100 : s;
-    if (n >= 90) return 'STRONG';
-    if (n >= 50) return 'ATTENTION';
-    return 'URGENT';
-  };
-  const status = resolveStatus(score);
-  const st = STATUS_MAP[status] || null;
+  useEffect(() => { loadCognitive(); }, []);
+
+  const c = cognitive || {};
+  const st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
+  const inevitabilities = c.inevitabilities || [];
+  const pc = c.priority_compression || {};
+  const od = c.opportunity_decay || {};
 
   return (
     <DashboardLayout>
-      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#FAFAF8' }} data-testid="biqc-insights-page">
+      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#FAFAF8', fontFamily: HEAD }} data-testid="biqc-insights-page">
 
-        {/* ═══ INTELLIGENCE STATUS BAR ═══ */}
-        {st && !isLoading && (
-          <div className="sticky top-14 z-30" style={{ borderBottom: `1px solid ${st.border}`, background: st.bg }} data-testid="intelligence-status-bar">
-            <div className="max-w-3xl mx-auto px-6 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+        {/* Status Bar */}
+        {!loading && cognitive && (
+          <div className="sticky top-14 z-30" style={{ background: st.bg, borderBottom: `1px solid ${st.border}` }}>
+            <div className="max-w-4xl mx-auto px-6 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <span className="w-2 h-2 rounded-full" style={{ background: st.dot }} />
-                <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: st.color, fontFamily: HEAD, letterSpacing: '0.15em' }}>
-                  {st.label}
-                </span>
+                <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+                <span className="text-[11px]" style={{ color: st.color, opacity: 0.7 }}>{c.system_state_interpretation}</span>
               </div>
-              <span className="text-[11px] tracking-wide" style={{ color: st.color, opacity: 0.7, fontFamily: HEAD }}>
-                Intelligence {status === 'STRONG' ? 'nominal' : status === 'ATTENTION' ? 'monitoring' : 'active'}
-              </span>
+              <button onClick={refresh} disabled={refreshing} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg hover:bg-black/5" style={{ color: '#9CA3AF' }} data-testid="refresh-btn">
+                <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
             </div>
           </div>
         )}
 
-        {/* ═══ LOADING ═══ */}
-        {isLoading && (
-          <div className="max-w-3xl mx-auto px-6 py-12" data-testid="advisor-loading">
-            <PageSkeleton cards={2} lines={4} />
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mb-5" />
+            <p className="text-sm font-medium" style={{ color: '#374151' }}>Cognitive system initialising...</p>
+            <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>Perceiving signals across all connected systems</p>
           </div>
         )}
 
-        {!isLoading && (
-          <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
+        {error && !loading && (
+          <div className="max-w-3xl mx-auto px-6 py-16 text-center">
+            <p className="text-sm" style={{ color: '#D97706' }}>{error}</p>
+            <button onClick={loadCognitive} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #E5E7EB' }}>Retry</button>
+          </div>
+        )}
 
-            {/* ═══ EXECUTIVE GREETING ═══ */}
-            <div data-testid="executive-greeting">
-              <div className="flex items-start justify-between mb-1">
-                <h1 className="text-3xl sm:text-4xl leading-tight" style={{ fontFamily: SERIF, color: '#111', fontWeight: 600 }}>
-                  {firstName ? `Good ${greeting}, ${firstName}.` : 'Your Executive Brief'}
-                </h1>
-                <button onClick={refresh} disabled={refreshing} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all mt-2"
-                  style={{ color: '#9CA3AF', border: '1px solid #E5E5E0', fontFamily: HEAD }}
-                  data-testid="refresh-btn">
-                  <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </button>
-              </div>
-              {calibrated && persona?.summary && (
-                <p className="text-base leading-relaxed mt-4" style={{ color: '#555', maxWidth: 560, fontFamily: HEAD, fontWeight: 400 }}>
-                  {persona.summary}
-                </p>
-              )}
-            </div>
+        {cognitive && !loading && (
+          <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+
+            {/* Greeting */}
+            <h1 className="text-3xl font-semibold" style={{ color: '#111827', fontFamily: "'Playfair Display', Georgia, serif" }}>
+              Good {timeOfDay}, {owner}.
+            </h1>
+
+            {/* ═══ INEVITABILITIES ═══ */}
+            {inevitabilities.length > 0 && (
+              <section data-testid="inevitabilities">
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>
+                  Active Inevitabilities
+                </h2>
+                <div className="space-y-3">
+                  {inevitabilities.map((inv, i) => {
+                    const ic = INTENSITY_CFG[inv.intensity] || INTENSITY_CFG.forming;
+                    return (
+                      <div key={i} className="p-6 rounded-2xl" style={{ background: ic.bg, border: `1px solid ${ic.border}` }} data-testid={`inevitability-${i}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: ic.color, fontFamily: MONO }}>{inv.domain}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: ic.color, background: `${ic.color}10`, fontFamily: MONO }}>{inv.intensity}</span>
+                          </div>
+                          {inv.intervention_window && (
+                            <span className="text-[10px] font-medium" style={{ color: ic.color, fontFamily: MONO }}>Window: {inv.intervention_window}</span>
+                          )}
+                        </div>
+                        <p className="text-[15px] leading-relaxed font-medium" style={{ color: '#1F2937' }}>{inv.signal}</p>
+                        {inv.if_ignored && (
+                          <p className="text-sm mt-2 leading-relaxed" style={{ color: '#7F1D1D' }}>If ignored: {inv.if_ignored}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* ═══ PRIORITY COMPRESSION ═══ */}
-            {/* 1-3 compressed signals. Generous whitespace. Executive typography. */}
-            {calibrated && hasMemo && (
+            {(pc.primary_focus || pc.secondary_focus) && (
               <section data-testid="priority-compression">
-                <h2 className="text-[11px] font-semibold tracking-widest uppercase mb-6" style={{ color: '#9CA3AF', letterSpacing: '0.2em', fontFamily: HEAD }}>
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>
                   Priority Compression
                 </h2>
-
-                {memo.primary_tension && (
-                  <div className="rounded-2xl px-7 py-6 mb-4" style={{ background: '#FFF', border: '1px solid #E8E6E1' }} data-testid="primary-tension">
-                    <p className="text-lg leading-relaxed" style={{ color: '#111', fontFamily: HEAD, fontWeight: 500 }}>
-                      {memo.primary_tension}
-                    </p>
-                    {memo.force_summary && (
-                      <p className="text-sm leading-relaxed mt-3" style={{ color: '#777', fontFamily: HEAD }}>
-                        {memo.force_summary}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Compressed signal cards — max 3 */}
-                <div className="space-y-3">
-                  {signals.slice(0, 3).map((sig, i) => (
-                    <div key={i} className="rounded-2xl px-7 py-5" style={{ background: '#FFF', border: '1px solid #E8E6E1' }} data-testid={`signal-${i}`}>
-                      {sig.signal_class && (
-                        <span className="text-[10px] font-semibold tracking-widest uppercase mb-2 block" style={{ color: '#B0B0A8', letterSpacing: '0.15em', fontFamily: HEAD }}>
-                          {sig.signal_class === 'Revenue' ? 'Growth Momentum' : sig.signal_class === 'Capital' ? 'Financial Resilience' : sig.signal_class === 'Human' ? 'Leadership Cadence' : sig.signal_class}
-                        </span>
-                      )}
-                      {sig.tension && <p className="text-base leading-relaxed" style={{ color: '#222', fontFamily: HEAD }}>{sig.tension}</p>}
-                      {sig.cost_of_silence && (
-                        <p className="text-sm font-medium mt-2" style={{ color: '#991B1B', fontFamily: HEAD }}>{sig.cost_of_silence}</p>
-                      )}
-                      {sig.foresight && <p className="text-sm mt-2 leading-relaxed" style={{ color: '#888', fontFamily: HEAD }}>{sig.foresight}</p>}
+                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  {pc.primary_focus && (
+                    <div className="mb-4">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#111827', fontFamily: MONO }}>Primary</span>
+                      <p className="text-[15px] leading-relaxed font-medium" style={{ color: '#1F2937' }}>{pc.primary_focus}</p>
                     </div>
-                  ))}
+                  )}
+                  {pc.secondary_focus && (
+                    <div className="mb-4 pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#6B7280', fontFamily: MONO }}>Secondary</span>
+                      <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{pc.secondary_focus}</p>
+                    </div>
+                  )}
+                  {pc.noise_to_ignore && (
+                    <div className="pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#9CA3AF', fontFamily: MONO }}>Noise</span>
+                      <p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{pc.noise_to_ignore}</p>
+                    </div>
+                  )}
                 </div>
               </section>
             )}
 
             {/* ═══ OPPORTUNITY DECAY ═══ */}
-            {calibrated && (memo?.risk_quantification || memo?.cost_of_silence || memo?.drift_projection) && (
+            {od.decaying && (
               <section data-testid="opportunity-decay">
-                <h2 className="text-[11px] font-semibold tracking-widest uppercase mb-6" style={{ color: '#9CA3AF', letterSpacing: '0.2em', fontFamily: HEAD }}>
-                  Opportunity Monitor
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>
+                  Opportunity Decay
                 </h2>
-                <div className="space-y-3">
-                  {(memo.risk_quantification || memo.cost_of_silence) && (
-                    <div className="rounded-2xl px-7 py-5" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }} data-testid="cost-of-waiting">
-                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#991B1B', letterSpacing: '0.12em', fontFamily: HEAD }}>
-                        Cost of Waiting
-                      </span>
-                      <p className="text-base font-medium leading-relaxed" style={{ color: '#7F1D1D', fontFamily: HEAD }}>
-                        {memo.risk_quantification || memo.cost_of_silence}
-                      </p>
-                    </div>
-                  )}
-                  {memo.drift_projection && (
-                    <div className="rounded-2xl px-7 py-5" style={{ background: '#FFF', border: '1px solid #E8E6E1' }} data-testid="drift-projection">
-                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#B0B0A8', letterSpacing: '0.12em', fontFamily: HEAD }}>
-                        Drift Projection
-                      </span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#555', fontFamily: HEAD }}>{memo.drift_projection}</p>
-                    </div>
-                  )}
+                <div className="p-6 rounded-2xl" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                  <p className="text-[15px] leading-relaxed font-medium" style={{ color: '#7F1D1D' }}>{od.decaying}</p>
+                  {od.velocity && <p className="text-sm mt-2" style={{ color: '#991B1B', fontFamily: MONO }}>Decay rate: {od.velocity}</p>}
+                  {od.recovery_action && <p className="text-sm mt-2 leading-relaxed" style={{ color: '#374151' }}>{od.recovery_action}</p>}
                 </div>
               </section>
             )}
 
             {/* ═══ EXECUTIVE MEMO ═══ */}
-            {calibrated && memo?.strategic_direction && (
+            {c.executive_memo && (
               <section data-testid="executive-memo">
-                <h2 className="text-[11px] font-semibold tracking-widest uppercase mb-6" style={{ color: '#9CA3AF', letterSpacing: '0.2em', fontFamily: HEAD }}>
-                  Strategic Memo
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>
+                  Executive Memo
                 </h2>
-                <div className="rounded-2xl px-8 py-7" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-                  <p className="text-base leading-loose" style={{ color: '#14532D', fontFamily: HEAD, fontWeight: 450 }}>
-                    {memo.strategic_direction}
-                  </p>
+                <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#1F2937' }}>{c.executive_memo}</p>
                 </div>
               </section>
             )}
 
-            {/* ═══ PULSE BASELINES (from Fact Ledger) ═══ */}
-            {calibrated && factLedger && typeof factLedger === 'object' && Object.keys(factLedger).length > 0 && (
-              <section data-testid="pulse-baselines">
-                <h2 className="text-[11px] font-semibold tracking-widest uppercase mb-6" style={{ color: '#9CA3AF', letterSpacing: '0.2em', fontFamily: HEAD }}>
-                  Your Baselines
+            {/* ═══ STRATEGIC ALIGNMENT ═══ */}
+            {c.strategic_alignment_check && (
+              <section data-testid="alignment-check">
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>
+                  Strategic Alignment
                 </h2>
-                <div className="rounded-2xl px-7 py-5" style={{ background: '#FFF', border: '1px solid #E8E6E1' }}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4">
-                    {Object.entries(factLedger).slice(0, 12).map(([key, val]) => {
-                      const v = typeof val === 'object' ? (val.value || JSON.stringify(val)) : String(val);
-                      const label = key.replace(/\./g, ' \u203A ').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
-                      return (
-                        <div key={key} className="flex flex-col">
-                          <span className="text-[10px] uppercase tracking-widest" style={{ color: '#B0B0A8', letterSpacing: '0.1em', fontFamily: HEAD }}>{label}</span>
-                          <span className="text-sm font-medium mt-0.5" style={{ color: '#222', fontFamily: HEAD }}>{v}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{c.strategic_alignment_check}</p>
                 </div>
               </section>
             )}
 
-            {/* ═══ AWAITING BRIEF ═══ */}
-            {calibrated && !hasMemo && (
-              <div className="rounded-2xl px-8 py-12 text-center" style={{ background: '#FFF', border: '1px solid #E8E6E1' }} data-testid="awaiting-brief">
-                <p className="text-xl leading-relaxed mb-2" style={{ color: '#333', fontFamily: SERIF, fontWeight: 500 }}>
-                  {firstName ? `${firstName}, your` : 'Your'} executive brief is being prepared.
-                </p>
-                <p className="text-sm" style={{ color: '#999', fontFamily: HEAD }}>
-                  Connect an integration or click Refresh to generate your first intelligence brief.
-                </p>
-              </div>
+            {/* ═══ MARKET POSITION ═══ */}
+            {c.market_position && (
+              <section data-testid="market-position">
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>
+                  Market Position
+                </h2>
+                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{c.market_position}</p>
+                </div>
+              </section>
             )}
 
-            {/* ═══ NOT CALIBRATED ═══ */}
-            {!calibrated && (
-              <div className="rounded-2xl px-8 py-14 text-center" style={{ background: '#FFF', border: '1px solid #E8E6E1' }} data-testid="calibration-required">
-                <p className="text-2xl leading-relaxed mb-3" style={{ color: '#111', fontFamily: SERIF, fontWeight: 500 }}>
-                  Before I can advise, I need to understand how you operate.
-                </p>
-                <p className="text-sm mb-8" style={{ color: '#888', fontFamily: HEAD }}>
-                  Calibration takes 5 minutes. It shapes every insight I generate for you.
-                </p>
-                <button onClick={() => navigate('/calibration')}
-                  className="text-sm font-medium px-8 py-3 rounded-full transition-all hover:shadow-lg"
-                  style={{ color: '#FFF', background: '#111', fontFamily: HEAD }}
-                  data-testid="begin-calibration-btn">
-                  Begin Calibration <ArrowRight className="w-4 h-4 ml-1 inline" />
-                </button>
-              </div>
-            )}
-
-            {/* ═══ QUICK NAV ═══ */}
-            {calibrated && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="quick-nav">
-                {[
-                  { label: 'Strategic Console', path: '/war-room', desc: 'Full calibration' },
-                  { label: 'Business DNA', path: '/business-profile', desc: 'Your profile' },
-                  { label: 'Integrations', path: '/integrations', desc: 'Connect tools' },
-                ].map(item => (
-                  <button key={item.path} onClick={() => navigate(item.path)}
-                    className="flex items-center justify-between px-5 py-4 rounded-xl text-left transition-all hover:shadow-sm"
-                    style={{ background: '#FFF', border: '1px solid #E8E6E1', fontFamily: HEAD }}>
-                    <div>
-                      <span className="text-sm font-medium block" style={{ color: '#222' }}>{item.label}</span>
-                      <span className="text-[11px]" style={{ color: '#AAA' }}>{item.desc}</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4" style={{ color: '#CCC' }} />
-                  </button>
+            {/* ═══ DATA SOURCES ═══ */}
+            {sources.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: MONO }}>Perception sources:</span>
+                {sources.map((s, i) => (
+                  <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>
                 ))}
+                <span className="text-[10px]" style={{ color: '#D1D5DB', fontFamily: MONO }}>{c.data_freshness}</span>
               </div>
             )}
 
