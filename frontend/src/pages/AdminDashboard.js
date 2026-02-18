@@ -85,6 +85,36 @@ const AdminDashboard = () => {
     } catch (e) { alert('Failed: ' + e.message); }
   };
 
+  const suspendUser = async (userId) => {
+    if (!confirm('Suspend this user? They will be locked out.')) return;
+    try {
+      await apiClient.post(`/admin/users/${userId}/suspend`);
+      alert('User suspended');
+      loadData();
+      loadUserDetail(userId);
+    } catch (e) { alert('Failed: ' + e.message); }
+  };
+
+  const unsuspendUser = async (userId) => {
+    try {
+      await apiClient.post(`/admin/users/${userId}/unsuspend`);
+      alert('User unsuspended');
+      loadData();
+      loadUserDetail(userId);
+    } catch (e) { alert('Failed: ' + e.message); }
+  };
+
+  const [impersonating, setImpersonating] = useState(null);
+  const [impersonateData, setImpersonateData] = useState(null);
+
+  const impersonateUser = async (userId) => {
+    try {
+      const res = await apiClient.post(`/admin/users/${userId}/impersonate`);
+      setImpersonateData(res.data);
+      setImpersonating(userId);
+    } catch (e) { alert('Failed: ' + e.message); }
+  };
+
   const filteredUsers = users.filter(u =>
     !search || (u.email || '').toLowerCase().includes(search.toLowerCase()) || (u.full_name || '').toLowerCase().includes(search.toLowerCase())
   );
