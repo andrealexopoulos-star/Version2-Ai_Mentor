@@ -27,7 +27,7 @@ from supabase_intelligence_helpers import (
     get_email_intelligence_supabase, get_calendar_intelligence_supabase,
     get_chat_history_supabase, get_user_data_files_supabase,
     get_user_analyses_supabase, get_soundboard_conversation_supabase,
-    count_user_data_files_supabase,
+    count_user_data_files_supabase, get_priority_analysis_supabase,
 )
 from supabase_remaining_helpers import (
     get_oac_usage_supabase, update_oac_usage_supabase,
