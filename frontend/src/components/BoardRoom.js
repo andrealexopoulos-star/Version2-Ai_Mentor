@@ -1,377 +1,273 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../context/SupabaseAuthContext';
-import { getBackendUrl } from '../config/urls';
+import { useSWR } from '../hooks/useSWR';
+import { RefreshCw, ChevronRight, ArrowLeft } from 'lucide-react';
 
-const POSITION_COLORS = {
-  STABLE: { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)', text: '#4ade80', dot: '#22c55e' },
-  ELEVATED: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#fbbf24', dot: '#f59e0b' },
-  DETERIORATING: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', text: '#f87171', dot: '#ef4444' },
-  CRITICAL: { bg: 'rgba(220,38,38,0.12)', border: 'rgba(220,38,38,0.4)', text: '#fca5a5', dot: '#dc2626' },
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const HEAD = "'Inter Tight', 'Inter', -apple-system, sans-serif";
+const MONO = "'JetBrains Mono', 'SF Mono', monospace";
+
+const STATE_CONFIG = {
+  STABLE:      { label: 'STABLE',      color: '#22C55E', bg: 'rgba(34,197,94,0.04)' },
+  DRIFT:       { label: 'DRIFT',       color: '#F59E0B', bg: 'rgba(245,158,11,0.04)' },
+  COMPRESSION: { label: 'COMPRESSION', color: '#F97316', bg: 'rgba(249,115,22,0.04)' },
+  CRITICAL:    { label: 'CRITICAL',    color: '#EF4444', bg: 'rgba(239,68,68,0.05)' },
 };
 
-const DEFAULT_STYLE = { bg: 'rgba(100,100,100,0.05)', border: 'rgba(100,100,100,0.15)', text: '#9ca3af', dot: '#6b7280' };
-
-const getActionText = (item) => {
-  if (!item) return null;
-  if (item.window_days !== null && item.window_days !== undefined) return `${item.window_days}d decision window`;
-  if (item.pressure_level === 'CRITICAL') return 'Immediate action required';
-  if (item.pressure_level === 'HIGH') return 'Action required';
-  if (item.has_contradiction) return 'Alignment gap detected';
-  if (item.position === 'DETERIORATING') return 'Trend worsening';
-  if (item.position === 'ELEVATED') return 'Monitor';
-  return null;
-};
+const DIAGNOSIS_AREAS = [
+  { id: 'cash_flow_financial_risk', label: 'Cash Flow & Financial Risk', icon: '$', color: '#22C55E', desc: 'Liquidity, payment obligations, and runway.' },
+  { id: 'revenue_momentum', label: 'Revenue Momentum', icon: '\u2197', color: '#3B82F6', desc: 'Sales velocity, pipeline health, close rates.' },
+  { id: 'strategy_effectiveness', label: 'Strategy Effectiveness', icon: '\u25CE', color: '#8B5CF6', desc: 'Whether direction is producing expected outcomes.' },
+  { id: 'operations_delivery', label: 'Operations & Delivery', icon: '\u2699', color: '#F59E0B', desc: 'Execution quality, timelines, bottlenecks.' },
+  { id: 'people_retention_capacity', label: 'People & Capacity', icon: '\u2693', color: '#EC4899', desc: 'Team stability, workload, delegation gaps.' },
+  { id: 'customer_relationships', label: 'Customer Relationships', icon: '\u2764', color: '#EF4444', desc: 'Client satisfaction, retention signals, churn risk.' },
+  { id: 'risk_compliance', label: 'Risk & Compliance', icon: '\u26A0', color: '#F97316', desc: 'Regulatory, contractual, and legal exposure.' },
+  { id: 'systems_technology', label: 'Systems & Technology', icon: '\u2699', color: '#6366F1', desc: 'Technical debt, reliability, infrastructure limits.' },
+  { id: 'market_position', label: 'Market Position', icon: '\u2691', color: '#14B8A6', desc: 'Competitive landscape, positioning, opportunity decay.' },
+];
 
 const BoardRoom = () => {
-  const navigate = useNavigate();
-  const [positions, setPositions] = useState({});
-  const [escalations, setEscalations] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const [priorityCompression, setPriorityCompression] = useState(null);
-  const [expandedEvidence, setExpandedEvidence] = useState(new Set());
-  const [showCollapsed, setShowCollapsed] = useState(false);
-  const scrollRef = useRef(null);
-  const inputRef = useRef(null);
+  const [activeDiagnosis, setActiveDiagnosis] = useState(null);
+  const [diagnosisResult, setDiagnosisResult] = useState(null);
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [diagError, setDiagError] = useState(null);
 
-  const toggleEvidence = (domain) => {
-    setExpandedEvidence(prev => {
-      const next = new Set(prev);
-      if (next.has(domain)) next.delete(domain);
-      else next.add(domain);
-      return next;
-    });
-  };
+  const { data: briefing, isLoading: briefingLoading } = useSWR('/strategic-console/briefing', {
+    revalidateOnFocus: true, dedupingInterval: 15000,
+  });
 
-  // Session check
-  useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!cancelled) setSessionReady(!!session);
-    };
-    check();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (!cancelled) setSessionReady(!!s);
-    });
-    return () => { cancelled = true; subscription.unsubscribe(); };
-  }, []);
+  const st = STATE_CONFIG[briefing?.system_state] || STATE_CONFIG.STABLE;
+  const dpi = briefing?.decision_pressure_index || 0;
+  const narrative = briefing?.executive_narrative;
+  const forces = briefing?.compression || [];
+  const hasBrief = narrative && (narrative.primary_tension || typeof narrative === 'string');
 
-  // Load positions + auto-brief on mount
-  useEffect(() => {
-    if (!sessionReady || initialized) return;
-    const init = async () => {
-      await loadPositions();
-      await sendMessage('[BOARD_ROOM_INIT]', true);
-      setInitialized(true);
-    };
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionReady]);
-
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isProcessing]);
-
-  const loadPositions = async () => {
+  const runDiagnosis = async (area) => {
+    setActiveDiagnosis(area.id);
+    setDiagnosisResult(null);
+    setDiagError(null);
+    setDiagnosing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const res = await fetch(`${getBackendUrl()}/api/watchtower/positions`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
-      });
-      const ct = res.headers.get('content-type') || '';
-      if (res.ok && ct.includes('application/json')) {
-        const data = await res.json();
-        setPositions(data.positions || {});
-      }
-    } catch (e) {
-      console.error('[BoardRoom] Failed to load positions:', e);
-    }
-  };
-
-  const sendMessage = async (text, isHidden = false) => {
-    if (!text.trim()) return;
-    if (!isHidden) {
-      setMessages(prev => [...prev, { role: 'user', content: text }]);
-    }
-    setInput('');
-    setIsProcessing(true);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setIsProcessing(false);
-        return;
-      }
-
-      const res = await fetch(`${getBackendUrl()}/api/boardroom/respond`, {
+      if (!session) throw new Error('No session');
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/boardroom-diagnosis`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
+          'apikey': process.env.REACT_APP_SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({
-          message: text,
-          history: messages.filter(m => m.role !== 'system'),
-        }),
+        body: JSON.stringify({ focus_area: area.id }),
       });
-
-      const ct = res.headers.get('content-type') || '';
-      if (!res.ok || !ct.includes('application/json')) throw new Error('Board Room connection failed');
+      if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
-
-      if (data.response) {
-        setMessages(prev => [...prev, { role: 'authority', content: data.response }]);
-      }
-      if (data.escalations) {
-        setEscalations(data.escalations);
-      }
-      if (data.priority_compression) {
-        setPriorityCompression(data.priority_compression);
-      }
-
-      await loadPositions();
-    } catch (err) {
-      console.error('[BoardRoom] Error:', err);
-      setMessages(prev => [...prev, {
-        role: 'authority',
-        content: 'Intelligence link disrupted. Reconnect and retry.',
-      }]);
+      setDiagnosisResult(data);
+    } catch (e) {
+      setDiagError(`Diagnosis unavailable. ${e.message === '404' ? 'Edge Function not deployed yet.' : 'Please try again.'}`);
     } finally {
-      setIsProcessing(false);
-      inputRef.current?.focus();
+      setDiagnosing(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e?.preventDefault();
-    if (!isProcessing && input.trim()) sendMessage(input);
-  };
-
-  const handleEscalationAction = async (domain, action) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const res = await fetch(`${getBackendUrl()}/api/boardroom/escalation-action`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-        },
-        body: JSON.stringify({ domain, action }),
-      });
-      if (res.ok) {
-        setEscalations(prev => prev.map(e =>
-          e.domain === domain ? { ...e, last_user_action: action } : e
-        ));
-      }
-    } catch (err) {
-      console.error('[BoardRoom] Escalation action failed:', err);
-    }
-  };
-
-  const actionableEscalations = escalations.filter(e => e.last_user_action === 'unknown');
-  const pc = priorityCompression;
-  const positionEntries = Object.entries(positions);
-  const hasFallbackPositions = !pc && positionEntries.length > 0;
-
-  const renderDomainCard = (item, isPrimary) => {
-    if (!item) return null;
-    const s = POSITION_COLORS[item.position] || DEFAULT_STYLE;
-    const isExpanded = expandedEvidence.has(item.domain);
-    const action = getActionText(item);
-
-    return (
-      <div
-        key={item.domain}
-        data-testid={`domain-${isPrimary ? 'primary' : 'secondary'}-${item.domain}`}
-        style={{
-          padding: isPrimary ? '16px 20px' : '12px 16px',
-          borderLeft: `3px solid ${s.dot}`,
-          background: s.bg,
-          flex: isPrimary ? 'unset' : '1',
-          minWidth: isPrimary ? 'unset' : 0,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.dot, flexShrink: 0, boxShadow: `0 0 6px ${s.dot}` }} />
-            <span style={{ fontSize: isPrimary ? 12 : 10, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', fontWeight: 500 }}>{item.domain}</span>
-          </div>
-          <span style={{ fontSize: isPrimary ? 11 : 10, letterSpacing: '0.15em', color: s.text, fontWeight: 600 }}>{item.position}</span>
-        </div>
-        {action && (
-          <div style={{ marginTop: 8, fontSize: isPrimary ? 12 : 10, letterSpacing: '0.1em', color: s.text, opacity: 0.9 }}>{action}</div>
-        )}
-        {item.finding && (
-          <div style={{ marginTop: isPrimary ? 10 : 6 }}>
-            <button
-              data-testid={`evidence-toggle-${item.domain}`}
-              onClick={() => toggleEvidence(item.domain)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 9, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.25)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
-            >
-              <span style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block', fontSize: 8 }}>&#9654;</span>
-              EVIDENCE
-            </button>
-            {isExpanded && (
-              <div style={{ marginTop: 6, fontSize: isPrimary ? 12 : 11, lineHeight: 1.6, color: 'rgba(255,255,255,0.5)', paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
-                {item.finding}
-              </div>
-            )}
-          </div>
-        )}
-        {isPrimary && item.has_contradiction && (
-          <div style={{ marginTop: 8, fontSize: 10, letterSpacing: '0.1em', color: '#fbbf24', opacity: 0.8 }}>
-            {item.contradiction_count} contradiction{item.contradiction_count > 1 ? 's' : ''} detected
-          </div>
-        )}
-      </div>
-    );
+  const closeDiagnosis = () => {
+    setActiveDiagnosis(null);
+    setDiagnosisResult(null);
+    setDiagError(null);
   };
 
   return (
-    <div data-testid="board-room" style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#050505', color: '#e5e7eb', fontFamily: "'Inter', 'SF Pro Display', -apple-system, sans-serif", overflow: 'hidden' }}>
-      <div style={{ pointerEvents: 'none', position: 'absolute', inset: 0, zIndex: 0, opacity: 0.03, backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
+    <div className="flex flex-col h-full" style={{ background: '#09090B', color: '#E4E4E7', fontFamily: HEAD }}>
 
-      {/* HEADER */}
-      <header style={{ position: 'relative', zIndex: 5, padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#050505', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 11, letterSpacing: '0.35em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>BIQC</div>
-          <div style={{ fontSize: 15, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: 2 }}>BOARD ROOM</div>
+      {/* ═══ HEADER ═══ */}
+      <header className="flex items-center justify-between px-5 md:px-8 py-3 shrink-0" style={{ borderBottom: '1px solid #1A1A1E' }}>
+        <div className="flex items-center gap-4">
+          <a href="/advisor" className="text-xs px-2.5 py-1 rounded" style={{ color: '#555', border: '1px solid #222', fontFamily: MONO, textDecoration: 'none' }} data-testid="boardroom-home">
+            ← Dashboard
+          </a>
+          <span className="text-sm font-medium tracking-wide" style={{ color: '#A1A1AA' }}>Board Room</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full" style={{ background: st.color, boxShadow: `0 0 8px ${st.color}40` }} />
+            <span className="text-[10px] font-semibold tracking-widest" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.2)' }}>{new Date().toISOString().slice(0, 10)}</span>
-          <button data-testid="boardroom-home" onClick={() => navigate('/advisor')} style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 12px', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'rgba(255,255,255,0.6)'} onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.3)'}>HOME</button>
-        </div>
+        <span className="text-[10px]" style={{ color: '#444', fontFamily: MONO }}>{new Date().toISOString().slice(0, 10)}</span>
       </header>
 
-      {/* PRIORITY COMPRESSION VIEW */}
-      {pc && (
-        <div data-testid="priority-compression" style={{ position: 'relative', zIndex: 5, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-          {pc.primary && (
-            <div data-testid="primary-focus-section" style={{ borderBottom: pc.secondary?.length ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-              <div style={{ fontSize: 9, letterSpacing: '0.3em', color: 'rgba(255,255,255,0.2)', padding: '10px 20px 0', textTransform: 'uppercase' }}>PRIMARY FOCUS</div>
-              {renderDomainCard(pc.primary, true)}
-            </div>
-          )}
-          {pc.secondary?.length > 0 && (
-            <div data-testid="secondary-section" style={{ display: 'flex', gap: 1, borderBottom: pc.collapsed?.length ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-              {pc.secondary.map(item => renderDomainCard(item, false))}
-            </div>
-          )}
-          {pc.collapsed?.length > 0 && (
-            <div data-testid="collapsed-section" style={{ padding: '0 20px' }}>
-              <button data-testid="show-collapsed-btn" onClick={() => setShowCollapsed(!showCollapsed)} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', fontFamily: 'inherit', fontSize: 9, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.2)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ transition: 'transform 0.2s', transform: showCollapsed ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block', fontSize: 8 }}>&#9654;</span>
-                {pc.collapsed.length} MORE DOMAIN{pc.collapsed.length > 1 ? 'S' : ''}
-              </button>
-              {showCollapsed && (
-                <div style={{ display: 'flex', gap: 1, paddingBottom: 6 }}>
-                  {pc.collapsed.map(item => renderDomainCard(item, false))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* FALLBACK POSITION STRIP (before compression data arrives) */}
-      {hasFallbackPositions && (
-        <div data-testid="position-strip" style={{ position: 'relative', zIndex: 5, display: 'flex', gap: 1, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0, overflowX: 'auto' }}>
-          {positionEntries.map(([domain, data]) => {
-            const st = POSITION_COLORS[data.position] || DEFAULT_STYLE;
-            return (
-              <div key={domain} data-testid={`position-${domain}`} style={{ padding: '10px 14px', border: `1px solid ${st.border}`, background: st.bg, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: st.dot, flexShrink: 0, boxShadow: `0 0 6px ${st.dot}` }} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>{domain}</div>
-                  <div style={{ fontSize: 12, letterSpacing: '0.15em', color: st.text, fontWeight: 600 }}>{data.position}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* BRIEFING AREA */}
-      <div style={{ position: 'relative', zIndex: 5, flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-        {!sessionReady && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, letterSpacing: '0.2em' }}>ESTABLISHING AUTHORITY LINK...</span>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div key={i} style={{ maxWidth: '90%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-            {msg.role === 'authority' ? (
-              <div data-testid={`authority-message-${i}`}>
-                <div style={{ fontSize: 9, letterSpacing: '0.25em', marginBottom: 6, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase' }}>BOARD ROOM</div>
-                <div style={{ fontSize: 14, lineHeight: 1.8, color: 'rgba(255,255,255,0.85)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '2px solid rgba(255,255,255,0.1)', paddingLeft: 16 }}>{msg.content}</div>
-              </div>
-            ) : (
-              <div data-testid={`user-message-${i}`}>
-                <div style={{ fontSize: 9, letterSpacing: '0.25em', marginBottom: 6, color: 'rgba(255,255,255,0.15)', textTransform: 'uppercase', textAlign: 'right' }}>OPERATOR</div>
-                <div style={{ fontSize: 13, lineHeight: 1.6, color: 'rgba(255,255,255,0.5)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderRight: '2px solid rgba(255,255,255,0.06)', paddingRight: 16, textAlign: 'right' }}>{msg.content}</div>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {isProcessing && (
-          <div style={{ maxWidth: '90%', alignSelf: 'flex-start' }}>
-            <div style={{ fontSize: 9, letterSpacing: '0.25em', marginBottom: 6, color: 'rgba(255,255,255,0.2)' }}>BOARD ROOM</div>
-            <div style={{ borderLeft: '2px solid rgba(255,255,255,0.1)', paddingLeft: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', animation: 'brDot 1.4s infinite' }} />
-              <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', animation: 'brDot 1.4s infinite 0.2s' }} />
-              <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', animation: 'brDot 1.4s infinite 0.4s' }} />
-              <span style={{ marginLeft: 10, color: 'rgba(255,255,255,0.15)', fontSize: 10, letterSpacing: '0.2em' }}>EVALUATING</span>
-            </div>
-          </div>
-        )}
-
-        <div ref={scrollRef} />
+      {/* ═══ PRESSURE BAR ═══ */}
+      <div className="h-[3px] shrink-0" style={{ background: '#111' }}>
+        <div className="h-full transition-all duration-1000" style={{ width: `${dpi}%`, background: st.color }} />
       </div>
 
-      {/* ESCALATION ACTIONS */}
-      {actionableEscalations.length > 0 && (
-        <div data-testid="escalation-actions" style={{ position: 'relative', zIndex: 5, padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.04)', background: '#050505', flexShrink: 0 }}>
-          {actionableEscalations.map(esc => (
-            <div key={esc.domain} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
-              <span style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>{esc.domain} — {esc.position}</span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button data-testid={`acknowledge-${esc.domain}`} onClick={() => handleEscalationAction(esc.domain, 'acknowledged')} style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)', padding: '4px 14px', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }} onMouseEnter={e => { e.target.style.borderColor = 'rgba(255,255,255,0.3)'; e.target.style.color = 'rgba(255,255,255,0.8)'; }} onMouseLeave={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.color = 'rgba(255,255,255,0.5)'; }}>ACKNOWLEDGE</button>
-                <button data-testid={`defer-${esc.domain}`} onClick={() => handleEscalationAction(esc.domain, 'deferred')} style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 14px', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }} onMouseEnter={e => { e.target.style.borderColor = 'rgba(255,255,255,0.2)'; e.target.style.color = 'rgba(255,255,255,0.6)'; }} onMouseLeave={e => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; e.target.style.color = 'rgba(255,255,255,0.3)'; }}>DEFER</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 space-y-10">
 
-      {/* INPUT */}
-      <form onSubmit={handleSubmit} style={{ position: 'relative', zIndex: 5, padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', background: '#050505', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,0.08)', padding: '8px 14px', background: 'rgba(255,255,255,0.02)' }}>
-          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, userSelect: 'none' }}>{'>'}</span>
-          <input ref={inputRef} data-testid="boardroom-input" type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="" disabled={isProcessing || !sessionReady} style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.6)', fontFamily: 'inherit', fontSize: 13, letterSpacing: '0.03em', opacity: isProcessing ? 0.3 : 1 }} />
-          <button type="submit" data-testid="boardroom-submit" disabled={isProcessing || !input.trim() || !sessionReady} style={{ padding: '5px 16px', fontFamily: 'inherit', fontSize: 10, letterSpacing: '0.2em', fontWeight: 500, color: '#050505', background: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', opacity: (isProcessing || !input.trim()) ? 0.2 : 1, transition: 'opacity 0.2s' }}>SUBMIT</button>
-        </div>
-      </form>
+          {/* ═══ EXECUTIVE BRIEFING (Top Zone) ═══ */}
+          {!activeDiagnosis && (
+            <>
+              <section data-testid="executive-zone">
+                {briefingLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-5 h-5 border border-zinc-700 border-t-zinc-400 rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Narrative */}
+                    {hasBrief && (
+                      <div className="p-6 rounded-2xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
+                        <p className="text-base leading-relaxed" style={{ color: '#D4D4D8' }}>
+                          {typeof narrative === 'string' ? narrative : narrative.primary_tension}
+                        </p>
+                        {narrative.force_summary && (
+                          <p className="text-sm mt-3 leading-relaxed" style={{ color: '#71717A' }}>{narrative.force_summary}</p>
+                        )}
+                        {narrative.strategic_direction && (
+                          <div className="mt-4 pt-4" style={{ borderTop: '1px solid #1A1A1E' }}>
+                            <span className="text-[10px] tracking-widest uppercase" style={{ color: '#22C55E', fontFamily: MONO }}>Direction</span>
+                            <p className="text-sm mt-1 leading-relaxed" style={{ color: '#A1A1AA' }}>{narrative.strategic_direction}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!hasBrief && (
+                      <div className="p-6 rounded-2xl text-center" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
+                        <p className="text-sm" style={{ color: '#71717A' }}>Executive briefing will appear here once intelligence is generated.</p>
+                      </div>
+                    )}
 
-      <style>{`
-        @keyframes brDot {
-          0%, 80%, 100% { opacity: 0.15; }
-          40% { opacity: 0.8; }
-        }
-      `}</style>
+                    {/* Forces */}
+                    {forces.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {forces.map((f, i) => (
+                          <div key={i} className="p-4 rounded-xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
+                            <span className="text-xs font-medium" style={{ color: '#D4D4D8' }}>{f.domain}</span>
+                            {f.detail && <p className="text-[11px] mt-1" style={{ color: '#71717A', fontFamily: MONO }}>{f.detail}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              {/* ═══ DIAGNOSIS CARDS (Bottom Zone) ═══ */}
+              <section data-testid="diagnosis-zone">
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: '#555', fontFamily: MONO }}>
+                  Diagnosis — Select an area to analyse
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {DIAGNOSIS_AREAS.map((area) => (
+                    <button
+                      key={area.id}
+                      onClick={() => runDiagnosis(area)}
+                      className="text-left p-5 rounded-xl transition-all hover:scale-[1.01]"
+                      style={{ background: '#111113', border: '1px solid #1A1A1E', cursor: 'pointer' }}
+                      data-testid={`diagnosis-${area.id}`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: `${area.color}15`, color: area.color }}>{area.icon}</span>
+                        <span className="text-sm font-medium" style={{ color: '#D4D4D8' }}>{area.label}</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed" style={{ color: '#71717A' }}>{area.desc}</p>
+                      <div className="flex items-center gap-1 mt-3">
+                        <span className="text-[10px]" style={{ color: '#555', fontFamily: MONO }}>Run diagnosis</span>
+                        <ChevronRight className="w-3 h-3" style={{ color: '#555' }} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* ═══ DIAGNOSIS RESULT VIEW ═══ */}
+          {activeDiagnosis && (
+            <section data-testid="diagnosis-result">
+              <button onClick={closeDiagnosis} className="flex items-center gap-2 text-xs mb-6 px-3 py-1.5 rounded" style={{ color: '#888', border: '1px solid #222', fontFamily: MONO }}>
+                <ArrowLeft className="w-3 h-3" /> Back to Board Room
+              </button>
+
+              {diagnosing && (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="w-6 h-6 border border-zinc-700 border-t-zinc-400 rounded-full animate-spin mb-4" />
+                  <p className="text-sm" style={{ color: '#71717A' }}>
+                    Analysing {DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis)?.label}...
+                  </p>
+                  <p className="text-[11px] mt-1" style={{ color: '#555', fontFamily: MONO }}>Reading CRM, financials, and email signals</p>
+                </div>
+              )}
+
+              {diagError && (
+                <div className="p-6 rounded-2xl text-center" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
+                  <p className="text-sm" style={{ color: '#F59E0B' }}>{diagError}</p>
+                  <button onClick={() => runDiagnosis(DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis))} className="text-xs mt-4 px-4 py-1.5 rounded" style={{ color: '#888', border: '1px solid #333', fontFamily: MONO }}>Retry</button>
+                </div>
+              )}
+
+              {diagnosisResult && (
+                <div className="space-y-6">
+                  {/* Headline */}
+                  <div className="p-7 rounded-2xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
+                    <div className="flex items-center gap-3 mb-4">
+                      {(() => { const area = DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis); return area ? (
+                        <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: `${area.color}15`, color: area.color }}>{area.icon}</span>
+                      ) : null; })()}
+                      <div>
+                        <h2 className="text-lg font-medium" style={{ color: '#E4E4E7' }}>
+                          {DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis)?.label}
+                        </h2>
+                        {diagnosisResult.confidence && (
+                          <span className="text-[10px] tracking-wider uppercase" style={{ color: '#888', fontFamily: MONO }}>
+                            Confidence: {diagnosisResult.confidence}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-lg leading-relaxed font-medium" style={{ color: '#D4D4D8' }}>
+                      {diagnosisResult.headline}
+                    </p>
+                  </div>
+
+                  {/* Narrative */}
+                  {diagnosisResult.narrative && (
+                    <div className="p-7 rounded-2xl" style={{ background: '#111113', border: '1px solid #1A1A1E' }}>
+                      <p className="text-sm leading-loose whitespace-pre-line" style={{ color: '#A1A1AA' }}>
+                        {diagnosisResult.narrative}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* What to Watch */}
+                  {diagnosisResult.what_to_watch && (
+                    <div className="p-5 rounded-2xl" style={{ background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.12)' }}>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#F59E0B', fontFamily: MONO }}>What to Watch</span>
+                      <p className="text-sm leading-relaxed" style={{ color: '#D4D4D8' }}>{diagnosisResult.what_to_watch}</p>
+                    </div>
+                  )}
+
+                  {/* If Ignored */}
+                  {diagnosisResult.if_ignored && (
+                    <div className="p-5 rounded-2xl" style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.12)' }}>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#EF4444', fontFamily: MONO }}>If Ignored</span>
+                      <p className="text-sm leading-relaxed" style={{ color: '#FECACA' }}>{diagnosisResult.if_ignored}</p>
+                    </div>
+                  )}
+
+                  {/* Data Sources */}
+                  {diagnosisResult.data_sources_used?.length > 0 && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <span className="text-[10px]" style={{ color: '#555', fontFamily: MONO }}>Sources:</span>
+                      {diagnosisResult.data_sources_used.map((s, i) => (
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#888', background: '#1A1A1E', fontFamily: MONO }}>{s}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 };
