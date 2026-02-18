@@ -2,25 +2,44 @@ import React, { useRef } from 'react';
 
 const CHARCOAL = '#1E293B';
 const MUTED = '#64748B';
+const GOLD = '#B8860B';
 const CARD_BG = '#FFFFFF';
 const CARD_BORDER = '#E8E6E1';
 const SERIF = "'Playfair Display', serif";
+
+const TOTAL_STEPS = 9;
 
 const CalibratingSession = ({
   calMode, error, question, options, allowText, insight,
   selectedOption, setSelectedOption, textValue, setTextValue,
   isSubmitting, handleWizardContinue,
   messages, inputValue, setInputValue, handleChatSubmit,
+  currentStep,
 }) => {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
+  const stepNum = Math.min(currentStep || 1, TOTAL_STEPS);
+  const progressPct = Math.round(((stepNum - 1) / TOTAL_STEPS) * 100);
+
   return (
     <>
-      <header className="px-6 sm:px-8 py-4" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
-        <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: MUTED, letterSpacing: '0.12em' }}>
-          Calibration
-        </h1>
+      <header className="px-6 sm:px-8 py-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: MUTED, letterSpacing: '0.12em' }}>
+            Calibration
+          </h1>
+          <span className="text-xs font-semibold" style={{ color: GOLD }}>
+            Question {stepNum} of {TOTAL_STEPS}
+          </span>
+        </div>
+        {/* Progress bar */}
+        <div className="h-1 rounded-full overflow-hidden" style={{ background: CARD_BORDER }}>
+          <div
+            className="h-full rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${progressPct}%`, background: GOLD }}
+          />
+        </div>
       </header>
 
       {!calMode && !error && (
