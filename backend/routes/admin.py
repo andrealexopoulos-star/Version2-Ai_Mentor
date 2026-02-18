@@ -62,20 +62,30 @@ async def admin_backfill_calibration(request: Request):
 @router.get("/admin/users")
 async def admin_get_users(admin: dict = Depends(get_super_admin)):
     sb = get_sb()
-    result = sb.table("users").select("*").order("created_at", desc=True).limit(1000).execute()
-    return result.data if result.data else []
+    result = sb.table("users").select("id, email, full_name, company_name, role, subscription_tier, is_master_account, created_at, updated_at").order("created_at", desc=True).limit(1000).execute()
+    users = result.data or []
+    # Enrich with last sign-in from auth
+    try:
+        for u in users:
+            scs = sb.table("strategic_console_state").select("is_complete").eq("user_id", u["id"]).maybe_single().execute()
+            u["calibrated"] = scs.data.get("is_complete", False) if scs.data else False
+    except Exception:
+        pass
+    return {"users": users}
 
 
 @router.get("/admin/stats")
 async def admin_get_stats(admin: dict = Depends(get_super_admin)):
     sb = get_sb()
+    calibrated = sb.table("strategic_console_state").select("user_id", count="exact").eq("is_complete", True).execute()
+    integrations = sb.table("integration_accounts").select("id", count="exact").execute()
     return {
         "total_users": (sb.table("users").select("id", count="exact").execute()).count or 0,
+        "calibrated_users": calibrated.count or 0,
+        "total_integrations": integrations.count or 0,
         "total_analyses": (sb.table("analyses").select("id", count="exact").execute()).count or 0,
         "total_documents": (sb.table("documents").select("id", count="exact").execute()).count or 0,
-        "total_chats": (sb.table("chat_history").select("id", count="exact").execute()).count or 0,
-        "recent_users": (sb.table("users").select("*").order("created_at", desc=True).limit(5).execute()).data or [],
-        "recent_analyses": (sb.table("analyses").select("*").order("created_at", desc=True).limit(5).execute()).data or [],
+        "total_snapshots": (sb.table("intelligence_snapshots").select("id", count="exact").execute()).count or 0,
     }
 
 
