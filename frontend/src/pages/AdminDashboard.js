@@ -269,6 +269,18 @@ const AdminDashboard = () => {
                               Force-Complete Calibration
                             </button>
                           )}
+                          <button onClick={() => impersonateUser(selectedUser)} className="w-full text-xs font-medium px-3 py-2 rounded-lg text-left" style={{ color: '#3B82F6', border: '1px solid #93C5FD', background: '#EFF6FF' }}>
+                            View as This User
+                          </button>
+                          {users.find(u => u.id === selectedUser)?.role !== 'suspended' ? (
+                            <button onClick={() => suspendUser(selectedUser)} className="w-full text-xs font-medium px-3 py-2 rounded-lg text-left" style={{ color: '#EF4444', border: '1px solid #FECACA', background: '#FEF2F2' }}>
+                              Suspend Account
+                            </button>
+                          ) : (
+                            <button onClick={() => unsuspendUser(selectedUser)} className="w-full text-xs font-medium px-3 py-2 rounded-lg text-left" style={{ color: '#22C55E', border: '1px solid #BBF7D0', background: '#F0FDF4' }}>
+                              Unsuspend Account
+                            </button>
+                          )}
                           <button onClick={() => updateUserRole(selectedUser, 'superadmin')} className="w-full text-xs font-medium px-3 py-2 rounded-lg text-left" style={{ color: '#4F46E5', border: '1px solid #C7D2FE', background: '#EEF2FF' }}>
                             Promote to Admin
                           </button>
