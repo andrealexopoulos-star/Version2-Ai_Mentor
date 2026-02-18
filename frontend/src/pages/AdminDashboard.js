@@ -348,6 +348,96 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+          {/* Impersonation Overlay */}
+          {impersonating && impersonateData && (
+            <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center pt-8 overflow-y-auto">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 mb-8" style={{ fontFamily: HEAD }}>
+                <div className="flex items-center justify-between px-6 py-4 rounded-t-2xl" style={{ background: '#EFF6FF', borderBottom: '1px solid #93C5FD' }}>
+                  <div className="flex items-center gap-3">
+                    <Eye className="w-4 h-4" style={{ color: '#3B82F6' }} />
+                    <span className="text-sm font-semibold" style={{ color: '#1E40AF' }}>Viewing as: {impersonateData.user?.full_name || impersonateData.user?.email}</span>
+                  </div>
+                  <button onClick={() => { setImpersonating(null); setImpersonateData(null); }} className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ color: '#1E40AF', border: '1px solid #93C5FD' }}>Exit Impersonation</button>
+                </div>
+                <div className="p-6 space-y-6">
+                  {/* User Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: '#9CA3AF', fontFamily: MONO }}>Email</span>
+                      <p className="text-sm" style={{ color: '#1F2937' }}>{impersonateData.user?.email}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: '#9CA3AF', fontFamily: MONO }}>Role</span>
+                      <p className="text-sm" style={{ color: '#1F2937' }}>{impersonateData.user?.role}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: '#9CA3AF', fontFamily: MONO }}>Company</span>
+                      <p className="text-sm" style={{ color: '#1F2937' }}>{impersonateData.user?.company_name || '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: '#9CA3AF', fontFamily: MONO }}>Tier</span>
+                      <p className="text-sm" style={{ color: '#1F2937' }}>{impersonateData.user?.subscription_tier}</p>
+                    </div>
+                  </div>
+
+                  {/* Business Profile */}
+                  {impersonateData.business_profile && (
+                    <div>
+                      <h3 className="text-xs font-semibold mb-3" style={{ color: '#111827' }}>Business DNA</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {['business_name', 'industry', 'business_stage', 'location', 'target_market', 'business_model', 'team_size', 'growth_goals', 'risk_profile', 'main_products_services', 'unique_value_proposition', 'mission_statement'].map(f => {
+                          const val = impersonateData.business_profile[f];
+                          return val ? (
+                            <div key={f}>
+                              <span className="text-[9px] uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>{f.replace(/_/g, ' ')}</span>
+                              <p className="text-xs" style={{ color: '#374151' }}>{String(val).substring(0, 100)}{String(val).length > 100 ? '...' : ''}</p>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Snapshots */}
+                  {impersonateData.snapshots?.length > 0 && (
+                    <div>
+                      <h3 className="text-xs font-semibold mb-3" style={{ color: '#111827' }}>Latest Intelligence</h3>
+                      {impersonateData.snapshots.filter(s => s.snapshot_type === 'cognitive_full').slice(0, 1).map((s, i) => {
+                        const memo = s.executive_memo;
+                        return (
+                          <div key={i} className="p-4 rounded-xl" style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.05)' }}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-[10px] font-semibold" style={{ color: memo?.system_state === 'CRITICAL' ? '#EF4444' : memo?.system_state === 'DRIFT' ? '#F59E0B' : '#22C55E', fontFamily: MONO }}>{memo?.system_state || '?'}</span>
+                              <span className="text-[10px]" style={{ color: '#9CA3AF' }}>{new Date(s.generated_at).toLocaleString('en-AU')}</span>
+                            </div>
+                            {memo?.executive_memo && <p className="text-xs leading-relaxed" style={{ color: '#374151' }}>{String(memo.executive_memo).substring(0, 300)}...</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Integrations + Stats */}
+                  <div className="flex gap-4">
+                    <div className="flex-1 p-3 rounded-lg" style={{ background: '#F9FAFB' }}>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: '#9CA3AF', fontFamily: MONO }}>Integrations</span>
+                      <p className="text-lg font-bold" style={{ color: '#111827' }}>{impersonateData.integrations?.length || 0}</p>
+                      {impersonateData.integrations?.map((ig, i) => <span key={i} className="text-[10px] mr-1" style={{ color: '#6B7280', fontFamily: MONO }}>{ig.provider}</span>)}
+                    </div>
+                    <div className="flex-1 p-3 rounded-lg" style={{ background: '#F9FAFB' }}>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: '#9CA3AF', fontFamily: MONO }}>Signals</span>
+                      <p className="text-lg font-bold" style={{ color: '#111827' }}>{impersonateData.signal_count || 0}</p>
+                    </div>
+                    <div className="flex-1 p-3 rounded-lg" style={{ background: '#F9FAFB' }}>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: '#9CA3AF', fontFamily: MONO }}>Calibrated</span>
+                      <p className="text-lg font-bold" style={{ color: impersonateData.console_state?.is_complete ? '#22C55E' : '#EF4444' }}>{impersonateData.console_state?.is_complete ? 'Yes' : 'No'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </DashboardLayout>
