@@ -195,9 +195,18 @@ export const ManualSummaryFallback = ({ firstName, onSubmit, isSubmitting }) => 
         <h2 className="text-2xl sm:text-3xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
           {firstName ? `Tell me about your business, ${firstName}.` : 'Tell me about your business.'}
         </h2>
-        <p className="text-sm leading-relaxed mb-6" style={{ color: MUTED, maxWidth: 440, margin: '0 auto' }}>
+        <p className="text-sm leading-relaxed mb-3" style={{ color: MUTED, maxWidth: 440, margin: '0 auto' }}>
           In 2-3 sentences: What does your business do, and who do you serve?
         </p>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5"
+          style={{ background: '#F0F4FF', border: '1px solid #BFDBFE' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span className="text-xs font-medium" style={{ color: '#2563EB' }}>
+            9 quick questions follow · Takes ~3 minutes
+          </span>
+        </div>
         <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
           <textarea
             value={summary}
