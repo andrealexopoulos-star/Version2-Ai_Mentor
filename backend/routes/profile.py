@@ -39,7 +39,7 @@ from supabase_remaining_helpers import (
 from supabase_document_helpers import (
     get_user_documents_supabase, count_user_documents_supabase,
 )
-from supabase_email_helpers import count_user_emails_supabase
+from supabase_email_helpers import count_user_emails_supabase, get_user_calendar_events_supabase
 from core.helpers import fetch_website_text, compute_missing_profile_fields, serper_search
 from core.ai_core import get_ai_response
 
