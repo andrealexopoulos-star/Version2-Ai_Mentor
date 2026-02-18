@@ -103,6 +103,52 @@ async def admin_update_user(user_id: str, update: AdminUserUpdate, admin: dict =
     return await get_user_by_id(user_id)
 
 
+@router.post("/admin/users/{user_id}/suspend")
+async def admin_suspend_user(user_id: str, admin: dict = Depends(get_super_admin)):
+    """Suspend a user account. Sets role to 'suspended'. Reversible."""
+    sb = get_sb()
+    if user_id == admin["id"]:
+        raise HTTPException(status_code=400, detail="Cannot suspend yourself")
+    result = sb.table("users").update({"role": "suspended", "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"status": "suspended", "user_id": user_id}
+
+
+@router.post("/admin/users/{user_id}/unsuspend")
+async def admin_unsuspend_user(user_id: str, admin: dict = Depends(get_super_admin)):
+    """Unsuspend a user account. Restores role to 'user'."""
+    sb = get_sb()
+    result = sb.table("users").update({"role": "user", "updated_at": datetime.now(timezone.utc).isoformat()}).eq("id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"status": "active", "user_id": user_id}
+
+
+@router.post("/admin/users/{user_id}/impersonate")
+async def admin_impersonate_user(user_id: str, admin: dict = Depends(get_super_admin)):
+    """Get full user context for impersonation. Returns everything needed to render their view."""
+    sb = get_sb()
+    user = sb.table("users").select("*").eq("id", user_id).maybe_single().execute()
+    if not user.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    bp = sb.table("business_profiles").select("*").eq("user_id", user_id).maybe_single().execute()
+    scs = sb.table("strategic_console_state").select("*").eq("user_id", user_id).maybe_single().execute()
+    snaps = sb.table("intelligence_snapshots").select("snapshot_type, executive_memo, generated_at").eq("user_id", user_id).order("generated_at", desc=True).limit(5).execute()
+    integ = sb.table("integration_accounts").select("provider, category, connected_at").eq("user_id", user_id).execute()
+    signals = sb.table("observation_events").select("id", count="exact").eq("user_id", user_id).execute()
+    return {
+        "user": {k: v for k, v in user.data.items() if k != "password_hash"},
+        "business_profile": bp.data,
+        "console_state": scs.data,
+        "snapshots": snaps.data or [],
+        "integrations": integ.data or [],
+        "signal_count": signals.count or 0,
+    }
+
+
+
+
 @router.delete("/admin/users/{user_id}")
 async def admin_delete_user(user_id: str, admin: dict = Depends(get_super_admin)):
     sb = get_sb()
