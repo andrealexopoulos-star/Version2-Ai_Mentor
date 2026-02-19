@@ -17,7 +17,6 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
-const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,7 +74,7 @@ YOUR OUTPUT MUST BE THIS EXACT JSON:
   
   "market_size": "Estimate of addressable market size for this product/service in this region. Use firecrawl data.",
   
-  "competitor_landscape": "1-2 paragraphs. Who are the key competitors? What are they doing? How does the owner compare? Reference specific competitors from firecrawl data.",
+  "competitor_landscape": "1-2 paragraphs. Who are the key competitors? What are they doing? How does the owner compare? Reference specific competitors .",
   
   "customer_insight": "1 paragraph. Based on their CRM contacts and deals, what patterns emerge about their ideal customer? What's working in their pipeline?",
   
@@ -98,7 +97,7 @@ YOUR OUTPUT MUST BE THIS EXACT JSON:
 
 RULES:
 - Reference ACTUAL business data. Not generic advice.
-- Use firecrawl market intel for real competitor and market data.
+- Use web intelligence for real competitor and market data.
 - If their CRM shows stalled deals in this segment, say so.
 - If their financial data shows they can't fund expansion, say so.
 - Maximum 5 recommendations, ranked by impact.
@@ -223,7 +222,7 @@ ${JSON.stringify(ctx, null, 2)}`;
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
