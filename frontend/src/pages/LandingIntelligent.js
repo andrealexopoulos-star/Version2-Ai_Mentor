@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Shield, Check, Clock, DollarSign, Users } from 'lucide-react';
+import { ArrowRight, Shield, Check, Clock, DollarSign, Users, Menu, X } from 'lucide-react';
 
 /* ═══ TYPEWRITER HOOK ═══ */
 const useTypewriter = (phrases, speed = 75, pause = 2200, deleteSpeed = 40) => {
