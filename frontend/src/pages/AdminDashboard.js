@@ -4,8 +4,8 @@ import { supabase } from '../context/SupabaseAuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { RefreshCw, Users, Activity, Shield, Eye, ChevronRight, Search } from 'lucide-react';
 
-const HEAD = "'Inter Tight', 'Inter', -apple-system, sans-serif";
-const MONO = "'JetBrains Mono', 'SF Mono', monospace";
+const HEAD = "var(--font-heading)";
+const MONO = "var(--font-mono)";
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);

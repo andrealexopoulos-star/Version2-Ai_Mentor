@@ -4,8 +4,8 @@ import { useSnapshot } from '../hooks/useSnapshot';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const HEAD = "'Inter Tight', 'Inter', -apple-system, sans-serif";
-const MONO = "'JetBrains Mono', 'SF Mono', monospace";
+const HEAD = "var(--font-heading)";
+const MONO = "var(--font-mono)";
 
 const STATE_CONFIG = {
   STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },

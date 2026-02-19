@@ -7,7 +7,7 @@ const AZURE = '#007AFF';
 const MINT = '#00D995';
 const SLATE = '#1E293B';
 const MUTED = '#64748B';
-const HEAD = "'Inter Tight', sans-serif";
+const HEAD = "var(--font-heading)";
 const MONO = "'Geist Mono', monospace";
 
 const glass = { background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.3)', boxShadow: '0 24px 48px -12px rgba(0,0,0,0.05)' };
