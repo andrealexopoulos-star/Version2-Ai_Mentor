@@ -126,8 +126,7 @@ code, pre, kbd, samp, .font-mono {
 #root {
     min-height: 100vh;
     height: auto;
-    overflow-x: hidden;
-    overflow-y: visible;
+    overflow: visible;
     max-width: 100%;
     position: relative;
 }
