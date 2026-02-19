@@ -140,7 +140,7 @@ const BusinessProfile = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl md:text-4xl mb-2" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-primary)' }}>
+              <h1 className="text-3xl md:text-4xl mb-2" style={{ fontFamily: "var(--font-heading)", color: 'var(--text-primary)' }}>
                 Business DNA
               </h1>
               <p style={{ color: 'var(--text-secondary)' }}>
@@ -157,7 +157,7 @@ const BusinessProfile = () => {
 
           {/* Tabs — Live Baselines only (admin fields moved to Settings) */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 w-full mb-8">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-8">
               <TabsTrigger value="market" className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 <span className="hidden sm:inline">Market</span>
