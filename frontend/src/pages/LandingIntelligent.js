@@ -281,27 +281,55 @@ const ComparisonSection = () => {
   );
 };
 
-/* ═══ INTEGRATION LOGOS MARQUEE ═══ */
-const LOGOS = ['HubSpot', 'Salesforce', 'Xero', 'Stripe', 'BambooHR', 'Slack', 'Microsoft 365', 'Google Workspace', 'Jira', 'Asana', 'Monday', 'Shopify', 'Zoom', 'Teams', 'QuickBooks'];
+/* ═══ INTEGRATION LOGOS MARQUEE — with real brand colors ═══ */
+const LOGO_ITEMS = [
+  { name: 'HubSpot',           bg: '#FF7A59', color: '#fff', letter: 'H', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/HubSpot_Logo.svg/2560px-HubSpot_Logo.svg.png' },
+  { name: 'Salesforce',        bg: '#00A1E0', color: '#fff', letter: 'S', img: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg' },
+  { name: 'Xero',              bg: '#13B5EA', color: '#fff', letter: 'X', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Xero_software_logo.svg/2560px-Xero_software_logo.svg.png' },
+  { name: 'Stripe',            bg: '#635BFF', color: '#fff', letter: 'S', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png' },
+  { name: 'Slack',             bg: '#4A154B', color: '#fff', letter: 'Sl', img: 'https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg' },
+  { name: 'Microsoft 365',     bg: '#D83B01', color: '#fff', letter: 'M', img: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Microsoft_Office_365_%282019%E2%80%93present%29.svg' },
+  { name: 'Google Workspace',  bg: '#4285F4', color: '#fff', letter: 'G', img: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' },
+  { name: 'Shopify',           bg: '#96BF48', color: '#fff', letter: 'Sh', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png' },
+  { name: 'QuickBooks',        bg: '#2CA01C', color: '#fff', letter: 'QB', img: null },
+  { name: 'Zoom',              bg: '#2D8CFF', color: '#fff', letter: 'Z',  img: null },
+  { name: 'Jira',              bg: '#0052CC', color: '#fff', letter: 'J',  img: null },
+  { name: 'Monday',            bg: '#F64D25', color: '#fff', letter: 'M',  img: null },
+  { name: 'BambooHR',          bg: '#73C41D', color: '#fff', letter: 'B',  img: null },
+  { name: 'Asana',             bg: '#F06A6A', color: '#fff', letter: 'A',  img: null },
+  { name: 'Teams',             bg: '#6264A7', color: '#fff', letter: 'T',  img: null },
+];
 
 const IntegrationMarquee = () => (
   <div className="overflow-hidden">
     <div
       className="flex whitespace-nowrap"
-      style={{ animation: 'marquee 32s linear infinite' }}
+      style={{ animation: 'marquee 36s linear infinite' }}
     >
-      {[...LOGOS, ...LOGOS].map((logo, i) => (
+      {[...LOGO_ITEMS, ...LOGO_ITEMS].map((logo, i) => (
         <div
           key={i}
           className="inline-flex items-center gap-2.5 mx-4 px-5 py-3 rounded-xl bg-white border border-slate-100 shadow-sm flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
         >
+          {logo.img ? (
+            <img
+              src={logo.img}
+              alt={logo.name}
+              className="h-5 w-auto object-contain"
+              style={{ maxWidth: 28 }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
           <div
-            className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold text-white"
-            style={{ background: '#2563eb' }}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+            style={{ background: logo.bg, display: logo.img ? 'none' : 'flex' }}
           >
-            {logo[0]}
+            {logo.letter}
           </div>
-          <span className="text-sm font-medium text-slate-700" style={{ fontFamily: FONTS.body }}>{logo}</span>
+          <span className="text-sm font-medium text-slate-700" style={{ fontFamily: FONTS.body }}>{logo.name}</span>
         </div>
       ))}
     </div>
