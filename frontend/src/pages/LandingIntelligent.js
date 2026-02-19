@@ -556,7 +556,7 @@ const LandingIntelligent = () => {
             <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
               Dashboards report the past.
               <br />
-              <span className="text-blue-600">Agents command the future.</span>
+              <span className="text-blue-600">BIQc commands the future.</span>
             </h2>
             <p className="text-base text-slate-500 mt-4 max-w-2xl mx-auto" style={{ fontFamily: FONTS.body }}>
               BI tools answer questions you ask. BIQc pushes answers to you before the crisis hits.
