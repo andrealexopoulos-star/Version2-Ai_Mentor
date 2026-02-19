@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BIQc — Mockup v2 (Liquid Silver + Orange)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════ LIQUID SILVER DESIGN TOKENS ═══════════ */
+:root {
+  --silver-bg:      #F5F7FA;
+  --silver-surface: #FFFFFF;
+  --silver-1:       #EEF1F6;
+  --silver-2:       #E4E8F0;
+  --silver-3:       #D4DAE8;
+  --silver-border:  rgba(180,190,210,0.35);
+  --silver-shine:   rgba(255,255,255,0.9);
+  --silver-shadow:  rgba(100,120,160,0.10);
+  --silver-deep:    rgba(80,95,130,0.08);
+
+  --text-900:  #0F172A;
+  --text-700:  #1E293B;
+  --text-500:  #475569;
+  --text-400:  #64748B;
+  --text-300:  #94A3B8;
+  --text-200:  #CBD5E1;
+
+  --orange:      #F97316;
+  --orange-dark: #EA6C0A;
+  --orange-dim:  rgba(249,115,22,0.10);
+  --orange-glow: rgba(249,115,22,0.20);
+  --orange-line: rgba(249,115,22,0.6);
+
+  --font-h: 'Plus Jakarta Sans', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --font-m: 'JetBrains Mono', monospace;
+
+  --radius: 14px;
+  --radius-lg: 20px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--silver-bg);
+  color: var(--text-900);
+  font-family: var(--font-b);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ═══ SUBTLE METALLIC BG TEXTURE ═══ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(200,210,230,0.3) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(249,115,22,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(200,215,235,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Fine grid */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(180,195,215,0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180,195,215,0.12) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══ NAV ═══ */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  background: rgba(245,247,250,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--silver-border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo-mark {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--orange), #C2410C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-h);
+  font-weight: 800;
+  font-size: 16px;
+  color: white;
+  box-shadow: 0 4px 12px var(--orange-glow), 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nav-brand {
+  font-family: var(--font-h);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text-900);
+  letter-spacing: -0.02em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-500);
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: none;
+  border: none;
+  text-decoration: none;
+}
+.nav-link:hover { color: var(--text-900); background: var(--silver-1); }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ghost {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-700);
+  padding: 8px 18px;
+  border-radius: 50px;
+  border: 1px solid var(--silver-border);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-h);
+}
+.btn-ghost:hover { background: var(--silver-1); border-color: var(--silver-3); }
+
+.btn-dark {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  padding: 9px 20px;
+  border-radius: 50px;
+  background: var(--text-900);
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: var(--font-h);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.btn-dark:hover { background: #1E293B; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+
+.btn-orange {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  padding: 9px 20px;
+  border-radius: 50px;
+  background: var(--orange);
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: var(--font-h);
+  box-shadow: 0 2px 8px var(--orange-glow);
+}
+.btn-orange:hover { background: var(--orange-dark); transform: translateY(-1px); box-shadow: 0 4px 16px var(--orange-glow); }
+
+/* ═══ HERO ═══ */
+.hero {
+  position: relative;
+  z-index: 1;
+  padding: 140px 48px 80px;
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 50px;
+  background: var(--orange-dim);
+  border: 1px solid rgba(249,115,22,0.2);
+  font-family: var(--font-m);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--orange-dark);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+.kicker-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--orange);
+  animation: blink 1.8s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.hero-heading {
+  font-family: var(--font-h);
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  color: var(--text-900);
+  margin-bottom: 24px;
+}
+
+.hero-heading .line-muted {
+  color: var(--text-400);
+  font-weight: 300;
+}
+
+/* Typewriter */
+.typewriter-wrap {
+  display: inline-block;
+  position: relative;
+}
+
+.typewriter-text {
+  color: var(--orange);
+}
+
+.typewriter-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.85em;
+  background: var(--orange);
+  margin-left: 3px;
+  vertical-align: middle;
+  border-radius: 2px;
+  animation: cursorBlink 1s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.hero-sub {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--text-500);
+  max-width: 560px;
+  margin: 0 auto 36px;
+  font-weight: 400;
+}
+
+.hero-sub strong { color: var(--text-700); font-weight: 600; }
+
+.hero-ctas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hero-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  border-radius: 50px;
+  background: var(--text-900);
+  color: white;
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+}
+.hero-cta-primary:hover { background: #1E293B; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.22); }
+
+.hero-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  border-radius: 50px;
+  background: transparent;
+  color: var(--text-700);
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 600;
+  border: 1.5px solid var(--silver-3);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.hero-cta-secondary:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+
+/* ═══ HERO CONNECTION DIAGRAM ═══ */
+.hero-diagram {
+  position: relative;
+  z-index: 1;
+  margin: 60px auto 0;
+  max-width: 1100px;
+  padding: 0 48px;
+  height: 480px;
+}
+
+.diagram-card {
+  position: absolute;
+  background: var(--silver-surface);
+  border: 1px solid var(--silver-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px var(--silver-shadow), 0 1px 4px rgba(0,0,0,0.04);
+  transition: all 0.3s ease;
+}
+
+.diagram-card:hover {
+  box-shadow: 0 8px 36px var(--silver-shadow), 0 2px 8px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+/* Left panel - "Your Business" */
+.card-left {
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 210px;
+  padding: 20px;
+}
+
+.card-left-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-400);
+  margin-bottom: 14px;
+  font-family: var(--font-m);
+}
+
+.mini-chart {
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.mini-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--silver-1);
+  border: 1px solid var(--silver-2);
+  transition: height 0.6s ease;
+}
+
+.mini-bar.active {
+  background: linear-gradient(to top, var(--orange-dark), var(--orange));
+  border-color: var(--orange);
+}
+
+.mini-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--silver-1);
+  border-radius: 8px;
+  border: 1px solid var(--silver-2);
+  margin-top: 6px;
+}
+
+.mini-metric-label {
+  font-size: 11px;
+  color: var(--text-400);
+  font-family: var(--font-m);
+}
+
+.mini-metric-val {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-m);
+  color: var(--orange);
+}
+
+/* Center BIQc node */
+.card-center {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--silver-surface);
+  box-shadow:
+    0 0 0 16px rgba(245,247,250,0.8),
+    0 0 0 32px rgba(245,247,250,0.4),
+    0 8px 40px var(--silver-shadow),
+    0 0 60px var(--orange-dim);
+  border: 2px solid var(--orange-line);
+  animation: centerPulse 3s ease-in-out infinite;
+  z-index: 10;
+}
+
+@keyframes centerPulse {
+  0%, 100% { box-shadow: 0 0 0 16px rgba(245,247,250,0.8), 0 0 0 32px rgba(245,247,250,0.4), 0 8px 40px var(--silver-shadow), 0 0 60px var(--orange-dim); }
+  50% { box-shadow: 0 0 0 20px rgba(245,247,250,0.6), 0 0 0 40px rgba(245,247,250,0.2), 0 8px 40px var(--silver-shadow), 0 0 80px rgba(249,115,22,0.12); }
+}
+
+.center-logo {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--orange), #C2410C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-h);
+  font-weight: 800;
+  font-size: 24px;
+  color: white;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 16px var(--orange-glow);
+}
+
+.center-label {
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-900);
+  letter-spacing: -0.01em;
+}
+
+.center-sub {
+  font-size: 10px;
+  color: var(--text-400);
+  font-family: var(--font-m);
+  margin-top: 2px;
+}
+
+/* Right integration rows */
+.card-integrations {
+  right: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 260px;
+  padding: 16px;
+}
+
+.int-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--silver-1);
+}
+
+.int-row:last-child { border-bottom: none; }
+
+.int-category {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-500);
+  width: 80px;
+  font-family: var(--font-m);
+  letter-spacing: 0.04em;
+}
+
+.int-logos {
+  display: flex;
+  gap: 6px;
+}
+
+.int-logo {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  font-family: var(--font-h);
+  transition: transform 0.2s ease;
+}
+
+.int-logo:hover { transform: scale(1.1); }
+
+/* SVG connection lines */
+.diagram-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Animated orange dot on connection line */
+.flow-dot {
+  fill: var(--orange);
+  filter: drop-shadow(0 0 4px rgba(249,115,22,0.6));
+}
+
+/* ═══ TRUST BAR ═══ */
+.trust-bar {
+  position: relative;
+  z-index: 1;
+  padding: 40px 48px;
+  border-top: 1px solid var(--silver-border);
+  border-bottom: 1px solid var(--silver-border);
+  background: rgba(255,255,255,0.6);
+}
+
+.trust-label {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-400);
+  margin-bottom: 24px;
+  font-family: var(--font-m);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trust-label span { color: var(--orange); text-decoration: underline; text-underline-offset: 3px; }
+
+.trust-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.trust-logo {
+  font-family: var(--font-h);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-300);
+  letter-spacing: -0.02em;
+  transition: color 0.2s;
+  cursor: default;
+}
+.trust-logo:hover { color: var(--text-500); }
+
+/* ═══ SECTION TEMPLATE ═══ */
+section {
+  position: relative;
+  z-index: 1;
+}
+
+.section-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 100px 48px;
+}
+
+.section-kicker {
+  font-family: var(--font-m);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--orange);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-kicker::before {
+  content: '';
+  width: 20px; height: 1px;
+  background: var(--orange);
+}
+
+.section-title {
+  font-family: var(--font-h);
+  font-size: clamp(32px, 3.5vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  color: var(--text-900);
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--text-500);
+  max-width: 520px;
+}
+
+/* ═══ FEATURE CARDS (Merge-style) ═══ */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 64px;
+}
+
+.feature-card {
+  background: var(--silver-surface);
+  border: 1px solid var(--silver-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 12px var(--silver-shadow);
+}
+
+.feature-card:hover {
+  box-shadow: 0 8px 36px var(--silver-shadow);
+  transform: translateY(-3px);
+  border-color: var(--silver-3);
+}
+
+.feature-card-visual {
+  height: 220px;
+  background: var(--silver-1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--silver-border);
+}
+
+.feature-card-body {
+  padding: 28px 32px 32px;
+}
+
+.feature-card-title {
+  font-family: var(--font-h);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.feature-card-tagline {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-700);
+  margin-bottom: 12px;
+}
+
+.feature-card-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-500);
+  margin-bottom: 24px;
+}
+
+.learn-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-h);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-900);
+  padding: 9px 20px;
+  border-radius: 50px;
+  background: var(--text-900);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-decoration: none;
+}
+.learn-more:hover { background: #1E293B; }
+
+/* Feature visuals */
+.vis-boardroom {
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+  padding: 24px;
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.agent-node {
+  background: white;
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.agent-node:hover { border-color: var(--orange); transform: scale(1.03); }
+
+.agent-emoji { font-size: 18px; display: block; margin-bottom: 4px; }
+.agent-label { font-size: 9px; font-weight: 600; color: var(--text-500); font-family: var(--font-m); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.center-biqc-node {
+  grid-column: 2;
+  background: var(--text-900);
+  border: 1px solid var(--text-900);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.center-biqc-node .agent-label { color: rgba(255,255,255,0.7); }
+
+/* Vis: Dashboard screenshot mockup */
+.vis-dashboard {
+  background: var(--text-900);
+  padding: 16px;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-header {
+  height: 28px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 6px;
+}
+
+.dash-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+.dash-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.dash-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  animation: rowGlow 4s ease-in-out infinite;
+}
+
+.dash-row:nth-child(1) { animation-delay: 0s; }
+.dash-row:nth-child(2) { animation-delay: 0.5s; }
+.dash-row:nth-child(3) { animation-delay: 1s; }
+.dash-row:nth-child(4) { animation-delay: 1.5s; }
+
+@keyframes rowGlow {
+  0%, 80%, 100% { border-color: rgba(255,255,255,0.06); }
+  40% { border-color: rgba(249,115,22,0.25); background: rgba(249,115,22,0.05); }
+}
+
+.dash-row-label { font-size: 10px; color: rgba(255,255,255,0.5); font-family: var(--font-m); }
+.dash-row-val { font-size: 10px; font-weight: 600; color: var(--orange); font-family: var(--font-m); }
+
+/* Vis: Voice waves */
+.vis-soundboard {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.wave-viz {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 60px;
+}
+
+.wave-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--orange);
+  animation: wave 1.4s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+.wave-caption {
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-700);
+}
+
+/* Vis: Market intel */
+.vis-market {
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.market-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid rgba(34,197,94,0.15);
+}
+
+.market-label { font-size: 11px; color: var(--text-500); font-family: var(--font-m); }
+.market-val { font-size: 11px; font-weight: 700; font-family: var(--font-m); color: #059669; }
+
+/* ═══ STATS ═══ */
+.stats-section {
+  background: var(--silver-surface);
+  border-top: 1px solid var(--silver-border);
+  border-bottom: 1px solid var(--silver-border);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.stat-cell {
+  padding: 48px 32px;
+  text-align: center;
+  border-right: 1px solid var(--silver-border);
+  transition: background 0.2s;
+}
+.stat-cell:last-child { border-right: none; }
+.stat-cell:hover { background: var(--silver-1); }
+
+.stat-number {
+  font-family: var(--font-h);
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--orange);
+  line-height: 1;
+  margin-bottom: 6px;
+  letter-spacing: -0.04em;
+}
+
+.stat-unit {
+  font-size: 12px;
+  color: var(--text-400);
+  font-family: var(--font-m);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.stat-desc {
+  font-size: 14px;
+  color: var(--text-500);
+  margin-top: 8px;
+}
+
+/* ═══ COMPARISON SECTION ═══ */
+.comparison-section {
+  background: var(--silver-bg);
+}
+
+.comparison-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.comparison-header .section-kicker {
+  justify-content: center;
+}
+.comparison-header .section-kicker::before { display: none; }
+
+.tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--silver-surface);
+  border: 1px solid var(--silver-border);
+  border-radius: 50px;
+  padding: 4px;
+  width: fit-content;
+  margin: 0 auto 48px;
+  box-shadow: 0 2px 8px var(--silver-shadow);
+}
+
+.tab-btn {
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-h);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  color: var(--text-500);
+  background: transparent;
+}
+
+.tab-btn.active {
+  background: var(--text-900);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.comparison-card {
+  background: var(--silver-surface);
+  border: 1px solid var(--silver-border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: 0 2px 12px var(--silver-shadow);
+  transition: all 0.2s;
+}
+
+.comparison-card:hover {
+  box-shadow: 0 6px 24px var(--silver-shadow);
+  border-color: var(--silver-3);
+}
+
+.comparison-card.muted {
+  opacity: 0.5;
+  filter: grayscale(0.3);
+}
+
+.comparison-card-title {
+  font-family: var(--font-m);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-400);
+  margin-bottom: 16px;
+}
+
+.comparison-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--silver-1);
+  border: 1px solid var(--silver-border);
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-family: var(--font-m);
+  color: var(--text-500);
+  transition: all 0.2s;
+}
+
+.comparison-card:not(.muted) .comparison-item:hover {
+  border-color: var(--orange);
+  background: var(--orange-dim);
+}
+
+.comparison-item-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-300);
+  flex-shrink: 0;
+}
+
+.comparison-card:not(.muted) .comparison-item:hover .comparison-item-dot {
+  background: var(--orange);
+  box-shadow: 0 0 6px var(--orange);
+}
+
+.comparison-footer {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-400);
+  font-style: italic;
+}
+
+/* ═══ CTA SECTION ═══ */
+.cta-section {
+  background: var(--text-900);
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(249,115,22,0.08), transparent);
+  pointer-events: none;
+}
+
+.cta-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.cta-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 100px 48px;
+}
+
+.cta-title {
+  font-family: var(--font-h);
+  font-size: clamp(36px, 4vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.cta-title span { color: var(--orange); }
+
+.cta-sub {
+  font-size: 17px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 36px;
+}
+
+.cta-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.cta-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 50px;
+  background: var(--orange);
+  color: white;
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  box-shadow: 0 4px 20px var(--orange-glow);
+}
+.cta-btn-primary:hover { background: var(--orange-dark); transform: translateY(-2px); }
+
+.cta-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 50px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-family: var(--font-h);
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.cta-btn-secondary:hover { background: rgba(255,255,255,0.18); }
+
+.cta-legal {
+  font-size: 12px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 20px;
+  font-family: var(--font-m);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ═══ FOOTER ═══ */
+footer {
+  position: relative;
+  z-index: 1;
+  background: #080E18;
+  padding: 32px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.footer-left {
+  font-family: var(--font-m);
+  font-size: 12px;
+  color: rgba(255,255,255,0.25);
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-link {
+  font-size: 13px;
+  color: rgba(255,255,255,0.25);
+  cursor: pointer;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+.footer-link:hover { color: rgba(255,255,255,0.5); }
+
+/* ═══ SCROLL ANIMATIONS ═══ */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.08s; }
+.reveal-delay-2 { transition-delay: 0.16s; }
+.reveal-delay-3 { transition-delay: 0.24s; }
+.reveal-delay-4 { transition-delay: 0.32s; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 900px) {
+  nav { padding: 0 20px; }
+  nav .nav-links { display: none; }
+  .hero { padding: 120px 20px 60px; }
+  .hero-diagram { display: none; }
+  .features-grid { grid-template-columns: 1fr; padding: 0 20px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .comparison-grid { grid-template-columns: 1fr; padding: 0 20px; }
+  .section-container { padding: 60px 20px; }
+  footer { flex-direction: column; gap: 16px; padding: 24px 20px; text-align: center; }
+  .trust-logos { gap: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-mark">B</div>
+    <span class="nav-brand">BIQc</span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="#">Platform</a>
+    <a class="nav-link" href="#">Intelligence</a>
+    <a class="nav-link" href="#">Integrations</a>
+    <a class="nav-link" href="#">Pricing</a>
+    <a class="nav-link" href="#">Trust</a>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-ghost">Log in</button>
+    <button class="btn-dark">Get started →</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section>
+  <div class="hero">
+    <div class="hero-kicker reveal">
+      <div class="kicker-dot"></div>
+      Sovereign Business Intelligence
+    </div>
+
+    <h1 class="hero-heading reveal reveal-delay-1">
+      <span id="typewriter-line" class="typewriter-text"></span><span class="typewriter-cursor"></span><br>
+      <span class="line-muted">across your entire business.</span>
+    </h1>
+
+    <p class="hero-sub reveal reveal-delay-2">
+      BIQc is <strong>calibrated to you</strong> — connecting every system you run and detecting threats before they surface. No dashboards. No noise. Just clarity.
+    </p>
+
+    <div class="hero-ctas reveal reveal-delay-3">
+      <button class="hero-cta-primary">
+        Start for free
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <button class="hero-cta-secondary">Get a demo</button>
+    </div>
+
+    <p style="font-size:12px;color:var(--text-300);font-family:var(--font-m);margin-top:12px;" class="reveal reveal-delay-4">
+      No credit card required · Australian owned & operated
+    </p>
+  </div>
+
+  <!-- CONNECTION DIAGRAM -->
+  <div class="hero-diagram reveal">
+    <svg class="diagram-svg" viewBox="0 0 1100 480" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="arrowOrange" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <circle cx="3" cy="3" r="2" fill="#F97316"/>
+        </marker>
+      </defs>
+
+      <!-- Left card to center: solid line -->
+      <path d="M 215 240 C 310 240 360 240 400 240" stroke="rgba(180,195,215,0.5)" stroke-width="1.5" fill="none" stroke-dasharray="6,4"/>
+
+      <!-- Center to right rows: dashed lines -->
+      <path d="M 700 240 C 750 240 780 170 840 170" stroke="rgba(180,195,215,0.4)" stroke-width="1.2" fill="none" stroke-dasharray="5,4"/>
+      <path d="M 700 240 C 750 240 780 205 840 205" stroke="rgba(180,195,215,0.4)" stroke-width="1.2" fill="none" stroke-dasharray="5,4"/>
+      <path d="M 700 240 C 750 240 780 240 840 240" stroke="rgba(249,115,22,0.5)" stroke-width="1.5" fill="none" stroke-dasharray="5,4"/>
+      <path d="M 700 240 C 750 240 780 275 840 275" stroke="rgba(180,195,215,0.4)" stroke-width="1.2" fill="none" stroke-dasharray="5,4"/>
+      <path d="M 700 240 C 750 240 780 310 840 310" stroke="rgba(180,195,215,0.4)" stroke-width="1.2" fill="none" stroke-dasharray="5,4"/>
+
+      <!-- Animated orange dots -->
+      <circle class="flow-dot" r="5">
+        <animateMotion dur="2.5s" repeatCount="indefinite">
+          <mpath href="#path-left"/>
+        </animateMotion>
+      </circle>
+      <path id="path-left" d="M 215 240 C 310 240 360 240 400 240" fill="none" visibility="hidden"/>
+
+      <circle class="flow-dot" r="4">
+        <animateMotion dur="2s" repeatCount="indefinite" begin="0.3s">
+          <mpath href="#path-r1"/>
+        </animateMotion>
+      </circle>
+      <path id="path-r1" d="M 700 240 C 750 240 780 240 840 240" fill="none" visibility="hidden"/>
+
+      <circle class="flow-dot" r="3.5" fill="#F97316" opacity="0.8">
+        <animateMotion dur="2.2s" repeatCount="indefinite" begin="0.8s">
+          <mpath href="#path-r2"/>
+        </animateMotion>
+      </circle>
+      <path id="path-r2" d="M 700 240 C 750 240 780 170 840 170" fill="none" visibility="hidden"/>
+
+      <circle class="flow-dot" r="3.5" fill="#F97316" opacity="0.6">
+        <animateMotion dur="2.4s" repeatCount="indefinite" begin="1.2s">
+          <mpath href="#path-r3"/>
+        </animateMotion>
+      </circle>
+      <path id="path-r3" d="M 700 240 C 750 240 780 310 840 310" fill="none" visibility="hidden"/>
+    </svg>
+
+    <!-- Left card: Your Business -->
+    <div class="diagram-card card-left">
+      <div class="card-left-header">Your Business</div>
+      <div class="mini-chart">
+        <div class="mini-bar" style="height:25%"></div>
+        <div class="mini-bar" style="height:45%"></div>
+        <div class="mini-bar active" style="height:70%"></div>
+        <div class="mini-bar" style="height:55%"></div>
+        <div class="mini-bar active" style="height:90%"></div>
+        <div class="mini-bar" style="height:65%"></div>
+        <div class="mini-bar active" style="height:85%"></div>
+        <div class="mini-bar" style="height:50%"></div>
+      </div>
+      <div class="mini-metric">
+        <span class="mini-metric-label">HubSpot CRM</span>
+        <span class="mini-metric-val">30 deals</span>
+      </div>
+      <div class="mini-metric" style="margin-top:4px">
+        <span class="mini-metric-label">Xero Financials</span>
+        <span class="mini-metric-val">Synced</span>
+      </div>
+      <div class="mini-metric" style="margin-top:4px">
+        <span class="mini-metric-label">Outlook</span>
+        <span class="mini-metric-val">12 emails</span>
+      </div>
+    </div>
+
+    <!-- Center: BIQc Node -->
+    <div class="diagram-card card-center" style="background:white;border:2px solid rgba(249,115,22,0.3);">
+      <div class="center-logo">B</div>
+      <div class="center-label">BIQc</div>
+      <div class="center-sub">Intelligence Layer</div>
+    </div>
+
+    <!-- Right: Integration categories -->
+    <div class="diagram-card card-integrations">
+      <div class="int-row">
+        <span class="int-category">CRM</span>
+        <div class="int-logos">
+          <div class="int-logo" style="background:#FF7A59" title="HubSpot">H</div>
+          <div class="int-logo" style="background:#00A1E0" title="Salesforce">S</div>
+          <div class="int-logo" style="background:#4B0082" title="Pipedrive">P</div>
+        </div>
+      </div>
+      <div class="int-row" style="border-color:rgba(249,115,22,0.2);background:rgba(249,115,22,0.03);">
+        <span class="int-category" style="color:var(--orange);">Financial</span>
+        <div class="int-logos">
+          <div class="int-logo" style="background:#13B5EA" title="Xero">X</div>
+          <div class="int-logo" style="background:#2CA01C" title="QuickBooks">Q</div>
+          <div class="int-logo" style="background:#0070BA" title="Stripe">S</div>
+        </div>
+      </div>
+      <div class="int-row">
+        <span class="int-category">Email</span>
+        <div class="int-logos">
+          <div class="int-logo" style="background:#D83B01" title="Outlook">O</div>
+          <div class="int-logo" style="background:#4285F4" title="Gmail">G</div>
+        </div>
+      </div>
+      <div class="int-row">
+        <span class="int-category">Comms</span>
+        <div class="int-logos">
+          <div class="int-logo" style="background:#4A154B" title="Slack">Sl</div>
+          <div class="int-logo" style="background:#6264A7" title="Teams">T</div>
+        </div>
+      </div>
+      <div class="int-row">
+        <span class="int-category">HR</span>
+        <div class="int-logos">
+          <div class="int-logo" style="background:#73C41D" title="BambooHR">B</div>
+          <div class="int-logo" style="background:#FF4500" title="Workday">W</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-400);font-family:var(--font-m);text-align:right;">and 500+ more →</div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <p class="trust-label">Trusted by <span>growing Australian businesses</span></p>
+  <div class="trust-logos">
+    <span class="trust-logo">The Strategy Squad</span>
+    <span class="trust-logo">Professional Services</span>
+    <span class="trust-logo">SaaS Founders</span>
+    <span class="trust-logo">eCommerce</span>
+    <span class="trust-logo">Financial Services</span>
+    <span class="trust-logo">Healthcare</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-cell reveal">
+      <div class="stat-number">94%</div>
+      <div class="stat-unit">faster loads</div>
+      <div class="stat-desc">vs. live generation</div>
+    </div>
+    <div class="stat-cell reveal reveal-delay-1">
+      <div class="stat-number">15+</div>
+      <div class="stat-unit">hrs/week</div>
+      <div class="stat-desc">Reclaimed per operator</div>
+    </div>
+    <div class="stat-cell reveal reveal-delay-2">
+      <div class="stat-number">500+</div>
+      <div class="stat-unit">integrations</div>
+      <div class="stat-desc">Connected and syncing</div>
+    </div>
+    <div class="stat-cell reveal reveal-delay-3">
+      <div class="stat-number">24/7</div>
+      <div class="stat-unit">sentinel</div>
+      <div class="stat-desc">Always watching, always on</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section>
+  <div class="section-container">
+    <div class="reveal">
+      <div class="section-kicker">The Functional Arsenal</div>
+      <h2 class="section-title">One platform.<br>Four pillars of intelligence.</h2>
+      <p class="section-sub">Every screen built for decisions, not analysis. BIQc compresses your entire business into clarity.</p>
+    </div>
+
+    <div class="features-grid">
+
+      <!-- Boardroom -->
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-card-visual vis-boardroom">
+          <div class="agent-grid">
+            <div class="agent-node">
+              <span class="agent-emoji">💰</span>
+              <span class="agent-label">Finance</span>
+            </div>
+            <div class="center-biqc-node">
+              <span class="agent-emoji" style="font-size:20px">⚡</span>
+              <span class="agent-label">BIQc</span>
+            </div>
+            <div class="agent-node">
+              <span class="agent-emoji">⚙️</span>
+              <span class="agent-label">Ops</span>
+            </div>
+            <div class="agent-node">
+              <span class="agent-emoji">📈</span>
+              <span class="agent-label">Sales</span>
+            </div>
+            <div class="agent-node" style="border-color:rgba(239,68,68,0.2);">
+              <span class="agent-emoji">⚠️</span>
+              <span class="agent-label">Risk</span>
+            </div>
+            <div class="agent-node">
+              <span class="agent-emoji">🛡️</span>
+              <span class="agent-label">Compliance</span>
+            </div>
+          </div>
+        </div>
+        <div class="feature-card-body">
+          <h3 class="feature-card-title">The Boardroom</h3>
+          <p class="feature-card-tagline">Five AI agents debating your data in real time.</p>
+          <p class="feature-card-desc">Finance, Ops, Sales, Risk, and Compliance simultaneously analyse your business and deliver a unified strategic verdict. Not a chatbot. An always-on board meeting.</p>
+          <a class="learn-more" href="#">Learn more →</a>
+        </div>
+      </div>
+
+      <!-- BIQc Insights -->
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-card-visual vis-dashboard">
+          <div class="dash-header">
+            <div class="dash-dot" style="background:#EF4444"></div>
+            <div class="dash-dot" style="background:#F59E0B"></div>
+            <div class="dash-dot" style="background:#22C55E"></div>
+          </div>
+          <div class="dash-rows">
+            <div class="dash-row">
+              <span class="dash-row-label">ATO Compliance Check</span>
+              <span class="dash-row-val">OK</span>
+            </div>
+            <div class="dash-row">
+              <span class="dash-row-label">Sales Velocity Deviation</span>
+              <span class="dash-row-val">Corrected</span>
+            </div>
+            <div class="dash-row">
+              <span class="dash-row-label">Cash Flow Forecast</span>
+              <span class="dash-row-val" style="color:#F59E0B">Attention</span>
+            </div>
+            <div class="dash-row">
+              <span class="dash-row-label">Client Retention Score</span>
+              <span class="dash-row-val" style="color:#4ADE80">94%</span>
+            </div>
+          </div>
+        </div>
+        <div class="feature-card-body">
+          <h3 class="feature-card-title">BIQc Insights</h3>
+          <p class="feature-card-tagline">The always-on intelligence layer. Sub-second from cache.</p>
+          <p class="feature-card-desc">Radar-sweep detection of Silent Killers — forgotten invoices, SOP drift, compliance gaps — before they become crises. Loads in under 1 second every visit.</p>
+          <a class="learn-more" href="#">Learn more →</a>
+        </div>
+      </div>
+
+      <!-- SoundBoard -->
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-card-visual vis-soundboard">
+          <div class="wave-viz">
+            <div class="wave-bar" style="height:20px;animation-delay:0s"></div>
+            <div class="wave-bar" style="height:40px;animation-delay:0.1s"></div>
+            <div class="wave-bar" style="height:55px;animation-delay:0.2s"></div>
+            <div class="wave-bar" style="height:35px;animation-delay:0.3s"></div>
+            <div class="wave-bar" style="height:50px;animation-delay:0.4s"></div>
+            <div class="wave-bar" style="height:28px;animation-delay:0.5s"></div>
+            <div class="wave-bar" style="height:45px;animation-delay:0.6s"></div>
+            <div class="wave-bar" style="height:60px;animation-delay:0.7s"></div>
+            <div class="wave-bar" style="height:38px;animation-delay:0.8s"></div>
+            <div class="wave-bar" style="height:52px;animation-delay:0.9s"></div>
+            <div class="wave-bar" style="height:25px;animation-delay:1.0s"></div>
+            <div class="wave-bar" style="height:42px;animation-delay:1.1s"></div>
+          </div>
+          <span class="wave-caption">🎤 Voice-to-Strategy Calibration</span>
+        </div>
+        <div class="feature-card-body">
+          <h3 class="feature-card-title">SoundBoard</h3>
+          <p class="feature-card-tagline">Speak your challenges. Get structured action plans.</p>
+          <p class="feature-card-desc">Voice-to-strategy calibration built on your actual business data — not generic templates. The fastest path from problem to executable plan.</p>
+          <a class="learn-more" href="#">Learn more →</a>
+        </div>
+      </div>
+
+      <!-- Strategic Console -->
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-card-visual vis-market">
+          <div class="market-item">
+            <span class="market-label">Industry Trends — AU 2026</span>
+            <span class="market-val">Perplexity AI ↑</span>
+          </div>
+          <div class="market-item">
+            <span class="market-label">Competitor Landscape</span>
+            <span class="market-val">3 Gaps Found</span>
+          </div>
+          <div class="market-item">
+            <span class="market-label">Regulatory Changes</span>
+            <span class="market-val">1 Update</span>
+          </div>
+          <div class="market-item">
+            <span class="market-label">Revenue Opportunity</span>
+            <span class="market-val">High Signal</span>
+          </div>
+        </div>
+        <div class="feature-card-body">
+          <h3 class="feature-card-title">Strategic Console</h3>
+          <p class="feature-card-tagline">Daily executive briefing. Ask anything. Get answers.</p>
+          <p class="feature-card-desc">Live market intelligence, competitor tracking, and daily force memos. Your AI advisor that knows your business, your goals, and your constraints.</p>
+          <a class="learn-more" href="#">Learn more →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="comparison-section">
+  <div class="section-container">
+    <div class="comparison-header reveal">
+      <div class="section-kicker">Intelligence Evolution</div>
+      <h2 class="section-title" style="text-align:center;">Dashboards report the past.<br>BIQc commands the future.</h2>
+      <p class="section-sub" style="margin:16px auto 0;text-align:center;">BI tools wait to be asked. BIQc pushes answers to you before the crisis hits.</p>
+    </div>
+
+    <div class="tab-bar reveal">
+      <button class="tab-btn active" onclick="switchTab(0, this)">Passive Analytics</button>
+      <button class="tab-btn" onclick="switchTab(1, this)">Agentic Resolution</button>
+    </div>
+
+    <div class="comparison-grid reveal">
+      <!-- Passive -->
+      <div class="comparison-card muted" id="tab-panel-0">
+        <div class="comparison-card-title">Requires Questions</div>
+        <div class="comparison-item"><div class="comparison-item-dot"></div>Revenue by Region</div>
+        <div class="comparison-item"><div class="comparison-item-dot"></div>Q3 Pipeline Report</div>
+        <div class="comparison-item"><div class="comparison-item-dot"></div>Staff Utilisation %</div>
+        <div class="comparison-item"><div class="comparison-item-dot"></div>Churn Rate Trend</div>
+        <p class="comparison-footer">You ask. It waits. You interpret. You decide.</p>
+      </div>
+
+      <!-- Active -->
+      <div class="comparison-card" id="tab-panel-1">
+        <div class="comparison-card-title" style="color:var(--orange)">Delivers Answers</div>
+        <div class="comparison-item"><div class="comparison-item-dot" style="background:var(--orange);box-shadow:0 0 6px var(--orange)"></div>FORCE MEMO: Client #47 payment drift detected</div>
+        <div class="comparison-item"><div class="comparison-item-dot" style="background:#2563eb"></div>ALERT: Pipeline over-concentrated in 2 accounts</div>
+        <div class="comparison-item"><div class="comparison-item-dot" style="background:#EF4444"></div>SOP BREACH: Onboarding step 3 skipped 4×</div>
+        <div class="comparison-item"><div class="comparison-item-dot" style="background:#059669"></div>OPPORTUNITY: Competitor pricing gap — act now</div>
+        <p class="comparison-footer" style="color:var(--orange);font-style:normal;font-weight:600;">It watches. It decides. It pushes. You command.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner reveal">
+    <h2 class="cta-title">Business clarity,<br><span>mastered.</span></h2>
+    <p class="cta-sub">Connect your systems. Let BIQc build context. Act with confidence.</p>
+    <div class="cta-actions">
+      <button class="cta-btn-primary">Deploy My Intelligence →</button>
+      <button class="cta-btn-secondary">Talk to us first</button>
+    </div>
+    <p class="cta-legal">Free to start · No credit card · Australian owned and operated</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-left">© 2026 BIQc — Business IQ Centre. Powered by The Strategy Squad Pty Ltd.</span>
+  <div class="footer-links">
+    <a class="footer-link" href="#">Pricing</a>
+    <a class="footer-link" href="#">Trust & Security</a>
+    <a class="footer-link" href="#">Terms</a>
+    <a class="footer-link" href="#">Privacy</a>
+  </div>
+</footer>
+
+<script>
+/* ════════════ TYPEWRITER ════════════ */
+const phrases = [
+  "Instant, secure intelligence",
+  "Real-time threat detection",
+  "AI-powered clarity",
+  "Strategic intelligence"
+];
+
+let phraseIdx = 0;
+let charIdx = 0;
+let isDeleting = false;
+const el = document.getElementById('typewriter-line');
+
+function typeWriter() {
+  const current = phrases[phraseIdx];
+  if (isDeleting) {
+    el.textContent = current.substring(0, charIdx - 1);
+    charIdx--;
+  } else {
+    el.textContent = current.substring(0, charIdx + 1);
+    charIdx++;
+  }
+
+  let delay = isDeleting ? 40 : 75;
+
+  if (!isDeleting && charIdx === current.length) {
+    delay = 2200;
+    isDeleting = true;
+  } else if (isDeleting && charIdx === 0) {
+    isDeleting = false;
+    phraseIdx = (phraseIdx + 1) % phrases.length;
+    delay = 400;
+  }
+
+  setTimeout(typeWriter, delay);
+}
+
+typeWriter();
+
+/* ════════════ SCROLL REVEAL ════════════ */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* Trigger immediately visible elements */
+setTimeout(() => {
+  document.querySelectorAll('.reveal').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight) {
+      el.classList.add('visible');
+    }
+  });
+}, 100);
+
+/* ════════════ TAB SWITCH ════════════ */
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const panel0 = document.getElementById('tab-panel-0');
+  const panel1 = document.getElementById('tab-panel-1');
+
+  if (idx === 0) {
+    panel0.classList.remove('muted');
+    panel1.classList.add('muted');
+  } else {
+    panel1.classList.remove('muted');
+    panel0.classList.add('muted');
+  }
+}
+
+/* ════════════ MINI BAR ANIMATION ════════════ */
+const bars = document.querySelectorAll('.mini-bar');
+function animateBars() {
+  bars.forEach((bar, i) => {
+    const heights = ['25%','45%','70%','55%','90%','65%','85%','50%'];
+    const newHeights = ['40%','60%','80%','35%','75%','90%','55%','70%'];
+    const isActive = [2, 4, 6].includes(i);
+
+    bar.style.height = newHeights[i];
+    if (isActive) bar.classList.add('active');
+    else bar.classList.remove('active');
+  });
+
+  setTimeout(() => {
+    bars.forEach((bar, i) => {
+      const heights = ['25%','45%','70%','55%','90%','65%','85%','50%'];
+      bar.style.height = heights[i];
+    });
+  }, 1800);
+}
+
+setInterval(animateBars, 3600);
+</script>
+
+</body>
+</html>
