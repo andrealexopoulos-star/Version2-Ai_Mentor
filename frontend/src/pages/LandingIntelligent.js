@@ -381,7 +381,7 @@ const OUTCOMES = [
     unit: 'hours/week reclaimed',
     title: 'Reclaim Your Time',
     desc: 'Stop being the Chief Monitor. BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.',
-    mentorEdge: "Andre's frameworks prioritise your attention so you never waste a minute on noise.",
+    mentorEdge: "BIQc prioritises your attention so you never waste a minute on noise.",
     color: '#2563eb',
   },
   {
