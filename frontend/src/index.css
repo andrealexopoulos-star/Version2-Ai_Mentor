@@ -71,15 +71,10 @@
 
 html {
     overflow-x: hidden;
+    overflow-y: scroll !important;
     max-width: 100%;
-    /* Android: prevent elastic bounce scroll */
+    height: auto;
     overscroll-behavior-x: none;
-}
-
-body {
-    overscroll-behavior: contain;
-    /* Android Chrome: prevent phantom scroll */
-    -webkit-overflow-scrolling: auto;
 }
 
 body {
@@ -92,10 +87,12 @@ body {
     font-size: 15px;
     line-height: 1.6;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll !important;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     position: relative;
     min-height: 100vh;
+    height: auto;
     max-width: 100%;
 }
 
