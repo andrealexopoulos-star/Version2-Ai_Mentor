@@ -136,8 +136,10 @@ code, pre, kbd, samp, .font-mono {
 @media (max-width: 768px) {
     html, body {
         overflow-x: hidden !important;
+        overflow-y: scroll !important;
         max-width: 100% !important;
         position: relative;
+        height: auto !important;
     }
     
     body {
@@ -148,6 +150,8 @@ code, pre, kbd, samp, .font-mono {
     #root {
         /* Replace 100vh with 100dvh for mobile */
         min-height: 100dvh;
+        height: auto !important;
+        overflow-y: visible !important;
     }
     
     /* iOS Safe Area Support */
