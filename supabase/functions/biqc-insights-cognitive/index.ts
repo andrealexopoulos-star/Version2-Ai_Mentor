@@ -264,7 +264,7 @@ YOUR OUTPUT MUST BE THIS EXACT JSON STRUCTURE:
 
   "strategic_alignment_check": "One paragraph. Does what the owner SAYS they want match what the data shows is actually happening? If there's a gap, name it directly.",
 
-  "market_position": "One paragraph. What's happening in their market that affects them. Use firecrawl data. Reference specific trends, competitor movements, regulatory changes.",
+  "market_position": "One paragraph. What's happening in their market. Use web intelligence data.",
 
   "confidence_level": "low|medium|high",
   "data_freshness": "Description of how current the data is"
