@@ -19,12 +19,14 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
+const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Keep Firecrawl ONLY for URL scraping — no Perplexity alternative for full page crawl
 async function scrapeWebsite(url: string): Promise<string> {
   if (!FIRECRAWL_API_KEY) return "";
   try {
@@ -41,21 +43,20 @@ async function scrapeWebsite(url: string): Promise<string> {
   return "";
 }
 
+// Replace Firecrawl search with Perplexity
 async function searchWeb(query: string): Promise<string> {
-  if (!FIRECRAWL_API_KEY) return "";
+  if (!PERPLEXITY_KEY) return "";
   try {
-    const res = await fetch("https://api.firecrawl.dev/v1/search", {
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query, limit: 5 }),
+      headers: { "Authorization": `Bearer ${PERPLEXITY_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 500 }),
     });
     if (res.ok) {
-      const data = await res.json();
-      return (data.data || data.results || [])
-        .map((r: any) => `${r.title || ""}: ${r.description || r.snippet || ""}`)
-        .join("\n");
+      const d = await res.json();
+      return d.choices?.[0]?.message?.content || "";
     }
-  } catch (e) { console.error("[search]", e); }
+  } catch (e) { console.error("[perplexity]", e); }
   return "";
 }
 
