@@ -399,7 +399,7 @@ const OUTCOMES = [
     unit: 'SOP compliance',
     title: 'Enforce Operational Strength',
     desc: 'AI detects when staff skip steps or leads go cold, triggering intervention before the client leaves a bad review. 24/7.',
-    mentorEdge: 'The tool enforces the Strategy Squad standard across your entire team.',
+    mentorEdge: 'BIQc enforces operational standards across your entire team, 24/7.',
     color: '#7c3aed',
   },
 ];
