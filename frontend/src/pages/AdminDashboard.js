@@ -110,9 +110,54 @@ const AdminDashboard = () => {
   const impersonateUser = async (userId) => {
     try {
       const res = await apiClient.post(`/admin/users/${userId}/impersonate`);
+      const token = res.data?.token || res.data?.access_token;
+      if (!token) { alert('No token returned from server'); return; }
+
+      // Store admin token so we can restore it
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.access_token) {
+        localStorage.setItem('biqc_admin_token_backup', currentSession.access_token);
+        localStorage.setItem('biqc_admin_refresh_backup', currentSession.refresh_token || '');
+      }
+
+      // Switch to impersonated user session
+      const { error } = await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: res.data?.refresh_token || token,
+      });
+
+      if (error) { alert('Session switch failed: ' + error.message); return; }
+
       setImpersonateData(res.data);
       setImpersonating(userId);
+
+      // Redirect to advisor as the impersonated user
+      window.location.href = '/advisor';
     } catch (e) { alert('Failed: ' + e.message); }
+  };
+
+  const exitImpersonation = async () => {
+    try {
+      const adminToken = localStorage.getItem('biqc_admin_token_backup');
+      const adminRefresh = localStorage.getItem('biqc_admin_refresh_backup');
+
+      if (adminToken) {
+        await supabase.auth.setSession({
+          access_token: adminToken,
+          refresh_token: adminRefresh || adminToken,
+        });
+        localStorage.removeItem('biqc_admin_token_backup');
+        localStorage.removeItem('biqc_admin_refresh_backup');
+      }
+
+      setImpersonating(null);
+      setImpersonateData(null);
+      window.location.href = '/admin';
+    } catch (e) {
+      localStorage.removeItem('biqc_admin_token_backup');
+      localStorage.removeItem('biqc_admin_refresh_backup');
+      window.location.href = '/admin';
+    }
   };
 
   const filteredUsers = users.filter(u =>
