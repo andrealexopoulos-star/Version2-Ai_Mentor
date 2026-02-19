@@ -8,7 +8,7 @@
 // Deploy: supabase functions deploy strategic-console-ai
 //
 // Secrets: OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-//          MERGE_API_KEY, FIRECRAWL_API_KEY (optional, for market intel)
+//          MERGE_API_KEY, Perplexity_API
 // ═══════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -146,7 +146,7 @@ async function gatherContext(supabase: any, userId: string, integrations: any[])
         trends: marketResults || "No recent market data found.",
         competitors: competitorResults || "No competitor intelligence found.",
       };
-      sources.push("firecrawl (market intel)");
+      sources.push("perplexity (market intel)");
     }
   }
 
