@@ -540,7 +540,7 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── COMPARISON: DASHBOARDS VS AGENTS ── */}
-      <section className="py-24 px-6 lg:px-12 bg-white" data-testid="sigma-comparison">
+      <section className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-12 bg-white" data-testid="sigma-comparison">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -552,7 +552,7 @@ const LandingIntelligent = () => {
             <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               Intelligence Evolution
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Dashboards report the past.
               <br />
               <span className="text-blue-600">BIQc commands the future.</span>
@@ -569,7 +569,7 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── FOUR PILLARS ── */}
-      <section className="py-24 px-6 lg:px-12 bg-slate-50" data-testid="four-pillars">
+      <section className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-12 bg-slate-50" data-testid="four-pillars">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -581,7 +581,7 @@ const LandingIntelligent = () => {
             <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               The Functional Arsenal
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Four pillars of sovereign intelligence
             </h2>
           </motion.div>
@@ -640,7 +640,7 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── WIIFM / OUTCOMES ── */}
-      <section className="py-24 px-6 lg:px-12 bg-white" data-testid="outcome-matrix">
+      <section className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-12 bg-white" data-testid="outcome-matrix">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -652,7 +652,7 @@ const LandingIntelligent = () => {
             <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               Real-World Impact
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               What's in it for you?
             </h2>
           </motion.div>
@@ -697,7 +697,7 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── PRICING ── */}
-      <section className="py-24 px-6 lg:px-12 bg-slate-50" data-testid="pricing-section">
+      <section className="py-14 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-12 bg-slate-50" data-testid="pricing-section">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -709,7 +709,7 @@ const LandingIntelligent = () => {
             <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               Strategic Pricing Ladder
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Intelligence at every scale
             </h2>
             <p className="text-sm text-slate-500 mt-3" style={{ fontFamily: 'var(--font-body)' }}>
