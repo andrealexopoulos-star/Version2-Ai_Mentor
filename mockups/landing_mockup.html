@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BIQc — Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  /* ═══════════ DESIGN TOKENS — LIQUID STEEL + ORANGE ═══════════ */
+  :root {
+    --steel-bg:       #0B0D0F;
+    --steel-1:        #111418;
+    --steel-2:        #161B20;
+    --steel-3:        #1E252D;
+    --steel-4:        #252E38;
+    --steel-border:   rgba(180,195,210,0.08);
+    --steel-glow:     rgba(180,195,210,0.04);
+    --steel-sheen:    rgba(200,215,230,0.12);
+    --text-primary:   #E8EDF2;
+    --text-muted:     #6B7C8D;
+    --text-dim:       #3A4A58;
+    --orange:         #F97316;
+    --orange-light:   #FB923C;
+    --orange-dim:     rgba(249,115,22,0.12);
+    --orange-glow:    rgba(249,115,22,0.25);
+    --font-display:   'Cormorant Garamond', Georgia, serif;
+    --font-body:      'DM Sans', system-ui, sans-serif;
+    --font-mono:      'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--steel-bg);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+  }
+
+  /* ═══════════ LIQUID STEEL SURFACE ═══════════ */
+  .steel-surface {
+    background: linear-gradient(135deg,
+      var(--steel-2) 0%,
+      var(--steel-3) 30%,
+      var(--steel-2) 60%,
+      var(--steel-4) 100%);
+    border: 1px solid var(--steel-border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .steel-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg,
+      transparent 40%,
+      var(--steel-sheen) 50%,
+      transparent 60%);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+
+  .steel-surface:hover::before { opacity: 1; }
+
+  /* ═══════════ ANIMATED BACKGROUND ═══════════ */
+  .bg-field {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.06;
+    animation: orbFloat 20s ease-in-out infinite;
+  }
+
+  .bg-orb-1 {
+    width: 600px; height: 600px;
+    background: var(--orange);
+    top: -200px; right: -100px;
+    animation-delay: 0s;
+  }
+
+  .bg-orb-2 {
+    width: 400px; height: 400px;
+    background: #60A5FA;
+    bottom: 100px; left: -100px;
+    opacity: 0.04;
+    animation-delay: -8s;
+  }
+
+  .bg-orb-3 {
+    width: 300px; height: 300px;
+    background: var(--orange);
+    top: 50%; left: 40%;
+    opacity: 0.03;
+    animation-delay: -14s;
+  }
+
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(40px, -30px) scale(1.05); }
+    66%       { transform: translate(-20px, 20px) scale(0.95); }
+  }
+
+  /* Grid overlay */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(var(--steel-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--steel-border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+  }
+
+  /* ═══════════ NAVBAR ═══════════ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 60px;
+    background: rgba(11,13,15,0.85);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--steel-border);
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-logo-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--orange), #C2410C);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 18px;
+    color: white;
+    box-shadow: 0 0 20px var(--orange-glow);
+  }
+
+  .nav-wordmark {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-name {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+  }
+
+  .nav-sub {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: none;
+    border: none;
+    text-decoration: none;
+  }
+
+  .nav-link:hover { color: var(--text-primary); background: var(--steel-glow); }
+
+  .nav-cta {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    padding: 9px 22px;
+    border-radius: 9px;
+    background: var(--orange);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px var(--orange-glow);
+  }
+
+  .nav-cta:hover {
+    background: var(--orange-light);
+    box-shadow: 0 6px 28px var(--orange-glow);
+    transform: translateY(-1px);
+  }
+
+  /* ═══════════ HERO ═══════════ */
+  .hero {
+    position: relative;
+    z-index: 1;
+    padding: 160px 60px 100px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    background: var(--orange-dim);
+    border: 1px solid rgba(249,115,22,0.2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange-light);
+    margin-bottom: 28px;
+  }
+
+  .eyebrow-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--orange);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .hero-heading {
+    font-family: var(--font-display);
+    font-size: 72px;
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+  }
+
+  .hero-heading em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--orange);
+  }
+
+  .hero-heading strong {
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  /* Animated typewriter line */
+  .typewriter-line {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typeReveal 0.8s cubic-bezier(0.22,1,0.36,1) forwards;
+    opacity: 0;
+  }
+
+  .typewriter-line:nth-child(1) { animation-delay: 0.1s; }
+  .typewriter-line:nth-child(2) { animation-delay: 0.4s; }
+  .typewriter-line:nth-child(3) { animation-delay: 0.7s; }
+  .typewriter-line:nth-child(4) { animation-delay: 1.0s; }
+
+  @keyframes typeReveal {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-sub {
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--text-muted);
+    max-width: 480px;
+    margin-bottom: 40px;
+    animation: typeReveal 0.8s 1.3s cubic-bezier(0.22,1,0.36,1) forwards;
+    opacity: 0;
+  }
+
+  .hero-sub strong { color: var(--text-primary); font-weight: 500; }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 48px;
+    animation: typeReveal 0.8s 1.5s cubic-bezier(0.22,1,0.36,1) forwards;
+    opacity: 0;
+  }
+
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: var(--orange);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 8px 32px var(--orange-glow);
+  }
+
+  .btn-primary:hover {
+    background: var(--orange-light);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px var(--orange-glow);
+  }
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: var(--steel-glow);
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--steel-border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background: var(--steel-2);
+    border-color: rgba(180,195,210,0.15);
+  }
+
+  .hero-trust {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: typeReveal 0.8s 1.7s cubic-bezier(0.22,1,0.36,1) forwards;
+    opacity: 0;
+  }
+
+  .trust-text {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ═══════════ HERO VIDEO/CARTOON PANEL ═══════════ */
+  .hero-right {
+    animation: typeReveal 0.8s 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
+    opacity: 0;
+  }
+
+  .video-container {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px var(--steel-border),
+      0 40px 80px rgba(0,0,0,0.6),
+      0 0 60px rgba(249,115,22,0.08);
+  }
+
+  .video-chrome {
+    background: var(--steel-2);
+    border-bottom: 1px solid var(--steel-border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chrome-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .chrome-dot-1 { background: #EF4444; }
+  .chrome-dot-2 { background: #F59E0B; }
+  .chrome-dot-3 { background: #22C55E; }
+
+  .chrome-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  /* Cartoon storyboard panels */
+  .storyboard {
+    background: var(--steel-1);
+    padding: 0;
+    position: relative;
+  }
+
+  .story-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 2px;
+    background: var(--steel-bg);
+  }
+
+  .story-panel {
+    background: var(--steel-2);
+    padding: 28px 24px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .story-panel:hover { background: var(--steel-3); }
+
+  .story-panel.highlight {
+    background: linear-gradient(135deg, rgba(249,115,22,0.08), var(--steel-3));
+    border: 1px solid rgba(249,115,22,0.15);
+  }
+
+  .story-panel-label {
+    position: absolute;
+    top: 10px; left: 12px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Cartoon character SVG area */
+  .cartoon-char {
+    width: 80px; height: 80px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .panel-caption {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .panel-caption strong {
+    color: var(--text-primary);
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .panel-caption.orange { color: var(--orange-light); }
+  .panel-caption.orange strong { color: var(--orange); }
+
+  /* Stress indicators */
+  .stress-dots {
+    position: absolute;
+    top: 14px; right: 14px;
+    display: flex;
+    gap: 3px;
+  }
+
+  .stress-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #EF4444;
+    animation: stressPulse 0.8s ease-in-out infinite;
+  }
+
+  .stress-dot:nth-child(2) { animation-delay: 0.2s; }
+  .stress-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes stressPulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50%       { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* Orange glow for after-AI panel */
+  .glow-ring {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    border: 2px solid var(--orange-dim);
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { transform: scale(0.9); opacity: 0.5; }
+    50%       { transform: scale(1.1); opacity: 1; }
+  }
+
+  /* Bottom status bar */
+  .video-status {
+    background: var(--steel-2);
+    border-top: 1px solid var(--steel-border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--orange-light);
+    letter-spacing: 0.1em;
+  }
+
+  .status-badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--orange);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .status-right {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  /* ═══════════ FLOATING INTEL CARD ═══════════ */
+  .intel-card {
+    position: absolute;
+    bottom: -24px;
+    left: -32px;
+    background: var(--steel-2);
+    border: 1px solid var(--steel-border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    min-width: 220px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  }
+
+  .intel-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .intel-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--orange-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .intel-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .intel-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .intel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+
+  .intel-item-label { color: var(--text-muted); }
+
+  .intel-item-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--orange);
+    background: var(--orange-dim);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .intel-item-value.green {
+    color: #4ADE80;
+    background: rgba(74,222,128,0.1);
+  }
+
+  /* ═══════════ SCROLL INDICATOR ═══════════ */
+  .scroll-indicator {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: typeReveal 0.8s 2s cubic-bezier(0.22,1,0.36,1) forwards;
+    opacity: 0;
+  }
+
+  .scroll-text {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .scroll-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, var(--text-dim), transparent);
+    animation: scrollDrop 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollDrop {
+    0%   { transform: scaleY(0); transform-origin: top; }
+    50%  { transform: scaleY(1); transform-origin: top; }
+    51%  { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  /* ═══════════ STATS ROW ═══════════ */
+  .stats-row {
+    position: relative;
+    z-index: 1;
+    padding: 48px 60px;
+    border-top: 1px solid var(--steel-border);
+    border-bottom: 1px solid var(--steel-border);
+    background: var(--steel-1);
+  }
+
+  .stats-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 24px;
+    border-right: 1px solid var(--steel-border);
+  }
+
+  .stat-item:last-child { border-right: none; }
+
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 52px;
+    font-weight: 600;
+    color: var(--orange);
+    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .stat-unit {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .stat-label {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  /* ═══════════ STORYBOARD SECTION (FULL) ═══════════ */
+  .story-section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 60px;
+  }
+
+  .section-header {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 64px;
+  }
+
+  .section-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 52px;
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  .section-title em {
+    font-style: italic;
+    color: var(--orange);
+  }
+
+  .section-sub {
+    font-size: 16px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* Journey timeline */
+  .journey-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--steel-border);
+  }
+
+  .journey-panel {
+    background: var(--steel-2);
+    padding: 40px 32px;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .journey-panel:hover { background: var(--steel-3); }
+
+  .journey-panel.active {
+    background: linear-gradient(135deg,
+      rgba(249,115,22,0.1) 0%,
+      var(--steel-3) 100%);
+    border-right: 1px solid rgba(249,115,22,0.2);
+  }
+
+  .journey-num {
+    font-family: var(--font-display);
+    font-size: 72px;
+    font-weight: 600;
+    color: var(--steel-border);
+    line-height: 1;
+    margin-bottom: 20px;
+    transition: color 0.3s;
+  }
+
+  .journey-panel.active .journey-num { color: var(--orange-dim); }
+  .journey-panel:hover .journey-num { color: var(--steel-4); }
+
+  .journey-cartoon {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    background: var(--steel-1);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--steel-border);
+  }
+
+  .journey-cartoon-label {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .journey-title {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+
+  .journey-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .journey-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 16px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .journey-tag.red   { background: rgba(239,68,68,0.1); color: #F87171; }
+  .journey-tag.amber { background: rgba(245,158,11,0.1); color: #FBBF24; }
+  .journey-tag.orange{ background: var(--orange-dim); color: var(--orange-light); }
+  .journey-tag.green { background: rgba(34,197,94,0.1); color: #4ADE80; }
+
+  /* ═══════════ FEATURES ═══════════ */
+  .features-section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 60px;
+    background: var(--steel-1);
+    border-top: 1px solid var(--steel-border);
+  }
+
+  .features-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--steel-border);
+  }
+
+  .feature-card {
+    background: var(--steel-2);
+    padding: 40px 36px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .feature-card:hover { background: var(--steel-3); }
+
+  .feature-card.span2 {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .feature-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    background: var(--orange-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(249,115,22,0.15);
+  }
+
+  .feature-name {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .feature-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .feature-visual {
+    border-radius: 12px;
+    background: var(--steel-1);
+    padding: 20px;
+    border: 1px solid var(--steel-border);
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Mini intelligence feed */
+  .mini-feed-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--steel-2);
+    border-radius: 8px;
+    border: 1px solid var(--steel-border);
+    transition: all 0.3s;
+  }
+
+  .mini-feed-item:hover { border-color: rgba(249,115,22,0.2); }
+
+  .mini-feed-label {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .mini-feed-val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .mini-feed-val.ok     { color: #4ADE80; background: rgba(74,222,128,0.1); }
+  .mini-feed-val.warn   { color: #FBBF24; background: rgba(245,158,11,0.1); }
+  .mini-feed-val.orange { color: var(--orange-light); background: var(--orange-dim); }
+
+  /* ═══════════ PRICING ═══════════ */
+  .pricing-section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 60px;
+  }
+
+  .pricing-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--steel-border);
+  }
+
+  .price-card {
+    background: var(--steel-2);
+    padding: 40px 36px;
+    position: relative;
+  }
+
+  .price-card.featured {
+    background: linear-gradient(135deg,
+      rgba(249,115,22,0.08) 0%,
+      var(--steel-3) 100%);
+    border-left: 1px solid rgba(249,115,22,0.2);
+    border-right: 1px solid rgba(249,115,22,0.2);
+  }
+
+  .price-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    background: var(--orange-dim);
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+  }
+
+  .price-tier {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .price-name {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+  }
+
+  .price-amount {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 28px;
+  }
+
+  .price-dollar {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .price-period {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .price-features {
+    list-style: none;
+    margin-bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .price-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .price-check {
+    color: var(--orange);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .price-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .price-btn.primary {
+    background: var(--orange);
+    color: white;
+    box-shadow: 0 4px 20px var(--orange-glow);
+  }
+
+  .price-btn.primary:hover {
+    background: var(--orange-light);
+    transform: translateY(-1px);
+  }
+
+  .price-btn.ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--steel-border);
+  }
+
+  .price-btn.ghost:hover {
+    background: var(--steel-3);
+    color: var(--text-primary);
+  }
+
+  /* ═══════════ CTA SECTION ═══════════ */
+  .cta-section {
+    position: relative;
+    z-index: 1;
+    padding: 120px 60px;
+    text-align: center;
+    border-top: 1px solid var(--steel-border);
+    background: var(--steel-1);
+  }
+
+  .cta-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px; height: 300px;
+    background: var(--orange);
+    border-radius: 50%;
+    filter: blur(150px);
+    opacity: 0.05;
+    pointer-events: none;
+  }
+
+  .cta-inner { position: relative; z-index: 1; }
+
+  .cta-title {
+    font-family: var(--font-display);
+    font-size: 64px;
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+
+  .cta-title em { font-style: italic; color: var(--orange); }
+
+  .cta-sub {
+    font-size: 17px;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+  }
+
+  /* ═══════════ FOOTER ═══════════ */
+  footer {
+    position: relative;
+    z-index: 1;
+    padding: 32px 60px;
+    border-top: 1px solid var(--steel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-left {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .footer-right {
+    display: flex;
+    gap: 24px;
+  }
+
+  .footer-link {
+    font-size: 13px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: color 0.2s;
+    text-decoration: none;
+  }
+
+  .footer-link:hover { color: var(--text-muted); }
+
+  /* ═══════════ SVG CHARACTERS ═══════════ */
+  /* Stressed character */
+  .char-stressed {
+    animation: stress 0.3s ease-in-out infinite alternate;
+  }
+
+  @keyframes stress {
+    from { transform: rotate(-2deg) translateY(0px); }
+    to   { transform: rotate(2deg) translateY(-3px); }
+  }
+
+  /* Calm confident character */
+  .char-confident {
+    animation: confident 3s ease-in-out infinite;
+  }
+
+  @keyframes confident {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-6px); }
+  }
+
+  /* Floating elements around stressed character */
+  .chaos-item {
+    position: absolute;
+    font-size: 16px;
+    animation: chaos 2s ease-in-out infinite;
+  }
+
+  @keyframes chaos {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.7; }
+    25%       { transform: translate(-8px, -6px) rotate(-15deg); opacity: 1; }
+    75%       { transform: translate(8px, 4px) rotate(10deg); opacity: 0.5; }
+  }
+
+  /* Data streams around AI character */
+  .data-stream {
+    position: absolute;
+    right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .data-line {
+    height: 2px;
+    border-radius: 1px;
+    background: var(--orange);
+    animation: dataFlow 1.5s ease-in-out infinite;
+  }
+
+  @keyframes dataFlow {
+    0%   { width: 0; opacity: 0; }
+    50%  { opacity: 1; }
+    100% { width: 32px; opacity: 0; }
+  }
+
+  .data-line:nth-child(1) { animation-delay: 0s; width: 0; }
+  .data-line:nth-child(2) { animation-delay: 0.3s; width: 0; }
+  .data-line:nth-child(3) { animation-delay: 0.6s; width: 0; }
+  .data-line:nth-child(4) { animation-delay: 0.9s; width: 0; }
+
+  /* ═══════════ ANNOUNCEMENT BAR ═══════════ */
+  .announce-bar {
+    background: linear-gradient(90deg, var(--steel-2), var(--steel-3), var(--steel-2));
+    border-bottom: 1px solid var(--steel-border);
+    padding: 10px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 101;
+  }
+
+  .announce-text {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  .announce-highlight {
+    color: var(--orange-light);
+    font-weight: 600;
+  }
+
+  .announce-arrow {
+    color: var(--orange);
+    font-size: 12px;
+  }
+
+  /* Shift nav down for announce bar */
+  nav { top: 37px; }
+  .hero { padding-top: 200px; }
+
+  /* ═══════════ MARQUEE ═══════════ */
+  .marquee-section {
+    position: relative;
+    z-index: 1;
+    padding: 40px 0;
+    border-top: 1px solid var(--steel-border);
+    border-bottom: 1px solid var(--steel-border);
+    overflow: hidden;
+    background: var(--steel-1);
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: 0;
+    animation: marquee 30s linear infinite;
+    width: max-content;
+  }
+
+  .marquee-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 40px;
+    border-right: 1px solid var(--steel-border);
+    white-space: nowrap;
+  }
+
+  .marquee-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--steel-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .marquee-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ═══════════ RESPONSIVE ═══════════ */
+  @media (max-width: 1024px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 60px; }
+    .story-panels { grid-template-columns: 1fr 1fr; }
+    .journey-grid { grid-template-columns: 1fr 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-card.span2 { grid-column: span 1; grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    nav { padding: 16px 24px; }
+    .hero { padding: 180px 24px 80px; }
+    .hero-heading { font-size: 52px; }
+    .stats-inner { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-field">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- Announcement Bar -->
+<div class="announce-bar">
+  <span class="announce-text">🔥 <span class="announce-highlight">New:</span> Intelligence Snapshot v2 — now 94% faster with AI caching</span>
+  <span class="announce-arrow">→</span>
+  <span class="announce-text" style="color:var(--orange); cursor:pointer;">See what's new</span>
+</div>
+
+<!-- Navbar -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-mark">B</div>
+    <div class="nav-wordmark">
+      <span class="nav-name">BIQc</span>
+      <span class="nav-sub">Sovereign Intelligence</span>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="#">Platform</a>
+    <a class="nav-link" href="#">Intelligence</a>
+    <a class="nav-link" href="#">Pricing</a>
+    <a class="nav-link" href="#">Trust</a>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="nav-link">Log In</button>
+    <button class="nav-cta">Start Free →</button>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="hero-inner">
+
+    <!-- Left -->
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <div class="eyebrow-dot"></div>
+        Sovereign Business Intelligence
+      </div>
+
+      <h1 class="hero-heading">
+        <span class="typewriter-line">You built the</span>
+        <span class="typewriter-line"><em>business.</em></span>
+        <span class="typewriter-line">Now let it</span>
+        <span class="typewriter-line"><em>run itself.</em></span>
+      </h1>
+
+      <p class="hero-sub">
+        BIQc sits above every system you run —
+        <strong>reading signals, detecting drift, compressing decisions</strong> —
+        so you see what's coming before it arrives.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn-primary">
+          Deploy My Intelligence
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16"/></svg>
+          Watch Story
+        </button>
+      </div>
+
+      <div class="hero-trust">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="trust-text">Australian Sovereign · Zero Data Leakage · AES-256</span>
+      </div>
+    </div>
+
+    <!-- Right — Story Panel -->
+    <div class="hero-right" style="position:relative;">
+      <div class="video-container">
+
+        <div class="video-chrome">
+          <div class="chrome-dot chrome-dot-1"></div>
+          <div class="chrome-dot chrome-dot-2"></div>
+          <div class="chrome-dot chrome-dot-3"></div>
+          <span class="chrome-title">Andre_COO_Journey.biqc</span>
+        </div>
+
+        <div class="storyboard">
+          <div class="story-panels">
+
+            <!-- Panel 1: Overwhelmed -->
+            <div class="story-panel">
+              <div class="stress-dots">
+                <div class="stress-dot"></div>
+                <div class="stress-dot"></div>
+                <div class="stress-dot"></div>
+              </div>
+              <span class="story-panel-label">Before BIQc</span>
+              <div class="cartoon-char char-stressed" style="position:relative;">
+                <!-- Stressed CEO SVG -->
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <!-- Body -->
+                  <circle cx="40" cy="26" r="14" fill="#F0E6D3" stroke="#D4B896" stroke-width="1.5"/>
+                  <!-- Eyes stressed -->
+                  <path d="M33 23 L36 26 M44 26 L47 23" stroke="#8B4513" stroke-width="2" stroke-linecap="round"/>
+                  <!-- Stress lines -->
+                  <path d="M30 18 L26 15 M50 18 L54 15" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
+                  <!-- Sweat drop -->
+                  <ellipse cx="52" cy="22" rx="2" ry="3" fill="#60A5FA" opacity="0.8"/>
+                  <!-- Frown -->
+                  <path d="M34 31 Q40 28 46 31" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <!-- Body/shirt -->
+                  <rect x="28" y="40" width="24" height="28" rx="6" fill="#1E293B"/>
+                  <rect x="30" y="40" width="8" height="28" rx="3" fill="#FF6B35"/>
+                  <!-- Tie -->
+                  <path d="M40 40 L37 52 L40 58 L43 52 Z" fill="#F97316"/>
+                  <!-- Papers flying -->
+                  <rect x="8" y="20" width="12" height="8" rx="1" fill="#FFF3E0" stroke="#E0E0E0" transform="rotate(-20 8 20)"/>
+                  <rect x="58" y="30" width="10" height="7" rx="1" fill="#FFF3E0" stroke="#E0E0E0" transform="rotate(15 58 30)"/>
+                  <rect x="12" y="45" width="10" height="6" rx="1" fill="#FFF3E0" stroke="#E0E0E0" transform="rotate(-10 12 45)"/>
+                  <!-- Laptop red screen -->
+                  <rect x="22" y="52" width="36" height="22" rx="3" fill="#1E293B" stroke="#374151"/>
+                  <rect x="24" y="54" width="32" height="16" rx="2" fill="#EF4444" opacity="0.3"/>
+                  <text x="40" y="64" text-anchor="middle" font-size="8" fill="#EF4444" font-family="monospace">!!ERROR!!</text>
+                </svg>
+                <!-- Chaos items floating -->
+                <div class="chaos-item" style="top:-5px;right:-5px;animation-delay:0s;">📧</div>
+                <div class="chaos-item" style="bottom:0px;left:-8px;animation-delay:0.5s;">💸</div>
+                <div class="chaos-item" style="top:10px;left:-10px;animation-delay:1s;">🔥</div>
+              </div>
+              <div class="panel-caption">
+                <strong>Drowning in data</strong>
+                50+ tabs, 3 tools, zero clarity
+              </div>
+            </div>
+
+            <!-- Panel 2: Enabling AI -->
+            <div class="story-panel highlight">
+              <span class="story-panel-label">Activating BIQc</span>
+              <div class="cartoon-char" style="position:relative;">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <!-- Glow ring -->
+                  <circle cx="40" cy="26" r="18" fill="none" stroke="#F97316" stroke-width="0.5" opacity="0.4"/>
+                  <!-- Body -->
+                  <circle cx="40" cy="26" r="14" fill="#F0E6D3" stroke="#D4B896" stroke-width="1.5"/>
+                  <!-- Eyes wide/surprised -->
+                  <circle cx="35" cy="24" r="2.5" fill="#4B2C0A"/>
+                  <circle cx="45" cy="24" r="2.5" fill="#4B2C0A"/>
+                  <circle cx="36" cy="23" r="0.8" fill="white"/>
+                  <circle cx="46" cy="23" r="0.8" fill="white"/>
+                  <!-- Open mouth amazed -->
+                  <ellipse cx="40" cy="30" rx="4" ry="3" fill="#8B4513"/>
+                  <!-- Body -->
+                  <rect x="28" y="40" width="24" height="28" rx="6" fill="#1E293B"/>
+                  <path d="M40 40 L37 52 L40 58 L43 52 Z" fill="#F97316"/>
+                  <!-- AI connection lines -->
+                  <path d="M10 40 Q25 30 40 40" stroke="#F97316" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+                  <path d="M70 35 Q55 25 40 35" stroke="#F97316" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+                  <!-- Circuit nodes -->
+                  <circle cx="10" cy="40" r="3" fill="#F97316" opacity="0.8"/>
+                  <circle cx="70" cy="35" r="3" fill="#F97316" opacity="0.8"/>
+                  <circle cx="20" cy="60" r="2.5" fill="#F97316" opacity="0.6"/>
+                  <path d="M20 60 Q30 55 40 60" stroke="#F97316" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>
+                  <!-- BIQc logo on chest -->
+                  <text x="40" y="56" text-anchor="middle" font-size="7" fill="#F97316" font-family="monospace" font-weight="bold">BIQc</text>
+                </svg>
+                <!-- Data streams -->
+                <div class="data-stream">
+                  <div class="data-line" style="animation-delay:0s;"></div>
+                  <div class="data-line" style="animation-delay:0.3s;"></div>
+                  <div class="data-line" style="animation-delay:0.6s;"></div>
+                  <div class="data-line" style="animation-delay:0.9s;"></div>
+                </div>
+              </div>
+              <div class="panel-caption orange">
+                <strong>Intelligence activated</strong>
+                All systems connected, AI online
+              </div>
+            </div>
+
+            <!-- Panel 3: Multiplied -->
+            <div class="story-panel highlight">
+              <span class="story-panel-label">Multiplied</span>
+              <div class="cartoon-char char-confident" style="position:relative;">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <!-- Halo/crown effect -->
+                  <path d="M26 18 L30 10 L40 14 L50 10 L54 18" stroke="#F97316" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+                  <!-- Body -->
+                  <circle cx="40" cy="26" r="14" fill="#F0E6D3" stroke="#D4B896" stroke-width="1.5"/>
+                  <!-- Confident eyes -->
+                  <path d="M33 24 Q35 22 37 24" stroke="#4B2C0A" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M43 24 Q45 22 47 24" stroke="#4B2C0A" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <!-- Smile -->
+                  <path d="M34 30 Q40 35 46 30" stroke="#4B2C0A" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <!-- Body - confident posture hands on hips -->
+                  <rect x="28" y="40" width="24" height="28" rx="6" fill="#1E293B"/>
+                  <path d="M40 40 L37 52 L40 58 L43 52 Z" fill="#F97316"/>
+                  <!-- Multiplier badges -->
+                  <rect x="58" y="15" width="18" height="12" rx="4" fill="#F97316"/>
+                  <text x="67" y="24" text-anchor="middle" font-size="7" fill="white" font-family="monospace" font-weight="bold">×10</text>
+                  <!-- Growth arrow -->
+                  <path d="M8 55 L15 45 L22 48 L30 38" stroke="#4ADE80" stroke-width="2" stroke-linecap="round" fill="none"/>
+                  <circle cx="30" cy="38" r="3" fill="#4ADE80"/>
+                </svg>
+              </div>
+              <div class="panel-caption orange">
+                <strong>10× multiplied</strong>
+                One operator, infinite leverage
+              </div>
+            </div>
+
+            <!-- Panel 4: Reading the future -->
+            <div class="story-panel">
+              <span class="story-panel-label">Reading the Future</span>
+              <div class="cartoon-char" style="position:relative;">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <!-- Body -->
+                  <circle cx="40" cy="24" r="13" fill="#F0E6D3" stroke="#D4B896" stroke-width="1.5"/>
+                  <!-- Eyes looking at dashboard -->
+                  <ellipse cx="36" cy="22" rx="2" ry="1.5" fill="#4B2C0A"/>
+                  <ellipse cx="44" cy="22" rx="2" ry="1.5" fill="#4B2C0A"/>
+                  <!-- Focused expression -->
+                  <path d="M35 28 Q40 30 45 28" stroke="#4B2C0A" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <!-- Body leaning forward -->
+                  <rect x="29" y="37" width="22" height="26" rx="5" fill="#1E293B" transform="rotate(5 40 50)"/>
+                  <!-- Dashboard in front - mini BIQc screen -->
+                  <rect x="6" y="40" width="30" height="22" rx="4" fill="#111418" stroke="#F97316" stroke-width="1"/>
+                  <rect x="8" y="42" width="26" height="14" rx="2" fill="#0B0D0F"/>
+                  <!-- Mini chart on screen -->
+                  <path d="M10 52 L14 48 L18 50 L22 44 L26 46 L30 42" stroke="#F97316" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <circle cx="30" cy="42" r="2" fill="#F97316"/>
+                  <!-- Orange glow from screen -->
+                  <rect x="6" y="40" width="30" height="22" rx="4" fill="#F97316" opacity="0.05"/>
+                  <!-- Prediction text -->
+                  <text x="18" y="59" text-anchor="middle" font-size="5" fill="#F97316" font-family="monospace">TREND ↑</text>
+                </svg>
+              </div>
+              <div class="panel-caption">
+                <strong>Reading tomorrow's move</strong>
+                Inevitable patterns, detected today
+              </div>
+            </div>
+
+          </div><!-- end story-panels -->
+        </div><!-- end storyboard -->
+
+        <div class="video-status">
+          <div class="status-badge">
+            <div class="status-badge-dot"></div>
+            Intelligence Active — DRIFT → STABLE
+          </div>
+          <span class="status-right">andre@thestrategysquad.com.au</span>
+        </div>
+
+      </div><!-- end video-container -->
+
+      <!-- Floating intel card -->
+      <div class="intel-card">
+        <div class="intel-card-header">
+          <div class="intel-icon">🧠</div>
+          <span class="intel-label">Live Snapshot</span>
+        </div>
+        <div class="intel-items">
+          <div class="intel-item">
+            <span class="intel-item-label">Business State</span>
+            <span class="intel-item-value">DRIFT → STABLE</span>
+          </div>
+          <div class="intel-item">
+            <span class="intel-item-label">CRM Health</span>
+            <span class="intel-item-value green">24 open deals</span>
+          </div>
+          <div class="intel-item">
+            <span class="intel-item-label">Cache Load</span>
+            <span class="intel-item-value green">882ms</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end hero-right -->
+  </div>
+
+  <div class="scroll-indicator">
+    <span class="scroll-text">Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ═══════════ STATS ROW ═══════════ -->
+<div class="stats-row">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-number">15+</div>
+      <div class="stat-unit">hrs / week</div>
+      <div class="stat-label">Reclaimed per operator</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">94%</div>
+      <div class="stat-unit">faster loads</div>
+      <div class="stat-label">vs. live generation</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">10×</div>
+      <div class="stat-unit">skill leverage</div>
+      <div class="stat-label">One operator, infinite output</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">24/7</div>
+      <div class="stat-unit">sentinel</div>
+      <div class="stat-label">Always watching, always on</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MARQUEE ═══════════ -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <div class="marquee-item"><div class="marquee-icon">H</div><span class="marquee-name">HubSpot</span></div>
+    <div class="marquee-item"><div class="marquee-icon">X</div><span class="marquee-name">Xero</span></div>
+    <div class="marquee-item"><div class="marquee-icon">S</div><span class="marquee-name">Salesforce</span></div>
+    <div class="marquee-item"><div class="marquee-icon">M</div><span class="marquee-name">Microsoft 365</span></div>
+    <div class="marquee-item"><div class="marquee-icon">G</div><span class="marquee-name">Google Workspace</span></div>
+    <div class="marquee-item"><div class="marquee-icon">S</div><span class="marquee-name">Stripe</span></div>
+    <div class="marquee-item"><div class="marquee-icon">Sl</div><span class="marquee-name">Slack</span></div>
+    <div class="marquee-item"><div class="marquee-icon">B</div><span class="marquee-name">BambooHR</span></div>
+    <div class="marquee-item"><div class="marquee-icon">Sh</div><span class="marquee-name">Shopify</span></div>
+    <div class="marquee-item"><div class="marquee-icon">Z</div><span class="marquee-name">Zoom</span></div>
+    <div class="marquee-item"><div class="marquee-icon">J</div><span class="marquee-name">Jira</span></div>
+    <div class="marquee-item"><div class="marquee-icon">QB</div><span class="marquee-name">QuickBooks</span></div>
+    <!-- Duplicate for loop -->
+    <div class="marquee-item"><div class="marquee-icon">H</div><span class="marquee-name">HubSpot</span></div>
+    <div class="marquee-item"><div class="marquee-icon">X</div><span class="marquee-name">Xero</span></div>
+    <div class="marquee-item"><div class="marquee-icon">S</div><span class="marquee-name">Salesforce</span></div>
+    <div class="marquee-item"><div class="marquee-icon">M</div><span class="marquee-name">Microsoft 365</span></div>
+    <div class="marquee-item"><div class="marquee-icon">G</div><span class="marquee-name">Google Workspace</span></div>
+    <div class="marquee-item"><div class="marquee-icon">S</div><span class="marquee-name">Stripe</span></div>
+    <div class="marquee-item"><div class="marquee-icon">Sl</div><span class="marquee-name">Slack</span></div>
+    <div class="marquee-item"><div class="marquee-icon">B</div><span class="marquee-name">BambooHR</span></div>
+    <div class="marquee-item"><div class="marquee-icon">Sh</div><span class="marquee-name">Shopify</span></div>
+    <div class="marquee-item"><div class="marquee-icon">Z</div><span class="marquee-name">Zoom</span></div>
+    <div class="marquee-item"><div class="marquee-icon">J</div><span class="marquee-name">Jira</span></div>
+    <div class="marquee-item"><div class="marquee-icon">QB</div><span class="marquee-name">QuickBooks</span></div>
+  </div>
+</div>
+
+<!-- ═══════════ THE JOURNEY ═══════════ -->
+<section class="story-section">
+  <div class="section-header">
+    <div class="section-eyebrow">The COO Journey</div>
+    <h2 class="section-title">From <em>drowning</em> to<br/>reading the future</h2>
+    <p class="section-sub">Four moments every business operator lives through. BIQc compresses chapters 1–3 so you can live permanently in chapter 4.</p>
+  </div>
+
+  <div class="journey-grid">
+
+    <div class="journey-panel">
+      <div class="journey-num">01</div>
+      <div class="journey-cartoon">
+        <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
+          <text x="45" y="30" text-anchor="middle" font-size="10" fill="#EF4444" font-family="monospace">12 TABS OPEN</text>
+          <text x="45" y="44" text-anchor="middle" font-size="10" fill="#EF4444" font-family="monospace">3 CRISES</text>
+          <text x="45" y="58" text-anchor="middle" font-size="10" fill="#EF4444" font-family="monospace">1 HUMAN</text>
+          <path d="M20 70 L70 70" stroke="#374151" stroke-width="1" stroke-dasharray="4,4"/>
+          <circle cx="45" cy="78" r="5" fill="#EF4444" opacity="0.5"/>
+          <text x="45" y="81" text-anchor="middle" font-size="7" fill="white" font-family="monospace">YOU</text>
+        </svg>
+        <div class="journey-cartoon-label">Unassisted</div>
+      </div>
+      <div class="journey-title">Every fire is yours to fight</div>
+      <div class="journey-desc">100+ emails. 3 SaaS dashboards. Staff pinging. Clients chasing. You're reactive, not strategic.</div>
+      <span class="journey-tag red">⚠ Maximum exposure</span>
+    </div>
+
+    <div class="journey-panel">
+      <div class="journey-num">02</div>
+      <div class="journey-cartoon">
+        <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
+          <text x="45" y="25" text-anchor="middle" font-size="9" fill="#FBBF24" font-family="monospace">CONNECTING...</text>
+          <!-- Connection lines -->
+          <circle cx="45" cy="55" r="15" fill="none" stroke="#F97316" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="45" y="59" text-anchor="middle" font-size="8" fill="#F97316" font-family="monospace">BIQc</text>
+          <path d="M10 45 L30 55" stroke="#F97316" stroke-width="1" stroke-dasharray="2,2" opacity="0.7"/>
+          <path d="M80 45 L60 55" stroke="#F97316" stroke-width="1" stroke-dasharray="2,2" opacity="0.7"/>
+          <path d="M45 20 L45 40" stroke="#F97316" stroke-width="1" stroke-dasharray="2,2" opacity="0.7"/>
+          <circle cx="10" cy="45" r="4" fill="#374151" stroke="#F97316" stroke-width="1"/>
+          <circle cx="80" cy="45" r="4" fill="#374151" stroke="#F97316" stroke-width="1"/>
+          <text x="10" y="48" text-anchor="middle" font-size="5" fill="#F97316">CRM</text>
+          <text x="80" y="48" text-anchor="middle" font-size="5" fill="#F97316">XERO</text>
+        </svg>
+        <div class="journey-cartoon-label">Calibrating</div>
+      </div>
+      <div class="journey-title">Connecting your intelligence layer</div>
+      <div class="journey-desc">BIQc connects to every system. 9-question calibration. Your Business DNA is mapped. Takes 15 minutes.</div>
+      <span class="journey-tag amber">⟳ Initialising</span>
+    </div>
+
+    <div class="journey-panel active">
+      <div class="journey-num">03</div>
+      <div class="journey-cartoon">
+        <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
+          <!-- Dashboard mockup -->
+          <rect x="8" y="10" width="74" height="55" rx="6" fill="#111418" stroke="#F97316" stroke-width="1"/>
+          <rect x="10" y="12" width="70" height="8" rx="3" fill="#1E293B"/>
+          <text x="45" y="18.5" text-anchor="middle" font-size="6" fill="#9CA3AF" font-family="monospace">BIQc INTELLIGENCE SNAPSHOT</text>
+          <!-- Chart -->
+          <path d="M14 50 L22 40 L30 43 L38 34 L46 37 L54 28 L62 30 L70 22" stroke="#F97316" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <!-- Prediction line (dashed) -->
+          <path d="M70 22 L78 16" stroke="#F97316" stroke-width="1.5" stroke-dasharray="3,2" stroke-linecap="round" opacity="0.7"/>
+          <!-- Dots -->
+          <circle cx="54" cy="28" r="2.5" fill="#F97316"/>
+          <circle cx="70" cy="22" r="2.5" fill="#F97316"/>
+          <!-- Signal tags -->
+          <rect x="12" y="55" width="20" height="7" rx="2" fill="rgba(249,115,22,0.15)"/>
+          <text x="22" y="60.5" text-anchor="middle" font-size="5" fill="#F97316" font-family="monospace">DRIFT</text>
+          <rect x="34" y="55" width="20" height="7" rx="2" fill="rgba(74,222,128,0.1)"/>
+          <text x="44" y="60.5" text-anchor="middle" font-size="5" fill="#4ADE80" font-family="monospace">94% ↑</text>
+          <!-- Glow -->
+          <rect x="8" y="10" width="74" height="55" rx="6" fill="#F97316" opacity="0.03"/>
+          <!-- Status bar -->
+          <rect x="8" y="65" width="74" height="10" rx="0" fill="#1E293B"/>
+          <text x="45" y="72" text-anchor="middle" font-size="5" fill="#F97316" font-family="monospace">LIVE · SYSTEM STATE: DRIFT RESOLVING</text>
+        </svg>
+        <div class="journey-cartoon-label">Intelligence Active</div>
+      </div>
+      <div class="journey-title">Seeing what others miss</div>
+      <div class="journey-desc">Real-time inevitabilities surface. Pipeline compression detected weeks early. Cashflow drift flagged before it hits.</div>
+      <span class="journey-tag orange">✦ Intelligence forming</span>
+    </div>
+
+    <div class="journey-panel active">
+      <div class="journey-num">04</div>
+      <div class="journey-cartoon">
+        <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
+          <!-- Future/horizon aesthetic -->
+          <path d="M8 65 Q45 20 82 65" fill="none" stroke="#F97316" stroke-width="1" opacity="0.3"/>
+          <!-- Prediction rays -->
+          <path d="M45 65 L30 30" stroke="#F97316" stroke-width="1" stroke-dasharray="2,3" opacity="0.5"/>
+          <path d="M45 65 L45 20" stroke="#F97316" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.7"/>
+          <path d="M45 65 L62 28" stroke="#F97316" stroke-width="1" stroke-dasharray="2,3" opacity="0.5"/>
+          <!-- Future nodes -->
+          <circle cx="30" cy="30" r="4" fill="#374151" stroke="#F97316" stroke-width="1"/>
+          <text x="30" y="33" text-anchor="middle" font-size="5" fill="#F97316">Q2</text>
+          <circle cx="45" cy="20" r="5" fill="#F97316" opacity="0.9"/>
+          <text x="45" y="23.5" text-anchor="middle" font-size="6" fill="white">NOW</text>
+          <circle cx="62" cy="28" r="4" fill="#374151" stroke="#F97316" stroke-width="1"/>
+          <text x="62" y="31" text-anchor="middle" font-size="5" fill="#F97316">Q3</text>
+          <!-- Observer at base -->
+          <circle cx="45" cy="72" r="6" fill="#F97316" opacity="0.2" stroke="#F97316" stroke-width="1"/>
+          <text x="45" y="75" text-anchor="middle" font-size="7" fill="#F97316">👁</text>
+          <!-- Labels -->
+          <text x="14" y="44" font-size="5" fill="#4ADE80" font-family="monospace">REVENUE ↑</text>
+          <text x="60" y="44" font-size="5" fill="#FBBF24" font-family="monospace">RISK ↓</text>
+        </svg>
+        <div class="journey-cartoon-label">Sovereign State</div>
+      </div>
+      <div class="journey-title">Reading tomorrow's decisions today</div>
+      <div class="journey-desc">You no longer react. You see 6 weeks ahead. Every decision is made from intelligence, not instinct.</div>
+      <span class="journey-tag green">✓ Sovereign operator</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════ FEATURES ═══════════ -->
+<section class="features-section">
+  <div class="section-header">
+    <div class="section-eyebrow">The Functional Arsenal</div>
+    <h2 class="section-title">Four pillars of <em>sovereign intelligence</em></h2>
+  </div>
+
+  <div class="features-grid" style="max-width:1200px;margin:0 auto;">
+
+    <div class="feature-card span2">
+      <div>
+        <div class="feature-icon">🧠</div>
+        <div class="feature-name">The Boardroom</div>
+        <div class="feature-desc">Five AI specialists — Finance, Operations, Sales, Risk, and Compliance — simultaneously debate your business data and deliver a unified strategic verdict. Not a chatbot. A board meeting that never ends.</div>
+      </div>
+      <div class="feature-visual">
+        <div class="mini-feed-item"><span class="mini-feed-label">Finance Agent</span><span class="mini-feed-val orange">Cash compression Q3</span></div>
+        <div class="mini-feed-item"><span class="mini-feed-label">Risk Agent</span><span class="mini-feed-val warn">Pipeline concentration</span></div>
+        <div class="mini-feed-item"><span class="mini-feed-label">Sales Agent</span><span class="mini-feed-val ok">3 deals ready to close</span></div>
+        <div class="mini-feed-item"><span class="mini-feed-label">Ops Agent</span><span class="mini-feed-val ok">SOP compliance 97%</span></div>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-name">BIQc Insights</div>
+      <div class="feature-desc">Radar-sweep detection of Silent Killers — forgotten invoices, SOP drift, compliance gaps — before they become crises. Sub-second load from intelligent caching.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-name">Strategic Console</div>
+      <div class="feature-desc">Your daily executive briefing. Live pulse tracking across Cash Velocity, Staff Sentiment, and Compliance Risk. Ask it anything about your business in plain language.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🎤</div>
+      <div class="feature-name">SoundBoard</div>
+      <div class="feature-desc">Voice-to-strategy calibration. Speak your challenges, receive structured action plans built entirely on your data — not generic templates.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════ PRICING ═══════════ -->
+<section class="pricing-section">
+  <div class="section-header">
+    <div class="section-eyebrow">Strategic Pricing Ladder</div>
+    <h2 class="section-title">Intelligence at <em>every scale</em></h2>
+    <p class="section-sub">All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
+  </div>
+
+  <div class="pricing-grid">
+
+    <div class="price-card">
+      <div class="price-tier">Entry</div>
+      <div class="price-name">The Pulse</div>
+      <div class="price-amount">
+        <span class="price-dollar">$149</span>
+        <span class="price-period">/mo</span>
+      </div>
+      <ul class="price-features">
+        <li class="price-feature"><span class="price-check">✦</span>24/7 Sentinel Monitoring</li>
+        <li class="price-feature"><span class="price-check">✦</span>Risk & anomaly alerts</li>
+        <li class="price-feature"><span class="price-check">✦</span>Business DNA profile</li>
+        <li class="price-feature"><span class="price-check">✦</span>Weekly intelligence briefing</li>
+        <li class="price-feature"><span class="price-check">✦</span>Email & calendar integration</li>
+        <li class="price-feature"><span class="price-check">✦</span>1 user seat</li>
+      </ul>
+      <button class="price-btn ghost">Deploy My Intelligence</button>
+    </div>
+
+    <div class="price-card featured">
+      <div class="price-badge">Recommended</div>
+      <div class="price-tier">Advisory</div>
+      <div class="price-name">The Strategist</div>
+      <div class="price-amount">
+        <span class="price-dollar">$1,950</span>
+        <span class="price-period">/mo</span>
+      </div>
+      <ul class="price-features">
+        <li class="price-feature"><span class="price-check" style="color:var(--orange)">✦</span>Everything in The Pulse</li>
+        <li class="price-feature"><span class="price-check" style="color:var(--orange)">✦</span>Full BIQc Intelligence Matrix</li>
+        <li class="price-feature"><span class="price-check" style="color:var(--orange)">✦</span>Monthly Advisory Calibration</li>
+        <li class="price-feature"><span class="price-check" style="color:var(--orange)">✦</span>CRM & accounting integration</li>
+        <li class="price-feature"><span class="price-check" style="color:var(--orange)">✦</span>Board-ready intelligence memos</li>
+        <li class="price-feature"><span class="price-check" style="color:var(--orange)">✦</span>Up to 5 user seats</li>
+      </ul>
+      <button class="price-btn primary">Deploy My Intelligence</button>
+    </div>
+
+    <div class="price-card">
+      <div class="price-tier">Sovereign</div>
+      <div class="price-name">The Sovereign</div>
+      <div class="price-amount">
+        <span class="price-dollar">$5,500</span>
+        <span class="price-period">/mo</span>
+      </div>
+      <ul class="price-features">
+        <li class="price-feature"><span class="price-check">✦</span>Everything in The Strategist</li>
+        <li class="price-feature"><span class="price-check">✦</span>Weekly Force Memo Execution</li>
+        <li class="price-feature"><span class="price-check">✦</span>Daily mentoring sessions</li>
+        <li class="price-feature"><span class="price-check">✦</span>Custom integration pipeline</li>
+        <li class="price-feature"><span class="price-check">✦</span>Dedicated Strategy Squad advisor</li>
+        <li class="price-feature"><span class="price-check">✦</span>Unlimited seats</li>
+      </ul>
+      <button class="price-btn ghost">Contact Sales</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════ CTA ═══════════ -->
+<section class="cta-section">
+  <div class="cta-glow"></div>
+  <div class="cta-inner">
+    <h2 class="cta-title">Business clarity,<br/><em>mastered.</em></h2>
+    <p class="cta-sub">Connect your systems. Let BIQc build context. Act with confidence.</p>
+    <button class="btn-primary" style="margin:0 auto;display:inline-flex;font-size:15px;padding:16px 36px;">
+      Deploy My Intelligence
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <p style="margin-top:20px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;">
+      Free to start · No credit card · Australian owned and operated
+    </p>
+  </div>
+</section>
+
+<!-- Disclaimer -->
+<div style="background:var(--steel-2);border-top:1px solid var(--steel-border);padding:16px 60px;text-align:center;">
+  <p style="font-size:11px;color:var(--text-dim);line-height:1.6;">
+    <strong style="color:var(--text-muted)">Important:</strong> The Strategy Squad provides general information and educational content only.
+    It does not constitute financial, legal, tax, or professional advice.
+    See our <a href="#" style="color:var(--orange);text-decoration:none;">Terms and Conditions</a> for full details.
+  </p>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-left">
+    © 2026 BIQc — Business IQ Centre. Powered by The Strategy Squad Pty Ltd.
+  </div>
+  <div class="footer-right">
+    <a class="footer-link" href="#">Pricing</a>
+    <a class="footer-link" href="#">Trust & Security</a>
+    <a class="footer-link" href="#">Terms</a>
+    <a class="footer-link" href="#">Privacy</a>
+  </div>
+</footer>
+
+</body>
+</html>
