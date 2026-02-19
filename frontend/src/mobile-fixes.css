@@ -15,10 +15,15 @@ html, body {
 }
 
 /* Prevent horizontal scroll globally - preserve vertical scroll */
-html, body, #root {
+html, body {
   overflow-x: hidden;
   overflow-y: scroll !important;
   max-width: 100vw;
+}
+
+#root {
+  overflow: visible;
+  height: auto;
 }
 
 /* iOS safe area */
