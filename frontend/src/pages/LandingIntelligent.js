@@ -352,7 +352,7 @@ const LandingIntelligent = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-body)', color: '#0F172A', overscrollBehavior: 'none' }}>
+    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-body)', color: '#0F172A' }}>
 
       {/* Subtle grid + radial glow */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
