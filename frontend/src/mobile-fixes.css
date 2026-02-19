@@ -125,55 +125,26 @@ aside [class*="overflow-y"] {
     width: 100%;
   }
 }
-  
-  /* Fix: Text wrapping and line-height for narrative */
+
+/* Additional mobile-scoped rules */
+@media (max-width: 768px) {
   .whitespace-pre-wrap {
     white-space: normal !important;
     word-break: break-word;
     line-height: 1.5 !important;
   }
-  
-  /* ========================================
-     MY SOUNDBOARD - SPECIFIC FIXES
-     ======================================== */
-  
-  /* Fix: Message input alignment */
+
   textarea {
     width: 100% !important;
     padding: 12px !important;
     line-height: 1.5 !important;
   }
-  
-  /* Fix: Centre placeholder correctly */
+
   ::placeholder {
     text-align: left;
     opacity: 0.6;
-    letter-spacing: normal;
   }
-  
-  /* Fix: Input bar positioning - prevent overlap */
-  [class*="bottom-"] {
-    position: relative !important;
-    bottom: auto !important;
-  }
-  
-  /* Fix: Remove text artifacts (S h spacing issues) */
-  * {
-    letter-spacing: normal !important;
-    word-spacing: normal !important;
-  }
-  
-  /* Ensure input bar does not float incorrectly */
-  form {
-    width: 100%;
-    position: relative;
-  }
-  
-  /* ========================================
-     INTEGRATIONS - SPECIFIC FIXES
-     ======================================== */
-  
-  /* Fix: Tab label overlap/clipping */
+
   [role="tablist"] {
     display: flex;
     flex-wrap: nowrap;
@@ -181,90 +152,20 @@ aside [class*="overflow-y"] {
     -webkit-overflow-scrolling: touch;
     gap: 0;
   }
-  
+
   [role="tab"] {
     flex-shrink: 0;
     padding: 8px 12px !important;
     font-size: 13px !important;
     white-space: nowrap;
   }
-  
-  /* Fix: Ensure tabs fit within viewport */
-  .grid-cols-4 {
-    display: flex !important;
-    grid-template-columns: none !important;
-  }
-  
-  .grid-cols-2 {
-    display: flex !important;
-    grid-template-columns: none !important;
-  }
-  
-  /* Fix: Correct spacing above Connected Data Sources */
-  h2 + div {
-    margin-top: 1rem !important;
-  }
-  
-  /* ========================================
-     SETTINGS - SPECIFIC FIXES
-     ======================================== */
-  
-  /* Fix: Remove desktop max-width constraints */
-  .max-w-4xl {
-    max-width: 100% !important;
-  }
-  
-  /* Fix: Centre cards correctly */
-  [class*="card"] {
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
-  }
-  
-  /* Fix: Improve mobile typography scale */
-  .text-3xl {
-    font-size: 1.75rem !important;
-  }
-  
-  .text-4xl {
-    font-size: 2rem !important;
-  }
-  
-  /* Fix: Reduce excess padding */
-  .p-8 {
-    padding: 1rem !important;
-  }
-  
-  .p-6 {
-    padding: 0.75rem !important;
-  }
-  
-  .mb-8 {
-    margin-bottom: 1.5rem !important;
-  }
-  
-  /* ========================================
-     GENERAL MOBILE FIXES
-     ======================================== */
-  
-  /* Ensure all buttons are touchable */
-  button,
-  [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Fix grid layouts on mobile */
-  .grid {
-    grid-template-columns: 1fr !important;
-  }
-  
-  /* Fix flex layouts that might cause overflow */
-  .flex {
-    flex-wrap: wrap;
-  }
-  
-  /* Prevent images from causing horizontal scroll */
+
+  .max-w-4xl { max-width: 100% !important; }
+
+  .p-8 { padding: 1rem !important; }
+  .p-6 { padding: 0.75rem !important; }
+  .mb-8 { margin-bottom: 1.5rem !important; }
+
   img {
     max-width: 100%;
     height: auto;
