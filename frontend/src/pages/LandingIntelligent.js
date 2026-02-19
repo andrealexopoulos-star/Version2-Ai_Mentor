@@ -530,9 +530,9 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── TRUST LOGOS STRIP ── */}
-      <section className="py-12 bg-slate-50 border-y border-slate-200" data-testid="trust-strip">
-        <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400 mb-6" style={{ fontFamily: FONTS.mono }}>
+      <section className="py-8 sm:py-12 bg-slate-50 border-y border-slate-200" data-testid="trust-strip">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400 mb-5 sm:mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
             BIQc speaks 500 languages. Your business is one.
           </p>
           <IntegrationMarquee />
