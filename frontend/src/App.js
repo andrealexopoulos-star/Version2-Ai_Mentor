@@ -9,8 +9,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useEffect } from 'react';
 import InstallPrompt from './components/InstallPrompt';
 
-// Pages
-import Landing from "./pages/Landing";
+// Pages - removed legacy Landing and Advisor imports
 import LandingIntelligent from "./pages/LandingIntelligent";
 import TrustPage from "./pages/TrustPage";
 import LoginSupabase from "./pages/LoginSupabase";
