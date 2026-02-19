@@ -9,9 +9,9 @@ import {
 
 /* ═══ DESIGN TOKENS ═══ */
 const FONTS = {
-  head: "'Outfit', sans-serif",
-  body: "'DM Sans', sans-serif",
-  mono: "'JetBrains Mono', 'Geist Mono', monospace",
+  head: "var(--font-heading)",
+  body: "var(--font-body)",
+  mono: "var(--font-mono)",
 };
 
 /* ═══ ANIMATION VARIANTS ═══ */
