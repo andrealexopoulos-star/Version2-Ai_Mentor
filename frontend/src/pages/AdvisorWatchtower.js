@@ -3,7 +3,8 @@ import { useSnapshot } from '../hooks/useSnapshot';
 import DashboardLayout from '../components/DashboardLayout';
 import { RefreshCw } from 'lucide-react';
 
-const HEAD = "'Inter Tight', 'Inter', -apple-system, sans-serif";
+const HEAD = "var(--font-heading)";
+const MONO = "var(--font-mono)";
 const MONO = "'JetBrains Mono', 'SF Mono', monospace";
 
 const STATE_CFG = {
