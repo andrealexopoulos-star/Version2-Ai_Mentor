@@ -401,7 +401,7 @@ const DashboardLayout = ({ children }) => {
         className={`fixed left-0 bg-white shadow-2xl transition-all duration-300 ${sidebarWidth} ${
           isNavOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 top-12 md:top-14 h-[calc(100vh-3rem)] md:h-[calc(100vh-3.5rem)]`}
-        style={{ zIndex: 999 }}
+        style={{ zIndex: 999, pointerEvents: isNavOpen ? 'auto' : undefined }}
       >
         {/* Desktop: Collapse Toggle */}
         <button
