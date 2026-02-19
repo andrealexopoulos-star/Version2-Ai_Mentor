@@ -83,6 +83,7 @@ function AppRoutes() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/trust" element={<TrustPage />} />
       <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/enterprise-terms" element={<EnterpriseTerms />} />
       
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
