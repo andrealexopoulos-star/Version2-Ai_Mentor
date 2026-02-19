@@ -1,17 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 // BIQC INSIGHTS — Cognitive Layer Edge Function
-// 
-// This is THE core intelligence function of the platform.
-// It performs: Signal Perception → Pattern Recognition → 
-// Decision Compression → Executive Framing
-//
-// NOT a dashboard. NOT a report. NOT a chatbot.
-// It is a cognitive system that interprets drift, detects
-// inevitability, compresses complexity, and frames decisions.
-//
 // Deploy: supabase functions deploy biqc-insights-cognitive
 // Secrets: OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-//          MERGE_API_KEY, FIRECRAWL_API_KEY
+//          MERGE_API_KEY, Perplexity_API
 // ═══════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -21,7 +12,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
-const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
+const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,21 +31,20 @@ async function fetchMerge(token: string, endpoint: string, limit = 20) {
   return [];
 }
 
-// ─── Firecrawl ───
+// ─── Perplexity (replaces Firecrawl) ───
 async function searchMarket(query: string): Promise<string> {
-  if (!FIRECRAWL_API_KEY) return "";
+  if (!PERPLEXITY_KEY) return "";
   try {
-    const res = await fetch("https://api.firecrawl.dev/v1/search", {
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query, limit: 5 }),
+      headers: { "Authorization": `Bearer ${PERPLEXITY_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 400 }),
     });
     if (res.ok) {
-      const data = await res.json();
-      const results = data.data || data.results || [];
-      return results.map((r: any) => `[${r.title || ""}] ${r.description || r.snippet || ""} (${r.url || ""})`).join("\n");
+      const d = await res.json();
+      return d.choices?.[0]?.message?.content || "";
     }
-  } catch (e) { console.error("[firecrawl]", e); }
+  } catch (e) { console.error("[perplexity]", e); }
   return "";
 }
 
