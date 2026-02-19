@@ -109,7 +109,7 @@ const Settings = () => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="text-3xl md:text-4xl font-heading mb-2" style={{ color: 'var(--text-primary)' }}>
               Settings
             </h1>
             <p style={{ color: 'var(--text-secondary)' }}>
@@ -160,7 +160,7 @@ const Settings = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 w-full mb-8">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-8">
               <TabsTrigger value="account" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Account</span>
