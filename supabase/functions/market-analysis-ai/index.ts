@@ -194,21 +194,21 @@ serve(async (req) => {
       sources.push(`emails (${emails.length})`);
     }
 
-    // Firecrawl — DEEP market research
-    const [marketData, competitorData, pricingData, trendData] = await Promise.all([
-      firecrawlSearch(`${product_or_service} market size ${region} ${new Date().getFullYear()}`, 5),
-      firecrawlSearch(`${product_or_service} competitors ${region} top companies`, 5),
-      firecrawlSearch(`${product_or_service} pricing trends ${region}`, 3),
-      firecrawlSearch(`${product_or_service} industry trends outlook ${region} ${new Date().getFullYear()}`, 5),
+    // Market intelligence via Perplexity
+    const [marketIntel, competitorIntel, pricingIntel, trendIntel] = await Promise.all([
+      perplexitySearch(`${product_or_service} market size ${region} ${new Date().getFullYear()}`),
+      perplexitySearch(`${product_or_service} top competitors ${region}`),
+      perplexitySearch(`${product_or_service} pricing trends ${region}`),
+      perplexitySearch(`${product_or_service} industry trends outlook ${region} ${new Date().getFullYear()}`),
     ]);
 
     ctx.market_research = {
-      market_size_data: marketData,
-      competitor_data: competitorData,
-      pricing_trends: pricingData,
-      industry_trends: trendData,
+      market_size_data: marketIntel,
+      competitor_data: competitorIntel,
+      pricing_trends: pricingIntel,
+      industry_trends: trendIntel,
     };
-    sources.push(`firecrawl (${marketData.length + competitorData.length + pricingData.length + trendData.length} results)`);
+    sources.push("perplexity (market intel)");
 
     const userPrompt = `ANALYSE THIS MARKET OPPORTUNITY:
 
