@@ -103,7 +103,6 @@ function AppRoutes() {
       {/* Protected Routes */}
       <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
       <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
-      <Route path="/advisor-legacy" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
       <Route path="/intel-centre" element={<ProtectedRoute><IntelCentre /></ProtectedRoute>} />
