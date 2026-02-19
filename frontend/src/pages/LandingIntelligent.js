@@ -390,7 +390,7 @@ const OUTCOMES = [
     unit: 'profit bleed plugged',
     title: 'Plug Cashflow Leaks',
     desc: 'Real-time detection of high CAC, zombie subscriptions, and tax liability mismatches — before they hit your bank balance.',
-    mentorEdge: 'Automated financial Red Lines based on proven SME advisory methodology.',
+    mentorEdge: 'BIQc automates financial Red Lines based on proven SME advisory methodology.',
     color: '#059669',
   },
   {
