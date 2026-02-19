@@ -12,7 +12,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-const MODEL = "gpt-4o";
+const MODEL = "gpt-4o-mini";
 
 const STEPS: Record<number, { field: string; label: string }> = {
   1: { field: "communication_style", label: "Communication Style" },
