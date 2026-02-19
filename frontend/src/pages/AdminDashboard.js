@@ -402,7 +402,7 @@ const AdminDashboard = () => {
                     <Eye className="w-4 h-4" style={{ color: '#3B82F6' }} />
                     <span className="text-sm font-semibold" style={{ color: '#1E40AF' }}>Viewing as: {impersonateData.user?.full_name || impersonateData.user?.email}</span>
                   </div>
-                  <button onClick={() => { setImpersonating(null); setImpersonateData(null); }} className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ color: '#1E40AF', border: '1px solid #93C5FD' }}>Exit Impersonation</button>
+                  <button onClick={exitImpersonation} className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ color: '#1E40AF', border: '1px solid #93C5FD' }}>Exit Impersonation</button>
                 </div>
                 <div className="p-6 space-y-6">
                   {/* User Info */}
