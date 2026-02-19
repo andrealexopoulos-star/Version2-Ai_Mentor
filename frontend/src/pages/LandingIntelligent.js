@@ -479,22 +479,21 @@ const LandingIntelligent = () => {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="pt-28 sm:pt-36 pb-20 px-6 lg:px-12 bg-white relative" data-testid="hero-section">
-        {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none" style={{ zIndex: 0 }} />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-violet-50 rounded-full blur-3xl opacity-30 pointer-events-none" style={{ zIndex: 0 }} />
+      <section className="pt-20 sm:pt-28 lg:pt-36 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-12 bg-white relative" data-testid="hero-section">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none" style={{ zIndex: 0 }} />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-violet-50 rounded-full blur-3xl opacity-30 pointer-events-none" style={{ zIndex: 0 }} />
 
         <div className="max-w-7xl mx-auto relative" style={{ zIndex: 1 }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
 
-            {/* Left — No motion initial hiding so content is immediately visible */}
-            <div className="space-y-7">
+            {/* Left */}
+            <div className="space-y-5 sm:space-y-7 order-1">
 
               <HeroHeadline />
 
               <p
-                className="text-lg lg:text-xl leading-relaxed text-slate-600 max-w-lg"
-                style={{ fontFamily: FONTS.body }}
+                className="text-base sm:text-lg lg:text-xl leading-relaxed text-slate-600 max-w-lg"
+                style={{ fontFamily: 'var(--font-body)' }}
               >
                 BIQc is calibrated to you and your business and{' '}
                 <strong className="text-slate-900 font-semibold">detects threats before they surface.</strong>
@@ -503,8 +502,8 @@ const LandingIntelligent = () => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => nav('/register-supabase')}
-                  className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-0.5"
-                  style={{ fontFamily: FONTS.head }}
+                  className="flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-0.5 w-full sm:w-auto"
+                  style={{ fontFamily: 'var(--font-heading)' }}
                   data-testid="hero-cta-primary"
                 >
                   Start My Defense
@@ -512,8 +511,8 @@ const LandingIntelligent = () => {
                 </button>
                 <button
                   onClick={() => nav('/trust')}
-                  className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all"
-                  style={{ fontFamily: FONTS.head }}
+                  className="flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm transition-all w-full sm:w-auto"
+                  style={{ fontFamily: 'var(--font-heading)' }}
                   data-testid="hero-cta-secondary"
                 >
                   <Shield className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
@@ -523,7 +522,7 @@ const LandingIntelligent = () => {
             </div>
 
             {/* Right — Live Intelligence Panel */}
-            <div className="relative">
+            <div className="relative order-2 mt-6 lg:mt-0">
               <LiveIntelligencePanel />
             </div>
           </div>
