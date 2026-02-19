@@ -336,6 +336,7 @@ const ComparisonSection = () => {
 /* ═══ MAIN LANDING PAGE ═══ */
 const LandingIntelligent = () => {
   const nav = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const typewritten = useTypewriter(['Instant, secure intelligence','Real-time threat detection','AI-powered clarity','Strategic foresight'], 70, 2400, 38);
 
   const outcomes = [
