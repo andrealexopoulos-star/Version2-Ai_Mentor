@@ -384,7 +384,7 @@ const AdminDashboard = () => {
               </div>
               <div className="p-6 rounded-xl" style={{ background: '#FFF', border: '1px solid rgba(0,0,0,0.06)' }}>
                 <h3 className="text-sm font-semibold mb-4" style={{ color: '#111827' }}>Data Sources</h3>
-                {['Supabase PostgreSQL', 'HubSpot (Merge.dev)', 'Xero (Merge.dev)', 'Outlook Email', 'Firecrawl Market Intel', 'OpenAI GPT-4o'].map(s => (
+                {['Supabase PostgreSQL', 'HubSpot (Merge.dev)', 'Xero (Merge.dev)', 'Outlook Email', 'Perplexity Market Intel', 'OpenAI GPT-4o-mini'].map(s => (
                   <div key={s} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
                     <span className="text-xs" style={{ color: '#374151' }}>{s}</span>
                     <span className="w-2 h-2 rounded-full" style={{ background: '#22C55E' }} />
