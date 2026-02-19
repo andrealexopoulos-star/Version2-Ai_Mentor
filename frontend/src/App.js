@@ -1,5 +1,6 @@
 import "@/App.css";
 import "@/mobile-fixes.css";
+import "@/scroll-fix-critical.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SupabaseAuthProvider, useSupabaseAuth, AUTH_STATE } from "./context/SupabaseAuthContext";
 import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
