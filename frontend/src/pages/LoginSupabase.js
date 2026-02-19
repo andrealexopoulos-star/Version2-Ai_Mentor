@@ -11,7 +11,7 @@ const AZ = '#007AFF';
 const MINT = '#00D995';
 const SL = '#1E293B';
 const MU = '#64748B';
-const HEAD = "'Inter Tight',sans-serif";
+const HEAD = "var(--font-heading)";
 const MONO = "'JetBrains Mono',monospace";
 
 const glass = {

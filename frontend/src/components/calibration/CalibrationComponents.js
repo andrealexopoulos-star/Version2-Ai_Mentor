@@ -7,7 +7,7 @@ const MUTED = '#64748B';
 const GOLD = '#B8860B';
 const CARD_BG = '#FFFFFF';
 const CARD_BORDER = '#E8E6E1';
-const SERIF = "'Playfair Display', serif";
+const SERIF = "var(--font-heading)";
 const AZ = '#007AFF';
 
 const ANALYZE_PHASES = [
