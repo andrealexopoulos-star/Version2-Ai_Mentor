@@ -334,9 +334,7 @@ ${JSON.stringify(ctx, null, 2)}`;
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: COGNITIVE_SYSTEM_PROMPT },
+        model: "gpt-4o-mini",
           { role: "user", content: userPrompt },
         ],
         temperature: 0.6,
