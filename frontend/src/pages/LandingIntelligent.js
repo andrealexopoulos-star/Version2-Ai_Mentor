@@ -36,45 +36,22 @@ const PHRASES = [
   { text: 'own your time.', color: '#7c3aed' },
 ];
 
-const RotatingHeadline = () => {
-  const [idx, setIdx] = useState(0);
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setVisible(false);
-      setTimeout(() => {
-        setIdx(p => (p + 1) % PHRASES.length);
-        setVisible(true);
-      }, 350);
-    }, 3200);
-    return () => clearInterval(t);
-  }, []);
-
-  return (
-    <h1
-      style={{ fontFamily: FONTS.head, letterSpacing: '-0.03em', lineHeight: 1.08 }}
-      data-testid="rotating-headline"
-    >
-      <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900">
-        The insight to
-      </span>
-      <span
-        className="block text-5xl sm:text-6xl lg:text-7xl font-bold"
-        style={{
-          color: PHRASES[idx].color,
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(16px)',
-          transition: 'opacity 0.35s ease, transform 0.35s ease',
-          minHeight: '1.15em',
-          display: 'block',
-        }}
-      >
-        {PHRASES[idx].text}
-      </span>
-    </h1>
-  );
-};
+const HeroHeadline = () => (
+  <h1
+    style={{ fontFamily: FONTS.head, letterSpacing: '-0.03em', lineHeight: 1.08 }}
+    data-testid="rotating-headline"
+  >
+    <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900">
+      Instant, Secure
+    </span>
+    <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-blue-600">
+      Intelligence & Insight
+    </span>
+    <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900">
+      across your entire business.
+    </span>
+  </h1>
+);
 
 /* ═══ LIVE INTELLIGENCE PANEL ═══ */
 const FEED_ITEMS = [
