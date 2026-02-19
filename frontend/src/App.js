@@ -16,7 +16,6 @@ import LoginSupabase from "./pages/LoginSupabase";
 import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
 import Dashboard from "./pages/Dashboard";
-import Advisor from "./pages/Advisor";
 import AdvisorWatchtower from "./pages/AdvisorWatchtower";
 import Analysis from "./pages/Analysis";
 import SOPGenerator from "./pages/SOPGenerator";
