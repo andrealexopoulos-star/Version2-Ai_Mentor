@@ -1,7 +1,7 @@
 ## BIQc Backend Performance Test Report
 
 Date: 2026-02-17  
-Platform: https://intelligence-hub-12.preview.emergentagent.com  
+Platform: https://ai-strategic-hub.preview.emergentagent.com  
 Test Type: Backend API Performance Testing  
 
 ### 🎯 OBJECTIVE

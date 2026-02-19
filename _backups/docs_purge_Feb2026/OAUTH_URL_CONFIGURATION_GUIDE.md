@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://intelligence-hub-12.preview.emergentagent.com
+https://ai-strategic-hub.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://intelligence-hub-12.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://intelligence-hub-12.preview.emergentagent.com
+https://ai-strategic-hub.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://intelligence-hub-12.preview.emergentagent.com/**
-https://intelligence-hub-12.preview.emergentagent.com/auth/callback
-https://intelligence-hub-12.preview.emergentagent.com/auth-callback-supabase
-https://intelligence-hub-12.preview.emergentagent.com/connect-email
-https://intelligence-hub-12.preview.emergentagent.com/integrations
+https://ai-strategic-hub.preview.emergentagent.com/**
+https://ai-strategic-hub.preview.emergentagent.com/auth/callback
+https://ai-strategic-hub.preview.emergentagent.com/auth-callback-supabase
+https://ai-strategic-hub.preview.emergentagent.com/connect-email
+https://ai-strategic-hub.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://intelligence-hub-12.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://intelligence-hub-12.preview.emergentagent.com/api/auth/outlook/callback
+https://ai-strategic-hub.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://intelligence-hub-12.preview.emergentagent.com
+https://ai-strategic-hub.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://intelligence-hub-12.preview.emergentagent.com/api/auth/gmail/callback
+https://ai-strategic-hub.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

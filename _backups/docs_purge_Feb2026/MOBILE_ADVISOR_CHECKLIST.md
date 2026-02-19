@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://intelligence-hub-12.preview.emergentagent.com/advisor
+## For: https://ai-strategic-hub.preview.emergentagent.com/advisor
 
 ---
 

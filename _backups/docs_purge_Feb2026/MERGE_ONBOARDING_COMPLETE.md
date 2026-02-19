@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://intelligence-hub-12.preview.emergentagent.com/login-supabase
+https://ai-strategic-hub.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://intelligence-hub-12.preview.emergentagent.com/integrations
+https://ai-strategic-hub.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

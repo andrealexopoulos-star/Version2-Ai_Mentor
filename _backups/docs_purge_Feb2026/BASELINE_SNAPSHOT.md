@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://intelligence-hub-12.preview.emergentagent.com`
-- **Backend:** `https://intelligence-hub-12.preview.emergentagent.com/api`
+- **Frontend:** `https://ai-strategic-hub.preview.emergentagent.com`
+- **Backend:** `https://ai-strategic-hub.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

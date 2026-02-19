@@ -4,7 +4,7 @@
 # Requires: Valid user authentication
 
 # Configuration
-API_URL="https://intelligence-hub-12.preview.emergentagent.com/api"
+API_URL="https://ai-strategic-hub.preview.emergentagent.com/api"
 
 # Color codes for output
 GREEN='\033[0;32m'

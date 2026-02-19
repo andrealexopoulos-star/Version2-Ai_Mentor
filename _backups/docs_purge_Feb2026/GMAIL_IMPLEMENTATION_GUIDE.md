@@ -200,7 +200,7 @@ https://www.googleapis.com/auth/gmail.readonly
 
 ### **Test 1: Basic Function Access**
 
-1. Log in to your BIQC app: `https://intelligence-hub-12.preview.emergentagent.com/login-supabase`
+1. Log in to your BIQC app: `https://ai-strategic-hub.preview.emergentagent.com/login-supabase`
 2. Navigate to: `/gmail-test`
 3. Click: **Test Gmail Connection**
 4. Expected: One of two outcomes:

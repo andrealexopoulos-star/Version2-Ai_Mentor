@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://intelligence-hub-12.preview.emergentagent.com
+**Test URL:** https://ai-strategic-hub.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://intelligence-hub-12.preview.emergentagent.com/advisor
+- [ ] Navigate to https://ai-strategic-hub.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://intelligence-hub-12.preview.emergentagent.com/
+**Landing:** https://ai-strategic-hub.preview.emergentagent.com/
 
-**Login:** https://intelligence-hub-12.preview.emergentagent.com/login-supabase
+**Login:** https://ai-strategic-hub.preview.emergentagent.com/login-supabase
 
-**Register:** https://intelligence-hub-12.preview.emergentagent.com/register-supabase
+**Register:** https://ai-strategic-hub.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://intelligence-hub-12.preview.emergentagent.com/pricing
+**Pricing:** https://ai-strategic-hub.preview.emergentagent.com/pricing
 
-**Terms:** https://intelligence-hub-12.preview.emergentagent.com/terms
+**Terms:** https://ai-strategic-hub.preview.emergentagent.com/terms
 
-**Advisor:** https://intelligence-hub-12.preview.emergentagent.com/advisor
+**Advisor:** https://ai-strategic-hub.preview.emergentagent.com/advisor
 
 ---
 
