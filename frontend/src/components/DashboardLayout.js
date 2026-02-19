@@ -421,7 +421,7 @@ const DashboardLayout = ({ children }) => {
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
 
-        <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto h-full bg-white">
+        <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto bg-white flex flex-col" style={{ height: 'calc(100% - 0px)' }}>
           {visibleNavItems.map((item, index) => {
             if (item.type === 'divider') {
               return (
