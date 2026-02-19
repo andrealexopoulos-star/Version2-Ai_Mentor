@@ -479,6 +479,28 @@ const DashboardLayout = ({ children }) => {
               </button>
             );
           })}
+
+          {/* Legal footer links at bottom of sidebar */}
+          {!sidebarCollapsed && (
+            <div className="mt-auto pt-4 pb-2 border-t" style={{ borderColor: 'var(--border-light)' }}>
+              <div className="flex flex-col gap-0.5">
+                {[
+                  { label: 'Enterprise Terms', path: '/enterprise-terms' },
+                  { label: 'Terms & Conditions', path: '/terms' },
+                  { label: 'Trust & Security', path: '/trust' },
+                ].map(({ label, path }) => (
+                  <button
+                    key={path}
+                    onClick={() => navigate(path)}
+                    className="text-left text-xs px-3 py-2 rounded-lg transition-colors hover:bg-gray-50"
+                    style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </nav>
       </aside>
 
