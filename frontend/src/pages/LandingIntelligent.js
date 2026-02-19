@@ -78,11 +78,11 @@ const LiveIntelligencePanel = () => {
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500" style={{ fontFamily: FONTS.mono }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500" style={{ fontFamily: 'var(--font-mono)' }}>
               Live Sentinel Feed
             </span>
           </div>
-          <span className="text-xs text-slate-400" style={{ fontFamily: FONTS.mono }}>AEST</span>
+          <span className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>AEST</span>
         </div>
 
         {/* Feed items */}
@@ -108,7 +108,7 @@ const LiveIntelligencePanel = () => {
                   />
                   <span
                     className="text-sm font-medium"
-                    style={{ color: isActive ? '#0f172a' : '#64748b', fontFamily: FONTS.body }}
+                    style={{ color: isActive ? '#0f172a' : '#64748b', fontFamily: 'var(--font-body)' }}
                   >
                     {item.label}
                   </span>
@@ -118,7 +118,7 @@ const LiveIntelligencePanel = () => {
                   style={{
                     color: item.color,
                     background: item.bg,
-                    fontFamily: FONTS.mono,
+                    fontFamily: 'var(--font-mono)',
                   }}
                 >
                   {item.status}
@@ -131,8 +131,8 @@ const LiveIntelligencePanel = () => {
         {/* Bottom score bar */}
         <div className="mt-5 pt-4 border-t border-slate-100">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-500" style={{ fontFamily: FONTS.mono }}>Business Health Score</span>
-            <span className="text-xs font-bold text-emerald-600" style={{ fontFamily: FONTS.mono }}>87/100</span>
+            <span className="text-xs text-slate-500" style={{ fontFamily: 'var(--font-mono)' }}>Business Health Score</span>
+            <span className="text-xs font-bold text-emerald-600" style={{ fontFamily: 'var(--font-mono)' }}>87/100</span>
           </div>
           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div
@@ -147,7 +147,7 @@ const LiveIntelligencePanel = () => {
       <div className="absolute -bottom-4 -left-4 bg-slate-900 text-white rounded-2xl px-4 py-3 shadow-xl">
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-blue-400" strokeWidth={1.5} />
-          <span className="text-xs font-semibold" style={{ fontFamily: FONTS.body }}>AI Analysis Active</span>
+          <span className="text-xs font-semibold" style={{ fontFamily: 'var(--font-body)' }}>AI Analysis Active</span>
         </div>
       </div>
 
@@ -155,7 +155,7 @@ const LiveIntelligencePanel = () => {
       <div className="absolute -top-3 -right-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 shadow-lg">
         <div className="flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
-          <span className="text-xs font-semibold text-amber-700" style={{ fontFamily: FONTS.mono }}>1 Alert</span>
+          <span className="text-xs font-semibold text-amber-700" style={{ fontFamily: 'var(--font-mono)' }}>1 Alert</span>
         </div>
       </div>
     </div>
@@ -180,7 +180,7 @@ const ComparisonSection = () => {
       <div className="flex items-center justify-center gap-4 mb-10">
         <span
           className="text-xs font-semibold uppercase tracking-widest transition-colors"
-          style={{ fontFamily: FONTS.mono, color: !isActive ? '#0f172a' : '#94a3b8' }}
+          style={{ fontFamily: 'var(--font-mono)', color: !isActive ? '#0f172a' : '#94a3b8' }}
         >
           Passive Analytics
         </span>
@@ -197,7 +197,7 @@ const ComparisonSection = () => {
         </button>
         <span
           className="text-xs font-semibold uppercase tracking-widest transition-colors"
-          style={{ fontFamily: FONTS.mono, color: isActive ? '#2563eb' : '#94a3b8' }}
+          style={{ fontFamily: 'var(--font-mono)', color: isActive ? '#2563eb' : '#94a3b8' }}
         >
           Agentic Resolution
         </span>
@@ -214,19 +214,19 @@ const ComparisonSection = () => {
             opacity: isActive ? 0.45 : 1,
           }}
         >
-          <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-slate-400" style={{ fontFamily: FONTS.mono }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>
             Requires Questions
           </p>
           <div className="space-y-2">
             {passiveItems.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
                 <BarChart3 className="w-4 h-4 text-slate-300" strokeWidth={1.5} />
-                <span className="text-sm text-slate-400" style={{ fontFamily: FONTS.mono }}>{item}</span>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-400" style={{ fontFamily: FONTS.mono }}>Static</span>
+                <span className="text-sm text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>{item}</span>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>Static</span>
               </div>
             ))}
           </div>
-          <p className="text-xs mt-4 italic text-slate-400" style={{ fontFamily: FONTS.body }}>You ask. It waits. You interpret. You decide.</p>
+          <p className="text-xs mt-4 italic text-slate-400" style={{ fontFamily: 'var(--font-body)' }}>You ask. It waits. You interpret. You decide.</p>
         </div>
 
         {/* Active */}
@@ -241,7 +241,7 @@ const ComparisonSection = () => {
         >
           <p
             className="text-xs font-semibold uppercase tracking-widest mb-4 transition-colors"
-            style={{ fontFamily: FONTS.mono, color: isActive ? '#2563eb' : '#94a3b8' }}
+            style={{ fontFamily: 'var(--font-mono)', color: isActive ? '#2563eb' : '#94a3b8' }}
           >
             Delivers Answers
           </p>
@@ -259,10 +259,10 @@ const ComparisonSection = () => {
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{ background: isActive ? item.color : '#cbd5e1', boxShadow: isActive ? `0 0 6px ${item.color}` : 'none' }}
                 />
-                <span className="text-xs flex-1 text-slate-600" style={{ fontFamily: FONTS.mono }}>{item.text}</span>
+                <span className="text-xs flex-1 text-slate-600" style={{ fontFamily: 'var(--font-mono)' }}>{item.text}</span>
                 <span
                   className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                  style={{ color: isActive ? item.color : '#94a3b8', background: isActive ? item.bg : '#f1f5f9', fontFamily: FONTS.mono }}
+                  style={{ color: isActive ? item.color : '#94a3b8', background: isActive ? item.bg : '#f1f5f9', fontFamily: 'var(--font-mono)' }}
                 >
                   {item.action}
                 </span>
@@ -271,7 +271,7 @@ const ComparisonSection = () => {
           </div>
           <p
             className="text-xs mt-4 font-semibold transition-colors"
-            style={{ color: isActive ? '#2563eb' : '#94a3b8', fontFamily: FONTS.body }}
+            style={{ color: isActive ? '#2563eb' : '#94a3b8', fontFamily: 'var(--font-body)' }}
           >
             It watches. It decides. It pushes. You command.
           </p>
@@ -329,7 +329,7 @@ const IntegrationMarquee = () => (
           >
             {logo.letter}
           </div>
-          <span className="text-sm font-medium text-slate-700" style={{ fontFamily: FONTS.body }}>{logo.name}</span>
+          <span className="text-sm font-medium text-slate-700" style={{ fontFamily: 'var(--font-body)' }}>{logo.name}</span>
         </div>
       ))}
     </div>
@@ -437,18 +437,18 @@ const LandingIntelligent = () => {
   const nav = useNavigate();
 
   return (
-    <div className="min-h-screen bg-slate-50" style={{ fontFamily: FONTS.body, color: '#1e293b' }}>
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: 'var(--font-body)', color: '#1e293b' }}>
 
       {/* ── NAVBAR ── */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/60">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-              <span className="text-sm font-black text-white" style={{ fontFamily: FONTS.head }}>B</span>
+              <span className="text-sm font-black text-white" style={{ fontFamily: 'var(--font-heading)' }}>B</span>
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-base text-slate-900 leading-none" style={{ fontFamily: FONTS.head }}>BIQc</span>
-              <span className="text-[9px] uppercase tracking-widest text-slate-400 hidden sm:block" style={{ fontFamily: FONTS.mono }}>Sovereign Intelligence</span>
+              <span className="font-bold text-base text-slate-900 leading-none" style={{ fontFamily: 'var(--font-heading)' }}>BIQc</span>
+              <span className="text-[9px] uppercase tracking-widest text-slate-400 hidden sm:block" style={{ fontFamily: 'var(--font-mono)' }}>Sovereign Intelligence</span>
             </div>
           </div>
 
@@ -549,15 +549,15 @@ const LandingIntelligent = () => {
           className="max-w-6xl mx-auto"
         >
           <motion.div variants={fadeUp} className="text-center mb-12">
-            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               Intelligence Evolution
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Dashboards report the past.
               <br />
               <span className="text-blue-600">BIQc commands the future.</span>
             </h2>
-            <p className="text-base text-slate-500 mt-4 max-w-2xl mx-auto" style={{ fontFamily: FONTS.body }}>
+            <p className="text-base text-slate-500 mt-4 max-w-2xl mx-auto" style={{ fontFamily: 'var(--font-body)' }}>
               BI tools answer questions you ask. BIQc pushes answers to you before the crisis hits.
             </p>
           </motion.div>
@@ -578,10 +578,10 @@ const LandingIntelligent = () => {
           className="max-w-7xl mx-auto"
         >
           <motion.div variants={fadeUp} className="text-center mb-14">
-            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               The Functional Arsenal
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Four pillars of sovereign intelligence
             </h2>
           </motion.div>
@@ -601,10 +601,10 @@ const LandingIntelligent = () => {
                   >
                     <Icon className="w-6 h-6" style={{ color: pillar.color }} strokeWidth={1.8} />
                   </div>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-3" style={{ fontFamily: FONTS.head }}>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
                     {pillar.title}
                   </h3>
-                  <p className="text-base text-slate-500 leading-relaxed" style={{ fontFamily: FONTS.body }}>
+                  <p className="text-base text-slate-500 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>
                     {pillar.desc || pillar.description}
                   </p>
                 </motion.div>
@@ -624,13 +624,13 @@ const LandingIntelligent = () => {
                 </div>
               </div>
               <div>
-                <span className="text-xs font-semibold uppercase tracking-widest text-blue-200 mb-1 block" style={{ fontFamily: FONTS.mono }}>
+                <span className="text-xs font-semibold uppercase tracking-widest text-blue-200 mb-1 block" style={{ fontFamily: 'var(--font-mono)' }}>
                   AI-Powered Business Intelligence
                 </span>
-                <h3 className="text-xl font-semibold mb-2" style={{ fontFamily: FONTS.head }}>
+                <h3 className="text-xl font-semibold mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
                   We don't replace your data. We wake it up.
                 </h3>
-                <p className="text-blue-100 text-sm leading-relaxed" style={{ fontFamily: FONTS.body }}>
+                <p className="text-blue-100 text-sm leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>
                   BIQc connects to your existing tools and scans them 24/7 for threats, drift, and anomalies — turning raw rows into executive strategy.
                 </p>
               </div>
@@ -649,10 +649,10 @@ const LandingIntelligent = () => {
           className="max-w-7xl mx-auto"
         >
           <motion.div variants={fadeUp} className="text-center mb-14">
-            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               Real-World Impact
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               What's in it for you?
             </h2>
           </motion.div>
@@ -671,20 +671,20 @@ const LandingIntelligent = () => {
                       <Icon className="w-5 h-5" style={{ color: outcome.color }} strokeWidth={1.8} />
                     </div>
                     <div>
-                      <span className="text-2xl font-bold" style={{ fontFamily: FONTS.head, color: outcome.color }}>{outcome.metric}</span>
-                      <span className="text-xs ml-1.5 text-slate-500" style={{ fontFamily: FONTS.mono }}>{outcome.unit}</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-heading)', color: outcome.color }}>{outcome.metric}</span>
+                      <span className="text-xs ml-1.5 text-slate-500" style={{ fontFamily: 'var(--font-mono)' }}>{outcome.unit}</span>
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-semibold text-slate-900 mb-3" style={{ fontFamily: FONTS.head }}>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
                     {outcome.title}
                   </h3>
-                  <p className="text-sm text-slate-500 leading-relaxed mb-5 flex-1" style={{ fontFamily: FONTS.body }}>
+                  <p className="text-sm text-slate-500 leading-relaxed mb-5 flex-1" style={{ fontFamily: 'var(--font-body)' }}>
                     {outcome.desc}
                   </p>
 
                   <div className="pt-4 border-t border-slate-100">
-                    <p className="text-xs text-slate-400 leading-relaxed" style={{ fontFamily: FONTS.body }}>
+                    <p className="text-xs text-slate-400 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>
                       <span className="font-semibold not-italic" style={{ color: outcome.color }}>BIQc Edge: </span>
                       {outcome.mentorEdge}
                     </p>
@@ -706,13 +706,13 @@ const LandingIntelligent = () => {
           className="max-w-6xl mx-auto"
         >
           <motion.div variants={fadeUp} className="text-center mb-14">
-            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: FONTS.mono }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-3 block" style={{ fontFamily: 'var(--font-mono)' }}>
               Strategic Pricing Ladder
             </span>
-            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: FONTS.head }}>
+            <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Intelligence at every scale
             </h2>
-            <p className="text-sm text-slate-500 mt-3" style={{ fontFamily: FONTS.body }}>
+            <p className="text-sm text-slate-500 mt-3" style={{ fontFamily: 'var(--font-body)' }}>
               All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.
             </p>
           </motion.div>
@@ -731,7 +731,7 @@ const LandingIntelligent = () => {
                 {tier.highlight && (
                   <span
                     className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white bg-blue-600 shadow-lg"
-                    style={{ fontFamily: FONTS.mono }}
+                    style={{ fontFamily: 'var(--font-mono)' }}
                   >
                     Recommended
                   </span>
@@ -739,16 +739,16 @@ const LandingIntelligent = () => {
 
                 <p
                   className="text-xs font-semibold uppercase tracking-widest mb-2"
-                  style={{ fontFamily: FONTS.mono, color: tier.highlight ? '#93c5fd' : '#64748b' }}
+                  style={{ fontFamily: 'var(--font-mono)', color: tier.highlight ? '#93c5fd' : '#64748b' }}
                 >
                   {tier.tagline}
                 </p>
-                <h3 className="text-xl font-semibold mb-4" style={{ fontFamily: FONTS.head }}>
+                <h3 className="text-xl font-semibold mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
                   {tier.name}
                 </h3>
 
                 <div className="flex items-baseline gap-1 mb-7">
-                  <span className="text-4xl font-bold" style={{ fontFamily: FONTS.head }}>${tier.price}</span>
+                  <span className="text-4xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>${tier.price}</span>
                   <span className={`text-sm ${tier.highlight ? 'text-slate-400' : 'text-slate-500'}`}>/mo</span>
                 </div>
 
@@ -760,7 +760,7 @@ const LandingIntelligent = () => {
                         style={{ color: tier.highlight ? '#60a5fa' : '#2563eb' }}
                         strokeWidth={2}
                       />
-                      <span style={{ color: tier.highlight ? '#cbd5e1' : '#64748b', fontFamily: FONTS.body }}>
+                      <span style={{ color: tier.highlight ? '#cbd5e1' : '#64748b', fontFamily: 'var(--font-body)' }}>
                         {feature}
                       </span>
                     </li>
@@ -774,7 +774,7 @@ const LandingIntelligent = () => {
                       ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
                       : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                   }`}
-                  style={{ fontFamily: FONTS.head }}
+                  style={{ fontFamily: 'var(--font-heading)' }}
                   data-testid={`pricing-cta-${i}`}
                 >
                   {tier.cta}
@@ -795,10 +795,10 @@ const LandingIntelligent = () => {
                   <Lock className="w-7 h-7 text-white" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: FONTS.head }}>
+                  <h3 className="text-lg font-semibold mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
                     Australian Data Sovereignty
                   </h3>
-                  <p className="text-sm text-slate-300" style={{ fontFamily: FONTS.body }}>
+                  <p className="text-sm text-slate-300" style={{ fontFamily: 'var(--font-body)' }}>
                     Sydney/Melbourne nodes. AES-256 encryption. Zero data leakage. 100% Australian owned and operated.
                   </p>
                 </div>
@@ -806,7 +806,7 @@ const LandingIntelligent = () => {
               <button
                 onClick={() => nav('/trust')}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all flex-shrink-0"
-                style={{ fontFamily: FONTS.head }}
+                style={{ fontFamily: 'var(--font-heading)' }}
                 data-testid="trust-teaser-cta"
               >
                 Enter The Vault
@@ -827,14 +827,14 @@ const LandingIntelligent = () => {
           className="max-w-3xl mx-auto text-center"
         >
           <motion.div variants={fadeUp}>
-            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-6 block" style={{ fontFamily: FONTS.mono }}>
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-600 mb-6 block" style={{ fontFamily: 'var(--font-mono)' }}>
               Ready to take control?
             </span>
           </motion.div>
           <motion.h2
             variants={fadeUp}
             className="text-5xl sm:text-6xl font-bold text-slate-900 leading-[1.08] tracking-tight mb-6"
-            style={{ fontFamily: FONTS.head }}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
             Business clarity,{' '}
             <span className="text-blue-600">mastered.</span>
@@ -842,7 +842,7 @@ const LandingIntelligent = () => {
           <motion.p
             variants={fadeUp}
             className="text-lg text-slate-500 mb-8 max-w-xl mx-auto"
-            style={{ fontFamily: FONTS.body }}
+            style={{ fontFamily: 'var(--font-body)' }}
           >
             Connect your systems. Let BIQc build context. Act with confidence.
           </motion.p>
@@ -850,7 +850,7 @@ const LandingIntelligent = () => {
             <button
               onClick={() => nav('/register-supabase')}
               className="inline-flex items-center gap-2.5 px-10 py-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-600/30 transition-all hover:-translate-y-0.5"
-              style={{ fontFamily: FONTS.head }}
+              style={{ fontFamily: 'var(--font-heading)' }}
               data-testid="final-cta"
             >
               Deploy My Intelligence
@@ -860,7 +860,7 @@ const LandingIntelligent = () => {
           <motion.p
             variants={fadeUp}
             className="text-xs text-slate-400 mt-5 uppercase tracking-widest"
-            style={{ fontFamily: FONTS.mono }}
+            style={{ fontFamily: 'var(--font-mono)' }}
           >
             Free to start · No credit card · Australian owned and operated
           </motion.p>
@@ -870,7 +870,7 @@ const LandingIntelligent = () => {
       {/* ── LEGAL DISCLAIMER ── */}
       <section className="py-6 px-6 bg-slate-800">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-slate-400 text-xs leading-relaxed" style={{ fontFamily: FONTS.body }}>
+          <p className="text-slate-400 text-xs leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>
             <strong className="text-slate-300">Important:</strong> The Strategy Squad provides general information and educational content only.
             It does not constitute financial, legal, tax, or professional advice. You should seek independent professional advice
             before making any business decisions. See our{' '}
@@ -884,20 +884,20 @@ const LandingIntelligent = () => {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-              <span className="text-sm font-black text-white" style={{ fontFamily: FONTS.head }}>B</span>
+              <span className="text-sm font-black text-white" style={{ fontFamily: 'var(--font-heading)' }}>B</span>
             </div>
-            <span className="text-sm font-semibold text-white" style={{ fontFamily: FONTS.head }}>BIQc</span>
+            <span className="text-sm font-semibold text-white" style={{ fontFamily: 'var(--font-heading)' }}>BIQc</span>
             <span className="text-slate-600 hidden sm:inline">—</span>
-            <span className="text-xs text-slate-500 hidden sm:inline" style={{ fontFamily: FONTS.body }}>Business IQ Centre. Powered by The Strategy Squad.</span>
+            <span className="text-xs text-slate-500 hidden sm:inline" style={{ fontFamily: 'var(--font-body)' }}>Business IQ Centre. Powered by The Strategy Squad.</span>
           </div>
           <div className="flex items-center gap-6">
-            <button onClick={() => nav('/pricing')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: FONTS.body }}>Pricing</button>
-            <button onClick={() => nav('/trust')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: FONTS.body }}>Trust & Security</button>
-            <button onClick={() => nav('/terms')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: FONTS.body }}>Terms</button>
+            <button onClick={() => nav('/pricing')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: 'var(--font-body)' }}>Pricing</button>
+            <button onClick={() => nav('/trust')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: 'var(--font-body)' }}>Trust & Security</button>
+            <button onClick={() => nav('/terms')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors" style={{ fontFamily: 'var(--font-body)' }}>Terms</button>
           </div>
         </div>
         <div className="max-w-7xl mx-auto pt-6 mt-6 border-t border-slate-800">
-          <p className="text-xs text-slate-600 text-center" style={{ fontFamily: FONTS.mono }}>
+          <p className="text-xs text-slate-600 text-center" style={{ fontFamily: 'var(--font-mono)' }}>
             © 2026 The Strategy Squad Pty Ltd. All rights reserved. · General Information Only · Not Professional Advice
           </p>
         </div>
@@ -909,7 +909,7 @@ const LandingIntelligent = () => {
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-blue-600 flex items-center justify-center">
             <Shield className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-xs font-semibold text-slate-700" style={{ fontFamily: FONTS.mono }}>
+          <span className="text-xs font-semibold text-slate-700" style={{ fontFamily: 'var(--font-mono)' }}>
             Australian Sovereign Data
           </span>
         </div>
