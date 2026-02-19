@@ -38,16 +38,16 @@ const PHRASES = [
 
 const HeroHeadline = () => (
   <h1
-    style={{ fontFamily: FONTS.head, letterSpacing: '-0.03em', lineHeight: 1.08 }}
+    style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em', lineHeight: 1.08 }}
     data-testid="rotating-headline"
   >
-    <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900">
+    <span className="block text-3xl sm:text-5xl lg:text-6xl font-bold text-slate-900">
       Instant, Secure
     </span>
-    <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-blue-600">
+    <span className="block text-3xl sm:text-5xl lg:text-6xl font-bold text-blue-600">
       Intelligence & Insight
     </span>
-    <span className="block text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900">
+    <span className="block text-3xl sm:text-5xl lg:text-6xl font-bold text-slate-900">
       across your entire business.
     </span>
   </h1>
