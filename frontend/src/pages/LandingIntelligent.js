@@ -595,7 +595,7 @@ const LandingIntelligent = () => {
           <span className="text-xs text-slate-600" style={{ fontFamily: 'var(--font-mono)' }}>© 2026 BIQc — Business IQ Centre. Powered by The Strategy Squad.</span>
         </div>
         <div className="flex gap-5">
-          {['Pricing','Trust & Security','Terms','Privacy'].map(l => <button key={l} onClick={() => l === 'Pricing' ? nav('/pricing') : l === 'Trust & Security' ? nav('/trust') : l === 'Terms' ? nav('/terms') : null} className="text-xs text-slate-600 hover:text-slate-400 transition-colors" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{l}</button>)}
+          {['Pricing','Trust & Security','Terms','Enterprise Terms','Privacy'].map(l => <button key={l} onClick={() => l === 'Pricing' ? nav('/pricing') : l === 'Trust & Security' ? nav('/trust') : l === 'Terms' ? nav('/terms') : l === 'Enterprise Terms' ? nav('/enterprise-terms') : null} className="text-xs text-slate-600 hover:text-slate-400 transition-colors" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{l}</button>)}
         </div>
       </footer>
 
