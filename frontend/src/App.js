@@ -86,7 +86,7 @@ function AppRoutes() {
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
       <Route path="/register-supabase" element={<PublicRoute><RegisterSupabase /></PublicRoute>} />
       <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
-      <Route path="/auth-debug" element={<AuthDebug />} />
+      <Route path="/auth-debug" element={<ProtectedRoute adminOnly><AuthDebug /></ProtectedRoute>} />
       
       {/* Legacy routes - redirect to Supabase */}
       <Route path="/login" element={<Navigate to="/login-supabase" replace />} />
@@ -104,8 +104,8 @@ function AppRoutes() {
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
       <Route path="/intel-centre" element={<ProtectedRoute><IntelCentre /></ProtectedRoute>} />
-      <Route path="/outlook-test" element={<ProtectedRoute><OutlookTest /></ProtectedRoute>} />
-      <Route path="/gmail-test" element={<ProtectedRoute><GmailTest /></ProtectedRoute>} />
+      <Route path="/outlook-test" element={<ProtectedRoute adminOnly><OutlookTest /></ProtectedRoute>} />
+      <Route path="/gmail-test" element={<ProtectedRoute adminOnly><GmailTest /></ProtectedRoute>} />
       <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
       <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
       <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
