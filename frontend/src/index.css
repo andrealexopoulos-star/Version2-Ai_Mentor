@@ -167,11 +167,11 @@ code, pre, kbd, samp, .font-mono {
         touch-action: manipulation;
     }
     
-    /* Scroll lock when sidebar open */
+    /* Scroll lock when sidebar open — Android-safe approach */
     body.sidebar-open {
         overflow: hidden;
-        position: fixed;
-        width: 100%;
+        /* Do NOT use position:fixed — causes page jump on Android */
+        touch-action: none;
     }
 }
 
