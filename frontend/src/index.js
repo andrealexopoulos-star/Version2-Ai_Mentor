@@ -6,6 +6,7 @@ import "@/mobile-enhancements.css";
 import "@/mobile-ux-overhaul.css";
 import "@/landing-mobile-ux.css";
 import "@/executive-refinement.css";
+import "@/scroll-fix-critical.css"; // MUST BE LAST - critical scroll fix
 import App from "@/App";
 
 // ═══════════════════════════════════════════════════════════════
