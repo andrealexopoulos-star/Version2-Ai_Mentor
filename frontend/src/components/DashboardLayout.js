@@ -68,16 +68,24 @@ const DashboardLayout = ({ children }) => {
     localStorage.setItem('sidebar-collapsed', sidebarCollapsed);
   }, [sidebarCollapsed]);
 
-  // Mobile: Lock scroll when nav drawer open
+  // Mobile: Lock scroll when nav drawer open — Android-safe (no position:fixed)
   useEffect(() => {
     if (isNavOpen) {
       document.body.classList.add('sidebar-open');
+      // Android-safe: store scroll position and use overflow:hidden only
+      const scrollY = window.scrollY;
+      document.body.style.top = `-${scrollY}px`;
     } else {
+      const scrollY = document.body.style.top;
       document.body.classList.remove('sidebar-open');
+      document.body.style.top = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
-    
     return () => {
       document.body.classList.remove('sidebar-open');
+      document.body.style.top = '';
     };
   }, [isNavOpen]);
 
