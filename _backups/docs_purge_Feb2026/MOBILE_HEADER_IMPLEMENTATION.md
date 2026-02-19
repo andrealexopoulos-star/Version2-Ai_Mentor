@@ -200,7 +200,7 @@
 ## 🚀 READY FOR TESTING
 
 **Test on Real Devices:**
-1. Login at: https://ai-strategic-hub.preview.emergentagent.com
+1. Login at: https://biqc-performance-hub.preview.emergentagent.com
 2. Test credentials: `testing@biqc.demo` / `TestPass123!`
 3. Verify hamburger menu opens/closes
 4. Check header alignment and spacing

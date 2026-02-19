@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://ai-strategic-hub.preview.emergentagent.com
+https://biqc-performance-hub.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://ai-strategic-hub.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://ai-strategic-hub.preview.emergentagent.com
+https://biqc-performance-hub.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://ai-strategic-hub.preview.emergentagent.com/**
-https://ai-strategic-hub.preview.emergentagent.com/auth/callback
-https://ai-strategic-hub.preview.emergentagent.com/auth-callback-supabase
-https://ai-strategic-hub.preview.emergentagent.com/connect-email
-https://ai-strategic-hub.preview.emergentagent.com/integrations
+https://biqc-performance-hub.preview.emergentagent.com/**
+https://biqc-performance-hub.preview.emergentagent.com/auth/callback
+https://biqc-performance-hub.preview.emergentagent.com/auth-callback-supabase
+https://biqc-performance-hub.preview.emergentagent.com/connect-email
+https://biqc-performance-hub.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://ai-strategic-hub.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://ai-strategic-hub.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-performance-hub.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://ai-strategic-hub.preview.emergentagent.com
+https://biqc-performance-hub.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://ai-strategic-hub.preview.emergentagent.com/api/auth/gmail/callback
+https://biqc-performance-hub.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

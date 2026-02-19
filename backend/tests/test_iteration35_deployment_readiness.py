@@ -8,7 +8,7 @@ import requests
 import os
 import subprocess
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ai-strategic-hub.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biqc-performance-hub.preview.emergentagent.com').rstrip('/')
 
 
 class TestHealthEndpoints:

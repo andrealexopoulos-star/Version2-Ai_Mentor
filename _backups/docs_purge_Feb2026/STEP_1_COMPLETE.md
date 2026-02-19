@@ -99,7 +99,7 @@ A bash script is provided at `/app/test_advisory_contract_curl.sh` that tests:
 
 **Regular Message:**
 ```bash
-API_URL="https://ai-strategic-hub.preview.emergentagent.com/api"
+API_URL="https://biqc-performance-hub.preview.emergentagent.com/api"
 curl -X POST "$API_URL/chat" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \

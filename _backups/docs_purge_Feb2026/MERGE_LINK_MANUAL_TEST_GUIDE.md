@@ -13,14 +13,14 @@ Verify Merge Link modal opens using the React hook pattern (@mergeapi/react-merg
 ## Test Steps
 
 ### Step 1: Log In
-1. Navigate to: https://ai-strategic-hub.preview.emergentagent.com/login-supabase
+1. Navigate to: https://biqc-performance-hub.preview.emergentagent.com/login-supabase
 2. Log in with your credentials (andre.alexopoulos@gmail.com)
 3. Complete OAuth authentication if prompted
 4. Verify you're redirected to the dashboard or advisor page
 
 ### Step 2: Navigate to Integrations Page
 1. Click on "Integrations" in the sidebar navigation
-2. OR directly navigate to: https://ai-strategic-hub.preview.emergentagent.com/integrations
+2. OR directly navigate to: https://biqc-performance-hub.preview.emergentagent.com/integrations
 3. Wait for the page to fully load
 
 ### Step 3: Open Browser Console
@@ -127,7 +127,7 @@ After completing authentication, check the console for:
 **Symptom:** Redirected to /login-supabase when accessing /integrations
 
 **Solution:**
-1. Log in at https://ai-strategic-hub.preview.emergentagent.com/login-supabase
+1. Log in at https://biqc-performance-hub.preview.emergentagent.com/login-supabase
 2. Complete OAuth authentication
 3. Try accessing /integrations again
 
@@ -181,7 +181,7 @@ const session = JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-to
 const token = session.access_token;
 
 // Call the backend endpoint
-fetch('https://ai-strategic-hub.preview.emergentagent.com/api/integrations/merge/link-token', {
+fetch('https://biqc-performance-hub.preview.emergentagent.com/api/integrations/merge/link-token', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
