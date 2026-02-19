@@ -686,7 +686,7 @@ const LandingIntelligent = () => {
 
                   <div className="pt-4 border-t border-slate-100">
                     <p className="text-xs text-slate-400 leading-relaxed" style={{ fontFamily: FONTS.body }}>
-                      <span className="font-semibold not-italic" style={{ color: outcome.color }}>Mentor Edge: </span>
+                      <span className="font-semibold not-italic" style={{ color: outcome.color }}>BIQc Edge: </span>
                       {outcome.mentorEdge}
                     </p>
                   </div>
