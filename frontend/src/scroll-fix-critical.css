@@ -1,57 +1,62 @@
 /**
- * CRITICAL SCROLL FIX
- * This file MUST be loaded LAST to ensure scrolling works
- * Use highest specificity to override any conflicting rules
+ * CRITICAL SCROLL FIX - IMPORTED LAST IN App.js
+ * Ensures scrolling works on ALL pages - desktop and mobile
  */
 
-/* Force scroll on html and body - highest priority */
-html, 
-html:not(.no-scroll),
-body,
-body:not(.sidebar-open):not(.modal-open):not(.no-scroll) {
-  overflow-y: scroll !important;
+/* ── Core: force scroll on html and body ── */
+html {
   overflow-x: hidden !important;
+  overflow-y: auto !important;
   height: auto !important;
   min-height: 100% !important;
-  position: relative !important;
 }
 
-/* Root element must not restrict scrolling */
+body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  position: static !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* ── Root must never restrict scroll ── */
 #root {
-  overflow: visible !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
   height: auto !important;
-  min-height: 100vh;
+  min-height: 100vh !important;
   position: relative !important;
 }
 
-/* Ensure main containers don't block scroll */
-.min-h-screen {
+/* ── Hero section must allow scroll to pass through ── */
+.hero-section {
   overflow: visible !important;
+}
+
+/* ── min-h-screen divs must not trap scroll ── */
+div.min-h-screen {
+  overflow-y: visible !important;
   height: auto !important;
 }
 
-/* Landing page specific - ensure it scrolls */
-[data-testid="hero-section"],
-[data-testid="landing-page"] {
-  overflow: visible !important;
+/* ── Only lock body when sidebar is explicitly open ── */
+body.sidebar-open {
+  overflow: hidden !important;
+  touch-action: none !important;
 }
 
-/* Mobile scroll preservation */
-@media (max-width: 768px) {
+/* ── Mobile: keep scroll enabled ── */
+@media (max-width: 1024px) {
   html,
-  body:not(.sidebar-open) {
-    overflow-y: scroll !important;
+  body {
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     height: auto !important;
   }
-  
+
   #root {
-    overflow: visible !important;
+    overflow-y: visible !important;
     height: auto !important;
   }
-}
-
-/* Only block scroll when sidebar is explicitly open */
-body.sidebar-open {
-  overflow: hidden !important;
 }
