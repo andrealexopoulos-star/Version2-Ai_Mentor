@@ -5,7 +5,6 @@ import { RefreshCw } from 'lucide-react';
 
 const HEAD = "var(--font-heading)";
 const MONO = "var(--font-mono)";
-const MONO = "'JetBrains Mono', 'SF Mono', monospace";
 
 const STATE_CFG = {
   STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
