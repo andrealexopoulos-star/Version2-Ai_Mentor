@@ -76,7 +76,7 @@ html {
 
 body {
     margin: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: var(--bg-primary);
@@ -89,6 +89,33 @@ body {
     position: relative;
     min-height: 100vh;
     max-width: 100%;
+}
+
+/* ═══════════════════════════════════════
+   UNIFIED FONT SYSTEM — BIQc Design v2
+   Headings:  Plus Jakarta Sans
+   Body/UI:   DM Sans
+   Data/Mono: JetBrains Mono
+═══════════════════════════════════════ */
+:root {
+    --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-feature-settings: 'ss01', 'cv01';
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+p, span, div, button, input, textarea, select, label {
+    font-family: var(--font-body);
+}
+
+code, pre, kbd, samp, .font-mono {
+    font-family: var(--font-mono) !important;
 }
 
 #root {
