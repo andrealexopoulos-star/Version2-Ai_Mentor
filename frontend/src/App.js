@@ -79,7 +79,6 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes - Landing page accessible to everyone */}
       <Route path="/" element={<LandingIntelligent />} />
-      <Route path="/landing-original" element={<Landing />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/trust" element={<TrustPage />} />
       <Route path="/terms" element={<TermsAndConditions />} />
