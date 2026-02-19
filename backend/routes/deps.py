@@ -93,3 +93,22 @@ async def get_current_user_from_request(request: Request):
     """Extract user from raw Request object (for endpoints that don't use Depends)."""
     from auth_supabase import get_current_user_from_request as _impl
     return await _impl(request)
+
+
+def require_owner_or_admin(current_user: dict = Depends(get_current_user)):
+    """Gate for owner or admin roles."""
+    if current_user.get("role") not in {"owner", "admin"}:
+        raise HTTPException(status_code=403, detail="Owner/Admin access required")
+    return current_user
+
+
+async def get_current_account(current_user: dict = Depends(get_current_user)):
+    """Get the account associated with the current user."""
+    account_id = current_user.get("account_id")
+    if not account_id:
+        raise HTTPException(status_code=400, detail="Account not configured")
+    from supabase_remaining_helpers import get_account_supabase
+    account = await get_account_supabase(get_sb(), account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return account
