@@ -367,16 +367,37 @@ const LandingIntelligent = () => {
           <div className="flex items-center justify-center rounded-xl text-white font-black text-sm" style={{ width: 34, height: 34, background: 'linear-gradient(135deg,#F97316,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>B</div>
           <span className="font-bold text-base text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>BIQc</span>
         </div>
+
+        {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-1">
           {['Platform','Intelligence','Integrations','Pricing','Trust'].map(link => (
             <button key={link} className="text-sm font-medium text-slate-500 px-4 py-2 rounded-lg hover:bg-white hover:text-slate-900 transition-all" style={{ fontFamily: 'var(--font-body)' }}>{link}</button>
           ))}
         </div>
+
         <div className="flex items-center gap-2">
-          <button onClick={() => nav('/login-supabase')} className="text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-heading)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
+          <button onClick={() => nav('/login-supabase')} className="hidden sm:flex text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-heading)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
           <button onClick={() => nav('/register-supabase')} className="text-sm font-semibold text-white px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
+          {/* Mobile hamburger */}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-1 transition-all" style={{ background: mobileMenuOpen ? '#0F172A' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
+            {mobileMenuOpen ? <X className="w-4 h-4 text-white" /> : <Menu className="w-4 h-4 text-slate-700" />}
+          </button>
         </div>
       </nav>
+
+      {/* Mobile menu drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed top-16 inset-x-0 z-40 md:hidden" style={{ background: 'rgba(245,247,250,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(180,195,215,0.35)', boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }}>
+          <div className="px-5 py-4 flex flex-col gap-1">
+            {['Platform','Intelligence','Integrations','Pricing','Trust'].map(link => (
+              <button key={link} onClick={() => setMobileMenuOpen(false)} className="text-left text-sm font-medium text-slate-700 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-body)' }}>{link}</button>
+            ))}
+            <div className="h-px bg-slate-200 my-2" />
+            <button onClick={() => { nav('/login-supabase'); setMobileMenuOpen(false); }} className="text-left text-sm font-medium text-slate-600 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-body)' }}>Log in</button>
+            <button onClick={() => { nav('/register-supabase'); setMobileMenuOpen(false); }} className="text-sm font-semibold text-white px-4 py-3 rounded-xl text-center" style={{ fontFamily: 'var(--font-heading)', background: '#F97316' }}>Get started →</button>
+          </div>
+        </div>
+      )}
 
       {/* ── HERO ── */}
       <section className="relative z-10 pt-28 sm:pt-36 pb-10 sm:pb-16 px-4 sm:px-6 text-center" data-testid="hero-section">
