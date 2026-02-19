@@ -489,22 +489,15 @@ const LandingIntelligent = () => {
 
             {/* Left — No motion initial hiding so content is immediately visible */}
             <div className="space-y-7">
-              <span
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-widest"
-                style={{ fontFamily: FONTS.mono }}
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                Sovereign Business Intelligence
-              </span>
 
-              <RotatingHeadline />
+              <HeroHeadline />
 
               <p
                 className="text-lg lg:text-xl leading-relaxed text-slate-600 max-w-lg"
                 style={{ fontFamily: FONTS.body }}
               >
-                Don't wait for end-of-month surprises. BIQc is the always-on intelligence layer that surfaces risks and opportunities in real time.{' '}
-                <strong className="text-slate-900 font-semibold">See it coming. Fix it fast. Get back to business.</strong>
+                BIQc is calibrated to you and your business and{' '}
+                <strong className="text-slate-900 font-semibold">detects threats before they surface.</strong>
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -524,15 +517,8 @@ const LandingIntelligent = () => {
                   data-testid="hero-cta-secondary"
                 >
                   <Shield className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
-                  Meet Your Mentor
+                  Meet BIQc
                 </button>
-              </div>
-
-              <div className="flex items-center gap-2.5 text-slate-500">
-                <Lock className="w-3.5 h-3.5" strokeWidth={1.5} />
-                <span className="text-sm" style={{ fontFamily: FONTS.mono }}>
-                  100% Sovereign. 0% Blind Spots. Australian Owned.
-                </span>
               </div>
             </div>
 
