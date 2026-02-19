@@ -626,7 +626,7 @@ const LandingIntelligent = () => {
               </div>
               <div>
                 <span className="text-xs font-semibold uppercase tracking-widest text-blue-200 mb-1 block" style={{ fontFamily: FONTS.mono }}>
-                  AI SME Mentoring
+                  AI-Powered Business Intelligence
                 </span>
                 <h3 className="text-xl font-semibold mb-2" style={{ fontFamily: FONTS.head }}>
                   We don't replace your data. We wake it up.
