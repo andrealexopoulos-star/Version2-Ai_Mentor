@@ -34,6 +34,7 @@ import Pricing from "./pages/Pricing";
 import Integrations from "./pages/Integrations";
 import ConnectEmail from "./pages/ConnectEmail";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import EnterpriseTerms from "./pages/EnterpriseTerms";
 import OnboardingWizard from "./pages/OnboardingWizard";
 import OnboardingDecision from "./pages/OnboardingDecision";
 import CalibrationAdvisor from "./pages/CalibrationAdvisor";
