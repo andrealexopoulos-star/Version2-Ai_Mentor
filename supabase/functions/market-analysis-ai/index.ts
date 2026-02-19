@@ -35,22 +35,19 @@ async function fetchMerge(token: string, endpoint: string, limit = 20) {
   return [];
 }
 
-async function firecrawlSearch(query: string, limit = 5): Promise<any[]> {
-  if (!FIRECRAWL_API_KEY) return [];
+const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
+
+async function perplexitySearch(query: string): Promise<string> {
+  if (!PERPLEXITY_KEY) return "";
   try {
-    const res = await fetch("https://api.firecrawl.dev/v1/search", {
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query, limit }),
+      headers: { "Authorization": `Bearer ${PERPLEXITY_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 500 }),
     });
-    if (res.ok) {
-      const data = await res.json();
-      return (data.data || data.results || []).map((r: any) => ({
-        title: r.title || "", description: r.description || r.snippet || "", url: r.url || "",
-      }));
-    }
-  } catch (e) { console.error("[firecrawl]", e); }
-  return [];
+    if (res.ok) { const d = await res.json(); return d.choices?.[0]?.message?.content || ""; }
+  } catch (e) { console.error("[perplexity]", e); }
+  return "";
 }
 
 const SYSTEM_PROMPT = `You are BIQc Market Intelligence — a senior market analyst for an Australian business owner.
