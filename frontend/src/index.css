@@ -133,7 +133,7 @@ code, pre, kbd, samp, .font-mono {
 
 /* MOBILE P0 STABILISATION - SYSTEMATIC FIXES */
 @media (max-width: 768px) {
-    html, body {
+    html {
         overflow-x: hidden !important;
         overflow-y: scroll !important;
         max-width: 100% !important;
@@ -142,6 +142,11 @@ code, pre, kbd, samp, .font-mono {
     }
     
     body {
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        max-width: 100% !important;
+        height: auto !important;
+        overscroll-behavior: auto !important;
         /* Replace 100vh with 100dvh for mobile */
         min-height: 100dvh;
     }
