@@ -165,7 +165,7 @@ code, pre, kbd, samp, .font-mono {
     }
     
     /* Prevent horizontal overflow on all containers */
-    * {
+    *:not([class*="fixed"]):not([data-testid="sovereign-badge"]) {
         max-width: 100%;
     }
     
