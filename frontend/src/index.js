@@ -17,14 +17,18 @@ import App from "@/App";
 (function unlockScroll() {
   var html = document.documentElement;
   var body = document.body;
-  html.style.overflowY = 'auto';
+  // HTML is the ONLY scroll container
+  html.style.overflowY = 'scroll';
   html.style.overflowX = 'hidden';
   html.style.height = 'auto';
   html.style.position = 'static';
-  body.style.overflowY = 'auto';
+  html.style.overscrollBehavior = 'auto';
+  // Body must NOT be a scroll container
+  body.style.overflowY = 'visible';
   body.style.overflowX = 'hidden';
   body.style.height = 'auto';
   body.style.position = 'static';
+  body.style.overscrollBehavior = 'auto';
 })();
 
 // ═══════════════════════════════════════════════════════════════
