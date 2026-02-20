@@ -1,177 +1,123 @@
 {
-  "project_name": "BIQc Landing Page Redesign",
-  "design_philosophy": {
-    "identity": "E1: Anti-AI Designer",
-    "core_principles": [
-      "Fusion over Imitation: Swiss Style + Tactical SaaS",
-      "Emotion First: Sovereign = Trust, Intelligence = Clarity",
-      "Content is King: Directed storytelling",
-      "Zoom In: Focus on data details",
-      "Negative Space: Luxurious breathing room"
-    ],
-    "anti_patterns": [
-      "No generic 'Inter' for headings",
-      "No center-aligned everything",
-      "No excessive gradients",
-      "No 'default' Shadcn look"
-    ]
-  },
   "typography": {
-    "font_family": {
-      "headings": "Outfit, sans-serif",
-      "body": "DM Sans, sans-serif",
-      "mono": "JetBrains Mono, monospace"
+    "font_families": {
+      "heading": "font-heading",
+      "body": "font-body",
+      "mono": "font-mono"
     },
     "scale": {
-      "h1": "text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]",
-      "h2": "text-4xl md:text-5xl font-semibold tracking-tight",
-      "h3": "text-2xl md:text-3xl font-semibold",
-      "body_lg": "text-lg md:text-xl leading-relaxed text-slate-600",
-      "body_base": "text-base leading-relaxed text-slate-600",
-      "caption": "text-xs font-mono uppercase tracking-widest text-slate-500"
+      "h1": "text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter leading-[1.1]",
+      "h2": "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight",
+      "h3": "text-xl sm:text-2xl font-bold tracking-tight leading-snug",
+      "h4": "text-lg sm:text-xl font-semibold tracking-tight leading-snug",
+      "body_large": "text-lg sm:text-xl leading-relaxed font-normal",
+      "body_default": "text-base leading-relaxed font-normal",
+      "body_small": "text-sm leading-relaxed font-medium",
+      "caption": "text-xs font-medium leading-normal",
+      "micro_label": "text-[10px] sm:text-xs font-semibold uppercase tracking-widest leading-none font-mono"
+    },
+    "weights": {
+      "default": "font-normal",
+      "medium": "font-medium",
+      "semibold": "font-semibold",
+      "bold": "font-bold",
+      "extrabold": "font-extrabold"
+    },
+    "alignment_rules": {
+      "headings": "text-center md:text-left (unless section is explicitly centered)",
+      "body": "text-left (avoid center alignment for paragraphs > 3 lines)",
+      "labels": "text-left"
     }
   },
   "colors": {
-    "palette": {
-      "primary": {
-        "base": "#0f172a",
-        "hover": "#1e293b",
-        "foreground": "#ffffff"
-      },
-      "accent": {
-        "blue": "#2563eb",
-        "blue_light": "#dbeafe",
-        "emerald": "#059669",
-        "emerald_light": "#d1fae5",
-        "amber": "#d97706",
-        "rose": "#e11d48"
-      },
-      "neutral": {
-        "white": "#ffffff",
-        "slate_50": "#f8fafc",
-        "slate_100": "#f1f5f9",
-        "slate_200": "#e2e8f0",
-        "slate_900": "#0f172a"
-      }
+    "instructions": "DO NOT CHANGE ANY COLORS. Use existing Tailwind classes or CSS variables provided in index.css.",
+    "text_colors": {
+      "primary": "text-slate-900",
+      "secondary": "text-slate-600",
+      "muted": "text-slate-500",
+      "accent": "text-orange-500",
+      "brand_highlight": "text-orange-600",
+      "inverse": "text-white"
+    }
+  },
+  "spacing_and_layout": {
+    "general": {
+      "section_padding": "py-16 sm:py-24",
+      "container_padding": "px-4 sm:px-6 lg:px-8",
+      "stack_gap": "space-y-6 sm:space-y-8"
     },
-    "usage": {
-      "background": "bg-slate-50",
-      "surface": "bg-white",
-      "text_main": "text-slate-900",
-      "text_muted": "text-slate-600",
-      "border": "border-slate-200"
+    "grid_rules": {
+      "landing_features": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8",
+      "stats_bar": "grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-slate-200/50"
     }
   },
   "components": {
     "buttons": {
-      "primary": "bg-slate-900 text-white hover:bg-slate-800 rounded-lg px-8 py-4 font-semibold shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5",
-      "secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg px-8 py-4 font-medium transition-all",
-      "ghost": "text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg px-4 py-2 transition-all"
+      "primary": "font-heading font-semibold text-sm sm:text-base px-6 py-3 rounded-full shadow-lg hover:-translate-y-0.5 transition-all duration-200",
+      "secondary": "font-heading font-semibold text-sm sm:text-base px-6 py-3 rounded-full border border-slate-200 hover:bg-slate-50 transition-all duration-200",
+      "text_link": "font-heading font-semibold text-sm text-orange-500 hover:text-orange-600 underline-offset-4 hover:underline"
     },
     "cards": {
-      "base": "bg-white border border-slate-200 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all",
-      "feature": "bg-white border border-slate-100 rounded-3xl p-8 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300",
-      "pricing_highlight": "bg-slate-900 text-white rounded-3xl p-8 shadow-2xl shadow-slate-900/30 relative overflow-hidden"
+      "feature": "rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300",
+      "pricing": "rounded-2xl p-6 sm:p-8 border border-slate-200 bg-white transition-all duration-300 relative"
+    },
+    "inputs": {
+      "default": "w-full rounded-xl px-4 py-3 text-sm font-body border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all placeholder:text-slate-400"
     },
     "badges": {
-      "base": "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-mono uppercase tracking-wider",
-      "blue": "bg-blue-50 text-blue-700 border border-blue-100",
-      "emerald": "bg-emerald-50 text-emerald-700 border border-emerald-100"
+      "sovereign": "fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur border border-slate-200 rounded-full shadow-lg font-mono text-xs font-semibold text-slate-700"
     }
   },
-  "layout_strategies": {
-    "spacing": {
-      "section_y": "py-24 md:py-32",
-      "container_x": "px-6 md:px-12 lg:px-20",
-      "element_gap": "gap-8 md:gap-12"
+  "audit_fixes": {
+    "landing_page": {
+      "hero_headline": "Replace inline clamp() with 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl'. Ensure 'Run Your Business' is on one line if possible, or break semantically.",
+      "hero_subtext": "Change to 'text-lg sm:text-xl text-slate-600 font-medium leading-relaxed'. Remove bolding on 'Meet BIQc..' and integrate it as a kicker or label.",
+      "feature_cards": "Standardize titles to H3 style. Standardize body text to body_small style. Remove inline pixel values.",
+      "stats_section": "Ensure numbers use font-heading and extrabold weight. Labels must be font-mono uppercase.",
+      "trust_bar": "Quote text should be 'italic text-slate-600 font-body'. Attribution should be 'font-heading font-semibold'."
     },
-    "grids": {
-      "hero": "grid grid-cols-1 lg:grid-cols-2 gap-16 items-center",
-      "bento": "grid grid-cols-1 md:grid-cols-3 gap-6",
-      "features": "grid grid-cols-1 md:grid-cols-2 gap-8"
+    "contact_page": {
+      "form_labels": "Use 'micro_label' style defined in typography scale. Ensure consistent uppercase tracking.",
+      "input_fields": "Remove inline styles. Use the 'inputs.default' class set defined above.",
+      "headings": "Align H1 size with other page headers (H2 on landing page).",
+      "info_panel": "Ensure text contrast is sufficient (white on dark background). Use font-body for descriptions."
     }
   },
-  "motion": {
-    "library": "framer-motion",
-    "variants": {
-      "fadeInUp": {
-        "initial": { "opacity": 0, "y": 20 },
-        "whileInView": { "opacity": 1, "y": 0 },
-        "viewport": { "once": true },
-        "transition": { "duration": 0.5, "ease": "easeOut" }
-      },
-      "stagger": {
-        "initial": "hidden",
-        "animate": "visible",
-        "variants": {
-          "visible": { "transition": { "staggerChildren": 0.1 } }
-        }
-      }
-    }
+  "accessibility": {
+    "checklist": [
+      "Ensure all text meets WCAG AA contrast ratios (4.5:1 normal, 3:1 large).",
+      "Buttons must have visible focus states.",
+      "Inputs must have associated labels.",
+      "Do not rely solely on color for state (use icons or text labels)."
+    ]
   },
-  "sections_breakdown": [
-    {
-      "name": "Navbar",
-      "type": "sticky",
-      "style": "glassmorphism",
-      "elements": ["Logo (BIQc)", "Trust Link", "Login", "Start Free (Primary CTA)"]
-    },
-    {
-      "name": "Hero",
-      "layout": "split",
-      "left": ["Eyebrow: Sovereign Intelligence", "Rotating Headline", "Subhead", "CTA Group", "Trust Badge"],
-      "right": ["Live Intelligence Panel (Mocked UI)", "Floating Elements"],
-      "fix": "Ensure right panel render"
-    },
-    {
-      "name": "Trust Strip",
-      "layout": "full-width",
-      "style": "marquee",
-      "content": "Marquee of integration logos"
-    },
-    {
-      "name": "Comparison",
-      "title": "Dashboards vs Agents",
-      "interaction": "Toggle Switch",
-      "visual": "Side-by-side comparison or Cross-fade based on toggle"
-    },
-    {
-      "name": "Features",
-      "layout": "Bento Grid",
-      "cards": ["The Boardroom", "Strategic Console", "SoundBoard", "BIQc Insights"]
-    },
-    {
-      "name": "WIIFM",
-      "layout": "3-Col Grid",
-      "cards": ["Time Reclaimed", "Profit Leaks Plugged", "SOP Compliance"]
-    },
-    {
-      "name": "Pricing",
-      "layout": "3-Col Grid",
-      "highlight": "The Strategist (Middle)"
-    },
-    {
-      "name": "Sovereignty",
-      "style": "Trust Badge/Banner",
-      "content": "Australian Data Sovereignty"
-    },
-    {
-      "name": "Footer",
-      "style": "Minimal",
-      "content": "Copyright, Disclaimer"
-    }
+  "instructions_to_main_agent": [
+    "AUDIT ONLY: Do not change layout, colors, or images.",
+    "REFACTOR: Replace all inline `style={{ fontFamily: '...' }}` with Tailwind classes `font-heading`, `font-body`, `font-mono`.",
+    "REFACTOR: Replace all inline `style={{ fontSize: '...' }}` with standard Tailwind text scales.",
+    "REFACTOR: Remove arbitrary `letterSpacing` inline styles and use `tracking-tight`, `tracking-wide`, or `tracking-widest`.",
+    "CONSISTENCY: Ensure all section headings (H2) use the exact same class set.",
+    "CLEANUP: Remove unused imports if any.",
+    "TESTING: Add `data-testid` to all interactive elements as requested."
   ],
-  "image_urls": {
-     "hero_bg": "generated-gradient-mesh",
-     "logos": [
-       "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Xero_software_logo.svg/2560px-Xero_software_logo.svg.png",
-       "https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg",
-       "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/HubSpot_Logo.svg/2560px-HubSpot_Logo.svg.png",
-       "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png",
-       "https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg",
-       "https://upload.wikimedia.org/wikipedia/commons/0/08/Microsoft_Office_365_%282019%E2%80%93present%29.svg",
-       "https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-     ]
-  },
-  "instructions_to_main_agent": "Refactor LandingIntelligent.js to use Tailwind classes instead of inline styles. Use Shadcn components for Buttons and Cards where possible, but customize them to match the E1 aesthetic. Ensure the Hero Right Panel is visible by fixing the animation logic (remove initial='hidden' if it blocks rendering). Preserve all existing text content and logic (toggle, etc.). Use 'Outfit' for headings and 'DM Sans' for body."
+  "universal_guidelines": [
+     "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+	"Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Create new components that match the style and conventions of existing components when needed",
+    "Examine existing components to understand the project's component patterns before creating new ones",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})"
+  ]
 }
