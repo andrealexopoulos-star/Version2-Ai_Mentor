@@ -450,11 +450,8 @@ const LandingIntelligent = () => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-white font-semibold hover:-translate-y-0.5 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
-            Run free BIQc Snapshot <ArrowRight className="w-4 h-4" />
-          </button>
-          <button onClick={() => nav('/trust')} className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold hover:border-orange-400 hover:text-orange-500 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'transparent', fontSize: 15, color: '#475569', border: '1.5px solid rgba(180,195,215,0.6)' }} data-testid="hero-cta-secondary">
+        <div className="flex items-center justify-center mb-4">
+          <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-white font-semibold hover:-translate-y-0.5 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
             <Shield className="w-4 h-4" strokeWidth={1.5} /> Book a live demo
           </button>
         </div>
