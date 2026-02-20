@@ -524,7 +524,7 @@ const LandingIntelligent = () => {
               Dashboards tell you what happened.<br />
               <span style={{ color: '#2563EB' }}>BIQc fixes what's happening.</span>
             </h2>
-            <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto">Stop digging through charts to find problems. BIQc spots the leaks and hands you the solution — before you lose money.</p>
+            <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Stop digging through charts to find problems. BIQc spots the leaks and hands you the solution — before you lose money.</p>
           </div>
           <ComparisonSection />
         </div>
