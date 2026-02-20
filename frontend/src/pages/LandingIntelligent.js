@@ -278,12 +278,12 @@ const FeatureCards = () => {
 /* ═══ COMPARISON SECTION ═══ */
 const ComparisonSection = () => {
   const [active, setActive] = useState(1);
-  const passiveItems = ['Revenue by Region','Q3 Pipeline Report','Staff Utilisation %','Churn Rate Trend'];
+  const passiveItems = ['Monthly Sales Report','Total Outstanding Invoices','Employee Hours & Overtime','Customer Complaints/Churn'];
   const activeItems = [
-    { text: 'FORCE MEMO: Client #47 payment drift detected', action: 'Deploy Fix', color: '#F97316' },
-    { text: 'ALERT: Pipeline over-concentrated in 2 accounts', action: 'Mitigate', color: '#2563EB' },
-    { text: 'SOP BREACH: Onboarding step 3 skipped 4×', action: 'Enforce', color: '#EF4444' },
-    { text: 'OPPORTUNITY: Competitor pricing gap — act now', action: 'Capture', color: '#059669' },
+    { text: 'LATE PAYMENT: Client #47 hasn\'t paid.', action: 'Send Auto-Reminder', color: '#F97316' },
+    { text: 'BUDGET ALERT: Overtime is 15% above target this week.', action: 'Adjust Schedule', color: '#2563EB' },
+    { text: 'SOP BREACH: 3 new leads haven\'t been called in 24 hours.', action: 'Notify Team', color: '#EF4444' },
+    { text: 'PROFIT WIN: Supplier price just dropped 10%.', action: 'Restock Now', color: '#059669' },
   ];
 
   return (
@@ -291,7 +291,7 @@ const ComparisonSection = () => {
       {/* Toggle */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center p-1 rounded-full" style={{ background: 'white', border: '1px solid rgba(180,195,215,0.35)', boxShadow: '0 2px 8px rgba(100,120,160,0.08)' }}>
-          {['Passive Analytics','Agentic Resolution'].map((label,i) => (
+          {['The Old Way','The BIQc Way'].map((label,i) => (
             <button key={i} onClick={() => setActive(i)}
               className="px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200"
               style={{ fontFamily: 'var(--font-heading)', background: active === i ? '#0F172A' : 'transparent', color: active === i ? 'white' : '#64748B', boxShadow: active === i ? '0 2px 8px rgba(0,0,0,0.15)' : 'none' }}>
@@ -305,20 +305,20 @@ const ComparisonSection = () => {
         {/* Passive */}
         <div className="bg-white rounded-2xl p-6 border transition-all duration-500"
           style={{ borderColor: active === 0 ? 'rgba(180,195,215,0.35)' : '#F1F5F9', opacity: active === 1 ? 0.4 : 1, boxShadow: '0 2px 12px rgba(100,120,160,0.06)' }}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest mb-4 text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>Requires Questions</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-4 text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>The Mental Load</p>
           {passiveItems.map((item,i) => (
             <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-100 mb-2 text-sm text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>
               <div className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
               {item}
             </div>
           ))}
-          <p className="text-xs text-slate-400 mt-3 italic">You ask. It waits. You interpret. You decide.</p>
+          <p className="text-xs text-slate-400 mt-3 italic">You search. You analyze. You lose time.</p>
         </div>
 
         {/* Active */}
         <div className="bg-white rounded-2xl p-6 border transition-all duration-500"
           style={{ borderColor: active === 1 ? 'rgba(249,115,22,0.2)' : '#F1F5F9', opacity: active === 0 ? 0.4 : 1, background: active === 1 ? 'rgba(249,115,22,0.02)' : 'white', boxShadow: active === 1 ? '0 4px 24px rgba(249,115,22,0.08)' : '0 2px 12px rgba(100,120,160,0.06)' }}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ fontFamily: 'var(--font-mono)', color: active === 1 ? '#F97316' : '#94A3B8' }}>Delivers Answers</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ fontFamily: 'var(--font-mono)', color: active === 1 ? '#F97316' : '#94A3B8' }}>Instant Resolution</p>
           {activeItems.map((item,i) => (
             <div key={i} className="flex items-center gap-2 px-3 py-2.5 rounded-lg mb-2 border transition-all duration-200" style={{ background: active === 1 ? 'white' : '#F8FAFC', borderColor: active === 1 ? 'rgba(249,115,22,0.1)' : '#F1F5F9' }}>
               <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: active === 1 ? item.color : '#CBD5E1', boxShadow: active === 1 ? `0 0 5px ${item.color}` : 'none' }} />
@@ -326,7 +326,7 @@ const ComparisonSection = () => {
               <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: active === 1 ? item.color : '#94A3B8', background: active === 1 ? `${item.color}15` : '#F1F5F9', fontFamily: 'var(--font-mono)' }}>{item.action}</span>
             </div>
           ))}
-          <p className="text-xs font-semibold mt-3" style={{ color: active === 1 ? '#F97316' : '#94A3B8' }}>It watches. It decides. It pushes. You command.</p>
+          <p className="text-xs font-semibold mt-3" style={{ color: active === 1 ? '#F97316' : '#94A3B8' }}>It monitors. It alerts. You just hit "Approve."</p>
         </div>
       </div>
     </div>
@@ -510,10 +510,10 @@ const LandingIntelligent = () => {
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Intelligence Evolution</span>
             </div>
             <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
-              Dashboards report the past.<br />
-              <span style={{ color: '#2563EB' }}>BIQc commands the future.</span>
+              Dashboards tell you what happened.<br />
+              <span style={{ color: '#2563EB' }}>BIQc fixes what's happening.</span>
             </h2>
-            <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto">BI tools wait to be asked. BIQc pushes answers to you before the crisis hits.</p>
+            <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto">Stop digging through charts to find problems. BIQc spots the leaks and hands you the solution — before you lose money.</p>
           </div>
           <ComparisonSection />
         </div>
