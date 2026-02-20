@@ -533,6 +533,11 @@ const DashboardLayout = ({ children }) => {
           {children}
         </div>
       </main>
+
+      {/* Tutorial Overlay */}
+      {showTutorial && tutorial && (
+        <TutorialModal tutorial={tutorial} onClose={closeTutorial} />
+      )}
     </div>
   );
 };
