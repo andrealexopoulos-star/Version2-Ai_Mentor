@@ -8,6 +8,7 @@ import { WowSummary, DissolveTransition } from "../components/calibration/WowSum
 import { ExecutiveReveal } from "../components/calibration/ExecutiveReveal";
 import { ContinuitySuite } from "../components/calibration/ContinuitySuite";
 import { CalibratingSession } from "../components/calibration/CalibratingSession";
+import { CalibrationTutorial } from "../components/TutorialOverlay";
 
 const CREAM = '#FBFBF9';
 const CHARCOAL = '#1E293B';
@@ -17,9 +18,18 @@ const CARD_BORDER = '#E8E6E1';
 const CalibrationAdvisor = () => {
   const cal = useCalibrationState();
 
+  // Pick the right tutorial key based on current entry
+  const tutorialKey = cal.entry === 'welcome' ? 'calibration-welcome'
+    : (cal.entry === 'calibrating') ? 'calibration-chat'
+    : (cal.entry === 'wow_summary') ? 'calibration-wow'
+    : null;
+
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: CREAM }} data-testid="calibration-page">
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
+      {/* Tutorial overlay for calibration stages */}
+      {tutorialKey && <CalibrationTutorial pageKey={tutorialKey} />}
 
       {cal.entry !== "loading" && cal.user && (
         <div className="flex items-center justify-between px-5 py-2.5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} data-testid="identity-bar">
