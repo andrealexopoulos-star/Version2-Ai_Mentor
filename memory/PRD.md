@@ -34,7 +34,7 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 ### P0 (Critical)
 - [x] Scroll fix on landing page (RESOLVED)
 - [x] Mobile responsiveness overhaul (RESOLVED)
-- [ ] Production deployment verification
+- [x] Production deployment verification — Removed MongoDB env vars (MONGO_URL, DB_NAME) and fixed hardcoded URLs in email.py
 
 ### P1 (High Priority)
 - [ ] Complete "Fix Web" track (mobile responsiveness on authenticated pages)
@@ -53,7 +53,8 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 ### P3 (Low Priority / Tech Debt)
 - [ ] Refactor routes/profile.py (1,917 lines)
 - [ ] Refactor routes/email.py (1,855 lines)
-- [ ] Eliminate MongoDB (migrate truth_engine.py to Supabase)
+- [x] MongoDB env vars removed from .env (deployment blocker resolved)
+- [ ] Eliminate MongoDB code references (truth_engine.py) — migrate to Supabase
 - [ ] React Native App (Track 2)
 
 ## Key Files Modified
