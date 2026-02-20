@@ -1,26 +1,32 @@
 /**
- * CRITICAL SCROLL FIX - IMPORTED LAST IN App.js
- * Ensures scrolling works on ALL pages - desktop and mobile
+ * CRITICAL SCROLL FIX - IMPORTED LAST IN index.js & App.js
+ * ROOT CAUSE: When body has overflow-y:scroll AND overscroll-behavior:contain,
+ * it creates a scroll container that eats wheel events but can't scroll
+ * (because body.clientHeight == body.scrollHeight).
+ * FIX: Only html is the scroll container. Body is overflow:visible.
  */
 
-/* ── Core: force scroll on html and body ── */
+/* HTML is the ONLY scroll container */
 html {
   overflow-x: hidden !important;
-  overflow-y: auto !important;
+  overflow-y: scroll !important;
   height: auto !important;
   min-height: 100% !important;
+  overscroll-behavior: auto !important;
 }
 
+/* Body must NOT be a scroll container */
 body {
   overflow-x: hidden !important;
-  overflow-y: auto !important;
+  overflow-y: visible !important;
   height: auto !important;
   min-height: 100vh !important;
   position: static !important;
   -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: auto !important;
 }
 
-/* ── Root must never restrict scroll ── */
+/* Root must never restrict scroll */
 #root {
   overflow-x: hidden !important;
   overflow-y: visible !important;
@@ -29,30 +35,36 @@ body {
   position: relative !important;
 }
 
-/* ── Hero section must allow scroll to pass through ── */
+/* Hero section must allow scroll to pass through */
 .hero-section {
   overflow: visible !important;
 }
 
-/* ── min-h-screen divs must not trap scroll ── */
+/* min-h-screen divs must not trap scroll */
 div.min-h-screen {
   overflow-y: visible !important;
   height: auto !important;
 }
 
-/* ── Only lock body when sidebar is explicitly open ── */
+/* Only lock body when sidebar is explicitly open */
 body.sidebar-open {
   overflow: hidden !important;
   touch-action: none !important;
 }
 
-/* ── Mobile: keep scroll enabled ── */
+/* Mobile: keep scroll enabled */
 @media (max-width: 1024px) {
-  html,
-  body {
-    overflow-y: auto !important;
+  html {
+    overflow-y: scroll !important;
     -webkit-overflow-scrolling: touch !important;
     height: auto !important;
+  }
+
+  body {
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    height: auto !important;
+    overscroll-behavior: auto !important;
   }
 
   #root {
