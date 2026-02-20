@@ -102,7 +102,7 @@ export const useCalibrationState = () => {
 
   const triggerComplete = () => { setCompleting(true); setEntry("completing"); setRevealPhase(0); };
 
-  const applyResponse = (data) => {
+  const applyResponse = async (data) => {
     if (data.question && data.options && data.options.length > 0) {
       setQuestion(data.question); setOptions(data.options); setAllowText(data.allow_text === true);
       setInsight(data.insight || null); setIsProbe(data.probe === true);
@@ -110,7 +110,26 @@ export const useCalibrationState = () => {
       if (!data.probe) setCurrentStep(prev => data.step || prev + 1);
       setCalMode("wizard"); setEntry("calibrating"); return;
     }
-    if (data.message) { setMessages(prev => [...prev, { role: "edge", text: data.message }]); setCalMode("chat"); setEntry("calibrating"); return; }
+    if (data.message) {
+      setMessages(prev => [...prev, { role: "edge", text: data.message }]);
+      setCalMode("chat"); setEntry("calibrating");
+      // If response is just an acknowledgment (no question), auto-fetch next step
+      if (!data.message.includes('?')) {
+        try {
+          const followUp = await callEdge({ step: currentStep + 1, message: "continue" });
+          if (followUp.status === "COMPLETE") { triggerComplete(); return; }
+          if (followUp.question && followUp.options?.length > 0) {
+            setQuestion(followUp.question); setOptions(followUp.options); setAllowText(followUp.allow_text === true);
+            setInsight(followUp.insight || null); setIsProbe(followUp.probe === true);
+            setSelectedOption(null); setTextValue("");
+            if (!followUp.probe) setCurrentStep(prev => followUp.step || prev + 1);
+            setCalMode("wizard"); return;
+          }
+          if (followUp.message) setMessages(prev => [...prev, { role: "edge", text: followUp.message }]);
+        } catch { /* stay in chat mode */ }
+      }
+      return;
+    }
     const fb = data.text || data.response || JSON.stringify(data);
     if (fb) { setMessages(prev => [...prev, { role: "edge", text: fb }]); setCalMode("chat"); setEntry("calibrating"); }
   };
