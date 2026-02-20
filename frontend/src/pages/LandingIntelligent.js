@@ -293,7 +293,7 @@ const ComparisonSection = () => {
         <div className="flex items-center p-1 rounded-full" style={{ background: 'white', border: '1px solid rgba(180,195,215,0.35)', boxShadow: '0 2px 8px rgba(100,120,160,0.08)' }}>
           {['Passive Analytics','Agentic Resolution'].map((label,i) => (
             <button key={i} onClick={() => setActive(i)}
-              className="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200"
+              className="px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200"
               style={{ fontFamily: 'var(--font-heading)', background: active === i ? '#0F172A' : 'transparent', color: active === i ? 'white' : '#64748B', boxShadow: active === i ? '0 2px 8px rgba(0,0,0,0.15)' : 'none' }}>
               {label}
             </button>
