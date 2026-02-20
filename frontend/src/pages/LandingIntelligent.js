@@ -277,7 +277,7 @@ const FeatureCards = () => {
 
 /* ═══ COMPARISON SECTION ═══ */
 const ComparisonSection = () => {
-  const [active, setActive] = useState(1);
+  const [active, setActive] = useState(0);
   const passiveItems = ['Monthly Sales Report','Total Outstanding Invoices','Employee Hours & Overtime','Customer Complaints/Churn'];
   const activeItems = [
     { text: 'LATE PAYMENT: Client #47 hasn\'t paid.', action: 'Send Auto-Reminder', color: '#F97316' },
