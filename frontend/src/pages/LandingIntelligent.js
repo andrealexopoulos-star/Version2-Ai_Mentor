@@ -223,8 +223,8 @@ const FeatureCards = () => {
             </div>
           ))}
         </div>
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>BIQc Insights</h3>
+        <div className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>BIQc Insights</h3>
           <p className="text-sm font-semibold text-slate-700 mb-2">The always-on intelligence layer. Sub-second from cache.</p>
           <p className="text-sm text-slate-500 leading-relaxed mb-4">Radar-sweep detection of Silent Killers — forgotten invoices, SOP drift, compliance gaps — before they become crises.</p>
           <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-heading)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
