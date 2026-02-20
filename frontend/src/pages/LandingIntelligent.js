@@ -426,25 +426,25 @@ const LandingIntelligent = () => {
         </div>
 
         {/* Heading with typewriter */}
-        <h1 className="mx-auto mb-3" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5.5vw,68px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.07, maxWidth: 900 }}>
+        <h1 className="mx-auto mb-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08]" style={{ fontFamily: 'var(--font-heading)', maxWidth: 900 }}>
           <span style={{ color: '#F97316' }}>Run Your Business Like The Big </span>
-          <span style={{ color: '#64748B', fontWeight: 300 }}>Players </span>
+          <span className="font-light" style={{ color: '#64748B' }}>Players </span>
           <span style={{ color: '#F97316' }}>Without The Cost</span>
         </h1>
 
-        <p className="mx-auto mb-2 text-lg sm:text-xl font-bold text-slate-800" style={{ fontFamily: 'var(--font-heading)' }}>
+        <p className="mx-auto mb-1.5 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
           Meet BIQc..
         </p>
-        <p className="mx-auto mb-6 text-base sm:text-lg leading-relaxed text-slate-500" style={{ maxWidth: 600, fontFamily: 'var(--font-body)' }}>
-          Your Digital Leadership team surfacing & preventing risk weeks in advance
+        <p className="mx-auto mb-6 text-base sm:text-lg font-medium leading-relaxed text-slate-500" style={{ maxWidth: 560, fontFamily: 'var(--font-body)' }}>
+          Your Digital Leadership team surfacing &amp; preventing risk weeks in advance
         </p>
 
-        <div className="mx-auto mb-6 text-sm sm:text-base leading-relaxed text-slate-500" style={{ maxWidth: 620, fontFamily: 'var(--font-body)' }}>
-          <p className="mb-4">Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>
-            <span>Not a chatbot.</span>
+        <div className="mx-auto mb-7 text-sm sm:text-base leading-relaxed text-slate-500" style={{ maxWidth: 600, fontFamily: 'var(--font-body)' }}>
+          <p className="mb-5">Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-5 text-sm font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            <span className="text-slate-700">Not a chatbot.</span>
             <span className="hidden sm:inline text-slate-300">|</span>
-            <span>Not a dashboard.</span>
+            <span className="text-slate-700">Not a dashboard.</span>
             <span className="hidden sm:inline text-slate-300">|</span>
             <span style={{ color: '#F97316' }}>A digital operations layer working behind the scenes.</span>
           </div>
