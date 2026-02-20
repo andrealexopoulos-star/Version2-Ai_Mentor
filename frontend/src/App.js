@@ -144,14 +144,18 @@ function App() {
   // This is the nuclear option — guaranteed to enable scrolling on every page.
   useEffect(() => {
     const unlock = () => {
-      document.documentElement.style.overflowY = 'auto';
+      // HTML is the ONLY scroll container
+      document.documentElement.style.overflowY = 'scroll';
       document.documentElement.style.overflowX = 'hidden';
       document.documentElement.style.height = 'auto';
       document.documentElement.style.position = 'static';
-      document.body.style.overflowY = 'auto';
+      document.documentElement.style.overscrollBehavior = 'auto';
+      // Body must NOT be a scroll container
+      document.body.style.overflowY = 'visible';
       document.body.style.overflowX = 'hidden';
       document.body.style.height = 'auto';
       document.body.style.position = 'static';
+      document.body.style.overscrollBehavior = 'auto';
       const root = document.getElementById('root');
       if (root) {
         root.style.overflowY = 'visible';
