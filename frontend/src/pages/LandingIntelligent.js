@@ -451,7 +451,7 @@ const LandingIntelligent = () => {
         </div>
 
         <div className="flex items-center justify-center mb-4">
-          <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-white font-semibold hover:-translate-y-0.5 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
+          <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
             <Shield className="w-4 h-4" strokeWidth={1.5} /> Book a live demo
           </button>
         </div>
