@@ -422,27 +422,26 @@ const LandingIntelligent = () => {
         {/* Kicker */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full mb-6" style={{ background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.2)' }}>
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#F97316', animation: 'blink 1.8s ease-in-out infinite' }} />
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: '#EA6C0A' }}>Sovereign Business Intelligence</span>
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: '#EA6C0A' }}>Secure Business Intelligence</span>
         </div>
 
         {/* Heading with typewriter */}
         <h1 className="mx-auto mb-5" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5.5vw,68px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.07, maxWidth: 860 }}>
-          <span style={{ color: '#F97316' }}>{typewritten}</span>
-          <span style={{ display: 'inline-block', width: 3, height: '0.82em', background: '#F97316', marginLeft: 3, verticalAlign: 'middle', borderRadius: 2, animation: 'cursorBlink 1s step-end infinite' }} />
+          <span style={{ color: '#F97316' }}>Know exactly what's happening</span>
           <br />
-          <span style={{ color: '#64748B', fontWeight: 300 }}>across your entire business.</span>
+          <span style={{ color: '#64748B', fontWeight: 300 }}>in your business — right now.</span>
         </h1>
 
-        <p className="mx-auto mb-8 text-base sm:text-lg leading-relaxed text-slate-500" style={{ maxWidth: 540, fontFamily: 'var(--font-body)' }}>
-          BIQc is <strong className="text-slate-700 font-semibold">calibrated to you</strong> — connecting every system you run and detecting threats before they surface.
+        <p className="mx-auto mb-8 text-base sm:text-lg leading-relaxed text-slate-500" style={{ maxWidth: 580, fontFamily: 'var(--font-body)' }}>
+          Run a free BIQc Snapshot from your public footprint. Then connect one tool to unlock always&#8209;on intelligence.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
           <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-white font-semibold hover:-translate-y-0.5 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
-            Start for free <ArrowRight className="w-4 h-4" />
+            Run free BIQc Snapshot <ArrowRight className="w-4 h-4" />
           </button>
           <button onClick={() => nav('/trust')} className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold hover:border-orange-400 hover:text-orange-500 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'transparent', fontSize: 15, color: '#475569', border: '1.5px solid rgba(180,195,215,0.6)' }} data-testid="hero-cta-secondary">
-            <Shield className="w-4 h-4" strokeWidth={1.5} /> Get a demo
+            <Shield className="w-4 h-4" strokeWidth={1.5} /> Book a live demo
           </button>
         </div>
         <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>No credit card required · Australian owned & operated</p>
