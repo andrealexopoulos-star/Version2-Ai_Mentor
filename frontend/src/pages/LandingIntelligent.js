@@ -251,7 +251,7 @@ const FeatureCards = () => {
 
       {/* Strategic Console */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style={{ boxShadow: '0 2px 12px rgba(100,120,160,0.08)' }}>
-        <div className="p-5" style={{ background: 'linear-gradient(135deg,#F0FDF4,#DCFCE7)', minHeight: 180 }}>
+        <div className="p-4 sm:p-5" style={{ background: 'linear-gradient(135deg,#F0FDF4,#DCFCE7)', minHeight: 140 }}>
           {[['Industry Trends — AU 2026','High Signal'],['Competitor Landscape','3 Gaps Found'],['Regulatory Changes','1 Update'],['Revenue Opportunity','Act Now']].map(([l,v],i) => (
             <div key={i} className="flex items-center justify-between px-3 py-2 bg-white rounded-lg mb-2 last:mb-0" style={{ border: '1px solid rgba(34,197,94,0.12)' }}>
               <span className="text-[11px] text-slate-500" style={{ fontFamily: 'var(--font-mono)' }}>{l}</span>
