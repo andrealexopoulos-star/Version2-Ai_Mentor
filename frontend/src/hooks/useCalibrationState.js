@@ -247,9 +247,11 @@ export const useCalibrationState = () => {
     if (isProbe) payload.probe = true;
     try {
       const data = await callEdge(payload);
+      // Auto-save progress after each wizard step
+      autoSave(currentStep, data.status === "COMPLETE" ? "COMPLETE" : "IN_PROGRESS");
       if (data.status === "COMPLETE") { triggerComplete(); return; }
       // Fallback: if we've answered all 9 steps but backend didn't flag COMPLETE, force it
-      if (currentStep >= 9) { triggerComplete(); return; }
+      if (currentStep >= 9) { autoSave(9, "COMPLETE"); triggerComplete(); return; }
       await new Promise(r => setTimeout(r, 400));
       applyResponse(data);
     } catch { setError("Calibration engine temporarily unavailable."); }
@@ -264,7 +266,9 @@ export const useCalibrationState = () => {
     setMessages(prev => [...prev, { role: "user", text: msg }]);
     try {
       const data = await callEdge({ message: msg });
-      if (data.status === "COMPLETE") { triggerComplete(); return; }
+      // Auto-save progress after each chat response
+      autoSave(currentStep);
+      if (data.status === "COMPLETE") { autoSave(currentStep, "COMPLETE"); triggerComplete(); return; }
       if (data.question && data.options?.length > 0) { applyResponse(data); return; }
       if (data.message) {
         setMessages(prev => [...prev, { role: "edge", text: data.message }]);
@@ -273,7 +277,7 @@ export const useCalibrationState = () => {
         if (!hasQuestion) {
           try {
             const followUp = await callEdge({ step: currentStep + 1, message: "continue" });
-            if (followUp.status === "COMPLETE") { triggerComplete(); return; }
+            if (followUp.status === "COMPLETE") { autoSave(currentStep + 1, "COMPLETE"); triggerComplete(); return; }
             if (followUp.question && followUp.options?.length > 0) { applyResponse(followUp); return; }
             if (followUp.message) setMessages(prev => [...prev, { role: "edge", text: followUp.message }]);
           } catch { /* silently continue in chat mode */ }
