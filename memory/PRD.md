@@ -29,6 +29,17 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 - **Spacing**: Reduced padding on mobile cards (p-4 sm:p-6)
 - **Testing**: 100% pass (iteration_50.json) on Android (360x800) and iPhone (390x844)
 
+### Calibration Auto-Save (Feb 20, 2026)
+- Auto-saves progress to Supabase (`/api/console/state`) after each wizard step, chat response, audit submit, and wow confirmation
+- Users can resume calibration from where they left off if disconnected or inactive
+
+### Tutorial/Onboarding System (Feb 20, 2026)
+- Reusable `TutorialOverlay` component with modal, X close, back/next arrows, dot indicators
+- Shows automatically on first visit to each page (tracked via localStorage)
+- "?" help button in header to re-trigger tutorials
+- Covers 21 authenticated pages + 3 calibration stages
+- Content written for non-AI-savvy users explaining purpose and how to use each function
+
 ### Calibration Psych Fixes (Feb 20, 2026)
 - **Scroll Fix:** Changed CalibrationAdvisor container from `min-h-screen` to `h-screen overflow-hidden` so chat messages scroll within viewport and input stays visible
 - **Auto-scroll:** Added useEffect to auto-scroll to bottom when new messages arrive
