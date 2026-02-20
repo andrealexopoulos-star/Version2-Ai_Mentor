@@ -358,9 +358,9 @@ const LandingIntelligent = () => {
   }, []);
 
   const outcomes = [
-    { icon: Clock, metric: '15+', unit: 'hrs/week', title: 'Reclaim Your Time', desc: 'Stop being the Chief Monitor. BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.', color: '#2563EB' },
-    { icon: DollarSign, metric: '8–12%', unit: 'profit', title: 'Plug Cashflow Leaks', desc: 'Real-time detection of high CAC, zombie subscriptions, and tax liability mismatches — before they hit your bank balance.', color: '#F97316' },
-    { icon: Users, metric: '97%', unit: 'SOP rate', title: 'Enforce Standards', desc: 'AI detects when staff skip steps or leads go cold, triggering intervention before the client leaves a bad review.', color: '#059669' },
+    { icon: Clock, metric: '15+', unit: 'hrs/week', title: 'No More Overworking', desc: 'For the same results. BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.', color: '#2563EB' },
+    { icon: DollarSign, metric: '8–12%', unit: 'profit', title: 'Keep More of Your Cash', desc: 'Real-time detection of high CAC, zombie subscriptions, and tax liability mismatches — before they hit your bank balance.', color: '#F97316' },
+    { icon: Users, metric: '97%', unit: 'SOP rate', title: 'Bring Simplicity into Your Business', desc: 'Standard Operating Processes that work. AI detects when steps are skipped or leads go cold, triggering intervention automatically.', color: '#059669' },
   ];
 
   const pricingTiers = [
@@ -455,11 +455,19 @@ const LandingIntelligent = () => {
       {/* ── TRUST BAR ── */}
       <section className="relative z-10 py-8 sm:py-10 border-y" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(180,195,215,0.35)' }} data-testid="trust-strip">
         <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400 mb-5" style={{ fontFamily: 'var(--font-mono)' }}>
-          Trusted by <span style={{ color: '#F97316', textDecoration: 'underline', textUnderlineOffset: 3 }}>growing Australian businesses</span>
+          What <span style={{ color: '#F97316', textDecoration: 'underline', textUnderlineOffset: 3 }}>Australian businesses</span> are saying
         </p>
         <div className="flex items-center justify-center flex-wrap gap-6 sm:gap-10 px-6">
-          {['Professional Services','SaaS Founders','eCommerce','Financial Services','Healthcare','Manufacturing'].map(name => (
-            <span key={name} className="text-base font-bold text-slate-300 hover:text-slate-500 transition-colors cursor-default" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>{name}</span>
+          {[
+            { quote: "BIQc spotted a cash leak we'd been missing for 6 months. Within a week of connecting Xero, we recovered $12,000.", name: 'Sarah M.', co: 'Melbourne Accounting Firm' },
+            { quote: "I used to spend 3 hours every Monday pulling reports. Now BIQc hands me a briefing before my coffee.", name: 'James T.', co: 'Brisbane eCommerce' },
+            { quote: "The SOP monitoring alone paid for itself. We caught 4 compliance gaps before our audit.", name: 'Lisa K.', co: 'Sydney Healthcare' },
+          ].map((t, i) => (
+            <div key={i} className="max-w-xs text-center px-4">
+              <p className="text-sm text-slate-500 italic leading-relaxed mb-2" style={{ fontFamily: 'var(--font-body)' }}>"{t.quote}"</p>
+              <p className="text-xs font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>{t.name}</p>
+              <p className="text-[10px] text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>{t.co}</p>
+            </div>
           ))}
         </div>
       </section>
@@ -516,7 +524,7 @@ const LandingIntelligent = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 sm:mb-12">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Real-World Impact</span>
+              <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>What Life Looks Like with BIQc</span>
             </div>
             <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>What's in it for you?</h2>
           </div>
