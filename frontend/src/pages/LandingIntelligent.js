@@ -426,15 +426,30 @@ const LandingIntelligent = () => {
         </div>
 
         {/* Heading with typewriter */}
-        <h1 className="mx-auto mb-5" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5.5vw,68px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.07, maxWidth: 860 }}>
-          <span style={{ color: '#F97316' }}>Know exactly what's happening</span>
+        <h1 className="mx-auto mb-3" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5.5vw,68px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.07, maxWidth: 900 }}>
+          <span style={{ color: '#F97316' }}>Run Your Business Like The Big Players</span>
           <br />
-          <span style={{ color: '#64748B', fontWeight: 300 }}>in your business — right now.</span>
+          <span style={{ color: '#64748B', fontWeight: 300 }}>Without Cost</span>
         </h1>
 
-        <p className="mx-auto mb-8 text-base sm:text-lg leading-relaxed text-slate-500" style={{ maxWidth: 580, fontFamily: 'var(--font-body)' }}>
-          Run a free BIQc Snapshot from your public footprint. Then connect one tool to unlock always&#8209;on intelligence.
+        <p className="mx-auto mb-2 text-lg sm:text-xl font-bold text-slate-800" style={{ fontFamily: 'var(--font-heading)' }}>
+          Meet BIQc..
         </p>
+        <p className="mx-auto mb-6 text-base sm:text-lg leading-relaxed text-slate-500" style={{ maxWidth: 600, fontFamily: 'var(--font-body)' }}>
+          Your Digital Leadership team surfacing & preventing risk weeks in advance
+        </p>
+
+        <div className="mx-auto mb-6 text-sm sm:text-base leading-relaxed text-slate-500" style={{ maxWidth: 620, fontFamily: 'var(--font-body)' }}>
+          <p className="mb-3">What if you could add a <strong className="text-slate-700">CTO, CFO, CMO, COO and CCO</strong> to your company… without salaries, recruitment, or overhead?</p>
+          <p className="mb-4">BIQc deploys a team of agents that operate like a coordinated leadership team — monitoring, planning, executing, and optimizing across your entire business.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>
+            <span>Not a chatbot.</span>
+            <span className="hidden sm:inline text-slate-300">|</span>
+            <span>Not a dashboard.</span>
+            <span className="hidden sm:inline text-slate-300">|</span>
+            <span style={{ color: '#F97316' }}>A digital operations layer working behind the scenes.</span>
+          </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
           <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-full text-white font-semibold hover:-translate-y-0.5 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
