@@ -339,6 +339,23 @@ const LandingIntelligent = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const typewritten = useTypewriter(['Instant, secure intelligence','Real-time threat detection','AI-powered clarity','Strategic foresight'], 70, 2400, 38);
 
+  // ── SCROLL UNLOCK: force scroll ON whenever landing page mounts ──
+  useEffect(() => {
+    document.documentElement.style.overflowY = 'auto';
+    document.documentElement.style.height = 'auto';
+    document.documentElement.style.position = 'static';
+    document.body.style.overflowY = 'auto';
+    document.body.style.height = 'auto';
+    document.body.style.position = 'static';
+    const root = document.getElementById('root');
+    if (root) { root.style.overflow = 'visible'; root.style.height = 'auto'; }
+    return () => {
+      // Clean up inline styles on unmount so other pages aren't affected
+      document.documentElement.style.overflowY = '';
+      document.body.style.overflowY = '';
+    };
+  }, []);
+
   const outcomes = [
     { icon: Clock, metric: '15+', unit: 'hrs/week', title: 'Reclaim Your Time', desc: 'Stop being the Chief Monitor. BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.', color: '#2563EB' },
     { icon: DollarSign, metric: '8–12%', unit: 'profit', title: 'Plug Cashflow Leaks', desc: 'Real-time detection of high CAC, zombie subscriptions, and tax liability mismatches — before they hit your bank balance.', color: '#F97316' },
