@@ -233,7 +233,7 @@ const FeatureCards = () => {
 
       {/* SoundBoard */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style={{ boxShadow: '0 2px 12px rgba(100,120,160,0.08)' }}>
-        <div className="flex flex-col items-center justify-center gap-4 p-8" style={{ background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)', minHeight: 180 }}>
+        <div className="flex flex-col items-center justify-center gap-4 p-6 sm:p-8" style={{ background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)', minHeight: 140 }}>
           <div className="flex items-end gap-1" style={{ height: 56 }}>
             {Array.from({ length: 14 }).map((_, i) => (
               <div key={i} className="w-1 rounded-full" style={{ background: '#F97316', height: `${8 + Math.abs(Math.sin(i * 0.7)) * 40}px`, animation: `waveBar ${0.8 + i * 0.06}s ease-in-out ${i * 0.04}s infinite alternate`, opacity: 0.7 + Math.abs(Math.sin(i * 0.7)) * 0.3 }} />
