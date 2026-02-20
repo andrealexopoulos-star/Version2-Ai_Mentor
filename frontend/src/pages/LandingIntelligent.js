@@ -259,8 +259,8 @@ const FeatureCards = () => {
             </div>
           ))}
         </div>
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>Strategic Console</h3>
+        <div className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>Strategic Console</h3>
           <p className="text-sm font-semibold text-slate-700 mb-2">Daily executive briefing. Ask anything. Get answers.</p>
           <p className="text-sm text-slate-500 leading-relaxed mb-4">Live market intelligence, competitor tracking, and daily force memos. Your AI advisor calibrated to your exact situation.</p>
           <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-heading)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
