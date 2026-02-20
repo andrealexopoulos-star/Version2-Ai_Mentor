@@ -79,11 +79,9 @@ aside [class*="overflow-y"] {
     min-height: 100dvh !important;
   }
 
-  * {
+  *:not([class*="fixed"]):not([data-testid="sovereign-badge"]) {
     max-width: 100%;
   }
-
-  body {
     font-size: 14px;
     line-height: 1.5;
     /* Android: critical — prevents rubber band scroll causing phantom scrolls */
