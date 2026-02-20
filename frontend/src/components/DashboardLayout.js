@@ -4,6 +4,7 @@ import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { Button } from './ui/button';
 import { apiClient } from '../lib/api';
+import { useTutorial, HelpButton, TutorialModal } from './TutorialOverlay';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,7 @@ import {
 import { 
   MessageSquare, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Building2,
-  Plug, Zap, Sun, Moon, Bell, Search, HelpCircle, Calendar,
+  Plug, Zap, Sun, Moon, Bell, Search, Calendar,
   Lightbulb, AlertCircle, Mail, ChevronLeft, ChevronRight, Terminal,
   Crosshair, BarChart3, Activity, FileText, Inbox, Database, TrendingUp, Radar
 } from 'lucide-react';
