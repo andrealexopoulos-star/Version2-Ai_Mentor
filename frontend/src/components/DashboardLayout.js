@@ -223,6 +223,9 @@ const DashboardLayout = ({ children }) => {
 
         {/* Right: Actions - Compact on Mobile */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* Help / Tutorial Button */}
+          {tutorial && <HelpButton onClick={openTutorial} />}
+          
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="p-2 sm:p-2.5 rounded-lg transition-colors touch-manipulation hidden sm:flex"
