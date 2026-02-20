@@ -102,6 +102,15 @@ export const useCalibrationState = () => {
 
   const triggerComplete = () => { setCompleting(true); setEntry("completing"); setRevealPhase(0); };
 
+  // Auto-save calibration progress after each step
+  const autoSave = async (step, status = "IN_PROGRESS") => {
+    try {
+      await apiClient.post('/console/state', { current_step: step, status });
+    } catch (e) {
+      console.warn('Auto-save failed (non-blocking):', e);
+    }
+  };
+
   const applyResponse = async (data) => {
     if (data.question && data.options && data.options.length > 0) {
       setQuestion(data.question); setOptions(data.options); setAllowText(data.allow_text === true);
