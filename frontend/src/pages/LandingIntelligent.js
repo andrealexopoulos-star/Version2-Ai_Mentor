@@ -513,13 +513,13 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── WIIFM ── */}
-      <section className="relative z-10 py-16 sm:py-24 px-4 sm:px-6 lg:px-12" style={{ background: 'white' }} data-testid="outcome-matrix">
+      <section className="relative z-10 py-12 sm:py-24 px-4 sm:px-6 lg:px-12" style={{ background: 'white' }} data-testid="outcome-matrix">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 sm:mb-12">
             <div className="flex items-center justify-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Real-World Impact</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>What's in it for you?</h2>
+            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>What's in it for you?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {outcomes.map((o,i) => {
