@@ -521,21 +521,21 @@ const LandingIntelligent = () => {
             </div>
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>What's in it for you?</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {outcomes.map((o,i) => {
               const Icon = o.icon;
               return (
-                <div key={i} className="bg-white rounded-2xl p-7 border hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style={{ borderColor: 'rgba(180,195,215,0.35)', boxShadow: '0 2px 12px rgba(100,120,160,0.06)' }}>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${o.color}12` }}><Icon className="w-5 h-5" style={{ color: o.color }} strokeWidth={1.8} /></div>
-                    <div>
-                      <span className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)', color: o.color, letterSpacing: '-0.03em' }}>{o.metric}</span>
-                      <span className="text-xs ml-1.5 text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>{o.unit}</span>
+                <div key={i} className="bg-white rounded-2xl p-5 sm:p-7 border hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style={{ borderColor: 'rgba(180,195,215,0.35)', boxShadow: '0 2px 12px rgba(100,120,160,0.06)' }}>
+                  <div className="flex items-center gap-3 mb-4 sm:mb-5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${o.color}12` }}><Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: o.color }} strokeWidth={1.8} /></div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xl sm:text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)', color: o.color, letterSpacing: '-0.03em' }}>{o.metric}</span>
+                      <span className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>{o.unit}</span>
                     </div>
                   </div>
                   <h3 className="text-base font-bold text-slate-900 mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{o.title}</h3>
                   <p className="text-sm text-slate-500 leading-relaxed mb-4">{o.desc}</p>
-                  <div className="pt-4 border-t border-slate-100">
+                  <div className="pt-3 sm:pt-4 border-t border-slate-100">
                     <p className="text-xs text-slate-400"><span className="font-semibold" style={{ color: o.color }}>BIQc Edge: </span>Powered by calibrated intelligence unique to your business.</p>
                   </div>
                 </div>
