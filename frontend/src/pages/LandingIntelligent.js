@@ -432,12 +432,14 @@ const LandingIntelligent = () => {
           <span style={{ color: '#F97316' }}>Without The Cost</span>
         </h1>
 
-        <p className="mx-auto mb-1.5 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-          Meet BIQc..
-        </p>
-        <p className="mx-auto mb-6 text-base sm:text-lg font-medium leading-relaxed text-slate-500" style={{ maxWidth: 560, fontFamily: 'var(--font-body)' }}>
-          Your Digital Leadership team surfacing &amp; preventing risk weeks in advance
-        </p>
+        <div className="max-w-xl mx-auto text-left">
+          <p className="mb-1.5 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            Meet BIQc..
+          </p>
+          <p className="mb-6 text-base sm:text-lg font-medium leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>
+            Your Digital Leadership team surfacing &amp; preventing risk weeks in advance
+          </p>
+        </div>
 
         <p className="mx-auto mb-7 text-sm sm:text-base leading-relaxed text-slate-500 text-left" style={{ maxWidth: 600, fontFamily: 'var(--font-body)' }}>
           Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.
