@@ -148,8 +148,8 @@
   }
   
   /* H1 blue span - visual anchor */
-  section h1 span {
-    display: block !important; /* Force new line for rhythm */
+  section h1 span[style*="fontWeight: 300"] {
+    display: block !important; /* Force new line for subtitle only */
     margin-top: 4px !important;
   }
   
