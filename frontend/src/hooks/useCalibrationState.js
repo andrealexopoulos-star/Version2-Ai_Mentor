@@ -236,9 +236,21 @@ export const useCalibrationState = () => {
     setMessages(prev => [...prev, { role: "user", text: msg }]);
     try {
       const data = await callEdge({ message: msg });
-      if (data.message) setMessages(prev => [...prev, { role: "edge", text: data.message }]);
       if (data.status === "COMPLETE") { triggerComplete(); return; }
-      if (data.question && data.options?.length > 0) applyResponse(data);
+      if (data.question && data.options?.length > 0) { applyResponse(data); return; }
+      if (data.message) {
+        setMessages(prev => [...prev, { role: "edge", text: data.message }]);
+        // If the AI response doesn't contain a question, auto-request the next step
+        const hasQuestion = data.message.includes('?');
+        if (!hasQuestion) {
+          try {
+            const followUp = await callEdge({ step: currentStep + 1, message: "continue" });
+            if (followUp.status === "COMPLETE") { triggerComplete(); return; }
+            if (followUp.question && followUp.options?.length > 0) { applyResponse(followUp); return; }
+            if (followUp.message) setMessages(prev => [...prev, { role: "edge", text: followUp.message }]);
+          } catch { /* silently continue in chat mode */ }
+        }
+      }
     } catch { setError("Calibration engine temporarily unavailable."); setInputValue(msg); }
     finally { setIsSubmitting(false); }
   };
