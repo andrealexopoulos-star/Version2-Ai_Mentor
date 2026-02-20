@@ -1,50 +1,82 @@
-# BIQc Platform — Product Requirements Document
+# BIQc Platform - Product Requirements Document
 
-## Core Identity
-BIQc is the Executive Cognitive Layer — a Sovereign Strategic Partner for Australian SMEs.
-Brand tone: Premium, Calm, Sovereign. Focus on Strategic Clarity, Inevitability Detection, Decision Velocity.
+## Original Problem Statement
+Transform the BIQc platform into a high-performance, AI-driven strategic business intelligence tool for Australian SMEs. The platform uses React frontend, FastAPI backend, and Supabase (PostgreSQL) database.
+
+## Core Requirements
+1. **Best-in-Class UX** - Modern, fast, interactive experience on desktop and mobile
+2. **Instantaneous Performance** - All pages load instantly
+3. **Production Stability** - Deployable and stable in production
+
+## Architecture
+- **Frontend:** React (CRA with Craco), Tailwind CSS, Shadcn UI
+- **Backend:** FastAPI (Python), Supabase client
+- **Database:** Supabase (PostgreSQL)
+- **Auth:** Supabase Auth with Google/Microsoft OAuth
+- **AI:** OpenAI, Perplexity, Firecrawl integrations
+- **Integrations:** Merge.dev (CRM/Accounting), Outlook/Gmail email
 
 ## What's Been Implemented
 
-### BIQc Insights Command Surface (Latest)
-- **Intelligence Status Bar:** Sticky top panel with Stable/Elevated/Critical badges, color-coded (green/amber/red)
-- **Priority Compression:** Center-focused, max 3 compressed signals, generous whitespace, executive typography (Inter Tight + Playfair Display)
-- **Opportunity Monitor:** Vertical stack for mobile, Cost of Waiting + Drift Projection cards
-- **Executive Memo:** Strategic direction rendered as high-trust briefing, calm typography, wide margins, zero charts
-- **Pulse Baselines:** Fact ledger grid display (2-col on desktop, 1-col on mobile)
-- **Quick Nav:** 3 action tiles (Strategic Console, Business DNA, Integrations) for calibrated users
-- **SWR-powered:** Stale-while-revalidate caching for instant loads + background refresh
-- **Data Pipeline:** Bound to /api/executive-mirror which parallel-fetches: user_operator_profile, intelligence_snapshots, business_profiles, strategic_console_state
+### Session 1-N (Previous Sessions)
+- Full platform build with 20+ pages/features
+- Supabase auth integration with Google/Microsoft OAuth
+- AI-powered business intelligence features
+- Edge Functions for calibration and intelligence
+- Admin dashboard with user management
+- Email/calendar integration
+- Mobile responsive design
 
-### Previous Implementations
-- ASI-Grade Forensic Audit completed (FORENSIC_AUDIT_20260217.md)
-- 24-Node Sidebar with calibration visibility gating
-- Dynamic Gap-Filling (17-point Strategic Audit)
-- Performance indexes (5 layers, 50+ indexes)
-- Skeleton loaders, SWR caching, mobile Titan Glass optimization
-- Parallel backend fetches (asyncio.gather)
-- Scoring logic extracted to core/scoring.py
+### Current Session (Feb 20, 2026)
+- **P0 SCROLL BUG FIX (RESOLVED)**
+  - Root cause: `body` had `overflow-y:scroll` + `overscroll-behavior:contain` creating a scroll container that trapped wheel events
+  - Fix: Changed body to `overflow-y:visible` and `overscroll-behavior:auto`, making html the ONLY scroll container
+  - 3-layer fix: CSS (scroll-fix-critical.css) + JS IIFE (index.js) + React useEffect (App.js)
+  - Verified: Mouse wheel, keyboard, and touch scroll all working on desktop and mobile
+  - Testing: 100% pass rate on all scroll tests (iteration_48.json)
 
-### Sidebar Data Anchors
-| Node | Executive Job | Data Anchor |
-|------|-------------|-------------|
-| Intel Centre | Signal Aggregation | observation_events |
-| SOP Generator | Strategic Discipline | sops |
-| Data Center | Structural Awareness | data_files |
-| Diagnosis | Inevitability Detection | diagnoses |
-| Email Inbox | Priority Compression | email_intelligence |
+- **HTML Structure Fix**
+  - Fixed broken `index.html` with duplicate `</head>` tag
+  - All meta tags (OG, Twitter, structured data) now correctly inside `<head>`
 
-## System Status: PARTIALLY CONNECTED
-**Single Blocker:** business_profiles RLS policy prevents INSERT/SELECT.
-Fix RLS → SYSTEM SOVEREIGN.
+- **Deployment Readiness**
+  - All deployment checks pass (no hardcoded URLs, env vars correct, build compiles)
+  - Frontend uses `window.location.origin` for API calls (fork-safe)
 
-## Backlog
-### P0 (User Action)
-- [ ] Fix RLS on business_profiles
-### P1
-- [ ] E2E calibration flow
-- [ ] Seed test data for BIQc Insights visual verification
-### P2
-- [ ] Continue profile.py decomposition
-- [ ] Video call feature
-- [ ] Mobile responsive full audit
+## Prioritized Backlog
+
+### P0 (Critical)
+- [x] ~~Scroll fix on landing page~~ (RESOLVED Feb 20, 2026)
+- [ ] Production deployment verification (user must deploy and verify)
+
+### P1 (High Priority)
+- [ ] Complete "Fix Web" track (mobile responsiveness audit on authenticated pages)
+- [ ] Calibration Forensic Intelligence Upgrade (rebuild Edge Functions)
+- [ ] Deploy 6 updated Edge Functions to Supabase
+- [ ] Admin Console: Verify Suspend/Unsuspend feature
+- [ ] Snapshot Architecture: Verify WarRoomConsole & BoardRoom caching
+- [ ] Recover un-versioned Edge Functions from Supabase to git repo
+
+### P2 (Medium Priority)
+- [ ] Mobile hamburger menu on authenticated pages (DashboardLayout.js)
+- [ ] Consolidate duplicate Supabase secrets (6 Microsoft/Azure)
+- [ ] Implement Merge.dev webhook handler
+- [ ] Cost tracking per user
+
+### P3 (Low Priority / Tech Debt)
+- [ ] Refactor routes/profile.py (1,917 lines)
+- [ ] Refactor routes/email.py (1,855 lines)
+- [ ] Eliminate MongoDB (migrate truth_engine.py to Supabase)
+- [ ] React Native App (Track 2)
+
+## Key Files Modified This Session
+- `frontend/public/index.html` - Fixed HTML structure
+- `frontend/src/scroll-fix-critical.css` - Critical scroll CSS fix
+- `frontend/src/index.css` - Body overflow/overscroll changes
+- `frontend/src/mobile-fixes.css` - Mobile overflow/overscroll changes
+- `frontend/src/index.js` - Pre-React scroll unlock JS
+- `frontend/src/App.js` - React useEffect scroll unlock
+
+## Test Credentials
+- Superadmin: andre@thestrategysquad.com.au
+- Test User: e2e.test.feb17@emergentagent.com / TestPassword123!
