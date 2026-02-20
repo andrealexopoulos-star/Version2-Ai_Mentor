@@ -498,15 +498,15 @@ const LandingIntelligent = () => {
       {/* ── COMPARISON ── */}
       <section className="relative z-10 py-16 sm:py-24 px-4 sm:px-6" style={{ background: '#F5F7FA' }} data-testid="sigma-comparison">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Intelligence Evolution</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-4" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
+            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
               Dashboards report the past.<br />
               <span style={{ color: '#2563EB' }}>BIQc commands the future.</span>
             </h2>
-            <p className="text-base text-slate-500 max-w-xl mx-auto">BI tools wait to be asked. BIQc pushes answers to you before the crisis hits.</p>
+            <p className="text-sm sm:text-base text-slate-500 max-w-xl mx-auto">BI tools wait to be asked. BIQc pushes answers to you before the crisis hits.</p>
           </div>
           <ComparisonSection />
         </div>
