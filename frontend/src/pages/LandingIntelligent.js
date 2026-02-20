@@ -427,9 +427,9 @@ const LandingIntelligent = () => {
 
         {/* Heading with typewriter */}
         <h1 className="mx-auto mb-3" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5.5vw,68px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.07, maxWidth: 900 }}>
-          <span style={{ color: '#F97316' }}>Run Your Business Like The Big Players</span>
-          <br />
-          <span style={{ color: '#64748B', fontWeight: 300 }}>Without Cost</span>
+          <span style={{ color: '#F97316' }}>Run Your Business Like The Big </span>
+          <span style={{ color: '#64748B', fontWeight: 300 }}>Players </span>
+          <span style={{ color: '#F97316' }}>Without The Cost</span>
         </h1>
 
         <p className="mx-auto mb-2 text-lg sm:text-xl font-bold text-slate-800" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -440,8 +440,7 @@ const LandingIntelligent = () => {
         </p>
 
         <div className="mx-auto mb-6 text-sm sm:text-base leading-relaxed text-slate-500" style={{ maxWidth: 620, fontFamily: 'var(--font-body)' }}>
-          <p className="mb-3">What if you could add a <strong className="text-slate-700">CTO, CFO, CMO, COO and CCO</strong> to your company… without salaries, recruitment, or overhead?</p>
-          <p className="mb-4">BIQc deploys a team of agents that operate like a coordinated leadership team — monitoring, planning, executing, and optimizing across your entire business.</p>
+          <p className="mb-4">Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>
             <span>Not a chatbot.</span>
             <span className="hidden sm:inline text-slate-300">|</span>
