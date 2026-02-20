@@ -188,10 +188,10 @@ const FeatureCards = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Boardroom */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style={{ boxShadow: '0 2px 12px rgba(100,120,160,0.08)' }}>
-        <div className="p-6" style={{ background: 'linear-gradient(135deg,#EEF2FF,#E0E7FF)', minHeight: 180 }}>
+        <div className="p-4 sm:p-6" style={{ background: 'linear-gradient(135deg,#EEF2FF,#E0E7FF)', minHeight: 140 }}>
           <div className="grid grid-cols-3 gap-2">
             {[['💰','Finance'],['⚡','BIQc'],['⚙️','Ops'],['📈','Sales'],['⚠️','Risk'],['🛡️','Compliance']].map(([e,l], i) => (
               <div key={i} className="flex flex-col items-center justify-center p-2 rounded-xl transition-all"
