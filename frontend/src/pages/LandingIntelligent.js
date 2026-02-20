@@ -212,7 +212,7 @@ const FeatureCards = () => {
 
       {/* BIQc Insights */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style={{ boxShadow: '0 2px 12px rgba(100,120,160,0.08)' }}>
-        <div className="p-4 bg-slate-900" style={{ minHeight: 180 }}>
+        <div className="p-4 bg-slate-900" style={{ minHeight: 140 }}>
           <div className="flex gap-1.5 mb-3">
             {['#EF4444','#F59E0B','#22C55E'].map(c => <div key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}
           </div>
