@@ -395,9 +395,9 @@ const LandingIntelligent = () => {
 
         <div className="flex items-center gap-2">
           <button onClick={() => nav('/login-supabase')} className="hidden sm:flex text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-heading)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
-          <button onClick={() => nav('/register-supabase')} className="text-sm font-semibold text-white px-5 py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
+          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
           {/* Mobile hamburger */}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-1 transition-all" style={{ background: mobileMenuOpen ? '#0F172A' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-0.5 transition-all" style={{ background: mobileMenuOpen ? '#0F172A' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
             {mobileMenuOpen ? <X className="w-4 h-4 text-white" /> : <Menu className="w-4 h-4 text-slate-700" />}
           </button>
         </div>
