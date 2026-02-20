@@ -1,56 +1,43 @@
 # BIQc Platform - Product Requirements Document
 
 ## Original Problem Statement
-Transform the BIQc platform into a high-performance, AI-driven strategic business intelligence tool for Australian SMEs. The platform uses React frontend, FastAPI backend, and Supabase (PostgreSQL) database.
+Transform the BIQc platform into a high-performance, AI-driven strategic business intelligence tool for Australian SMEs. React frontend + FastAPI backend + Supabase (PostgreSQL).
 
 ## Core Requirements
-1. **Best-in-Class UX** - Modern, fast, interactive experience on desktop and mobile
+1. **Best-in-Class UX** - Modern, fast, interactive on desktop AND mobile
 2. **Instantaneous Performance** - All pages load instantly
 3. **Production Stability** - Deployable and stable in production
 
-## Architecture
-- **Frontend:** React (CRA with Craco), Tailwind CSS, Shadcn UI
-- **Backend:** FastAPI (Python), Supabase client
-- **Database:** Supabase (PostgreSQL)
-- **Auth:** Supabase Auth with Google/Microsoft OAuth
-- **AI:** OpenAI, Perplexity, Firecrawl integrations
-- **Integrations:** Merge.dev (CRM/Accounting), Outlook/Gmail email
-
 ## What's Been Implemented
 
-### Session 1-N (Previous Sessions)
-- Full platform build with 20+ pages/features
-- Supabase auth integration with Google/Microsoft OAuth
-- AI-powered business intelligence features
-- Edge Functions for calibration and intelligence
-- Admin dashboard with user management
-- Email/calendar integration
-- Mobile responsive design
-
 ### Current Session (Feb 20, 2026)
-- **P0 SCROLL BUG FIX (RESOLVED)**
-  - Root cause: `body` had `overflow-y:scroll` + `overscroll-behavior:contain` creating a scroll container that trapped wheel events
-  - Fix: Changed body to `overflow-y:visible` and `overscroll-behavior:auto`, making html the ONLY scroll container
-  - 3-layer fix: CSS (scroll-fix-critical.css) + JS IIFE (index.js) + React useEffect (App.js)
-  - Verified: Mouse wheel, keyboard, and touch scroll all working on desktop and mobile
-  - Testing: 100% pass rate on all scroll tests (iteration_48.json)
 
-- **HTML Structure Fix**
-  - Fixed broken `index.html` with duplicate `</head>` tag
-  - All meta tags (OG, Twitter, structured data) now correctly inside `<head>`
+#### P0 SCROLL BUG FIX (RESOLVED)
+- **Root cause**: `body` had `overflow-y:scroll` + `overscroll-behavior:contain` creating a scroll container that trapped wheel events
+- **Fix**: body `overflow-y:visible`, `overscroll-behavior:auto`. HTML is ONLY scroll container
+- **Testing**: 100% pass (iteration_48.json) - mouse wheel, keyboard, mobile touch all work
 
-- **Deployment Readiness**
-  - All deployment checks pass (no hardcoded URLs, env vars correct, build compiles)
-  - Frontend uses `window.location.origin` for API calls (fork-safe)
+#### HTML Structure Fix (RESOLVED)
+- Fixed `index.html` with duplicate `</head>` tag causing meta tags outside `<head>`
+
+#### Mobile Responsiveness Overhaul (RESOLVED)
+- **Nav**: "Get started" button scaled down on mobile (text-xs, px-3)
+- **Stats grid**: Fixed from single-column to 2x2 on mobile (removed aggressive `.grid-cols-2 { grid-template-columns: 1fr }` CSS overrides)
+- **Sovereign badge**: Fixed full-viewport-width bug (excluded fixed elements from `* { max-width: 100% }` CSS rules across 3 CSS files)
+- **Cards**: Feature/outcome/pricing cards properly stack on mobile (grid-cols-1 sm:grid-cols-2 md:grid-cols-3)
+- **Typography**: Section headings reduced for mobile (text-xl sm:text-3xl)
+- **Spacing**: Reduced padding on mobile cards (p-4 sm:p-6)
+- **Testing**: 100% pass (iteration_50.json) on Android (360x800) and iPhone (390x844)
 
 ## Prioritized Backlog
 
 ### P0 (Critical)
-- [x] ~~Scroll fix on landing page~~ (RESOLVED Feb 20, 2026)
-- [ ] Production deployment verification (user must deploy and verify)
+- [x] Scroll fix on landing page (RESOLVED)
+- [x] Mobile responsiveness overhaul (RESOLVED)
+- [ ] Production deployment verification
 
 ### P1 (High Priority)
-- [ ] Complete "Fix Web" track (mobile responsiveness audit on authenticated pages)
+- [ ] Complete "Fix Web" track (mobile responsiveness on authenticated pages)
 - [ ] Calibration Forensic Intelligence Upgrade (rebuild Edge Functions)
 - [ ] Deploy 6 updated Edge Functions to Supabase
 - [ ] Admin Console: Verify Suspend/Unsuspend feature
@@ -59,7 +46,7 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 
 ### P2 (Medium Priority)
 - [ ] Mobile hamburger menu on authenticated pages (DashboardLayout.js)
-- [ ] Consolidate duplicate Supabase secrets (6 Microsoft/Azure)
+- [ ] Consolidate duplicate Supabase secrets
 - [ ] Implement Merge.dev webhook handler
 - [ ] Cost tracking per user
 
@@ -69,13 +56,16 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 - [ ] Eliminate MongoDB (migrate truth_engine.py to Supabase)
 - [ ] React Native App (Track 2)
 
-## Key Files Modified This Session
-- `frontend/public/index.html` - Fixed HTML structure
-- `frontend/src/scroll-fix-critical.css` - Critical scroll CSS fix
-- `frontend/src/index.css` - Body overflow/overscroll changes
-- `frontend/src/mobile-fixes.css` - Mobile overflow/overscroll changes
-- `frontend/src/index.js` - Pre-React scroll unlock JS
-- `frontend/src/App.js` - React useEffect scroll unlock
+## Key Files Modified
+- `frontend/public/index.html` - HTML structure fix
+- `frontend/src/scroll-fix-critical.css` - Body overflow-y:visible
+- `frontend/src/index.css` - Scroll fix + grid fix + badge fix
+- `frontend/src/mobile-fixes.css` - Scroll + badge wildcard fix
+- `frontend/src/mobile-ux-overhaul.css` - Grid override fix
+- `frontend/src/mobile-enhancements.css` - Badge wildcard fix
+- `frontend/src/landing-mobile-ux.css` - Grid override fix
+- `frontend/src/pages/LandingIntelligent.js` - Full mobile responsive overhaul
+- `frontend/src/index.js` + `frontend/src/App.js` - Scroll unlock JS
 
 ## Test Credentials
 - Superadmin: andre@thestrategysquad.com.au
