@@ -341,16 +341,17 @@ const LandingIntelligent = () => {
 
   // ── SCROLL UNLOCK: force scroll ON whenever landing page mounts ──
   useEffect(() => {
-    document.documentElement.style.overflowY = 'auto';
+    document.documentElement.style.overflowY = 'scroll';
     document.documentElement.style.height = 'auto';
     document.documentElement.style.position = 'static';
-    document.body.style.overflowY = 'auto';
+    document.documentElement.style.overscrollBehavior = 'auto';
+    document.body.style.overflowY = 'visible';
     document.body.style.height = 'auto';
     document.body.style.position = 'static';
+    document.body.style.overscrollBehavior = 'auto';
     const root = document.getElementById('root');
     if (root) { root.style.overflow = 'visible'; root.style.height = 'auto'; }
     return () => {
-      // Clean up inline styles on unmount so other pages aren't affected
       document.documentElement.style.overflowY = '';
       document.body.style.overflowY = '';
     };
