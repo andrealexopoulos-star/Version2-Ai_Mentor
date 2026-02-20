@@ -9,15 +9,21 @@
    Fix: Never use position:fixed on body. Use overflow:hidden only.
 */
 html, body {
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
   overscroll-behavior-x: none;
-  -webkit-overflow-scrolling: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Prevent horizontal scroll globally - preserve vertical scroll */
-html, body {
+html {
   overflow-x: hidden;
   overflow-y: scroll !important;
+  max-width: 100vw;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: visible !important;
   max-width: 100vw;
 }
 
