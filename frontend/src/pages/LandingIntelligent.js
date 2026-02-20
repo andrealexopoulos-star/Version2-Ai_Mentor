@@ -520,7 +520,7 @@ const LandingIntelligent = () => {
             <div className="inline-flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Intelligence Evolution</span>
             </div>
-            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Dashboards tell you what happened.<br />
               <span style={{ color: '#2563EB' }}>BIQc fixes what's happening.</span>
             </h2>
@@ -537,7 +537,7 @@ const LandingIntelligent = () => {
             <div className="flex items-center justify-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>What Life Looks Like with BIQc</span>
             </div>
-            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>What's in it for you?</h2>
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>What's in it for you?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {outcomes.map((o,i) => {
