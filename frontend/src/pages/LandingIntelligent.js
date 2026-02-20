@@ -439,21 +439,16 @@ const LandingIntelligent = () => {
           Your Digital Leadership team surfacing &amp; preventing risk weeks in advance
         </p>
 
-        <div className="mx-auto mb-7 text-sm sm:text-base leading-relaxed text-slate-500" style={{ maxWidth: 600, fontFamily: 'var(--font-body)' }}>
-          <p className="mb-5">Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-5 text-sm font-semibold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-            <span className="text-slate-700">Not a chatbot.</span>
-            <span className="hidden sm:inline text-slate-300">|</span>
-            <span className="text-slate-700">Not a dashboard.</span>
-            <span className="hidden sm:inline text-slate-300">|</span>
-            <span style={{ color: '#F97316' }}>A digital operations layer working behind the scenes.</span>
-          </div>
-        </div>
+        <p className="mx-auto mb-7 text-sm sm:text-base leading-relaxed text-slate-500 text-left" style={{ maxWidth: 600, fontFamily: 'var(--font-body)' }}>
+          Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.
+        </p>
 
-        <div className="flex items-center justify-center mb-4">
-          <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-4">
+          <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a chatbot.</span>
+          <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
             <Shield className="w-4 h-4" strokeWidth={1.5} /> Book a live demo
           </button>
+          <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a dashboard.</span>
         </div>
         <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>No credit card required · Australian owned & operated</p>
       </section>
