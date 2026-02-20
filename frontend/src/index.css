@@ -187,6 +187,13 @@ code, pre, kbd, samp, .font-mono {
         /* Do NOT use position:fixed — causes page jump on Android */
         touch-action: none;
     }
+    
+    /* Force sovereign badge to have auto width - override all * rules */
+    [data-testid="sovereign-badge"],
+    .fixed[data-testid="sovereign-badge"] {
+        width: auto !important;
+        max-width: fit-content !important;
+    }
 }
 
 /* Premium Typography - Mobile First */
