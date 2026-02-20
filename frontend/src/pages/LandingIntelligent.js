@@ -426,7 +426,7 @@ const LandingIntelligent = () => {
         </div>
 
         {/* Heading with typewriter */}
-        <h1 className="mx-auto mb-5" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(36px,5.5vw,68px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.07, maxWidth: 860 }}>
+        <h1 className="mx-auto mb-5" style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5.5vw,68px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.07, maxWidth: 860 }}>
           <span style={{ color: '#F97316' }}>{typewritten}</span>
           <span style={{ display: 'inline-block', width: 3, height: '0.82em', background: '#F97316', marginLeft: 3, verticalAlign: 'middle', borderRadius: 2, animation: 'cursorBlink 1s step-end infinite' }} />
           <br />
