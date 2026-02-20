@@ -26,6 +26,7 @@ const DashboardLayout = ({ children }) => {
   const { user, signOut, authState } = useSupabaseAuth();
   const { isNavOpen, openNav, closeAll } = useMobileDrawer();
   const isCalibrated = authState === AUTH_STATE.READY;
+  const { showTutorial, closeTutorial, openTutorial, tutorial } = useTutorial(location.pathname);
   
   const logout = async () => {
     try {
