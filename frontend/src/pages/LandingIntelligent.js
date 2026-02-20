@@ -555,9 +555,9 @@ const LandingIntelligent = () => {
             <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-3" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>Intelligence at every scale</h2>
             <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {pricingTiers.map((tier, i) => (
-              <div key={i} className="rounded-2xl p-7 flex flex-col transition-all hover:-translate-y-1 duration-300" style={{ background: tier.highlight ? '#0F172A' : 'white', border: tier.highlight ? 'none' : '1px solid rgba(180,195,215,0.35)', boxShadow: tier.highlight ? '0 8px 40px rgba(0,0,0,0.2)' : '0 2px 12px rgba(100,120,160,0.06)', position: 'relative' }}>
+              <div key={i} className={`rounded-2xl p-5 sm:p-7 flex flex-col transition-all hover:-translate-y-1 duration-300 ${tier.highlight ? 'sm:col-span-2 md:col-span-1' : ''}`} style={{ background: tier.highlight ? '#0F172A' : 'white', border: tier.highlight ? 'none' : '1px solid rgba(180,195,215,0.35)', boxShadow: tier.highlight ? '0 8px 40px rgba(0,0,0,0.2)' : '0 2px 12px rgba(100,120,160,0.06)', position: 'relative', order: tier.highlight ? -1 : 'unset' }}>
                 {tier.highlight && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white" style={{ background: '#F97316', fontFamily: 'var(--font-mono)' }}>Recommended</div>}
                 <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ fontFamily: 'var(--font-mono)', color: tier.highlight ? '#93C5FD' : '#64748B' }}>{tier.tagline}</p>
                 <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: tier.highlight ? 'white' : '#0F172A', letterSpacing: '-0.02em' }}>{tier.name}</h3>
