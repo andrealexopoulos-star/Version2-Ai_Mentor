@@ -238,7 +238,8 @@ button, a, input, select, textarea {
     overflow-x: hidden !important;
   }
   
-  * {
+  /* Exclude fixed elements and sovereign badge from max-width constraint */
+  *:not([class*="fixed"]):not([data-testid="sovereign-badge"]) {
     max-width: 100vw !important;
   }
   
