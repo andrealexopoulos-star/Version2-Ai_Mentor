@@ -599,12 +599,20 @@ const LandingIntelligent = () => {
           </h2>
           <p className="text-base text-slate-400 mb-8">Connect your systems. Let BIQc build context. Act with confidence.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#F97316', fontSize: 15, boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Deploy My Intelligence <ArrowRight className="w-4 h-4" /></button>
-            <button onClick={() => nav('/trust')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', fontSize: 15, border: '1px solid rgba(255,255,255,0.12)' }}>Talk to us first</button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#F97316', fontSize: 15, boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={() => nav('/trust')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', fontSize: 15, border: '1px solid rgba(255,255,255,0.12)' }}>Book a live demo</button>
           </div>
           <p className="text-xs text-slate-600 mt-5" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Free to start · No credit card · Australian owned and operated</p>
         </div>
       </section>
+
+      {/* Australian Trust Bar */}
+      <div className="relative z-10 py-3 px-6 text-center flex items-center justify-center gap-2" style={{ background: 'rgba(5,150,105,0.06)', borderTop: '1px solid rgba(5,150,105,0.15)', borderBottom: '1px solid rgba(5,150,105,0.15)' }}>
+        <Shield className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={2} />
+        <p className="text-xs text-slate-600" style={{ fontFamily: 'var(--font-mono)' }}>
+          <strong className="text-emerald-700">Securely Built & Hosted in Australia</strong> · Your data stays on Australian soil, protected by local privacy laws and zero foreign access.
+        </p>
+      </div>
 
       {/* Disclaimer */}
       <div className="relative z-10 py-5 px-6 text-center" style={{ background: '#1E293B', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
