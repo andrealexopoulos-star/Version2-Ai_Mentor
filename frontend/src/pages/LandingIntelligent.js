@@ -605,13 +605,13 @@ const LandingIntelligent = () => {
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%,rgba(249,115,22,0.07),transparent)' }} />
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
         <div className="relative z-10 max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-4xl lg:text-6xl font-extrabold text-white mb-5" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em', lineHeight: 1.07 }}>
+          <h2 className="text-2xl sm:text-4xl lg:text-6xl font-extrabold text-white mb-5 tracking-tight leading-[1.07]" style={{ fontFamily: 'var(--font-heading)' }}>
             Business clarity,<br /><span style={{ color: '#F97316' }}>mastered.</span>
           </h2>
-          <p className="text-base text-slate-400 mb-8">Connect your systems. Let BIQc build context. Act with confidence.</p>
+          <p className="text-base sm:text-lg text-slate-400 mb-8" style={{ fontFamily: 'var(--font-body)' }}>Connect your systems. Let BIQc build context. Act with confidence.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#F97316', fontSize: 15, boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
-            <button onClick={() => nav('/trust')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', fontSize: 15, border: '1px solid rgba(255,255,255,0.12)' }}>Book a live demo</button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#F97316', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Book a live demo</button>
           </div>
           <p className="text-xs text-slate-600 mt-5" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Free to start · No credit card · Australian owned and operated</p>
         </div>
