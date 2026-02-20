@@ -12,7 +12,7 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = 'https://biqc-performance-hub.preview.emergentagent.com'
+    BASE_URL = 'https://biqc-production-fix.preview.emergentagent.com'
 
 
 class TestZeroRedirectProtocol:

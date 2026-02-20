@@ -65,7 +65,7 @@ Click **"Save"** or **"Update"** button.
 
 ## 🧪 TEST THE CONNECTION
 
-1. Navigate to: https://biqc-performance-hub.preview.emergentagent.com/integrations
+1. Navigate to: https://biqc-production-fix.preview.emergentagent.com/integrations
 2. Click "Connect" on HubSpot
 3. Merge modal opens
 4. Click HubSpot

@@ -105,7 +105,7 @@ Status: ✅ CLEAN
 
 ```javascript
 // OLD (BROKEN):
-const apiUrl = "https://biqc-performance-hub.preview.emergentagent.com/api"
+const apiUrl = "https://biqc-production-fix.preview.emergentagent.com/api"
 
 // NEW (FORK-SAFE):
 import { getApiBaseUrl } from 'config/urls';
@@ -116,7 +116,7 @@ const apiUrl = getApiBaseUrl();  // Automatically adapts to current fork
 
 ```python
 # OLD (BROKEN):
-redirect_uri = "https://biqc-performance-hub.preview.emergentagent.com/callback"
+redirect_uri = "https://biqc-production-fix.preview.emergentagent.com/callback"
 
 # NEW (FORK-SAFE):
 from config.urls import get_oauth_redirect_uri
@@ -129,15 +129,15 @@ redirect_uri = get_oauth_redirect_uri('/callback')  # Uses BACKEND_URL env var
 
 ### Frontend (`/app/frontend/.env`)
 ```bash
-REACT_APP_BACKEND_URL=https://biqc-performance-hub.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://biqc-production-fix.preview.emergentagent.com
 REACT_APP_SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ### Backend (`/app/backend/.env`)
 ```bash
-BACKEND_URL=https://biqc-performance-hub.preview.emergentagent.com
-FRONTEND_URL=https://biqc-performance-hub.preview.emergentagent.com
+BACKEND_URL=https://biqc-production-fix.preview.emergentagent.com
+FRONTEND_URL=https://biqc-production-fix.preview.emergentagent.com
 AZURE_CLIENT_ID=biqc-fixer
 AZURE_CLIENT_SECRET=o8S8Q~3.q3nakGJkPOSZ.WkcdA0xsdNJUZ8Y5aVb
 ```
@@ -154,13 +154,13 @@ Navigate to: **Authentication** → **URL Configuration**
 
 **Site URL:**
 ```
-https://biqc-performance-hub.preview.emergentagent.com
+https://biqc-production-fix.preview.emergentagent.com
 ```
 
 **Redirect URLs:**
 ```
-https://biqc-performance-hub.preview.emergentagent.com/auth/callback
-https://biqc-performance-hub.preview.emergentagent.com/**
+https://biqc-production-fix.preview.emergentagent.com/auth/callback
+https://biqc-production-fix.preview.emergentagent.com/**
 ```
 
 ### Azure AD App Registration (Already Correct)
@@ -179,7 +179,7 @@ https://uxyqpdfftxpkzeppqtvk.supabase.co/auth/v1/callback
 ### 1. OAuth Flow Test
 ```bash
 # User flow:
-1. Visit https://biqc-performance-hub.preview.emergentagent.com
+1. Visit https://biqc-production-fix.preview.emergentagent.com
 2. Click "Continue with Microsoft"
 3. Complete Microsoft login
 4. Verify redirect to /auth/callback

@@ -1,7 +1,7 @@
 ## BIQc Backend Performance Test Report
 
 Date: 2026-02-17  
-Platform: https://biqc-performance-hub.preview.emergentagent.com  
+Platform: https://biqc-production-fix.preview.emergentagent.com  
 Test Type: Backend API Performance Testing  
 
 ### 🎯 OBJECTIVE

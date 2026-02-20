@@ -122,7 +122,7 @@ Should show:
 ### Manual Test (User: andre.alexopoulos@gmail.com)
 
 1. **Login**
-   - Go to https://biqc-performance-hub.preview.emergentagent.com/login-supabase
+   - Go to https://biqc-production-fix.preview.emergentagent.com/login-supabase
    - Log in with Google
 
 2. **Connect Integration**

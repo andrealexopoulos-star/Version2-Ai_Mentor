@@ -15,7 +15,7 @@ SUPABASE_URL = "https://uxyqpdfftxpkzeppqtvk.supabase.co"
 SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4eXFwZGZmdHhwa3plcHBxdHZrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODQzNzA0NywiZXhwIjoyMDg0MDEzMDQ3fQ.Of8sBhmza-QMmtlQ-EN7kpqcDuiy512TlY2Gku9YuX4"
 
 # Backend API URL
-BACKEND_URL = "https://biqc-performance-hub.preview.emergentagent.com/api"
+BACKEND_URL = "https://biqc-production-fix.preview.emergentagent.com/api"
 
 def main():
     print("=" * 80)
@@ -134,7 +134,7 @@ def main():
     print()
     print("⚠️ LIMITATION: Cannot test full endpoint functionality without user password")
     print("   To complete the test, the user needs to:")
-    print("   1. Log in at https://biqc-performance-hub.preview.emergentagent.com/login-supabase")
+    print("   1. Log in at https://biqc-production-fix.preview.emergentagent.com/login-supabase")
     print("   2. Navigate to a page that calls the endpoint")
     print("   3. Or provide credentials for automated testing")
     print()

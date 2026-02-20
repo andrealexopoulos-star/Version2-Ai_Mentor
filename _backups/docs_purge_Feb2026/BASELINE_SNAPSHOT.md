@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://biqc-performance-hub.preview.emergentagent.com`
-- **Backend:** `https://biqc-performance-hub.preview.emergentagent.com/api`
+- **Frontend:** `https://biqc-production-fix.preview.emergentagent.com`
+- **Backend:** `https://biqc-production-fix.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**
