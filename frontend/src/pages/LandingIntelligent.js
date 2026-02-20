@@ -464,20 +464,20 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── TRUST BAR ── */}
-      <section className="relative z-10 py-8 sm:py-10 border-y" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(180,195,215,0.35)' }} data-testid="trust-strip">
-        <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400 mb-5" style={{ fontFamily: 'var(--font-mono)' }}>
+      <section className="relative z-10 py-10 sm:py-14 border-y" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(180,195,215,0.35)' }} data-testid="trust-strip">
+        <p className="text-center text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
           What <span style={{ color: '#F97316', textDecoration: 'underline', textUnderlineOffset: 3 }}>Australian businesses</span> are saying
         </p>
-        <div className="flex items-center justify-center flex-wrap gap-6 sm:gap-10 px-6">
+        <div className="flex items-center justify-center flex-wrap gap-8 sm:gap-12 px-6 max-w-4xl mx-auto">
           {[
             { quote: "BIQc spotted a cash leak we'd been missing for 6 months. Within a week of connecting Xero, we recovered $12,000.", name: 'Sarah M.', co: 'Melbourne Accounting Firm' },
             { quote: "I used to spend 3 hours every Monday pulling reports. Now BIQc hands me a briefing before my coffee.", name: 'James T.', co: 'Brisbane eCommerce' },
             { quote: "The SOP monitoring alone paid for itself. We caught 4 compliance gaps before our audit.", name: 'Lisa K.', co: 'Sydney Healthcare' },
           ].map((t, i) => (
-            <div key={i} className="max-w-xs text-center px-4">
-              <p className="text-sm text-slate-500 italic leading-relaxed mb-2" style={{ fontFamily: 'var(--font-body)' }}>"{t.quote}"</p>
-              <p className="text-xs font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>{t.name}</p>
-              <p className="text-[10px] text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>{t.co}</p>
+            <div key={i} className="max-w-[280px] text-center">
+              <p className="text-sm text-slate-500 italic leading-relaxed mb-3" style={{ fontFamily: 'var(--font-body)' }}>"{t.quote}"</p>
+              <p className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>{t.name}</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{t.co}</p>
             </div>
           ))}
         </div>
