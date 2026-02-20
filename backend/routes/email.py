@@ -52,7 +52,7 @@ def _get_oauth_base_url() -> str:
     if '.emergent.host' in url:
         url = url.replace('.emergent.host', '.com')
     if 'preview.emergentagent.com' in url:
-        url = 'https://biqc.thestrategysquad.com'
+        url = os.environ.get('BACKEND_URL', 'https://biqc.thestrategysquad.com')
     return url
 
 
