@@ -18,7 +18,7 @@ const CalibrationAdvisor = () => {
   const cal = useCalibrationState();
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: CREAM }} data-testid="calibration-page">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: CREAM }} data-testid="calibration-page">
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       {cal.entry !== "loading" && cal.user && (

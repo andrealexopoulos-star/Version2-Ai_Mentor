@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 const CHARCOAL = '#1E293B';
 const MUTED = '#64748B';
