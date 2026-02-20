@@ -9,7 +9,7 @@ Go to: **Supabase Dashboard → Authentication → URL Configuration**
 ## 📍 Site URL
 
 ```
-https://biqc-production-fix.preview.emergentagent.com
+https://biqc-unblock-prod.preview.emergentagent.com
 ```
 
 **What it's for**: The main URL of your application
@@ -22,7 +22,7 @@ Add **ALL** of these to the "Redirect URLs" list:
 
 ### 1. Production Frontend
 ```
-https://biqc-production-fix.preview.emergentagent.com/**
+https://biqc-unblock-prod.preview.emergentagent.com/**
 ```
 
 ### 2. Local Development (if needed)
@@ -32,15 +32,15 @@ http://localhost:3000/**
 
 ### 3. Specific Auth Callbacks
 ```
-https://biqc-production-fix.preview.emergentagent.com/auth/callback
+https://biqc-unblock-prod.preview.emergentagent.com/auth/callback
 ```
 
 ```
-https://biqc-production-fix.preview.emergentagent.com/connect-email
+https://biqc-unblock-prod.preview.emergentagent.com/connect-email
 ```
 
 ```
-https://biqc-production-fix.preview.emergentagent.com/integrations
+https://biqc-unblock-prod.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -48,11 +48,11 @@ https://biqc-production-fix.preview.emergentagent.com/integrations
 ## 📋 Copy-Paste Format (one per line)
 
 ```
-https://biqc-production-fix.preview.emergentagent.com/**
+https://biqc-unblock-prod.preview.emergentagent.com/**
 http://localhost:3000/**
-https://biqc-production-fix.preview.emergentagent.com/auth/callback
-https://biqc-production-fix.preview.emergentagent.com/connect-email
-https://biqc-production-fix.preview.emergentagent.com/integrations
+https://biqc-unblock-prod.preview.emergentagent.com/auth/callback
+https://biqc-unblock-prod.preview.emergentagent.com/connect-email
+https://biqc-unblock-prod.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -62,9 +62,9 @@ https://biqc-production-fix.preview.emergentagent.com/integrations
 ### Additional Redirect URLs
 If you have other pages that use Supabase Auth:
 ```
-https://biqc-production-fix.preview.emergentagent.com/dashboard
-https://biqc-production-fix.preview.emergentagent.com/login
-https://biqc-production-fix.preview.emergentagent.com/signup
+https://biqc-unblock-prod.preview.emergentagent.com/dashboard
+https://biqc-unblock-prod.preview.emergentagent.com/login
+https://biqc-unblock-prod.preview.emergentagent.com/signup
 ```
 
 ---
@@ -74,7 +74,7 @@ https://biqc-production-fix.preview.emergentagent.com/signup
 1. **Go to**: Supabase Dashboard
 2. **Click**: Authentication (left sidebar)
 3. **Click**: URL Configuration (tab at top)
-4. **Set Site URL**: `https://biqc-production-fix.preview.emergentagent.com`
+4. **Set Site URL**: `https://biqc-unblock-prod.preview.emergentagent.com`
 5. **Add Redirect URLs**: Paste each URL from above (one per line)
 6. **Click**: Save
 
@@ -116,7 +116,7 @@ After configuration, test:
 
 **Cause**: Site URL doesn't match your domain
 
-**Fix**: Set Site URL to `https://biqc-production-fix.preview.emergentagent.com`
+**Fix**: Set Site URL to `https://biqc-unblock-prod.preview.emergentagent.com`
 
 ---
 

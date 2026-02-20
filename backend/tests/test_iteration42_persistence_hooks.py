@@ -15,7 +15,7 @@ import requests
 import os
 import re
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biqc-production-fix.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biqc-unblock-prod.preview.emergentagent.com').rstrip('/')
 
 
 class TestCodeReview:

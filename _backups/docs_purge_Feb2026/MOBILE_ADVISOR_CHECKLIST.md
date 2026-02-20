@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://biqc-production-fix.preview.emergentagent.com/advisor
+## For: https://biqc-unblock-prod.preview.emergentagent.com/advisor
 
 ---
 

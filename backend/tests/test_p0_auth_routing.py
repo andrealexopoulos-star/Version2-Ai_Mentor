@@ -7,7 +7,7 @@ import requests
 import os
 
 # Use the preview endpoint URL for testing
-BASE_URL = os.environ.get('preview_endpoint', 'https://biqc-production-fix.preview.emergentagent.com')
+BASE_URL = os.environ.get('preview_endpoint', 'https://biqc-unblock-prod.preview.emergentagent.com')
 
 
 class TestBackendHealthAndCalibration:

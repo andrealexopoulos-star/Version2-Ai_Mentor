@@ -175,7 +175,7 @@ Only show "Complete Onboarding" button if user has incomplete profile:
 3. **Test the API manually** with a valid auth token:
    ```bash
    curl -H "Authorization: Bearer YOUR_TOKEN" \
-        https://biqc-production-fix.preview.emergentagent.com/api/auth/check-profile
+        https://biqc-unblock-prod.preview.emergentagent.com/api/auth/check-profile
    ```
 
 ---

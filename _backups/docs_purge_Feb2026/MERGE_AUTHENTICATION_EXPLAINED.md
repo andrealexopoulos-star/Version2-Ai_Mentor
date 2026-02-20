@@ -176,7 +176,7 @@ After connecting HubSpot:
 **Production Merge API Key**: ✅ Updated and backend restarted
 
 **Next Steps:**
-1. Go to: https://biqc-production-fix.preview.emergentagent.com/integrations
+1. Go to: https://biqc-unblock-prod.preview.emergentagent.com/integrations
 2. Click "Connect" on HubSpot card
 3. Select HubSpot in Merge.dev modal
 4. Log in to HubSpot and authorize

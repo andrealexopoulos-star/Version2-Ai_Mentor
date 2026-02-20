@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 class BIQCIntegrationTester:
-    def __init__(self, base_url="https://biqc-production-fix.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://biqc-unblock-prod.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
