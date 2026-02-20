@@ -212,7 +212,8 @@ export const useCalibrationState = () => {
       const payload = { step: 2, confirmed_summary: true };
       if (Object.keys(editedFields).length > 0) payload.user_edits = editedFields;
       const data = await callEdge(payload);
-      if (data.status === "COMPLETE") { triggerComplete(); return; }
+      if (data.status === "COMPLETE") { autoSave(2, "COMPLETE"); triggerComplete(); return; }
+      autoSave(2);
       setTransitioning(false);
       applyResponse(data);
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
