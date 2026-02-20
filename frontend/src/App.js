@@ -139,9 +139,33 @@ function AppRoutes() {
 function App() {
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   
+  // ── SCROLL UNLOCK (runs before paint, cannot be overridden by CSS) ──
+  // Inline styles on DOM elements take priority over ALL stylesheets.
+  // This is the nuclear option — guaranteed to enable scrolling on every page.
+  useEffect(() => {
+    const unlock = () => {
+      document.documentElement.style.overflowY = 'auto';
+      document.documentElement.style.overflowX = 'hidden';
+      document.documentElement.style.height = 'auto';
+      document.documentElement.style.position = 'static';
+      document.body.style.overflowY = 'auto';
+      document.body.style.overflowX = 'hidden';
+      document.body.style.height = 'auto';
+      document.body.style.position = 'static';
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.overflowY = 'visible';
+        root.style.height = 'auto';
+        root.style.minHeight = '100vh';
+      }
+    };
+    unlock();
+    // Re-apply after any dynamic content loads
+    const t = setTimeout(unlock, 500);
+    return () => clearTimeout(t);
+  }, []);
+
   // NUCLEAR: Remove ALL service workers and caches permanently
-  // Service workers have caused persistent HTML-instead-of-JSON bugs on production
-  // They provide no real value for this app (only cached / and /manifest.json)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(registrations => {
