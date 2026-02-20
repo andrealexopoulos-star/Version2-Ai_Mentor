@@ -174,6 +174,7 @@ export const useCalibrationState = () => {
       if (data.status === "COMPLETE") { triggerComplete(); return; }
       if (data.wow_summary || data.audit || data.summary) {
         setWowSummary(data.wow_summary || data.audit || data.summary || data);
+        autoSave(1);
         setEntry("wow_summary"); return;
       }
       applyResponse(data);
@@ -190,6 +191,7 @@ export const useCalibrationState = () => {
       catch { try { data = await callEdge({ message: summary }); }
       catch { setEntry("calibrating"); setIsSubmitting(false); return; } }
       if (data.status === "COMPLETE") { triggerComplete(); return; }
+      autoSave(1);
       applyResponse(data);
     } catch { setEntry("calibrating"); }
     finally { setIsSubmitting(false); }
