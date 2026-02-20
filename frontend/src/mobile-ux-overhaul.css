@@ -293,10 +293,11 @@
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
   }
   
-  /* Grid layouts - SINGLE COLUMN on mobile for clarity */
-  main .grid[class*="md:grid-cols-2"],
-  main .grid[class*="grid-cols-2"] {
-    grid-template-columns: 1fr !important; /* Force single column */
+  /* Grid layouts - Force 3+ column grids to single column on mobile */
+  main .grid[class*="md:grid-cols-3"],
+  main .grid[class*="md:grid-cols-4"],
+  main .grid[class*="lg:grid-cols-3"] {
+    grid-template-columns: 1fr !important;
     gap: 14px !important;
   }
   
