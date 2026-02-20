@@ -29,6 +29,12 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 - **Spacing**: Reduced padding on mobile cards (p-4 sm:p-6)
 - **Testing**: 100% pass (iteration_50.json) on Android (360x800) and iPhone (390x844)
 
+### Calibration Psych Fixes (Feb 20, 2026)
+- **Scroll Fix:** Changed CalibrationAdvisor container from `min-h-screen` to `h-screen overflow-hidden` so chat messages scroll within viewport and input stays visible
+- **Auto-scroll:** Added useEffect to auto-scroll to bottom when new messages arrive
+- **Auto-follow-up:** When AI returns acknowledgment without a question (no `?`), automatically requests next step from edge function
+- **Input focus:** Auto-focuses input field after each message send
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
