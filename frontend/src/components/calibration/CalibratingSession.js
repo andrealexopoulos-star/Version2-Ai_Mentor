@@ -22,6 +22,20 @@ const CalibratingSession = ({
   const stepNum = Math.min(currentStep || 1, TOTAL_STEPS);
   const progressPct = Math.round(((stepNum - 1) / TOTAL_STEPS) * 100);
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isSubmitting]);
+
+  // Keep input focused after sending
+  useEffect(() => {
+    if (!isSubmitting && calMode === 'chat' && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isSubmitting, calMode]);
+
   return (
     <>
       <header className="px-6 sm:px-8 py-3" style={{ borderBottom: `1px solid ${CARD_BORDER}` }}>
