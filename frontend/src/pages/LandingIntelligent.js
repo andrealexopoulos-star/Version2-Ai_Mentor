@@ -588,11 +588,11 @@ const LandingIntelligent = () => {
       {/* ── PRICING ── */}
       <section className="relative z-10 py-12 sm:py-24 px-4 sm:px-6 lg:px-12" style={{ background: '#F5F7FA' }} data-testid="pricing-section">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="mb-8 sm:mb-12">
+            <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Strategic Pricing Ladder</span>
             </div>
-            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-3" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>Intelligence at every scale</h2>
+            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Intelligence at every scale</h2>
             <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
