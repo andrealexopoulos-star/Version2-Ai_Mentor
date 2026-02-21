@@ -81,3 +81,30 @@ async def workers_health():
         "intelligence": _check_worker("intelligence_worker"),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.get("/warmup")
+async def warmup_edge_functions():
+    """Ping Supabase Edge Functions to prevent cold starts. Called by cron or frontend."""
+    import httpx
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    if not supabase_url or not service_key:
+        return {"status": "skip", "reason": "no credentials"}
+
+    functions = ["biqc-insights-cognitive", "intelligence-bridge", "sop-generator", "competitor-monitor", "cfo-cash-analysis"]
+    results = {}
+
+    async with httpx.AsyncClient() as client:
+        for fn in functions:
+            try:
+                res = await client.options(
+                    f"{supabase_url}/functions/v1/{fn}",
+                    headers={"Authorization": f"Bearer {service_key}"},
+                    timeout=5.0,
+                )
+                results[fn] = "warm" if res.status_code < 500 else "cold"
+            except Exception:
+                results[fn] = "unreachable"
+
+    return {"status": "ok", "functions": results, "timestamp": datetime.now(timezone.utc).isoformat()}
