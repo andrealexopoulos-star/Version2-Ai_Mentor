@@ -119,6 +119,21 @@ async function askOpenAI(
   const txt = data.output?.find((o: Record<string, unknown>) => o.type === "message")
     ?.content?.find((c: Record<string, unknown>) => c.type === "output_text")?.text;
 
+  // Track usage
+  try {
+    const usage = data.usage || {};
+    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    await sb.from("usage_tracking").insert({
+      function_name: "calibration-psych",
+      api_provider: "openai",
+      model: MODEL,
+      tokens_in: usage.input_tokens || usage.prompt_tokens || 0,
+      tokens_out: usage.output_tokens || usage.completion_tokens || 0,
+      cost_estimate: ((usage.input_tokens || usage.prompt_tokens || 0) * 0.00015 + (usage.output_tokens || usage.completion_tokens || 0) * 0.0006) / 1000,
+      called_at: new Date().toISOString(),
+    });
+  } catch {}
+
   if (!txt) throw new Error("Empty OpenAI response");
   return { parsed: JSON.parse(txt), responseId: data.id };
 }
