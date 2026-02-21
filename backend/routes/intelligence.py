@@ -40,6 +40,15 @@ async def snapshot_generate(
     from snapshot_agent import get_snapshot_agent
     agent = get_snapshot_agent()
     result = await agent.generate_snapshot(current_user["id"], snapshot_type)
+
+    # Also trigger watchtower analysis (non-blocking)
+    try:
+        from watchtower_engine import get_watchtower_engine
+        engine = get_watchtower_engine()
+        await engine.run_analysis(current_user["id"])
+    except Exception:
+        pass  # Watchtower failure is non-blocking
+
     if result is None:
         return {"generated": False, "reason": "no_material_change"}
     return {"generated": True, "snapshot": result}
