@@ -338,6 +338,52 @@ serve(async (req) => {
       });
     }
 
+    const body = await req.json().catch(() => ({}));
+
+    // Warmup ping — return immediately
+    if (body.warmup) {
+      return new Response(JSON.stringify({ ok: true, warm: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // SERVER-SIDE CACHE: Return cached snapshot if < 5 min old
+    const forceRefresh = body.force === true;
+    if (!forceRefresh) {
+      try {
+        const { data: cached } = await supabase.from("intelligence_snapshots")
+          .select("summary, generated_at")
+          .eq("user_id", user.id)
+          .eq("snapshot_type", "cognitive_v2")
+          .order("generated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cached?.summary && cached?.generated_at) {
+          const ageMs = Date.now() - new Date(cached.generated_at).getTime();
+          if (ageMs < 5 * 60 * 1000) {
+            // Fresh cache — return instantly
+            const firstName = user.user_metadata?.full_name?.split(" ")[0]
+              || user.user_metadata?.name?.split(" ")[0]
+              || user.email?.split("@")[0]?.split(/[._-]/)[0]?.replace(/^\w/, (c: string) => c.toUpperCase())
+              || "there";
+            const hour = (new Date().getUTCHours() + 11) % 24;
+            const tod = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+
+            return new Response(JSON.stringify({
+              cognitive: cached.summary,
+              owner: firstName,
+              time_of_day: tod,
+              data_sources: cached.summary?.data_sources || [],
+              generated_at: cached.generated_at,
+              cache_age_minutes: Math.round(ageMs / 60000),
+              cached: true,
+            }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
+      } catch {}
+    }
+
     // Get integrations
     const { data: integrations } = await supabase.from("integration_accounts")
       .select("provider, category, account_token").eq("user_id", user.id);
