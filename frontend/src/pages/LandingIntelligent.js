@@ -441,7 +441,7 @@ const LandingIntelligent = () => {
           </p>
         </div>
 
-        <p className="mx-auto mb-7 text-sm sm:text-base leading-relaxed text-slate-500 text-left" style={{ maxWidth: 600, fontFamily: 'var(--font-body)' }}>
+        <p className="max-w-xl mx-auto mb-7 text-sm sm:text-base leading-relaxed text-slate-500 text-left" style={{ fontFamily: 'var(--font-body)' }}>
           Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.
         </p>
 
