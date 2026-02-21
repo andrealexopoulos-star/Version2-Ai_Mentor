@@ -29,11 +29,9 @@ export const CheckInAlerts = () => {
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const res = await apiClient.get('/checkins/pending');
-      setAlerts(res.data.alerts || []);
-    } catch {
-      // silent — non-critical
-    }
+      const data = await callCheckin('pending');
+      if (data) setAlerts(data.alerts || []);
+    } catch {}
   }, []);
 
   useEffect(() => {
