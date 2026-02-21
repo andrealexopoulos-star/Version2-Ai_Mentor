@@ -178,8 +178,9 @@ const Settings = () => {
                       }
                     }}
                   >
-                    {resettingCalibration ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Recalibrate Agent'}
+                    {resettingCalibration ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Recalibrate'}
                   </Button>
+                  </div>
                 ) : (
                   <Button size="sm" className="btn-primary" onClick={() => navigate('/calibration')}>
                     Complete Calibration
