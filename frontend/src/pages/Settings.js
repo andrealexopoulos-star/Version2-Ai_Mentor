@@ -158,11 +158,15 @@ const Settings = () => {
                   </div>
                 </div>
                 {calibrationStatus === 'complete' ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={resettingCalibration}
-                    onClick={async () => {
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" disabled={syncing} onClick={syncFromCalibration}>
+                      {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><RefreshCw className="w-3.5 h-3.5 mr-1" />Sync Profile</>}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={resettingCalibration}
+                      onClick={async () => {
                       setResettingCalibration(true);
                       try {
                         await apiClient.post('/calibration/reset');
