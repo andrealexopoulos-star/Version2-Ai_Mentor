@@ -42,6 +42,19 @@ async function searchMarket(query: string): Promise<string> {
     });
     if (res.ok) {
       const d = await res.json();
+      // Track Perplexity usage (no token counts available, estimate)
+      try {
+        const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        await sb.from("usage_tracking").insert({
+          function_name: "biqc-insights-cognitive",
+          api_provider: "perplexity",
+          model: "sonar",
+          tokens_in: query.length,
+          tokens_out: (d.choices?.[0]?.message?.content || "").length,
+          cost_estimate: 0.005,
+          called_at: new Date().toISOString(),
+        });
+      } catch {}
       return d.choices?.[0]?.message?.content || "";
     }
   } catch (e) { console.error("[perplexity]", e); }
