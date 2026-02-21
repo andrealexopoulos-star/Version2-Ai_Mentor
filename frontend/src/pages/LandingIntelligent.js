@@ -625,7 +625,7 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="relative z-10 py-16 sm:py-28 px-4 sm:px-6 text-center overflow-hidden" style={{ background: '#0F172A' }}>
+      <section className="relative z-10 py-20 sm:py-32 px-6 sm:px-8 lg:px-12 overflow-hidden" style={{ background: '#0F172A' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%,rgba(249,115,22,0.07),transparent)' }} />
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
         <div className="relative z-10 max-w-2xl mx-auto">
