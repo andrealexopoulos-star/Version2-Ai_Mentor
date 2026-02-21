@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSnapshot } from '../hooks/useSnapshot';
 import DashboardLayout from '../components/DashboardLayout';
+import { CheckInAlerts } from '../components/CheckInAlerts';
 import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw } from 'lucide-react';
 
 const HEAD = "var(--font-heading)";
