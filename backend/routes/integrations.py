@@ -1161,3 +1161,25 @@ async def google_drive_status(current_user: dict = Depends(get_current_user)):
     }
 
 
+@router.post("/integrations/google-drive/disconnect")
+async def google_drive_disconnect(current_user: dict = Depends(get_current_user)):
+    """Disconnect Google Drive integration and remove stored tokens/files."""
+    user_id = current_user["id"]
+    try:
+        # Remove integration record
+        get_sb().table("integration_accounts").delete().eq(
+            "user_id", user_id
+        ).eq("integration_slug", "google_drive").execute()
+
+        # Remove synced files
+        get_sb().table("data_files").delete().eq(
+            "user_id", user_id
+        ).eq("source", "google_drive").execute()
+
+        logger.info(f"[google-drive/disconnect] Disconnected for {user_id}")
+        return {"ok": True, "message": "Google Drive disconnected successfully"}
+    except Exception as e:
+        logger.error(f"[google-drive/disconnect] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to disconnect Google Drive")
+
+
