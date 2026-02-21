@@ -5,14 +5,13 @@ const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 min
 const CACHE_KEY = 'biqc_snapshot_cache';
-const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 min — serve cached data if younger than this
 
 /**
- * useSnapshot — Cache-first, background-refresh strategy.
- * 1. On mount: show cached data INSTANTLY (from localStorage)
- * 2. Then fetch fresh data in background
- * 3. Every 5 min: background refresh (no loading spinner)
- * 4. Manual refresh available via `refresh()`
+ * useSnapshot — STALE-WHILE-REVALIDATE strategy.
+ * 1. ALWAYS show cached data instantly (never loading spinner for returning users)
+ * 2. Background refresh if cache > 5 min old
+ * 3. Show "Updated X min ago" indicator
+ * 4. Loading spinner ONLY on first-ever visit (no cache exists)
  */
 export function useSnapshot() {
   const [cognitive, setCognitive] = useState(null);
@@ -27,92 +26,60 @@ export function useSnapshot() {
   const intervalRef = useRef(null);
   const mountedRef = useRef(true);
 
-  // Read cache
   const getCache = useCallback(() => {
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       const cached = JSON.parse(raw);
       const age = Date.now() - (cached._timestamp || 0);
-      if (age > CACHE_MAX_AGE * 2) return null; // stale beyond 10 min, discard
       return { ...cached, _age: age };
     } catch { return null; }
   }, []);
 
-  // Write cache
   const setCache = useCallback((data) => {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, _timestamp: Date.now() }));
-    } catch {}
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, _timestamp: Date.now() })); } catch {}
   }, []);
 
-  // Apply data to state
   const applyData = useCallback((data) => {
     if (!data || !mountedRef.current) return;
     setCognitive(data.cognitive);
     setSources(data.data_sources || []);
     setOwner(data.owner || '');
     setTimeOfDay(data.time_of_day || '');
-    setCacheAge(data._age ? Math.round(data._age / 60000) : 0);
+    setCacheAge(data._age ? Math.round(data._age / 60000) : (data.cache_age_minutes || 0));
   }, []);
 
-  // Fetch from Edge Function
   const fetchFresh = useCallback(async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
-
-      // Try v2 first, fallback to legacy
-      let res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    let res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+      body: '{}',
+    });
+    if (!res.ok) {
+      res = await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
         body: '{}',
       });
-      if (!res.ok) {
-        res = await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-          body: '{}',
-        });
-      }
-      if (!res.ok) throw new Error(`${res.status}`);
-      return res.json();
-    } catch (e) { throw e; }
+    }
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
   }, []);
 
-  // Load: cache first, then background refresh
-  const loadSnapshot = useCallback(async (isBackground = false) => {
-    if (!isBackground) setError(null);
+  // STALE-WHILE-REVALIDATE: Always show data, refresh in background
+  const loadSnapshot = useCallback(async () => {
+    setError(null);
 
-    // Step 1: Show cache instantly
+    // Step 1: Show ANY cached data immediately (even stale)
     const cached = getCache();
-    if (cached && !cognitive) {
+    if (cached?.cognitive) {
       applyData(cached);
-      setLoading(false);
+      setLoading(false); // Never show spinner if we have cache
     }
 
-    // Step 2: Fetch fresh in background
-    if (isBackground) setRefreshing(true);
-    try {
-      const fresh = await fetchFresh();
-      if (fresh && mountedRef.current) {
-        applyData(fresh);
-        setCache(fresh);
-      }
-    } catch (e) {
-      if (!cached && mountedRef.current) {
-        setError('Intelligence unavailable. Connect integrations for full insights.');
-      }
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    }
-  }, [getCache, applyData, fetchFresh, setCache, cognitive]);
-
-  // Manual refresh
-  const refresh = useCallback(async () => {
+    // Step 2: Background refresh
     setRefreshing(true);
     try {
       const fresh = await fetchFresh();
@@ -121,10 +88,27 @@ export function useSnapshot() {
         setCache(fresh);
       }
     } catch (e) {
-      setError('Refresh failed. Try again.');
+      if (!cached && mountedRef.current) {
+        setError('Connect integrations for full insights.');
+      }
     } finally {
-      if (mountedRef.current) setRefreshing(false);
+      if (mountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
+  }, [getCache, applyData, fetchFresh, setCache]);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const fresh = await fetchFresh();
+      if (fresh && mountedRef.current) {
+        applyData(fresh);
+        setCache(fresh);
+      }
+    } catch { setError('Refresh failed.'); }
+    finally { if (mountedRef.current) setRefreshing(false); }
   }, [fetchFresh, applyData, setCache]);
 
   // On mount
