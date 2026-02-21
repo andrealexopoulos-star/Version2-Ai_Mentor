@@ -361,8 +361,8 @@ serve(async (req) => {
 
         if (cached?.summary && cached?.generated_at) {
           const ageMs = Date.now() - new Date(cached.generated_at).getTime();
-          if (ageMs < 5 * 60 * 1000) {
-            // Fresh cache — return instantly
+          if (ageMs < 30 * 60 * 1000) {
+            // Cache valid (30 min TTL) — return instantly
             const firstName = user.user_metadata?.full_name?.split(" ")[0]
               || user.user_metadata?.name?.split(" ")[0]
               || user.email?.split("@")[0]?.split(/[._-]/)[0]?.replace(/^\w/, (c: string) => c.toUpperCase())
