@@ -44,24 +44,17 @@ export const CheckInAlerts = () => {
     if (!selectedDate || !showScheduler) return;
     setSubmitting(true);
     try {
-      const scheduledFor = `${selectedDate}T${selectedTime}:00+11:00`; // AEST
-      await apiClient.post('/checkins/schedule', {
-        type: showScheduler,
-        scheduled_for: scheduledFor,
-      });
+      const scheduledFor = `${selectedDate}T${selectedTime}:00+11:00`;
+      await callCheckin('schedule', { type: showScheduler, scheduled_for: scheduledFor });
       setShowScheduler(null);
       setSelectedDate('');
       fetchAlerts();
-    } catch {
-      // handle error
-    } finally {
-      setSubmitting(false);
-    }
+    } catch {} finally { setSubmitting(false); }
   };
 
   const handleDismiss = async (type) => {
     try {
-      await apiClient.post('/checkins/dismiss');
+      await callCheckin('dismiss');
       setAlerts(prev => prev.filter(a => a.type !== type));
     } catch {
       setAlerts(prev => prev.filter(a => a.type !== type));
