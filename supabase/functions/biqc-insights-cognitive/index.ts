@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
-// BIQC INSIGHTS — Cognitive Layer Edge Function
+// BIQC INSIGHTS COGNITIVE v2 — Executive Cognition System
 // Deploy: supabase functions deploy biqc-insights-cognitive
 // Secrets: OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-//          MERGE_API_KEY, Perplexity_API
+//          MERGE_API_KEY, PERPLEXITY_API_KEY
 // ═══════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -12,7 +12,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
-const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
+const PERPLEXITY_KEY = Deno.env.get("PERPLEXITY_API_KEY") || Deno.env.get("Perplexity_API") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,7 +31,7 @@ async function fetchMerge(token: string, endpoint: string, limit = 20) {
   return [];
 }
 
-// ─── Perplexity (replaces Firecrawl) ───
+// ─── Perplexity ───
 async function searchMarket(query: string): Promise<string> {
   if (!PERPLEXITY_KEY) return "";
   try {
@@ -49,45 +49,38 @@ async function searchMarket(query: string): Promise<string> {
 }
 
 // ─── FULL CONTEXT GATHERING ───
-// Reads EVERYTHING: business profile, calibration persona, strategy,
-// cognitive profile, emails, CRM, financial, signals, market intel
 async function gatherFullContext(supabase: any, userId: string, integrations: any[]) {
   const ctx: Record<string, any> = {};
   const sources: string[] = [];
+  const blind_spots: any[] = [];
 
-  // Business profile (17-point strategic map)
+  // Business profile
   const { data: bp } = await supabase.from("business_profiles")
     .select("*").eq("user_id", userId).maybeSingle();
   if (bp) {
-    // Remove internal fields
     delete bp.id; delete bp.created_at; delete bp.updated_at;
     delete bp.profile_data; delete bp.intelligence_configuration;
     delete bp.social_handles; delete bp.sop_library;
     ctx.business_profile = bp;
-    sources.push("business_profile (17-point map)");
+    sources.push("business_profile");
   }
 
-  // Calibration persona + operator profile
+  // Calibration persona
   const { data: op } = await supabase.from("user_operator_profile")
     .select("agent_persona, operator_profile, persona_calibration_status, agent_instructions")
     .eq("user_id", userId).maybeSingle();
   if (op) {
-    ctx.calibration = {
-      status: op.persona_calibration_status,
-      persona: op.agent_persona,
-      instructions: op.agent_instructions,
-      operator_profile: op.operator_profile,
-    };
+    ctx.calibration = { status: op.persona_calibration_status, persona: op.agent_persona, instructions: op.agent_instructions, operator_profile: op.operator_profile };
     sources.push("calibration_persona");
   }
 
-  // Strategy profiles (AI-refined mission/vision/goals)
+  // Strategy profiles
   const { data: strategy } = await supabase.from("strategy_profiles")
-    .select("mission_statement, vision_statement, short_term_goals, long_term_goals, primary_challenges, growth_strategy, source")
+    .select("mission_statement, vision_statement, short_term_goals, long_term_goals, primary_challenges, growth_strategy")
     .eq("user_id", userId).maybeSingle();
   if (strategy) { ctx.strategy = strategy; sources.push("strategy_profile"); }
 
-  // Cognitive profiles (personality, decision patterns)
+  // Cognitive profiles
   const { data: cognitive } = await supabase.from("cognitive_profiles")
     .select("immutable_reality, behavioural_truth, delivery_preference, consequence_memory")
     .eq("user_id", userId).maybeSingle();
@@ -98,21 +91,19 @@ async function gatherFullContext(supabase: any, userId: string, integrations: an
     .select("subject, from_address, to_recipients, body_preview, received_date, is_read")
     .eq("user_id", userId).order("received_date", { ascending: false }).limit(25);
   if (emails?.length) {
-    ctx.emails = emails.map((e: any) => ({
-      subject: e.subject, from: e.from_address, to: e.to_recipients,
-      preview: (e.body_preview || "").substring(0, 300),
-      date: e.received_date, read: e.is_read,
-    }));
+    ctx.emails = emails.map((e: any) => ({ subject: e.subject, from: e.from_address, preview: (e.body_preview || "").substring(0, 300), date: e.received_date, read: e.is_read }));
     sources.push(`emails (${emails.length})`);
+  } else {
+    blind_spots.push({ area: "Email", detail: "No email data synced. Communication patterns unavailable.", fix: "Connect Outlook or Gmail" });
   }
 
-  // Observation events (signals from all integrations)
+  // Signals
   const { data: signals } = await supabase.from("observation_events")
     .select("signal_name, payload, source, domain, observed_at, confidence")
     .eq("user_id", userId).order("observed_at", { ascending: false }).limit(40);
   if (signals?.length) { ctx.signals = signals; sources.push(`signals (${signals.length})`); }
 
-  // Escalation memory (active patterns)
+  // Escalation memory
   const { data: escalations } = await supabase.from("escalation_memory")
     .select("domain, position, pressure_level, times_detected, last_detected_at, has_contradiction")
     .eq("user_id", userId).eq("active", true).limit(10);
@@ -122,165 +113,195 @@ async function gatherFullContext(supabase: any, userId: string, integrations: an
   const { data: pressures } = await supabase.from("decision_pressure")
     .select("domain, pressure_level, window_days, basis")
     .eq("user_id", userId).eq("active", true).limit(5);
-  if (pressures?.length) { ctx.decision_pressure = pressures; sources.push(`decision_pressure (${pressures.length})`); }
+  if (pressures?.length) { ctx.decision_pressure = pressures; }
 
-  // Evidence freshness
-  const { data: freshness } = await supabase.from("evidence_freshness")
-    .select("domain, current_confidence, decay_rate, last_evidence_at")
-    .eq("user_id", userId).limit(10);
-  if (freshness?.length) { ctx.evidence_freshness = freshness; sources.push("evidence_freshness"); }
-
-  // Contradiction memory
+  // Contradictions
   const { data: contradictions } = await supabase.from("contradiction_memory")
     .select("domain, observed_state, expected_state, times_detected")
     .eq("user_id", userId).eq("active", true).limit(5);
-  if (contradictions?.length) { ctx.contradictions = contradictions; sources.push(`contradictions (${contradictions.length})`); }
+  if (contradictions?.length) { ctx.contradictions = contradictions; }
 
-  // CRM data (HubSpot etc)
+  // Previous snapshot (for velocity tracking)
+  const { data: prevSnapshot } = await supabase.from("intelligence_snapshots")
+    .select("summary, generated_at").eq("user_id", userId)
+    .order("generated_at", { ascending: false }).limit(1).maybeSingle();
+  if (prevSnapshot) { ctx.previous_snapshot = { summary: prevSnapshot.summary, generated_at: prevSnapshot.generated_at }; }
+
+  // CRM data
+  let hasCRM = false;
   for (const integ of integrations) {
     if (integ.category === "crm" && integ.account_token && integ.account_token !== "connected") {
       const contacts = await fetchMerge(integ.account_token, "crm/v1/contacts", 30);
       const deals = await fetchMerge(integ.account_token, "crm/v1/opportunities", 25);
       if (contacts.length || deals.length) {
+        hasCRM = true;
         ctx.crm = {
-          provider: integ.provider,
-          total_contacts: contacts.length,
-          contacts: contacts.map((c: any) => ({
-            name: `${c.first_name || ""} ${c.last_name || ""}`.trim(),
-            email: c.email_addresses?.[0]?.email_address, company: c.company,
-            last_activity: c.last_activity_at,
-          })),
-          total_deals: deals.length,
-          open_deals: deals.filter((d: any) => d.status === "OPEN").length,
-          won_deals: deals.filter((d: any) => d.status === "WON").length,
-          lost_deals: deals.filter((d: any) => d.status === "LOST").length,
-          deals: deals.map((d: any) => ({
-            name: d.name, status: d.status, amount: d.amount,
-            stage: d.stage, close_date: d.close_date, last_activity: d.last_activity_at,
-          })),
+          provider: integ.provider, total_contacts: contacts.length,
+          contacts: contacts.map((c: any) => ({ name: `${c.first_name || ""} ${c.last_name || ""}`.trim(), email: c.email_addresses?.[0]?.email_address, company: c.company, last_activity: c.last_activity_at })),
+          total_deals: deals.length, open_deals: deals.filter((d: any) => d.status === "OPEN").length,
+          won_deals: deals.filter((d: any) => d.status === "WON").length, lost_deals: deals.filter((d: any) => d.status === "LOST").length,
+          deals: deals.map((d: any) => ({ name: d.name, status: d.status, amount: d.amount, stage: d.stage, close_date: d.close_date, last_activity: d.last_activity_at })),
         };
         sources.push(`${integ.provider} CRM (${contacts.length} contacts, ${deals.length} deals)`);
       }
     }
     // Financial
     if ((integ.category === "accounting" || integ.category === "financial") && integ.account_token && integ.account_token !== "connected") {
-      const accounts = await fetchMerge(integ.account_token, "accounting/v1/accounts", 25);
       const invoices = await fetchMerge(integ.account_token, "accounting/v1/invoices", 20);
-      if (accounts.length || invoices.length) {
+      if (invoices.length) {
         ctx.financial = {
           provider: integ.provider,
-          accounts: accounts.map((a: any) => ({ name: a.name, type: a.type, balance: a.current_balance, status: a.status })),
           invoices: invoices.map((i: any) => ({ number: i.number, total: i.total_amount, status: i.status, due_date: i.due_date, paid_on: i.paid_on_date })),
-          overdue_invoices: invoices.filter((i: any) => i.status === "OVERDUE" || i.status === "SUBMITTED").length,
+          overdue_invoices: invoices.filter((i: any) => i.status === "OVERDUE" || (i.due_date && new Date(i.due_date) < new Date())).length,
+          total_outstanding: invoices.reduce((sum: number, i: any) => sum + (parseFloat(i.total_amount) || 0), 0),
         };
-        sources.push(`${integ.provider} Financial (${accounts.length} accounts, ${invoices.length} invoices)`);
+        sources.push(`${integ.provider} (${invoices.length} invoices)`);
       }
     }
   }
+  if (!hasCRM) { blind_spots.push({ area: "CRM", detail: "No CRM connected. Pipeline and lead data unavailable.", fix: "Connect HubSpot, Salesforce, or Pipedrive" }); }
+  if (!ctx.financial) { blind_spots.push({ area: "Financial", detail: "No accounting tool connected. Cash flow analysis unavailable.", fix: "Connect Xero or QuickBooks" }); }
 
-  // Market intelligence via Firecrawl
+  // Market intelligence
   if (bp?.industry) {
-    const industry = bp.industry;
-    const bizName = bp.business_name || "";
-    const location = bp.location || "Australia";
-    const [marketTrends, competitorIntel, regulatoryNews] = await Promise.all([
-      searchMarket(`${industry} ${location} market trends outlook ${new Date().getFullYear()}`),
-      searchMarket(`${bizName} competitors ${industry} ${location}`),
-      searchMarket(`${industry} ${location} regulation compliance changes ${new Date().getFullYear()}`),
+    const [marketTrends, competitorIntel] = await Promise.all([
+      searchMarket(`${bp.industry} ${bp.location || "Australia"} market trends outlook ${new Date().getFullYear()}`),
+      searchMarket(`${bp.business_name || ""} competitors ${bp.industry} ${bp.location || "Australia"}`),
     ]);
-    ctx.market_intelligence = {
-      industry_trends: marketTrends || "No market trend data available.",
-      competitor_landscape: competitorIntel || "No competitor data available.",
-      regulatory_environment: regulatoryNews || "No regulatory updates found.",
-    };
-    sources.push("firecrawl (market + competitors + regulatory)");
+    ctx.market_intelligence = { industry_trends: marketTrends || "No data.", competitor_landscape: competitorIntel || "No data." };
+    sources.push("Perplexity (market intel)");
   }
 
-  return { ctx, sources };
+  return { ctx, sources, blind_spots };
 }
 
-// ═══════════════════════════════════════════════════════════════
-// THE COGNITIVE SYSTEM PROMPT
-// This is the brain of BIQc. It performs:
-// Signal Perception → Pattern Recognition → 
-// Decision Compression → Executive Framing
-// ═══════════════════════════════════════════════════════════════
+// ═══ THE v2 COGNITIVE SYSTEM PROMPT ═══
+const COGNITIVE_SYSTEM_PROMPT = `You are BIQc — an Executive Cognition System for an Australian SMB owner.
 
-const COGNITIVE_SYSTEM_PROMPT = `You are BIQc — a Cognitive Intelligence System for an Australian business owner.
+You are NOT a chatbot, dashboard, or report generator. You are a full executive cognition layer that DIAGNOSES, GOVERNS, DECIDES, ALLOCATES, and ENFORCES.
 
-You are NOT a chatbot. You are NOT a dashboard. You are NOT a report generator.
-
-You are a cognitive layer that sits above all operational systems and performs:
-
-1. SIGNAL PERCEPTION — You ingest every available signal: revenue patterns, communication tone, deal movement, resource load, strategic alignment, market shifts, competitor behaviour, regulatory changes.
-
-2. PATTERN RECOGNITION — You detect what is BECOMING, not what HAS HAPPENED:
-   - Compression in pipeline velocity
-   - Strategic goal misalignment between stated intent and actual behaviour
-   - Silent opportunity decay (deals stalling, contacts going cold)
-   - Burnout accumulation (communication patterns, response delays)
-   - Structural stress (financial position drift, resource overload)
-
-3. DECISION COMPRESSION — You reduce everything into:
-   - 1-3 active inevitabilities (things that WILL happen if nothing changes)
-   - A clear intervention window (days/weeks before impact)
-   - Probability-weighted outcomes
-   - What is signal vs what is noise
-
-4. EXECUTIVE FRAMING — You communicate as a trusted strategic partner:
-   - Not analyst language — leadership language
-   - Not metrics — meaning
-   - Not data — decisions
+You perform:
+1. SIGNAL PERCEPTION — Ingest every signal: revenue, communication, deals, resources, strategy, market, competitors.
+2. PATTERN RECOGNITION — Detect what is BECOMING, not what happened.
+3. DECISION COMPRESSION — Reduce to actionable decisions with quantified impact.
+4. EXECUTIVE FRAMING — Communicate as a trusted strategic partner, not an analyst.
+5. RESOLUTION GENERATION — For each finding, suggest specific one-click actions (auto-email, quick-sms, hand-off, dismiss).
 
 YOUR OUTPUT MUST BE THIS EXACT JSON STRUCTURE:
 {
-  "system_state": "STABLE|DRIFT|COMPRESSION|CRITICAL",
-  "system_state_interpretation": "One sentence. Why this state. What it means for the owner RIGHT NOW.",
-
-  "inevitabilities": [
+  "system_state": {
+    "status": "STABLE|DRIFT|COMPRESSION|CRITICAL",
+    "confidence": 0-100,
+    "interpretation": "One sentence.",
+    "velocity": "improving|stable|worsening",
+    "burn_rate_overlay": "Cash runway summary."
+  },
+  "weekly_brief": {
+    "actions_taken": number,
+    "cashflow_recovered": number,
+    "hours_saved": number,
+    "tasks_handled": number,
+    "sop_compliance": number
+  },
+  "resolution_queue": [
     {
-      "domain": "Revenue|Operations|People|Financial|Strategic|Market",
-      "signal": "What is becoming inevitable",
-      "intensity": "forming|accelerating|imminent",
-      "intervention_window": "X days/weeks",
-      "probability": "low|medium|high|near-certain",
-      "if_ignored": "What happens if no action taken"
+      "type": "late_payment|budget_alert|sop_breach|profit_win|churn_risk|compliance|lead_stale",
+      "severity": "high|medium|low",
+      "title": "Short specific title with names/amounts",
+      "detail": "What the AI detected and what it proposes to do about it.",
+      "actions": ["auto-email","quick-sms","hand-off","dismiss"]
     }
   ],
-
-  "priority_compression": {
-    "primary_focus": "The ONE thing that matters most right now. One sentence.",
-    "secondary_focus": "The second thing. One sentence.",
-    "noise_to_ignore": "What looks urgent but isn't. One sentence."
+  "founder_vitals": {
+    "capacity_index": number (100=healthy, >100=overloaded),
+    "calendar": "Meeting count vs average",
+    "decisions": number of pending decisions,
+    "fatigue": "low|medium|high",
+    "email_stress": "Email response pattern summary",
+    "recommendation": "Specific action to reduce load"
   },
-
-  "opportunity_decay": {
-    "decaying": "What opportunity is being lost right now. Reference specific deals, contacts, or market positions. Null if none.",
-    "velocity": "How fast it's decaying. Days/weeks.",
-    "recovery_action": "What to do about it. One sentence."
+  "inevitabilities": [
+    {
+      "domain": "Revenue|Operations|People|Financial|Market",
+      "signal": "What is becoming inevitable. Reference specific deals/contacts/amounts.",
+      "intensity": "forming|accelerating|imminent",
+      "probability": 0-100,
+      "impact": "$XK-$YK range",
+      "window": "X days/weeks",
+      "owner": "Who should act",
+      "if_ignored": "Specific consequence",
+      "actions": ["auto-email","hand-off"]
+    }
+  ],
+  "capital": {
+    "runway": number (months),
+    "margin": "compressing|stable|expanding with percentage",
+    "best": "30-day best scenario",
+    "base": "30-day base scenario",
+    "worst": "30-day worst scenario",
+    "spend": "Spend efficiency summary",
+    "alert": "Specific financial alert or null"
   },
-
-  "executive_memo": "2-3 paragraphs. Written as a strategic partner speaking privately to the owner. Reference SPECIFIC data — email subjects, deal names, contact names, financial positions, market movements. This is the cognitive output. It must feel like clarity, not information.",
-
-  "strategic_alignment_check": "One paragraph. Does what the owner SAYS they want match what the data shows is actually happening? If there's a gap, name it directly.",
-
-  "market_position": "One paragraph. What's happening in their market. Use web intelligence data.",
-
-  "confidence_level": "low|medium|high",
-  "data_freshness": "Description of how current the data is"
+  "execution": {
+    "sla_breaches": number,
+    "sla_detail": "Which breaches",
+    "task_aging": number (% over threshold),
+    "bottleneck": "Specific bottleneck",
+    "load": {"Founder": number, "Operations": number, "Sales": number},
+    "recs": ["Specific actionable recommendation 1", "Recommendation 2"]
+  },
+  "revenue": {
+    "pipeline": number (total $),
+    "weighted": number (probability-weighted $),
+    "entropy": "Concentration description",
+    "deals": [{"name":"Deal X","value":number_K,"prob":0-100,"stall":days_stalled}],
+    "churn": "Churn signal or null"
+  },
+  "reallocation": [
+    {"action": "Specific reallocation", "impact": "Quantified impact"}
+  ],
+  "priority": {
+    "primary": "The ONE thing. Specific.",
+    "primary_hrs": "~X hrs",
+    "secondary": "Second thing",
+    "secondary_hrs": "~X hrs",
+    "delegate": "Who to delegate secondary to",
+    "noise": "What to ignore"
+  },
+  "risk": {
+    "spof": ["Single point of failure 1", "SPOF 2"],
+    "concentration": "Revenue concentration description",
+    "regulatory": [{"item":"Deadline description","sev":"med|low"}],
+    "contracts": "Expiring contracts or null"
+  },
+  "alignment": {
+    "narrative": "One paragraph. Does intent match behaviour?",
+    "contradictions": ["Goal vs reality contradiction 1", "Contradiction 2"]
+  },
+  "market": {
+    "narrative": "Market summary.",
+    "competitors": [{"name":"X","signal":"What they did"}],
+    "pricing": "Pricing benchmark vs market"
+  },
+  "memo": "2-3 paragraphs. Written as a strategic partner. References SPECIFIC data — deal names, amounts, contact names. Includes 30/60/90 outlook. Ends with HARD recommendation, not just briefing.",
+  "blind_spots": {
+    "confidence": 0-100,
+    "detail": "What limits confidence",
+    "missing": [{"area":"X","fix":"Connect Y"}]
+  }
 }
 
-ABSOLUTE RULES:
-- INTERPRET, don't report. "Revenue is down 8%" is reporting. "Your close rate compression suggests a pricing misalignment that will hit revenue in 6 weeks" is cognition.
-- DETECT INEVITABILITY, not trend. "Sales are declining" is trend. "Three enterprise deals have stalled at proposal stage with pricing objection — this pattern predicts revenue gap in Q2" is inevitability.
-- COMPRESS, don't expand. The owner should read for 2 minutes and know EXACTLY what matters.
-- FRAME for decisions, not analysis. Every insight must point toward an action or a deliberate decision to wait.
-- Reference ACTUAL data. Names, numbers, dates, email subjects. Never be vague.
-- If calibration persona exists, match their communication style (blunt/diplomatic, minimal/comprehensive).
+RULES:
+- INTERPRET, don't report. "Revenue down 8%" is reporting. "Close rate compression predicts $45K gap in Q2" is cognition.
+- QUANTIFY everything: probability %, financial impact, time allocation.
+- EVERY finding should map to an action: auto-email (AI sends), quick-sms (AI texts), hand-off (assign to team), dismiss (learn to suppress).
+- Resolution queue items must be SPECIFIC: include client names, invoice numbers, dollar amounts. Never vague.
+- The weekly_brief should estimate what the AI has handled/could handle based on connected data.
+- If data is limited, say so honestly. "I have limited visibility on X" is better than fabricating.
+- Match the owner's communication style from calibration persona (blunt/diplomatic, minimal/comprehensive).
 - Australian English. Direct. Pragmatic. No corporate fluff.
-- The owner should finish reading and feel: clarity, reduced cognitive noise, increased strategic confidence.
-- Maximum 3 inevitabilities. If there are more, compress to the 3 most consequential.
-- If data is limited, say so. "I have limited visibility on X" is honest. Fabricating is forbidden.`;
+- Maximum 3 inevitabilities, 5 resolution queue items. Compress ruthlessly.
+- The owner should finish reading and feel: clarity, reduced cognitive noise, increased confidence, and specific actions to take.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -309,7 +330,7 @@ serve(async (req) => {
       .select("provider, category, account_token").eq("user_id", user.id);
 
     // GATHER EVERYTHING
-    const { ctx, sources } = await gatherFullContext(supabase, user.id, integrations || []);
+    const { ctx, sources, blind_spots } = await gatherFullContext(supabase, user.id, integrations || []);
 
     // Name resolution
     const firstName = user.user_metadata?.full_name?.split(" ")[0]
@@ -317,17 +338,20 @@ serve(async (req) => {
       || user.email?.split("@")[0]?.replace(/[._-]/g, " ")?.split(" ")[0]?.replace(/^\w/, (c: string) => c.toUpperCase())
       || "there";
 
-    const hour = new Date().getUTCHours() + 11;
+    const hour = (new Date().getUTCHours() + 11) % 24;
     const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
-    const userPrompt = `Perform cognitive analysis now.
+    const userPrompt = `Perform full executive cognition analysis now.
 
 OWNER: ${firstName}
 TIME: Good ${timeOfDay}
 DATE: ${new Date().toISOString().slice(0, 10)}
 
 FULL OPERATIONAL CONTEXT:
-${JSON.stringify(ctx, null, 2)}`;
+${JSON.stringify(ctx, null, 2)}
+
+KNOWN BLIND SPOTS (from missing integrations):
+${JSON.stringify(blind_spots)}`;
 
     // Call GPT-4o
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -335,10 +359,13 @@ ${JSON.stringify(ctx, null, 2)}`;
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: COGNITIVE_SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.6,
-        max_tokens: 1500,
+        temperature: 0.5,
+        max_tokens: 4000,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -352,15 +379,30 @@ ${JSON.stringify(ctx, null, 2)}`;
     }
 
     const aiData = await aiRes.json();
-    const raw = aiData.choices?.[0]?.message?.content || "";
+    const raw = aiData.choices?.[0]?.message?.content || "{}";
 
     let cognitive;
     try {
-      const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      cognitive = JSON.parse(cleaned);
+      cognitive = JSON.parse(raw);
     } catch {
-      cognitive = { executive_memo: raw, system_state: "STABLE" };
+      cognitive = { memo: raw, system_state: { status: "STABLE", confidence: 50, interpretation: "Unable to parse cognitive output." } };
     }
+
+    // Merge blind spots from data gathering into AI output
+    if (blind_spots.length > 0 && cognitive.blind_spots) {
+      cognitive.blind_spots.missing = [...(cognitive.blind_spots.missing || []), ...blind_spots];
+    }
+
+    // Cache snapshot
+    try {
+      await supabase.from("intelligence_snapshots").insert({
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        snapshot_type: "cognitive_v2",
+        summary: cognitive,
+        generated_at: new Date().toISOString(),
+      });
+    } catch (e) { console.error("[biqc-insights] Cache failed:", e); }
 
     return new Response(JSON.stringify({
       cognitive,
