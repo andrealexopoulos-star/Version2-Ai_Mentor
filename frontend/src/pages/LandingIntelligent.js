@@ -555,8 +555,8 @@ const LandingIntelligent = () => {
       {/* ── WIIFM ── */}
       <section className="relative z-10 py-12 sm:py-24 px-4 sm:px-6 lg:px-12" style={{ background: 'white' }} data-testid="outcome-matrix">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="mb-8 sm:mb-12">
+            <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>What Life Looks Like with BIQc</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>What's in it for you?</h2>
