@@ -456,13 +456,13 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── COGNITION-AS-A-SERVICE ── */}
-      <section className="relative z-10 py-10 sm:py-14 px-4 sm:px-6" data-testid="cognition-section">
-        <div className="max-w-5xl mx-auto">
+      <section className="relative z-10 py-16 sm:py-24 px-6 sm:px-8 lg:px-12" data-testid="cognition-section">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-6 pl-4 border-l-2" style={{ borderColor: '#F97316' }}>
             <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>What Cognition-as-a-Service Delivers</h3>
             <p className="text-sm text-slate-500 mt-1 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Industry benchmarks show that businesses embedding AI-driven decision systems experience:</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-6 border-y py-6" style={{ borderColor: 'rgba(180,195,215,0.35)', background: 'rgba(255,255,255,0.4)' }}>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-12 gap-y-8 border-y py-10" style={{ borderColor: 'rgba(180,195,215,0.35)', background: 'rgba(255,255,255,0.4)' }}>
             {[
               { value: '40%', label: 'Improvement in operational efficiency' },
               { value: '50%', label: 'Reduction in manual workload' },
@@ -481,13 +481,13 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── CONNECTION DIAGRAM ── */}
-      <section className="relative z-10 pb-12 sm:pb-16 px-4 sm:px-6 hidden lg:block">
+      <section className="relative z-10 pb-16 sm:pb-24 px-6 sm:px-8 hidden lg:block">
         <ConnectionDiagram />
       </section>
 
       {/* ── TRUST BAR ── */}
-      <section className="relative z-10 py-10 sm:py-14 border-y" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(180,195,215,0.35)' }} data-testid="trust-strip">
-        <p className="text-center text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
+      <section className="relative z-10 py-16 sm:py-24 border-y" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(180,195,215,0.35)' }} data-testid="trust-strip">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">="text-center text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
           What <span style={{ color: '#F97316', textDecoration: 'underline', textUnderlineOffset: 3 }}>Australian businesses</span> are saying
         </p>
         <div className="flex items-center justify-center flex-wrap gap-8 sm:gap-12 px-6 max-w-4xl mx-auto">
