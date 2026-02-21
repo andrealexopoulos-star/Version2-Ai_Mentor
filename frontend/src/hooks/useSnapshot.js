@@ -27,11 +27,20 @@ export function useSnapshot() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return null;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
+      // Call v2 cognitive Edge Function first, fallback to legacy
+      let res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
         body: '{}',
       });
+      if (!res.ok) {
+        // Fallback to legacy intelligence-snapshot
+        res = await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+          body: '{}',
+        });
+      }
       if (!res.ok) throw new Error(`${res.status}`);
       return res.json();
     } catch (e) {
