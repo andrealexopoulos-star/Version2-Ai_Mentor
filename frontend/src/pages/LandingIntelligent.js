@@ -588,9 +588,9 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── PRICING ── */}
-      <section className="relative z-10 py-12 sm:py-24 px-4 sm:px-6 lg:px-12" style={{ background: '#F5F7FA' }} data-testid="pricing-section">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8 sm:mb-12">
+      <section className="relative z-10 py-20 sm:py-32 px-6 sm:px-8 lg:px-12" style={{ background: '#F5F7FA' }} data-testid="pricing-section">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12 sm:mb-16 max-w-3xl">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Strategic Pricing Ladder</span>
             </div>
