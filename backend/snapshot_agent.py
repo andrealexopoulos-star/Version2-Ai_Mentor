@@ -100,14 +100,31 @@ class SnapshotAgent:
 
         await self._persist_snapshot(snapshot)
 
-        # Bridge: auto-generate intelligence actions from snapshot findings
+        # Bridge: call Edge Function to auto-generate intelligence actions
         try:
-            from intelligence_bridge import bridge_snapshot_to_actions
-            actions_created = await bridge_snapshot_to_actions(self.supabase, user_id, snapshot)
-            if actions_created > 0:
-                logger.info(f"[snapshot] Bridged {actions_created} actions from snapshot {snapshot['id'][:8]}")
+            import os, httpx
+            supabase_url = os.environ.get("SUPABASE_URL", "")
+            service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+            if supabase_url and service_key:
+                async with httpx.AsyncClient() as client:
+                    res = await client.post(
+                        f"{supabase_url}/functions/v1/intelligence-bridge",
+                        json={"user_id": user_id, "snapshot": snapshot},
+                        headers={"Authorization": f"Bearer {service_key}", "Content-Type": "application/json"},
+                        timeout=15.0,
+                    )
+                    if res.status_code == 200:
+                        result = res.json()
+                        if result.get("actions_created", 0) > 0:
+                            logger.info(f"[snapshot] Bridge created {result['actions_created']} actions")
         except Exception as e:
-            logger.warning(f"[snapshot] Bridge failed (non-blocking): {e}")
+            # Fallback to local bridge if Edge Function unavailable
+            try:
+                from intelligence_bridge import bridge_snapshot_to_actions
+                await bridge_snapshot_to_actions(self.supabase, user_id, snapshot)
+            except Exception:
+                pass
+            logger.warning(f"[snapshot] Edge bridge failed, used local fallback: {e}")
 
         return snapshot
 
