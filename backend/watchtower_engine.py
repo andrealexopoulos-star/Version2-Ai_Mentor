@@ -563,18 +563,35 @@ class WatchtowerEngine:
             except RuntimeError:
                 pass  # Memory not initialized — non-fatal
 
-            # ─── Bridge: auto-generate intelligence action ───────
+            # ─── Bridge: call Edge Function to create intelligence action ───────
             try:
-                from intelligence_bridge import bridge_watchtower_to_actions
-                await bridge_watchtower_to_actions(self.supabase, user_id, {
-                    "id": insight["id"],
-                    "domain": domain,
-                    "old_position": previous_position,
-                    "new_position": new_position,
-                    "reason": finding,
-                })
+                import os, httpx
+                supabase_url = os.environ.get("SUPABASE_URL", "")
+                service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+                if supabase_url and service_key:
+                    async with httpx.AsyncClient() as client:
+                        await client.post(
+                            f"{supabase_url}/functions/v1/intelligence-bridge",
+                            json={"user_id": user_id, "finding": {
+                                "id": insight["id"], "domain": domain,
+                                "old_position": previous_position, "new_position": new_position,
+                                "reason": finding,
+                            }},
+                            headers={"Authorization": f"Bearer {service_key}", "Content-Type": "application/json"},
+                            timeout=10.0,
+                        )
             except Exception as bridge_err:
-                logger.warning(f"[watchtower] Bridge failed (non-blocking): {bridge_err}")
+                # Fallback to local bridge
+                try:
+                    from intelligence_bridge import bridge_watchtower_to_actions
+                    await bridge_watchtower_to_actions(self.supabase, user_id, {
+                        "id": insight["id"], "domain": domain,
+                        "old_position": previous_position, "new_position": new_position,
+                        "reason": finding,
+                    })
+                except Exception:
+                    pass
+                logger.warning(f"[watchtower] Edge bridge failed, used local fallback: {bridge_err}")
 
             return result.data[0] if result.data else insight
         except Exception as e:
