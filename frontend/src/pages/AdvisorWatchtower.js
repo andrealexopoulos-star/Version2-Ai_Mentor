@@ -170,6 +170,9 @@ const AdvisorWatchtower = () => {
                 Good {timeOfDay || 'morning'}, {owner || 'there'}.
               </h1>
 
+              {/* CHECK-IN ALERTS */}
+              <CheckInAlerts />
+
               {/* 5 COGNITION TABS */}
               <div className="flex gap-2 mb-6 overflow-x-auto pb-2" data-testid="cognition-tabs">
                 {sortedGroups.map((g) => {
