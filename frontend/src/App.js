@@ -76,6 +76,19 @@ const PublicRoute = ({ children }) => {
 };
 
 function AppRoutes() {
+  // Warmup Edge Functions on app load to prevent cold starts
+  useEffect(() => {
+    const warmup = async () => {
+      try {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL;
+        if (backendUrl) fetch(`${backendUrl}/api/health/warmup`).catch(() => {});
+      } catch {}
+    };
+    warmup();
+    const interval = setInterval(warmup, 4 * 60 * 1000); // every 4 min
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Routes>
       {/* Public Routes - Landing page accessible to everyone */}
