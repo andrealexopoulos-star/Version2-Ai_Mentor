@@ -926,6 +926,8 @@ const Integrations = () => {
                                     } else if (integration.isGmail || integration.id === 'gmail') {
                                       await apiClient.post('/gmail/disconnect');
                                       setGmailStatus({ connected: false });
+                                    } else if (integration.id === 'google_drive') {
+                                      await apiClient.post('/integrations/google-drive/disconnect');
                                     }
                                     toast.success(`${integration.name} disconnected`);
                                   } catch (err) {
