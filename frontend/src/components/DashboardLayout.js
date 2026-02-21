@@ -441,61 +441,61 @@ const DashboardLayout = ({ children }) => {
         </button>
 
         <nav className="p-3 sm:p-4 space-y-1 overflow-y-auto bg-white flex flex-col" style={{ height: 'calc(100% - 0px)' }}>
-          {visibleNavItems.map((item, index) => {
-            if (item.type === 'divider') {
-              return (
-                <div key={index} className="pt-6 pb-2">
-                  {!sidebarCollapsed && (
-                    <div 
-                      className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-600 text-center"
-                    >
-                      {item.label}
-                    </div>
-                  )}
-                  {sidebarCollapsed && (
-                    <div className="h-px bg-gray-200 mx-2" />
-                  )}
-                </div>
-              );
-            }
-            
-            // Check if this nav item should show notification badge
-            const showNotificationBadge = item.showBadge && notifications.total > 0;
-            
+          {visibleSections.map((section) => {
+            const isExpanded = expandedSection === section.id;
+            const hasActiveChild = section.items.some(i => isActive(i.path));
+            const SectionIcon = section.icon;
+
             return (
-              <button
-                key={item.path}
-                onClick={() => {
-                  navigate(item.path);
-                  closeAll();
-                }}
-                className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} w-full ${sidebarCollapsed ? 'px-2' : 'px-4'} py-3 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(item.path) 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-                style={{ minHeight: '48px' }}
-                title={sidebarCollapsed ? item.label : undefined}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!sidebarCollapsed && (
-                  <>
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {showNotificationBadge && (
-                      <span 
-                        className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-red-500"
-                      >
-                        {notifications.total > 9 ? '•' : notifications.total}
-                      </span>
-                    )}
-                  </>
+              <div key={section.id}>
+                {/* Section Header */}
+                <button
+                  onClick={() => setExpandedSection(isExpanded ? null : section.id)}
+                  className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-4'} py-3 rounded-lg text-sm font-semibold transition-all ${
+                    hasActiveChild ? 'text-blue-600' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                  style={{ minHeight: '44px' }}
+                  title={sidebarCollapsed ? section.label : undefined}
+                  data-testid={`nav-section-${section.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <SectionIcon className="w-5 h-5 flex-shrink-0" />
+                    {!sidebarCollapsed && <span>{section.label}</span>}
+                  </div>
+                  {!sidebarCollapsed && (
+                    <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} style={{ color: 'var(--text-muted)' }} />
+                  )}
+                </button>
+
+                {/* Sub-items (expanded) */}
+                {isExpanded && !sidebarCollapsed && (
+                  <div className="ml-4 pl-4 space-y-0.5 mb-2" style={{ borderLeft: '1px solid var(--border-light)' }}>
+                    {section.items.map((item) => {
+                      const showNotificationBadge = item.showBadge && notifications.total > 0;
+                      return (
+                        <button
+                          key={item.path}
+                          onClick={() => { navigate(item.path); closeAll(); }}
+                          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                            isActive(item.path)
+                              ? 'bg-blue-600 text-white font-medium'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                          data-testid={`nav-item-${item.path.replace('/', '')}`}
+                        >
+                          <item.icon className="w-4 h-4 flex-shrink-0" />
+                          <span className="flex-1 text-left">{item.label}</span>
+                          {showNotificationBadge && (
+                            <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-red-500">
+                              {notifications.total > 9 ? '9+' : notifications.total}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
-                {sidebarCollapsed && showNotificationBadge && (
-                  <span 
-                    className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"
-                  />
-                )}
-              </button>
+              </div>
             );
           })}
 
