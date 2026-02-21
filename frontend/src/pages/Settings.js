@@ -27,10 +27,33 @@ const Settings = () => {
   const [profile, setProfile] = useState({});
   const [calibrationStatus, setCalibrationStatus] = useState(null); // DB authority only
   const [resettingCalibration, setResettingCalibration] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [accountData, setAccountData] = useState({
     name: user?.name || '',
     email: user?.email || ''
   });
+
+  const syncFromCalibration = async () => {
+    setSyncing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Not authenticated'); return; }
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-sync`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+        body: '{}',
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(`Synced ${data.fields_updated} fields from calibration`);
+        fetchProfile(); // Reload
+      } else {
+        toast.error(data.error || 'Sync failed');
+      }
+    } catch (e) {
+      toast.error('Failed to sync from calibration');
+    } finally { setSyncing(false); }
+  };
 
   useEffect(() => {
     fetchProfile();
