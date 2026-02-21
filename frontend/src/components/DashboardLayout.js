@@ -243,7 +243,7 @@ const DashboardLayout = ({ children }) => {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 sm:p-2.5 rounded-lg transition-colors hidden sm:flex relative touch-manipulation"
+              className="p-2 sm:p-2.5 rounded-lg transition-colors flex relative touch-manipulation"
               style={{ color: 'var(--text-secondary)' }}
               aria-label="Notifications"
             >
