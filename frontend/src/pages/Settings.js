@@ -8,11 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard } from 'lucide-react';
+import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
+import { supabase } from '../context/SupabaseAuthContext';
+
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const Settings = () => {
   const { user } = useSupabaseAuth();
