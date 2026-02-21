@@ -147,6 +147,20 @@ serve(async (req) => {
 
     const content = await callOpenAI(systemPrompt, fullPrompt);
 
+    // Track usage
+    try {
+      await sb.from("usage_tracking").insert({
+        user_id: user.id,
+        function_name: "sop-generator",
+        api_provider: "openai",
+        model: "gpt-4o-mini",
+        tokens_in: fullPrompt.length,
+        tokens_out: content.length,
+        cost_estimate: 0.002,
+        called_at: new Date().toISOString(),
+      });
+    } catch {}
+
     // Persist to documents table
     const docId = crypto.randomUUID();
     await sb.from("documents").insert({
