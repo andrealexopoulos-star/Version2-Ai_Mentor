@@ -110,6 +110,22 @@ Be factual. No fabrication.`,
 
     const data = await res.json();
     const content = data.choices?.[0]?.message?.content || "{}";
+    const usage = data.usage || {};
+
+    // Track OpenAI usage
+    try {
+      const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      await sb.from("usage_tracking").insert({
+        function_name: "competitor-monitor",
+        api_provider: "openai",
+        model: "gpt-4o-mini",
+        tokens_in: usage.prompt_tokens || 0,
+        tokens_out: usage.completion_tokens || 0,
+        cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
+        called_at: new Date().toISOString(),
+      });
+    } catch {}
+
     const parsed = JSON.parse(content);
     return parsed.signals || parsed.changes || [];
   } catch {
