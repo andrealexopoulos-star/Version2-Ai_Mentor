@@ -1,130 +1,287 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSnapshot } from '../hooks/useSnapshot';
 import DashboardLayout from '../components/DashboardLayout';
-import { RefreshCw } from 'lucide-react';
+import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw } from 'lucide-react';
 
 const HEAD = "var(--font-heading)";
 const MONO = "var(--font-mono)";
+const BODY = "var(--font-body)";
 
-const STATE_CFG = {
-  STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
-  DRIFT:       { label: 'Drift',       color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
-  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#F97316' },
-  CRITICAL:    { label: 'Critical',    color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
+/* ═══ ACTION BUTTONS ═══ */
+const ActionBtn = ({ icon: Icon, label, color }) => (
+  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:-translate-y-0.5 active:scale-95" style={{ background: `${color}12`, color, border: `1px solid ${color}30`, fontFamily: MONO }} data-testid={`action-${label.toLowerCase().replace(/\s/g,'-')}`}>
+    <Icon className="w-3.5 h-3.5" />{label}
+  </button>
+);
+const ActionBar = ({ actions }) => {
+  if (!actions || actions.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {actions.includes("auto-email") && <ActionBtn icon={Mail} label="Auto-Email" color="#2563EB" />}
+      {actions.includes("quick-sms") && <ActionBtn icon={MessageSquare} label="Quick-SMS" color="#059669" />}
+      {actions.includes("hand-off") && <ActionBtn icon={Users} label="Hand Off" color="#F97316" />}
+      {actions.includes("dismiss") && <ActionBtn icon={XCircle} label="Dismiss & Learn" color="#6B7280" />}
+    </div>
+  );
 };
-const INTENSITY_CFG = {
-  forming:      { color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
-  accelerating: { color: '#F97316', bg: '#FFF7ED', border: '#FED7AA' },
-  imminent:     { color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
+
+const GROUPS = {
+  money: { id: 'money', label: 'Money', icon: DollarSign, color: '#F97316', description: 'Cash, invoices, margins, runway, spend' },
+  revenue: { id: 'revenue', label: 'Revenue', icon: TrendingUp, color: '#2563EB', description: 'Pipeline, deals, leads, churn, pricing' },
+  operations: { id: 'operations', label: 'Operations', icon: SettingsIcon, color: '#059669', description: 'Tasks, SOPs, bottlenecks, delivery' },
+  people: { id: 'people', label: 'People', icon: User, color: '#EF4444', description: 'Capacity, calendar, decisions, burnout' },
+  market: { id: 'market', label: 'Market', icon: Radar, color: '#7C3AED', description: 'Competitors, positioning, trends, regulatory' },
 };
+
+const ST = { STABLE: { c: '#166534', bg: '#F0FDF4', b: '#BBF7D0', d: '#22C55E' }, DRIFT: { c: '#92400E', bg: '#FFFBEB', b: '#FDE68A', d: '#F59E0B' }, COMPRESSION: { c: '#9A3412', bg: '#FFF7ED', b: '#FED7AA', d: '#F97316' }, CRITICAL: { c: '#991B1B', bg: '#FEF2F2', b: '#FECACA', d: '#EF4444' } };
+const SEV = { high: { bg: '#FEF2F2', b: '#FECACA', d: '#EF4444' }, medium: { bg: '#FFFBEB', b: '#FDE68A', d: '#F59E0B' }, low: { bg: '#F0FDF4', b: '#BBF7D0', d: '#059669' } };
+
+const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${className}`} style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.06)', backdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>{children}</div>);
+
+// Parse cognitive data into group structure
+function parseToGroups(c) {
+  const groups = { money: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, operations: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, people: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, market: { alerts: 0, severity: 'low', resolutions: [], insight: '' } };
+  if (!c) return groups;
+
+  // Map resolution_queue items to groups
+  const rq = c.resolution_queue || [];
+  for (const item of rq) {
+    const t = item.type || '';
+    let g = 'operations';
+    if (t.includes('payment') || t.includes('invoice') || t.includes('cash') || t.includes('budget')) g = 'money';
+    else if (t.includes('deal') || t.includes('lead') || t.includes('churn') || t.includes('revenue') || t.includes('pipeline')) g = 'revenue';
+    else if (t.includes('sop') || t.includes('task') || t.includes('overtime') || t.includes('breach')) g = 'operations';
+    else if (t.includes('capacity') || t.includes('burnout') || t.includes('fatigue') || t.includes('team')) g = 'people';
+    else if (t.includes('competitor') || t.includes('market') || t.includes('regulatory') || t.includes('compliance')) g = 'market';
+    groups[g].resolutions.push(item);
+    groups[g].alerts++;
+    if (item.severity === 'high') groups[g].severity = 'high';
+    else if (item.severity === 'medium' && groups[g].severity !== 'high') groups[g].severity = 'medium';
+  }
+
+  // Map inevitabilities to groups
+  const inv = c.inevitabilities || [];
+  for (const item of inv) {
+    const d = (item.domain || '').toLowerCase();
+    let g = 'operations';
+    if (d.includes('financ') || d.includes('money') || d.includes('cash')) g = 'money';
+    else if (d.includes('revenue') || d.includes('sales') || d.includes('pipeline')) g = 'revenue';
+    else if (d.includes('operation') || d.includes('execution')) g = 'operations';
+    else if (d.includes('people') || d.includes('team') || d.includes('founder')) g = 'people';
+    else if (d.includes('market') || d.includes('compet') || d.includes('strategic')) g = 'market';
+    groups[g].resolutions.push({ severity: 'medium', title: item.signal || item.domain, detail: item.if_ignored || '', actions: ["hand-off", "dismiss"] });
+    groups[g].alerts++;
+    if (!groups[g].insight) groups[g].insight = item.signal;
+  }
+
+  // Set insights from various fields
+  if (c.capital || c.cash_runway_months) groups.money.insight = groups.money.insight || (c.capital?.alert || c.executive_memo?.substring(0, 200) || 'Review financial position.');
+  if (c.revenue || c.pipeline_total) groups.revenue.insight = groups.revenue.insight || (c.revenue?.churn || 'Review revenue pipeline.');
+  if (c.execution || c.sla_breaches) groups.operations.insight = groups.operations.insight || (c.execution?.bottleneck || 'Review operational execution.');
+  if (c.founder_vitals || c.capacity_index) groups.people.insight = groups.people.insight || 'Review founder capacity and workload.';
+  groups.market.insight = groups.market.insight || c.market_position || c.market?.narrative || 'No urgent market signals.';
+
+  // Use executive memo as fallback insight for the top group
+  const topGroup = Object.entries(groups).sort((a, b) => b[1].alerts - a[1].alerts)[0];
+  if (!topGroup[1].insight && c.executive_memo) topGroup[1].insight = c.executive_memo.substring(0, 300);
+
+  // Use priority compression
+  const pc = c.priority_compression || c.priority || {};
+  if (pc.primary_focus || pc.primary) {
+    const mainGroup = Object.entries(groups).sort((a, b) => b[1].alerts - a[1].alerts)[0];
+    if (!mainGroup[1].insight) mainGroup[1].insight = pc.primary_focus || pc.primary;
+  }
+
+  return groups;
+}
 
 const AdvisorWatchtower = () => {
-  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
+  const { cognitive, sources, owner, timeOfDay, loading, error, refreshing, refresh } = useSnapshot();
   const c = cognitive || {};
-  const st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
-  const inevitabilities = c.inevitabilities || [];
-  const pc = c.priority_compression || {};
-  const od = c.opportunity_decay || {};
+
+  // Parse system state (handle both string and object formats)
+  const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
+  const stateConf = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
+  const stateInterp = typeof c.system_state === 'object' ? c.system_state?.interpretation : c.system_state_interpretation;
+  const stateVelocity = typeof c.system_state === 'object' ? c.system_state?.velocity : null;
+  const st = ST[stateStatus] || ST.STABLE;
+
+  const groupData = useMemo(() => parseToGroups(c), [c]);
+  const sortedGroups = useMemo(() => Object.values(GROUPS).sort((a, b) => {
+    const sevW = { high: 3, medium: 2, low: 1 };
+    return (groupData[b.id].alerts * (sevW[groupData[b.id].severity] || 1)) - (groupData[a.id].alerts * (sevW[groupData[a.id].severity] || 1));
+  }), [groupData]);
+
+  const [activeGroup, setActiveGroup] = useState(null);
+  const activeId = activeGroup || sortedGroups[0]?.id || 'money';
+  const gd = groupData[activeId];
+  const group = GROUPS[activeId];
+
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [memoOpen, setMemoOpen] = useState(false);
+
+  const memo = c.executive_memo || c.memo || '';
+  const alignment = c.strategic_alignment_check || c.alignment?.narrative || '';
+  const contradictions = c.alignment?.contradictions || [];
+  const wb = c.weekly_brief || {};
 
   return (
     <DashboardLayout>
       <div className="min-h-[calc(100vh-56px)]" style={{ background: '#FAFAF8', fontFamily: HEAD }} data-testid="biqc-insights-page">
-        {!loading && cognitive && (
-          <div className="sticky top-14 z-30" style={{ background: st.bg, borderBottom: `1px solid ${st.border}` }}>
-            <div className="max-w-4xl mx-auto px-6 py-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full" style={{ background: st.dot }} />
-                <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
-                <span className="text-[11px]" style={{ color: st.color, opacity: 0.7 }}>{c.system_state_interpretation}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                {cacheAge !== null && cacheAge > 0 && <span className="text-[10px]" style={{ color: '#9CA3AF', fontFamily: MONO }}>{cacheAge}m ago</span>}
-                <button onClick={refresh} disabled={refreshing} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg hover:bg-black/5" style={{ color: '#9CA3AF' }} data-testid="refresh-btn">
-                  <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+
+        {/* LOADING */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-24">
             <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mb-5" />
             <p className="text-sm font-medium" style={{ color: '#374151' }}>Cognitive system initialising...</p>
-            <p className="text-[11px] mt-1" style={{ color: '#9CA3AF' }}>Perceiving signals across all connected systems</p>
           </div>
         )}
+
+        {/* ERROR */}
         {error && !loading && (
           <div className="max-w-3xl mx-auto px-6 py-16 text-center">
             <p className="text-sm" style={{ color: '#D97706' }}>{error}</p>
             <button onClick={refresh} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #E5E7EB' }}>Retry</button>
           </div>
         )}
-        {cognitive && !loading && (
-          <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
-            <h1 className="text-3xl font-semibold" style={{ color: '#111827', fontFamily: "'Playfair Display', Georgia, serif" }}>Good {timeOfDay}, {owner}.</h1>
-            {inevitabilities.length > 0 && (
-              <section data-testid="inevitabilities">
-                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Active Inevitabilities</h2>
-                <div className="space-y-3">
-                  {inevitabilities.map((inv, i) => { const ic = INTENSITY_CFG[inv.intensity] || INTENSITY_CFG.forming; return (
-                    <div key={i} className="p-6 rounded-2xl" style={{ background: ic.bg, border: `1px solid ${ic.border}` }} data-testid={`inevitability-${i}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: ic.color, fontFamily: MONO }}>{inv.domain}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: ic.color, background: `${ic.color}10`, fontFamily: MONO }}>{inv.intensity}</span>
-                        </div>
-                        {inv.intervention_window && <span className="text-[10px] font-medium" style={{ color: ic.color, fontFamily: MONO }}>Window: {inv.intervention_window}</span>}
-                      </div>
-                      <p className="text-[15px] leading-relaxed font-medium" style={{ color: '#1F2937' }}>{inv.signal}</p>
-                      {inv.if_ignored && <p className="text-sm mt-2 leading-relaxed" style={{ color: '#7F1D1D' }}>If ignored: {inv.if_ignored}</p>}
-                    </div>
-                  ); })}
+
+        {/* MAIN CONTENT */}
+        {!loading && cognitive && (
+          <>
+            {/* STICKY HEADER */}
+            <div className="sticky top-14 z-30" style={{ background: st.bg, borderBottom: `1px solid ${st.b}` }}>
+              <div className="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: st.d }} />
+                  <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: MONO }}>{stateStatus || 'STABLE'}</span>
+                  {stateVelocity && <span className="text-[11px]" style={{ color: st.c }}>{stateVelocity === 'worsening' ? '↘' : stateVelocity === 'improving' ? '↗' : '→'} {stateVelocity}</span>}
+                  {stateConf && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: MONO }}>{typeof stateConf === 'number' ? `${stateConf}%` : stateConf}</span>}
                 </div>
-              </section>
-            )}
-            {(pc.primary_focus || pc.secondary_focus) && (
-              <section data-testid="priority-compression">
-                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Priority Compression</h2>
-                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                  {pc.primary_focus && (<div className="mb-4"><span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#111827', fontFamily: MONO }}>Primary</span><p className="text-[15px] leading-relaxed font-medium" style={{ color: '#1F2937' }}>{pc.primary_focus}</p></div>)}
-                  {pc.secondary_focus && (<div className="mb-4 pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}><span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#6B7280', fontFamily: MONO }}>Secondary</span><p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{pc.secondary_focus}</p></div>)}
-                  {pc.noise_to_ignore && (<div className="pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}><span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#9CA3AF', fontFamily: MONO }}>Noise</span><p className="text-sm leading-relaxed" style={{ color: '#9CA3AF' }}>{pc.noise_to_ignore}</p></div>)}
-                </div>
-              </section>
-            )}
-            {od.decaying && (
-              <section data-testid="opportunity-decay">
-                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Opportunity Decay</h2>
-                <div className="p-6 rounded-2xl" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
-                  <p className="text-[15px] leading-relaxed font-medium" style={{ color: '#7F1D1D' }}>{od.decaying}</p>
-                  {od.velocity && <p className="text-sm mt-2" style={{ color: '#991B1B', fontFamily: MONO }}>Decay rate: {od.velocity}</p>}
-                  {od.recovery_action && <p className="text-sm mt-2 leading-relaxed" style={{ color: '#374151' }}>{od.recovery_action}</p>}
-                </div>
-              </section>
-            )}
-            {c.executive_memo && (
-              <section data-testid="executive-memo">
-                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Executive Memo</h2>
-                <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                  <p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#1F2937' }}>{c.executive_memo}</p>
-                </div>
-              </section>
-            )}
-            {c.strategic_alignment_check && (
-              <section><h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Strategic Alignment</h2>
-                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}><p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{c.strategic_alignment_check}</p></div></section>
-            )}
-            {c.market_position && (
-              <section><h2 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Market Position</h2>
-                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}><p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{c.market_position}</p></div></section>
-            )}
-            {sources.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sources:</span>
-                {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>))}
+                <button onClick={refresh} disabled={refreshing} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg hover:bg-black/5" style={{ color: '#9CA3AF' }} data-testid="refresh-btn">
+                  <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
               </div>
-            )}
-          </div>
+              {stateInterp && <div className="max-w-5xl mx-auto px-6 pb-2"><p className="text-[12px]" style={{ color: st.c, fontFamily: BODY }}>{stateInterp}</p></div>}
+            </div>
+
+            <div className="max-w-5xl mx-auto px-6 py-8">
+              <h1 className="text-3xl font-semibold mb-6" style={{ color: '#111827', fontFamily: HEAD }}>
+                Good {timeOfDay || 'morning'}, {owner || 'there'}.
+              </h1>
+
+              {/* 5 COGNITION TABS */}
+              <div className="flex gap-2 mb-6 overflow-x-auto pb-2" data-testid="cognition-tabs">
+                {sortedGroups.map((g) => {
+                  const d = groupData[g.id];
+                  const isActive = activeId === g.id;
+                  const Icon = g.icon;
+                  return (
+                    <button key={g.id} onClick={() => setActiveGroup(g.id)}
+                      className="flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all shrink-0"
+                      style={{ background: isActive ? g.color : 'white', color: isActive ? 'white' : '#374151', border: `1.5px solid ${isActive ? g.color : 'rgba(0,0,0,0.08)'}`, boxShadow: isActive ? `0 4px 16px ${g.color}30` : '0 1px 3px rgba(0,0,0,0.04)', fontFamily: HEAD }}
+                      data-testid={`tab-${g.id}`}>
+                      <Icon className="w-4 h-4" />
+                      <span className="text-sm font-semibold">{g.label}</span>
+                      {d.alerts > 0 && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: isActive ? 'rgba(255,255,255,0.25)' : SEV[d.severity].bg, color: isActive ? 'white' : SEV[d.severity].d, fontFamily: MONO }}>{d.alerts}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ACTIVE GROUP */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${group.color}15` }}>
+                    <group.icon className="w-4 h-4" style={{ color: group.color }} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: '#111827', fontFamily: HEAD }}>{group.label}</h2>
+                    <p className="text-xs" style={{ color: '#9CA3AF', fontFamily: MONO }}>{group.description}</p>
+                  </div>
+                </div>
+
+                {/* AI Insight */}
+                {gd.insight && <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#374151', fontFamily: BODY }}>{gd.insight}</p></Card>}
+
+                {/* Resolution Items */}
+                {gd.resolutions.length > 0 ? (
+                  <div>
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: MONO }}>Needs Attention</h3>
+                    <div className="space-y-3">
+                      {gd.resolutions.map((item, i) => {
+                        const sv = SEV[item.severity] || SEV.medium;
+                        return (
+                          <div key={i} className="rounded-2xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>
+                            <div className="flex items-start gap-3">
+                              <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold" style={{ color: '#1F2937', fontFamily: HEAD }}>{item.title}</p>
+                                {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280', fontFamily: BODY }}>{item.detail}</p>}
+                                <ActionBar actions={item.actions || ["hand-off", "dismiss"]} />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#9CA3AF', fontFamily: BODY }}>No items need attention right now. All clear.</p></Card>
+                )}
+
+                {/* Alignment Gaps */}
+                {(alignment || contradictions.length > 0) && (
+                  <div>
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: MONO }}>Alignment</h3>
+                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: '#374151', fontFamily: BODY }}>{alignment}</p></Card>}
+                    {contradictions.map((ct, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}><p className="text-xs" style={{ color: '#92400E', fontFamily: MONO }}>⚠ {ct}</p></div>))}
+                  </div>
+                )}
+              </div>
+
+              {/* WEEKLY BRIEF */}
+              <div className="mt-8 mb-4">
+                <Card className="p-0 overflow-hidden">
+                  <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>This Week</span>
+                      {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#F97316', fontFamily: HEAD }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>recovered</span></div>}
+                      {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#059669', fontFamily: HEAD }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>saved</span></div>}
+                      {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#2563EB', fontFamily: HEAD }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>actions</span></div>}
+                      {wb.sop_compliance && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#7C3AED', fontFamily: HEAD }}>{wb.sop_compliance}%</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>sop</span></div>}
+                      {!wb.cashflow_recovered && !wb.hours_saved && <span className="text-xs" style={{ color: '#9CA3AF', fontFamily: BODY }}>Connect integrations to see weekly activity</span>}
+                    </div>
+                    {briefOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  </button>
+                  {briefOpen && wb.actions_taken && (
+                    <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                      <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#F97316' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>
+                      <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#059669' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>
+                    </div>
+                  )}
+                </Card>
+              </div>
+
+              {/* EXECUTIVE MEMO */}
+              {memo && (
+                <div className="mb-8">
+                  <button onClick={() => setMemoOpen(!memoOpen)} className="flex items-center justify-between w-full mb-3">
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280', fontFamily: MONO }}>Executive Memo</h3>
+                    {memoOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  </button>
+                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#1F2937', fontFamily: BODY }}>{memo}</p></Card>}
+                </div>
+              )}
+
+              {/* Sources */}
+              {sources && sources.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                  <span className="text-[10px]" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sources:</span>
+                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>))}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </DashboardLayout>
