@@ -455,6 +455,31 @@ const LandingIntelligent = () => {
         <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>No credit card required · Australian owned & operated</p>
       </section>
 
+      {/* ── COGNITION-AS-A-SERVICE ── */}
+      <section className="relative z-10 py-10 sm:py-14 px-4 sm:px-6" data-testid="cognition-section">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-6 pl-4 border-l-2" style={{ borderColor: '#F97316' }}>
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>What Cognition-as-a-Service Delivers</h3>
+            <p className="text-sm text-slate-500 mt-1 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Industry benchmarks show that businesses embedding AI-driven decision systems experience:</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-6 border-y py-6" style={{ borderColor: 'rgba(180,195,215,0.35)', background: 'rgba(255,255,255,0.4)' }}>
+            {[
+              { value: '40%', label: 'Improvement in operational efficiency' },
+              { value: '50%', label: 'Reduction in manual workload' },
+              { value: '80%', label: 'Lower finance processing costs' },
+              { value: '3x', label: 'Faster anomaly detection' },
+              { value: '-25%', label: 'Reduction in preventable errors' },
+            ].map((s, i) => (
+              <div key={i} className="flex flex-col gap-1">
+                <span className="text-3xl sm:text-4xl font-extrabold leading-none" style={{ fontFamily: 'var(--font-heading)', color: '#F97316' }}>{s.value}</span>
+                <span className="text-[10px] uppercase tracking-widest text-slate-500 leading-tight" style={{ fontFamily: 'var(--font-mono)' }}>{s.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm font-medium text-slate-700 italic" style={{ fontFamily: 'var(--font-heading)' }}>BIQc brings that cognitive layer to SMBs — without enterprise headcount.</p>
+        </div>
+      </section>
+
       {/* ── CONNECTION DIAGRAM ── */}
       <section className="relative z-10 pb-12 sm:pb-16 px-4 sm:px-6 hidden lg:block">
         <ConnectionDiagram />
