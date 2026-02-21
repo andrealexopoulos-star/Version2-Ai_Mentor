@@ -1322,3 +1322,161 @@ async def handle_regeneration_response(payload: RegenerationResponsePayload, cur
     if action not in {"accept", "refine", "keep"}:
         raise HTTPException(status_code=400, detail="Invalid response action")
     return await record_regeneration_response(current_user["id"], payload.proposal_id, action, supabase_admin)
+
+
+# ═══ RECALIBRATION & CHECK-IN SCHEDULING ═══
+
+class ScheduleCheckInRequest(BaseModel):
+    type: str  # recalibration | video_checkin
+    scheduled_for: str  # ISO datetime
+    notes: Optional[str] = None
+
+class PostponeCheckInRequest(BaseModel):
+    check_in_id: str
+    new_date: str  # ISO datetime
+
+
+@router.get("/checkins/pending")
+async def get_pending_checkins(current_user: dict = Depends(get_current_user)):
+    """Get pending recalibration and video check-in alerts."""
+    user_id = current_user["id"]
+    now = datetime.now(timezone.utc)
+
+    # Check last calibration date
+    try:
+        scs = get_sb().table("strategic_console_state").select(
+            "updated_at"
+        ).eq("user_id", user_id).maybe_single().execute()
+
+        op = get_sb().table("user_operator_profile").select(
+            "operator_profile"
+        ).eq("user_id", user_id).maybe_single().execute()
+
+        last_calibration = None
+        if scs.data and scs.data.get("updated_at"):
+            last_calibration = scs.data["updated_at"]
+        elif op.data:
+            console_state = (op.data.get("operator_profile") or {}).get("console_state", {})
+            last_calibration = console_state.get("updated_at")
+    except Exception:
+        last_calibration = None
+
+    # Check scheduled check-ins
+    scheduled = []
+    try:
+        result = get_sb().table("calibration_schedules").select("*").eq(
+            "user_id", user_id
+        ).eq("status", "pending").order("scheduled_for", desc=False).execute()
+        scheduled = result.data or []
+    except Exception:
+        pass
+
+    # Determine if recalibration is due (every 14 days)
+    recal_due = False
+    recal_days_overdue = 0
+    if last_calibration:
+        try:
+            last_dt = datetime.fromisoformat(str(last_calibration).replace("Z", "+00:00"))
+            days_since = (now - last_dt).days
+            recal_due = days_since >= 14
+            recal_days_overdue = max(0, days_since - 14)
+        except (ValueError, TypeError):
+            recal_due = True
+
+    # Determine if weekly video check-in is due
+    video_due = False
+    last_video = None
+    for s in scheduled:
+        if s.get("type") == "video_checkin" and s.get("status") == "completed":
+            last_video = s.get("completed_at") or s.get("scheduled_for")
+
+    if not last_video:
+        video_due = True
+    else:
+        try:
+            last_v_dt = datetime.fromisoformat(str(last_video).replace("Z", "+00:00"))
+            video_due = (now - last_v_dt).days >= 7
+        except (ValueError, TypeError):
+            video_due = True
+
+    alerts = []
+    if recal_due:
+        alerts.append({
+            "type": "recalibration",
+            "title": "Recalibration Due",
+            "message": f"Your business profile was last calibrated {recal_days_overdue + 14} days ago. Recalibrate to keep insights accurate.",
+            "overdue_days": recal_days_overdue,
+            "severity": "high" if recal_days_overdue > 7 else "medium",
+        })
+
+    if video_due:
+        alerts.append({
+            "type": "video_checkin",
+            "title": "Weekly Check-In Available",
+            "message": "Schedule a video check-in with your BIQc advisor to review progress and priorities.",
+            "severity": "low",
+        })
+
+    return {
+        "alerts": alerts,
+        "scheduled": scheduled,
+        "last_calibration": last_calibration,
+        "recalibration_due": recal_due,
+        "video_checkin_due": video_due,
+    }
+
+
+@router.post("/checkins/schedule")
+async def schedule_checkin(payload: ScheduleCheckInRequest, current_user: dict = Depends(get_current_user)):
+    """Schedule a recalibration or video check-in."""
+    user_id = current_user["id"]
+    checkin_id = str(uuid.uuid4())
+
+    try:
+        get_sb().table("calibration_schedules").insert({
+            "id": checkin_id,
+            "user_id": user_id,
+            "type": payload.type,
+            "scheduled_for": payload.scheduled_for,
+            "notes": payload.notes,
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+
+        return {"ok": True, "check_in_id": checkin_id, "scheduled_for": payload.scheduled_for}
+    except Exception as e:
+        logger.error(f"[checkins/schedule] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to schedule check-in")
+
+
+@router.post("/checkins/postpone")
+async def postpone_checkin(payload: PostponeCheckInRequest, current_user: dict = Depends(get_current_user)):
+    """Postpone a scheduled check-in to a new date."""
+    try:
+        get_sb().table("calibration_schedules").update({
+            "scheduled_for": payload.new_date,
+            "postponed_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", payload.check_in_id).eq("user_id", current_user["id"]).execute()
+
+        return {"ok": True, "new_date": payload.new_date}
+    except Exception as e:
+        logger.error(f"[checkins/postpone] Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to postpone check-in")
+
+
+@router.post("/checkins/dismiss")
+async def dismiss_checkin(current_user: dict = Depends(get_current_user)):
+    """Dismiss recalibration alert for 7 days."""
+    user_id = current_user["id"]
+    try:
+        get_sb().table("calibration_schedules").insert({
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "type": "recalibration_dismissed",
+            "scheduled_for": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+            "status": "dismissed",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+        return {"ok": True, "dismissed_until": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()}
+    except Exception:
+        return {"ok": True}
