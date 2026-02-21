@@ -133,41 +133,55 @@ const DashboardLayout = ({ children }) => {
     }
   };
 
-  const navItems = [
-    { type: 'divider', label: 'INTELLIGENCE' },
-    { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
-    { icon: Terminal, label: 'Strategic Console', path: '/war-room', requiresCalibration: true },
-    { icon: Crosshair, label: 'Board Room', path: '/board-room', requiresCalibration: true },
-    { icon: Activity, label: 'Operator View', path: '/operator', requiresCalibration: true },
-    { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
-    { type: 'divider', label: 'ANALYSIS' },
-    { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis', requiresCalibration: true },
-    { icon: TrendingUp, label: 'Analysis', path: '/analysis' },
-    { icon: Search, label: 'Market Analysis', path: '/market-analysis' },
-    { icon: Radar, label: 'Intel Centre', path: '/intel-centre' },
-    { type: 'divider', label: 'TOOLS' },
-    { icon: Shield, label: 'SOP Generator', path: '/sop-generator' },
-    { icon: Database, label: 'Data Center', path: '/data-center' },
-    { icon: FileText, label: 'Documents', path: '/documents' },
-    { type: 'divider', label: 'CONFIGURATION' },
-    { icon: BarChart3, label: 'Intelligence Baseline', path: '/intelligence-baseline' },
-    { icon: Building2, label: 'Business DNA', path: '/business-profile' },
-    { icon: Plug, label: 'Integrations', path: '/integrations' },
-    { icon: Mail, label: 'Email', path: '/connect-email' },
-    { icon: Inbox, label: 'Email Inbox', path: '/email-inbox' },
-    { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { type: 'divider', label: 'SETTINGS' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
+  const [expandedSection, setExpandedSection] = useState(null);
+
+  const navSections = [
+    { id: 'intelligence', label: 'Intelligence', icon: MessageSquare, items: [
+      { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
+      { icon: Terminal, label: 'Strategic Console', path: '/war-room', requiresCalibration: true },
+      { icon: Crosshair, label: 'Board Room', path: '/board-room', requiresCalibration: true },
+      { icon: Activity, label: 'Operator View', path: '/operator', requiresCalibration: true },
+      { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
+    ]},
+    { id: 'analysis', label: 'Analysis', icon: Search, items: [
+      { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis', requiresCalibration: true },
+      { icon: TrendingUp, label: 'Analysis', path: '/analysis' },
+      { icon: Search, label: 'Market Analysis', path: '/market-analysis' },
+      { icon: Radar, label: 'Intel Centre', path: '/intel-centre' },
+    ]},
+    { id: 'tools', label: 'Tools', icon: Shield, items: [
+      { icon: Shield, label: 'SOP Generator', path: '/sop-generator' },
+      { icon: Database, label: 'Data Center', path: '/data-center' },
+      { icon: FileText, label: 'Documents', path: '/documents' },
+    ]},
+    { id: 'configuration', label: 'Configuration', icon: Plug, items: [
+      { icon: BarChart3, label: 'Intelligence Baseline', path: '/intelligence-baseline' },
+      { icon: Plug, label: 'Integrations', path: '/integrations' },
+      { icon: Mail, label: 'Email', path: '/connect-email' },
+      { icon: Inbox, label: 'Email Inbox', path: '/email-inbox' },
+      { icon: Calendar, label: 'Calendar', path: '/calendar' },
+    ]},
+    { id: 'settings', label: 'Settings', icon: Settings, items: [
+      { icon: Settings, label: 'Account', path: '/settings' },
+      { icon: Building2, label: 'Business DNA', path: '/business-profile' },
+    ]},
   ];
 
-  // Filter: hide calibration-locked items when not calibrated
-  const visibleNavItems = useMemo(() => {
-    return navItems.filter(item => {
-      if (item.type === 'divider') return true;
-      if (item.requiresCalibration && !isCalibrated) return false;
-      return true;
-    });
-  }, [isCalibrated]);
+  // Auto-expand the section containing the active route
+  useEffect(() => {
+    if (!expandedSection) {
+      const active = navSections.find(s => s.items.some(i => isActive(i.path)));
+      if (active) setExpandedSection(active.id);
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Filter calibration-locked items
+  const visibleSections = useMemo(() => {
+    return navSections.map(section => ({
+      ...section,
+      items: section.items.filter(item => !item.requiresCalibration || isCalibrated),
+    }));
+  }, [isCalibrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = () => {
     logout();
