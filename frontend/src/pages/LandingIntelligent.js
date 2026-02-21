@@ -418,7 +418,7 @@ const LandingIntelligent = () => {
       )}
 
       {/* ── HERO ── */}
-      <section className="relative z-10 pt-28 sm:pt-36 pb-10 sm:pb-16 px-4 sm:px-6 text-center" data-testid="hero-section">
+      <section className="relative z-10 pt-32 sm:pt-44 pb-16 sm:pb-24 px-6 sm:px-8 text-center" data-testid="hero-section">
         {/* Kicker */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full mb-6" style={{ background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.2)' }}>
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#F97316', animation: 'blink 1.8s ease-in-out infinite' }} />
@@ -426,24 +426,24 @@ const LandingIntelligent = () => {
         </div>
 
         {/* Heading with typewriter */}
-        <h1 className="mx-auto mb-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08]" style={{ fontFamily: 'var(--font-heading)', maxWidth: 900 }}>
+        <h1 className="mx-auto mb-6 text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.08] max-w-4xl" style={{ fontFamily: 'var(--font-heading)' }}>
           <span style={{ color: '#F97316' }}>Run Your Business Like The Big </span>
           <span className="font-light" style={{ color: '#64748B' }}>Players </span>
           <span style={{ color: '#F97316' }}>Without The Cost</span>
         </h1>
 
-        <div className="max-w-xl mx-auto text-left">
-          <p className="mb-1.5 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+        <div className="max-w-2xl mx-auto w-full text-left">
+          <p className="mb-2 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
             Meet BIQc..
           </p>
-          <p className="mb-6 text-base sm:text-lg font-medium leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>
+          <p className="mb-8 text-lg sm:text-xl font-medium leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>
             Your Digital Leadership team surfacing &amp; preventing risk weeks in advance
           </p>
-        </div>
 
-        <p className="max-w-xl mx-auto mb-7 text-sm sm:text-base leading-relaxed text-slate-500 text-left" style={{ fontFamily: 'var(--font-body)' }}>
-          Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.
-        </p>
+          <p className="mb-8 text-base sm:text-lg leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>
+            Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.
+          </p>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-4">
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a chatbot.</span>
