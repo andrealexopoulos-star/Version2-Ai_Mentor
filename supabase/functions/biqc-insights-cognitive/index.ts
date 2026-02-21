@@ -347,7 +347,53 @@ serve(async (req) => {
       });
     }
 
-    // SERVER-SIDE CACHE: Return cached snapshot if < 5 min old
+    // PRECOMPUTE MODE — generate snapshots for all active users (called by pg_cron)
+    if (body.batch_precompute) {
+      const { data: users } = await supabase.from("business_profiles")
+        .select("user_id").not("business_name", "is", null);
+      let computed = 0;
+      for (const u of (users || []).slice(0, 20)) {
+        try {
+          // Check if snapshot is already fresh
+          const { data: existing } = await supabase.from("intelligence_snapshots")
+            .select("generated_at").eq("user_id", u.user_id).eq("snapshot_type", "cognitive_v2")
+            .order("generated_at", { ascending: false }).limit(1).maybeSingle();
+          if (existing?.generated_at) {
+            const age = Date.now() - new Date(existing.generated_at).getTime();
+            if (age < 25 * 60 * 1000) continue; // Skip if < 25 min old
+          }
+          // Generate fresh snapshot via internal call
+          const { data: integrations } = await supabase.from("integration_accounts")
+            .select("provider, category, account_token").eq("user_id", u.user_id);
+          const { ctx, sources, blind_spots } = await gatherFullContext(supabase, u.user_id, integrations || []);
+          // Minimal AI call for precompute
+          const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [{ role: "system", content: COGNITIVE_SYSTEM_PROMPT }, { role: "user", content: `Precompute snapshot.\n${JSON.stringify(ctx).substring(0, 8000)}` }],
+              temperature: 0.5, max_tokens: 3000, response_format: { type: "json_object" },
+            }),
+          });
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            const raw = aiData.choices?.[0]?.message?.content || "{}";
+            let cognitive; try { cognitive = JSON.parse(raw); } catch { cognitive = {}; }
+            await supabase.from("intelligence_snapshots").insert({
+              id: crypto.randomUUID(), user_id: u.user_id, snapshot_type: "cognitive_v2",
+              summary: cognitive, generated_at: new Date().toISOString(),
+            });
+            computed++;
+          }
+        } catch (e) { console.error(`[precompute] Failed for ${u.user_id}:`, e); }
+      }
+      return new Response(JSON.stringify({ ok: true, mode: "precompute", users_computed: computed }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // SERVER-SIDE CACHE: Return cached snapshot if < 30 min old
     const forceRefresh = body.force === true;
     if (!forceRefresh) {
       try {
