@@ -89,6 +89,8 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<str
   });
 
   const data = await response.json();
+  // Track usage (called from serve handler with sb context)
+  data._usage = data.usage || {};
   return data.choices?.[0]?.message?.content || "Generation failed. Please try again.";
 }
 
