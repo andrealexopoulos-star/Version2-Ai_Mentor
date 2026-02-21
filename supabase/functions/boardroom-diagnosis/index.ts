@@ -294,6 +294,21 @@ Generate a diagnosis briefing. Return ONLY valid JSON with this exact structure:
 
     const aiData = await aiRes.json();
     const raw = aiData.choices?.[0]?.message?.content || "";
+    const usage = aiData.usage || {};
+
+    // Track OpenAI usage — boardroom is the most expensive (multi-agent debate)
+    try {
+      await supabase.from("usage_tracking").insert({
+        user_id: user.id,
+        function_name: "boardroom-diagnosis",
+        api_provider: "openai",
+        model: "gpt-4o-mini",
+        tokens_in: usage.prompt_tokens || 0,
+        tokens_out: usage.completion_tokens || 0,
+        cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
+        called_at: new Date().toISOString(),
+      });
+    } catch (e) { console.error("[usage] boardroom tracking failed:", e); }
 
     // Parse JSON from AI response
     let parsed;
