@@ -1,93 +1,128 @@
 {
-  "design_guidelines": {
-    "project_metadata": {
-      "type": "marketing_site",
-      "name": "BIQc Intelligent Landing",
-      "target_audience": "Australian SME Business Owners",
-      "tone": "Authoritative, Editorial, Intelligent, Trustworthy"
-    },
-    "typography": {
-      "primary_font": "DM Sans",
-      "heading_font": "Playfair Display",
-      "mono_font": "JetBrains Mono",
-      "instructions": [
-        "Replace 'Plus Jakarta Sans' with 'Playfair Display' for all headings to achieve the requested editorial/serif look.",
-        "Ensure 'Playfair Display' is imported from Google Fonts in index.css (weights: 400, 500, 600, 700, 800, 900).",
-        "Retain 'DM Sans' for body text and 'JetBrains Mono' for data/labels."
-      ]
-    },
-    "layout_and_alignment": {
-      "global_rule": "STRICT LEFT-ALIGNMENT PROTOCOL",
-      "specific_instructions": [
-        "CRITICAL: Remove 'text-center' from ALL body paragraphs, feature descriptions, card content, testimonials, and pricing details.",
-        "EXCEPTION: The main Hero Headline (H1) and its immediate 'Kicker' (badge) can remain centered.",
-        "The Hero sub-paragraph ('Your Digital Leadership team...') MUST be left-aligned.",
-        "The Trust Bar quotes MUST be text-left (currently text-center).",
-        "The Stats Bar numbers/labels MUST be text-left (currently text-center).",
-        "The Pricing Card content MUST be text-left (currently text-center).",
-        "The Final CTA content MUST be text-left (currently text-center)."
-      ]
-    },
-    "new_section": {
-      "name": "Cognition-as-a-Service",
-      "placement": "In LandingIntelligent.js, insert strictly BETWEEN the Hero CTA row (buttons) and the <ConnectionDiagram /> component.",
-      "visual_style": "High-density information row, matching existing 'Stats' aesthetic (Orange numbers, Mono labels).",
-      "code_structure": {
-        "container_classes": "relative z-20 mt-10 mb-8 max-w-6xl mx-auto px-4 sm:px-6 text-left",
-        "content": [
-          {
-            "element": "header",
-            "style": "mb-6 pl-4 border-l-2 border-[#F97316]",
-            "children": [
-              { "tag": "h3", "text": "What Cognition-as-a-Service Delivers", "class": "text-xl font-bold text-slate-900 font-heading" },
-              { "tag": "p", "text": "Industry benchmarks show that businesses embedding AI-driven decision systems experience:", "class": "text-sm text-slate-500 font-body mt-1" }
-            ]
-          },
-          {
-            "element": "grid",
-            "style": "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-6 border-y border-slate-200 py-6 bg-white/40 backdrop-blur-sm",
-            "items": [
-              { "value": "40%", "label": "Improvement in operational efficiency" },
-              { "value": "50%", "label": "Reduction in manual workload" },
-              { "value": "80%", "label": "Lower finance processing costs" },
-              { "value": "3x", "label": "Faster anomaly detection" },
-              { "value": "-25%", "label": "Reduction in preventable errors" }
-            ],
-            "item_style": {
-              "wrapper": "flex flex-col gap-1",
-              "value": "text-3xl font-extrabold text-[#F97316] font-heading leading-none",
-              "label": "text-[10px] uppercase tracking-widest text-slate-500 font-mono leading-tight"
-            }
-          },
-          {
-            "element": "footer",
-            "style": "mt-4 text-sm font-medium text-slate-700 font-heading italic",
-            "text": "BIQc brings that cognitive layer to SMBs — without enterprise headcount."
-          }
-        ]
-      }
-    },
-    "implementation_steps": [
-      {
-        "file": "/app/frontend/src/index.css",
-        "action": "add_import",
-        "details": "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');"
-      },
-      {
-        "file": "/app/frontend/tailwind.config.js",
-        "action": "update_font",
-        "details": "Change 'heading' to ['Playfair Display', 'serif']"
-      },
-      {
-        "file": "/app/frontend/src/pages/LandingIntelligent.js",
-        "action": "refactor_alignment",
-        "details": "Systematically remove 'text-center' and enforce 'text-left' on all sections except Hero H1."
-      },
-      {
-        "file": "/app/frontend/src/pages/LandingIntelligent.js",
-        "action": "insert_component",
-        "details": "Inject the 'Cognition-as-a-Service' section code above <ConnectionDiagram />."
-      }
+  "semantic_version": "1.0.0",
+  "design_philosophy": {
+    "name": "BIQc Premium Cognition",
+    "inspiration": ["Stripe", "Linear", "Notion"],
+    "core_principles": [
+      "Unified Container Geometry: All sections must align to a central axis with consistent max-width.",
+      "Generous Breathing Room: Vertical spacing (py) is doubled compared to standard layouts.",
+      "Text Block Discipline: Reading width never exceeds 65 characters (max-w-2xl).",
+      "Left-Align Rigor: Even when the container is centered, the text block within acts as a solid, left-aligned unit."
     ]
-  }
+  },
+  "layout_system": {
+    "containers": {
+      "default": "max-w-7xl mx-auto px-6 sm:px-8 lg:px-12",
+      "narrow": "max-w-4xl mx-auto px-6 sm:px-8",
+      "reading": "max-w-2xl mx-auto px-4",
+      "full_width": "w-full px-6 sm:px-8 lg:px-12"
+    },
+    "spacing": {
+      "section_padding": "py-20 sm:py-32",
+      "section_padding_compact": "py-16 sm:py-24",
+      "element_gap": "gap-8 sm:gap-12"
+    },
+    "alignment_rules": {
+      "hero": {
+        "headline": "text-center mx-auto max-w-4xl",
+        "body_container": "max-w-2xl mx-auto w-full",
+        "body_text": "text-left"
+      },
+      "standard_section": {
+        "heading_container": "max-w-3xl",
+        "heading_alignment": "text-left",
+        "grid_alignment": "justify-start"
+      }
+    }
+  },
+  "typography_rules": {
+    "font_families": {
+      "heading": "Playfair Display",
+      "body": "DM Sans",
+      "mono": "JetBrains Mono"
+    },
+    "hierarchy": {
+      "h1": "text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]",
+      "h2": "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1]",
+      "h3": "text-xl sm:text-2xl font-bold tracking-tight",
+      "body_lead": "text-lg sm:text-xl text-slate-500 leading-relaxed font-medium",
+      "body": "text-base text-slate-500 leading-relaxed",
+      "label": "text-xs font-semibold uppercase tracking-widest text-orange-500 font-mono"
+    }
+  },
+  "color_palette_constraints": {
+    "primary": "#F97316",
+    "dark": "#0F172A",
+    "slate": {
+      "900": "#0F172A",
+      "500": "#64748B",
+      "400": "#94A3B8"
+    },
+    "backgrounds": {
+      "default": "#F5F7FA",
+      "white": "#FFFFFF",
+      "dark": "#0F172A"
+    },
+    "rule": "DO NOT INTRODUCE NEW COLORS. Use opacity variants of existing palette for depth."
+  },
+  "component_specific_instructions": {
+    "Hero": {
+      "container_class": "relative z-10 pt-32 sm:pt-48 pb-20 sm:pb-32 px-6 sm:px-8",
+      "fix": "Change body text container to 'max-w-2xl mx-auto w-full text-left'. Remove 'text-center' from the description paragraph."
+    },
+    "Cognition_Stats": {
+      "container_class": "max-w-7xl mx-auto",
+      "grid_class": "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-12 gap-y-10 border-y py-10"
+    },
+    "Connection_Diagram": {
+      "container_class": "relative w-full max-w-6xl mx-auto"
+    },
+    "Trust_Bar": {
+      "container_class": "max-w-7xl mx-auto px-6 sm:px-8",
+      "layout": "flex flex-wrap justify-between items-start gap-12"
+    },
+    "Stats_Bar": {
+      "container_class": "max-w-7xl mx-auto",
+      "grid_class": "grid grid-cols-2 md:grid-cols-4 w-full"
+    },
+    "Features_Four_Pillars": {
+      "container_class": "max-w-7xl mx-auto",
+      "heading_container": "mb-16 max-w-3xl"
+    },
+    "Comparison_Section": {
+      "container_class": "max-w-7xl mx-auto",
+      "heading_container": "mb-16 max-w-3xl",
+      "grid_class": "grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto"
+    },
+    "Value_Props_WIIFM": {
+      "container_class": "max-w-7xl mx-auto",
+      "grid_class": "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8"
+    },
+    "Pricing": {
+      "container_class": "max-w-7xl mx-auto",
+      "card_gap": "gap-6 lg:gap-8"
+    }
+  },
+  "implementation_steps": [
+    {
+      "step": 1,
+      "description": "Standardize Outer Containers",
+      "instruction": "Replace all `max-w-5xl`, `max-w-4xl`, `max-w-xl` (in section wrappers) with `max-w-7xl` to create a unified 'wide-screen' rail."
+    },
+    {
+      "step": 2,
+      "description": "Fix Hero Alignment",
+      "instruction": "Wrap the Hero description text (`Meet BIQc...`, `Your Chief Agent...`) in a `div.max-w-2xl.mx-auto.w-full.text-left` to satisfy the 'Centered Headline, Left Body' requirement."
+    },
+    {
+      "step": 3,
+      "description": "Normalize Vertical Spacing",
+      "instruction": "Update all section `py` values to `py-20 sm:py-32` for major sections and `py-16 sm:py-24` for secondary ones. No more random `py-10` or `pt-28`."
+    },
+    {
+      "step": 4,
+      "description": "Unify Horizontal Padding",
+      "instruction": "Ensure every `max-w-7xl` container has `px-6 sm:px-8 lg:px-12`."
+    }
+  ]
 }
