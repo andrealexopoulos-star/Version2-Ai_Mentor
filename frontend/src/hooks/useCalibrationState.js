@@ -268,10 +268,15 @@ export const useCalibrationState = () => {
     setInputValue(""); setError(null); setIsSubmitting(true);
     setMessages(prev => [...prev, { role: "user", text: msg }]);
     try {
-      const data = await callEdge({ message: msg });
+      const data = await callEdge({ message: msg, step: currentStep });
+      // Increment step counter on each chat exchange
+      setCurrentStep(prev => {
+        const next = data.step || prev + 1;
+        return Math.min(next, 9);
+      });
       // Auto-save progress after each chat response
-      autoSave(currentStep);
-      if (data.status === "COMPLETE") { autoSave(currentStep, "COMPLETE"); triggerComplete(); return; }
+      autoSave(currentStep + 1);
+      if (data.status === "COMPLETE") { autoSave(9, "COMPLETE"); triggerComplete(); return; }
       if (data.question && data.options?.length > 0) { applyResponse(data); return; }
       if (data.message) {
         setMessages(prev => [...prev, { role: "edge", text: data.message }]);
@@ -279,8 +284,9 @@ export const useCalibrationState = () => {
         const hasQuestion = data.message.includes('?');
         if (!hasQuestion) {
           try {
-            const followUp = await callEdge({ step: currentStep + 1, message: "continue" });
-            if (followUp.status === "COMPLETE") { autoSave(currentStep + 1, "COMPLETE"); triggerComplete(); return; }
+            const nextStep = Math.min(currentStep + 2, 9);
+            const followUp = await callEdge({ step: nextStep, message: "continue" });
+            if (followUp.status === "COMPLETE") { autoSave(9, "COMPLETE"); triggerComplete(); return; }
             if (followUp.question && followUp.options?.length > 0) { applyResponse(followUp); return; }
             if (followUp.message) setMessages(prev => [...prev, { role: "edge", text: followUp.message }]);
           } catch { /* silently continue in chat mode */ }
