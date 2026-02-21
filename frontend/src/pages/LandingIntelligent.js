@@ -509,7 +509,7 @@ const LandingIntelligent = () => {
 
       {/* ── STATS ── */}
       <section className="relative z-10" style={{ background: 'white', borderBottom: '1px solid rgba(180,195,215,0.35)' }}>
-        <div className="grid grid-cols-2 md:grid-cols-4 max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 max-w-7xl mx-auto">
           {[['94%','faster loads','vs. live generation'],['15+','hrs/week','Reclaimed per operator'],['500+','integrations','Connected and syncing'],['24/7','sentinel','Always on, always watching']].map(([num,unit,desc],i) => (
             <div key={i} className="py-6 sm:py-10 px-3 sm:px-6 hover:bg-slate-50 transition-colors" style={{ borderRight: i % 2 === 0 ? '1px solid rgba(180,195,215,0.35)' : (i < 3 && i % 2 === 1 ? 'none' : 'none'), borderBottom: i < 2 ? '1px solid rgba(180,195,215,0.35)' : 'none' }}>
               <div className="text-3xl sm:text-5xl font-extrabold mb-1" style={{ fontFamily: 'var(--font-heading)', color: '#F97316', letterSpacing: '-0.04em' }}>{num}</div>
