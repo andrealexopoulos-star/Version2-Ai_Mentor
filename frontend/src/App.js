@@ -80,12 +80,20 @@ function AppRoutes() {
   useEffect(() => {
     const warmup = async () => {
       try {
-        const backendUrl = process.env.REACT_APP_BACKEND_URL;
-        if (backendUrl) fetch(`${backendUrl}/api/health/warmup`).catch(() => {});
+        const sbUrl = process.env.REACT_APP_SUPABASE_URL;
+        const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
+        if (sbUrl && key) {
+          // Ping the main Edge Function with warmup flag
+          fetch(`${sbUrl}/functions/v1/biqc-insights-cognitive`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': key },
+            body: '{"warmup": true}',
+          }).catch(() => {});
+        }
       } catch {}
     };
     warmup();
-    const interval = setInterval(warmup, 4 * 60 * 1000); // every 4 min
+    const interval = setInterval(warmup, 4 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
