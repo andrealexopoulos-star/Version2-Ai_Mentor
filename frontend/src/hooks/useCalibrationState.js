@@ -100,7 +100,22 @@ export const useCalibrationState = () => {
     return await res.json();
   };
 
-  const triggerComplete = () => { setCompleting(true); setEntry("completing"); setRevealPhase(0); };
+  const triggerComplete = () => {
+    setCompleting(true); setEntry("completing"); setRevealPhase(0);
+    // Sync calibration data to business profile
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await fetch(`${SUPABASE_URL}/functions/v1/calibration-sync`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+            body: '{}',
+          });
+        }
+      } catch (e) { console.warn('[calibration] Sync failed (non-blocking):', e); }
+    })();
+  };
 
   // Auto-save calibration progress after each step
   const autoSave = async (step, status = "IN_PROGRESS") => {
