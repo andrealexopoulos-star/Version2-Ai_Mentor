@@ -7,6 +7,12 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 1. **Best-in-Class UX** - Modern, fast, interactive on desktop AND mobile
 2. **Instantaneous Performance** - All pages load instantly
 3. **Production Stability** - Deployable and stable in production
+4. **Cognition-as-a-Platform** - Full executive cognition replacing CTO/CFO/CMO/COO/CCO
+
+## Action Layer Backlog (Integration Required)
+- **P1: Email Provider for Auto-Email actions** — Evaluate: SendGrid (free tier, industry standard) / Resend (modern, dev-friendly) / Existing Outlook/Gmail OAuth connection. Needed for Resolution Center Auto-Email buttons to actually send emails on user's behalf.
+- **P1: SMS Provider for Quick-SMS actions** — Evaluate: Twilio (industry standard, AU numbers) / MessageMedia (Australian provider). Needed for Resolution Center Quick-SMS buttons to send texts for urgent signals.
+- **P2: Project Management integration for Hand Off actions** — Merge.dev Ticketing category (Asana, Monday, Jira). Needed for Hand Off buttons to create tasks and assign to team members.
 
 ## What's Been Implemented
 
