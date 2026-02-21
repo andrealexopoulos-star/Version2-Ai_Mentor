@@ -40,6 +40,12 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 - Covers 21 authenticated pages + 3 calibration stages
 - Content written for non-AI-savvy users explaining purpose and how to use each function
 
+### Sprint A: Enable Dormant Systems (Feb 21, 2026)
+- **Notifications system ENABLED** — was feature-flagged off (`ENABLE_NOTIFICATIONS_POLLING = false`). Now active. Bell icon visible on mobile + desktop. Backend `/notifications/alerts` scans emails for complaints, calendar for upcoming meetings, email intelligence for declining client engagement. Full dropdown UI with severity badges and navigation.
+- **Intelligence Bridge BUILT** — New `intelligence_bridge.py` connects Watchtower findings + Snapshots → Intelligence Actions automatically. When a snapshot detects open risks or contradictions, they auto-create actionable items in `intelligence_actions` table with domain, severity, title, description, and suggested action.
+- **Watchtower wired to Snapshot** — `/snapshot/generate` now triggers `watchtower.run_analysis()` on every refresh, keeping position monitoring in sync with cognitive snapshots.
+- **Watchtower → Actions pipeline** — When Watchtower persists a position change finding, it auto-bridges to an intelligence action via `bridge_watchtower_to_actions()`.
+
 ### Calibration Psych Fixes (Feb 20, 2026)
 - **Scroll Fix:** Changed CalibrationAdvisor container from `min-h-screen` to `h-screen overflow-hidden` so chat messages scroll within viewport and input stays visible
 - **Auto-scroll:** Added useEffect to auto-scroll to bottom when new messages arrive
