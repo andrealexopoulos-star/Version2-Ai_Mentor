@@ -15,7 +15,7 @@ import {
 import { 
   MessageSquare, Settings, LogOut, Menu, X,
   ChevronDown, Shield, User, Stethoscope, Building2,
-  Plug, Zap, Sun, Moon, Bell, Search, Calendar,
+  Plug, Zap, Sun, Moon, Bell, Search, Calendar, HelpCircle,
   Lightbulb, AlertCircle, Mail, ChevronLeft, ChevronRight, Terminal,
   Crosshair, BarChart3, Activity, FileText, Inbox, Database, TrendingUp, Radar
 } from 'lucide-react';
