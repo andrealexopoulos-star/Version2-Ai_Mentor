@@ -563,6 +563,19 @@ class WatchtowerEngine:
             except RuntimeError:
                 pass  # Memory not initialized — non-fatal
 
+            # ─── Bridge: auto-generate intelligence action ───────
+            try:
+                from intelligence_bridge import bridge_watchtower_to_actions
+                await bridge_watchtower_to_actions(self.supabase, user_id, {
+                    "id": insight["id"],
+                    "domain": domain,
+                    "old_position": previous_position,
+                    "new_position": new_position,
+                    "reason": finding,
+                })
+            except Exception as bridge_err:
+                logger.warning(f"[watchtower] Bridge failed (non-blocking): {bridge_err}")
+
             return result.data[0] if result.data else insight
         except Exception as e:
             logger.error(f"[watchtower] Failed to persist finding: {e}")
