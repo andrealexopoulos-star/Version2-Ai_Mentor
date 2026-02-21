@@ -496,7 +496,7 @@ const LandingIntelligent = () => {
             { quote: "I used to spend 3 hours every Monday pulling reports. Now BIQc hands me a briefing before my coffee.", name: 'James T.', co: 'Brisbane eCommerce' },
             { quote: "The SOP monitoring alone paid for itself. We caught 4 compliance gaps before our audit.", name: 'Lisa K.', co: 'Sydney Healthcare' },
           ].map((t, i) => (
-            <div key={i} className="max-w-[280px] text-center">
+            <div key={i} className="max-w-[280px] text-left">
               <p className="text-sm text-slate-500 italic leading-relaxed mb-3" style={{ fontFamily: 'var(--font-body)' }}>"{t.quote}"</p>
               <p className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>{t.name}</p>
               <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{t.co}</p>
