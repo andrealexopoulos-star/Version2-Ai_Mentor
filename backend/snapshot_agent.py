@@ -99,6 +99,16 @@ class SnapshotAgent:
         }
 
         await self._persist_snapshot(snapshot)
+
+        # Bridge: auto-generate intelligence actions from snapshot findings
+        try:
+            from intelligence_bridge import bridge_snapshot_to_actions
+            actions_created = await bridge_snapshot_to_actions(self.supabase, user_id, snapshot)
+            if actions_created > 0:
+                logger.info(f"[snapshot] Bridged {actions_created} actions from snapshot {snapshot['id'][:8]}")
+        except Exception as e:
+            logger.warning(f"[snapshot] Bridge failed (non-blocking): {e}")
+
         return snapshot
 
     async def get_latest_snapshot(self, user_id: str) -> Optional[Dict[str, Any]]:
