@@ -1,128 +1,150 @@
 {
-  "semantic_version": "1.0.0",
-  "design_philosophy": {
-    "name": "BIQc Premium Cognition",
-    "inspiration": ["Stripe", "Linear", "Notion"],
-    "core_principles": [
-      "Unified Container Geometry: All sections must align to a central axis with consistent max-width.",
-      "Generous Breathing Room: Vertical spacing (py) is doubled compared to standard layouts.",
-      "Text Block Discipline: Reading width never exceeds 65 characters (max-w-2xl).",
-      "Left-Align Rigor: Even when the container is centered, the text block within acts as a solid, left-aligned unit."
+  "project_metadata": {
+    "app_name": "BIQc Cognitive Snapshot v2",
+    "target_audience": "Time-poor Australian SMB Owners",
+    "tone": "Executive Personal Assistant (Calm, Direct, Proactive)",
+    "aesthetic": "Executive Luxe (Clean, Serif-led, High-Whitespace)"
+  },
+  "typography": {
+    "headings": {
+      "family": "Playfair Display, serif",
+      "usage": "Page titles, Section headers, Key Metrics",
+      "weights": ["Regular (400)", "SemiBold (600)", "Bold (700)"],
+      "instructions": "Use for all emotional or high-impact text. Do not use for dense data."
+    },
+    "body": {
+      "family": "DM Sans, sans-serif",
+      "usage": "Paragraphs, UI labels, descriptions",
+      "weights": ["Regular (400)", "Medium (500)"],
+      "instructions": "High legibility for reading."
+    },
+    "data": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "Financial figures, Dates, Status tags, Action buttons",
+      "weights": ["Regular (400)"],
+      "instructions": "Use for anything that needs precision or represents a 'system' value."
+    }
+  },
+  "color_palette": {
+    "theme": "light",
+    "backgrounds": {
+      "primary": "#FAFAF8",
+      "card": "rgba(255,255,255,0.85)",
+      "header_sticky": "rgba(255,255,255,0.9)"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#374151",
+      "tertiary": "#6B7280",
+      "accent": "#9CA3AF"
+    },
+    "status_colors": {
+      "success": { "bg": "#F0FDF4", "text": "#166534", "border": "#BBF7D0" },
+      "warning": { "bg": "#FFFBEB", "text": "#92400E", "border": "#FDE68A" },
+      "error": { "bg": "#FEF2F2", "text": "#991B1B", "border": "#FECACA" },
+      "info": { "bg": "#F0F9FF", "text": "#0C4A6E", "border": "#BAE6FD" }
+    }
+  },
+  "layout_strategy": {
+    "container": "max-w-4xl mx-auto px-6",
+    "spacing": "space-y-6",
+    "reordering_map": [
+      {
+        "order": 1,
+        "id": "system_state",
+        "component": "Header (Sticky)",
+        "logic": "The Anchor. Immediate pulse check."
+      },
+      {
+        "order": 2,
+        "id": "resolution_center",
+        "component": "Section",
+        "title": "Resolution Center — Needs Attention",
+        "logic": "What is on fire? The Inbox. Must be cleared first.",
+        "style": "Expanded, High Visibility"
+      },
+      {
+        "order": 3,
+        "id": "weekly_brief",
+        "component": "Section",
+        "title": "Weekly Brief — AI Actions",
+        "logic": "Proof of work. 'What did you do for me?' Quick dopamine hit.",
+        "style": "Compact/Collapsible (Default: Collapsed summary)"
+      },
+      {
+        "order": 4,
+        "id": "founder_vitals",
+        "component": "Section",
+        "title": "Founder Vitals",
+        "logic": "Personal capacity check before taking on more work.",
+        "style": "Card"
+      },
+      {
+        "order": 5,
+        "id": "inevitabilities",
+        "component": "Section",
+        "title": "Inevitabilities",
+        "logic": "Proactive radar. What is coming?",
+        "style": "List"
+      },
+      {
+        "order": 6,
+        "id": "priority",
+        "component": "Section",
+        "title": "Strategic Focus",
+        "logic": "The ONE thing to do after fires are out.",
+        "style": "Card"
+      },
+      {
+        "order": 7,
+        "group_name": "Financial Health",
+        "layout": "Grid (2 columns on Desktop)",
+        "sections": ["capital", "revenue", "reallocation"],
+        "logic": "Money metrics. Grouped for context."
+      },
+      {
+        "order": 8,
+        "group_name": "Operational Health",
+        "layout": "Grid (2 columns on Desktop)",
+        "sections": ["execution", "risk", "blind_spots"],
+        "logic": "Engine room metrics. Grouped."
+      },
+      {
+        "order": 9,
+        "group_name": "Strategic Context",
+        "layout": "Grid (1 column / Stacked)",
+        "sections": ["alignment", "market", "memo"],
+        "logic": "Deep reading. Bottom of page for 'Study Mode'."
+      }
     ]
   },
-  "layout_system": {
-    "containers": {
-      "default": "max-w-7xl mx-auto px-6 sm:px-8 lg:px-12",
-      "narrow": "max-w-4xl mx-auto px-6 sm:px-8",
-      "reading": "max-w-2xl mx-auto px-4",
-      "full_width": "w-full px-6 sm:px-8 lg:px-12"
+  "component_styling": {
+    "cards": {
+      "base": "rounded-2xl backdrop-blur-md border border-black/5 shadow-sm",
+      "hover": "hover:shadow-md transition-shadow duration-300",
+      "glass": "bg-white/80"
     },
-    "spacing": {
-      "section_padding": "py-20 sm:py-32",
-      "section_padding_compact": "py-16 sm:py-24",
-      "element_gap": "gap-8 sm:gap-12"
+    "buttons": {
+      "action": "font-mono text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-transform hover:-translate-y-0.5 border"
     },
-    "alignment_rules": {
-      "hero": {
-        "headline": "text-center mx-auto max-w-4xl",
-        "body_container": "max-w-2xl mx-auto w-full",
-        "body_text": "text-left"
-      },
-      "standard_section": {
-        "heading_container": "max-w-3xl",
-        "heading_alignment": "text-left",
-        "grid_alignment": "justify-start"
-      }
+    "typography_rules": {
+      "headers": "font-serif tracking-tight text-gray-900",
+      "subheaders": "font-mono uppercase tracking-widest text-[10px] text-gray-400"
     }
   },
-  "typography_rules": {
-    "font_families": {
-      "heading": "Playfair Display",
-      "body": "DM Sans",
-      "mono": "JetBrains Mono"
-    },
-    "hierarchy": {
-      "h1": "text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]",
-      "h2": "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1]",
-      "h3": "text-xl sm:text-2xl font-bold tracking-tight",
-      "body_lead": "text-lg sm:text-xl text-slate-500 leading-relaxed font-medium",
-      "body": "text-base text-slate-500 leading-relaxed",
-      "label": "text-xs font-semibold uppercase tracking-widest text-orange-500 font-mono"
-    }
-  },
-  "color_palette_constraints": {
-    "primary": "#F97316",
-    "dark": "#0F172A",
-    "slate": {
-      "900": "#0F172A",
-      "500": "#64748B",
-      "400": "#94A3B8"
-    },
-    "backgrounds": {
-      "default": "#F5F7FA",
-      "white": "#FFFFFF",
-      "dark": "#0F172A"
-    },
-    "rule": "DO NOT INTRODUCE NEW COLORS. Use opacity variants of existing palette for depth."
-  },
-  "component_specific_instructions": {
-    "Hero": {
-      "container_class": "relative z-10 pt-32 sm:pt-48 pb-20 sm:pb-32 px-6 sm:px-8",
-      "fix": "Change body text container to 'max-w-2xl mx-auto w-full text-left'. Remove 'text-center' from the description paragraph."
-    },
-    "Cognition_Stats": {
-      "container_class": "max-w-7xl mx-auto",
-      "grid_class": "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-12 gap-y-10 border-y py-10"
-    },
-    "Connection_Diagram": {
-      "container_class": "relative w-full max-w-6xl mx-auto"
-    },
-    "Trust_Bar": {
-      "container_class": "max-w-7xl mx-auto px-6 sm:px-8",
-      "layout": "flex flex-wrap justify-between items-start gap-12"
-    },
-    "Stats_Bar": {
-      "container_class": "max-w-7xl mx-auto",
-      "grid_class": "grid grid-cols-2 md:grid-cols-4 w-full"
-    },
-    "Features_Four_Pillars": {
-      "container_class": "max-w-7xl mx-auto",
-      "heading_container": "mb-16 max-w-3xl"
-    },
-    "Comparison_Section": {
-      "container_class": "max-w-7xl mx-auto",
-      "heading_container": "mb-16 max-w-3xl",
-      "grid_class": "grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto"
-    },
-    "Value_Props_WIIFM": {
-      "container_class": "max-w-7xl mx-auto",
-      "grid_class": "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8"
-    },
-    "Pricing": {
-      "container_class": "max-w-7xl mx-auto",
-      "card_gap": "gap-6 lg:gap-8"
-    }
-  },
-  "implementation_steps": [
-    {
-      "step": 1,
-      "description": "Standardize Outer Containers",
-      "instruction": "Replace all `max-w-5xl`, `max-w-4xl`, `max-w-xl` (in section wrappers) with `max-w-7xl` to create a unified 'wide-screen' rail."
-    },
-    {
-      "step": 2,
-      "description": "Fix Hero Alignment",
-      "instruction": "Wrap the Hero description text (`Meet BIQc...`, `Your Chief Agent...`) in a `div.max-w-2xl.mx-auto.w-full.text-left` to satisfy the 'Centered Headline, Left Body' requirement."
-    },
-    {
-      "step": 3,
-      "description": "Normalize Vertical Spacing",
-      "instruction": "Update all section `py` values to `py-20 sm:py-32` for major sections and `py-16 sm:py-24` for secondary ones. No more random `py-10` or `pt-28`."
-    },
-    {
-      "step": 4,
-      "description": "Unify Horizontal Padding",
-      "instruction": "Ensure every `max-w-7xl` container has `px-6 sm:px-8 lg:px-12`."
-    }
+  "instructions_to_main_agent": [
+    "REORDER sections strictly according to the 'layout_strategy.reordering_map'.",
+    "GROUP the lower-priority sections (Financial, Operational, Strategic) into grid containers to reduce vertical scroll length.",
+    "MAINTAIN the existing content and mock data exactly.",
+    "ENSURE the 'System State' header remains sticky at the top.",
+    "USE the existing color variables and font definitions.",
+    "ADD 'data-testid' attributes to all reordered sections for testing."
+  ],
+  "universal_guidelines": [
+    "Do not use generic gradients.",
+    "Ensure 4.5:1 contrast for text.",
+    "Use generous padding (p-6, p-8) inside cards.",
+    "Avoid 'Inter' font; stick to the Playfair/DM Sans/JetBrains Mono stack.",
+    "All interactive elements must have hover states."
   ]
 }
