@@ -522,16 +522,16 @@ const LandingIntelligent = () => {
 
       {/* ── FEATURES ── */}
       <section className="relative z-10 py-12 sm:py-24 px-4 sm:px-6 lg:px-12">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8 sm:mb-12">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="mb-12 sm:mb-16 max-w-3xl">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-5 h-px bg-orange-500" />
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>The Functional Arsenal</span>
             </div>
-            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em', lineHeight: 1.08 }}>
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight leading-[1.1]" style={{ fontFamily: 'var(--font-heading)' }}>
               One platform.<br />Four pillars of intelligence.
             </h2>
-            <p className="text-sm sm:text-lg text-slate-500 max-w-lg" style={{ fontFamily: 'var(--font-body)' }}>Every screen built for decisions, not analysis.</p>
+            <p className="text-base sm:text-lg text-slate-500 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Every screen built for decisions, not analysis.</p>
           </div>
           <FeatureCards />
         </div>
