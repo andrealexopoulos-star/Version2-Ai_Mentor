@@ -3,7 +3,7 @@ import { supabase } from '../context/SupabaseAuthContext';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes — faster refresh for real-time feel
 
 /**
  * useSnapshot — Reads from intelligence_snapshots table.
