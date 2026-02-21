@@ -1,14 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../lib/api';
-import { X, Calendar, Video, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Calendar, Video, RefreshCw } from 'lucide-react';
+import { supabase } from '../context/SupabaseAuthContext';
 
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const MONO = "var(--font-mono)";
 const HEAD = "var(--font-heading)";
 const BODY = "var(--font-body)";
 
+const callCheckin = async (action, extra = {}) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/checkin-manager`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+    body: JSON.stringify({ action, ...extra }),
+  });
+  if (!res.ok) return null;
+  return res.json();
+};
+
 export const CheckInAlerts = () => {
   const [alerts, setAlerts] = useState([]);
-  const [showScheduler, setShowScheduler] = useState(null); // 'recalibration' | 'video_checkin'
+  const [showScheduler, setShowScheduler] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('10:00');
   const [submitting, setSubmitting] = useState(false);
