@@ -279,6 +279,21 @@ ${JSON.stringify(ctx, null, 2)}`;
 
     const aiData = await aiRes.json();
     const raw = aiData.choices?.[0]?.message?.content || "";
+    const usage = aiData.usage || {};
+
+    // Track usage
+    try {
+      await supabase.from("usage_tracking").insert({
+        user_id: user.id,
+        function_name: "strategic-console-ai",
+        api_provider: "openai",
+        model: "gpt-4o-mini",
+        tokens_in: usage.prompt_tokens || 0,
+        tokens_out: usage.completion_tokens || 0,
+        cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
+        called_at: new Date().toISOString(),
+      });
+    } catch {}
 
     if (mode === "brief") {
       // Parse JSON briefing
