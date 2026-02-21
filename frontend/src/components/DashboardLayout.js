@@ -109,8 +109,8 @@ const DashboardLayout = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [darkMode]);
 
-  // FEATURE FLAG: Disable notifications polling for PoC demo
-  const ENABLE_NOTIFICATIONS_POLLING = false;
+  // Notifications polling — enabled
+  const ENABLE_NOTIFICATIONS_POLLING = true;
 
   useEffect(() => {
     if (!ENABLE_NOTIFICATIONS_POLLING) return;
