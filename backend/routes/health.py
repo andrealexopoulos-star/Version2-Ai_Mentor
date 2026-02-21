@@ -92,7 +92,7 @@ async def warmup_edge_functions():
     if not supabase_url or not service_key:
         return {"status": "skip", "reason": "no credentials"}
 
-    functions = ["biqc-insights-cognitive", "intelligence-bridge", "sop-generator", "competitor-monitor", "cfo-cash-analysis"]
+    functions = ["biqc-insights-cognitive", "intelligence-bridge", "sop-generator", "competitor-monitor", "cfo-cash-analysis", "checkin-manager"]
     results = {}
 
     async with httpx.AsyncClient() as client:
