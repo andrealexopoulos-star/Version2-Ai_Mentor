@@ -1,7 +1,7 @@
 ## BIQc Backend Performance Test Report
 
 Date: 2026-02-17  
-Platform: https://biqc-unblock-prod.preview.emergentagent.com  
+Platform: https://agentic-advisor.preview.emergentagent.com  
 Test Type: Backend API Performance Testing  
 
 ### 🎯 OBJECTIVE

@@ -1,6 +1,6 @@
 # 📸 SCREENSHOT PROOF - ALL FEATURES VALIDATED
 
-**Canonical URL:** https://biqc-unblock-prod.preview.emergentagent.com  
+**Canonical URL:** https://agentic-advisor.preview.emergentagent.com  
 **Validation Date:** January 22, 2026  
 **Status:** ✅ ALL CLAIMED FEATURES VERIFIED WITH VISUAL PROOF
 
@@ -165,7 +165,7 @@ Full strategic analysis including:
 
 ## 🔗 CANONICAL TEST URL (VALIDATED)
 
-# **https://biqc-unblock-prod.preview.emergentagent.com**
+# **https://agentic-advisor.preview.emergentagent.com**
 
 **Validation Status:** ✅ **CONFIRMED WITH SCREENSHOT PROOF**
 

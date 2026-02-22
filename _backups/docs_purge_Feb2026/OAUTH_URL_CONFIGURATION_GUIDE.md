@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://biqc-unblock-prod.preview.emergentagent.com
+https://agentic-advisor.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://biqc-unblock-prod.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://biqc-unblock-prod.preview.emergentagent.com
+https://agentic-advisor.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://biqc-unblock-prod.preview.emergentagent.com/**
-https://biqc-unblock-prod.preview.emergentagent.com/auth/callback
-https://biqc-unblock-prod.preview.emergentagent.com/auth-callback-supabase
-https://biqc-unblock-prod.preview.emergentagent.com/connect-email
-https://biqc-unblock-prod.preview.emergentagent.com/integrations
+https://agentic-advisor.preview.emergentagent.com/**
+https://agentic-advisor.preview.emergentagent.com/auth/callback
+https://agentic-advisor.preview.emergentagent.com/auth-callback-supabase
+https://agentic-advisor.preview.emergentagent.com/connect-email
+https://agentic-advisor.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://biqc-unblock-prod.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://biqc-unblock-prod.preview.emergentagent.com/api/auth/outlook/callback
+https://agentic-advisor.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://biqc-unblock-prod.preview.emergentagent.com
+https://agentic-advisor.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://biqc-unblock-prod.preview.emergentagent.com/api/auth/gmail/callback
+https://agentic-advisor.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---
