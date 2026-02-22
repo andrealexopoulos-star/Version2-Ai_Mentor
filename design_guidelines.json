@@ -1,150 +1,142 @@
 {
-  "project_metadata": {
-    "app_name": "BIQc Cognitive Snapshot v2",
-    "target_audience": "Time-poor Australian SMB Owners",
-    "tone": "Executive Personal Assistant (Calm, Direct, Proactive)",
-    "aesthetic": "Executive Luxe (Clean, Serif-led, High-Whitespace)"
+  "identity": {
+    "name": "E1",
+    "persona": "The Anti-AI Designer",
+    "mission": "Create a 'Liquid Steel' executive operating system that feels controlled, decisive, and infrastructure-grade. No gamification, no excessive brightness.",
+    "principles": [
+      "Fusion over Imitation: Liquid Steel = FinTech Precision + Industrial Strength",
+      "Emotion First: The user 'Andre' feels calm, powerful, and in control.",
+      "Content is King: Data is the hero. Typography and spacing frame the data.",
+      "Contrast: Deep dark backgrounds (#0F1720) vs. Sharp Orange Accents (#FF6A00)."
+    ]
   },
-  "typography": {
-    "headings": {
-      "family": "Playfair Display, serif",
-      "usage": "Page titles, Section headers, Key Metrics",
-      "weights": ["Regular (400)", "SemiBold (600)", "Bold (700)"],
-      "instructions": "Use for all emotional or high-impact text. Do not use for dense data."
+  "theme": {
+    "name": "Liquid Steel",
+    "mode": "dark",
+    "colors": {
+      "background": "#0F1720",
+      "panel": "#141C26",
+      "border": "#243140",
+      "text": {
+        "primary": "#F4F7FA",
+        "secondary": "#9FB0C3",
+        "muted": "#64748B"
+      },
+      "accent": {
+        "primary": "#FF6A00",
+        "hover": "#E65E00",
+        "active": "#CC5200"
+      },
+      "status": {
+        "critical": "#FF6A00",
+        "warning": "#F59E0B",
+        "success": "#10B981",
+        "info": "#3B82F6"
+      }
     },
-    "body": {
-      "family": "DM Sans, sans-serif",
-      "usage": "Paragraphs, UI labels, descriptions",
-      "weights": ["Regular (400)", "Medium (500)"],
-      "instructions": "High legibility for reading."
+    "typography": {
+      "headings": {
+        "family": "Sora, sans-serif",
+        "weights": [600, 700],
+        "usage": "Page titles, card headers, section titles"
+      },
+      "body": {
+        "family": "Inter, sans-serif",
+        "weights": [400, 500],
+        "usage": "General text, labels, descriptions"
+      },
+      "metrics": {
+        "family": "JetBrains Mono, monospace",
+        "weights": [400, 500],
+        "usage": "KPIs, financial data, code snippets, IDs"
+      }
     },
-    "data": {
-      "family": "JetBrains Mono, monospace",
-      "usage": "Financial figures, Dates, Status tags, Action buttons",
-      "weights": ["Regular (400)"],
-      "instructions": "Use for anything that needs precision or represents a 'system' value."
-    }
-  },
-  "color_palette": {
-    "theme": "light",
-    "backgrounds": {
-      "primary": "#FAFAF8",
-      "card": "rgba(255,255,255,0.85)",
-      "header_sticky": "rgba(255,255,255,0.9)"
+    "spacing": {
+      "base": 4,
+      "scale": [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128],
+      "grid": "12-column",
+      "section_gap": "64px"
     },
-    "text": {
-      "primary": "#111827",
-      "secondary": "#374151",
-      "tertiary": "#6B7280",
-      "accent": "#9CA3AF"
-    },
-    "status_colors": {
-      "success": { "bg": "#F0FDF4", "text": "#166534", "border": "#BBF7D0" },
-      "warning": { "bg": "#FFFBEB", "text": "#92400E", "border": "#FDE68A" },
-      "error": { "bg": "#FEF2F2", "text": "#991B1B", "border": "#FECACA" },
-      "info": { "bg": "#F0F9FF", "text": "#0C4A6E", "border": "#BAE6FD" }
+    "visual_enhancers": {
+      "borders": "1px solid #243140",
+      "radius": "sm: 4px, md: 6px, lg: 8px",
+      "shadows": "none (flat, precision look) or very subtle ambient for float",
+      "glass": "backdrop-blur-md bg-[#141C26]/80 (Use sparingly for overlays)"
     }
   },
   "layout_strategy": {
-    "container": "max-w-4xl mx-auto px-6",
-    "spacing": "space-y-6",
-    "reordering_map": [
-      {
-        "order": 1,
-        "id": "system_state",
-        "component": "Header (Sticky)",
-        "logic": "The Anchor. Immediate pulse check."
-      },
-      {
-        "order": 2,
-        "id": "resolution_center",
-        "component": "Section",
-        "title": "Resolution Center — Needs Attention",
-        "logic": "What is on fire? The Inbox. Must be cleared first.",
-        "style": "Expanded, High Visibility"
-      },
-      {
-        "order": 3,
-        "id": "weekly_brief",
-        "component": "Section",
-        "title": "Weekly Brief — AI Actions",
-        "logic": "Proof of work. 'What did you do for me?' Quick dopamine hit.",
-        "style": "Compact/Collapsible (Default: Collapsed summary)"
-      },
-      {
-        "order": 4,
-        "id": "founder_vitals",
-        "component": "Section",
-        "title": "Founder Vitals",
-        "logic": "Personal capacity check before taking on more work.",
-        "style": "Card"
-      },
-      {
-        "order": 5,
-        "id": "inevitabilities",
-        "component": "Section",
-        "title": "Inevitabilities",
-        "logic": "Proactive radar. What is coming?",
-        "style": "List"
-      },
-      {
-        "order": 6,
-        "id": "priority",
-        "component": "Section",
-        "title": "Strategic Focus",
-        "logic": "The ONE thing to do after fires are out.",
-        "style": "Card"
-      },
-      {
-        "order": 7,
-        "group_name": "Financial Health",
-        "layout": "Grid (2 columns on Desktop)",
-        "sections": ["capital", "revenue", "reallocation"],
-        "logic": "Money metrics. Grouped for context."
-      },
-      {
-        "order": 8,
-        "group_name": "Operational Health",
-        "layout": "Grid (2 columns on Desktop)",
-        "sections": ["execution", "risk", "blind_spots"],
-        "logic": "Engine room metrics. Grouped."
-      },
-      {
-        "order": 9,
-        "group_name": "Strategic Context",
-        "layout": "Grid (1 column / Stacked)",
-        "sections": ["alignment", "market", "memo"],
-        "logic": "Deep reading. Bottom of page for 'Study Mode'."
-      }
-    ]
-  },
-  "component_styling": {
-    "cards": {
-      "base": "rounded-2xl backdrop-blur-md border border-black/5 shadow-sm",
-      "hover": "hover:shadow-md transition-shadow duration-300",
-      "glass": "bg-white/80"
-    },
-    "buttons": {
-      "action": "font-mono text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-transform hover:-translate-y-0.5 border"
-    },
-    "typography_rules": {
-      "headers": "font-serif tracking-tight text-gray-900",
-      "subheaders": "font-mono uppercase tracking-widest text-[10px] text-gray-400"
+    "container": "max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8",
+    "dashboard_grid": "grid grid-cols-12 gap-6",
+    "navigation": {
+      "sidebar": "Fixed left, width 280px, grouped by Intelligence, Execution, Systems, Governance",
+      "topbar": "Height 64px, Logo left, Status center, User right"
     }
   },
-  "instructions_to_main_agent": [
-    "REORDER sections strictly according to the 'layout_strategy.reordering_map'.",
-    "GROUP the lower-priority sections (Financial, Operational, Strategic) into grid containers to reduce vertical scroll length.",
-    "MAINTAIN the existing content and mock data exactly.",
-    "ENSURE the 'System State' header remains sticky at the top.",
-    "USE the existing color variables and font definitions.",
-    "ADD 'data-testid' attributes to all reordered sections for testing."
-  ],
+  "components": {
+    "buttons": {
+      "primary": "bg-[#FF6A00] hover:bg-[#E65E00] text-white font-semibold rounded-md px-4 py-2 transition-colors duration-200",
+      "secondary": "bg-[#141C26] border border-[#243140] text-[#F4F7FA] hover:bg-[#1E293B] rounded-md px-4 py-2 transition-colors duration-200",
+      "ghost": "text-[#9FB0C3] hover:text-[#F4F7FA] hover:bg-[#1E293B] rounded-md px-3 py-1.5 transition-colors duration-200"
+    },
+    "cards": {
+      "default": "bg-[#141C26] border border-[#243140] rounded-lg p-6 flex flex-col gap-4",
+      "metric": "bg-[#141C26] border border-[#243140] rounded-lg p-5 flex flex-col justify-between h-full"
+    },
+    "inputs": {
+      "default": "bg-[#0F1720] border border-[#243140] text-[#F4F7FA] placeholder-[#64748B] rounded-md px-3 py-2 focus:border-[#FF6A00] focus:ring-1 focus:ring-[#FF6A00] focus:outline-none transition-all duration-200"
+    },
+    "badges": {
+      "default": "bg-[#1E293B] text-[#9FB0C3] px-2 py-0.5 rounded text-xs font-mono uppercase tracking-wider",
+      "alert": "bg-[#FF6A00]/10 text-[#FF6A00] border border-[#FF6A00]/20 px-2 py-0.5 rounded text-xs font-mono uppercase tracking-wider"
+    }
+  },
+  "assets": {
+    "user_avatar": "https://images.unsplash.com/photo-1584940120505-117038d90b05?crop=entropy&cs=srgb&fm=jpg&w=150&q=80",
+    "logos": {
+      "salesforce": "https://logo.clearbit.com/salesforce.com",
+      "hubspot": "https://logo.clearbit.com/hubspot.com",
+      "stripe": "https://logo.clearbit.com/stripe.com",
+      "xero": "https://logo.clearbit.com/xero.com",
+      "slack": "https://logo.clearbit.com/slack.com",
+      "quickbooks": "https://logo.clearbit.com/quickbooks.intuit.com"
+    }
+  },
+  "pages": {
+    "login": {
+      "path": "/site/platform/login",
+      "description": "Minimalist, secure login. Liquid Steel theme. Logo + Credential fields + 'Secure Environment' badge."
+    },
+    "executive_overview": {
+      "path": "/site/platform/overview",
+      "description": "The command center. Health Strip (top), 'What Needs Attention' (cards), Financial Snapshot (charts), Intelligence Pulse."
+    },
+    "revenue_module": {
+      "path": "/site/platform/revenue",
+      "description": "Deep dive into pipeline, concentration, and churn. Dense data tables and trend lines."
+    },
+    "integrations": {
+      "path": "/site/platform/integrations",
+      "description": "Grid of connected tools. Slide-out panel for details. Status indicators are critical."
+    },
+    "alerts": {
+      "path": "/site/platform/alerts",
+      "description": "Prioritized list of actions. Critical (Orange), Moderate, Info. Clear CTAs."
+    },
+    "automations": {
+      "path": "/site/platform/automations",
+      "description": "IF/THEN builder interface. Visual logic flow. Controlled complexity."
+    }
+  },
   "universal_guidelines": [
-    "Do not use generic gradients.",
-    "Ensure 4.5:1 contrast for text.",
-    "Use generous padding (p-6, p-8) inside cards.",
-    "Avoid 'Inter' font; stick to the Playfair/DM Sans/JetBrains Mono stack.",
-    "All interactive elements must have hover states."
-  ]
+    "DO NOT use generic gradients. Use solid colors and subtle borders.",
+    "DO NOT use 'Inter' for Headings. Use 'Sora'.",
+    "Orange (#FF6A00) is for ACTIONS and ALERTS only. Do not use it for decoration.",
+    "Always use 'JetBrains Mono' for numbers, currency, and percentages.",
+    "Ensure all interactive elements have `data-testid` attributes.",
+    "Use `sonner` for toasts.",
+    "Use `lucide-react` for icons.",
+    "Mobile: Bottom tab nav, swipeable cards.",
+    "Desktop: Fixed sidebar, high-density grids."
+  ],
+  "instructions_to_main_agent": "You are building a high-fidelity mockup. Focus on the 'Liquid Steel' aesthetic. It should look like a tool for a CFO or COO—serious, precise, and expensive. Avoid whitespace overload; prefer dense, structured information hierarchy."
 }
