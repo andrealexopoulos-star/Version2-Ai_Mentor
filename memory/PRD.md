@@ -1,41 +1,40 @@
 # BIQc Platform - Product Requirements Document
 
-## Original Problem Statement
-Transform the BIQc platform into a high-performance, AI-driven strategic business intelligence tool for Australian SMEs. React frontend + FastAPI backend + Supabase (PostgreSQL).
-
 ## Design System: Liquid Steel
-- **Background**: #0F1720 (main), #141C26 (panels)
+- **Background**: #0F1720, panels #141C26, sidebar #0A1018
 - **Borders**: 1px solid #243140
 - **Text**: #FFFFFF (headings), #F4F7FA (primary), #9FB0C3 (secondary), #64748B (muted)
-- **Accent**: #FF6A00 (orange — alerts, actions, buttons ONLY)
-- **Typography**: Cormorant Garamond (headings — elegant serif), Inter (body), JetBrains Mono (metrics)
+- **Accent**: #FF6A00 (alerts, actions, active states)
+- **Typography**: Cormorant Garamond (elegant serif headings), Inter (body), JetBrains Mono (metrics)
 
-## Transformation Status
+## Transformation Complete — 4 Phases
 
-### Phase 1 — Font + Naming (Feb 22, 2026) COMPLETE
-- Replaced Sora with Cormorant Garamond across ALL pages (23+ pages)
-- Renamed "Executive Overview" → "BIQc Insights"
-- Fixed all font readability issues (explicit #FFFFFF white on dark backgrounds)
-- Testing: 100% pass (iteration_55.json)
+### Phase 1 ✅ Fonts + Naming (iteration_55 — 100%)
+- Cormorant Garamond across all 23+ pages
+- Renamed Executive Overview → BIQc Insights
+- Fixed all font readability issues
 
-### Phase 2 — Login Transformation (NEXT)
-- Replace /login-supabase with Liquid Steel themed login
-- Ensure Google/Microsoft OAuth + email login work
+### Phase 2 ✅ Login/Register (iteration_56 — 100%)
+- Both pages transformed to Liquid Steel
+- Google/Microsoft OAuth + email login all functional
+- Real login tested with credentials
 
-### Phase 3 — Platform Transformation (UPCOMING)
-- Replace DashboardLayout with Liquid Steel PlatformLayout
-- Wire all authenticated routes to new layout
-- Add SoundBoard to Intelligence pages
+### Phase 3 ✅ Platform Layout (iteration_57 — 100%)
+- DashboardLayout.js rewritten — wraps ALL authenticated pages
+- Dark sidebar, topbar, content area
+- All features preserved: tutorials, notifications, calibration, collapse, mobile, admin link
 
-### Phase 4 — Super Admin Portal (UPCOMING)
-- Sales page, Support page, User Admin (create/suspend), Billing
-- Accessible when logged in as superadmin (andre@thestrategysquad.com.au)
+### Phase 4 ✅ Super Admin (iteration_58 — 95%)
+- 4 tabs: User Admin, Sales, Support, Billing
+- User Admin: search, user list, detail panel, suspend/unsuspend, impersonate
+- Sales: pipeline with mock data (needs CRM for live data)
+- Support: client health monitor
+- Billing: Stripe placeholder with 3 subscription tiers
 
-## Pages Built
-- 12 website pages (/site/*)
-- 6 platform mockup pages (/site/platform/*)
-- 5 industry mockup pages (/site/platform/industry/*)
-- Total: 23 Liquid Steel pages
+## What's MOCKED in Super Admin
+- Sales pipeline data (static)
+- Billing metrics ($0 — no Stripe connected)
+- Support health scores (derived from user position)
 
 ## Test Credentials
 - Superadmin: andre@thestrategysquad.com.au / BIQc_Test_2026!
