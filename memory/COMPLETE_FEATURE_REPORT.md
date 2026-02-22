@@ -186,25 +186,428 @@ Two sections:
 
 ---
 
-### CATEGORY M: HALF-BUILT / DISCUSSED BUT NOT COMPLETE
+### CATEGORY M: HALF-BUILT / DISCUSSED BUT NOT COMPLETE — DETAILED BREAKDOWN
 
-| # | Feature | Current State | What's Missing |
-|---|---|---|---|
-| M1 | Auto-Email execution | UI buttons exist | Need Resend or SendGrid integration |
-| M2 | Quick-SMS execution | UI buttons exist | Need Twilio integration |
-| M3 | Hand Off execution | UI button exists | Need Merge.dev Ticketing or direct API |
-| M4 | Voice Chat | Full UI component exists | Need voice AI provider (Daily.co/Twilio Voice) |
-| M5 | Subscription billing | Pricing page shows tiers | Need Stripe integration |
-| M6 | Data export | — | Not built. Privacy Act requirement. |
-| M7 | Full-text search | GIN indexes exist in DB | No search UI. |
-| M8 | Notification preferences | Bell works | No user preference settings |
-| M9 | Integration disconnect buttons | Backend works | Frontend missing for CRM/Accounting |
-| M10 | calibration-business-dna deployment | Edge Function built | Not deployed to Supabase |
-| M11 | calibration-sync deployment | Edge Function built | Not deployed to Supabase |
-| M12 | Pre-account Snapshot (10/10 plan) | Planned | Not built — would show value before signup |
-| M13 | Shareable Snapshot Export | Planned | Not built — PDF/link sharing of intelligence |
-| M14 | Team invitation system | Backend endpoint exists (`/account/users/invite`) | No frontend UI |
-| M15 | Advisory system | Backend endpoints exist (`/advisory/*`) | No frontend UI |
+---
+
+#### M1. AUTO-EMAIL EXECUTION
+**What exists today:**
+- UI: Orange "Auto-Email" button with Mail icon appears on every resolution card in `AdvisorWatchtower.js` (line 22). Also in Liquid Steel mockup pages (`ExecOverview.js`, `AlertsPage.js`).
+- Backend: `email.py` (1,855 lines) has full Gmail/Outlook connection, sync, and inbox reading. It can READ emails but cannot SEND emails on the user's behalf.
+- No email composition/send endpoint exists.
+- No email provider (Resend, SendGrid) is integrated.
+
+**What the button should do:**
+1. User clicks "Auto-Email" on an alert card (e.g., "Invoice #1847 overdue 12 days")
+2. BIQc generates a draft email using AI (using business context + alert data + owner's communication style from calibration)
+3. User previews the draft, can edit
+4. Clicks "Send" → email goes out via connected Gmail/Outlook OR via Resend/SendGrid
+5. Action logged to `advisory_log` table
+
+**What's missing:**
+- Email composition API endpoint (draft generation)
+- Email send endpoint (either via existing Gmail/Outlook OAuth tokens OR via Resend/SendGrid)
+- Draft preview UI (modal with editable email body, subject, recipient)
+- Send confirmation + audit logging
+- **Integration needed:** Resend OR SendGrid (for users without Gmail/Outlook connected) OR use existing OAuth tokens to send via Gmail API / Microsoft Graph API
+
+**Effort estimate:** 16-24 hours
+**Priority:** P1 — This is the #1 feature that makes BIQc "agentic" not just "advisory"
+
+---
+
+#### M2. QUICK-SMS EXECUTION
+**What exists today:**
+- UI: Green "Quick-SMS" button with MessageSquare icon on resolution cards in `AdvisorWatchtower.js` (line 23). Also in Liquid Steel mockup pages.
+- No SMS backend exists anywhere in the codebase.
+- No Twilio or any SMS provider is integrated.
+- No phone number storage exists for contacts.
+
+**What the button should do:**
+1. User clicks "Quick-SMS" on an urgent alert
+2. BIQc generates a short text message using AI (calibrated to owner's style)
+3. User previews, selects recipient phone number (from CRM contacts if available)
+4. Clicks "Send" → SMS goes out via Twilio
+5. Action logged
+
+**What's missing:**
+- Twilio integration (account, API key, phone number)
+- SMS composition endpoint
+- Phone number lookup from CRM contacts (Merge.dev)
+- SMS send endpoint
+- Preview UI (modal with editable message, recipient phone)
+- Audit logging
+- **Integration needed:** Twilio (for Australian SMS — need AU phone number)
+
+**Effort estimate:** 16-24 hours
+**Priority:** P1
+
+---
+
+#### M3. HAND OFF EXECUTION
+**What exists today:**
+- UI: Orange "Hand Off" button with Users icon on resolution cards in `AdvisorWatchtower.js` (line 24). Also in mockup pages.
+- Merge.dev is already integrated for CRM (HubSpot, Salesforce) and Accounting (Xero, MYOB).
+- Merge.dev also supports a **Ticketing** category (Asana, Monday, Jira, Trello) but this is NOT connected.
+- No task creation logic exists.
+
+**What the button should do:**
+1. User clicks "Hand Off" on an alert
+2. BIQc generates a task description from the alert (title, context, suggested assignee)
+3. User selects which team member to assign to (from CRM contacts or Settings team list)
+4. Clicks "Create Task" → task created in connected project management tool (via Merge.dev Ticketing) OR stored internally
+5. Action logged
+
+**What's missing:**
+- Merge.dev Ticketing category connection (Asana, Monday, Jira) — connection flow in `integrations.py`
+- Task creation API endpoint
+- Assignee selection UI (dropdown of team members)
+- Internal task storage (if no PM tool connected) — new `tasks` table
+- Task status tracking
+- **Integration needed:** Merge.dev Ticketing category activation (API already exists, just need to add the category to the connection flow)
+
+**Effort estimate:** 20-30 hours
+**Priority:** P2
+
+---
+
+#### M4. VOICE CHAT (AI VOICE ADVISOR)
+**What exists today:**
+- UI: Full 595-line `VoiceChat.js` component with:
+  - Mic toggle, speaker toggle, video toggle
+  - Call duration timer
+  - AI speaking/user speaking indicators
+  - Audio visualisation (waveform)
+  - WebRTC peer connection setup
+  - Connect/disconnect flow
+- Backend: `server.py` imports `OpenAIChatRealtime` and registers voice routes at `/api/voice`
+  - Session creation endpoint: `/api/voice/realtime/session`
+  - WebRTC negotiation endpoint: `/api/voice/realtime/negotiate`
+- The WebRTC connection targets **OpenAI's Realtime API** (GPT-4o voice mode)
+
+**What works:**
+- The UI renders. Buttons respond. Audio context initialises.
+- WebRTC peer connection attempts to establish.
+
+**What's missing:**
+- OpenAI Realtime API requires specific model access (`gpt-4o-realtime-preview`) — may not be available on all API keys
+- Voice chat needs the AI to have the user's business context (currently no context injection into voice session)
+- Error handling when WebRTC fails to connect
+- Mobile audio handling (iOS Safari has specific AudioContext requirements)
+- Call recording / transcript saving to `chat_history` table
+- **No integration needed** — uses existing OpenAI API key, but needs the Realtime API model enabled
+
+**Effort estimate:** 8-16 hours (mostly debugging + context injection)
+**Priority:** P3
+
+---
+
+#### M5. SUBSCRIPTION BILLING (Stripe)
+**What exists today:**
+- Frontend: `Settings.js` has a "Billing & Subscription" tab (line 609) showing:
+  - "Current Plan: Free Tier" (hardcoded)
+  - "Upgrade Plan" button (does nothing)
+  - "Payment Method: No payment method on file" (hardcoded)
+- Frontend: `Pricing.js` (391 lines) shows 3 tiers with pricing cards
+- Backend: `profile.py` has `subscription_tier` field (free/professional/enterprise) — read/write works
+- DB: `users.subscription_tier` column exists
+- No Stripe SDK installed. No Stripe API key configured. No checkout flow. No webhook handler.
+
+**What should work:**
+1. User clicks "Upgrade Plan" → Stripe Checkout session opens
+2. User enters card → payment processed
+3. Webhook fires → `users.subscription_tier` updated to "professional" or "enterprise"
+4. Features unlock based on tier
+5. Monthly/annual billing cycle
+6. Cancel/downgrade flow
+7. Invoice history visible in Settings
+
+**What's missing:**
+- Stripe SDK installation (`pip install stripe`)
+- Stripe API keys (publishable + secret)
+- Checkout session creation endpoint
+- Webhook handler endpoint (`/api/stripe/webhook`)
+- Subscription management endpoints (cancel, upgrade, downgrade)
+- Invoice history endpoint
+- Feature gating logic (what features are available per tier)
+- Stripe Customer creation on signup
+- **Integration needed:** Stripe (test key already available in pod environment)
+
+**Effort estimate:** 24-40 hours
+**Priority:** P1 (required for revenue)
+
+---
+
+#### M6. DATA EXPORT ("Download My Data")
+**What exists today:**
+- Backend: `data_center.py` line 87 has a `download_data_file` endpoint — but this downloads individual uploaded files, NOT a full data export.
+- No "Export all my data" functionality exists.
+- No GDPR/Privacy Act compliance export feature.
+
+**What should work:**
+1. User goes to Settings → "Download My Data" button
+2. System compiles: business profile, strategy profiles, intelligence snapshots, SOPs, documents, chat history, advisory log, observation events
+3. Generates a ZIP file with JSON + PDF exports
+4. Download link sent to email or available immediately
+
+**What's missing:**
+- Export compilation endpoint (aggregate all user data across tables)
+- ZIP file generation
+- JSON serialisation of all user records
+- PDF generation for reports/SOPs
+- Download delivery mechanism (presigned URL or direct download)
+- **No external integration needed** — all data is in Supabase
+
+**Effort estimate:** 8-16 hours
+**Priority:** P2 (legal requirement under Privacy Act 1988)
+
+---
+
+#### M7. FULL-TEXT SEARCH
+**What exists today:**
+- DB: GIN indexes exist on multiple tables:
+  - `observation_events.payload` (JSONB GIN index)
+  - `cognitive_profiles.immutable_reality` (JSONB GIN index)
+  - `cognitive_profiles.behavioural_truth` (JSONB GIN index)
+- These indexes enable fast full-text and JSONB queries
+- No search UI exists anywhere in the frontend
+- No search API endpoint exists
+
+**What should work:**
+1. Global search bar in the top navigation bar
+2. User types a query → searches across: intelligence snapshots, SOPs, documents, business profiles, chat history, advisory log
+3. Results grouped by type (Intelligence, Documents, SOPs, Conversations)
+4. Click result → navigates to relevant page
+
+**What's missing:**
+- Search API endpoint (query across multiple tables with relevance ranking)
+- Frontend search bar component in `DashboardLayout.js` header
+- Search results dropdown/page
+- Relevance ranking logic
+- **No external integration needed** — Supabase supports full-text search natively
+
+**Effort estimate:** 12-20 hours
+**Priority:** P2
+
+---
+
+#### M8. NOTIFICATION PREFERENCES
+**What exists today:**
+- Frontend: `Settings.js` has "Preferences" tab (line 200) with:
+  - Communication Style selector (Concise / Conversational / Detailed) — works
+  - Advice style stored in `user_operator_profile`
+- Backend: Notification scanning works (`/notifications/alerts` in `profile.py`) — scans emails for complaints, calendar for meetings, intelligence for signals
+- Notification bell with count and dropdown — works
+- Polling every 5 minutes — works
+- BUT: No way for user to choose WHICH notification types they receive
+
+**What should work:**
+1. Settings → Notification Preferences section showing toggles:
+   - Email intelligence alerts (on/off)
+   - Calendar conflict alerts (on/off)
+   - Financial risk alerts (on/off)
+   - Competitor activity alerts (on/off)
+   - Compliance deadline alerts (on/off)
+   - Recalibration reminders (on/off)
+2. Notification severity threshold (Critical only / Critical + Moderate / All)
+3. Delivery method (In-app only / In-app + Email digest / In-app + SMS for critical)
+
+**What's missing:**
+- `notification_preferences` table or JSONB column in `users`
+- Preferences UI in Settings page
+- Backend filtering logic in `/notifications/alerts` to respect preferences
+- Email digest system (daily/weekly summary email)
+- **No external integration needed** for in-app; needs email provider for digests
+
+**Effort estimate:** 8-12 hours
+**Priority:** P2
+
+---
+
+#### M9. INTEGRATION DISCONNECT BUTTONS (CRM/Accounting)
+**What exists today:**
+- Backend: Full disconnect logic exists:
+  - `/merge/disconnect` (line 252 in `integrations.py`) — handles CRM + Accounting disconnection via Merge.dev
+  - `/integrations/google-drive/disconnect` (line 1164) — Google Drive
+  - `/outlook/disconnect` — Outlook
+  - `/gmail/disconnect` — Gmail
+- Frontend: Disconnect buttons EXIST for:
+  - Gmail ✅ (line 590 in `Integrations.js`)
+  - Outlook ✅ (line 548)
+  - Google Drive ✅
+  - **Merge.dev (CRM/Accounting)** ✅ — Actually EXISTS! (line 915-921, uses `/merge/disconnect`)
+- The disconnect button on CRM/Accounting cards IS implemented but only shows when `isConnected` is true and `connectionState.source === 'merge'`
+
+**What's actually missing:**
+- The disconnect button exists but may be **visually hidden or hard to find** due to card layout
+- Need to verify the button is visible and functional for all Merge.dev integrations
+- Need to add confirmation modal + success toast
+
+**Effort estimate:** 2-4 hours (UI visibility fix + testing)
+**Priority:** P3 (mostly done, just needs verification)
+
+---
+
+#### M10. CALIBRATION-BUSINESS-DNA DEPLOYMENT
+**What exists today:**
+- Edge Function: `calibration-business-dna/index.ts` — 275 lines, fully built
+  - Takes website URL
+  - Scrapes via Firecrawl API
+  - Sends to GPT-4o for extraction
+  - Writes ALL Business DNA fields to `business_profiles` table (Market, Product, Team, Strategy tabs)
+  - Also uses Perplexity for supplementary market research
+- Referenced in Admin Dashboard (line 378) as a known Edge Function
+- NOT called from the calibration flow currently — calibration uses `watchtower-brain` instead for the Strategic Map
+
+**What's missing:**
+- **Deployment to Supabase** — user must run: `supabase functions deploy calibration-business-dna`
+- Secrets must be set: `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `FIRECRAWL_API_KEY`
+- Frontend integration in calibration flow — after user provides website URL, call this function to auto-fill Business DNA
+- Chain: URL input → `calibration-business-dna` → `calibration-psych` → done
+
+**Effort estimate:** 2 hours (deployment + wiring) — code is complete
+**Priority:** P0 (massive UX improvement — user gets full profile without filling forms)
+
+---
+
+#### M11. CALIBRATION-SYNC DEPLOYMENT
+**What exists today:**
+- Edge Function: `calibration-sync/index.ts` — 182 lines, fully built
+  - Reads full calibration conversation history
+  - Uses GPT to extract 16+ structured fields
+  - Writes to `business_profiles` + `strategy_profiles`
+  - Fields: business_name, industry, business_stage, location, target_market, products, value_proposition, team_size, years_operating, goals, challenges, growth_strategy, competitive_advantages, mission_statement, business_model
+- **Already called from frontend:**
+  - `useCalibrationState.js` line 110 — calls after calibration completes
+  - `Settings.js` line 41 — "Sync Profile" button calls it manually
+- But the function is NOT deployed, so these calls fail silently
+
+**What's missing:**
+- **Deployment to Supabase** — user must run: `supabase functions deploy calibration-sync`
+- Secrets: `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+- That's it. Frontend integration already exists. Deploy = instant value.
+
+**Effort estimate:** 30 minutes (deployment only — everything else is done)
+**Priority:** P0 (Settings page is blank without this)
+
+---
+
+#### M12. PRE-ACCOUNT SNAPSHOT (Onboarding 10/10 Plan — Phase 2)
+**What exists today:**
+- Detailed specification in `/app/memory/ONBOARDING_10_10_IMPLEMENTATION_PLAN.md` (Phase 2, lines 124-196)
+- Architecture designed:
+  - New Edge Function: `public-snapshot` (no auth required)
+  - User enters website URL on landing page (before signup)
+  - Function scrapes website → runs GPT analysis → returns instant business snapshot
+  - Stored in `public_snapshots` table
+  - After signup, snapshot linked to user account via `converted_to_user_id`
+- No code has been written
+
+**What it should do:**
+1. Visitor lands on BIQc website
+2. Enters their website URL in a hero input field
+3. Within 20 seconds, sees a mini-intelligence snapshot: industry detected, competitors found, risks identified, opportunities spotted
+4. Visitor thinks "wow, this actually knows my business" → signs up
+5. Snapshot carries over to their account after registration
+
+**What's missing:**
+- `public-snapshot` Edge Function (must be written)
+- `public_snapshots` DB table (schema designed but not created)
+- Landing page UI: URL input field + results display
+- Conversion tracking (which snapshots led to signups)
+- **All code needs to be written from scratch**
+
+**Effort estimate:** 40-60 hours
+**Priority:** P1 (single biggest conversion lever — show value before commitment)
+
+---
+
+#### M13. SHAREABLE SNAPSHOT EXPORT (Onboarding 10/10 Plan — Phase 10)
+**What exists today:**
+- Specification in ONBOARDING_10_10_IMPLEMENTATION_PLAN.md (Phase 10, lines 642-678)
+- Two approaches evaluated:
+  - Option A: React-PDF (`@react-pdf/renderer`) — generate PDF in frontend
+  - Option B: Puppeteer/Playwright — render React component to PDF server-side
+- "Share with team" link concept: unique URL for read-only access
+
+**What it should do:**
+1. User clicks "Export" on any intelligence snapshot or report
+2. Generates a branded PDF with BIQc header, executive summary, key metrics, recommendations
+3. "Share with team" generates a unique link — colleague can view read-only, optionally create account
+4. PDF can be downloaded, emailed, or shared via link
+
+**What's missing:**
+- PDF generation library installation
+- PDF template component
+- Share link generation + storage (`shared_snapshots` table)
+- Read-only public view page
+- Expiry/access control for shared links
+- **All code needs to be written**
+
+**Effort estimate:** 24-40 hours
+**Priority:** P2
+
+---
+
+#### M14. TEAM INVITATION SYSTEM
+**What exists today:**
+- Backend: `profile.py` has team-related fields:
+  - `users.account_id` — links user to account/workspace
+  - `users.is_master_account` — owner flag
+  - `workspace_helpers.py` — get/create workspace for user
+  - Account concept exists: `accounts` table with id, name
+- Backend `deps.py` has role gates: `get_client_admin()` accepts owner, admin, client_admin, user_admin roles
+- No invitation endpoint found in search (the `/account/users/invite` may have been removed or never built)
+- No invitation UI exists
+
+**What it should do:**
+1. Owner goes to Settings → Team tab
+2. Clicks "Invite Team Member"
+3. Enters: email, name, role (Viewer / Editor / Admin)
+4. Invitee receives email with signup link
+5. On signup, invitee is automatically linked to owner's account (`account_id`)
+6. Invitee sees platform filtered to their role permissions
+
+**What's missing:**
+- Invitation API endpoint (create invite, send email)
+- `team_invitations` table (email, role, token, status, expires_at)
+- Invitation email template
+- Role-based UI filtering (which pages/features each role can access)
+- Team management UI in Settings (list members, change roles, remove)
+- **Integration needed:** Email provider for sending invite emails (Resend/SendGrid — same as M1)
+
+**Effort estimate:** 20-30 hours
+**Priority:** P2 (important for multi-user businesses)
+
+---
+
+#### M15. ADVISORY SYSTEM (Confidence Tracking + Outcome Learning)
+**What exists today:**
+- Backend: Full advisory system in `cognitive.py` with 5 endpoints:
+  1. `GET /advisory/confidence` (line 138) — Returns current confidence level for the user's intelligence
+  2. `POST /advisory/log` (line 153) — Logs an AI recommendation with: type, recommendation, confidence, context, data_sources
+  3. `POST /advisory/outcome` (line 199) — Records whether a recommendation was followed and what happened (outcome_type: followed/ignored/modified, result: positive/negative/neutral, notes)
+  4. `GET /advisory/history` (line 228) — Returns full advisory log with optional filtering by type, outcome, and date range
+  5. `GET /advisory/escalations` (line 261) — Returns recommendations that were escalated (high severity or ignored)
+- DB: `advisory_log` table exists and is queryable
+- No frontend UI exists for any of these endpoints
+
+**What it should do:**
+1. Every time BIQc recommends an action, it's logged to `advisory_log` with confidence score
+2. User can mark outcomes: "I followed this advice and it worked" / "I ignored this and here's what happened"
+3. Over time, BIQc learns which types of advice this user follows → adjusts confidence and recommendations
+4. Advisory history page shows: all past recommendations, their outcomes, and BIQc's learning
+5. Escalation view shows: critical advice that was ignored or hasn't been acted on
+
+**What's missing:**
+- Frontend page/panel showing advisory history with outcome logging
+- Outcome recording UI (after an alert is resolved, prompt user: "How did this go?")
+- Confidence display in Executive Overview (show BIQc's confidence in its own recommendations)
+- Learning loop: feed outcomes back into the cognitive engine prompt
+- **No external integration needed** — all backend exists
+
+**Effort estimate:** 12-20 hours
+**Priority:** P2 (makes BIQc smarter over time — significant differentiation)
 
 ---
 
