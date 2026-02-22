@@ -1,0 +1,101 @@
+import React from 'react';
+import PlatformLayout from '../../components/website/PlatformLayout';
+import { Workflow, Play, Pause, Edit, FileText, ToggleLeft, ToggleRight, Clock, Zap, Mail, AlertTriangle, DollarSign, Users } from 'lucide-react';
+
+const SORA = "'Sora', sans-serif";
+const INTER = "'Inter', sans-serif";
+const MONO = "'JetBrains Mono', monospace";
+
+const automations = [
+  { id: 1, name: 'Overdue Invoice Follow-up', active: true, condition: 'Invoice is overdue > 7 days AND client has not responded', action: 'Send automated payment reminder via email. Escalate to phone after 48 hours.', runs: 12, lastRun: '2 hours ago', icon: DollarSign },
+  { id: 2, name: 'New Lead Auto-Response', active: true, condition: 'New lead received AND not contacted within 4 hours', action: 'Send personalised intro email from CRM template. Log to HubSpot.', runs: 34, lastRun: '6 hours ago', icon: Mail },
+  { id: 3, name: 'Churn Risk Alert', active: true, condition: 'Client engagement score drops below 40% AND response time increases > 2x', action: 'Flag client as at-risk. Notify account manager. Draft re-engagement email.', runs: 5, lastRun: '3 days ago', icon: AlertTriangle },
+  { id: 4, name: 'Overtime Threshold Alert', active: false, condition: 'Any team member logs > 45 hours in a week', action: 'Alert operations lead. Suggest workload redistribution. Block additional scheduling.', runs: 8, lastRun: '1 week ago', icon: Users },
+];
+
+const AutomationCard = ({ auto }) => (
+  <div className="rounded-lg overflow-hidden" style={{ background: '#141C26', border: `1px solid ${auto.active ? '#243140' : '#1E293B'}`, opacity: auto.active ? 1 : 0.7 }} data-testid={`automation-${auto.id}`}>
+    <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-md flex items-center justify-center" style={{ background: auto.active ? '#FF6A00' + '15' : '#243140' }}>
+          <auto.icon className="w-4 h-4" style={{ color: auto.active ? '#FF6A00' : '#64748B' }} />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>{auto.name}</h3>
+          <div className="flex items-center gap-3 mt-0.5">
+            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{auto.runs} runs</span>
+            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Last: {auto.lastRun}</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><Edit className="w-3.5 h-3.5" /></button>
+        <button className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><FileText className="w-3.5 h-3.5" /></button>
+        {auto.active ? (
+          <div className="w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5" style={{ background: '#FF6A00' }}>
+            <div className="w-4 h-4 rounded-full bg-white ml-auto" />
+          </div>
+        ) : (
+          <div className="w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5" style={{ background: '#243140' }}>
+            <div className="w-4 h-4 rounded-full bg-[#64748B]" />
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* IF / THEN blocks */}
+    <div className="px-5 pb-4 space-y-2" style={{ borderTop: '1px solid #243140' }}>
+      <div className="flex gap-3 pt-3">
+        <span className="text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wider shrink-0 h-fit" style={{ fontFamily: MONO, color: '#3B82F6', background: '#3B82F6' + '15', border: '1px solid #3B82F620' }}>IF</span>
+        <div className="flex-1 p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+          <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>{auto.condition}</p>
+        </div>
+      </div>
+      <div className="flex gap-3">
+        <span className="text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wider shrink-0 h-fit" style={{ fontFamily: MONO, color: '#10B981', background: '#10B981' + '15', border: '1px solid #10B98120' }}>THEN</span>
+        <div className="flex-1 p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+          <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>{auto.action}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const AutomationsPage = () => (
+  <PlatformLayout title="Automations">
+    <div className="space-y-6 max-w-[900px]">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: INTER }}>Automated workflows triggered by business signals.</p>
+        </div>
+        <button className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ background: '#FF6A00', fontFamily: INTER }}>
+          <Workflow className="w-4 h-4" /> New Automation
+        </button>
+      </div>
+
+      {/* Summary */}
+      <div className="flex gap-4">
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>Active</span>
+          <span className="text-sm font-semibold text-[#10B981]" style={{ fontFamily: MONO }}>{automations.filter(a => a.active).length}</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>Paused</span>
+          <span className="text-sm font-semibold text-[#64748B]" style={{ fontFamily: MONO }}>{automations.filter(a => !a.active).length}</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>Total Runs</span>
+          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{automations.reduce((s, a) => s + a.runs, 0)}</span>
+        </div>
+      </div>
+
+      {/* Automation cards */}
+      <div className="space-y-4">
+        {automations.map(a => <AutomationCard key={a.id} auto={a} />)}
+      </div>
+    </div>
+  </PlatformLayout>
+);
+
+export default AutomationsPage;
