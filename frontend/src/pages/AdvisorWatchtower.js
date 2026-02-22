@@ -131,16 +131,16 @@ const AdvisorWatchtower = () => {
     <DashboardLayout>
       <div className="min-h-[calc(100vh-56px)]" style={{ background: '#FAFAF8', fontFamily: HEAD }} data-testid="biqc-insights-page">
 
-        {/* LOADING */}
+        {/* LOADING — Animated cognitive screen */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mb-5" />
-            <p className="text-sm font-medium" style={{ color: '#374151' }}>Cognitive system initialising...</p>
-          </div>
+          <CognitiveLoadingScreen
+            mode={cacheAge === null ? 'first' : 'returning'}
+            ownerName={owner}
+          />
         )}
 
         {/* ERROR */}
-        {error && !loading && (
+        {error && !loading && !cognitive && (
           <div className="max-w-3xl mx-auto px-6 py-16 text-center">
             <p className="text-sm" style={{ color: '#D97706' }}>{error}</p>
             <button onClick={refresh} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #E5E7EB' }}>Retry</button>
