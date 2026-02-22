@@ -69,7 +69,7 @@ const MiniChart = ({ data, color }) => {
 };
 
 const ExecOverview = () => (
-  <PlatformLayout title="Executive Overview">
+  <PlatformLayout title="BIQc Insights">
     <div className="space-y-6 max-w-[1200px]">
       {/* Greeting */}
       <div>
