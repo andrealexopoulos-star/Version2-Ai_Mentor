@@ -98,7 +98,7 @@ function parseToGroups(c) {
 }
 
 const AdvisorWatchtower = () => {
-  const { cognitive, sources, owner, timeOfDay, loading, error, refreshing, refresh } = useSnapshot();
+  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
   const c = cognitive || {};
 
   // Parse system state (handle both string and object formats)
