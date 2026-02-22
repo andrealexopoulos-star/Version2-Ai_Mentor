@@ -210,75 +210,85 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
   const isFirst = mode === 'first';
   const [progress, setProgress] = useState(0);
 
-  // Randomly select content — different every time
-  const content = useMemo(() => {
-    const r = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    return {
-      headline: isFirst ? r(FIRST_TIME_HEADLINES) : r(RETURN_HEADLINES),
-      sub: isFirst ? r(FIRST_TIME_SUBS) : r(RETURN_SUBS),
-      scene: SCENES[Math.floor(Math.random() * SCENES.length)],
-      steps: isFirst ? r(STEP_SETS.first) : r(STEP_SETS.returning),
-    };
+  const pack = useMemo(() => {
+    if (isFirst) return SCENE_PACKS[Math.floor(Math.random() * SCENE_PACKS.length)];
+    const rp = RETURN_PACKS[Math.floor(Math.random() * RETURN_PACKS.length)];
+    // Use a random first-time scene animation for returning users too
+    const base = SCENE_PACKS[Math.floor(Math.random() * SCENE_PACKS.length)];
+    return { ...base, headline: rp.headline, sub: rp.sub, emoji: rp.emoji };
   }, [isFirst]);
 
-  // Animate progress
+  const steps = useMemo(() => {
+    const sets = isFirst ? STEP_SETS.first : STEP_SETS.returning;
+    return sets[Math.floor(Math.random() * sets.length)];
+  }, [isFirst]);
+
   useEffect(() => {
     const duration = isFirst ? 12000 : 8000;
-    const interval = setInterval(() => {
-      setProgress(p => Math.min(p + 1, 100));
-    }, duration / 100);
+    const interval = setInterval(() => setProgress(p => Math.min(p + 1, 100)), duration / 100);
     return () => clearInterval(interval);
   }, [isFirst]);
 
-  const visibleSteps = content.steps.filter((_, i) => {
-    const threshold = (i / content.steps.length) * 80;
-    return progress > threshold;
-  });
+  const visibleSteps = steps.filter((_, i) => progress > (i / steps.length) * 80);
+  const extras = pack.extras ? pack.extras(progress) : [];
+  const emojiStyle = pack.anim ? pack.anim(progress) : {};
 
   return (
     <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6" style={{ background: '#0F172A' }} data-testid="cognitive-loading">
-      <div className="max-w-lg w-full text-center">
+      <style>{`
+        @keyframes coffeeWiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+        @keyframes steam{0%{opacity:0.6;transform:translateY(0)}100%{opacity:0;transform:translateY(-20px)}}
+        @keyframes rocketShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+        @keyframes flame{0%,100%{transform:scaleY(1);opacity:0.8}50%{transform:scaleY(1.3);opacity:1}}
+        @keyframes starTwinkle{0%,100%{opacity:0.3}50%{opacity:1}}
+        @keyframes robotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes gearSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+        @keyframes detectiveSearch{0%,100%{transform:translateX(0) rotate(-5deg)}50%{transform:translateX(10px) rotate(5deg)}}
+        @keyframes clueAppear{0%{opacity:0;transform:scale(0.5)}100%{opacity:1;transform:scale(1)}}
+        @keyframes brainPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(124,58,237,0.3))}50%{transform:scale(1.08);filter:drop-shadow(0 0 25px rgba(124,58,237,0.6))}}
+        @keyframes sparkFly{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-25px)}}
+        @keyframes benchPress{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(3px) scaleY(0.88)}}
+        @keyframes curl{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-12deg)}}
+        @keyframes shieldPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+        @keyframes boltFlash{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+        @keyframes cogFadeUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes cogDotPulse{0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1.2)}}
+      `}</style>
 
-        {/* Animated Scene */}
-        {content.scene(progress)}
+      <div className="max-w-lg w-full text-center">
+        {/* Main animated emoji */}
+        <div className="relative w-48 h-48 mx-auto mb-6">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-7xl" style={emojiStyle}>{pack.emoji}</div>
+          </div>
+          {/* Contextual extras */}
+          {extras.map((ex, i) => (
+            <div key={i} className="absolute" style={{
+              left: ex.x, top: ex.y,
+              animation: ex.a,
+              fontSize: ex.size || '16px',
+              color: ex.color || 'inherit',
+            }}>{ex.e}</div>
+          ))}
+        </div>
 
         {/* Message */}
         <div style={{ animation: 'cogFadeUp 0.6s ease-out' }}>
-          <style>{`@keyframes cogFadeUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}} @keyframes cogDotPulse{0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1.2)}}`}</style>
-
-          {isFirst ? (
-            <>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight" style={{ fontFamily: HEAD }}>
-                {content.headline}
-              </h2>
-              <p className="text-base text-slate-400 leading-relaxed mb-8" style={{ fontFamily: BODY }}>
-                {content.sub}
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1 tracking-tight" style={{ fontFamily: HEAD }}>
-                {ownerName ? `${ownerName}, ` : ''}{content.headline}
-              </h2>
-              <p className="text-base text-slate-400 leading-relaxed mb-8 mt-3" style={{ fontFamily: BODY }}>
-                {content.sub}
-              </p>
-            </>
-          )}
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight" style={{ fontFamily: HEAD }}>
+            {!isFirst && ownerName ? `${ownerName}, ` : ''}{pack.headline}
+          </h2>
+          <p className="text-base text-slate-400 leading-relaxed mb-8" style={{ fontFamily: BODY }}>{pack.sub}</p>
         </div>
 
-        {/* Steps that fade in */}
+        {/* Steps */}
         <div className="space-y-3 text-left max-w-sm mx-auto mb-8">
           {visibleSteps.map((step, i) => (
-            <div key={i} className="flex items-center gap-3" style={{
-              animation: 'cogFadeUp 0.5s ease-out both',
-            }}>
+            <div key={i} className="flex items-center gap-3" style={{ animation: 'cogFadeUp 0.5s ease-out both' }}>
               <div className="flex gap-1">
                 {[0, 1, 2].map((d) => (
                   <div key={d} className="w-1.5 h-1.5 rounded-full" style={{
                     background: ['#F97316', '#2563EB', '#059669', '#7C3AED', '#EF4444'][i % 5],
-                    animation: `cogDotPulse 1.4s ease-in-out infinite`,
-                    animationDelay: `${d * 0.2}s`,
+                    animation: `cogDotPulse 1.4s ease-in-out infinite ${d * 0.2}s`,
                   }} />
                 ))}
               </div>
