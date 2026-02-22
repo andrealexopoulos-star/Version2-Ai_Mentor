@@ -9,7 +9,7 @@ const BODY = "'Inter', sans-serif";
 
 const GlassCard = ({ children, className = '' }) => (
   <div className={`rounded-2xl p-6 transition-all duration-300 hover:border-[#FF6A00]/20 ${className}`}
-    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)' }}>
+    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}>
     {children}
   </div>
 );
@@ -22,8 +22,8 @@ const PlatformPage = () => (
       <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10">
         <div className="max-w-3xl">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>The Platform</span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING }}>
-            Run Your Business With Enterprise-Level Intelligence <span className="block text-[#9FB0C3]" style={{ fontSize: '0.65em' }}>&mdash; Without Hiring Enterprise Headcount.</span>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
+            Run Your Business With Enterprise-Level Intelligence <span className="block" style={{ fontSize: '0.65em', color: '#CBD5E1' }}>&mdash; Without Hiring Enterprise Headcount.</span>
           </h1>
           <p className="text-lg text-[#9FB0C3] mb-8 leading-relaxed max-w-xl" style={{ fontFamily: BODY }}>
             BIQc connects your systems, builds unified business context, and deploys autonomous agents that monitor, detect, and correct &mdash; before problems compound.
