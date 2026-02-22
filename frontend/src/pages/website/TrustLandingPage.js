@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { Shield, Lock, Server, Eye, FileText, ArrowRight, CheckCircle } from 'lucide-react';
 
-const HEADING = "'Plus Jakarta Sans', sans-serif";
+const HEADING = "'Sora', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
-const BODY = "'DM Sans', sans-serif";
+const BODY = "'Inter', sans-serif";
 
 const legalDocs = [
   { icon: FileText, title: 'Terms & Conditions', path: '/site/trust/terms', summary: 'Governs your use of BIQc services, subscription terms, responsibilities, and dispute resolution procedures.' },
