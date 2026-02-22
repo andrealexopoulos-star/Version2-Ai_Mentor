@@ -27,7 +27,8 @@ class TestAdminPortalAPIs:
         )
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
-        token = data.get("access_token") or data.get("token")
+        # Token is in session.access_token for Supabase auth
+        token = data.get("access_token") or data.get("token") or (data.get("session") or {}).get("access_token")
         assert token, f"No token in response: {data}"
         return token
     
