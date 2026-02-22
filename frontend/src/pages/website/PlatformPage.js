@@ -42,7 +42,7 @@ const PlatformPage = () => (
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>The Problem SMBs Face</span>
         </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING }}>You&rsquo;re running a business with enterprise-level complexity on startup-level infrastructure.</h2>
+        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>You&rsquo;re running a business with enterprise-level complexity on startup-level infrastructure.</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {[
@@ -53,7 +53,7 @@ const PlatformPage = () => (
           ].map((item, i) => (
             <GlassCard key={i}>
               <item.icon className="w-5 h-5 text-[#EF4444] mb-3" />
-              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING }}>{item.title}</h3>
+              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{item.title}</h3>
               <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{item.desc}</p>
             </GlassCard>
           ))}
@@ -68,7 +68,7 @@ const PlatformPage = () => (
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What BIQc Does</span>
         </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING }}>Six layers of autonomous intelligence.</h2>
+        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six layers of autonomous intelligence.</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[
@@ -86,7 +86,7 @@ const PlatformPage = () => (
                 </div>
                 <span className="text-2xl font-bold text-[#9FB0C3]/10" style={{ fontFamily: MONO }}>{item.num}</span>
               </div>
-              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING }}>{item.title}</h3>
+              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{item.title}</h3>
               <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{item.desc}</p>
             </GlassCard>
           ))}
@@ -99,7 +99,7 @@ const PlatformPage = () => (
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>Visual Architecture</span>
-          <h2 className="text-3xl font-bold" style={{ fontFamily: HEADING }}>How It All Connects</h2>
+          <h2 className="text-3xl font-bold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>How It All Connects</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
