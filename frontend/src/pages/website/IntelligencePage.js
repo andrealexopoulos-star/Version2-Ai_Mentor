@@ -43,7 +43,7 @@ const IntelligencePage = () => (
       <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10">
         <div className="max-w-3xl">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>Intelligence Engine</span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING }}>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             Stop Checking Reports.<br /><span style={{ color: '#FF6A00' }}>Start Preventing Problems.</span>
           </h1>
           <p className="text-lg text-[#9FB0C3] mb-8 leading-relaxed max-w-xl" style={{ fontFamily: BODY }}>
@@ -60,7 +60,7 @@ const IntelligencePage = () => (
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What BIQc Analyses</span>
         </div>
-        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING }}>Six categories of business intelligence.</h2>
+        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six categories of business intelligence.</h2>
         <p className="text-base text-[#9FB0C3] mb-12 max-w-xl" style={{ fontFamily: BODY }}>Every data point mapped, monitored, and cross-referenced autonomously.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -70,7 +70,7 @@ const IntelligencePage = () => (
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" style={{ background: `${cat.color}15` }}>
                   <cat.icon className="w-5 h-5" style={{ color: cat.color }} />
                 </div>
-                <h3 className="text-base font-semibold" style={{ fontFamily: HEADING }}>{cat.title}</h3>
+                <h3 className="text-base font-semibold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{cat.title}</h3>
               </div>
               <ul className="space-y-2">
                 {cat.items.map((item, j) => (
@@ -94,7 +94,7 @@ const IntelligencePage = () => (
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>Intelligence Pipeline</span>
-          <h2 className="text-3xl font-bold" style={{ fontFamily: HEADING }}>From Raw Data to Executive Briefing</h2>
+          <h2 className="text-3xl font-bold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>From Raw Data to Executive Briefing</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -106,7 +106,7 @@ const IntelligencePage = () => (
           ].map((step, i) => (
             <div key={i} className="text-center relative">
               <div className="text-5xl font-bold mb-4" style={{ fontFamily: MONO, color: 'rgba(255,106,0,0.15)' }}>{step.num}</div>
-              <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: HEADING }}>{step.title}</h3>
+              <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{step.title}</h3>
               <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>{step.desc}</p>
               {i < 3 && <div className="hidden md:block absolute top-8 -right-3 w-6 text-[#9FB0C3]/20 text-lg">&rarr;</div>}
             </div>
@@ -118,7 +118,7 @@ const IntelligencePage = () => (
     {/* CTA */}
     <section className="py-20" style={{ background: '#141C26' }}>
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING }}>See what your business is <span style={{ color: '#FF6A00' }}>really doing.</span></h2>
+        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>See what your business is <span style={{ color: '#FF6A00' }}>really doing.</span></h2>
         <p className="text-base text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>Start your 14-day trial. No credit card. Full intelligence from day one.</p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
           Get started <ArrowRight className="w-4 h-4" />

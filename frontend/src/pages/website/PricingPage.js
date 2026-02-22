@@ -36,7 +36,7 @@ const PricingPage = () => (
       <div className="absolute top-10 right-10 w-[400px] h-[400px] rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
       <div className="max-w-5xl mx-auto px-6 pt-24 pb-16 relative z-10 text-center">
         <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>Pricing</span>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING }}>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
           Less Than <span style={{ color: '#FF6A00' }}>One Senior Hire.</span>
         </h1>
         <p className="text-lg text-[#9FB0C3] max-w-xl mx-auto" style={{ fontFamily: BODY }}>
@@ -53,7 +53,7 @@ const PricingPage = () => (
           <div className="rounded-2xl p-8" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center gap-2 mb-6">
               <X className="w-5 h-5 text-[#EF4444]" />
-              <h3 className="text-lg font-semibold" style={{ fontFamily: HEADING }}>Traditional Hiring</h3>
+              <h3 className="text-lg font-semibold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Traditional Hiring</h3>
             </div>
             <div className="space-y-4 mb-8">
               {hiresCost.map((hire) => (
@@ -65,7 +65,7 @@ const PricingPage = () => (
             </div>
             <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#EF4444]" style={{ fontFamily: HEADING }}>Total Annual Cost</span>
+                <span className="text-sm font-semibold text-[#EF4444]" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Total Annual Cost</span>
                 <span className="text-xl font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>$470,000+</span>
               </div>
               <span className="text-xs text-[#EF4444]/60 mt-1 block" style={{ fontFamily: MONO }}>+ super + benefits + recruitment + ramp time</span>
@@ -77,7 +77,7 @@ const PricingPage = () => (
             <div className="absolute -top-3 left-8 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase text-white" style={{ background: '#FF6A00', fontFamily: MONO }}>Recommended</div>
             <div className="flex items-center gap-2 mb-6 mt-2">
               <Check className="w-5 h-5 text-[#FF6A00]" />
-              <h3 className="text-lg font-semibold" style={{ fontFamily: HEADING }}>BIQc Subscription</h3>
+              <h3 className="text-lg font-semibold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>BIQc Subscription</h3>
             </div>
 
             <div className="mb-8">
@@ -116,7 +116,7 @@ const PricingPage = () => (
             { label: 'Onboarding', desc: 'Included at no cost' },
           ].map((item) => (
             <div key={item.label} className="rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <h4 className="text-sm font-semibold text-[#FF6A00] mb-1" style={{ fontFamily: HEADING }}>{item.label}</h4>
+              <h4 className="text-sm font-semibold text-[#FF6A00] mb-1" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{item.label}</h4>
               <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: MONO }}>{item.desc}</p>
             </div>
           ))}

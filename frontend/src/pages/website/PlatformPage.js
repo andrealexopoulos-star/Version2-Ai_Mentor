@@ -175,7 +175,7 @@ const PlatformPage = () => (
     {/* CTA */}
     <section className="py-20" data-testid="platform-bottom-cta">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING }}>Ready to see your business through a <span style={{ color: '#FF6A00' }}>single lens?</span></h2>
+        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Ready to see your business through a <span style={{ color: '#FF6A00' }}>single lens?</span></h2>
         <p className="text-base text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>Connect your first platform in under 2 minutes.</p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
           Start free trial <ArrowRight className="w-4 h-4" />

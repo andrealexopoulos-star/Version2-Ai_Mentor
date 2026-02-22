@@ -85,7 +85,7 @@ const HomePage = () => (
             <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
             <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What Cognition-as-a-Service Delivers</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: HEADING }}>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
           <p className="text-base text-[#9FB0C3] max-w-xl" style={{ fontFamily: BODY }}>Industry benchmarks show businesses embedding AI-driven decision systems experience:</p>
@@ -104,7 +104,7 @@ const HomePage = () => (
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(255,106,0,0.1)' }}>
                 <item.icon className="w-5 h-5 text-[#FF6A00]" />
               </div>
-              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING }}>{item.title}</h3>
+              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{item.title}</h3>
               <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{item.desc}</p>
             </GlassCard>
           ))}
@@ -117,7 +117,7 @@ const HomePage = () => (
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>The Functional Arsenal</span>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: HEADING }}>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             One platform. Four pillars of intelligence.
           </h2>
           <p className="text-base text-[#9FB0C3]" style={{ fontFamily: BODY }}>Every screen built for decisions, not analysis.</p>
@@ -192,7 +192,7 @@ const HomePage = () => (
     {/* ══ CTA ══ */}
     <section className="py-24" style={{ background: '#141C26' }} data-testid="cta-section">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: HEADING }}>
+        <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
           Stop reacting. Start <span style={{ color: '#FF6A00' }}>preventing.</span>
         </h2>
         <p className="text-base text-[#9FB0C3] mb-8 max-w-lg mx-auto" style={{ fontFamily: BODY }}>

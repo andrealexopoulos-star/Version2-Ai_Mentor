@@ -22,7 +22,7 @@ const TrustLandingPage = () => (
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
       <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10 text-center">
         <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>Trust & Security</span>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING }}>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
           Built for Businesses That Take<br /><span style={{ color: '#FF6A00' }}>Data Seriously.</span>
         </h1>
         <p className="text-lg text-[#9FB0C3] max-w-xl mx-auto" style={{ fontFamily: BODY }}>
@@ -40,7 +40,7 @@ const TrustLandingPage = () => (
               <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
               <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Australian Sovereign Hosting</span>
             </div>
-            <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING }}>Your data never leaves Australia.</h2>
+            <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Your data never leaves Australia.</h2>
             <p className="text-base text-[#9FB0C3] mb-6 leading-relaxed" style={{ fontFamily: BODY }}>
               All data is hosted, processed, and stored exclusively within Australian data centres. No offshore processing. No international data transfers. Full compliance with Australian privacy law.
             </p>
@@ -73,7 +73,7 @@ const TrustLandingPage = () => (
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Security Infrastructure</span>
         </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING }}>Enterprise-grade by default.</h2>
+        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Enterprise-grade by default.</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
@@ -84,7 +84,7 @@ const TrustLandingPage = () => (
           ].map((item, i) => (
             <div key={i} className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <item.icon className="w-5 h-5 text-[#FF6A00] mb-4" />
-              <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: HEADING }}>{item.title}</h3>
+              <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{item.title}</h3>
               <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{item.desc}</p>
             </div>
           ))}
@@ -99,7 +99,7 @@ const TrustLandingPage = () => (
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Legal & Governance</span>
         </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING }}>Full transparency. No ambiguity.</h2>
+        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Full transparency. No ambiguity.</h2>
 
         <div className="space-y-4">
           {legalDocs.map((doc) => (
@@ -108,7 +108,7 @@ const TrustLandingPage = () => (
                 <doc.icon className="w-5 h-5 text-[#FF6A00]" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold mb-1 group-hover:text-[#FF6A00] transition-colors" style={{ fontFamily: HEADING }}>{doc.title}</h3>
+                <h3 className="text-base font-semibold mb-1 group-hover:text-[#FF6A00] transition-colors" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{doc.title}</h3>
                 <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{doc.summary}</p>
               </div>
               <ArrowRight className="w-5 h-5 text-[#9FB0C3]/30 group-hover:text-[#FF6A00] transition-colors shrink-0" />
