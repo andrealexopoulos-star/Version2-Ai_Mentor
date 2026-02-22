@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PlatformLayout from '../../../components/website/PlatformLayout';
 import { AlertTriangle, TrendingDown, TrendingUp, DollarSign, Shield, Activity, ArrowRight, Mail, MessageSquare, Users, ChevronDown, ChevronUp } from 'lucide-react';
 
-const SORA = "'Sora', sans-serif";
+const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 

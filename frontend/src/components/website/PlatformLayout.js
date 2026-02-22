@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, TrendingUp, Settings as SettingsIcon, Shield, Radar, AlertTriangle, Zap, Workflow, Link2, Activity, FileText, ClipboardList, Bell, ChevronDown, ChevronRight, Menu, X, BarChart3 } from 'lucide-react';
 
-const SORA = "'Sora', sans-serif";
+const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
