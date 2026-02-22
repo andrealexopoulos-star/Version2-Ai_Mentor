@@ -9,7 +9,7 @@ const MONO = "'JetBrains Mono', monospace";
 const NAV_GROUPS = [
   {
     label: 'Intelligence', items: [
-      { label: 'Executive Overview', path: '/site/platform/overview', icon: LayoutDashboard },
+      { label: 'BIQc Insights', path: '/site/platform/overview', icon: LayoutDashboard },
       { label: 'Revenue', path: '/site/platform/revenue', icon: TrendingUp },
       { label: 'Operations', path: '/site/platform/operations', icon: SettingsIcon },
       { label: 'Risk', path: '/site/platform/risk', icon: AlertTriangle },
