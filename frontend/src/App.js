@@ -154,6 +154,13 @@ function AppRoutes() {
       <Route path="/site/platform/alerts" element={<AlertsPage />} />
       <Route path="/site/platform/automations" element={<AutomationsPage />} />
       <Route path="/site/platform/integrations" element={<IntegrationsPlatform />} />
+
+      {/* Industry Mockups */}
+      <Route path="/site/platform/industry/msp" element={<MSPView />} />
+      <Route path="/site/platform/industry/construction" element={<ConstructionView />} />
+      <Route path="/site/platform/industry/consulting" element={<ConsultingView />} />
+      <Route path="/site/platform/industry/agency" element={<AgencyView />} />
+      <Route path="/site/platform/industry/saas" element={<SaaSView />} />
       
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
