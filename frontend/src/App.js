@@ -139,6 +139,14 @@ function AppRoutes() {
       <Route path="/site/trust/dpa" element={<SiteDPAPage />} />
       <Route path="/site/trust/security" element={<SiteSecurityPage />} />
       <Route path="/site/trust/centre" element={<SiteTrustCentrePage />} />
+
+      {/* Platform Mockup (Liquid Steel) */}
+      <Route path="/site/platform/login" element={<PlatformLogin />} />
+      <Route path="/site/platform/overview" element={<ExecOverview />} />
+      <Route path="/site/platform/revenue" element={<RevenueModule />} />
+      <Route path="/site/platform/alerts" element={<AlertsPage />} />
+      <Route path="/site/platform/automations" element={<AutomationsPage />} />
+      <Route path="/site/platform/integrations" element={<IntegrationsPlatform />} />
       
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
