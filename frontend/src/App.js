@@ -118,6 +118,19 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/cognitive-v2-preview" element={<CognitiveV2Mockup />} />
       <Route path="/loading-preview" element={<LoadingPreview />} />
+
+      {/* Website (Liquid Steel) — Test Mockup */}
+      <Route path="/site" element={<SiteHomePage />} />
+      <Route path="/site/platform" element={<SitePlatformPage />} />
+      <Route path="/site/intelligence" element={<SiteIntelligencePage />} />
+      <Route path="/site/integrations" element={<SiteIntegrationsPage />} />
+      <Route path="/site/pricing" element={<SitePricingPage />} />
+      <Route path="/site/trust" element={<SiteTrustLandingPage />} />
+      <Route path="/site/trust/terms" element={<SiteTermsPage />} />
+      <Route path="/site/trust/privacy" element={<SitePrivacyPage />} />
+      <Route path="/site/trust/dpa" element={<SiteDPAPage />} />
+      <Route path="/site/trust/security" element={<SiteSecurityPage />} />
+      <Route path="/site/trust/centre" element={<SiteTrustCentrePage />} />
       
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
