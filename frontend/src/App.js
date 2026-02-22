@@ -55,6 +55,15 @@ import ContactPage from './pages/ContactPage';
 import CognitiveV2Mockup from './pages/CognitiveV2Mockup';
 import LoadingPreview from './pages/LoadingPreview';
 
+// Website (Liquid Steel) pages
+import SiteHomePage from './pages/website/HomePage';
+import SitePlatformPage from './pages/website/PlatformPage';
+import SiteIntelligencePage from './pages/website/IntelligencePage';
+import SiteIntegrationsPage from './pages/website/IntegrationsPage';
+import SitePricingPage from './pages/website/PricingPage';
+import SiteTrustLandingPage from './pages/website/TrustLandingPage';
+import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
+
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
   const { user, session, loading, authState } = useSupabaseAuth();
