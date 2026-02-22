@@ -4,47 +4,90 @@ const HEAD = "var(--font-heading)";
 const MONO = "var(--font-mono)";
 const BODY = "var(--font-body)";
 
-// 30 different fun messages — randomly selected each time
-const FIRST_TIME_HEADLINES = [
-  "Suiting Up Your Digital Team",
-  "Assembling Your War Room",
-  "Waking Up Your AI Agents",
-  "Brewing Your Intelligence",
-  "Loading Your Secret Weapon",
-  "Deploying Your Digital Army",
-  "Powering Up The Machine",
-  "Unleashing The Strategy Squad",
-  "Cranking The Intelligence Engine",
-  "Booting Your Business Brain",
+// Each scene is paired with its headline — animation matches the message
+const SCENE_PACKS = [
+  {
+    emoji: '☕', headline: 'Brewing Your Intelligence',
+    sub: 'Grab a coffee — your digital team is warming up. This takes about 10 seconds.',
+    anim: (p) => ({ animation: `coffeeWiggle 1.2s ease-in-out infinite`, filter: 'drop-shadow(0 0 20px rgba(249,115,22,0.3))' }),
+    extras: (p) => p > 30 ? [{ e: '~', x: '42%', y: '15%', a: 'steam 1.5s ease-out infinite' }, { e: '~', x: '50%', y: '12%', a: 'steam 1.5s ease-out infinite 0.4s' }, { e: '~', x: '58%', y: '14%', a: 'steam 1.5s ease-out infinite 0.8s' }] : [],
+  },
+  {
+    emoji: '🚀', headline: 'Launching Your Command Centre',
+    sub: 'Your competitors have no idea what\'s about to hit them.',
+    anim: (p) => ({ animation: p > 50 ? 'rocketShake 0.1s infinite' : 'none', filter: 'drop-shadow(0 0 25px rgba(249,115,22,0.5))' }),
+    extras: (p) => {
+      const stars = Array.from({ length: 5 }, (_, i) => ({ e: '✦', x: `${15 + i * 18}%`, y: `${10 + (i % 3) * 15}%`, a: `starTwinkle ${1.5 + i * 0.3}s ease-in-out infinite ${i * 0.5}s`, size: '10px', color: 'rgba(255,255,255,0.4)' }));
+      const flame = p > 25 ? [{ e: '🔥', x: '47%', y: '78%', a: 'flame 0.3s ease-in-out infinite', size: '28px' }] : [];
+      return [...stars, ...flame];
+    },
+  },
+  {
+    emoji: '🤖', headline: 'Waking Up Your AI Agents',
+    sub: 'Your digital leadership team is stretching and warming up.',
+    anim: (p) => ({ animation: 'robotBounce 1.5s ease-in-out infinite', filter: 'drop-shadow(0 0 20px rgba(37,99,235,0.4))' }),
+    extras: (p) => [
+      ...(p > 20 ? [{ e: '⚙️', x: '72%', y: '20%', a: 'gearSpin 2s linear infinite', size: '20px' }] : []),
+      ...(p > 40 ? [{ e: '⚙️', x: '25%', y: '25%', a: 'gearSpin 3s linear infinite reverse', size: '16px' }] : []),
+      ...(p > 60 ? [{ e: '⚡', x: '65%', y: '45%', a: 'sparkFly 1s ease-out infinite', size: '14px' }] : []),
+    ],
+  },
+  {
+    emoji: '🏋️', headline: 'Training Your Digital Team',
+    sub: 'Your AI agents are getting in shape. Peak performance incoming.',
+    anim: (p) => ({ animation: 'benchPress 0.8s ease-in-out infinite', filter: 'drop-shadow(0 0 15px rgba(5,150,105,0.4))' }),
+    extras: (p) => [
+      ...(p > 30 ? [{ e: '💪', x: '70%', y: '40%', a: 'curl 0.6s ease-in-out infinite', size: '22px' }] : []),
+      ...(p > 60 ? [{ e: '💨', x: '30%', y: '55%', a: 'steam 1s ease-out infinite', size: '16px' }] : []),
+    ],
+  },
+  {
+    emoji: '🔍', headline: 'Scanning Your Business',
+    sub: 'BIQc is learning everything about your business. Every signal matters.',
+    anim: (p) => ({ animation: 'detectiveSearch 2s ease-in-out infinite', filter: 'drop-shadow(0 0 15px rgba(249,115,22,0.3))' }),
+    extras: (p) => [
+      ...(p > 20 ? [{ e: '📊', x: '73%', y: '22%', a: 'clueAppear 0.5s ease-out both', size: '20px' }] : []),
+      ...(p > 45 ? [{ e: '📈', x: '25%', y: '30%', a: 'clueAppear 0.5s ease-out both', size: '20px' }] : []),
+      ...(p > 70 ? [{ e: '🎯', x: '68%', y: '60%', a: 'clueAppear 0.5s ease-out both', size: '18px' }] : []),
+    ],
+  },
+  {
+    emoji: '🧠', headline: 'Powering Up The Cognitive Engine',
+    sub: 'Neurons firing. Patterns forming. Intelligence activating.',
+    anim: (p) => ({ animation: 'brainPulse 2s ease-in-out infinite' }),
+    extras: (p) => Array.from({ length: Math.min(Math.floor(p / 20), 5) }, (_, i) => ({
+      e: '⚡', x: `${25 + Math.sin(i * 1.8) * 25}%`, y: `${20 + Math.cos(i * 1.5) * 20}%`,
+      a: `sparkFly 1s ease-out infinite ${i * 0.3}s`, size: '14px',
+    })),
+  },
+  {
+    emoji: '🛡️', headline: 'Assembling Your War Room',
+    sub: 'Your strategic command centre is being configured.',
+    anim: (p) => ({ animation: 'shieldPulse 2s ease-in-out infinite', filter: 'drop-shadow(0 0 20px rgba(37,99,235,0.4))' }),
+    extras: (p) => [
+      ...(p > 25 ? [{ e: '📡', x: '28%', y: '28%', a: 'gearSpin 4s linear infinite', size: '18px' }] : []),
+      ...(p > 50 ? [{ e: '🗺️', x: '70%', y: '32%', a: 'clueAppear 0.5s ease-out both', size: '20px' }] : []),
+    ],
+  },
+  {
+    emoji: '⚡', headline: 'Supercharging Your Insights',
+    sub: 'We\'re pulling data from every connected source. Stand by for clarity.',
+    anim: (p) => ({ animation: 'boltFlash 1.5s ease-in-out infinite', filter: 'drop-shadow(0 0 30px rgba(249,115,22,0.5))' }),
+    extras: (p) => [
+      ...(p > 30 ? [{ e: '✨', x: '30%', y: '25%', a: 'starTwinkle 1s ease-in-out infinite', size: '14px' }] : []),
+      ...(p > 50 ? [{ e: '✨', x: '68%', y: '30%', a: 'starTwinkle 1.2s ease-in-out infinite 0.3s', size: '12px' }] : []),
+      ...(p > 70 ? [{ e: '✨', x: '45%', y: '18%', a: 'starTwinkle 0.8s ease-in-out infinite 0.6s', size: '16px' }] : []),
+    ],
+  },
 ];
 
-const FIRST_TIME_SUBS = [
-  "First time here? We're building something special just for your business. This only happens once.",
-  "Your digital leadership team is being assembled. Grab a coffee — this takes about 10 seconds.",
-  "We're scanning everything about your business. Your AI agents are stretching and warming up.",
-  "BIQc is learning your business DNA. Think of it as your first day with a very fast executive team.",
-  "Setting up your command centre. Your competitors have no idea what's about to hit them.",
-];
-
-const RETURN_HEADLINES = [
-  "missed you",
-  "we've been busy while you were away",
-  "things have changed since yesterday",
-  "your agents never sleep",
-  "the market didn't wait — but we watched it for you",
-  "your digital team pulled an all-nighter",
-  "we caught some things overnight",
-  "buckle up — there's news",
-  "the boardroom has been buzzing",
-  "your agents have a briefing ready",
-];
-
-const RETURN_SUBS = [
-  "A lot happened in the market and your business. We're pulling it all together now.",
-  "Your AI agents have been monitoring everything. Let us compile the overnight intelligence.",
-  "While you recharged, your digital team was on watch. Finishing your morning briefing now.",
-  "New signals detected across your business. Running a thorough analysis before we brief you.",
-  "Your competitors moved, your inbox filled up, and deals shifted. Updating your command centre.",
+const RETURN_PACKS = [
+  { emoji: '🌅', headline: 'missed you', sub: 'A lot happened in the market and your business. Pulling it together now.' },
+  { emoji: '🦉', headline: 'your agents pulled an all-nighter', sub: 'While you recharged, your digital team was on watch. Compiling the briefing now.' },
+  { emoji: '📰', headline: 'things have changed since yesterday', sub: 'New signals detected across your business. Running a thorough analysis.' },
+  { emoji: '🔔', headline: 'we caught some things overnight', sub: 'Your competitors moved, your inbox filled up, and deals shifted.' },
+  { emoji: '🎯', headline: 'the boardroom has been buzzing', sub: 'Your AI agents have been monitoring everything. Let us compile the overnight intelligence.' },
+  { emoji: '⏰', headline: 'the market didn\'t wait — but we watched it for you', sub: 'Your digital team never sleeps. Finishing your morning briefing now.' },
 ];
 
 // Fun animated characters/scenes — different each load
