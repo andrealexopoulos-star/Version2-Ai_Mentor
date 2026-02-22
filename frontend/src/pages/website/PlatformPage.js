@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { ArrowRight, AlertTriangle, BarChart3, Zap, Users, Eye, RefreshCw, Settings, Cpu, Workflow } from 'lucide-react';
 
-const HEADING = "'Sora', sans-serif";
+const HEADING = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
 const BODY = "'Inter', sans-serif";
 
