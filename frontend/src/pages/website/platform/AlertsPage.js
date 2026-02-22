@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import PlatformLayout from '../../components/website/PlatformLayout';
+import PlatformLayout from '../../../components/website/PlatformLayout';
 import { Bell, AlertTriangle, Info, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Check, Clock } from 'lucide-react';
 
 const SORA = "'Sora', sans-serif";

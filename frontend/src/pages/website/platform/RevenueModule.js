@@ -1,5 +1,5 @@
 import React from 'react';
-import PlatformLayout from '../../components/website/PlatformLayout';
+import PlatformLayout from '../../../components/website/PlatformLayout';
 import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, Toggle } from 'lucide-react';
 
 const SORA = "'Sora', sans-serif";
