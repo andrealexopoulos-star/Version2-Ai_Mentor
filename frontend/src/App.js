@@ -108,6 +108,7 @@ function AppRoutes() {
       <Route path="/enterprise-terms" element={<EnterpriseTerms />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/cognitive-v2-preview" element={<CognitiveV2Mockup />} />
+      <Route path="/loading-preview" element={<LoadingPreview />} />
       
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
