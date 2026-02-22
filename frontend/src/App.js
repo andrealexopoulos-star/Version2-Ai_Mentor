@@ -72,6 +72,13 @@ import AlertsPage from './pages/website/platform/AlertsPage';
 import AutomationsPage from './pages/website/platform/AutomationsPage';
 import IntegrationsPlatform from './pages/website/platform/IntegrationsPlatform';
 
+// Industry mockup pages
+import MSPView from './pages/website/platform/industries/MSPView';
+import ConstructionView from './pages/website/platform/industries/ConstructionView';
+import ConsultingView from './pages/website/platform/industries/ConsultingView';
+import AgencyView from './pages/website/platform/industries/AgencyView';
+import SaaSView from './pages/website/platform/industries/SaaSView';
+
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
   const { user, session, loading, authState } = useSupabaseAuth();
