@@ -53,6 +53,7 @@ import OperatorDashboard from './pages/OperatorDashboard';
 import PromptLab from './pages/PromptLab';
 import ContactPage from './pages/ContactPage';
 import CognitiveV2Mockup from './pages/CognitiveV2Mockup';
+import LoadingPreview from './pages/LoadingPreview';
 
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
