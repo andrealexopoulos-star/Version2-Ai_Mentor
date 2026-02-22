@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { ArrowRight, Check, X } from 'lucide-react';
 
-const HEADING = "'Plus Jakarta Sans', sans-serif";
+const HEADING = "'Sora', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
-const BODY = "'DM Sans', sans-serif";
+const BODY = "'Inter', sans-serif";
 
 const hiresCost = [
   { role: 'Chief Operating Officer', salary: '$180,000+', icon: '/' },
