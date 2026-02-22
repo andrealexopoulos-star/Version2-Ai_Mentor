@@ -4,6 +4,7 @@ import { ChevronDown, Menu, X, Shield, FileText, Lock, Server, Eye } from 'lucid
 
 const NAV_FONT = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
+const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
 const TRUST_ITEMS = [
   { label: 'Terms & Conditions', path: '/site/trust/terms', icon: FileText },
