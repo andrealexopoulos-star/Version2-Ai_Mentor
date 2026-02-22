@@ -49,89 +49,103 @@ const RETURN_SUBS = [
 
 // Fun animated characters/scenes — different each load
 const SCENES = [
-  // Scene: Rocket launch
+  // Scene: Rocket launch with training agents
   (progress) => (
-    <div className="relative w-40 h-40 mx-auto mb-8">
-      <style>{`@keyframes rocketShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}} @keyframes flame{0%,100%{transform:scaleY(1);opacity:0.8}50%{transform:scaleY(1.3);opacity:1}} @keyframes smokeR{0%{opacity:0.6;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(40px) scale(2)}} @keyframes starTwinkle{0%,100%{opacity:0.3}50%{opacity:1}}`}</style>
-      {[...Array(8)].map((_, i) => (
+    <div className="relative w-64 h-48 mx-auto mb-8">
+      <style>{`@keyframes rocketShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}} @keyframes flame{0%,100%{transform:scaleY(1);opacity:0.8}50%{transform:scaleY(1.3);opacity:1}} @keyframes starTwinkle{0%,100%{opacity:0.3}50%{opacity:1}} @keyframes pushup{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(3px) scaleY(0.85)}} @keyframes curl{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-15deg)}} @keyframes bench{0%,100%{transform:scaleX(1)}50%{transform:scaleX(0.9)}} @keyframes jump{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}} @keyframes wave{0%,100%{transform:rotate(0deg)}25%{transform:rotate(15deg)}75%{transform:rotate(-15deg)}}`}</style>
+      {[...Array(6)].map((_, i) => (
         <div key={i} className="absolute w-1 h-1 rounded-full bg-white" style={{
-          left: `${10 + Math.random() * 80}%`, top: `${Math.random() * 60}%`,
+          left: `${10 + Math.random() * 80}%`, top: `${Math.random() * 40}%`,
           animation: `starTwinkle ${1 + Math.random() * 2}s ease-in-out infinite`,
           animationDelay: `${Math.random() * 3}s`,
         }} />
       ))}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2" style={{ animation: progress > 60 ? 'rocketShake 0.1s infinite' : 'none' }}>
-        <div className="text-6xl" style={{ filter: 'drop-shadow(0 0 20px rgba(249,115,22,0.5))' }}>🚀</div>
-        {progress > 30 && <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-6 h-8 rounded-full" style={{
-          background: 'linear-gradient(to bottom, #F97316, #EF4444, transparent)',
-          animation: 'flame 0.3s ease-in-out infinite',
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2" style={{ animation: progress > 60 ? 'rocketShake 0.1s infinite' : 'none' }}>
+        <div className="text-5xl" style={{ filter: 'drop-shadow(0 0 20px rgba(249,115,22,0.5))' }}>🚀</div>
+        {progress > 30 && <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-5 h-6 rounded-full" style={{
+          background: 'linear-gradient(to bottom, #F97316, #EF4444, transparent)', animation: 'flame 0.3s ease-in-out infinite',
         }} />}
       </div>
-      {progress > 50 && [...Array(3)].map((_, i) => (
-        <div key={i} className="absolute bottom-0 left-1/2 w-4 h-4 rounded-full" style={{
-          background: 'rgba(148,163,184,0.3)',
-          animation: `smokeR 1.5s ease-out infinite`,
-          animationDelay: `${i * 0.3}s`,
-          transform: `translateX(${(i - 1) * 15}px)`,
-        }} />
-      ))}
+      {/* Training agents */}
+      {progress > 15 && <div className="absolute bottom-2 left-6 text-lg" style={{ animation: 'pushup 0.8s ease-in-out infinite' }} title="Agent doing pushups">🏋️</div>}
+      {progress > 30 && <div className="absolute bottom-2 right-6 text-lg" style={{ animation: 'curl 0.6s ease-in-out infinite' }} title="Agent curling">💪</div>}
+      {progress > 50 && <div className="absolute bottom-12 left-2 text-base" style={{ animation: 'bench 0.7s ease-in-out infinite' }} title="Agent bench pressing">🤸</div>}
+      {progress > 70 && <div className="absolute bottom-12 right-2 text-base" style={{ animation: 'jump 0.5s ease-in-out infinite' }} title="Agent jumping">🏃</div>}
     </div>
   ),
-  // Scene: Robot assembling
+  // Scene: Robot with exercising agents
   (progress) => (
-    <div className="relative w-40 h-40 mx-auto mb-8 flex items-center justify-center">
-      <style>{`@keyframes robotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}} @keyframes gearSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}} @keyframes eyeBlink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(0.1)}}`}</style>
+    <div className="relative w-64 h-48 mx-auto mb-8 flex items-center justify-center">
+      <style>{`@keyframes robotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}} @keyframes gearSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}} @keyframes eyeBlink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(0.1)}} @keyframes pushup{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(3px) scaleY(0.85)}} @keyframes curl{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-15deg)}} @keyframes situp{0%,100%{transform:rotate(0deg) translateY(0)}50%{transform:rotate(-20deg) translateY(-2px)}} @keyframes lunge{0%,100%{transform:scaleX(1) translateX(0)}50%{transform:scaleX(1.15) translateX(3px)}}`}</style>
       <div style={{ animation: 'robotBounce 1.5s ease-in-out infinite' }}>
-        <div className="text-7xl" style={{ animation: 'eyeBlink 3s ease-in-out infinite', filter: 'drop-shadow(0 0 20px rgba(37,99,235,0.4))' }}>🤖</div>
+        <div className="text-6xl" style={{ animation: 'eyeBlink 3s ease-in-out infinite', filter: 'drop-shadow(0 0 20px rgba(37,99,235,0.4))' }}>🤖</div>
       </div>
-      {progress > 20 && <div className="absolute top-2 right-6 text-2xl" style={{ animation: 'gearSpin 2s linear infinite' }}>⚙️</div>}
-      {progress > 40 && <div className="absolute top-8 left-6 text-2xl" style={{ animation: 'gearSpin 3s linear infinite reverse' }}>⚙️</div>}
-      {progress > 60 && <div className="absolute bottom-6 right-8 text-xl" style={{ animation: 'gearSpin 1.5s linear infinite' }}>⚙️</div>}
+      {progress > 20 && <div className="absolute top-2 right-8 text-xl" style={{ animation: 'gearSpin 2s linear infinite' }}>⚙️</div>}
+      {progress > 40 && <div className="absolute top-6 left-8 text-xl" style={{ animation: 'gearSpin 3s linear infinite reverse' }}>⚙️</div>}
+      {/* Agents training around the robot */}
+      {progress > 10 && <div className="absolute bottom-2 left-4 text-lg" style={{ animation: 'pushup 0.8s ease-in-out infinite' }}>🏋️‍♂️</div>}
+      {progress > 25 && <div className="absolute bottom-2 right-4 text-lg" style={{ animation: 'situp 0.7s ease-in-out infinite' }}>🧘</div>}
+      {progress > 45 && <div className="absolute bottom-10 left-0 text-base" style={{ animation: 'curl 0.6s ease-in-out infinite' }}>🥊</div>}
+      {progress > 60 && <div className="absolute bottom-10 right-0 text-base" style={{ animation: 'lunge 0.9s ease-in-out infinite' }}>🤾</div>}
+      {progress > 75 && <div className="absolute top-0 left-1/2 -translate-x-1/2 text-base" style={{ animation: 'pushup 0.5s ease-in-out infinite' }}>🏃‍♂️</div>}
     </div>
   ),
-  // Scene: Magnifying glass detective
+  // Scene: Magnifying glass detective with agents warming up
   (progress) => (
-    <div className="relative w-40 h-40 mx-auto mb-8 flex items-center justify-center">
-      <style>{`@keyframes detectiveSearch{0%,100%{transform:translateX(0) rotate(-5deg)}50%{transform:translateX(10px) rotate(5deg)}} @keyframes clueAppear{0%{opacity:0;transform:scale(0.5)}100%{opacity:1;transform:scale(1)}}`}</style>
+    <div className="relative w-64 h-48 mx-auto mb-8 flex items-center justify-center">
+      <style>{`@keyframes detectiveSearch{0%,100%{transform:translateX(0) rotate(-5deg)}50%{transform:translateX(10px) rotate(5deg)}} @keyframes clueAppear{0%{opacity:0;transform:scale(0.5)}100%{opacity:1;transform:scale(1)}} @keyframes pushup{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(3px) scaleY(0.85)}} @keyframes curl{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-15deg)}} @keyframes stretch{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.2)}} @keyframes shadowbox{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}`}</style>
       <div style={{ animation: 'detectiveSearch 2s ease-in-out infinite' }}>
-        <div className="text-7xl" style={{ filter: 'drop-shadow(0 0 15px rgba(249,115,22,0.3))' }}>🔍</div>
+        <div className="text-6xl" style={{ filter: 'drop-shadow(0 0 15px rgba(249,115,22,0.3))' }}>🔍</div>
       </div>
-      {progress > 25 && <div className="absolute top-4 right-4 text-xl" style={{ animation: 'clueAppear 0.5s ease-out' }}>📊</div>}
-      {progress > 45 && <div className="absolute bottom-8 left-4 text-xl" style={{ animation: 'clueAppear 0.5s ease-out' }}>💰</div>}
-      {progress > 65 && <div className="absolute top-8 left-8 text-xl" style={{ animation: 'clueAppear 0.5s ease-out' }}>📈</div>}
-      {progress > 85 && <div className="absolute bottom-4 right-8 text-xl" style={{ animation: 'clueAppear 0.5s ease-out' }}>🎯</div>}
+      {progress > 25 && <div className="absolute top-2 right-6 text-xl" style={{ animation: 'clueAppear 0.5s ease-out' }}>📊</div>}
+      {progress > 55 && <div className="absolute top-2 left-6 text-xl" style={{ animation: 'clueAppear 0.5s ease-out' }}>📈</div>}
+      {/* Agents getting ready */}
+      {progress > 10 && <div className="absolute bottom-0 left-6 text-lg" style={{ animation: 'pushup 0.8s ease-in-out infinite' }}>🏋️</div>}
+      {progress > 30 && <div className="absolute bottom-0 right-6 text-lg" style={{ animation: 'shadowbox 0.4s ease-in-out infinite' }}>🥊</div>}
+      {progress > 50 && <div className="absolute bottom-8 left-0 text-base" style={{ animation: 'stretch 1s ease-in-out infinite' }}>🧘‍♀️</div>}
+      {progress > 70 && <div className="absolute bottom-8 right-0 text-base" style={{ animation: 'curl 0.6s ease-in-out infinite' }}>💪</div>}
     </div>
   ),
-  // Scene: Brain charging
+  // Scene: Brain charging with agents doing drills
   (progress) => (
-    <div className="relative w-40 h-40 mx-auto mb-8 flex items-center justify-center">
-      <style>{`@keyframes brainPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(124,58,237,0.3))}50%{transform:scale(1.08);filter:drop-shadow(0 0 25px rgba(124,58,237,0.6))}} @keyframes sparkFly{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-30px)}}`}</style>
+    <div className="relative w-64 h-48 mx-auto mb-8 flex items-center justify-center">
+      <style>{`@keyframes brainPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(124,58,237,0.3))}50%{transform:scale(1.08);filter:drop-shadow(0 0 25px rgba(124,58,237,0.6))}} @keyframes sparkFly{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-30px)}} @keyframes pushup{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(3px) scaleY(0.85)}} @keyframes curl{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-15deg)}} @keyframes jumpjack{0%,100%{transform:scaleX(1) scaleY(1)}50%{transform:scaleX(1.3) scaleY(0.9)}} @keyframes run{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}`}</style>
       <div style={{ animation: 'brainPulse 2s ease-in-out infinite' }}>
-        <div className="text-7xl">🧠</div>
+        <div className="text-6xl">🧠</div>
       </div>
-      {progress > 20 && [...Array(Math.min(Math.floor(progress / 15), 6))].map((_, i) => (
+      {progress > 20 && [...Array(Math.min(Math.floor(progress / 20), 4))].map((_, i) => (
         <div key={i} className="absolute text-sm" style={{
-          left: `${20 + Math.random() * 60}%`, top: `${20 + Math.random() * 40}%`,
+          left: `${25 + Math.random() * 50}%`, top: `${15 + Math.random() * 30}%`,
           animation: `sparkFly 1s ease-out infinite`, animationDelay: `${i * 0.4}s`,
         }}>⚡</div>
       ))}
+      {/* Agents doing brain training drills */}
+      {progress > 10 && <div className="absolute bottom-0 left-4 text-lg" style={{ animation: 'pushup 0.8s ease-in-out infinite' }}>🏋️‍♀️</div>}
+      {progress > 30 && <div className="absolute bottom-0 right-4 text-lg" style={{ animation: 'jumpjack 0.5s ease-in-out infinite' }}>🤸‍♂️</div>}
+      {progress > 50 && <div className="absolute bottom-8 left-0 text-base" style={{ animation: 'run 0.4s ease-in-out infinite' }}>🏃‍♀️</div>}
+      {progress > 65 && <div className="absolute bottom-8 right-0 text-base" style={{ animation: 'curl 0.6s ease-in-out infinite' }}>🥋</div>}
+      {progress > 80 && <div className="absolute top-0 right-8 text-base" style={{ animation: 'jumpjack 0.6s ease-in-out infinite' }}>🤾‍♂️</div>}
     </div>
   ),
-  // Scene: Coffee & hustle
+  // Scene: Coffee & hustle with agents prepping
   (progress) => (
-    <div className="relative w-40 h-40 mx-auto mb-8 flex items-center justify-center">
-      <style>{`@keyframes steam{0%{opacity:0.6;transform:translateY(0) scaleX(1)}100%{opacity:0;transform:translateY(-20px) scaleX(1.5)}} @keyframes coffeeWiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}`}</style>
+    <div className="relative w-64 h-48 mx-auto mb-8 flex items-center justify-center">
+      <style>{`@keyframes steam{0%{opacity:0.6;transform:translateY(0) scaleX(1)}100%{opacity:0;transform:translateY(-20px) scaleX(1.5)}} @keyframes coffeeWiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}} @keyframes pushup{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(3px) scaleY(0.85)}} @keyframes curl{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-15deg)}} @keyframes crunch{0%,100%{transform:rotate(0) scaleY(1)}50%{transform:rotate(-10deg) scaleY(0.9)}} @keyframes burpee{0%,100%{transform:translateY(0) scaleY(1)}25%{transform:translateY(4px) scaleY(0.8)}75%{transform:translateY(-8px) scaleY(1.1)}}`}</style>
       <div style={{ animation: 'coffeeWiggle 1s ease-in-out infinite' }}>
-        <div className="text-7xl" style={{ filter: 'drop-shadow(0 0 15px rgba(249,115,22,0.3))' }}>☕</div>
+        <div className="text-6xl" style={{ filter: 'drop-shadow(0 0 15px rgba(249,115,22,0.3))' }}>☕</div>
       </div>
       {[...Array(3)].map((_, i) => (
         <div key={i} className="absolute text-lg" style={{
-          left: `${40 + i * 10}%`, top: '15%',
-          animation: `steam 1.5s ease-out infinite`, animationDelay: `${i * 0.4}s`,
-          color: 'rgba(255,255,255,0.4)',
+          left: `${40 + i * 8}%`, top: '10%', animation: `steam 1.5s ease-out infinite`, animationDelay: `${i * 0.4}s`, color: 'rgba(255,255,255,0.3)',
         }}>~</div>
       ))}
-      {progress > 50 && <div className="absolute bottom-4 right-4 text-2xl" style={{ animation: 'coffeeWiggle 0.5s ease-in-out infinite' }}>💪</div>}
+      {/* Agents warming up around the coffee */}
+      {progress > 10 && <div className="absolute bottom-0 left-2 text-lg" style={{ animation: 'pushup 0.8s ease-in-out infinite' }}>🏋️</div>}
+      {progress > 25 && <div className="absolute bottom-0 right-2 text-lg" style={{ animation: 'burpee 0.7s ease-in-out infinite' }}>🤸</div>}
+      {progress > 40 && <div className="absolute bottom-8 left-6 text-base" style={{ animation: 'crunch 0.6s ease-in-out infinite' }}>🧘</div>}
+      {progress > 55 && <div className="absolute bottom-8 right-6 text-base" style={{ animation: 'curl 0.5s ease-in-out infinite' }}>💪</div>}
+      {progress > 70 && <div className="absolute top-4 right-2 text-base" style={{ animation: 'coffeeWiggle 0.5s ease-in-out infinite' }}>🥊</div>}
+      {progress > 85 && <div className="absolute top-4 left-2 text-base" style={{ animation: 'burpee 0.6s ease-in-out infinite' }}>🏃</div>}
     </div>
   ),
 ];
