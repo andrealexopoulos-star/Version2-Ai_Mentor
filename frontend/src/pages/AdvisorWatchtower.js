@@ -211,7 +211,7 @@ const AdvisorWatchtower = () => {
                 {/* Resolution Items */}
                 {gd.resolutions.length > 0 ? (
                   <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: MONO }}>Needs Attention</h3>
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Needs Attention</h3>
                     <div className="space-y-3">
                       {gd.resolutions.map((item, i) => {
                         const sv = SEV[item.severity] || SEV.medium;
@@ -220,8 +220,8 @@ const AdvisorWatchtower = () => {
                             <div className="flex items-start gap-3">
                               <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                               <div className="flex-1">
-                                <p className="text-sm font-semibold" style={{ color: '#1F2937', fontFamily: HEAD }}>{item.title}</p>
-                                {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280', fontFamily: BODY }}>{item.detail}</p>}
+                                <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{item.title}</p>
+                                {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{item.detail}</p>}
                                 <ActionBar actions={item.actions || ["hand-off", "dismiss"]} />
                               </div>
                             </div>
