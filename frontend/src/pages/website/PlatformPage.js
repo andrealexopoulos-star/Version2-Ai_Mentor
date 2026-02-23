@@ -42,7 +42,7 @@ const PlatformPage = () => (
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>The Problem SMBs Face</span>
         </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>You&rsquo;re running a business with enterprise-level complexity on startup-level infrastructure.</h2>
+        <h2 className="text-2xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>You&rsquo;re running a business with enterprise-level complexity on startup-level infrastructure.</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {[
@@ -68,7 +68,7 @@ const PlatformPage = () => (
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What BIQc Does</span>
         </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six layers of autonomous intelligence.</h2>
+        <h2 className="text-2xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six layers of autonomous intelligence.</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[
@@ -99,7 +99,7 @@ const PlatformPage = () => (
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>Visual Architecture</span>
-          <h2 className="text-3xl font-bold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>How It All Connects</h2>
+          <h2 className="text-2xl font-bold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>How It All Connects</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
@@ -175,7 +175,7 @@ const PlatformPage = () => (
     {/* CTA */}
     <section className="py-20" data-testid="platform-bottom-cta">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Ready to see your business through a <span style={{ color: '#FF6A00' }}>single lens?</span></h2>
+        <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Ready to see your business through a <span style={{ color: '#FF6A00' }}>single lens?</span></h2>
         <p className="text-base text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>Connect your first platform in under 2 minutes.</p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
           Start free trial <ArrowRight className="w-4 h-4" />
