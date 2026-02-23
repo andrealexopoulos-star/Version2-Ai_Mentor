@@ -167,7 +167,7 @@ const AdvisorWatchtower = () => {
             </div>
 
             <div className="max-w-5xl mx-auto px-6 py-8">
-              <h1 className="text-3xl font-semibold mb-6" style={{ color: '#111827', fontFamily: HEAD }}>
+              <h1 className="text-3xl font-semibold mb-6" style={{ color: '#F4F7FA', fontFamily: HEAD }}>
                 Good {timeOfDay || 'morning'}, {owner || 'there'}.
               </h1>
 
