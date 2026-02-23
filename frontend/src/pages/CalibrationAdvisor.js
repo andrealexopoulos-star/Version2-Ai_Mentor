@@ -20,6 +20,20 @@ const CARD_BORDER = '#243140';
 
 const CalibrationAdvisor = () => {
   const cal = useCalibrationState();
+  const { user } = useSupabaseAuth();
+  const [skipping, setSkipping] = useState(false);
+
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
+
+  const handleSkipCalibration = async () => {
+    setSkipping(true);
+    try {
+      await apiClient.post('/calibration/skip');
+      window.location.href = '/advisor';
+    } catch {
+      setSkipping(false);
+    }
+  };
 
   // Pick the right tutorial key based on current entry
   const tutorialKey = cal.entry === 'welcome' ? 'calibration-welcome'
