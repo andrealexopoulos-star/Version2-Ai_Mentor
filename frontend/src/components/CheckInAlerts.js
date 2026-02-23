@@ -126,13 +126,13 @@ export const CheckInAlerts = () => {
       {showScheduler && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center" data-testid="scheduler-modal">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowScheduler(null)} />
-          <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl p-6" style={{ background: 'white' }}>
+          <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl p-6" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold" style={{ fontFamily: HEAD, color: '#1F2937' }}>
+              <h3 className="text-lg font-bold" style={{ fontFamily: HEAD, color: '#F4F7FA' }}>
                 {showScheduler === 'recalibration' ? 'Schedule Recalibration' : 'Schedule Video Check-In'}
               </h3>
-              <button onClick={() => setShowScheduler(null)} className="p-1 rounded-lg hover:bg-gray-100">
-                <X className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+              <button onClick={() => setShowScheduler(null)} className="p-1 rounded-lg hover:bg-white/5">
+                <X className="w-4 h-4" style={{ color: '#64748B' }} />
               </button>
             </div>
 
