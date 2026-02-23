@@ -36,8 +36,8 @@ const ContinuitySuite = ({ firstName, calStep, error, onResume }) => {
         </p>
         <p className="text-sm mb-10" style={{ color: '#94A3B8' }}>{calStep} of 9 stages completed.</p>
         {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
-        <button onClick={onResume} className="px-8 py-3 rounded-full text-sm font-medium"
-          style={{ background: CHARCOAL, color: '#FFFFFF' }} data-testid="continue-calibration-btn">
+        <button onClick={onResume} className="px-8 py-3 rounded-xl text-sm font-semibold"
+          style={{ background: '#FF6A00', color: '#FFFFFF' }} data-testid="continue-calibration-btn">
           Resume My Session
         </button>
       </div>
