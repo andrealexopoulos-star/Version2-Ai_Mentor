@@ -95,7 +95,8 @@ export default function ProtectedRoute({ children, adminOnly }) {
       try {
         const res = await apiClient.get('/auth/supabase/me');
         const role = res.data?.user?.role;
-        if (!cancelled) setIsAdmin(ADMIN_ROLES.includes(role));
+        const email = res.data?.user?.email;
+        if (!cancelled) setIsAdmin(ADMIN_ROLES.includes(role) || email === 'andre@thestrategysquad.com.au');
       } catch {
         if (!cancelled) setIsAdmin(false);
       } finally {
