@@ -22,7 +22,8 @@ const ActionBar = ({ actions }) => {
       {actions.includes("auto-email") && <ActionBtn icon={Mail} label="Auto-Email" color="#2563EB" />}
       {actions.includes("quick-sms") && <ActionBtn icon={MessageSquare} label="Quick-SMS" color="#059669" />}
       {actions.includes("hand-off") && <ActionBtn icon={Users} label="Hand Off" color="#F97316" />}
-      {actions.includes("dismiss") && <ActionBtn icon={XCircle} label="Dismiss & Learn" color="#6B7280" />}
+      <ActionBtn icon={CheckCircle2} label="Complete" color="#10B981" />
+      <ActionBtn icon={XCircle} label="Ignore" color="#64748B" />
     </div>
   );
 };
