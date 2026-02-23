@@ -291,6 +291,7 @@ const AdvisorWatchtower = () => {
           </>
         )}
       </div>
+      <FloatingSoundboard context="BIQc Insights dashboard - viewing business health, alerts, and cognitive intelligence" />
     </DashboardLayout>
   );
 };
