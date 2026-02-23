@@ -9,32 +9,32 @@ const MONO = "'JetBrains Mono', monospace";
 const NAV_GROUPS = [
   {
     label: 'Intelligence', items: [
-      { label: 'BIQc Insights', path: '/site/platform/overview', icon: LayoutDashboard },
-      { label: 'Revenue', path: '/site/platform/revenue', icon: TrendingUp },
-      { label: 'Operations', path: '/site/platform/operations', icon: SettingsIcon },
-      { label: 'Risk', path: '/site/platform/risk', icon: AlertTriangle },
-      { label: 'Compliance', path: '/site/platform/compliance', icon: Shield },
-      { label: 'Market', path: '/site/platform/market', icon: Radar },
+      { label: 'BIQc Insights', path: '/platform/overview', icon: LayoutDashboard },
+      { label: 'Revenue', path: '/platform/revenue', icon: TrendingUp },
+      { label: 'Operations', path: '/platform/operations', icon: SettingsIcon },
+      { label: 'Risk', path: '/platform/risk', icon: AlertTriangle },
+      { label: 'Compliance', path: '/platform/compliance', icon: Shield },
+      { label: 'Market', path: '/platform/market', icon: Radar },
     ],
   },
   {
     label: 'Execution', items: [
-      { label: 'Alerts', path: '/site/platform/alerts', icon: Bell },
-      { label: 'Actions', path: '/site/platform/actions', icon: Zap },
-      { label: 'Automations', path: '/site/platform/automations', icon: Workflow },
+      { label: 'Alerts', path: '/platform/alerts', icon: Bell },
+      { label: 'Actions', path: '/platform/actions', icon: Zap },
+      { label: 'Automations', path: '/platform/automations', icon: Workflow },
     ],
   },
   {
     label: 'Systems', items: [
-      { label: 'Integrations', path: '/site/platform/integrations', icon: Link2 },
-      { label: 'Data Health', path: '/site/platform/data-health', icon: Activity },
+      { label: 'Integrations', path: '/platform/integrations', icon: Link2 },
+      { label: 'Data Health', path: '/platform/data-health', icon: Activity },
     ],
   },
   {
     label: 'Governance', items: [
-      { label: 'Reports', path: '/site/platform/reports', icon: FileText },
-      { label: 'Audit Log', path: '/site/platform/audit', icon: ClipboardList },
-      { label: 'Settings', path: '/site/platform/settings', icon: SettingsIcon },
+      { label: 'Reports', path: '/platform/reports', icon: FileText },
+      { label: 'Audit Log', path: '/platform/audit', icon: ClipboardList },
+      { label: 'Settings', path: '/platform/settings', icon: SettingsIcon },
     ],
   },
 ];
