@@ -1,0 +1,148 @@
+{
+  "summary": "Iteration 62: CRITICAL FONT AUDIT PART 2 - Trust subpage H1 fix VERIFIED. FOUND 6 authenticated pages with unreadable dark green text (#0f2f24) on dark Liquid Steel theme. These pages were designed for light theme but render inside DashboardLayout with dark background (#0F1720).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "MarketAnalysis.js",
+        "issue": "ALL text uses hardcoded dark green #0f2f24 which is INVISIBLE on dark Liquid Steel theme (#0F1720). H1 'Market Analysis' has color rgb(15,47,36) - nearly same as background.",
+        "selector": "h1.text-[#0f2f24], p.text-[#0f2f24]/60, Label.text-[#0f2f24]",
+        "priority": "CRITICAL",
+        "affected_elements": "H1 title, form labels, descriptions, tips text, loading spinner",
+        "fix_required": "Replace all text-[#0f2f24] with text-[#F4F7FA] and text-[#0f2f24]/60 with text-[#9FB0C3]"
+      },
+      {
+        "component": "Analysis.js",
+        "issue": "ALL text uses hardcoded dark green #0f2f24 - INVISIBLE on dark theme",
+        "selector": "h1.text-[#0f2f24], Label.text-[#0f2f24]",
+        "priority": "CRITICAL",
+        "affected_elements": "H1 'Business Analysis', overline, labels, descriptions",
+        "fix_required": "Replace text-[#0f2f24] with text-[#F4F7FA], text-[#0f2f24]/60 with text-[#9FB0C3]"
+      },
+      {
+        "component": "SOPGenerator.js",
+        "issue": "ALL text uses hardcoded dark green #0f2f24 - INVISIBLE on dark theme",
+        "selector": "h1.text-[#0f2f24]",
+        "priority": "CRITICAL",
+        "affected_elements": "H1 'SOP Generator', tabs, labels, all form text",
+        "fix_required": "Replace text-[#0f2f24] with text-[#F4F7FA], text-[#0f2f24]/60 with text-[#9FB0C3]"
+      },
+      {
+        "component": "DataCenter.js",
+        "issue": "ALL text uses hardcoded dark green #0f2f24 - INVISIBLE on dark theme",
+        "selector": "h1.text-[#0f2f24], h3.text-[#0f2f24], p.text-[#0f2f24]/60",
+        "priority": "CRITICAL",
+        "affected_elements": "H1 'Data Center', file names, descriptions, metadata, icons",
+        "fix_required": "Replace text-[#0f2f24] with text-[#F4F7FA], text-[#0f2f24]/60 with text-[#9FB0C3]"
+      },
+      {
+        "component": "Documents.js",
+        "issue": "ALL text uses hardcoded dark green #0f2f24 - INVISIBLE on dark theme",
+        "selector": "h1.text-[#0f2f24], h3.text-[#0f2f24]",
+        "priority": "CRITICAL",
+        "affected_elements": "H1 'My Documents', document titles, descriptions, search icon",
+        "fix_required": "Replace text-[#0f2f24] with text-[#F4F7FA], text-[#0f2f24]/60 with text-[#9FB0C3]"
+      },
+      {
+        "component": "DocumentView.js",
+        "issue": "Document title and metadata use hardcoded dark green #0f2f24 - INVISIBLE on dark theme",
+        "selector": "h1.text-[#0f2f24]",
+        "priority": "CRITICAL",
+        "affected_elements": "Document title, back link, metadata, buttons",
+        "fix_required": "Replace text-[#0f2f24] with text-[#F4F7FA], text-[#0f2f24]/60 with text-[#9FB0C3]"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_fixes": {
+    "trust_subpages_h1": {
+      "status": "FIXED",
+      "pages": [
+        "/site/trust/terms - H1 now rgb(255,255,255) WHITE",
+        "/site/trust/privacy - H1 now rgb(255,255,255) WHITE",
+        "/site/trust/dpa - H1 now rgb(255,255,255) WHITE",
+        "/site/trust/security - H1 now rgb(255,255,255) WHITE",
+        "/site/trust/centre - H1 now rgb(255,255,255) WHITE"
+      ],
+      "verification": "TrustSubPages.js line 17 now has color: '#FFFFFF'"
+    }
+  },
+  "pages_tested": {
+    "PASS_dark_theme_correct": [
+      "/advisor (AdvisorWatchtower.js) - Uses #F4F7FA, #9FB0C3 - READABLE",
+      "/settings (Settings.js) - No hardcoded dark colors - READABLE",
+      "/integrations (Integrations.js) - No hardcoded dark colors - READABLE",
+      "/soundboard (MySoundBoard.js) - No hardcoded dark colors - READABLE",
+      "/admin (AdminDashboard.js) - Uses #F4F7FA, #64748B - READABLE",
+      "/business-profile - Uses proper theme colors - READABLE",
+      "DashboardLayout sidebar and topbar - #F4F7FA, #9FB0C3 - READABLE"
+    ],
+    "FAIL_dark_green_on_dark_bg": [
+      "/market-analysis (MarketAnalysis.js) - H1/labels/descriptions use #0f2f24 = INVISIBLE",
+      "/analysis (Analysis.js) - H1/labels use #0f2f24 = INVISIBLE",
+      "/sop-generator (SOPGenerator.js) - H1/tabs/labels use #0f2f24 = INVISIBLE",
+      "/data-center (DataCenter.js) - H1/file names/descriptions use #0f2f24 = INVISIBLE",
+      "/documents (Documents.js) - H1/titles use #0f2f24 = INVISIBLE",
+      "/documents/:id (DocumentView.js) - Title/metadata use #0f2f24 = INVISIBLE"
+    ]
+  },
+  "root_cause_analysis": {
+    "issue": "6 pages were designed with a LIGHT theme color scheme (#0f2f24 = dark green text on white/cream background) but they render inside DashboardLayout which enforces the dark Liquid Steel theme (#0F1720 background).",
+    "color_conflict": {
+      "page_text_color": "#0f2f24 = rgb(15, 47, 36) - dark green",
+      "layout_background": "#0F1720 = rgb(15, 23, 32) - dark blue-gray",
+      "contrast_ratio": "Nearly 1:1 - INVISIBLE"
+    },
+    "fix_pattern": {
+      "current": "text-[#0f2f24] and text-[#0f2f24]/60",
+      "should_be": "text-[#F4F7FA] for headings, text-[#9FB0C3] for body, text-[#64748B] for muted"
+    },
+    "affected_files": [
+      "/app/frontend/src/pages/MarketAnalysis.js",
+      "/app/frontend/src/pages/Analysis.js",
+      "/app/frontend/src/pages/SOPGenerator.js",
+      "/app/frontend/src/pages/DataCenter.js",
+      "/app/frontend/src/pages/Documents.js",
+      "/app/frontend/src/pages/DocumentView.js"
+    ]
+  },
+  "test_report_links": [
+    "/app/frontend/src/pages/MarketAnalysis.js",
+    "/app/frontend/src/pages/Analysis.js",
+    "/app/frontend/src/pages/SOPGenerator.js",
+    "/app/frontend/src/pages/DataCenter.js",
+    "/app/frontend/src/pages/Documents.js",
+    "/app/frontend/src/pages/DocumentView.js"
+  ],
+  "action_items": [
+    "CRITICAL: Replace ALL instances of text-[#0f2f24] with text-[#F4F7FA] in the 6 affected files",
+    "CRITICAL: Replace ALL instances of text-[#0f2f24]/60 and text-[#0f2f24]/70 with text-[#9FB0C3]",
+    "CRITICAL: Replace ALL instances of text-[#0f2f24]/40 with text-[#64748B]",
+    "CRITICAL: Check .card-clean class and bg-white/bg-[#f5f5f0] styles - may need to use dark bg instead",
+    "Use global search: grep -r 'text-\\[#0f2f24\\]' /app/frontend/src/pages/ to find all instances",
+    "Reference AdvisorWatchtower.js and AdminDashboard.js for correct Liquid Steel dark theme colors"
+  ],
+  "critical_code_review_comments": [
+    "These 6 pages were likely built before the dark theme migration and never updated",
+    "The pages use .card-clean and bg-white which creates light cards with dark text - this design conflicts with dark layout",
+    "Consider: Either convert pages to full dark theme OR add internal white containers for light theme sections",
+    "The Liquid Steel color palette is: #F4F7FA (white text), #9FB0C3 (body text), #64748B (muted), #FF6A00 (accent), #0F1720 (background)"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - frontend only audit",
+    "frontend": "Trust H1 fix: 100% (5/5 pass). Authenticated pages: 50% (7 pass, 6 fail due to dark green text)"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "BIQc_Test_2026!"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Trust subpage H1 fix verified. 6 authenticated pages need color migration from #0f2f24 (light theme dark green) to Liquid Steel dark theme colors (#F4F7FA headings, #9FB0C3 body). Affected: MarketAnalysis.js, Analysis.js, SOPGenerator.js, DataCenter.js, Documents.js, DocumentView.js. Other pages like AdvisorWatchtower, Settings, Integrations, SoundBoard, Admin already use correct dark theme colors."
+}
