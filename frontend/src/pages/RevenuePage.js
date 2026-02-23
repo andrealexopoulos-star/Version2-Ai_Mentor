@@ -46,18 +46,25 @@ const DEMO = {
 
 const RevenuePage = () => {
   const [deals, setDeals] = useState(null);
+  const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDeals = async () => {
+    const fetchData = async () => {
       try {
-        const res = await apiClient.get('/integrations/crm/deals');
-        if (res.data?.results?.length > 0) {
-          setDeals(res.data.results);
+        const [dealsRes, finRes] = await Promise.allSettled([
+          apiClient.get('/integrations/crm/deals'),
+          apiClient.get('/integrations/accounting/summary'),
+        ]);
+        if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
+          setDeals(dealsRes.value.data.results);
+        }
+        if (finRes.status === 'fulfilled' && finRes.value.data?.connected) {
+          setFinancials(finRes.value.data);
         }
       } catch {} finally { setLoading(false); }
     };
-    fetchDeals();
+    fetchData();
   }, []);
 
   // Calculate metrics from live data or use demo
