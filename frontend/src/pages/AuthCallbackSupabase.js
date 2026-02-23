@@ -167,7 +167,7 @@ const AuthCallbackSupabase = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: "#FF6A00", animation: "pulse 2s ease-in-out infinite" }}><span className="text-white font-bold text-xl" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>B</span></div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Completing sign in...
         </h2>
