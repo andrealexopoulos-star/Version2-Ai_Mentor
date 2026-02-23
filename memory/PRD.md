@@ -1,37 +1,33 @@
-# BIQc Platform — PRD
+# BIQc Platform — PRD (Updated post-audit)
 
-## Completed 2026-02-23
+## Architecture
+- Frontend: React + Tailwind (Liquid Steel #0F1720/#FF6A00)
+- Backend: FastAPI (120+ endpoints) + Supabase (14 Edge Functions)
+- AI: OpenAI gpt-4o (backend) + gpt-4o-mini (calibration) + Perplexity (market)
+- Integrations: Merge.dev (CRM/Accounting), Outlook, Gmail, Google Drive
 
-### Business DNA in Sidebar
-- Added Business DNA under Governance in sidebar (links to existing /business-profile page)
-- Fixed spinner in BusinessProfile auto-save indicator
+## Completed (2026-02-23)
+- Full Liquid Steel theme across all 58 routes
+- 20 sidebar pages with data/intelligence
+- Floating Soundboard on all 6 Intelligence pages
+- Zero spinners in auth/loading flows
+- 4 accounting endpoints (provider-agnostic)
+- Alert Complete/Ignore with backend persistence
+- First-login notification for email/integration setup
+- Hero text sizing fixed across all website pages
+- Comprehensive platform audit completed
 
-### Alert Actions Wired to Backend
-- New endpoint: POST /api/intelligence/alerts/action (accepts alert_id + action: complete/ignore/hand-off/auto-email)
-- Frontend AlertsPageAuth: Complete/Ignore buttons now call backend, visually mark alerts as actioned
-- Logs actions to alert_actions table in Supabase
+## Pages with PLACEHOLDER data (5 pages)
+- /actions, /automations, /compliance, /reports, /audit-log
 
-### Calibration — Full Liquid Steel Theme
-- All calibration components themed: CalibratingSession, CalibrationComponents, WowSummary, ExecutiveReveal, ContinuitySuite
-- Zero spinners — all replaced with branded animations
-- Executive Summary at completion with Decision Style, Risk Posture, Communication, Focus Area cards
-
-### First-Login Notification
-- Prompts email + integration connection on first login
-
-### Floating Soundboard
-- On all 6 Intelligence pages
-
-### Financial Data Pipeline
-- 4 accounting endpoints via Merge.dev
-- Edge Function code at /app/memory/EDGE_FUNCTION_FINANCIAL_DATA.js
-
-### Sidebar Structure
-- Intelligence: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
-- Execution: Alerts, Priority Inbox, Actions, Automations
-- Systems: Integrations, Data Health
-- Governance: Reports, Audit Log, Business DNA, Settings
+## Live data pages (11 pages)
+- /advisor, /revenue, /operations, /risk, /market, /alerts
+- /email-inbox, /integrations, /data-health, /business-profile, /settings
 
 ## Pending
-- Deploy Edge Function financial data code to Supabase
-- Calibration intelligence: detect duplicate answers, adapt questions based on previous responses (requires Edge Function update to calibration-psych)
+- P0: Deploy Edge Function financial code to Supabase
+- P1: Wire 5 placeholder pages to real backends
+- P1: Calibration duplicate answer detection
+- P2: Consolidate 16 legacy pages
+- P2: Delete calibration_psych duplicate
+- P3: Bundle size optimization
