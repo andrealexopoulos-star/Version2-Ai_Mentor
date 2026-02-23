@@ -10,10 +10,10 @@ import { ContinuitySuite } from "../components/calibration/ContinuitySuite";
 import { CalibratingSession } from "../components/calibration/CalibratingSession";
 import { CalibrationTutorial } from "../components/TutorialOverlay";
 
-const CREAM = '#FBFBF9';
-const CHARCOAL = '#1E293B';
-const MUTED = '#64748B';
-const CARD_BORDER = '#E8E6E1';
+const CREAM = '#0F1720';
+const CHARCOAL = '#F4F7FA';
+const MUTED = '#9FB0C3';
+const CARD_BORDER = '#243140';
 
 const CalibrationAdvisor = () => {
   const cal = useCalibrationState();
