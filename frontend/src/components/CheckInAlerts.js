@@ -136,7 +136,7 @@ export const CheckInAlerts = () => {
               </button>
             </div>
 
-            <p className="text-sm mb-4" style={{ color: '#6B7280', fontFamily: BODY }}>
+            <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: BODY }}>
               {showScheduler === 'recalibration'
                 ? 'Choose a date and time to update your business profile and recalibrate BIQc.'
                 : 'Choose a date and time for a video check-in with your BIQc advisor.'}
@@ -144,15 +144,15 @@ export const CheckInAlerts = () => {
 
             {/* Date Selection */}
             <div className="mb-4">
-              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>Select Date</label>
+              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#64748B', fontFamily: MONO }}>Select Date</label>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                 {dateOptions.map((d) => (
                   <button key={d.value} onClick={() => setSelectedDate(d.value)}
                     className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: selectedDate === d.value ? '#0F172A' : 'white',
-                      color: selectedDate === d.value ? 'white' : '#374151',
-                      border: `1px solid ${selectedDate === d.value ? '#0F172A' : 'rgba(0,0,0,0.1)'}`,
+                      background: selectedDate === d.value ? '#FF6A00' : '#0F1720',
+                      color: selectedDate === d.value ? 'white' : '#9FB0C3',
+                      border: `1px solid ${selectedDate === d.value ? '#FF6A00' : '#243140'}`,
                       fontFamily: MONO,
                     }}>
                     {d.label}
@@ -163,15 +163,15 @@ export const CheckInAlerts = () => {
 
             {/* Time Selection */}
             <div className="mb-6">
-              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>Select Time (AEST)</label>
+              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#64748B', fontFamily: MONO }}>Select Time (AEST)</label>
               <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                 {timeSlots.map((t) => (
                   <button key={t} onClick={() => setSelectedTime(t)}
                     className="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: selectedTime === t ? '#F97316' : 'white',
-                      color: selectedTime === t ? 'white' : '#374151',
-                      border: `1px solid ${selectedTime === t ? '#F97316' : 'rgba(0,0,0,0.1)'}`,
+                      background: selectedTime === t ? '#FF6A00' : '#0F1720',
+                      color: selectedTime === t ? 'white' : '#9FB0C3',
+                      border: `1px solid ${selectedTime === t ? '#FF6A00' : '#243140'}`,
                       fontFamily: MONO,
                     }}>
                     {t}
@@ -182,7 +182,7 @@ export const CheckInAlerts = () => {
 
             <button onClick={handleSchedule} disabled={!selectedDate || submitting}
               className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40"
-              style={{ background: '#0F172A', fontFamily: HEAD }}
+              style={{ background: '#FF6A00', fontFamily: HEAD }}
               data-testid="schedule-confirm">
               {submitting ? 'Scheduling...' : `Schedule for ${selectedDate ? new Date(selectedDate).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '...'} at ${selectedTime}`}
             </button>
