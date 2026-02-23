@@ -35,10 +35,10 @@ const GROUPS = {
   market: { id: 'market', label: 'Market', icon: Radar, color: '#7C3AED', description: 'Competitors, positioning, trends, regulatory' },
 };
 
-const ST = { STABLE: { c: '#166534', bg: '#F0FDF4', b: '#BBF7D0', d: '#22C55E' }, DRIFT: { c: '#92400E', bg: '#FFFBEB', b: '#FDE68A', d: '#F59E0B' }, COMPRESSION: { c: '#9A3412', bg: '#FFF7ED', b: '#FED7AA', d: '#F97316' }, CRITICAL: { c: '#991B1B', bg: '#FEF2F2', b: '#FECACA', d: '#EF4444' } };
-const SEV = { high: { bg: '#FEF2F2', b: '#FECACA', d: '#EF4444' }, medium: { bg: '#FFFBEB', b: '#FDE68A', d: '#F59E0B' }, low: { bg: '#F0FDF4', b: '#BBF7D0', d: '#059669' } };
+const ST = { STABLE: { c: '#10B981', bg: '#10B98108', b: '#10B98125', d: '#10B981' }, DRIFT: { c: '#F59E0B', bg: '#F59E0B08', b: '#F59E0B25', d: '#F59E0B' }, COMPRESSION: { c: '#FF6A00', bg: '#FF6A0008', b: '#FF6A0025', d: '#FF6A00' }, CRITICAL: { c: '#EF4444', bg: '#EF444408', b: '#EF444425', d: '#EF4444' } };
+const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
 
-const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${className}`} style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.06)', backdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>{children}</div>);
+const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>);
 
 // Parse cognitive data into group structure
 function parseToGroups(c) {
