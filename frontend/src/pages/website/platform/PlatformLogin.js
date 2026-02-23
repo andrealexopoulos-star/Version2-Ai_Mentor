@@ -55,7 +55,7 @@ const PlatformLogin = () => (
           </div>
         </div>
 
-        <Link to="/site/platform/overview" className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: '#FF6A00', fontFamily: SORA }} data-testid="signin-btn">
+        <Link to="/platform/overview" className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: '#FF6A00', fontFamily: SORA }} data-testid="signin-btn">
           Sign in
         </Link>
 
