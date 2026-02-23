@@ -52,7 +52,7 @@ const WebsiteNav = () => {
     <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(15,23,32,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }} data-testid="website-nav">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/site" className="flex items-center gap-2.5" data-testid="nav-logo">
+        <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF8C33)' }}>
             <span className="text-white font-bold text-sm" style={{ fontFamily: MONO }}>B</span>
           </div>
