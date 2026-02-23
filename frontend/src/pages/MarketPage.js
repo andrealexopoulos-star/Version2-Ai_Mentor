@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { Radar, TrendingUp, TrendingDown, Users, Globe, ArrowUpRight, Target } from 'lucide-react';
+import { apiClient } from '../lib/api';
+import { Radar, TrendingUp, TrendingDown, Users, Globe, ArrowUpRight, Target, Loader2 } from 'lucide-react';
 
 const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
