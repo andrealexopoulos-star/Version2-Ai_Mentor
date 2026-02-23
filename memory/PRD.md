@@ -1,57 +1,58 @@
 # BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with a "Liquid Steel" dark theme.
+Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with "Liquid Steel" dark theme.
 
 ## Architecture
-- **Frontend**: React (CRA + CRACO), Tailwind CSS, Liquid Steel theme (#0F1720 bg, #FF6A00 accents)
-- **Backend**: FastAPI (Python) + Supabase (PostgreSQL, Auth, Edge Functions)
+- **Frontend**: React (CRA + CRACO), Tailwind CSS, Liquid Steel theme (#0F1720, #FF6A00)
+- **Backend**: FastAPI + Supabase (PostgreSQL, Auth, Edge Functions)
 - **Integrations**: Merge.dev (Xero, HubSpot), Google/Microsoft OAuth, OpenAI
 
 ## What's Been Implemented
 
+### 2026-02-23: Systems Audit & Critical Fixes
+- **ZERO spinners policy**: Replaced ALL spinning wheels across the app:
+  - ProtectedRoute LoadingScreen → branded BIQc pulse animation with progress bar
+  - CognitiveLoadingScreen → orbital animation (removed broken Lottie dependency)
+  - InitiatingBIQC → branded pulse animation
+  - AdvisorWatchtower refresh → static icon (no spin)
+  - All new pages → "syncing..." text instead of Loader2 spinner
+- **Priority Inbox added to sidebar** under Execution heading (/email-inbox)
+- **Complete/Ignore buttons** added to all alert items (AdvisorWatchtower + AlertsPageAuth)
+- **CheckInAlerts** fully dark-themed (was using light backgrounds)
+
 ### 2026-02-23: Live Data Integration
-- **Revenue page** pulls live HubSpot CRM deals via `/api/integrations/crm/deals` with demo fallback
-- **Operations page** pulls from `/api/snapshot/latest` cognitive data with demo fallback
-- **Risk page** pulls cash runway from snapshot with demo fallback
-- **Market page** pulls market narrative from snapshot with demo fallback
-- **Alerts page** pulls from `/api/intelligence/watchtower` events with demo fallback
-- **Data Health page** pulls from `/api/integrations/merge/connected` and `/api/intelligence/data-readiness`
-- Created `usePlatformData.js` shared hook for centralized API fetching
-- All pages show live data when authenticated, fall back to demo data gracefully
+- Revenue, Operations, Risk, Market, Alerts, Data Health pages wired to live APIs
+- Demo data fallback when APIs unavailable
 
 ### 2026-02-23: Sidebar Restructuring + 11 New Pages
-- Rebuilt sidebar: Intelligence, Execution, Systems, Governance
-- Created 11 new pages: Revenue, Operations, Risk, Compliance, Market, Alerts, Actions, Automations, Data Health, Reports, Audit Log
-- Fixed CheckInAlerts dark theme
+- Intelligence: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
+- Execution: Alerts, Priority Inbox, Actions, Automations
+- Systems: Integrations, Data Health
+- Governance: Reports, Audit Log, Settings
 
 ### 2026-02-23: Route Migration
-- Root `/` now serves Liquid Steel homepage
-- All `/site/*` routes migrated to root paths
-- 20/20 frontend tests passed
+- Root `/` serves Liquid Steel homepage
+- All routes migrated from `/site/*` to root paths
 
-## Sidebar Menu Structure
-- **Intelligence**: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
-- **Execution**: Alerts, Actions, Automations
-- **Systems**: Integrations, Data Health
-- **Governance**: Reports, Audit Log, Settings
-
-## Data Flow
-- Pages call backend APIs when authenticated
-- Backend routes: `/api/integrations/crm/deals`, `/api/integrations/crm/contacts`, `/api/integrations/merge/connected`, `/api/intelligence/watchtower`, `/api/snapshot/latest`, `/api/intelligence/data-readiness`
-- Demo/static data shown as fallback when APIs fail or return empty
+## Known Issue: Xero Data Not In Cognitive Engine
+- Xero IS connected via Merge.dev but the cognitive engine (Supabase Edge Function `biqc-insights-cognitive`) doesn't ingest accounting data
+- Sources show: "HubSpot CRM (30 contacts, 25 deals)" but no Xero
+- FIX REQUIRED: The Edge Function needs to query Merge.dev accounting API for Xero data
+- This produces the false alert: "Cash flow analysis critical due to lack of financial tool integration"
 
 ## Pending Tasks
 ### P0
 - Deploy to production
-- Verify live data flows from Xero/HubSpot/Email after login
+- Fix Xero data ingestion in cognitive Edge Function
+- Verify all pages render correctly on production after deploy
 
 ### P1
-- Connect Actions page to actual email sending
-- Implement Soundboard capability
-- Connect Automations to real workflow engine
+- Wire Complete/Ignore alert actions to backend
+- Connect Actions page to actual email/SMS sending
+- First-signup notification to connect email
 
 ### P2
 - Build report generation backend
+- Implement Soundboard capability
 - Industry-specific UI customization
-- Recover missing Edge Functions
