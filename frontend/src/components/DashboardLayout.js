@@ -113,7 +113,8 @@ const DashboardLayout = ({ children }) => {
     { id: 'governance', label: 'Governance', items: [
       { icon: FileText, label: 'Reports', path: '/reports' },
       { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
-      { icon: BarChart3, label: 'Settings', path: '/settings' },
+      { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
+      { icon: Settings, label: 'Settings', path: '/settings' },
     ]},
   ];
 
