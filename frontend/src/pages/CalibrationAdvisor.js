@@ -56,8 +56,25 @@ const CalibrationAdvisor = () => {
               Signed in as <span style={{ color: CHARCOAL }}>{cal.userEmail}</span>
             </span>
           </div>
-          <button onClick={cal.handleSignOut} className="text-xs px-3 py-1 rounded-full transition-colors"
-            style={{ color: MUTED, border: `1px solid ${CARD_BORDER}` }} data-testid="sign-out-btn">Sign out</button>
+          <div className="flex items-center gap-2">
+            {isSuperAdmin && (
+              <>
+                {cal.entry !== 'welcome' && cal.entry !== 'loading' && (
+                  <button onClick={() => cal.setEntry('welcome')} className="text-xs px-3 py-1 rounded-full flex items-center gap-1 transition-colors"
+                    style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="admin-back-btn">
+                    <ArrowLeft className="w-3 h-3" /> Back
+                  </button>
+                )}
+                <button onClick={handleSkipCalibration} disabled={skipping}
+                  className="text-xs px-3 py-1 rounded-full flex items-center gap-1 transition-colors"
+                  style={{ color: '#FF6A00', border: '1px solid #FF6A0040', background: '#FF6A0010' }} data-testid="admin-skip-btn">
+                  <SkipForward className="w-3 h-3" /> {skipping ? 'Skipping...' : 'Skip (Admin)'}
+                </button>
+              </>
+            )}
+            <button onClick={cal.handleSignOut} className="text-xs px-3 py-1 rounded-full transition-colors"
+              style={{ color: MUTED, border: `1px solid ${CARD_BORDER}` }} data-testid="sign-out-btn">Sign out</button>
+          </div>
         </div>
       )}
 
