@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { AlertTriangle, Shield, TrendingDown, DollarSign, Clock, ArrowRight } from 'lucide-react';
+import { apiClient } from '../lib/api';
+import { AlertTriangle, Shield, DollarSign, Clock, ArrowRight, Loader2 } from 'lucide-react';
 
 const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
@@ -10,7 +11,25 @@ const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
-const RiskPage = () => (
+const RiskPage = () => {
+  const [snapshot, setSnapshot] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await apiClient.get('/snapshot/latest');
+        if (res.data?.cognitive) setSnapshot(res.data.cognitive);
+      } catch {} finally { setLoading(false); }
+    };
+    fetch();
+  }, []);
+
+  const cashRunway = snapshot?.cash_runway_months || 4.2;
+  const riskLevel = cashRunway < 3 ? 'CRITICAL' : cashRunway < 6 ? 'MODERATE' : 'LOW';
+  const riskColor = riskLevel === 'CRITICAL' ? '#EF4444' : riskLevel === 'MODERATE' ? '#F59E0B' : '#10B981';
+
+  return (
   <DashboardLayout>
     <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="risk-page">
       <div>
