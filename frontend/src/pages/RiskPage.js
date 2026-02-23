@@ -34,7 +34,10 @@ const RiskPage = () => {
     <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="risk-page">
       <div>
         <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Risk Intelligence</h1>
-        <p className="text-sm text-[#9FB0C3]">Business risk exposure, financial threats, and operational vulnerabilities.</p>
+        <p className="text-sm text-[#9FB0C3]">
+          Business risk exposure, financial threats, and operational vulnerabilities.
+          {loading && <Loader2 className="w-3 h-3 inline ml-2 animate-spin" />}
+        </p>
       </div>
 
       {/* Risk Overview */}
