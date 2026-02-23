@@ -207,6 +207,7 @@ const RevenuePage = () => {
           ))}
         </div>
       </div>
+      <FloatingSoundboard context="Revenue intelligence - pipeline deals and churn" />
     </DashboardLayout>
   );
 };
