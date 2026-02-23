@@ -543,6 +543,167 @@ async def get_crm_owners(
         logger.error(f"❌ Error fetching owners: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+# ==================== ACCOUNTING / FINANCIAL INTEGRATIONS ====================
+
+@router.get("/integrations/accounting/invoices")
+async def get_accounting_invoices(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get invoices from ANY connected accounting system (Xero, QuickBooks, MYOB, etc.) via Merge.dev
+    """
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
+    user_id = current_user["id"]
+    account = await get_user_account(get_sb(), user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="User workspace not initialized")
+    
+    account_id = account["id"]
+    account_token = await get_merge_account_token(get_sb(), account_id, "accounting")
+    
+    if not account_token:
+        raise HTTPException(status_code=409, detail="IntegrationNotConnected: No accounting integration found. Connect Xero, QuickBooks, or MYOB.")
+    
+    merge_client = get_merge_client()
+    try:
+        data = await merge_client.get_invoices(account_token=account_token, cursor=cursor, page_size=page_size)
+        logger.info(f"✅ Retrieved {len(data.get('results', []))} invoices")
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error fetching invoices: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/integrations/accounting/payments")
+async def get_accounting_payments(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get payments from ANY connected accounting system via Merge.dev"""
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
+    user_id = current_user["id"]
+    account = await get_user_account(get_sb(), user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="User workspace not initialized")
+    
+    account_id = account["id"]
+    account_token = await get_merge_account_token(get_sb(), account_id, "accounting")
+    
+    if not account_token:
+        raise HTTPException(status_code=409, detail="IntegrationNotConnected: No accounting integration found.")
+    
+    merge_client = get_merge_client()
+    try:
+        data = await merge_client.get_payments(account_token=account_token, cursor=cursor, page_size=page_size)
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/integrations/accounting/transactions")
+async def get_accounting_transactions(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get transactions from ANY connected accounting system via Merge.dev"""
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
+    user_id = current_user["id"]
+    account = await get_user_account(get_sb(), user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="User workspace not initialized")
+    
+    account_id = account["id"]
+    account_token = await get_merge_account_token(get_sb(), account_id, "accounting")
+    
+    if not account_token:
+        raise HTTPException(status_code=409, detail="IntegrationNotConnected: No accounting integration found.")
+    
+    merge_client = get_merge_client()
+    try:
+        data = await merge_client.get_transactions(account_token=account_token, cursor=cursor, page_size=page_size)
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/integrations/accounting/summary")
+async def get_accounting_summary(current_user: dict = Depends(get_current_user)):
+    """
+    Financial intelligence summary from ANY connected accounting system.
+    Returns key financial metrics for the cognitive engine.
+    """
+    from merge_client import get_merge_client
+    from workspace_helpers import get_user_account, get_merge_account_token
+    
+    user_id = current_user["id"]
+    account = await get_user_account(get_sb(), user_id)
+    if not account:
+        raise HTTPException(status_code=400, detail="User workspace not initialized")
+    
+    account_id = account["id"]
+    account_token = await get_merge_account_token(get_sb(), account_id, "accounting")
+    
+    if not account_token:
+        return {"connected": False, "provider": None, "summary": None}
+    
+    merge_client = get_merge_client()
+    summary = {"connected": True, "invoices": [], "payments": [], "metrics": {}}
+    
+    try:
+        invoices = await merge_client.get_invoices(account_token=account_token, page_size=50)
+        invoice_list = invoices.get("results", [])
+        summary["invoices"] = invoice_list
+        
+        total_outstanding = 0
+        total_overdue = 0
+        overdue_count = 0
+        
+        for inv in invoice_list:
+            amount = float(inv.get("total_amount") or inv.get("amount") or 0)
+            status = (inv.get("status") or "").upper()
+            if status in ("SUBMITTED", "AUTHORIZED", "OPEN"):
+                total_outstanding += amount
+            if status == "OVERDUE" or (inv.get("due_date") and inv.get("due_date") < str(__import__('datetime').date.today())):
+                total_overdue += amount
+                overdue_count += 1
+        
+        summary["metrics"] = {
+            "total_invoices": len(invoice_list),
+            "total_outstanding": round(total_outstanding, 2),
+            "total_overdue": round(total_overdue, 2),
+            "overdue_count": overdue_count,
+        }
+        
+        try:
+            payments = await merge_client.get_payments(account_token=account_token, page_size=20)
+            summary["payments"] = payments.get("results", [])
+            summary["metrics"]["recent_payments"] = len(summary["payments"])
+        except Exception:
+            pass
+        
+        return summary
+    except Exception as e:
+        logger.error(f"❌ Error building accounting summary: {str(e)}")
+        return {"connected": True, "error": str(e), "summary": None}
+
 # ═══ Root + Health handled in server.py ═══
 
 # ═══ Voice chat handled in server.py ═══
