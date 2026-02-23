@@ -126,12 +126,9 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
         except Exception:
             pass
 
-        # SUPER ADMIN BYPASS: superadmins and the master account can always skip
-        if user_role in ("superadmin", "admin") or user_email == "andre@thestrategysquad.com.au":
-            logger.info(f"[calibration/status] Super admin {user_email} — auto-COMPLETE")
-            return JSONResponse(status_code=200, content={
-                "status": "COMPLETE", "user_name": user_name, "admin_bypass": True
-            })
+        # SUPER ADMIN NOTE: Super admins see calibration like everyone else
+        # but have skip/back buttons on the calibration page.
+        # They are NOT auto-bypassed — they see everything.
 
         # PRIORITY 1: Check strategic_console_state (new authoritative table)
         try:
