@@ -231,7 +231,7 @@ const AdvisorWatchtower = () => {
                     </div>
                   </div>
                 ) : (
-                  <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#9CA3AF', fontFamily: BODY }}>No items need attention right now. All clear.</p></Card>
+                  <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>No items need attention right now. All clear.</p></Card>
                 )}
 
                 {/* Alignment Gaps */}
