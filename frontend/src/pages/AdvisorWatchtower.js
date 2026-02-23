@@ -280,9 +280,9 @@ const AdvisorWatchtower = () => {
 
               {/* Sources */}
               {sources && sources.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <span className="text-[10px]" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sources:</span>
-                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>))}
+                <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid #243140' }}>
+                  <span className="text-[10px]" style={{ color: '#64748B', fontFamily: MONO }}>Sources:</span>
+                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: '#141C26', fontFamily: MONO }}>{s}</span>))}
                 </div>
               )}
             </div>
