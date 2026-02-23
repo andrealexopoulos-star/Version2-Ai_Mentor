@@ -11,7 +11,7 @@ const TrustPageShell = ({ title, lastUpdated, children }) => (
   <WebsiteLayout>
     <section className="py-24">
       <div className="max-w-3xl mx-auto px-6">
-        <Link to="/site/trust" className="inline-flex items-center gap-2 text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors mb-8" style={{ fontFamily: MONO }}>
+        <Link to="/trust" className="inline-flex items-center gap-2 text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors mb-8" style={{ fontFamily: MONO }}>
           <ArrowLeft className="w-4 h-4" /> Back to Trust
         </Link>
         <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{title}</h1>
@@ -199,10 +199,10 @@ export const TrustCentrePage = () => (
     <h2>Documentation</h2>
     <p>For detailed information on specific topics, please refer to:</p>
     <ul>
-      <li><a href="/site/trust/terms" style={{ color: '#FF6A00' }}>Terms & Conditions</a></li>
-      <li><a href="/site/trust/privacy" style={{ color: '#FF6A00' }}>Privacy Policy</a></li>
-      <li><a href="/site/trust/dpa" style={{ color: '#FF6A00' }}>Data Processing Agreement</a></li>
-      <li><a href="/site/trust/security" style={{ color: '#FF6A00' }}>Security & Infrastructure</a></li>
+      <li><a href="/trust/terms" style={{ color: '#FF6A00' }}>Terms & Conditions</a></li>
+      <li><a href="/trust/privacy" style={{ color: '#FF6A00' }}>Privacy Policy</a></li>
+      <li><a href="/trust/dpa" style={{ color: '#FF6A00' }}>Data Processing Agreement</a></li>
+      <li><a href="/trust/security" style={{ color: '#FF6A00' }}>Security & Infrastructure</a></li>
     </ul>
     <h2>Contact</h2>
     <p>For security inquiries: security@thestrategysquad.com.au<br />For privacy inquiries: privacy@thestrategysquad.com.au</p>
