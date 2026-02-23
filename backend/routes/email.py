@@ -281,7 +281,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     if '.emergent.host' in base_url:
         base_url = base_url.replace('.emergent.host', '.com')
     if 'preview.emergentagent.com' in base_url:
-        base_url = 'https://biqc.thestrategysquad.com'
+        base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
     redirect_uri = f"{base_url}/api/auth/gmail/callback"
     logger.info(f"📧 Gmail OAuth redirect_uri: {redirect_uri}")
     
