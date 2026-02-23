@@ -92,33 +92,26 @@ const DashboardLayout = ({ children }) => {
 
   const navSections = [
     { id: 'intelligence', label: 'Intelligence', items: [
-      { icon: MessageSquare, label: 'BIQc Insights', path: '/advisor', showBadge: true },
-      { icon: Terminal, label: 'Strategic Console', path: '/war-room', requiresCalibration: true },
-      { icon: Crosshair, label: 'Board Room', path: '/board-room', requiresCalibration: true },
-      { icon: Activity, label: 'Operator View', path: '/operator', requiresCalibration: true },
-      { icon: Lightbulb, label: 'SoundBoard', path: '/soundboard' },
+      { icon: LayoutDashboard, label: 'BIQc Insights', path: '/advisor', showBadge: true },
+      { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
+      { icon: Settings, label: 'Operations', path: '/operations' },
+      { icon: AlertTriangle, label: 'Risk', path: '/risk' },
+      { icon: Shield, label: 'Compliance', path: '/compliance' },
+      { icon: Radar, label: 'Market', path: '/market' },
     ]},
-    { id: 'analysis', label: 'Analysis', items: [
-      { icon: Stethoscope, label: 'Diagnosis', path: '/diagnosis', requiresCalibration: true },
-      { icon: TrendingUp, label: 'Analysis', path: '/analysis' },
-      { icon: Radar, label: 'Market Analysis', path: '/market-analysis' },
-      { icon: BarChart3, label: 'Intel Centre', path: '/intel-centre' },
+    { id: 'execution', label: 'Execution', items: [
+      { icon: Bell, label: 'Alerts', path: '/alerts' },
+      { icon: Zap, label: 'Actions', path: '/actions' },
+      { icon: Workflow, label: 'Automations', path: '/automations' },
     ]},
-    { id: 'tools', label: 'Tools', items: [
-      { icon: Shield, label: 'SOP Generator', path: '/sop-generator' },
-      { icon: Database, label: 'Data Center', path: '/data-center' },
-      { icon: FileText, label: 'Documents', path: '/documents' },
+    { id: 'systems', label: 'Systems', items: [
+      { icon: Link2, label: 'Integrations', path: '/integrations' },
+      { icon: Activity, label: 'Data Health', path: '/data-health' },
     ]},
-    { id: 'configuration', label: 'Configuration', items: [
-      { icon: BarChart3, label: 'Intelligence Baseline', path: '/intelligence-baseline' },
-      { icon: Plug, label: 'Integrations', path: '/integrations' },
-      { icon: Mail, label: 'Email', path: '/connect-email' },
-      { icon: Inbox, label: 'Email Inbox', path: '/email-inbox' },
-      { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    ]},
-    { id: 'settings', label: 'Settings', items: [
-      { icon: Settings, label: 'Account', path: '/settings' },
-      { icon: Building2, label: 'Business DNA', path: '/business-profile' },
+    { id: 'governance', label: 'Governance', items: [
+      { icon: FileText, label: 'Reports', path: '/reports' },
+      { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
+      { icon: BarChart3, label: 'Settings', path: '/settings' },
     ]},
   ];
 
