@@ -1001,6 +1001,43 @@ async def get_watchtower_events(
         raise HTTPException(status_code=500, detail=f"Failed to fetch watchtower events: {str(e)}")
 
 
+@router.post("/intelligence/alerts/action")
+async def alert_action(request: Request, current_user: dict = Depends(get_current_user)):
+    """Handle alert actions: complete, ignore, hand-off, auto-email"""
+    body = await request.json()
+    alert_id = body.get("alert_id")
+    action = body.get("action")  # complete, ignore, hand-off, auto-email
+    
+    if not alert_id or not action:
+        raise HTTPException(status_code=400, detail="alert_id and action required")
+    
+    user_id = current_user["id"]
+    
+    # Try watchtower store first
+    try:
+        from watchtower_store import get_watchtower_store
+        watchtower = get_watchtower_store()
+        if action in ("complete", "ignore"):
+            await watchtower.handle_event(str(alert_id), user_id)
+    except Exception as e:
+        logger.warning(f"[alert-action] Watchtower handle failed: {e}")
+    
+    # Log the action to Supabase
+    try:
+        get_sb().table("alert_actions").insert({
+            "user_id": user_id,
+            "alert_id": str(alert_id),
+            "action": action,
+            "created_at": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
+        }).execute()
+    except Exception as e:
+        # Table may not exist yet — log and continue
+        logger.warning(f"[alert-action] Log failed (table may not exist): {e}")
+    
+    return {"success": True, "action": action, "alert_id": alert_id}
+
+
+
 @router.patch("/intelligence/watchtower/{event_id}/handle")
 async def handle_watchtower_event(
     event_id: str,
