@@ -8,9 +8,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import {
-  MessageSquare, Settings, LogOut, Menu, X, ChevronDown, Shield, User, Stethoscope, Building2,
-  Plug, Zap, Bell, Calendar, Lightbulb, AlertCircle, Mail, ChevronRight, Terminal,
-  Crosshair, BarChart3, Activity, FileText, Inbox, Database, TrendingUp, Radar, HelpCircle
+  Settings, LogOut, Menu, X, ChevronDown, Shield, User,
+  Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
+  TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
+  ClipboardList
 } from 'lucide-react';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
