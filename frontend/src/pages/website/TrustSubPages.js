@@ -14,7 +14,7 @@ const TrustPageShell = ({ title, lastUpdated, children }) => (
         <Link to="/site/trust" className="inline-flex items-center gap-2 text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors mb-8" style={{ fontFamily: MONO }}>
           <ArrowLeft className="w-4 h-4" /> Back to Trust
         </Link>
-        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: HEADING }}>{title}</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{title}</h1>
         <p className="text-xs text-[#9FB0C3]/50 mb-10" style={{ fontFamily: MONO }}>Last updated: {lastUpdated}</p>
         <div className="prose-steel space-y-6">{children}</div>
       </div>
