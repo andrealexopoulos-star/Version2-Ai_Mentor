@@ -1,0 +1,85 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, X, Plug, ArrowRight } from 'lucide-react';
+
+const MONO = "'JetBrains Mono', monospace";
+const BODY = "'Inter', sans-serif";
+const HEAD = "'Cormorant Garamond', Georgia, serif";
+
+/**
+ * FirstLoginNotification — Shows on first login to prompt connecting email and integrations.
+ * Auto-dismisses after user clicks or after 30 seconds.
+ */
+const FirstLoginNotification = () => {
+  const navigate = useNavigate();
+  const [visible, setVisible] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    const key = 'biqc_first_login_shown';
+    const shown = localStorage.getItem(key);
+    if (!shown) {
+      setVisible(true);
+      localStorage.setItem(key, Date.now().toString());
+      const timer = setTimeout(() => setVisible(false), 30000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  if (!visible || dismissed) return null;
+
+  return (
+    <div className="fixed top-16 right-4 z-50 w-[360px] max-w-[calc(100vw-32px)] rounded-xl overflow-hidden shadow-2xl"
+      style={{ background: '#141C26', border: '1px solid #FF6A0030', animation: 'fadeIn 0.5s ease' }}
+      data-testid="first-login-notification">
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#FF6A0020' }}>
+              <Plug className="w-4 h-4 text-[#FF6A00]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Get Started</h3>
+              <p className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Connect your systems</p>
+            </div>
+          </div>
+          <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-white/5 text-[#64748B]">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-xs text-[#9FB0C3] mb-4 leading-relaxed" style={{ fontFamily: BODY }}>
+          Connect your email and integrations to unlock full intelligence capabilities.
+        </p>
+
+        <div className="space-y-2">
+          <button onClick={() => { setDismissed(true); navigate('/connect-email'); }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-white/5"
+            style={{ background: '#0F1720', border: '1px solid #243140' }}
+            data-testid="connect-email-btn">
+            <Mail className="w-4 h-4 text-[#3B82F6]" />
+            <div className="flex-1">
+              <span className="text-sm text-[#F4F7FA] block">Connect Email</span>
+              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Outlook or Gmail</span>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#64748B]" />
+          </button>
+
+          <button onClick={() => { setDismissed(true); navigate('/integrations'); }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-white/5"
+            style={{ background: '#0F1720', border: '1px solid #243140' }}
+            data-testid="connect-integrations-btn">
+            <Plug className="w-4 h-4 text-[#FF6A00]" />
+            <div className="flex-1">
+              <span className="text-sm text-[#F4F7FA] block">Connect Integrations</span>
+              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Xero, HubSpot, CRM</span>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#64748B]" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FirstLoginNotification;
