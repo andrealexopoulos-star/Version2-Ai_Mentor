@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://agentic-advisor.preview.emergentagent.com
+**Test URL:** https://admin-portal-launch.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://agentic-advisor.preview.emergentagent.com/advisor
+- [ ] Navigate to https://admin-portal-launch.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://agentic-advisor.preview.emergentagent.com/
+**Landing:** https://admin-portal-launch.preview.emergentagent.com/
 
-**Login:** https://agentic-advisor.preview.emergentagent.com/login-supabase
+**Login:** https://admin-portal-launch.preview.emergentagent.com/login-supabase
 
-**Register:** https://agentic-advisor.preview.emergentagent.com/register-supabase
+**Register:** https://admin-portal-launch.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://agentic-advisor.preview.emergentagent.com/pricing
+**Pricing:** https://admin-portal-launch.preview.emergentagent.com/pricing
 
-**Terms:** https://agentic-advisor.preview.emergentagent.com/terms
+**Terms:** https://admin-portal-launch.preview.emergentagent.com/terms
 
-**Advisor:** https://agentic-advisor.preview.emergentagent.com/advisor
+**Advisor:** https://admin-portal-launch.preview.emergentagent.com/advisor
 
 ---
 

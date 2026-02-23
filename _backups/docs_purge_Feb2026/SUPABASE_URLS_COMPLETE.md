@@ -34,7 +34,7 @@ https://app.supabase.com/project/uxyqpdfftxpkzeppqtvk
 
 **Site URL (Primary App URL):**
 ```
-https://agentic-advisor.preview.emergentagent.com
+https://admin-portal-launch.preview.emergentagent.com
 ```
 
 **Where to Set:**
@@ -42,8 +42,8 @@ https://agentic-advisor.preview.emergentagent.com
 
 **Redirect URLs (OAuth Callbacks):**
 ```
-https://agentic-advisor.preview.emergentagent.com/auth/callback
-https://agentic-advisor.preview.emergentagent.com/**
+https://admin-portal-launch.preview.emergentagent.com/auth/callback
+https://admin-portal-launch.preview.emergentagent.com/**
 ```
 
 **Where to Set:**
@@ -191,13 +191,13 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4eXFwZGZ
 
 | Setting | Value | Status |
 |---------|-------|--------|
-| **Site URL** | `https://agentic-advisor.preview.emergentagent.com` | ⏳ Verify |
+| **Site URL** | `https://admin-portal-launch.preview.emergentagent.com` | ⏳ Verify |
 | **Redirect URLs** | See below | ⏳ Verify |
 
 **Redirect URLs (Add All):**
 ```
-https://agentic-advisor.preview.emergentagent.com/auth/callback
-https://agentic-advisor.preview.emergentagent.com/**
+https://admin-portal-launch.preview.emergentagent.com/auth/callback
+https://admin-portal-launch.preview.emergentagent.com/**
 ```
 
 **Screenshot for Reference:**
@@ -373,7 +373,7 @@ https://uxyqpdfftxpkzeppqtvk.supabase.co/auth/v1/callback
 ### For Third-Party Callbacks:
 **Your app redirects users back to:**
 ```
-https://agentic-advisor.preview.emergentagent.com/auth/callback
+https://admin-portal-launch.preview.emergentagent.com/auth/callback
 ```
 **NOT** to Supabase URLs directly.
 
@@ -382,9 +382,9 @@ https://agentic-advisor.preview.emergentagent.com/auth/callback
 ## ✅ WHAT TO CONFIGURE IN SUPABASE DASHBOARD
 
 ### 1. Authentication → URL Configuration
-- [x] Site URL: `https://agentic-advisor.preview.emergentagent.com`
-- [ ] **ADD** Redirect URL: `https://agentic-advisor.preview.emergentagent.com/auth/callback`
-- [ ] **ADD** Redirect URL: `https://agentic-advisor.preview.emergentagent.com/**`
+- [x] Site URL: `https://admin-portal-launch.preview.emergentagent.com`
+- [ ] **ADD** Redirect URL: `https://admin-portal-launch.preview.emergentagent.com/auth/callback`
+- [ ] **ADD** Redirect URL: `https://admin-portal-launch.preview.emergentagent.com/**`
 
 ### 2. Authentication → Providers
 - [ ] **Enable Google** (for account login)
@@ -480,13 +480,13 @@ curl https://uxyqpdfftxpkzeppqtvk.supabase.co/rest/v1/users?select=id,email&limi
 
 2. **Verify/Add Site URL:**
    ```
-   https://agentic-advisor.preview.emergentagent.com
+   https://admin-portal-launch.preview.emergentagent.com
    ```
 
 3. **Verify/Add Redirect URLs:**
    ```
-   https://agentic-advisor.preview.emergentagent.com/auth/callback
-   https://agentic-advisor.preview.emergentagent.com/**
+   https://admin-portal-launch.preview.emergentagent.com/auth/callback
+   https://admin-portal-launch.preview.emergentagent.com/**
    ```
 
 4. **Check Edge Functions:**
@@ -519,8 +519,8 @@ Gmail Check: https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/gmail_prod
 
 **Your App URLs:**
 ```
-Site URL: https://agentic-advisor.preview.emergentagent.com
-Auth Callback: https://agentic-advisor.preview.emergentagent.com/auth/callback
+Site URL: https://admin-portal-launch.preview.emergentagent.com
+Auth Callback: https://admin-portal-launch.preview.emergentagent.com/auth/callback
 ```
 
 ---

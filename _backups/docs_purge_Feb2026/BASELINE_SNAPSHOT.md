@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://agentic-advisor.preview.emergentagent.com`
-- **Backend:** `https://agentic-advisor.preview.emergentagent.com/api`
+- **Frontend:** `https://admin-portal-launch.preview.emergentagent.com`
+- **Backend:** `https://admin-portal-launch.preview.emergentagent.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

@@ -1,7 +1,7 @@
 ## BIQc Backend Performance Test Report
 
 Date: 2026-02-17  
-Platform: https://agentic-advisor.preview.emergentagent.com  
+Platform: https://admin-portal-launch.preview.emergentagent.com  
 Test Type: Backend API Performance Testing  
 
 ### 🎯 OBJECTIVE

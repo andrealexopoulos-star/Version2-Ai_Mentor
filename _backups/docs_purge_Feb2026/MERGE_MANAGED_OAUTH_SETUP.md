@@ -65,7 +65,7 @@ Click **"Save"** or **"Update"** button.
 
 ## 🧪 TEST THE CONNECTION
 
-1. Navigate to: https://agentic-advisor.preview.emergentagent.com/integrations
+1. Navigate to: https://admin-portal-launch.preview.emergentagent.com/integrations
 2. Click "Connect" on HubSpot
 3. Merge modal opens
 4. Click HubSpot

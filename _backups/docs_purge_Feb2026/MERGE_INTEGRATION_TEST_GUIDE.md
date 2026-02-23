@@ -36,14 +36,14 @@ Verify that the Merge.dev link token endpoint works end-to-end with proper Supab
 ## Manual Testing Instructions
 
 ### Step 1: Log In
-1. Open browser and navigate to: https://agentic-advisor.preview.emergentagent.com/login-supabase
+1. Open browser and navigate to: https://admin-portal-launch.preview.emergentagent.com/login-supabase
 2. Log in using one of these methods:
    - **Google OAuth**: Click "Continue with Google" and use andre.alexopoulos@gmail.com
    - **Microsoft OAuth**: Click "Continue with Microsoft" and use andre.alexopoulos@gmail.com
    - **Email/Password**: If you have password credentials
 
 ### Step 2: Navigate to Integrations Page
-1. After successful login, navigate to: https://agentic-advisor.preview.emergentagent.com/integrations
+1. After successful login, navigate to: https://admin-portal-launch.preview.emergentagent.com/integrations
 2. The page should load without redirecting to login
 
 ### Step 3: Open Browser Console
@@ -108,7 +108,7 @@ If you want to test the API directly from console:
 const token = JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token;
 
 // Call API
-fetch('https://agentic-advisor.preview.emergentagent.com/api/integrations/merge/link-token', {
+fetch('https://admin-portal-launch.preview.emergentagent.com/api/integrations/merge/link-token', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${token}`,
@@ -212,7 +212,7 @@ Please provide the following information:
 - Endpoint: `POST /api/integrations/merge/link-token`
 
 ### Environment Variables
-- Frontend: `REACT_APP_BACKEND_URL=https://agentic-advisor.preview.emergentagent.com`
+- Frontend: `REACT_APP_BACKEND_URL=https://admin-portal-launch.preview.emergentagent.com`
 - Backend: `MERGE_API_KEY=7JIdThF2Hd92_B_rmlRWI8djXlCHeI0bJ6LhQfWdL0mge4mYt9l9cw`
 
 ### Merge.dev API Endpoint

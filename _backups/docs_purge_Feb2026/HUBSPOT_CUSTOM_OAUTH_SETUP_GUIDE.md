@@ -133,7 +133,7 @@ App 29819397
 
 **Test in BIQC:**
 
-1. Navigate to: https://agentic-advisor.preview.emergentagent.com/integrations
+1. Navigate to: https://admin-portal-launch.preview.emergentagent.com/integrations
 2. Login as: andre@thestrategysquad.com.au
 3. Click **"Connect"** on HubSpot card
 4. Merge modal should open

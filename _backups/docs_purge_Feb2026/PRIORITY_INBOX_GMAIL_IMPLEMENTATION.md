@@ -120,7 +120,7 @@
 
 ### **STEP 4: Test**
 
-1. Go to: `https://agentic-advisor.preview.emergentagent.com/email-inbox`
+1. Go to: `https://admin-portal-launch.preview.emergentagent.com/email-inbox`
 2. You should see Gmail/Outlook selector buttons
 3. Gmail should be selected by default
 4. Should show connection status

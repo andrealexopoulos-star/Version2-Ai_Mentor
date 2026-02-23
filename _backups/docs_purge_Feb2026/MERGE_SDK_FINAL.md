@@ -32,7 +32,7 @@ window.MergeLink.openLink(link_token, {
 ## Testing Instructions
 
 ### Step 1: Verify SDK Loaded
-1. Open browser and navigate to: https://agentic-advisor.preview.emergentagent.com/integrations
+1. Open browser and navigate to: https://admin-portal-launch.preview.emergentagent.com/integrations
 2. Open console (F12)
 3. Type: `console.log(window.MergeLink)`
 4. Should see an object (not undefined)

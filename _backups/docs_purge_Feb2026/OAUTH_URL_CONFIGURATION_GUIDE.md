@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://agentic-advisor.preview.emergentagent.com
+https://admin-portal-launch.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://agentic-advisor.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://agentic-advisor.preview.emergentagent.com
+https://admin-portal-launch.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://agentic-advisor.preview.emergentagent.com/**
-https://agentic-advisor.preview.emergentagent.com/auth/callback
-https://agentic-advisor.preview.emergentagent.com/auth-callback-supabase
-https://agentic-advisor.preview.emergentagent.com/connect-email
-https://agentic-advisor.preview.emergentagent.com/integrations
+https://admin-portal-launch.preview.emergentagent.com/**
+https://admin-portal-launch.preview.emergentagent.com/auth/callback
+https://admin-portal-launch.preview.emergentagent.com/auth-callback-supabase
+https://admin-portal-launch.preview.emergentagent.com/connect-email
+https://admin-portal-launch.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://agentic-advisor.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://agentic-advisor.preview.emergentagent.com/api/auth/outlook/callback
+https://admin-portal-launch.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://agentic-advisor.preview.emergentagent.com
+https://admin-portal-launch.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://agentic-advisor.preview.emergentagent.com/api/auth/gmail/callback
+https://admin-portal-launch.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

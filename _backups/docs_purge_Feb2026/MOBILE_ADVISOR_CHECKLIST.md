@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://agentic-advisor.preview.emergentagent.com/advisor
+## For: https://admin-portal-launch.preview.emergentagent.com/advisor
 
 ---
 

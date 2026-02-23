@@ -36,7 +36,7 @@ Backend restarted ✅
 **Secret Name**: `BACKEND_URL`  
 **Secret Value**:
 ```
-https://agentic-advisor.preview.emergentagent.com
+https://admin-portal-launch.preview.emergentagent.com
 ```
 
 ### After Updating Secrets
@@ -65,7 +65,7 @@ AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
 ```
 AZURE_CLIENT_ID=biqc-advisor
 AZURE_CLIENT_SECRET=3co8Q~PnscNo_dvuAw~HnlhhJzJsP~7sj3X3tc0E
-BACKEND_URL=https://agentic-advisor.preview.emergentagent.com
+BACKEND_URL=https://admin-portal-launch.preview.emergentagent.com
 ```
 
 ---
