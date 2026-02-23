@@ -206,7 +206,7 @@ const AdvisorWatchtower = () => {
                 </div>
 
                 {/* AI Insight */}
-                {gd.insight && <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#374151', fontFamily: BODY }}>{gd.insight}</p></Card>}
+                {gd.insight && <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{gd.insight}</p></Card>}
 
                 {/* Resolution Items */}
                 {gd.resolutions.length > 0 ? (
