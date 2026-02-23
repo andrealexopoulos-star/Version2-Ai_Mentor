@@ -160,7 +160,7 @@ const AdvisorWatchtower = () => {
                   {stateConf && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: MONO }}>{typeof stateConf === 'number' ? `${stateConf}%` : stateConf}</span>}
                 </div>
                 <button onClick={refresh} disabled={refreshing} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg hover:bg-white/5" style={{ color: '#64748B' }} data-testid="refresh-btn">
-                  <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className="w-3 h-3" />
                 </button>
               </div>
               {stateInterp && <div className="max-w-5xl mx-auto px-6 pb-2"><p className="text-[12px]" style={{ color: st.c, fontFamily: BODY }}>{stateInterp}</p></div>}
