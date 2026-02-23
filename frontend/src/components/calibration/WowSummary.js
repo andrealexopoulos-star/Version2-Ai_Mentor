@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
-const CHARCOAL = '#1E293B';
-const MUTED = '#64748B';
-const GOLD = '#B8860B';
-const CARD_BG = '#FFFFFF';
-const CARD_BORDER = '#E8E6E1';
+const CHARCOAL = '#F4F7FA';
+const MUTED = '#9FB0C3';
+const GOLD = '#FF6A00';
+const CARD_BG = '#141C26';
+const CARD_BORDER = '#243140';
 const SERIF = "var(--font-heading)";
 
 const WOW_CATEGORIES = ['Profile', 'Market', 'Product', 'Team', 'Strategy'];
