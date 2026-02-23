@@ -37,7 +37,7 @@ const HomePage = () => (
             <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#F4F7FA' }}>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#F4F7FA' }}>
             Run Your Business Like The<br />
             <span style={{ color: '#FF6A00' }}>Big Players</span> Without The Cost
           </h1>

@@ -22,7 +22,7 @@ const TrustLandingPage = () => (
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
       <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10 text-center">
         <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>Trust & Security</span>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
           Built for Businesses That Take<br /><span style={{ color: '#FF6A00' }}>Data Seriously.</span>
         </h1>
         <p className="text-lg text-[#9FB0C3] max-w-xl mx-auto" style={{ fontFamily: BODY }}>

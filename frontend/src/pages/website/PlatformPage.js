@@ -22,7 +22,7 @@ const PlatformPage = () => (
       <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10">
         <div className="max-w-3xl">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>The Platform</span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             Run Your Business With Enterprise-Level Intelligence <span className="block" style={{ fontSize: '0.65em', color: '#CBD5E1' }}>&mdash; Without Hiring Enterprise Headcount.</span>
           </h1>
           <p className="text-lg text-[#9FB0C3] mb-8 leading-relaxed max-w-xl" style={{ fontFamily: BODY }}>
