@@ -3,6 +3,7 @@ import { useSnapshot } from '../hooks/useSnapshot';
 import DashboardLayout from '../components/DashboardLayout';
 import { CheckInAlerts } from '../components/CheckInAlerts';
 import { CognitiveLoadingScreen } from '../components/CognitiveLoadingScreen';
+import FloatingSoundboard from '../components/FloatingSoundboard';
 import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
