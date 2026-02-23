@@ -55,6 +55,19 @@ import ContactPage from './pages/ContactPage';
 import CognitiveV2Mockup from './pages/CognitiveV2Mockup';
 import LoadingPreview from './pages/LoadingPreview';
 
+// New Intelligence Pages
+import RevenuePage from './pages/RevenuePage';
+import OperationsPage from './pages/OperationsPage';
+import RiskPage from './pages/RiskPage';
+import CompliancePage from './pages/CompliancePage';
+import MarketPage from './pages/MarketPage';
+import AlertsPageAuth from './pages/AlertsPageAuth';
+import ActionsPage from './pages/ActionsPage';
+import AutomationsPageAuth from './pages/AutomationsPageAuth';
+import DataHealthPage from './pages/DataHealthPage';
+import ReportsPage from './pages/ReportsPage';
+import AuditLogPage from './pages/AuditLogPage';
+
 // Website (Liquid Steel) pages
 import SiteHomePage from './pages/website/HomePage';
 import SitePlatformPage from './pages/website/PlatformPage';
