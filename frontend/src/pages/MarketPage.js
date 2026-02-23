@@ -129,7 +129,7 @@ const MarketPage = () => {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>AI Market Advisory</h3>
-            <p className="text-sm text-[#9FB0C3] leading-relaxed">Your market position is stable but under emerging pressure. Competitor A's price undercut requires a response — recommend emphasising your differentiated value (Australian data sovereignty, AI-driven proactive intelligence). Competitor D's client loss presents an acquisition opportunity. The AI automation trend strongly favours your platform positioning.</p>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed">{marketNarrative || 'Your market position is stable but under emerging pressure. Competitor A\'s price undercut requires a response — recommend emphasising your differentiated value (Australian data sovereignty, AI-driven proactive intelligence). Competitor D\'s client loss presents an acquisition opportunity. The AI automation trend strongly favours your platform positioning.'}</p>
           </div>
         </div>
       </Panel>
