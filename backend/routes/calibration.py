@@ -112,8 +112,11 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
     """
     Calibration status — checks strategic_console_state FIRST (authoritative),
     then falls back to user_operator_profile.
+    Super admins can always skip calibration.
     """
     user_id = current_user.get("id")
+    user_role = current_user.get("role", "user")
+    user_email = current_user.get("email", "")
 
     try:
         user_name = None
@@ -122,6 +125,13 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
             user_name = user_row.get("full_name") if user_row else None
         except Exception:
             pass
+
+        # SUPER ADMIN BYPASS: superadmins and the master account can always skip
+        if user_role in ("superadmin", "admin") or user_email == "andre@thestrategysquad.com.au":
+            logger.info(f"[calibration/status] Super admin {user_email} — auto-COMPLETE")
+            return JSONResponse(status_code=200, content={
+                "status": "COMPLETE", "user_name": user_name, "admin_bypass": True
+            })
 
         # PRIORITY 1: Check strategic_console_state (new authoritative table)
         try:
