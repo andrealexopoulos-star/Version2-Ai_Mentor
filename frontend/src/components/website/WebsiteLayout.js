@@ -7,19 +7,19 @@ const MONO = "'JetBrains Mono', monospace";
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
 const TRUST_ITEMS = [
-  { label: 'Terms & Conditions', path: '/site/trust/terms', icon: FileText },
-  { label: 'Privacy Policy', path: '/site/trust/privacy', icon: Eye },
-  { label: 'Data Processing Agreement', path: '/site/trust/dpa', icon: Lock },
-  { label: 'Security & Infrastructure', path: '/site/trust/security', icon: Server },
-  { label: 'Trust Centre', path: '/site/trust/centre', icon: Shield },
+  { label: 'Terms & Conditions', path: '/trust/terms', icon: FileText },
+  { label: 'Privacy Policy', path: '/trust/privacy', icon: Eye },
+  { label: 'Data Processing Agreement', path: '/trust/dpa', icon: Lock },
+  { label: 'Security & Infrastructure', path: '/trust/security', icon: Server },
+  { label: 'Trust Centre', path: '/trust/centre', icon: Shield },
 ];
 
 const NAV_LINKS = [
-  { label: 'Platform', path: '/site/platform' },
-  { label: 'Intelligence', path: '/site/intelligence' },
-  { label: 'Integrations', path: '/site/integrations' },
-  { label: 'Pricing', path: '/site/pricing' },
-  { label: 'Trust', path: '/site/trust', dropdown: true },
+  { label: 'Platform', path: '/platform' },
+  { label: 'Intelligence', path: '/intelligence' },
+  { label: 'Integrations', path: '/our-integrations' },
+  { label: 'Pricing', path: '/pricing' },
+  { label: 'Trust', path: '/trust', dropdown: true },
 ];
 
 const TrustDropdown = ({ open, onClose }) => {
