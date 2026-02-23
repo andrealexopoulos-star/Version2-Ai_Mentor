@@ -62,7 +62,7 @@ const WebsiteNav = () => {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map((link) => {
-            const isActive = location.pathname === link.path || (link.dropdown && location.pathname.startsWith('/site/trust'));
+            const isActive = location.pathname === link.path || (link.dropdown && location.pathname.startsWith('/trust'));
             return (
               <div key={link.label} className="relative">
                 {link.dropdown ? (
