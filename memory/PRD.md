@@ -1,38 +1,37 @@
 # BIQc Platform — PRD
 
-## Implemented 2026-02-23 (Latest)
+## Completed 2026-02-23
 
-### Calibration Overhaul — Liquid Steel Theme
-- Full dark theme applied to ALL calibration components: CalibratingSession, CalibrationComponents, WowSummary, ExecutiveReveal, ContinuitySuite
-- Removed ALL spinners — replaced with branded BIQc pulse animations and "thinking..." text
-- Multiple choice options with radio-style selection UI (orange highlight on select)
-- Step indicators with labels (Communication Style, Detail Level, Directness, etc.)
-- Executive Summary at completion: shows Decision Style, Risk Posture, Communication, Focus Area cards
-- Progress bar with individual step markers
+### Business DNA in Sidebar
+- Added Business DNA under Governance in sidebar (links to existing /business-profile page)
+- Fixed spinner in BusinessProfile auto-save indicator
+
+### Alert Actions Wired to Backend
+- New endpoint: POST /api/intelligence/alerts/action (accepts alert_id + action: complete/ignore/hand-off/auto-email)
+- Frontend AlertsPageAuth: Complete/Ignore buttons now call backend, visually mark alerts as actioned
+- Logs actions to alert_actions table in Supabase
+
+### Calibration — Full Liquid Steel Theme
+- All calibration components themed: CalibratingSession, CalibrationComponents, WowSummary, ExecutiveReveal, ContinuitySuite
+- Zero spinners — all replaced with branded animations
+- Executive Summary at completion with Decision Style, Risk Posture, Communication, Focus Area cards
 
 ### First-Login Notification
-- FirstLoginNotification component shows on first login
-- Prompts user to connect Email (Outlook/Gmail) and Integrations (Xero, HubSpot, CRM)
-- Auto-dismisses after 30 seconds, persists dismiss state in localStorage
+- Prompts email + integration connection on first login
 
-### Floating Soundboard on All Intelligence Pages
-- FloatingSoundboard widget on: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
-- Bottom-right lightbulb button → expandable chat panel
-- Quick-start suggestion buttons, uses /api/soundboard/chat backend
+### Floating Soundboard
+- On all 6 Intelligence pages
 
 ### Financial Data Pipeline
-- 4 backend endpoints: /api/integrations/accounting/{invoices,payments,transactions,summary}
-- Provider-agnostic — works with ANY Merge.dev accounting integration
-- Revenue page fetches both CRM deals AND accounting summary in parallel
+- 4 accounting endpoints via Merge.dev
+- Edge Function code at /app/memory/EDGE_FUNCTION_FINANCIAL_DATA.js
 
-### Zero Spinners Policy
-- All animate-spin removed from: ProtectedRoute, CognitiveLoadingScreen, InitiatingBIQC, all calibration components, AdvisorWatchtower
-
-### Priority Inbox + Alert Actions
-- Priority Inbox added to sidebar under Execution
-- Complete/Ignore buttons on all alert items
+### Sidebar Structure
+- Intelligence: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
+- Execution: Alerts, Priority Inbox, Actions, Automations
+- Systems: Integrations, Data Health
+- Governance: Reports, Audit Log, Business DNA, Settings
 
 ## Pending
-- Deploy Supabase Edge Function financial data code (/app/memory/EDGE_FUNCTION_FINANCIAL_DATA.js)
-- Wire Complete/Ignore alert actions to backend persistence
-- Business DNA page under Settings (auto-populated from calibration)
+- Deploy Edge Function financial data code to Supabase
+- Calibration intelligence: detect duplicate answers, adapt questions based on previous responses (requires Edge Function update to calibration-psych)
