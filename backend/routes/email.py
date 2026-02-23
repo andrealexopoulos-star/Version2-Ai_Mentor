@@ -203,7 +203,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     if '.emergent.host' in base_url:
         base_url = base_url.replace('.emergent.host', '.com')
     if 'preview.emergentagent.com' in base_url:
-        base_url = os.environ.get('BACKEND_URL', 'https://biqc.thestrategysquad.com')
+        base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
     redirect_uri = f"{base_url}/api/auth/outlook/callback"
     logger.info(f"📧 Outlook OAuth redirect_uri: {redirect_uri}")
     
