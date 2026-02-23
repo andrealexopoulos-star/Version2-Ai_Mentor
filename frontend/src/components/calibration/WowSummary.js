@@ -128,7 +128,7 @@ const DissolveTransition = ({ firstName }) => (
         Thank you, {firstName || 'there'}. With your foundation verified, I now need to understand how you navigate high-stakes decisions.
       </p>
       <div className="mt-6">
-        <div className="w-5 h-5 border rounded-full animate-spin mx-auto" style={{ borderColor: CARD_BORDER, borderTopColor: GOLD }} />
+        <span className="text-xs" style={{ color: '#FF6A00', fontFamily: "'JetBrains Mono', monospace" }}>confirming...</span>
       </div>
     </div>
   </div>
