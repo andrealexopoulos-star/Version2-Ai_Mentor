@@ -186,6 +186,48 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
         raise HTTPException(status_code=500, detail="Calibration check failed")
 
 
+@router.post("/calibration/skip")
+async def skip_calibration(current_user: dict = Depends(get_current_user)):
+    """Super admin only — skip calibration entirely and mark as complete."""
+    user_role = current_user.get("role", "user")
+    user_email = current_user.get("email", "")
+    if user_role not in ("superadmin", "admin") and user_email != "andre@thestrategysquad.com.au":
+        raise HTTPException(status_code=403, detail="Super admin only")
+    
+    user_id = current_user["id"]
+    now_iso = datetime.now(timezone.utc).isoformat()
+    
+    # Mark calibration complete in user_operator_profile
+    try:
+        existing = get_sb().table("user_operator_profile").select("user_id").eq("user_id", user_id).maybe_single().execute()
+        if existing.data:
+            get_sb().table("user_operator_profile").update({
+                "persona_calibration_status": "complete",
+                "operator_profile": {"onboarding_state": {"completed": True, "completed_at": now_iso}, "console_state": {"status": "COMPLETE", "updated_at": now_iso}},
+                "updated_at": now_iso,
+            }).eq("user_id", user_id).execute()
+        else:
+            get_sb().table("user_operator_profile").insert({
+                "user_id": user_id,
+                "persona_calibration_status": "complete",
+                "operator_profile": {"onboarding_state": {"completed": True, "completed_at": now_iso}, "console_state": {"status": "COMPLETE", "updated_at": now_iso}},
+            }).execute()
+    except Exception as e:
+        logger.warning(f"[calibration/skip] operator_profile write: {e}")
+    
+    # Mark strategic_console_state complete
+    try:
+        get_sb().table("strategic_console_state").upsert({
+            "user_id": user_id, "status": "COMPLETE", "is_complete": True, "current_step": 17, "updated_at": now_iso
+        }).execute()
+    except Exception as e:
+        logger.warning(f"[calibration/skip] console_state write: {e}")
+    
+    logger.info(f"[calibration/skip] Super admin {user_email} skipped calibration")
+    return {"ok": True, "message": "Calibration skipped — super admin bypass"}
+
+
+
 @router.post("/calibration/defer")
 async def defer_calibration(request: Request):
     """Set calibration as deferred. Writes to user_operator_profile (authoritative) and business_profiles."""
