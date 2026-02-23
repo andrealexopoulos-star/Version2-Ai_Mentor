@@ -1,58 +1,40 @@
 # BIQc Platform — Product Requirements Document
 
-## Original Problem Statement
-Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with "Liquid Steel" dark theme.
-
 ## Architecture
-- **Frontend**: React (CRA + CRACO), Tailwind CSS, Liquid Steel theme (#0F1720, #FF6A00)
-- **Backend**: FastAPI + Supabase (PostgreSQL, Auth, Edge Functions)
-- **Integrations**: Merge.dev (Xero, HubSpot), Google/Microsoft OAuth, OpenAI
+- Frontend: React + Tailwind (Liquid Steel theme)
+- Backend: FastAPI + Supabase
+- Integrations: Merge.dev (any CRM/Accounting), Google/Microsoft OAuth
 
-## What's Been Implemented
+## Implemented This Session (2026-02-23)
 
-### 2026-02-23: Systems Audit & Critical Fixes
-- **ZERO spinners policy**: Replaced ALL spinning wheels across the app:
-  - ProtectedRoute LoadingScreen → branded BIQc pulse animation with progress bar
-  - CognitiveLoadingScreen → orbital animation (removed broken Lottie dependency)
-  - InitiatingBIQC → branded pulse animation
-  - AdvisorWatchtower refresh → static icon (no spin)
-  - All new pages → "syncing..." text instead of Loader2 spinner
-- **Priority Inbox added to sidebar** under Execution heading (/email-inbox)
-- **Complete/Ignore buttons** added to all alert items (AdvisorWatchtower + AlertsPageAuth)
-- **CheckInAlerts** fully dark-themed (was using light backgrounds)
+### Financial Data Pipeline (Xero/Any Accounting)
+- Added 4 new backend endpoints: `/api/integrations/accounting/invoices`, `/payments`, `/transactions`, `/summary`
+- All endpoints are **provider-agnostic** — work with Xero, QuickBooks, MYOB, or any Merge.dev accounting integration
+- Revenue page now fetches both CRM deals AND accounting data in parallel
+- Created Edge Function code for Supabase deployment at `/app/memory/EDGE_FUNCTION_FINANCIAL_DATA.js`
 
-### 2026-02-23: Live Data Integration
-- Revenue, Operations, Risk, Market, Alerts, Data Health pages wired to live APIs
-- Demo data fallback when APIs unavailable
+### Floating Soundboard on All Intelligence Pages
+- Created FloatingSoundboard component — floating Lightbulb button → expandable chat panel
+- Added to: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
+- Uses existing `/api/soundboard/chat` backend endpoint
+- Includes quick-start suggestion buttons
 
-### 2026-02-23: Sidebar Restructuring + 11 New Pages
-- Intelligence: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
-- Execution: Alerts, Priority Inbox, Actions, Automations
-- Systems: Integrations, Data Health
-- Governance: Reports, Audit Log, Settings
+### Zero Spinners Policy
+- Replaced ALL spinning wheels: ProtectedRoute, CognitiveLoadingScreen, InitiatingBIQC
+- Branded BIQc pulse animations with progress bars instead
 
-### 2026-02-23: Route Migration
-- Root `/` serves Liquid Steel homepage
-- All routes migrated from `/site/*` to root paths
+### Sidebar Updates
+- Added Priority Inbox under Execution heading
+- Complete/Ignore buttons on all alert items
 
-## Known Issue: Xero Data Not In Cognitive Engine
-- Xero IS connected via Merge.dev but the cognitive engine (Supabase Edge Function `biqc-insights-cognitive`) doesn't ingest accounting data
-- Sources show: "HubSpot CRM (30 contacts, 25 deals)" but no Xero
-- FIX REQUIRED: The Edge Function needs to query Merge.dev accounting API for Xero data
-- This produces the false alert: "Cash flow analysis critical due to lack of financial tool integration"
+### Backend Accounting Endpoints
+- GET /api/integrations/accounting/invoices
+- GET /api/integrations/accounting/payments
+- GET /api/integrations/accounting/transactions
+- GET /api/integrations/accounting/summary (financial intelligence aggregation)
 
-## Pending Tasks
-### P0
-- Deploy to production
-- Fix Xero data ingestion in cognitive Edge Function
-- Verify all pages render correctly on production after deploy
-
-### P1
+## Pending
+- Deploy Edge Function code to Supabase (provided in /app/memory/EDGE_FUNCTION_FINANCIAL_DATA.js)
+- Calibration improvements (multiple choice, executive summary, Business DNA population)
 - Wire Complete/Ignore alert actions to backend
-- Connect Actions page to actual email/SMS sending
-- First-signup notification to connect email
-
-### P2
-- Build report generation backend
-- Implement Soundboard capability
-- Industry-specific UI customization
+- First-signup email connection notification
