@@ -77,44 +77,44 @@ const Analysis = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#0f2f24]/60 mb-2">Business Intelligence</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#0f2f24]">Business Analysis</h1>
-            <p className="text-[#0f2f24]/60 mt-2">
+            <p className="overline text-[#9FB0C3] mb-2">Business Intelligence</p>
+            <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">Business Analysis</h1>
+            <p className="text-[#9FB0C3] mt-2">
               Get AI-powered insights and recommendations for your business
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Form */}
-            <Card className="card-clean h-fit">
+            <Card className="rounded-lg h-fit">
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[#0f2f24]">Analysis Title</Label>
+                    <Label className="text-[#F4F7FA]">Analysis Title</Label>
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="e.g., Q4 Growth Strategy Review"
-                      className="bg-white"
+                      className="bg-[#141C26]"
                       data-testid="analysis-title-input"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#0f2f24]">Analysis Type</Label>
+                    <Label className="text-[#F4F7FA]">Analysis Type</Label>
                     <Select 
                       value={formData.analysis_type}
                       onValueChange={(value) => setFormData({ ...formData, analysis_type: value })}
                     >
-                      <SelectTrigger className="bg-white" data-testid="analysis-type-select">
+                      <SelectTrigger className="bg-[#141C26]" data-testid="analysis-type-select">
                         <SelectValue placeholder="Select analysis type" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-[#141C26]">
                         {analysisTypes.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             <div>
                               <p className="font-medium">{type.label}</p>
-                              <p className="text-xs text-[#0f2f24]/60">{type.desc}</p>
+                              <p className="text-xs text-[#9FB0C3]">{type.desc}</p>
                             </div>
                           </SelectItem>
                         ))}
@@ -123,15 +123,15 @@ const Analysis = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#0f2f24]">Business Context</Label>
+                    <Label className="text-[#F4F7FA]">Business Context</Label>
                     <Textarea
                       value={formData.business_context}
                       onChange={(e) => setFormData({ ...formData, business_context: e.target.value })}
                       placeholder="Describe your business, current situation, challenges, and what you'd like to analyze..."
-                      className="min-h-[200px] bg-white"
+                      className="min-h-[200px] bg-[#141C26]"
                       data-testid="analysis-context-input"
                     />
-                    <p className="text-xs text-[#0f2f24]/60">
+                    <p className="text-xs text-[#9FB0C3]">
                       Include details like industry, size, current revenue, main challenges, and goals.
                     </p>
                   </div>
@@ -161,11 +161,11 @@ const Analysis = () => {
             {/* Results */}
             <div className="space-y-6">
               {loading && (
-                <Card className="card-clean">
+                <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-[#0f2f24] mx-auto mb-4" />
-                    <p className="text-[#0f2f24] font-medium">Analyzing your business...</p>
-                    <p className="text-sm text-[#0f2f24]/60 mt-1">This may take a moment</p>
+                    <Loader2 className="w-12 h-12 animate-spin text-[#F4F7FA] mx-auto mb-4" />
+                    <p className="text-[#F4F7FA] font-medium">Analyzing your business...</p>
+                    <p className="text-sm text-[#9FB0C3] mt-1">This may take a moment</p>
                   </CardContent>
                 </Card>
               )}
@@ -173,7 +173,7 @@ const Analysis = () => {
               {result && (
                 <div className="space-y-6 animate-fade-in">
                   {/* Full Analysis Text */}
-                  <Card className="card-clean">
+                  <Card className="rounded-lg">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div>
@@ -276,10 +276,10 @@ const Analysis = () => {
               )}
 
               {!loading && !result && (
-                <Card className="card-clean">
+                <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <BarChart3 className="w-12 h-12 text-[#0f2f24]/20 mx-auto mb-4" />
-                    <p className="text-[#0f2f24]/60">
+                    <BarChart3 className="w-12 h-12 text-[#F4F7FA]/20 mx-auto mb-4" />
+                    <p className="text-[#9FB0C3]">
                       Fill in the form and run analysis to get AI-powered insights
                     </p>
                   </CardContent>

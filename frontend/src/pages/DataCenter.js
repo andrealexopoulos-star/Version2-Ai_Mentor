@@ -180,7 +180,7 @@ const DataCenter = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0f2f24]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#F4F7FA]" />
         </div>
       </DashboardLayout>
     );
@@ -192,9 +192,9 @@ const DataCenter = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#0f2f24]/60 mb-2">Knowledge Base</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#0f2f24]">Data Center</h1>
-            <p className="text-[#0f2f24]/60 mt-2">
+            <p className="overline text-[#9FB0C3] mb-2">Knowledge Base</p>
+            <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">Data Center</h1>
+            <p className="text-[#9FB0C3] mt-2">
               Upload your business documents to make the AI your subject matter expert
             </p>
           </div>
@@ -248,14 +248,14 @@ const DataCenter = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-[#f5f5f0] p-1 mb-6">
-              <TabsTrigger value="files" className="data-[state=active]:bg-white" data-testid="tab-files">
+            <TabsList className="bg-[#0F1720] p-1 mb-6">
+              <TabsTrigger value="files" className="data-[state=active]:bg-[#141C26]" data-testid="tab-files">
                 <Database className="w-4 h-4 mr-2" /> Files & Documents
               </TabsTrigger>
-              <TabsTrigger value="profile" className="data-[state=active]:bg-white" data-testid="tab-profile">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-[#141C26]" data-testid="tab-profile">
                 <Building2 className="w-4 h-4 mr-2" /> Business Profile
               </TabsTrigger>
-              <TabsTrigger value="upload" className="data-[state=active]:bg-white" data-testid="tab-upload">
+              <TabsTrigger value="upload" className="data-[state=active]:bg-[#141C26]" data-testid="tab-upload">
                 <Upload className="w-4 h-4 mr-2" /> Upload
               </TabsTrigger>
             </TabsList>
@@ -267,11 +267,11 @@ const DataCenter = () => {
                   {files.map((file) => {
                     const Icon = getCategoryIcon(file.category);
                     return (
-                      <Card key={file.id} className="card-clean hover-lift group">
+                      <Card key={file.id} className="rounded-lg hover-lift group">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="w-10 h-10 bg-[#ccff00]/20 rounded-sm flex items-center justify-center">
-                              <Icon className="w-5 h-5 text-[#0f2f24]" />
+                              <Icon className="w-5 h-5 text-[#F4F7FA]" />
                             </div>
                             <button
                               onClick={() => setDeleteFileId(file.id)}
@@ -281,14 +281,14 @@ const DataCenter = () => {
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </button>
                           </div>
-                          <h3 className="font-medium text-[#0f2f24] truncate mb-1">{file.filename}</h3>
-                          <p className="text-xs text-[#0f2f24]/60 mb-2">
+                          <h3 className="font-medium text-[#F4F7FA] truncate mb-1">{file.filename}</h3>
+                          <p className="text-xs text-[#9FB0C3] mb-2">
                             {fileCategories.find(c => c.value === file.category)?.label || file.category}
                           </p>
                           {file.description && (
-                            <p className="text-sm text-[#0f2f24]/70 line-clamp-2 mb-2">{file.description}</p>
+                            <p className="text-sm text-[#9FB0C3] line-clamp-2 mb-2">{file.description}</p>
                           )}
-                          <div className="flex items-center justify-between text-xs text-[#0f2f24]/40">
+                          <div className="flex items-center justify-between text-xs text-[#64748B]">
                             <span>{formatFileSize(file.file_size)}</span>
                             <span>{new Date(file.created_at).toLocaleDateString()}</span>
                           </div>
@@ -306,11 +306,11 @@ const DataCenter = () => {
                   })}
                 </div>
               ) : (
-                <Card className="card-clean">
+                <Card className="rounded-lg">
                   <CardContent className="p-12 text-center">
-                    <Database className="w-16 h-16 text-[#0f2f24]/20 mx-auto mb-4" />
-                    <h3 className="text-xl font-serif text-[#0f2f24] mb-2">No files yet</h3>
-                    <p className="text-[#0f2f24]/60 mb-6">
+                    <Database className="w-16 h-16 text-[#F4F7FA]/20 mx-auto mb-4" />
+                    <h3 className="text-xl font-serif text-[#F4F7FA] mb-2">No files yet</h3>
+                    <p className="text-[#9FB0C3] mb-6">
                       Upload your business documents to help the AI understand your business better
                     </p>
                     <Button onClick={() => setActiveTab('upload')} className="btn-lime">
@@ -323,13 +323,13 @@ const DataCenter = () => {
 
             {/* BUSINESS PROFILE TAB */}
             <TabsContent value="profile">
-              <Card className="card-clean">
+              <Card className="rounded-lg">
                 <CardHeader>
                   <CardTitle className="font-serif flex items-center gap-2">
                     <Building2 className="w-5 h-5" />
                     Business Profile
                   </CardTitle>
-                  <p className="text-sm text-[#0f2f24]/60">
+                  <p className="text-sm text-[#9FB0C3]">
                     Complete your profile to get more personalized AI recommendations
                   </p>
                   {stats?.profile_completeness !== undefined && (
@@ -359,7 +359,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-industry">
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white">
+                        <SelectContent className="bg-[#141C26]">
                           {industries.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -370,7 +370,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-business-type">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white">
+                        <SelectContent className="bg-[#141C26]">
                           <SelectItem value="Sole Proprietorship">Sole Proprietorship</SelectItem>
                           <SelectItem value="LLC">LLC</SelectItem>
                           <SelectItem value="Corporation">Corporation</SelectItem>
@@ -395,7 +395,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-employees">
                           <SelectValue placeholder="Select range" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white">
+                        <SelectContent className="bg-[#141C26]">
                           {employeeCounts.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -406,7 +406,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-revenue">
                           <SelectValue placeholder="Select range" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white">
+                        <SelectContent className="bg-[#141C26]">
                           {revenueRanges.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -478,10 +478,10 @@ const DataCenter = () => {
 
             {/* UPLOAD TAB */}
             <TabsContent value="upload">
-              <Card className="card-clean">
+              <Card className="rounded-lg">
                 <CardHeader>
                   <CardTitle className="font-serif">Upload Documents</CardTitle>
-                  <p className="text-sm text-[#0f2f24]/60">
+                  <p className="text-sm text-[#9FB0C3]">
                     Supported formats: PDF, Word, Excel, CSV, TXT, JSON (Max 10MB)
                   </p>
                 </CardHeader>
@@ -496,7 +496,7 @@ const DataCenter = () => {
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                   >
-                    <Upload className="w-12 h-12 text-[#0f2f24]/30 mx-auto mb-4" />
+                    <Upload className="w-12 h-12 text-[#F4F7FA]/30 mx-auto mb-4" />
                     {uploadForm.file ? (
                       <div className="flex items-center justify-center gap-2">
                         <Check className="w-5 h-5 text-green-600" />
@@ -510,7 +510,7 @@ const DataCenter = () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-[#0f2f24]/60 mb-2">Drag and drop your file here, or</p>
+                        <p className="text-[#9FB0C3] mb-2">Drag and drop your file here, or</p>
                         <label className="btn-lime px-6 py-2 rounded-sm cursor-pointer inline-block">
                           Browse Files
                           <input
@@ -532,7 +532,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="upload-category">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white">
+                        <SelectContent className="bg-[#141C26]">
                           {fileCategories.map(cat => (
                             <SelectItem key={cat.value} value={cat.value}>
                               <div className="flex items-center gap-2">
@@ -562,10 +562,10 @@ const DataCenter = () => {
                     Upload File
                   </Button>
 
-                  <div className="p-4 bg-[#f5f5f0] rounded-sm">
+                  <div className="p-4 bg-[#0F1720] rounded-sm">
                     <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-[#0f2f24]/60 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-[#0f2f24]/70">
+                      <AlertCircle className="w-5 h-5 text-[#9FB0C3] flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-[#9FB0C3]">
                         <p className="font-medium mb-1">How your data is used:</p>
                         <ul className="space-y-1 text-xs">
                           <li>• Text is extracted from your documents automatically</li>
@@ -585,7 +585,7 @@ const DataCenter = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteFileId} onOpenChange={() => setDeleteFileId(null)}>
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent className="bg-[#141C26]">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete File</AlertDialogTitle>
             <AlertDialogDescription>

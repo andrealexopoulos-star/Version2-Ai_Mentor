@@ -76,7 +76,7 @@ const DocumentView = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0f2f24]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#F4F7FA]" />
         </div>
       </DashboardLayout>
     );
@@ -90,7 +90,7 @@ const DocumentView = () => {
           <div className="mb-8">
             <button
               onClick={() => navigate('/documents')}
-              className="inline-flex items-center gap-2 text-[#0f2f24]/60 hover:text-[#0f2f24] mb-6 transition-colors"
+              className="inline-flex items-center gap-2 text-[#9FB0C3] hover:text-[#F4F7FA] mb-6 transition-colors"
               data-testid="back-to-documents-btn"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -100,8 +100,8 @@ const DocumentView = () => {
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div>
                 <span className="badge badge-lime text-xs mb-2">{document?.document_type}</span>
-                <h1 className="text-3xl md:text-4xl font-serif text-[#0f2f24]">{document?.title}</h1>
-                <div className="flex items-center gap-4 mt-3 text-sm text-[#0f2f24]/60">
+                <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">{document?.title}</h1>
+                <div className="flex items-center gap-4 mt-3 text-sm text-[#9FB0C3]">
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     {new Date(document?.created_at).toLocaleDateString()}
@@ -127,7 +127,7 @@ const DocumentView = () => {
                   variant="outline" 
                   size="sm"
                   onClick={downloadAsMarkdown}
-                  className="border-[#0f2f24] text-[#0f2f24]"
+                  className="border-[#0f2f24] text-[#F4F7FA]"
                   data-testid="download-document-btn"
                 >
                   <Download className="w-4 h-4 mr-1" />
@@ -147,7 +147,7 @@ const DocumentView = () => {
           </div>
 
           {/* Content */}
-          <Card className="card-clean">
+          <Card className="rounded-lg">
             <CardContent className="p-8">
               <div className="markdown-content prose prose-lg max-w-none">
                 <ReactMarkdown>{document?.content}</ReactMarkdown>
@@ -159,7 +159,7 @@ const DocumentView = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent className="bg-[#141C26]">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Document</AlertDialogTitle>
             <AlertDialogDescription>

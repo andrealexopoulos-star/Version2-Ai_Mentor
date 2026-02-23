@@ -149,26 +149,26 @@ const SOPGenerator = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#0f2f24]/60 mb-2">Documentation</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#0f2f24]">SOP Generator</h1>
-            <p className="text-[#0f2f24]/60 mt-2">
+            <p className="overline text-[#9FB0C3] mb-2">Documentation</p>
+            <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">SOP Generator</h1>
+            <p className="text-[#9FB0C3] mt-2">
               Create professional SOPs, checklists, and action plans instantly
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Forms */}
-            <Card className="card-clean h-fit">
+            <Card className="rounded-lg h-fit">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="w-full bg-[#f5f5f0] p-1">
-                    <TabsTrigger value="sop" className="flex-1 data-[state=active]:bg-white" data-testid="tab-sop">
+                  <TabsList className="w-full bg-[#0F1720] p-1">
+                    <TabsTrigger value="sop" className="flex-1 data-[state=active]:bg-[#141C26]" data-testid="tab-sop">
                       <FileText className="w-4 h-4 mr-2" /> SOP
                     </TabsTrigger>
-                    <TabsTrigger value="checklist" className="flex-1 data-[state=active]:bg-white" data-testid="tab-checklist">
+                    <TabsTrigger value="checklist" className="flex-1 data-[state=active]:bg-[#141C26]" data-testid="tab-checklist">
                       <CheckSquare className="w-4 h-4 mr-2" /> Checklist
                     </TabsTrigger>
-                    <TabsTrigger value="action" className="flex-1 data-[state=active]:bg-white" data-testid="tab-action">
+                    <TabsTrigger value="action" className="flex-1 data-[state=active]:bg-[#141C26]" data-testid="tab-action">
                       <Target className="w-4 h-4 mr-2" /> Action Plan
                     </TabsTrigger>
                   </TabsList>
@@ -181,7 +181,7 @@ const SOPGenerator = () => {
                           value={sopForm.topic}
                           onChange={(e) => setSopForm({ ...sopForm, topic: e.target.value })}
                           placeholder="e.g., Customer Onboarding Process"
-                          className="bg-white"
+                          className="bg-[#141C26]"
                           data-testid="sop-topic-input"
                         />
                       </div>
@@ -239,7 +239,7 @@ const SOPGenerator = () => {
                           value={sopForm.business_context}
                           onChange={(e) => setSopForm({ ...sopForm, business_context: e.target.value })}
                           placeholder="Describe your business and any specific requirements..."
-                          className="min-h-[120px] bg-white"
+                          className="min-h-[120px] bg-[#141C26]"
                           data-testid="sop-context-input"
                         />
                       </div>
@@ -258,7 +258,7 @@ const SOPGenerator = () => {
                           value={checklistForm.topic}
                           onChange={(e) => setChecklistForm({ ...checklistForm, topic: e.target.value })}
                           placeholder="e.g., Product Launch Checklist"
-                          className="bg-white"
+                          className="bg-[#141C26]"
                           data-testid="checklist-topic-input"
                         />
                       </div>
@@ -268,7 +268,7 @@ const SOPGenerator = () => {
                           value={checklistForm.context}
                           onChange={(e) => setChecklistForm({ ...checklistForm, context: e.target.value })}
                           placeholder="Any specific items or areas to cover..."
-                          className="min-h-[120px] bg-white"
+                          className="min-h-[120px] bg-[#141C26]"
                           data-testid="checklist-context-input"
                         />
                       </div>
@@ -287,7 +287,7 @@ const SOPGenerator = () => {
                           value={actionPlanForm.goal}
                           onChange={(e) => setActionPlanForm({ ...actionPlanForm, goal: e.target.value })}
                           placeholder="e.g., Launch new product line"
-                          className="bg-white"
+                          className="bg-[#141C26]"
                           data-testid="action-goal-input"
                         />
                       </div>
@@ -297,7 +297,7 @@ const SOPGenerator = () => {
                           value={actionPlanForm.timeline}
                           onChange={(e) => setActionPlanForm({ ...actionPlanForm, timeline: e.target.value })}
                           placeholder="e.g., 3 months"
-                          className="bg-white"
+                          className="bg-[#141C26]"
                           data-testid="action-timeline-input"
                         />
                       </div>
@@ -307,7 +307,7 @@ const SOPGenerator = () => {
                           value={actionPlanForm.resources}
                           onChange={(e) => setActionPlanForm({ ...actionPlanForm, resources: e.target.value })}
                           placeholder="Team size, budget, tools available..."
-                          className="min-h-[80px] bg-white"
+                          className="min-h-[80px] bg-[#141C26]"
                           data-testid="action-resources-input"
                         />
                       </div>
@@ -324,21 +324,21 @@ const SOPGenerator = () => {
             {/* Results */}
             <div className="space-y-6">
               {loading && (
-                <Card className="card-clean">
+                <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-[#0f2f24] mx-auto mb-4" />
-                    <p className="text-[#0f2f24] font-medium">Generating your document...</p>
+                    <Loader2 className="w-12 h-12 animate-spin text-[#F4F7FA] mx-auto mb-4" />
+                    <p className="text-[#F4F7FA] font-medium">Generating your document...</p>
                   </CardContent>
                 </Card>
               )}
 
               {result && (
-                <Card className="card-clean animate-fade-in">
+                <Card className="rounded-lg animate-fade-in">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <span className="badge badge-lime text-xs">{result.type}</span>
-                        <h3 className="text-xl font-serif text-[#0f2f24] mt-2">{result.title}</h3>
+                        <h3 className="text-xl font-serif text-[#F4F7FA] mt-2">{result.title}</h3>
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={copyToClipboard} data-testid="copy-result-btn">
@@ -357,10 +357,10 @@ const SOPGenerator = () => {
               )}
 
               {!loading && !result && (
-                <Card className="card-clean">
+                <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <FileText className="w-12 h-12 text-[#0f2f24]/20 mx-auto mb-4" />
-                    <p className="text-[#0f2f24]/60">
+                    <FileText className="w-12 h-12 text-[#F4F7FA]/20 mx-auto mb-4" />
+                    <p className="text-[#9FB0C3]">
                       Select a document type and fill in the details to generate
                     </p>
                   </CardContent>

@@ -89,8 +89,8 @@ const Documents = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <p className="overline text-[#0f2f24]/60 mb-2">Library</p>
-              <h1 className="text-3xl md:text-4xl font-serif text-[#0f2f24]">My Documents</h1>
+              <p className="overline text-[#9FB0C3] mb-2">Library</p>
+              <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">My Documents</h1>
             </div>
             <Button 
               onClick={() => navigate('/sop-generator')}
@@ -105,20 +105,20 @@ const Documents = () => {
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0f2f24]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search documents..."
-                className="pl-10 bg-white"
+                className="pl-10 bg-[#141C26]"
                 data-testid="search-documents-input"
               />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-48 bg-white" data-testid="filter-type-select">
+              <SelectTrigger className="w-48 bg-[#141C26]" data-testid="filter-type-select">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white">
+              <SelectContent className="bg-[#141C26]">
                 {documentTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                 ))}
@@ -129,14 +129,14 @@ const Documents = () => {
           {/* Documents Grid */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0f2f24]" />
+              <Loader2 className="w-8 h-8 animate-spin text-[#F4F7FA]" />
             </div>
           ) : filteredDocuments.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredDocuments.map((doc) => (
                 <Card 
                   key={doc.id} 
-                  className="card-clean hover-lift cursor-pointer group"
+                  className="rounded-lg hover-lift cursor-pointer group"
                   onClick={() => navigate(`/documents/${doc.id}`)}
                   data-testid={`document-card-${doc.id}`}
                 >
@@ -156,13 +156,13 @@ const Documents = () => {
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
-                    <h3 className="font-serif text-lg text-[#0f2f24] mb-2 line-clamp-2">
+                    <h3 className="font-serif text-lg text-[#F4F7FA] mb-2 line-clamp-2">
                       {doc.title}
                     </h3>
-                    <p className="text-sm text-[#0f2f24]/60 line-clamp-3 mb-4">
+                    <p className="text-sm text-[#9FB0C3] line-clamp-3 mb-4">
                       {doc.content.substring(0, 150)}...
                     </p>
-                    <div className="flex items-center justify-between text-xs text-[#0f2f24]/40">
+                    <div className="flex items-center justify-between text-xs text-[#64748B]">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(doc.created_at).toLocaleDateString()}
@@ -179,11 +179,11 @@ const Documents = () => {
               ))}
             </div>
           ) : (
-            <Card className="card-clean">
+            <Card className="rounded-lg">
               <CardContent className="p-12 text-center">
-                <FolderOpen className="w-16 h-16 text-[#0f2f24]/20 mx-auto mb-4" />
-                <h3 className="text-xl font-serif text-[#0f2f24] mb-2">No documents yet</h3>
-                <p className="text-[#0f2f24]/60 mb-6">
+                <FolderOpen className="w-16 h-16 text-[#F4F7FA]/20 mx-auto mb-4" />
+                <h3 className="text-xl font-serif text-[#F4F7FA] mb-2">No documents yet</h3>
+                <p className="text-[#9FB0C3] mb-6">
                   {searchQuery || filterType !== 'all' 
                     ? 'No documents match your search criteria'
                     : 'Start creating SOPs, analyses, and action plans'
@@ -204,7 +204,7 @@ const Documents = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent className="bg-[#141C26]">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Document</AlertDialogTitle>
             <AlertDialogDescription>
