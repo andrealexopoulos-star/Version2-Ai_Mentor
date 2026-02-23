@@ -237,9 +237,9 @@ const AdvisorWatchtower = () => {
                 {/* Alignment Gaps */}
                 {(alignment || contradictions.length > 0) && (
                   <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: MONO }}>Alignment</h3>
-                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: '#374151', fontFamily: BODY }}>{alignment}</p></Card>}
-                    {contradictions.map((ct, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}><p className="text-xs" style={{ color: '#92400E', fontFamily: MONO }}>⚠ {ct}</p></div>))}
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Alignment</h3>
+                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{alignment}</p></Card>}
+                    {contradictions.map((ct, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}><p className="text-xs" style={{ color: '#F59E0B', fontFamily: MONO }}>&#x26A0; {ct}</p></div>))}
                   </div>
                 )}
               </div>
