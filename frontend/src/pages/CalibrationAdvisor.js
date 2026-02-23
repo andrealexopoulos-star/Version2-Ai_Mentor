@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useCalibrationState } from "../hooks/useCalibrationState";
+import { useSupabaseAuth } from "../context/SupabaseAuthContext";
+import { apiClient } from "../lib/api";
 import {
   CalibrationLoading, WelcomeHandshake, ManualSummaryFallback,
   AuditProgress,
@@ -9,6 +11,7 @@ import { ExecutiveReveal } from "../components/calibration/ExecutiveReveal";
 import { ContinuitySuite } from "../components/calibration/ContinuitySuite";
 import { CalibratingSession } from "../components/calibration/CalibratingSession";
 import { CalibrationTutorial } from "../components/TutorialOverlay";
+import { SkipForward, ArrowLeft } from 'lucide-react';
 
 const CREAM = '#0F1720';
 const CHARCOAL = '#F4F7FA';
