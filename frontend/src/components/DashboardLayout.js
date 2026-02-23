@@ -101,6 +101,7 @@ const DashboardLayout = ({ children }) => {
     ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Bell, label: 'Alerts', path: '/alerts' },
+      { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
       { icon: Zap, label: 'Actions', path: '/actions' },
       { icon: Workflow, label: 'Automations', path: '/automations' },
     ]},
