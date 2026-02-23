@@ -1,5 +1,6 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import FloatingSoundboard from '../components/FloatingSoundboard';
 import { Shield, CheckCircle2, AlertTriangle, Clock, FileText, ArrowRight } from 'lucide-react';
 
 const SORA = "'Cormorant Garamond', Georgia, serif";
