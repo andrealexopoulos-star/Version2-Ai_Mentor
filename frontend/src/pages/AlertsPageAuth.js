@@ -19,9 +19,28 @@ const DEMO_ALERTS = [
 
 const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
 
-const AlertItem = ({ alert }) => {
+const AlertItem = ({ alert, onAction }) => {
   const [open, setOpen] = useState(false);
+  const [actioned, setActioned] = useState(null);
   const s = sevMap[alert.severity] || sevMap.info;
+
+  const handleAction = async (action) => {
+    setActioned(action);
+    try {
+      await apiClient.post('/intelligence/alerts/action', { alert_id: alert.id, action });
+    } catch {}
+  };
+
+  if (actioned === 'complete' || actioned === 'ignore') {
+    return (
+      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: '#141C26', border: '1px solid #24314050', opacity: 0.5 }}>
+        {actioned === 'complete' ? <CheckCircle2 className="w-4 h-4 text-[#10B981]" /> : <XCircle className="w-4 h-4 text-[#64748B]" />}
+        <span className="text-sm text-[#64748B]" style={{ fontFamily: INTER }}>{alert.title}</span>
+        <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: actioned === 'complete' ? '#10B981' : '#64748B', background: actioned === 'complete' ? '#10B98115' : '#64748B15', fontFamily: MONO }}>{actioned}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: '#141C26', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
