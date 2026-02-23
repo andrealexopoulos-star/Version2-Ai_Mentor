@@ -142,8 +142,8 @@ const AdvisorWatchtower = () => {
         {/* ERROR */}
         {error && !loading && !cognitive && (
           <div className="max-w-3xl mx-auto px-6 py-16 text-center">
-            <p className="text-sm" style={{ color: '#D97706' }}>{error}</p>
-            <button onClick={refresh} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #E5E7EB' }}>Retry</button>
+            <p className="text-sm" style={{ color: '#FF6A00' }}>{error}</p>
+            <button onClick={refresh} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#9FB0C3', border: '1px solid #243140' }}>Retry</button>
           </div>
         )}
 
