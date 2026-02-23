@@ -247,21 +247,21 @@ const AdvisorWatchtower = () => {
               {/* WEEKLY BRIEF */}
               <div className="mt-8 mb-4">
                 <Card className="p-0 overflow-hidden">
-                  <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors">
                     <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
-                      <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>This Week</span>
-                      {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#F97316', fontFamily: HEAD }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>recovered</span></div>}
-                      {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#059669', fontFamily: HEAD }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>saved</span></div>}
-                      {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#2563EB', fontFamily: HEAD }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>actions</span></div>}
-                      {wb.sop_compliance && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#7C3AED', fontFamily: HEAD }}>{wb.sop_compliance}%</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>sop</span></div>}
-                      {!wb.cashflow_recovered && !wb.hours_saved && <span className="text-xs" style={{ color: '#9CA3AF', fontFamily: BODY }}>Connect integrations to see weekly activity</span>}
+                      <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#64748B', fontFamily: MONO }}>This Week</span>
+                      {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#FF6A00', fontFamily: HEAD }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>recovered</span></div>}
+                      {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#10B981', fontFamily: HEAD }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>saved</span></div>}
+                      {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#3B82F6', fontFamily: HEAD }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>actions</span></div>}
+                      {wb.sop_compliance && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#7C3AED', fontFamily: HEAD }}>{wb.sop_compliance}%</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>sop</span></div>}
+                      {!wb.cashflow_recovered && !wb.hours_saved && <span className="text-xs" style={{ color: '#64748B', fontFamily: BODY }}>Connect integrations to see weekly activity</span>}
                     </div>
-                    {briefOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    {briefOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
                   </button>
                   {briefOpen && wb.actions_taken && (
-                    <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                      <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#F97316' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>
-                      <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#059669' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>
+                    <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid #243140' }}>
+                      <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>
+                      <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>
                     </div>
                   )}
                 </Card>
