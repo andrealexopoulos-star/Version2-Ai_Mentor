@@ -183,7 +183,7 @@ const AdvisorWatchtower = () => {
                   return (
                     <button key={g.id} onClick={() => setActiveGroup(g.id)}
                       className="flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all shrink-0"
-                      style={{ background: isActive ? g.color : 'white', color: isActive ? 'white' : '#374151', border: `1.5px solid ${isActive ? g.color : 'rgba(0,0,0,0.08)'}`, boxShadow: isActive ? `0 4px 16px ${g.color}30` : '0 1px 3px rgba(0,0,0,0.04)', fontFamily: HEAD }}
+                      style={{ background: isActive ? g.color : '#141C26', color: isActive ? 'white' : '#9FB0C3', border: `1.5px solid ${isActive ? g.color : '#243140'}`, boxShadow: isActive ? `0 4px 16px ${g.color}30` : 'none', fontFamily: HEAD }}
                       data-testid={`tab-${g.id}`}>
                       <Icon className="w-4 h-4" />
                       <span className="text-sm font-semibold">{g.label}</span>
