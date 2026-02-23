@@ -9,7 +9,7 @@ import {
   AlertTriangle, Loader2, X, Cpu, Lock, Zap, Globe, Server, Bell, FileText,
   Settings, Workflow, Database, Radio, Heart, Key, AlertOctagon, Gauge,
   Brain, Bot, Fingerprint, ShieldCheck, Scale, Rocket, ExternalLink, Clock,
-  ToggleLeft, Power, Pause, Play, Hash, Terminal, MonitorSmartphone
+  ToggleLeft, Power, Pause, Play, Hash, Terminal, MonitorSmartphone, Plug
 } from 'lucide-react';
 
 const D = "'Cormorant Garamond', Georgia, serif";
