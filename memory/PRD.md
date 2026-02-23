@@ -7,34 +7,29 @@
 - **Accent**: #FF6A00 (alerts, actions, active states)
 - **Typography**: Cormorant Garamond (elegant serif headings), Inter (body), JetBrains Mono (metrics)
 
-## Transformation Complete — 4 Phases
+## Transformation Complete — All Phases
 
 ### Phase 1 ✅ Fonts + Naming (iteration_55 — 100%)
-- Cormorant Garamond across all 23+ pages
-- Renamed Executive Overview → BIQc Insights
-- Fixed all font readability issues
-
 ### Phase 2 ✅ Login/Register (iteration_56 — 100%)
-- Both pages transformed to Liquid Steel
-- Google/Microsoft OAuth + email login all functional
-- Real login tested with credentials
-
 ### Phase 3 ✅ Platform Layout (iteration_57 — 100%)
-- DashboardLayout.js rewritten — wraps ALL authenticated pages
-- Dark sidebar, topbar, content area
-- All features preserved: tutorials, notifications, calibration, collapse, mobile, admin link
+### Phase 4 ✅ Super Admin Portal — 8 Pages (iteration_58 + 59 — 100%)
 
-### Phase 4 ✅ Super Admin (iteration_58 — 95%)
-- 4 tabs: User Admin, Sales, Support, Billing
-- User Admin: search, user list, detail panel, suspend/unsuspend, impersonate
-- Sales: pipeline with mock data (needs CRM for live data)
-- Support: client health monitor
-- Billing: Stripe placeholder with 3 subscription tiers
+## Super Admin Portal — 8 Enterprise Governance Pages
 
-## What's MOCKED in Super Admin
-- Sales pipeline data (static)
-- Billing metrics ($0 — no Stripe connected)
-- Support health scores (derived from user position)
+| Page | What It Contains | Real Data? |
+|---|---|---|
+| Command Centre | Platform health, worker status, Edge Functions, strategic inevitabilities | YES — health.py API |
+| User Admin | Search, user list, detail panel, suspend/unsuspend, impersonate | YES — admin.py API |
+| Governance | Role hierarchy (5 tiers), audit trail, data sovereignty, governance controls | PARTIAL — roles real, controls planned |
+| Security | 10 hardening items, 10 procurement readiness items with status badges | Status tracking — features planned |
+| AI Governance | 12 AI agents listed, token tracking, prompt audit, governance controls | YES — usage_tracking + prompt_audit_logs |
+| Commercial | MRR/ARR, revenue intelligence, sales pipeline, subscription tiers | MOCK — needs Stripe |
+| Operations | 6 kill switches, automation rules, team oversight | Visual — needs backend |
+| Growth | Growth infrastructure, trust signals, config intelligence | PARTIAL |
+
+## Next: Rest of Migration
+- Theme individual page content (AdvisorWatchtower, Settings, Integrations, etc.)
+- Each page's internal content needs dark theme styling
 
 ## Test Credentials
 - Superadmin: andre@thestrategysquad.com.au / BIQc_Test_2026!
