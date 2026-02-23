@@ -344,7 +344,7 @@ const SOPGenerator = () => {
                         <Button variant="outline" size="sm" onClick={copyToClipboard} data-testid="copy-result-btn">
                           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                         </Button>
-                        <Button variant="outline" size="sm" onClick={saveDocument} className="border-[#0f2f24]" data-testid="save-result-btn">
+                        <Button variant="outline" size="sm" onClick={saveDocument} className="border-[#243140]" data-testid="save-result-btn">
                           <Save className="w-4 h-4 mr-1" /> Save
                         </Button>
                       </div>

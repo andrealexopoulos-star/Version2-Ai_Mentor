@@ -127,7 +127,7 @@ const DocumentView = () => {
                   variant="outline" 
                   size="sm"
                   onClick={downloadAsMarkdown}
-                  className="border-[#0f2f24] text-[#F4F7FA]"
+                  className="border-[#243140] text-[#F4F7FA]"
                   data-testid="download-document-btn"
                 >
                   <Download className="w-4 h-4 mr-1" />

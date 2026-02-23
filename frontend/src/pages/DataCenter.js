@@ -293,7 +293,7 @@ const DataCenter = () => {
                             <span>{new Date(file.created_at).toLocaleDateString()}</span>
                           </div>
                           {file.extracted_text && (
-                            <div className="mt-3 pt-3 border-t border-[#e5e5e5]">
+                            <div className="mt-3 pt-3 border-t border-[#243140]">
                               <div className="flex items-center gap-1 text-xs text-green-600">
                                 <Check className="w-3 h-3" />
                                 Text extracted for AI
@@ -489,7 +489,7 @@ const DataCenter = () => {
                   {/* Drop Zone */}
                   <div
                     className={`border-2 border-dashed rounded-sm p-8 text-center transition-colors ${
-                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[#e5e5e5] hover:border-[#0f2f24]/30'
+                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[#243140] hover:border-[#243140]'
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}

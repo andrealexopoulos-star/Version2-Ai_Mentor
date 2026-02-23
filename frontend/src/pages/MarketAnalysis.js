@@ -161,7 +161,7 @@ const MarketAnalysis = () => {
                           variant="outline" 
                           size="sm"
                           onClick={saveAsDocument}
-                          className="border-[#0f2f24] text-[#F4F7FA]"
+                          className="border-[#243140] text-[#F4F7FA]"
                           data-testid="save-market-analysis-btn"
                         >
                           <Save className="w-4 h-4 mr-2" />
@@ -175,7 +175,7 @@ const MarketAnalysis = () => {
                   </Card>
 
                   {result.recommendations?.length > 0 && (
-                    <Card className="rounded-lg bg-[#0f2f24] text-white">
+                    <Card className="rounded-lg bg-[#141C26] text-white">
                       <CardContent className="p-6">
                         <h4 className="text-lg font-serif text-[#ccff00] mb-4 flex items-center gap-2">
                           <TrendingUp className="w-5 h-5" />
