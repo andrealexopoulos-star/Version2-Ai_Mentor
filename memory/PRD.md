@@ -1,35 +1,80 @@
-# BIQc Platform - Product Requirements Document
+# BIQc Platform — Product Requirements Document
 
-## Design System: Liquid Steel
-- **Background**: #0F1720, panels #141C26, sidebar #0A1018
-- **Borders**: 1px solid #243140
-- **Text**: #FFFFFF (headings), #F4F7FA (primary), #9FB0C3 (secondary), #64748B (muted)
-- **Accent**: #FF6A00 (alerts, actions, active states)
-- **Typography**: Cormorant Garamond (elegant serif headings), Inter (body), JetBrains Mono (metrics)
+## Original Problem Statement
+Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs. Complete visual and architectural overhaul to a "Liquid Steel" dark theme with premium typography (Cormorant Garamond + Inter).
 
-## Transformation Complete — All Phases
+## Core Requirements
+- Premium "Liquid Steel" aesthetic (dark theme #0F1720 background, orange #FF6A00 accents)
+- Fast, intuitive, agentic user experience
+- Industry-contextualized intelligence
+- Enterprise-grade Super Admin portal
+- Successful deployment to production
 
-### Phase 1 ✅ Fonts + Naming (iteration_55 — 100%)
-### Phase 2 ✅ Login/Register (iteration_56 — 100%)
-### Phase 3 ✅ Platform Layout (iteration_57 — 100%)
-### Phase 4 ✅ Super Admin Portal — 8 Pages (iteration_58 + 59 — 100%)
+## Architecture
+- **Frontend**: React (CRA + CRACO) with Tailwind CSS
+- **Backend**: FastAPI (Python)
+- **Database**: Supabase (PostgreSQL, Auth, Edge Functions, pg_cron)
+- **AI**: OpenAI + Perplexity via Supabase Edge Functions
+- **Integrations**: Merge.dev (CRM/Accounting), Google/Microsoft OAuth
 
-## Super Admin Portal — 8 Enterprise Governance Pages
+## What's Been Implemented
 
-| Page | What It Contains | Real Data? |
-|---|---|---|
-| Command Centre | Platform health, worker status, Edge Functions, strategic inevitabilities | YES — health.py API |
-| User Admin | Search, user list, detail panel, suspend/unsuspend, impersonate | YES — admin.py API |
-| Governance | Role hierarchy (5 tiers), audit trail, data sovereignty, governance controls | PARTIAL — roles real, controls planned |
-| Security | 10 hardening items, 10 procurement readiness items with status badges | Status tracking — features planned |
-| AI Governance | 12 AI agents listed, token tracking, prompt audit, governance controls | YES — usage_tracking + prompt_audit_logs |
-| Commercial | MRR/ARR, revenue intelligence, sales pipeline, subscription tiers | MOCK — needs Stripe |
-| Operations | 6 kill switches, automation rules, team oversight | Visual — needs backend |
-| Growth | Growth infrastructure, trust signals, config intelligence | PARTIAL |
+### 2026-02-23: Route Migration Fix (CRITICAL)
+- **ROOT CAUSE FOUND**: Liquid Steel themed pages were built under `/site/*` routes but main routes (`/`, `/pricing`, `/trust`) still served OLD light-themed components
+- **FIX**: Swapped all main routes to use Liquid Steel components, updated WebsiteLayout.js and PlatformLayout.js navigation links, added `/site/*` → `/` redirects
+- **Testing**: 20/20 frontend tests PASSED (100% success rate)
+- **Status**: ✅ COMPLETE — Root URL now serves Liquid Steel theme
 
-## Next: Rest of Migration
-- Theme individual page content (AdvisorWatchtower, Settings, Integrations, etc.)
-- Each page's internal content needs dark theme styling
+### Previous Session: Complete UI/UX Transformation
+- Redesigned 65+ pages/components to Liquid Steel dark theme
+- Built 8-section Super Admin portal
+- Created architectural planning documents
+- Fixed deployment code-level blockers
+- Font & legibility audits completed
 
-## Test Credentials
-- Superadmin: andre@thestrategysquad.com.au / BIQc_Test_2026!
+## Route Structure (Current)
+### Public Pages (Liquid Steel)
+- `/` → Homepage
+- `/platform` → Platform overview
+- `/intelligence` → Intelligence overview
+- `/our-integrations` → Integrations overview
+- `/pricing` → Pricing
+- `/trust` → Trust landing
+- `/trust/terms`, `/trust/privacy`, `/trust/dpa`, `/trust/security`, `/trust/centre`
+- `/contact` → Contact page
+
+### Auth Pages (Liquid Steel)
+- `/login-supabase` → Login
+- `/register-supabase` → Register
+- `/auth/callback` → OAuth callback
+
+### Protected Platform Pages
+- `/advisor` → Main dashboard (AdvisorWatchtower)
+- `/business-profile`, `/oac`, `/intel-centre`, `/diagnosis`, `/analysis`
+- `/settings`, `/integrations`, `/email-inbox`, `/calendar`, `/soundboard`
+- `/admin` → Super Admin portal
+
+### Demo/Mockup Pages
+- `/platform/login`, `/platform/overview`, `/platform/revenue`, `/platform/alerts`
+- `/platform/industry/msp`, `/platform/industry/construction`, etc.
+
+## Pending Tasks
+
+### P0
+- Production deployment verification — user must use "Save to GitHub" → "Deploy"
+- If MongoDB migration error persists, contact Emergent support to change template
+
+### P1
+- Implement "Soundboard" capability
+- Recover 5 missing Edge Function source files
+- Full post-deployment E2E testing
+
+### P2
+- Build Action Layer backend (email/SMS/ticketing)
+- Implement Blueprint features (SOP Generator, Vision Generator)
+- Refactor legacy backend to Edge Functions
+
+### Backlog
+- Consolidate duplicate Supabase secrets
+- Add Merge.dev webhook handler
+- Clean up old mockup pages
