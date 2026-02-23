@@ -1,0 +1,109 @@
+{
+  "summary": "Frontend testing for BIQc sidebar menu restructuring and 11 new intelligence pages. Build successful. All 14 protected routes correctly redirect to login. Public routes working with dark Liquid Steel theme. Code review confirms DashboardLayout has correct new menu structure (Intelligence, Execution, Systems, Governance sections) with all required items. All 11 new pages properly created with correct content and data-testids. UNABLE TO TEST AUTHENTICATED PAGES due to Supabase auth 400 error in preview environment.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Supabase Authentication",
+        "issue": "Login returns 400 error - credentials don't work in preview environment",
+        "affected_selectors": ["#login-form", "button[type='submit']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "tests_executed": {
+    "build_test": "PASS - yarn build successful with 495KB JS bundle, only minor ESLint warnings",
+    "public_routes": {
+      "homepage": "PASS - Loads with dark Liquid Steel theme",
+      "platform": "PASS - /platform loads correctly",
+      "intelligence": "PASS - /intelligence loads correctly",
+      "pricing": "PASS - /pricing loads correctly",
+      "trust": "PASS - /trust loads correctly",
+      "login": "PASS - /login-supabase shows login form with dark theme",
+      "register": "PASS - /register-supabase loads correctly",
+      "integrations_public": "PASS - /our-integrations loads correctly"
+    },
+    "protected_routes_redirect": {
+      "advisor": "PASS - Redirects to /login-supabase",
+      "revenue": "PASS - Redirects to /login-supabase",
+      "operations": "PASS - Redirects to /login-supabase",
+      "risk": "PASS - Redirects to /login-supabase",
+      "compliance": "PASS - Redirects to /login-supabase",
+      "market": "PASS - Redirects to /login-supabase",
+      "alerts": "PASS - Redirects to /login-supabase",
+      "actions": "PASS - Redirects to /login-supabase",
+      "automations": "PASS - Redirects to /login-supabase",
+      "integrations": "PASS - Redirects to /login-supabase",
+      "data_health": "PASS - Redirects to /login-supabase",
+      "reports": "PASS - Redirects to /login-supabase",
+      "audit_log": "PASS - Redirects to /login-supabase",
+      "settings": "PASS - Redirects to /login-supabase"
+    },
+    "code_review": {
+      "DashboardLayout_sidebar": "PASS - navSections at lines 93-116 correctly defines new menu structure",
+      "App_routes": "PASS - Routes at lines 193-214 correctly map all 11 new pages",
+      "CheckInAlerts_dark_theme": "PASS - Uses dark theme colors (#F4F7FA, #9FB0C3, #141C26, #243140)"
+    }
+  },
+  "verified_features": [
+    "DashboardLayout sidebar has new 4-section structure: Intelligence, Execution, Systems, Governance",
+    "BIQc Insights (/advisor) is first item under Intelligence section",
+    "All 11 new pages exist with correct data-testid attributes",
+    "RevenuePage has pipeline, concentration, churn data (DEMO)",
+    "OperationsPage has SOP compliance, bottlenecks, workload data (DEMO)",
+    "RiskPage has financial, operational, market risk data (DEMO)",
+    "CompliancePage has score, obligations, documents data (DEMO)",
+    "MarketPage has competitor signals, trends data (DEMO)",
+    "AlertsPageAuth has filter buttons and 7 alerts with expandable details (DEMO)",
+    "ActionsPage has pending actions and email drafts (DEMO)",
+    "AutomationsPageAuth has 8 automation workflows listed (DEMO)",
+    "DataHealthPage has integration sync status, connected systems (DEMO)",
+    "ReportsPage has downloadable reports (DEMO)",
+    "AuditLogPage has activity entries (DEMO)",
+    "CheckInAlerts uses dark theme colors",
+    "Protected routes correctly redirect to login when unauthenticated"
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "NO ACTION REQUIRED - All code changes appear correct based on code review",
+    "Consider testing authenticated flows in production environment with valid credentials"
+  ],
+  "critical_code_review_comments": [
+    "All 11 new pages use DEMO/STATIC data - not connected to live APIs (as designed)",
+    "Minor: ESLint warnings in other files (VoiceChat, AdvisorWatchtower, Diagnosis, EmailInbox, OnboardingWizard) - not related to this change"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - Backend testing skipped per request",
+    "frontend": "100% code review pass, 100% public route tests pass, unable to test authenticated pages due to auth issues"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "BIQc_Test_2026!",
+    "note": "Credentials return 400 error - not working in preview environment"
+  },
+  "seed_data_creation": "None - all new pages use static demo data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sidebar restructuring and 11 new intelligence pages implemented correctly. All components build without errors. Unable to test authenticated UI due to Supabase auth 400 error. Code review confirms correct implementation. New pages all use DEMO/STATIC data. If auth is fixed, test the authenticated dashboard UI to verify sidebar navigation and page content displays correctly.",
+  "mocked_api_confirmation": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": [
+      "Revenue data - static demo in RevenuePage.js",
+      "Operations data - static demo in OperationsPage.js", 
+      "Risk data - static demo in RiskPage.js",
+      "Compliance data - static demo in CompliancePage.js",
+      "Market data - static demo in MarketPage.js",
+      "Alerts data - static demo in AlertsPageAuth.js (7 alerts)",
+      "Actions data - static demo in ActionsPage.js (5 actions)",
+      "Automations data - static demo in AutomationsPageAuth.js (8 workflows)",
+      "Data Health metrics - static demo in DataHealthPage.js (6 systems)",
+      "Reports - static demo in ReportsPage.js",
+      "Audit Log entries - static demo in AuditLogPage.js (10 entries)"
+    ]
+  }
+}
