@@ -7,8 +7,8 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - Premium "Liquid Steel" aesthetic (dark theme #0F1720 background, orange #FF6A00 accents)
 - Fast, intuitive, agentic user experience
 - Industry-contextualized intelligence
-- Enterprise-grade Super Admin portal
-- Successful deployment to production
+- Enterprise-grade platform structure
+- Comprehensive data, insights, and intelligence on every page
 
 ## Architecture
 - **Frontend**: React (CRA + CRACO) with Tailwind CSS
@@ -19,62 +19,71 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 
 ## What's Been Implemented
 
+### 2026-02-23: Sidebar Restructuring + 11 New Intelligence Pages
+- **Rebuilt sidebar menu** to enterprise structure:
+  - **Intelligence**: BIQc Insights, Revenue, Operations, Risk, Compliance, Market
+  - **Execution**: Alerts, Actions, Automations
+  - **Systems**: Integrations, Data Health
+  - **Governance**: Reports, Audit Log, Settings
+- **Created 11 new data-rich pages** with demo data, insights, and intelligence:
+  - RevenuePage.js, OperationsPage.js, RiskPage.js, CompliancePage.js, MarketPage.js
+  - AlertsPageAuth.js, ActionsPage.js, AutomationsPageAuth.js
+  - DataHealthPage.js, ReportsPage.js, AuditLogPage.js
+- **Fixed CheckInAlerts** component: converted from light to dark Liquid Steel theme
+- **Testing**: Build passes, code review pass, all protected routes redirect correctly
+- **Note**: All new pages use DEMO/STATIC data (not connected to live APIs)
+
 ### 2026-02-23: Route Migration Fix (CRITICAL)
-- **ROOT CAUSE FOUND**: Liquid Steel themed pages were built under `/site/*` routes but main routes (`/`, `/pricing`, `/trust`) still served OLD light-themed components
-- **FIX**: Swapped all main routes to use Liquid Steel components, updated WebsiteLayout.js and PlatformLayout.js navigation links, added `/site/*` → `/` redirects
-- **Testing**: 20/20 frontend tests PASSED (100% success rate)
-- **Status**: ✅ COMPLETE — Root URL now serves Liquid Steel theme
+- Swapped main routes to use Liquid Steel components
+- Root URL now serves Liquid Steel homepage
+- Updated navigation links across WebsiteLayout, PlatformLayout, TrustSubPages
+- 20/20 frontend tests PASSED
 
 ### Previous Session: Complete UI/UX Transformation
 - Redesigned 65+ pages/components to Liquid Steel dark theme
 - Built 8-section Super Admin portal
 - Created architectural planning documents
-- Fixed deployment code-level blockers
-- Font & legibility audits completed
 
-## Route Structure (Current)
-### Public Pages (Liquid Steel)
-- `/` → Homepage
-- `/platform` → Platform overview
-- `/intelligence` → Intelligence overview
-- `/our-integrations` → Integrations overview
-- `/pricing` → Pricing
-- `/trust` → Trust landing
-- `/trust/terms`, `/trust/privacy`, `/trust/dpa`, `/trust/security`, `/trust/centre`
-- `/contact` → Contact page
+## Sidebar Menu Structure (Current)
+### Intelligence
+- BIQc Insights (/advisor) — AI cognitive dashboard
+- Revenue (/revenue) — Pipeline, churn, deal velocity
+- Operations (/operations) — SOP compliance, bottlenecks, workload
+- Risk (/risk) — Financial, operational, market risk
+- Compliance (/compliance) — Regulatory obligations, document status
+- Market (/market) — Competitor signals, trends
 
-### Auth Pages (Liquid Steel)
-- `/login-supabase` → Login
-- `/register-supabase` → Register
-- `/auth/callback` → OAuth callback
+### Execution
+- Alerts (/alerts) — Business alert centre with filters
+- Actions (/actions) — AI-recommended actions ready for execution
+- Automations (/automations) — AI-powered workflows
 
-### Protected Platform Pages
-- `/advisor` → Main dashboard (AdvisorWatchtower)
-- `/business-profile`, `/oac`, `/intel-centre`, `/diagnosis`, `/analysis`
-- `/settings`, `/integrations`, `/email-inbox`, `/calendar`, `/soundboard`
-- `/admin` → Super Admin portal
+### Systems
+- Integrations (/integrations) — Merge.dev integration management
+- Data Health (/data-health) — Sync status, data quality
 
-### Demo/Mockup Pages
-- `/platform/login`, `/platform/overview`, `/platform/revenue`, `/platform/alerts`
-- `/platform/industry/msp`, `/platform/industry/construction`, etc.
+### Governance
+- Reports (/reports) — AI-generated business reports
+- Audit Log (/audit-log) — Activity trail
+- Settings (/settings) — Account settings
 
 ## Pending Tasks
 
 ### P0
-- Production deployment verification — user must use "Save to GitHub" → "Deploy"
-- If MongoDB migration error persists, contact Emergent support to change template
+- Deploy to production: "Save to GitHub" → "Deploy"
+- Post-deployment E2E testing (verify auth and all pages)
 
 ### P1
+- Connect new pages to live data (replace demo data with real Supabase/Merge.dev data)
+- Debug Xero/HubSpot/email data flow through Edge Functions
 - Implement "Soundboard" capability
-- Recover 5 missing Edge Function source files
-- Full post-deployment E2E testing
 
 ### P2
-- Build Action Layer backend (email/SMS/ticketing)
-- Implement Blueprint features (SOP Generator, Vision Generator)
-- Refactor legacy backend to Edge Functions
+- Build Action Layer backend (email/SMS/ticketing execution)
+- Recover 5 missing Edge Function source files
+- Connect Reports to actual report generation
 
 ### Backlog
+- Industry-specific UI customization
 - Consolidate duplicate Supabase secrets
 - Add Merge.dev webhook handler
-- Clean up old mockup pages
