@@ -11,7 +11,23 @@ const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
-const MarketPage = () => (
+const MarketPage = () => {
+  const [snapshot, setSnapshot] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await apiClient.get('/snapshot/latest');
+        if (res.data?.cognitive) setSnapshot(res.data.cognitive);
+      } catch {} finally { setLoading(false); }
+    };
+    fetch();
+  }, []);
+
+  const marketNarrative = snapshot?.market_position || snapshot?.market?.narrative || null;
+
+  return (
   <DashboardLayout>
     <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="market-page">
       <div>
