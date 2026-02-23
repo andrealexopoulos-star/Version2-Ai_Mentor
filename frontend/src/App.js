@@ -124,43 +124,42 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public Routes - Landing page accessible to everyone */}
-      <Route path="/" element={<LandingIntelligent />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/trust" element={<TrustPage />} />
+      {/* Public Routes — Liquid Steel Theme (PRIMARY) */}
+      <Route path="/" element={<SiteHomePage />} />
+      <Route path="/platform" element={<SitePlatformPage />} />
+      <Route path="/intelligence" element={<SiteIntelligencePage />} />
+      <Route path="/our-integrations" element={<SiteIntegrationsPage />} />
+      <Route path="/pricing" element={<SitePricingPage />} />
+      <Route path="/trust" element={<SiteTrustLandingPage />} />
+      <Route path="/trust/terms" element={<SiteTermsPage />} />
+      <Route path="/trust/privacy" element={<SitePrivacyPage />} />
+      <Route path="/trust/dpa" element={<SiteDPAPage />} />
+      <Route path="/trust/security" element={<SiteSecurityPage />} />
+      <Route path="/trust/centre" element={<SiteTrustCentrePage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/enterprise-terms" element={<EnterpriseTerms />} />
-      <Route path="/contact" element={<ContactPage />} />
       <Route path="/cognitive-v2-preview" element={<CognitiveV2Mockup />} />
       <Route path="/loading-preview" element={<LoadingPreview />} />
 
-      {/* Website (Liquid Steel) — Test Mockup */}
-      <Route path="/site" element={<SiteHomePage />} />
-      <Route path="/site/platform" element={<SitePlatformPage />} />
-      <Route path="/site/intelligence" element={<SiteIntelligencePage />} />
-      <Route path="/site/integrations" element={<SiteIntegrationsPage />} />
-      <Route path="/site/pricing" element={<SitePricingPage />} />
-      <Route path="/site/trust" element={<SiteTrustLandingPage />} />
-      <Route path="/site/trust/terms" element={<SiteTermsPage />} />
-      <Route path="/site/trust/privacy" element={<SitePrivacyPage />} />
-      <Route path="/site/trust/dpa" element={<SiteDPAPage />} />
-      <Route path="/site/trust/security" element={<SiteSecurityPage />} />
-      <Route path="/site/trust/centre" element={<SiteTrustCentrePage />} />
+      {/* Platform Demo Pages (Liquid Steel) */}
+      <Route path="/platform/login" element={<PlatformLogin />} />
+      <Route path="/platform/overview" element={<ExecOverview />} />
+      <Route path="/platform/revenue" element={<RevenueModule />} />
+      <Route path="/platform/alerts" element={<AlertsPage />} />
+      <Route path="/platform/automations" element={<AutomationsPage />} />
+      <Route path="/platform/integrations-demo" element={<IntegrationsPlatform />} />
 
-      {/* Platform Mockup (Liquid Steel) */}
-      <Route path="/site/platform/login" element={<PlatformLogin />} />
-      <Route path="/site/platform/overview" element={<ExecOverview />} />
-      <Route path="/site/platform/revenue" element={<RevenueModule />} />
-      <Route path="/site/platform/alerts" element={<AlertsPage />} />
-      <Route path="/site/platform/automations" element={<AutomationsPage />} />
-      <Route path="/site/platform/integrations" element={<IntegrationsPlatform />} />
+      {/* Industry Demo Pages */}
+      <Route path="/platform/industry/msp" element={<MSPView />} />
+      <Route path="/platform/industry/construction" element={<ConstructionView />} />
+      <Route path="/platform/industry/consulting" element={<ConsultingView />} />
+      <Route path="/platform/industry/agency" element={<AgencyView />} />
+      <Route path="/platform/industry/saas" element={<SaaSView />} />
 
-      {/* Industry Mockups */}
-      <Route path="/site/platform/industry/msp" element={<MSPView />} />
-      <Route path="/site/platform/industry/construction" element={<ConstructionView />} />
-      <Route path="/site/platform/industry/consulting" element={<ConsultingView />} />
-      <Route path="/site/platform/industry/agency" element={<AgencyView />} />
-      <Route path="/site/platform/industry/saas" element={<SaaSView />} />
+      {/* Legacy /site/* redirects */}
+      <Route path="/site" element={<Navigate to="/" replace />} />
+      <Route path="/site/*" element={<Navigate to="/" replace />} />
       
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
