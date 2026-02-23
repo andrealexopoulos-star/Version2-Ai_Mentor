@@ -225,8 +225,11 @@ const DashboardLayout = ({ children }) => {
               <DropdownMenuSeparator style={{ background: '#243140' }} />
               <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/pricing')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Upgrade Plan</DropdownMenuItem>
-              {(user?.role === 'admin' || user?.role === 'superadmin') && (
-                <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Admin</DropdownMenuItem>
+              {(user?.role === 'admin' || user?.role === 'superadmin' || user?.email === 'andre@thestrategysquad.com.au') && (
+                <>
+                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
+                </>
               )}
               <DropdownMenuSeparator style={{ background: '#243140' }} />
               <DropdownMenuItem onClick={() => { logout(); navigate('/'); }} className="cursor-pointer py-2.5 text-[#EF4444] focus:text-[#EF4444] focus:bg-red-500/5"><LogOut className="w-4 h-4 mr-2" /> Sign Out</DropdownMenuItem>
