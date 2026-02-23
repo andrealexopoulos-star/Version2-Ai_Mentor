@@ -32,7 +32,10 @@ const MarketPage = () => {
     <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="market-page">
       <div>
         <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Market Intelligence</h1>
-        <p className="text-sm text-[#9FB0C3]">Competitive landscape, market trends, and positioning analysis.</p>
+        <p className="text-sm text-[#9FB0C3]">
+          Competitive landscape, market trends, and positioning analysis.
+          {loading && <Loader2 className="w-3 h-3 inline ml-2 animate-spin" />}
+        </p>
       </div>
 
       {/* Market Position */}
