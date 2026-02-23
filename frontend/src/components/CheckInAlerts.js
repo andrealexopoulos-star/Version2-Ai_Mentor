@@ -81,8 +81,8 @@ export const CheckInAlerts = () => {
     <div className="space-y-3 mb-6" data-testid="checkin-alerts">
       {alerts.map((alert, i) => (
         <div key={i} className="rounded-2xl p-4 flex items-start gap-3" style={{
-          background: alert.severity === 'high' ? '#FEF2F2' : alert.severity === 'medium' ? '#FFFBEB' : '#F0F9FF',
-          border: `1px solid ${alert.severity === 'high' ? '#FECACA' : alert.severity === 'medium' ? '#FDE68A' : '#BAE6FD'}`,
+          background: alert.severity === 'high' ? '#EF444410' : alert.severity === 'medium' ? '#F59E0B10' : '#3B82F610',
+          border: `1px solid ${alert.severity === 'high' ? '#EF444425' : alert.severity === 'medium' ? '#F59E0B25' : '#3B82F625'}`,
         }}>
           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{
             background: alert.type === 'recalibration' ? '#F9731615' : '#7C3AED15',
@@ -90,8 +90,8 @@ export const CheckInAlerts = () => {
             {alert.type === 'recalibration' ? <RefreshCw className="w-4 h-4" style={{ color: '#F97316' }} /> : <Video className="w-4 h-4" style={{ color: '#7C3AED' }} />}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: '#1F2937', fontFamily: HEAD }}>{alert.title}</p>
-            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#6B7280', fontFamily: BODY }}>{alert.message}</p>
+            <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{alert.title}</p>
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{alert.message}</p>
             <div className="flex gap-2 mt-3">
               <button onClick={() => {
                 if (alert.type === 'recalibration') {
@@ -107,14 +107,14 @@ export const CheckInAlerts = () => {
                 {alert.type === 'recalibration' ? 'Recalibrate Now' : 'Schedule Check-In'}
               </button>
               <button onClick={() => setShowScheduler(alert.type)} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:-translate-y-0.5" style={{
-                color: '#6B7280',
-                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#9FB0C3',
+                borderColor: '#243140',
                 fontFamily: MONO,
               }} data-testid={`checkin-schedule-${alert.type}`}>
                 <Calendar className="w-3 h-3 inline mr-1" />
                 Pick a Date
               </button>
-              <button onClick={() => handleDismiss(alert.type)} className="text-[11px] px-2 py-1.5 rounded-lg transition-colors hover:bg-gray-100" style={{ color: '#9CA3AF' }} data-testid={`checkin-dismiss-${alert.type}`}>
+              <button onClick={() => handleDismiss(alert.type)} className="text-[11px] px-2 py-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: '#64748B' }} data-testid={`checkin-dismiss-${alert.type}`}>
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
