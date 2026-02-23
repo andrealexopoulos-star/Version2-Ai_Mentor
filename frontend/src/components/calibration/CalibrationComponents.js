@@ -18,10 +18,15 @@ const ANALYZE_PHASES = [
   'Preparing your Executive Audit Brief...',
 ];
 
-/** Loading spinner */
+/** Loading — branded pulse, no spinner */
 export const CalibrationLoading = () => (
-  <div className="flex-1 flex items-center justify-center" data-testid="calibration-loading">
-    <div className="w-6 h-6 border rounded-full animate-spin" style={{ borderColor: CARD_BORDER, borderTopColor: CHARCOAL }} />
+  <div className="flex-1 flex items-center justify-center" style={{ background: '#0F1720' }} data-testid="calibration-loading">
+    <div className="text-center">
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: '#FF6A00', animation: 'pulse 2s ease-in-out infinite' }}>
+        <span className="text-white font-bold text-lg" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
+      </div>
+      <p className="text-sm" style={{ color: '#9FB0C3' }}>Loading calibration...</p>
+    </div>
   </div>
 );
 
