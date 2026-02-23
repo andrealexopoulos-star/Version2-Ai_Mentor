@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { Bell, AlertTriangle, Info, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Check, Clock } from 'lucide-react';
+import { apiClient } from '../lib/api';
+import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2 } from 'lucide-react';
 
 const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
-const alerts = [
+const DEMO_ALERTS = [
   { id: 1, severity: 'critical', title: 'Invoice #1847 overdue 12 days — $3,200', impact: 'Cash flow impact. Client has been unresponsive to previous follow-up.', action: 'Send firm payment reminder. Follow up via phone if no response in 48 hours.', time: '2h ago', actions: ['email', 'sms'] },
   { id: 2, severity: 'critical', title: '3 deals stalled at proposal stage', impact: 'Combined pipeline value: $88K. Pricing objection detected across all 3.', action: 'Review proposal pricing. Consider offering phased engagement or pilot scope.', time: '4h ago', actions: ['email', 'handoff'] },
   { id: 3, severity: 'moderate', title: 'Subcontractor costs increasing 12%', impact: 'Margin compression on Service B. Affects 4 active projects.', action: 'Renegotiate rates with current supplier or source alternatives.', time: '1d ago', actions: ['handoff'] },
@@ -16,15 +17,15 @@ const alerts = [
   { id: 7, severity: 'info', title: 'Workers compensation renewal in 45 days', impact: 'Current policy expires. Renewal documentation gathered.', action: 'Compare renewal quotes. Contact broker.', time: '5d ago', actions: [] },
 ];
 
-const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' } };
+const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
 
 const AlertItem = ({ alert }) => {
   const [open, setOpen] = useState(false);
-  const s = sevMap[alert.severity];
+  const s = sevMap[alert.severity] || sevMap.info;
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: '#141C26', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
-        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' ? `0 0 10px ${s.color}40` : 'none' }} />
+        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' || alert.severity === 'high' ? `0 0 10px ${s.color}40` : 'none' }} />
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: SORA }}>{alert.title}</span>
         </div>
@@ -54,15 +55,46 @@ const AlertItem = ({ alert }) => {
 };
 
 const AlertsPageAuth = () => {
+  const [alerts, setAlerts] = useState(DEMO_ALERTS);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter);
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const res = await apiClient.get('/intelligence/watchtower');
+        if (res.data?.events?.length > 0) {
+          const mapped = res.data.events.map((e, i) => ({
+            id: e.id || i + 1,
+            severity: e.severity || 'moderate',
+            title: e.title || e.signal || e.event,
+            impact: e.impact || e.detail || e.description || '',
+            action: e.recommendation || e.action || 'Review and take appropriate action.',
+            time: e.created_at ? timeAgo(e.created_at) : 'Recent',
+            actions: e.severity === 'critical' || e.severity === 'high' ? ['email', 'handoff'] : ['handoff'],
+          }));
+          setAlerts([...mapped, ...DEMO_ALERTS.slice(mapped.length)]);
+        }
+      } catch {} finally { setLoading(false); }
+    };
+    fetchAlerts();
+  }, []);
+
+  const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter || (filter === 'critical' && a.severity === 'high'));
+  const critCount = alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
+  const modCount = alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
+  const infoCount = alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[900px]" style={{ fontFamily: INTER }} data-testid="alerts-page">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Alert Centre</h1>
-            <p className="text-sm text-[#9FB0C3]">{alerts.length} active alerts across your business.</p>
+            <p className="text-sm text-[#9FB0C3]">
+              {alerts.length} active alerts across your business.
+              {loading && <Loader2 className="w-3 h-3 inline ml-2 animate-spin" />}
+            </p>
           </div>
           <div className="flex gap-2">
             {[['all', 'All'], ['critical', 'Critical'], ['moderate', 'Moderate'], ['info', 'Info']].map(([val, label]) => (
@@ -73,14 +105,16 @@ const AlertsPageAuth = () => {
             ))}
           </div>
         </div>
+
         <div className="grid grid-cols-3 gap-3">
-          {[['Critical', alerts.filter(a => a.severity === 'critical').length, '#FF6A00'], ['Moderate', alerts.filter(a => a.severity === 'moderate').length, '#F59E0B'], ['Info', alerts.filter(a => a.severity === 'info').length, '#3B82F6']].map(([l, v, c]) => (
+          {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
             <div key={l} className="rounded-lg p-4 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
               <span className="text-2xl font-bold block" style={{ fontFamily: MONO, color: c }}>{v}</span>
               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{l}</span>
             </div>
           ))}
         </div>
+
         <div className="space-y-3">
           {filtered.map(a => <AlertItem key={a.id} alert={a} />)}
         </div>
@@ -88,5 +122,14 @@ const AlertsPageAuth = () => {
     </DashboardLayout>
   );
 };
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
 
 export default AlertsPageAuth;
