@@ -87,7 +87,7 @@ const RevenuePage = () => {
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Revenue Intelligence</h1>
           <p className="text-sm text-[#9FB0C3]">
             {deals ? 'Live data from HubSpot CRM.' : 'Pipeline health, deal velocity, and churn signals.'}
-            {loading && <Loader2 className="w-3 h-3 inline ml-2 animate-spin" />}
+            {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
           </p>
         </div>
 

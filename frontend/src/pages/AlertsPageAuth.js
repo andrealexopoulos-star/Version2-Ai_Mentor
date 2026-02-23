@@ -95,7 +95,7 @@ const AlertsPageAuth = () => {
             <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Alert Centre</h1>
             <p className="text-sm text-[#9FB0C3]">
               {alerts.length} active alerts across your business.
-              {loading && <Loader2 className="w-3 h-3 inline ml-2 animate-spin" />}
+              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
             </p>
           </div>
           <div className="flex gap-2">

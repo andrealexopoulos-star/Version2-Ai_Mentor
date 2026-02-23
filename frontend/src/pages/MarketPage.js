@@ -34,7 +34,7 @@ const MarketPage = () => {
         <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Market Intelligence</h1>
         <p className="text-sm text-[#9FB0C3]">
           Competitive landscape, market trends, and positioning analysis.
-          {loading && <Loader2 className="w-3 h-3 inline ml-2 animate-spin" />}
+          {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
         </p>
       </div>
 
