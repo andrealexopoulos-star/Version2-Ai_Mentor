@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../../lib/api';
 
-const CREAM = '#FBFBF9';
-const CHARCOAL = '#1E293B';
-const MUTED = '#64748B';
-const GOLD = '#B8860B';
-const CARD_BG = '#FFFFFF';
-const CARD_BORDER = '#E8E6E1';
+const CREAM = '#0F1720';
+const CHARCOAL = '#F4F7FA';
+const MUTED = '#9FB0C3';
+const GOLD = '#FF6A00';
+const CARD_BG = '#141C26';
+const CARD_BORDER = '#243140';
 const SERIF = "var(--font-heading)";
-const AZ = '#007AFF';
+const AZ = '#FF6A00';
 
 const ANALYZE_PHASES = [
   'Scanning market presence...',
