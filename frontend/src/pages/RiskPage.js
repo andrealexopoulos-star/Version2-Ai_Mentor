@@ -49,8 +49,8 @@ const RiskPage = () => {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <span className="text-3xl font-bold" style={{ fontFamily: MONO, color: '#F59E0B' }}>MODERATE</span>
-              <span className="block text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>3 active risk vectors</span>
+              <span className="text-3xl font-bold" style={{ fontFamily: MONO, color: riskColor }}>{riskLevel}</span>
+              <span className="block text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{cashRunway} months runway</span>
             </div>
           </div>
         </div>
