@@ -190,9 +190,30 @@ function AppRoutes() {
       <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
       <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
-      {/* Protected Routes */}
+      {/* Protected Routes — Intelligence */}
       <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
       <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
+      <Route path="/revenue" element={<ProtectedRoute><RevenuePage /></ProtectedRoute>} />
+      <Route path="/operations" element={<ProtectedRoute><OperationsPage /></ProtectedRoute>} />
+      <Route path="/risk" element={<ProtectedRoute><RiskPage /></ProtectedRoute>} />
+      <Route path="/compliance" element={<ProtectedRoute><CompliancePage /></ProtectedRoute>} />
+      <Route path="/market" element={<ProtectedRoute><MarketPage /></ProtectedRoute>} />
+
+      {/* Protected Routes — Execution */}
+      <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
+      <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
+      <Route path="/automations" element={<ProtectedRoute><AutomationsPageAuth /></ProtectedRoute>} />
+
+      {/* Protected Routes — Systems */}
+      <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+      <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
+
+      {/* Protected Routes — Governance */}
+      <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+      <Route path="/audit-log" element={<ProtectedRoute><AuditLogPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+      {/* Legacy Routes (still accessible) */}
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
       <Route path="/intel-centre" element={<ProtectedRoute><IntelCentre /></ProtectedRoute>} />
@@ -205,8 +226,6 @@ function AppRoutes() {
       <Route path="/data-center" element={<ProtectedRoute><DataCenter /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
       <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
       <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
