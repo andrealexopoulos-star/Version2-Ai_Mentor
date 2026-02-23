@@ -4,6 +4,7 @@ import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { apiClient } from '../lib/api';
 import { useTutorial, HelpButton, TutorialModal } from './TutorialOverlay';
+import FirstLoginNotification from './FirstLoginNotification';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from './ui/dropdown-menu';
