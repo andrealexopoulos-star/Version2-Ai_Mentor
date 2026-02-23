@@ -158,6 +158,7 @@ const RiskPage = () => {
       </Panel>
     </div>
   </DashboardLayout>
-);
+  );
+};
 
 export default RiskPage;
