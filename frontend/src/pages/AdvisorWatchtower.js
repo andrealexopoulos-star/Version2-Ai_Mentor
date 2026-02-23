@@ -129,7 +129,7 @@ const AdvisorWatchtower = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#FAFAF8', fontFamily: HEAD }} data-testid="biqc-insights-page">
+      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: HEAD }} data-testid="biqc-insights-page">
 
         {/* LOADING — Animated cognitive screen */}
         {loading && (
