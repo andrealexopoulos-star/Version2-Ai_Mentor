@@ -125,8 +125,8 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // READY → enforce gates
   if (authState === AUTH_STATE.READY) {
-    // Calibrated users must NEVER see /calibration — deterministic redirect
-    if (location.pathname === '/calibration') {
+    // Calibrated users must NEVER see /calibration UNLESS they're super admin recalibrating
+    if (location.pathname === '/calibration' && !(user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au')) {
       console.log('[CALIBRATION ROUTING] Calibrated user on /calibration → redirect to /advisor');
       return <Navigate to="/advisor" replace />;
     }
