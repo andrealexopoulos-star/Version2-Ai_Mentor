@@ -74,8 +74,9 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
 
 
 async def get_super_admin(current_user: dict = Depends(get_current_user)):
-    """Super-admin only. Strictest gate — for system-level operations."""
-    if current_user.get("role") != "superadmin":
+    """Super-admin only. Strictest gate — for system-level operations.
+    Also grants access to the master account email."""
+    if current_user.get("role") != "superadmin" and current_user.get("email") != "andre@thestrategysquad.com.au":
         raise HTTPException(status_code=403, detail="Super-admin access required")
     return current_user
 
