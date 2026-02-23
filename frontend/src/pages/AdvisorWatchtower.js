@@ -200,8 +200,8 @@ const AdvisorWatchtower = () => {
                     <group.icon className="w-4 h-4" style={{ color: group.color }} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold" style={{ color: '#111827', fontFamily: HEAD }}>{group.label}</h2>
-                    <p className="text-xs" style={{ color: '#9CA3AF', fontFamily: MONO }}>{group.description}</p>
+                    <h2 className="text-lg font-bold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{group.label}</h2>
+                    <p className="text-xs" style={{ color: '#64748B', fontFamily: MONO }}>{group.description}</p>
                   </div>
                 </div>
 
