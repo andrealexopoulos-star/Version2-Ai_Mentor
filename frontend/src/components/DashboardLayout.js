@@ -311,6 +311,9 @@ const DashboardLayout = ({ children }) => {
         <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
       </main>
 
+      {/* First Login Notification */}
+      <FirstLoginNotification />
+
       {/* Tutorial */}
       {showTutorial && tutorial && <TutorialModal tutorial={tutorial} onClose={closeTutorial} />}
     </div>
