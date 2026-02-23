@@ -34,10 +34,10 @@ const FloatingSoundboard = ({ context = '' }) => {
     setLoading(true);
 
     try {
-      const res = await apiClient.post('/soundboard/message', {
+      const res = await apiClient.post('/soundboard/chat', {
         message: userMsg,
         context: context,
-        history: messages.slice(-6).map(m => ({ role: m.role, content: m.text })),
+        conversation_id: null,
       });
       const reply = res.data?.response || res.data?.message || 'Let me think about that...';
       setMessages(prev => [...prev, { role: 'assistant', text: reply }]);
