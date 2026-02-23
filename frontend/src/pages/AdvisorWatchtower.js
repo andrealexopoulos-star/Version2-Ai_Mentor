@@ -271,10 +271,10 @@ const AdvisorWatchtower = () => {
               {memo && (
                 <div className="mb-8">
                   <button onClick={() => setMemoOpen(!memoOpen)} className="flex items-center justify-between w-full mb-3">
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280', fontFamily: MONO }}>Executive Memo</h3>
-                    {memoOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Executive Memo</h3>
+                    {memoOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
                   </button>
-                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#1F2937', fontFamily: BODY }}>{memo}</p></Card>}
+                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#9FB0C3', fontFamily: BODY }}>{memo}</p></Card>}
                 </div>
               )}
 
