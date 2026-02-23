@@ -135,6 +135,7 @@ const MarketPage = () => {
       </Panel>
     </div>
   </DashboardLayout>
-);
+  );
+};
 
 export default MarketPage;
