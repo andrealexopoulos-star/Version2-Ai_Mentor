@@ -156,7 +156,7 @@ const DashboardLayout = ({ children }) => {
   const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
   return (
-    <div className="min-h-screen" style={{ background: '#0F1720', color: '#F4F7FA' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: '#0F1720', color: '#F4F7FA' }}>
       {/* ═══ TOP BAR ═══ */}
       <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: '#0A1018', borderBottom: '1px solid #243140', zIndex: 1000 }}>
         <div className="flex items-center gap-3">
