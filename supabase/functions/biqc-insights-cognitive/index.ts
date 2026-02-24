@@ -512,9 +512,49 @@ serve(async (req) => {
     // GATHER EVERYTHING
     const { ctx, sources, blind_spots } = await gatherFullContext(supabase, user.id, integrations || []);
 
-    // ═══ DETERMINISTIC OVERLAY — Runs BEFORE LLM synthesis ═══
-    // Anchors AI output in measurable signals, prevents pure inference drift
-    const contradictionCount = (ctx.contradictions || []).length;
+    // ═══ DETERMINISTIC CHAIN — SQL RPCs run BEFORE LLM synthesis ═══
+    // Order: contradictions → escalation → pressure → evidence → risk_weight
+    // Each function reads/writes to its own table. No cross-mutation.
+    // All functions use SECURITY DEFINER — runs with service_role privileges.
+
+    const startDeterministic = Date.now();
+    const deterministicOverlay: Record<string, any> = {};
+
+    // Step 1: detect_contradictions — finds misalignment between intent and behaviour
+    try {
+      const { data: contradictionResult } = await supabase.rpc('detect_contradictions', { p_user_id: user.id });
+      if (contradictionResult) {
+        deterministicOverlay.contradiction_result = contradictionResult;
+        deterministicOverlay.contradiction_count = contradictionResult.contradiction_count || 0;
+      }
+    } catch (e) { console.warn('[deterministic] detect_contradictions failed:', e); }
+
+    // Step 2: update_escalation — tracks risk persistence and recurrence
+    try {
+      const { data: escalationResult } = await supabase.rpc('update_escalation', { p_user_id: user.id });
+      if (escalationResult) {
+        deterministicOverlay.escalation_result = escalationResult;
+      }
+    } catch (e) { console.warn('[deterministic] update_escalation failed:', e); }
+
+    // Step 3: calibrate_pressure — evidence-based decision pressure per domain
+    try {
+      const { data: pressureResult } = await supabase.rpc('calibrate_pressure', { p_user_id: user.id });
+      if (pressureResult) {
+        deterministicOverlay.pressure_result = pressureResult;
+      }
+    } catch (e) { console.warn('[deterministic] calibrate_pressure failed:', e); }
+
+    // Step 4: decay_evidence — confidence decay when evidence becomes stale
+    try {
+      const { data: evidenceResult } = await supabase.rpc('decay_evidence', { p_user_id: user.id });
+      if (evidenceResult) {
+        deterministicOverlay.evidence_result = evidenceResult;
+      }
+    } catch (e) { console.warn('[deterministic] decay_evidence failed:', e); }
+
+    // Step 5: compute_market_risk_weight — aggregate risk scoring
+    const contradictionCount = deterministicOverlay.contradiction_count || (ctx.contradictions || []).length;
     const runwayMonths = ctx.capital?.runway || (ctx.financial ? 12 : 24);
     const slaBreaches = ctx.execution?.sla_breaches || (ctx.escalations || []).filter((e: any) => e.pressure_level === 'high').length;
     const prevSummary = ctx.previous_snapshot?.summary;
@@ -525,39 +565,8 @@ serve(async (req) => {
     const competitorPressure = (ctx.market_intelligence?.competitor_landscape || '').toLowerCase().includes('compet') || (ctx.escalations || []).some((e: any) => (e.domain || '').toLowerCase().includes('market'));
     const prevSystemState = typeof prevState.system_state === 'object' ? prevState.system_state?.status : prevState.system_state;
 
-    // Compute deterministic adjustments
-    const deterministicOverlay: Record<string, any> = {
-      misalignment_boost: contradictionCount > 2 ? 15 : contradictionCount > 0 ? 5 : 0,
-      risk_amplification: runwayMonths < 3 ? 'CRITICAL' : runwayMonths < 6 ? 'ELEVATED' : runwayMonths < 12 ? 'MODERATE' : 'NORMAL',
-      operational_risk: slaBreaches > 5 ? 'CRITICAL' : slaBreaches > 3 ? 'HIGH' : slaBreaches > 0 ? 'MODERATE' : 'STABLE',
-      urgency: 'LOW',
-      compression_probability: (pipelineDeclining && competitorPressure) ? 25 : pipelineDeclining ? 10 : competitorPressure ? 10 : 0,
-      overall_risk_weight: 30,
-      pipeline_declining: pipelineDeclining,
-      competitor_pressure_rising: competitorPressure,
-      contradiction_count: contradictionCount,
-      sla_breaches: slaBreaches,
-      runway_months: runwayMonths,
-    };
-
-    // Urgency calculation (separate for clarity)
-    if (prevSystemState === 'CRITICAL' || (ctx.escalations || []).some((e: any) => e.pressure_level === 'critical')) {
-      deterministicOverlay.urgency = 'IMMEDIATE';
-      deterministicOverlay.overall_risk_weight = 90;
-    } else if ((prevSystemState === 'DRIFT' && (ctx.decision_pressure || []).some((p: any) => p.window_days < 14)) || runwayMonths < 6) {
-      deterministicOverlay.urgency = 'HIGH';
-      deterministicOverlay.overall_risk_weight = 75;
-    } else if (prevSystemState === 'DRIFT' || slaBreaches > 3 || contradictionCount > 2) {
-      deterministicOverlay.urgency = 'MODERATE';
-      deterministicOverlay.overall_risk_weight = 55;
-    } else if (prevSystemState === 'COMPRESSION') {
-      deterministicOverlay.urgency = 'HIGH';
-      deterministicOverlay.overall_risk_weight = 65;
-    }
-
-    // Also try calling the SQL function (non-blocking, optional enhancement)
     try {
-      const { data: rpcResult } = await supabase.rpc('compute_market_risk_weight', {
+      const { data: riskResult } = await supabase.rpc('compute_market_risk_weight', {
         contradiction_count: contradictionCount,
         runway_months: runwayMonths,
         sla_breaches: slaBreaches,
@@ -566,15 +575,27 @@ serve(async (req) => {
         system_state: prevSystemState || 'STABLE',
         velocity: prevState.system_state?.velocity || 'stable',
       });
-      if (rpcResult) {
-        // SQL function result overrides TypeScript calculation (database is authoritative)
-        Object.assign(deterministicOverlay, rpcResult);
+      if (riskResult) {
+        Object.assign(deterministicOverlay, riskResult);
       }
-    } catch (rpcErr) {
-      console.warn('[biqc-insights] RPC compute_market_risk_weight failed (non-blocking):', rpcErr);
+    } catch (e) { console.warn('[deterministic] compute_market_risk_weight failed:', e); }
+
+    // Fallback: if SQL RPCs didn't populate key fields, compute in TypeScript
+    if (!deterministicOverlay.urgency) {
+      deterministicOverlay.urgency = prevSystemState === 'CRITICAL' ? 'IMMEDIATE' : prevSystemState === 'DRIFT' ? 'MODERATE' : 'LOW';
+      deterministicOverlay.overall_risk_weight = deterministicOverlay.overall_risk_weight || 30;
+      deterministicOverlay.misalignment_boost = deterministicOverlay.misalignment_boost || 0;
+      deterministicOverlay.compression_probability = deterministicOverlay.compression_probability || 0;
     }
 
-    console.log(`[biqc-insights] Deterministic overlay: urgency=${deterministicOverlay.urgency}, risk=${deterministicOverlay.overall_risk_weight}, contradictions=${contradictionCount}`);
+    // Add raw signal counts for LLM context
+    deterministicOverlay.pipeline_declining = pipelineDeclining;
+    deterministicOverlay.competitor_pressure_rising = competitorPressure;
+    deterministicOverlay.sla_breaches = slaBreaches;
+    deterministicOverlay.runway_months = runwayMonths;
+
+    const deterministicMs = Date.now() - startDeterministic;
+    console.log(`[biqc-insights] Deterministic chain completed in ${deterministicMs}ms: urgency=${deterministicOverlay.urgency}, risk=${deterministicOverlay.overall_risk_weight}, contradictions=${contradictionCount}`);
 
 
     // Name resolution
