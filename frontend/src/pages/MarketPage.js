@@ -184,6 +184,7 @@ const MarketPage = () => {
             })}
           </div>
         </div>
+        )}
 
         {/* ═══ PHASE 8.5: MISALIGNMENT QUANTIFICATION ═══ */}
         {(misalignmentIndex || goalProb || alignment || contradictions.length > 0) && (
