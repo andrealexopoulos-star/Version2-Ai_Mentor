@@ -478,7 +478,7 @@ const Advisor = () => {
         >
           {narrativeState.loading ? (
             <div className="flex items-center gap-3">
-              <Loader2 className="w-5 h-5 " style={{ color: 'var(--text-muted)' }} />
+              <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
               <p className="text-base" style={{ color: 'var(--text-muted)' }}>
                 Reading the signals...
               </p>

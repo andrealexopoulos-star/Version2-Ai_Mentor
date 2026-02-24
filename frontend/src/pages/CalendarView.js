@@ -188,7 +188,7 @@ const CalendarView = () => {
         {/* Events List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-8 h-8  mb-4" style={{ color: 'var(--accent-primary)' }} />
+            <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
             <p style={{ color: 'var(--text-muted)' }}>Loading calendar...</p>
           </div>
         ) : events.length === 0 ? (

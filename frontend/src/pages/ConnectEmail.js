@@ -250,7 +250,7 @@ const ConnectEmail = () => {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 " style={{ color: 'var(--accent-primary)' }} />
+              <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
             </div>
           ) : (
             <>
