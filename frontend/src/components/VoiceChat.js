@@ -392,7 +392,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
           {isConnecting && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <div className="text-center px-4">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-500 border-t-transparent rounded-full  mx-auto mb-4" />
+                <span className="text-sm text-[#FF6A00] block mx-auto mb-4" style={{ fontFamily: "monospace" }}>connecting...</span>
                 <p className="text-white text-base sm:text-lg">Connecting to your advisor...</p>
                 <p className="text-white/60 text-xs sm:text-sm mt-2">Setting up secure voice channel</p>
               </div>
