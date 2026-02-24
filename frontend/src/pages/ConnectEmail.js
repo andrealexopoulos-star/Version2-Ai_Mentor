@@ -330,7 +330,7 @@ const ConnectEmail = () => {
                         >
                           {connecting === 'outlook' ? (
                             <>
-                              <Loader2 className="w-4 h-4 mr-2 " />
+                              
                               Connecting...
                             </>
                           ) : (
@@ -394,7 +394,7 @@ const ConnectEmail = () => {
                         >
                           {connecting === 'gmail' ? (
                             <>
-                              <Loader2 className="w-4 h-4 mr-2 " />
+                              
                               Connecting...
                             </>
                           ) : (

@@ -481,7 +481,7 @@ const BusinessProfile = () => {
           {/* Save Button at Bottom */}
           <div className="mt-8 flex justify-end">
             <Button onClick={handleSave} className="btn-primary" disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 mr-2 " /> : <Save className="w-4 h-4 mr-2" />}
+              {saving ?  : <Save className="w-4 h-4 mr-2" />}
               Save Profile
             </Button>
           </div>

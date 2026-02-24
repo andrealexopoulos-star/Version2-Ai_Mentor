@@ -589,7 +589,7 @@ const EmailInbox = () => {
             >
               {analyzing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 " />
+                  
                   Analyzing...
                 </>
               ) : (
@@ -686,7 +686,7 @@ const EmailInbox = () => {
             <Button onClick={runPriorityAnalysis} disabled={analyzing} className="btn-primary">
               {analyzing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 " />
+                  
                   Analyzing...
                 </>
               ) : (
@@ -739,7 +739,7 @@ const EmailInbox = () => {
             className="p-8 rounded-2xl text-center"
             style={{ background: 'var(--bg-primary)' }}
           >
-            <Loader2 className="w-8 h-8  mx-auto mb-4" style={{ color: 'var(--accent-primary)' }} />
+            <span className="text-sm" style={{ color: "#FF6A00" }}>loading...</span>
             <p style={{ color: 'var(--text-primary)' }}>Generating smart replies...</p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
               Analyzing context and crafting responses

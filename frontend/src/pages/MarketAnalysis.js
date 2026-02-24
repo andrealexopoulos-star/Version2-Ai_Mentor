@@ -111,7 +111,7 @@ const MarketAnalysis = () => {
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 " />
+                        
                         Analyzing Market...
                       </>
                     ) : (

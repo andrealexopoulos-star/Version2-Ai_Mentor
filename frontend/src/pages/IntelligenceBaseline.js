@@ -290,7 +290,7 @@ const IntelligenceBaselinePage = () => {
               disabled={saving}
               className="flex items-center gap-2 px-6 py-2.5 text-xs tracking-[0.2em] uppercase bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 transition-colors disabled:opacity-30"
             >
-              {saving ? <Loader2 className="w-3.5 h-3.5 " /> : <Save className="w-3.5 h-3.5" />}
+              {saving ?  : <Save className="w-3.5 h-3.5" />}
               {saving ? 'Saving...' : 'Save Configuration'}
             </button>
           </div>

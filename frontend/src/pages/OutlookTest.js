@@ -59,7 +59,7 @@ const OutlookTest = () => {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 " />
+                    <span className="text-xs" style={{ color: "#FF6A00" }}>loading...</span>
                     Connecting...
                   </>
                 ) : (

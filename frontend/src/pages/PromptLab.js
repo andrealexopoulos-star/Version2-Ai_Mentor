@@ -205,7 +205,7 @@ export default function PromptLab() {
         {/* Prompt List */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 " style={{ color: 'var(--text-muted)' }} />
+            <span className="text-xs" style={{ color: "#FF6A00" }}>loading...</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
@@ -296,7 +296,7 @@ export default function PromptLab() {
           <div data-testid="audit-trail-section">
             {auditLoading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-6 h-6 " style={{ color: 'var(--text-muted)' }} />
+                <span className="text-xs" style={{ color: "#FF6A00" }}>loading...</span>
               </div>
             ) : auditLogs.length === 0 ? (
               <div className="text-center py-20">

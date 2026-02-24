@@ -469,7 +469,7 @@ const DataCenter = () => {
                   </div>
 
                   <Button onClick={handleSaveProfile} className="btn-lime" disabled={savingProfile} data-testid="save-profile-btn">
-                    {savingProfile ? <Loader2 className="w-4 h-4 mr-2 " /> : <Save className="w-4 h-4 mr-2" />}
+                    {savingProfile ?  : <Save className="w-4 h-4 mr-2" />}
                     Save Profile
                   </Button>
                 </CardContent>
@@ -558,7 +558,7 @@ const DataCenter = () => {
                   </div>
 
                   <Button onClick={handleUpload} className="btn-forest" disabled={uploading || !uploadForm.file} data-testid="upload-btn">
-                    {uploading ? <Loader2 className="w-4 h-4 mr-2 " /> : <Upload className="w-4 h-4 mr-2" />}
+                    {uploading ?  : <Upload className="w-4 h-4 mr-2" />}
                     Upload File
                   </Button>
 

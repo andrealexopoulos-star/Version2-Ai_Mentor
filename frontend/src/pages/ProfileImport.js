@@ -255,7 +255,7 @@ const ProfileImport = () => {
 
             <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
               <Button onClick={handleWebsiteScrape} disabled={!profileData.website || loading} className="btn-secondary">
-                {loading ? <Loader2 className="w-4 h-4 mr-2 " /> : <Globe className="w-4 h-4 mr-2" />}
+                {loading ?  : <Globe className="w-4 h-4 mr-2" />}
                 Auto-fill from Website
               </Button>
               <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
@@ -632,7 +632,7 @@ const ProfileImport = () => {
               />
               <label htmlFor="doc-upload" className="cursor-pointer">
                 {uploading ? (
-                  <Loader2 className="w-12 h-12  mx-auto mb-4" style={{ color: 'var(--accent-primary)' }} />
+                  <span className="text-sm" style={{ color: "#FF6A00" }}>loading...</span>
                 ) : (
                   <Upload className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
                 )}
@@ -774,7 +774,7 @@ const ProfileImport = () => {
                   <Button onClick={handleSaveComplete} disabled={loading} className="btn-primary">
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 " />
+                        
                         Saving...
                       </>
                     ) : (
