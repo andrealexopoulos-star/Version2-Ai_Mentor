@@ -331,9 +331,12 @@ const DashboardLayout = ({ children }) => {
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}
 
       {/* ═══ MAIN CONTENT ═══ */}
-      <main className={`${sidebarMargin} pt-14 transition-all duration-300`} style={{ background: '#0F1720', minHeight: '100dvh' }}>
+      <main className={`${sidebarMargin} pt-14 pb-[76px] lg:pb-0 transition-all duration-300`} style={{ background: '#0F1720', minHeight: '100dvh' }}>
         <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
 
       {/* First Login Notification */}
       <FirstLoginNotification />
