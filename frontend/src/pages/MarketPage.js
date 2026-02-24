@@ -74,11 +74,16 @@ const MarketPage = () => {
   const memo = c.executive_memo || c.memo || '';
   const alignment = c.strategic_alignment_check || c.alignment?.narrative || '';
   const contradictions = c.alignment?.contradictions || [];
-  const pipeline = c.pipeline_total;
+  const pipeline = c.pipeline_total || c.revenue?.pipeline;
   const slaBreaches = c.sla_breaches || c.execution?.sla_breaches;
   const marketNarrative = c.market_position || c.market?.narrative || '';
-  const misalignmentIndex = c.misalignment_index;
-  const goalProb = c.probability_of_goal_achievement;
+  const mi = c.market_intelligence || {};
+  const misalignmentIndex = mi.misalignment_index || c.misalignment_index;
+  const goalProb = mi.probability_of_goal_achievement || c.probability_of_goal_achievement;
+  const drift = mi.drift_snapshot || {};
+  const kpis = mi.market_kpis || {};
+  const compSignals = mi.competitor_signals || c.market?.competitors || [];
+  const trends = mi.industry_trends || [];
 
   return (
     <DashboardLayout>
