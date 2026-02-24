@@ -169,8 +169,9 @@ export const useCalibrationState = () => {
         setEntry("continuity");
         return;
       }
-      setEntry("welcome");
-    } catch { setEntry("welcome"); }
+      // New users → ignition sequence first
+      setEntry("ignition");
+    } catch { setEntry("ignition"); }
   };
 
   const handleAuditSubmit = async (e) => {
