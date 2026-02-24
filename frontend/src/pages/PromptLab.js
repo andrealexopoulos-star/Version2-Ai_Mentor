@@ -206,7 +206,7 @@ export default function PromptLab() {
         {/* Prompt List */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <span className="text-xs" style={{ color: "#FF6A00" }}>loading...</span>
+            <InlineLoading />
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
@@ -275,7 +275,7 @@ export default function PromptLab() {
                       data-testid={`test-btn-${p.prompt_key}`}
                     >
                       {testing[p.prompt_key] ? (
-                        <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+                        <InlineLoading />
                       ) : (
                         <Play className="w-3 h-3" />
                       )}
@@ -297,7 +297,7 @@ export default function PromptLab() {
           <div data-testid="audit-trail-section">
             {auditLoading ? (
               <div className="flex items-center justify-center py-20">
-                <span className="text-xs" style={{ color: "#FF6A00" }}>loading...</span>
+                <InlineLoading />
               </div>
             ) : auditLogs.length === 0 ? (
               <div className="text-center py-20">
@@ -461,7 +461,7 @@ export default function PromptLab() {
                   data-testid="prompt-test-btn"
                 >
                   {testing[selectedPrompt.prompt_key] ? (
-                    <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+                    <InlineLoading />
                   ) : (
                     <Play className="w-4 h-4" />
                   )}
@@ -477,7 +477,7 @@ export default function PromptLab() {
                     className="gap-2"
                     data-testid="prompt-save-btn"
                   >
-                    {saving ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : <Save className="w-4 h-4" />}
+                    {saving ? <InlineLoading /> : <Save className="w-4 h-4" />}
                     Save & Deploy
                   </Button>
                 </div>
