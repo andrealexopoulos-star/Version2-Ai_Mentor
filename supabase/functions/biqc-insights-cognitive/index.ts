@@ -317,6 +317,58 @@ YOUR OUTPUT MUST BE THIS EXACT JSON STRUCTURE:
     "gap_magnitude": "Low|Medium|High|Critical",
     "strategic_risk_level": "Low|Moderate|High|Critical"
   },
+  "action_plan": {
+    "top_3_marketing_moves": [
+      {
+        "move": "Specific marketing action with named channels/tactics",
+        "rationale": "Why this move matters NOW based on signals",
+        "expected_impact": "$XK revenue / X% improvement",
+        "urgency": "immediate|this_week|this_month",
+        "confidence": 0-100
+      }
+    ],
+    "primary_blindside_risk": {
+      "risk": "Specific risk the owner hasn't considered",
+      "evidence": "What signals suggest this",
+      "probability": 0-100,
+      "impact_if_materialises": "Quantified consequence",
+      "prevention_action": "What to do NOW"
+    },
+    "hidden_growth_lever": {
+      "lever": "Overlooked opportunity in current data",
+      "evidence": "What signals reveal this",
+      "potential_value": "$XK-$YK range",
+      "effort_to_activate": "low|medium|high",
+      "first_step": "Specific actionable first step"
+    },
+    "marketing_waste_alert": {
+      "waste_identified": "Where effort/spend is being wasted",
+      "evidence": "Data supporting this finding",
+      "amount_at_risk": "$XK or X hours/week",
+      "recommended_reallocation": "Where to redirect"
+    },
+    "90_day_market_projection": {
+      "best_case": "If all recommendations executed",
+      "base_case": "If current trajectory continues",
+      "worst_case": "If issues ignored",
+      "key_variable": "The ONE factor that determines which scenario plays out"
+    },
+    "decision_window_pressure": {
+      "window_days": 0,
+      "description": "Why timing matters",
+      "cost_of_delay_per_week": "Quantified cost of inaction"
+    },
+    "probability_shift_if_executed": 0-100,
+    "probability_shift_if_ignored": 0-100,
+    "confidence_score": 0-100,
+    "deterministic_inputs": {
+      "misalignment_boost": 0,
+      "risk_amplification": "NORMAL|MODERATE|ELEVATED|CRITICAL",
+      "urgency": "LOW|MODERATE|HIGH|IMMEDIATE",
+      "compression_probability": 0,
+      "overall_risk_weight": 0
+    }
+  },
   "memo": "2-3 paragraphs. Written as a strategic partner. References SPECIFIC data — deal names, amounts, contact names. Includes 30/60/90 outlook. Ends with HARD recommendation, not just briefing.",
   "blind_spots": {
     "confidence": 0-100,
