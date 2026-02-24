@@ -128,7 +128,7 @@ const Dashboard = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-[60vh]">
-          <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+          <CognitiveMesh compact />
         </div>
       </DashboardLayout>
     );

@@ -77,7 +77,7 @@ const DocumentView = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+          <CognitiveMesh compact />
         </div>
       </DashboardLayout>
     );

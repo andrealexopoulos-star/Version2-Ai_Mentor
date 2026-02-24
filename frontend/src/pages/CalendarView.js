@@ -189,7 +189,7 @@ const CalendarView = () => {
         {/* Events List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+            <CognitiveMesh compact />
             <p style={{ color: 'var(--text-muted)' }}>Loading calendar...</p>
           </div>
         ) : events.length === 0 ? (

@@ -199,7 +199,7 @@ const MySoundBoard = () => {
             <div className="flex-1 overflow-y-auto px-2 pb-4">
               {loadingConversations ? (
                 <div className="flex items-center justify-center py-8">
-                  <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+                  <CognitiveMesh compact />
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="text-center py-8 px-4">

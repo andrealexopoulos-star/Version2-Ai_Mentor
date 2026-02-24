@@ -479,7 +479,7 @@ const Advisor = () => {
         >
           {narrativeState.loading ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+              <CognitiveMesh compact />
               <p className="text-base" style={{ color: 'var(--text-muted)' }}>
                 Reading the signals...
               </p>

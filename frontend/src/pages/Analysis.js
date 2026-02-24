@@ -164,7 +164,7 @@ const Analysis = () => {
               {loading && (
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+                    <CognitiveMesh compact />
                     <p className="text-[#F4F7FA] font-medium">Analyzing your business...</p>
                     <p className="text-sm text-[#9FB0C3] mt-1">This may take a moment</p>
                   </CardContent>

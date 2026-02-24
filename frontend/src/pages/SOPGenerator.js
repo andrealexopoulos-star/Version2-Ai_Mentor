@@ -215,7 +215,7 @@ const SOPGenerator = () => {
                             ) : (
                               <>
                                 {uploading ? (
-                                  <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+                                  <CognitiveMesh compact />
                                 ) : (
                                   <FileText className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
                                 )}
@@ -327,7 +327,7 @@ const SOPGenerator = () => {
               {loading && (
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+                    <CognitiveMesh compact />
                     <p className="text-[#F4F7FA] font-medium">Generating your document...</p>
                   </CardContent>
                 </Card>

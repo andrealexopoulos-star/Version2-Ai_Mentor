@@ -146,7 +146,7 @@ const IntelligenceBaselinePage = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-full">
-          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+          <RadarSweep compact />
         </div>
       </DashboardLayout>
     );

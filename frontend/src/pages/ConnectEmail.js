@@ -251,7 +251,7 @@ const ConnectEmail = () => {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+              <RadarSweep compact />
             </div>
           ) : (
             <>

@@ -391,7 +391,7 @@ const Diagnosis = ({ embedded = false }) => {
     const loadingView = (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+          <CognitiveMesh compact />
           <p className="font-medium text-gray-900">Analyzing your business signals...</p>
           <p className="text-sm mt-1 text-gray-500">BIQC is reviewing patterns in your data</p>
         </div>

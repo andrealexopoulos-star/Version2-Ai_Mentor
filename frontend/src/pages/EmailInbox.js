@@ -606,7 +606,7 @@ const EmailInbox = () => {
         {/* Connection Status - Show if no provider connected */}
         {checkingConnection ? (
           <div className="flex items-center justify-center py-16">
-            <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+            <CognitiveMesh compact />
           </div>
         ) : !activeProvider ? (
           <div 
@@ -663,7 +663,7 @@ const EmailInbox = () => {
         {/* Loading State */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <span className="text-sm text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+            <CognitiveMesh compact />
             <p style={{ color: 'var(--text-muted)' }}>Loading priority inbox...</p>
           </div>
         ) : !priorityAnalysis ? (
@@ -740,7 +740,7 @@ const EmailInbox = () => {
             className="p-8 rounded-2xl text-center"
             style={{ background: 'var(--bg-primary)' }}
           >
-            <span className="text-sm" style={{ color: "#FF6A00" }}>loading...</span>
+            <CognitiveMesh compact />
             <p style={{ color: 'var(--text-primary)' }}>Generating smart replies...</p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
               Analyzing context and crafting responses

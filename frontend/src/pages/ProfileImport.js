@@ -633,7 +633,7 @@ const ProfileImport = () => {
               />
               <label htmlFor="doc-upload" className="cursor-pointer">
                 {uploading ? (
-                  <span className="text-sm" style={{ color: "#FF6A00" }}>loading...</span>
+                  <CognitiveMesh compact />
                 ) : (
                   <Upload className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
                 )}

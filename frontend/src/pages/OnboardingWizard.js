@@ -279,7 +279,7 @@ const OnboardingWizard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#080c14]">
         <div className="text-center space-y-4">
-          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+          <CognitiveMesh compact />
           <p className="text-sm text-white/40">Loading your profile...</p>
         </div>
       </div>
@@ -433,7 +433,7 @@ const OnboardingWizard = () => {
                       className="border-white/10 text-white/70 hover:bg-white/5"
                       data-testid="btn-enrich"
                     >
-                      {enriching ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : <ExternalLink className="w-4 h-4" />}
+                      {enriching ? <CognitiveMesh compact /> : <ExternalLink className="w-4 h-4" />}
                       Detect
                     </Button>
                   </div>
@@ -771,7 +771,7 @@ const OnboardingWizard = () => {
                 data-testid="btn-next"
               >
                 {saving ? (
-                  <><span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> Completing...</>
+                  <><CognitiveMesh compact /> Completing...</>
                 ) : currentStep === STEPS.length - 1 ? (
                   <><CheckCircle className="w-4 h-4 mr-1" /> Complete Setup</>
                 ) : currentStep === 0 ? (
