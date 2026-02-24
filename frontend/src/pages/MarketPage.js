@@ -71,12 +71,13 @@ const MarketPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="market-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Market Intelligence</h1>
-          <p className="text-sm text-[#9FB0C3]">
-            Strategic positioning, competitive landscape, drift analysis, and market alignment.
-            {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: MONO }}>syncing...</span>}
-          </p>
+          <p className="text-sm text-[#9FB0C3]">Strategic positioning, competitive landscape, drift analysis, and market alignment.</p>
         </div>
 
+        {/* Loading — Cognitive Mesh */}
+        {loading && <CognitiveMesh message="Generating executive market snapshot..." />}
+
+        {!loading && <>
         {/* ═══ SYSTEM STATE — CMO SNAPSHOT ═══ */}
         <div className="rounded-xl p-5" style={{ background: st.c + '08', border: `1px solid ${st.c}25` }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
