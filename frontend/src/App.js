@@ -68,6 +68,7 @@ import AutomationsPageAuth from './pages/AutomationsPageAuth';
 import DataHealthPage from './pages/DataHealthPage';
 import ReportsPage from './pages/ReportsPage';
 import AuditLogPage from './pages/AuditLogPage';
+import ForensicCalibration from './pages/ForensicCalibration';
 
 // Website (Liquid Steel) pages
 import SiteHomePage from './pages/website/HomePage';
