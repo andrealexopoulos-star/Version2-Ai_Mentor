@@ -1,0 +1,581 @@
+{
+  "audit_summary": {
+    "overall_mobile_score": 38,
+    "critical_issues_count": 6,
+    "high_issues_count": 12,
+    "medium_issues_count": 15,
+    "low_issues_count": 8,
+    "audit_date": "2026-02-24",
+    "auditor": "BIQc Head of UX & UI",
+    "devices_tested": ["Android 390px", "Android 412px", "360px small", "430px large"],
+    "pages_audited": 14,
+    "verdict": "Mobile experience is structurally broken. Sidebar never collapses visually on mobile viewports despite having lg: breakpoint code. Multiple grid layouts use fixed column counts without mobile fallbacks. Touch targets are undersized. The platform feels like a desktop app accidentally viewed on a phone — NOT a mobile-first cognition platform."
+  },
+
+  "global_layout_issues": [
+    {
+      "id": "GL-001",
+      "page": "ALL authenticated pages",
+      "component": "DashboardLayout sidebar",
+      "breakpoint": "390px",
+      "issue": "Sidebar renders at full 256px width on mobile despite having lg:translate-x-0 / -translate-x-full CSS. The sidebar IS hidden by default (translate-x-full) but main content area uses lg:ml-64 margin which does NOT apply at mobile — content starts at left edge. However the sidebar toggle hamburger menu IS present. Core problem: content area has no max-width constraint and renders at desktop proportions inside mobile viewport, causing horizontal scroll or tiny text.",
+      "why_it_matters": "Every authenticated page is affected. Content is unreadably small on phones.",
+      "risk": "CRITICAL",
+      "fix_category": "Layout"
+    },
+    {
+      "id": "GL-002",
+      "page": "ALL pages",
+      "component": "Root layout",
+      "breakpoint": "390px",
+      "issue": "No overflow-x:hidden on body or root container. Grids with fixed column counts (grid-cols-2, grid-cols-3, grid-cols-4, grid-cols-7) without mobile breakpoints cause horizontal overflow, enabling horizontal scroll on every page with data cards.",
+      "why_it_matters": "Horizontal scroll on mobile destroys trust and feels broken.",
+      "risk": "CRITICAL",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "GL-003",
+      "page": "ALL authenticated pages",
+      "component": "Top bar header",
+      "breakpoint": "390px",
+      "issue": "Header shows full email 'andre@thestrategysquad.com.au' at all widths. At 390px this overflows or compresses other header elements. Email text is hidden at sm: but the avatar+dropdown still takes significant space.",
+      "why_it_matters": "Header overflow pushes notification icons off-screen on small devices.",
+      "risk": "HIGH",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "navigation_issues": [
+    {
+      "id": "NAV-001",
+      "page": "ALL authenticated pages",
+      "component": "DashboardLayout",
+      "breakpoint": "390px",
+      "issue": "No bottom navigation bar. Mobile users must open hamburger menu for every page switch. Industry standard for mobile apps is persistent bottom nav with 4-5 core actions.",
+      "why_it_matters": "Increases navigation friction by 3-4 taps per page transition. Users will abandon.",
+      "risk": "HIGH",
+      "fix_category": "Layout"
+    },
+    {
+      "id": "NAV-002",
+      "page": "ALL authenticated pages",
+      "component": "Sidebar drawer",
+      "breakpoint": "390px",
+      "issue": "Sidebar drawer opens with w-64 (256px) on a 390px screen — takes 65% of viewport. Combined with the backdrop overlay, usable content area during nav is only 134px. Section headers (INTELLIGENCE, EXECUTION, SYSTEMS, GOVERNANCE) with chevron toggles are very small touch targets.",
+      "why_it_matters": "Navigation feels cramped. Expandable sections are hard to tap accurately.",
+      "risk": "MEDIUM",
+      "fix_category": "Layout"
+    },
+    {
+      "id": "NAV-003",
+      "page": "ALL authenticated pages",
+      "component": "FloatingSoundboard",
+      "breakpoint": "390px",
+      "issue": "Floating soundboard button is fixed bottom-6 right-6 with w-14 h-14. On mobile this overlaps content and cannot be dismissed. When expanded, the panel is max-w-[calc(100vw-48px)] which is good, but at 390px it leaves only 24px margins — very tight for a chat interface with text input.",
+      "why_it_matters": "Soundboard button covers bottom-right content including scroll indicators and CTA buttons.",
+      "risk": "MEDIUM",
+      "fix_category": "Layout"
+    }
+  ],
+
+  "calibration_flow_issues": [
+    {
+      "id": "CAL-001",
+      "page": "/calibration",
+      "component": "CognitiveIgnitionScreen",
+      "breakpoint": "390px",
+      "issue": "Ignition animation renders at full width. The animated orb and text are centered but at 390px the text 'Welcome to BIQc' heading and subtitle may overflow if font-size is not clamped. Uses text-3xl sm:text-4xl which is acceptable.",
+      "why_it_matters": "First impression for new users on mobile.",
+      "risk": "LOW",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "CAL-002",
+      "page": "/calibration",
+      "component": "WelcomeHandshake (website URL input)",
+      "breakpoint": "390px",
+      "issue": "Form uses max-w-md mx-auto which is fine for mobile. However the social handles section uses grid-cols-2 without mobile fallback — at 390px with px-4 margins, each social handle input gets ~155px width which is tight for URLs.",
+      "why_it_matters": "Text input for social URLs is cramped on mobile.",
+      "risk": "MEDIUM",
+      "fix_category": "Layout"
+    },
+    {
+      "id": "CAL-003",
+      "page": "/calibration",
+      "component": "WowSummary",
+      "breakpoint": "390px",
+      "issue": "WOW Summary fields use max-w-2xl (672px) with px-4 sm:px-8. At 390px, effective content width is 358px. Individual field cards render fine (full width). Edit pencil icon and 'Click to edit' text work on touch. Button is full-width and touchable. ACCEPTABLE.",
+      "why_it_matters": "This flow actually works reasonably well on mobile.",
+      "risk": "LOW",
+      "fix_category": "None"
+    },
+    {
+      "id": "CAL-004",
+      "page": "/calibration",
+      "component": "Identity bar (top bar within calibration)",
+      "breakpoint": "390px",
+      "issue": "Identity bar shows email, Admin buttons (Back, Skip), and Sign out — all in a single row with px-5. At 390px these buttons wrap or overflow. Touch targets for 'Skip (Admin)' and 'Back' buttons are 24px height — below 44px minimum.",
+      "why_it_matters": "Admin controls are unusable on mobile. Buttons too small to tap.",
+      "risk": "HIGH",
+      "fix_category": "Layout"
+    }
+  ],
+
+  "dashboard_issues": [
+    {
+      "id": "DASH-001",
+      "page": "/advisor (BIQc Insights)",
+      "component": "Cognition tabs (Money, Revenue, Operations, People, Market)",
+      "breakpoint": "390px",
+      "issue": "Tabs use flex gap-2 overflow-x-auto with shrink-0 on each tab. Each tab is ~120px wide. 5 tabs = 600px minimum. At 390px (minus sidebar margin) only 2.5 tabs visible. Horizontal scroll is enabled but there is NO scroll indicator — users don't know more tabs exist. Tab text uses font-semibold text-sm which is acceptable.",
+      "why_it_matters": "Users will only see Money and Revenue tabs. Market tab (most important) is hidden off-screen with no visual indicator.",
+      "risk": "HIGH",
+      "fix_category": "Layout"
+    },
+    {
+      "id": "DASH-002",
+      "page": "/advisor",
+      "component": "Resolution queue items",
+      "breakpoint": "390px",
+      "issue": "Resolution items use rounded-2xl p-5 with action buttons inside. Action buttons (Auto-Email, Quick-SMS, Hand Off, Complete, Ignore) use flex flex-wrap gap-2 which handles mobile well. However each button is only ~80px × 30px — below 44px touch target minimum.",
+      "why_it_matters": "Action buttons are too small to tap accurately on touch screens.",
+      "risk": "HIGH",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "DASH-003",
+      "page": "/advisor",
+      "component": "Sticky header (DRIFT status bar)",
+      "breakpoint": "390px",
+      "issue": "Sticky header is fixed at top-14 with flex items-center justify-between. At 390px, the status text (DRIFT), velocity indicator, and confidence badge all compete for space. Wrapping is handled by flex-wrap but the result is a multi-line header that pushes content down.",
+      "why_it_matters": "Status bar takes excessive vertical space on mobile, reducing visible content area.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "DASH-004",
+      "page": "/advisor",
+      "component": "Weekly brief stats row",
+      "breakpoint": "390px",
+      "issue": "Weekly brief shows 4 metrics ($recovered, hours saved, actions, SOP%) in a flex row with sm:gap-6 gap-1. At 390px the gap-1 makes metrics merge visually. Each metric label uses text-[9px] which is below readable threshold on Android.",
+      "why_it_matters": "Key performance metrics are unreadable on mobile.",
+      "risk": "HIGH",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "market_tab_issues": [
+    {
+      "id": "MKT-001",
+      "page": "/market",
+      "component": "Signal scores grid",
+      "breakpoint": "390px",
+      "issue": "Signal scores use grid-cols-2 md:grid-cols-4. At 390px this renders 2 columns which is CORRECT. Each card gets ~175px width. Text inside uses text-lg font-bold with JetBrains Mono — long values like 'Moderate interest in consulting services' overflow the card width and wrap to 3+ lines.",
+      "why_it_matters": "Signal card text overflow creates uneven card heights and broken layout.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "MKT-002",
+      "page": "/market",
+      "component": "Strategic Drift Analysis",
+      "breakpoint": "390px",
+      "issue": "Drift cards use grid-cols-2 md:grid-cols-4. At 390px, 2 columns. Each drift card shows percentage (45%/70%) with progress bar and gap indicator. The text-xl font-bold numbers and text-xs gap labels render correctly at 2-col. ACCEPTABLE but tight.",
+      "why_it_matters": "Drift visualization works at 2-col but cards are compressed.",
+      "risk": "LOW",
+      "fix_category": "None"
+    },
+    {
+      "id": "MKT-003",
+      "page": "/market",
+      "component": "Channel Intelligence grid",
+      "breakpoint": "390px",
+      "issue": "Channel cards use grid-cols-2 md:grid-cols-3. At 390px, 2 columns. Each channel card has a 40px icon + name + description + status badge. At 175px width per card, the description text (e.g., 'Mailchimp, ActiveCampaign') wraps to multiple lines. Channel name + provider text may truncate.",
+      "why_it_matters": "Channel cards are too compressed at 2-col on mobile. Should be 1 column.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "MKT-004",
+      "page": "/market",
+      "component": "Channel Performance Analysis metrics",
+      "breakpoint": "390px",
+      "issue": "Uses grid-cols-3 md:grid-cols-7 gap-2. At 390px, 3 columns for 7 metric placeholders (CAC, CPL, ROAS, Conv Rate, Dependency, Drop-off, Saturation). Each metric cell is ~115px wide. Labels like 'Dependency' and 'Saturation' at text-[9px] are at the readability limit.",
+      "why_it_matters": "Metric labels are unreadable on small screens.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "MKT-005",
+      "page": "/market",
+      "component": "ActionPlanSection",
+      "breakpoint": "390px",
+      "issue": "Action Plan probability cards use grid-cols-1 md:grid-cols-3. At 390px, single column — CORRECT. Marketing moves list uses full width — CORRECT. Blindside risk and Hidden lever use grid-cols-1 md:grid-cols-2. At 390px, single column — CORRECT. 90-day projection uses grid-cols-1 md:grid-cols-3. At 390px, single column — CORRECT. Action Plan mobile layout is WELL DESIGNED.",
+      "why_it_matters": "Action Plan is the best mobile-designed section. No issues.",
+      "risk": "LOW",
+      "fix_category": "None"
+    },
+    {
+      "id": "MKT-006",
+      "page": "/market",
+      "component": "Misalignment grid",
+      "breakpoint": "390px",
+      "issue": "Strategic Alignment Check uses grid-cols-2 gap-3 for Misalignment Index and Goal Achievement — NO mobile breakpoint. At 390px each card is ~175px. The text-2xl bold numbers display fine but cards are tight.",
+      "why_it_matters": "Should be grid-cols-1 on mobile for better readability.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "insights_tabs_issues": [
+    {
+      "id": "INS-001",
+      "page": "/advisor",
+      "component": "All cognition tabs",
+      "breakpoint": "390px",
+      "issue": "Tab content renders at max-w-5xl (1024px) with px-6. At 390px, content is 378px wide which is fine. Individual resolution items and insight cards render at full width. The primary issue is the TAB BAR itself (see DASH-001) — tabs scroll horizontally with no indicator.",
+      "why_it_matters": "Content within tabs is acceptable. Tab selection UX is broken.",
+      "risk": "HIGH",
+      "fix_category": "Layout"
+    }
+  ],
+
+  "integration_pages_issues": [
+    {
+      "id": "INT-001",
+      "page": "/integrations",
+      "component": "Merge.dev link modal",
+      "breakpoint": "390px",
+      "issue": "Merge.dev OAuth linking opens in a popup window. On Android Chrome, popup windows are often blocked or open in new tabs. The redirect back to the app after OAuth may not restore the original tab state.",
+      "why_it_matters": "Integration connection flow may fail silently on mobile browsers.",
+      "risk": "HIGH",
+      "fix_category": "Async"
+    },
+    {
+      "id": "INT-002",
+      "page": "/market/calibration",
+      "component": "ForensicCalibration questionnaire",
+      "breakpoint": "390px",
+      "issue": "Question options use rounded-xl px-6 py-5 with flex items-center gap-3. At 390px, each option gets full width minus px-6 padding = 342px. The radio circle (w-5 h-5) and option text render well. Continue/Back buttons are full-width. Progress bar renders correctly. ACCEPTABLE mobile experience.",
+      "why_it_matters": "Forensic calibration is well-designed for mobile.",
+      "risk": "LOW",
+      "fix_category": "None"
+    }
+  ],
+
+  "admin_panel_issues": [
+    {
+      "id": "ADM-001",
+      "page": "/admin",
+      "component": "Admin dashboard",
+      "breakpoint": "390px",
+      "issue": "Admin dashboard uses grid-cols-2 for user stat cards without mobile fallback. User list table renders at full width with horizontal scroll. Admin actions (suspend, impersonate) have small touch targets.",
+      "why_it_matters": "Admin panel is rarely used on mobile but should still be functional.",
+      "risk": "LOW",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "animation_performance_issues": [
+    {
+      "id": "ANIM-001",
+      "page": "/advisor (loading state)",
+      "component": "CognitiveLoadingScreen",
+      "breakpoint": "390px",
+      "issue": "Loading animation uses framer-motion with multiple animated elements (orb, dots, progress bar, text transitions). On mid-range Android devices (Snapdragon 600 series), this can cause frame drops. The animation runs at page center with full-screen overlay. No reduced-motion media query detected.",
+      "why_it_matters": "Animation performance is critical for perceived quality. Frame drops = broken feel.",
+      "risk": "HIGH",
+      "fix_category": "Animation"
+    },
+    {
+      "id": "ANIM-002",
+      "page": "ALL pages",
+      "component": "CognitiveMesh / RadarSweep",
+      "breakpoint": "390px",
+      "issue": "CognitiveMesh uses CSS keyframe animations (opacity, transform). These are GPU-accelerated and should perform well on mobile. RadarSweep uses similar approach. No requestAnimationFrame or heavy JS animations detected. ACCEPTABLE performance profile.",
+      "why_it_matters": "Loading animations are CSS-based and performant.",
+      "risk": "LOW",
+      "fix_category": "None"
+    },
+    {
+      "id": "ANIM-003",
+      "page": "ALL pages",
+      "component": "All animations",
+      "breakpoint": "ALL",
+      "issue": "No @media (prefers-reduced-motion: reduce) queries detected anywhere in the codebase. Users with motion sensitivity settings enabled will still see all animations.",
+      "why_it_matters": "Accessibility compliance. Required by WCAG 2.1 Level AA.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "font_rendering_issues": [
+    {
+      "id": "FONT-001",
+      "page": "ALL pages",
+      "component": "JetBrains Mono labels",
+      "breakpoint": "390px",
+      "issue": "Multiple elements use text-[9px] and text-[10px] with JetBrains Mono font. At these sizes on Android, JetBrains Mono is barely legible due to its wide character spacing. Elements affected: channel descriptions, metric labels, source badges, KPI labels, gap percentages.",
+      "why_it_matters": "Sub-11px monospace text is unreadable on mobile screens.",
+      "risk": "HIGH",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "FONT-002",
+      "page": "ALL pages",
+      "component": "Cormorant Garamond headings",
+      "breakpoint": "390px",
+      "issue": "Heading font Cormorant Garamond renders thin on Android compared to iOS. At text-2xl (24px) it looks elegant. At text-sm (14px) used for some card titles, the thin weight becomes hard to read against the dark background.",
+      "why_it_matters": "Serif fonts at small sizes on Android have poor rendering.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "state_transition_issues": [
+    {
+      "id": "STATE-001",
+      "page": "/advisor",
+      "component": "useSnapshot hook",
+      "breakpoint": "ALL",
+      "issue": "Snapshot fetch calls Edge Function which can take 10-15 seconds on cold start. During this time, CognitiveLoadingScreen shows. On mobile networks (3G/4G), combined with Supabase Edge Function cold start, total wait can be 20+ seconds. No timeout or fallback to cached data within the loading component itself.",
+      "why_it_matters": "20-second loading on mobile is unacceptable. Users will close the app.",
+      "risk": "CRITICAL",
+      "fix_category": "Async"
+    },
+    {
+      "id": "STATE-002",
+      "page": "/market",
+      "component": "MarketPage fetchSnapshot",
+      "breakpoint": "ALL",
+      "issue": "Market page has an 8-second timeout race but tries 3 sequential API calls (snapshot/latest, market-intelligence, Edge Function). On mobile networks, these can each take 3-5 seconds, totaling 9-15 seconds. The 8-second timeout may fire before the fallback Edge Function call.",
+      "why_it_matters": "Page may render without data even when data is available, just slow.",
+      "risk": "HIGH",
+      "fix_category": "Async"
+    }
+  ],
+
+  "authentication_issues": [
+    {
+      "id": "AUTH-001",
+      "page": "/login-supabase",
+      "component": "LoginSupabase",
+      "breakpoint": "390px",
+      "issue": "Login page uses min-h-screen flex with two panels. Right panel has hidden lg:flex which correctly hides on mobile. Left panel uses px-8 md:px-16 which gives adequate mobile padding. Sign in button is full-width and tappable. OAuth buttons (Google, Microsoft) are full-width. ACCEPTABLE.",
+      "why_it_matters": "Login flow works on mobile.",
+      "risk": "LOW",
+      "fix_category": "None"
+    },
+    {
+      "id": "AUTH-002",
+      "page": "/auth/callback",
+      "component": "AuthCallbackSupabase",
+      "breakpoint": "390px",
+      "issue": "Auth callback page shows 'Completing sign in...' with status text. On mobile, if the OAuth popup redirects to a new tab, the callback page may load in the popup tab instead of the original tab. User may end up with two tabs — one stuck on callback, one on login.",
+      "why_it_matters": "OAuth flow on mobile browsers is unreliable with popup-based redirects.",
+      "risk": "HIGH",
+      "fix_category": "Routing"
+    },
+    {
+      "id": "AUTH-003",
+      "page": "ALL",
+      "component": "SupabaseAuthContext bootstrap",
+      "breakpoint": "ALL",
+      "issue": "Auth bootstrap re-triggers on session token refresh, causing component remount. On mobile with unstable network, token refresh can happen frequently, causing the loading screen to flash repeatedly. The lastBootstrapUserId ref prevents re-bootstrap for the same user but doesn't prevent the initial loading flash.",
+      "why_it_matters": "Repeated loading flashes on mobile degrade perceived performance.",
+      "risk": "MEDIUM",
+      "fix_category": "State"
+    }
+  ],
+
+  "keyboard_input_issues": [
+    {
+      "id": "KB-001",
+      "page": "/calibration (welcome)",
+      "component": "Website URL input",
+      "breakpoint": "390px",
+      "issue": "Input field does not have inputMode='url' attribute. Android keyboard will show standard QWERTY instead of URL-optimized keyboard with .com shortcut. Input type is 'url' which is correct but inputMode adds additional mobile optimization.",
+      "why_it_matters": "Users must manually type URLs without keyboard shortcuts.",
+      "risk": "LOW",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "KB-002",
+      "page": "/soundboard (expanded)",
+      "component": "FloatingSoundboard chat input",
+      "breakpoint": "390px",
+      "issue": "When keyboard opens on mobile, the fixed-position soundboard panel doesn't adjust. The input field may be pushed behind the keyboard. No handling for visual viewport resize or keyboard events.",
+      "why_it_matters": "Users cannot see what they're typing in the soundboard on mobile.",
+      "risk": "HIGH",
+      "fix_category": "Layout"
+    }
+  ],
+
+  "safe_area_issues": [
+    {
+      "id": "SA-001",
+      "page": "ALL",
+      "component": "Root layout",
+      "breakpoint": "ALL",
+      "issue": "viewport meta has viewport-fit=cover but no env(safe-area-inset-*) CSS detected. On Android devices with navigation gestures or notched displays, bottom content may be obscured by the system navigation bar.",
+      "why_it_matters": "Bottom-positioned elements (Soundboard button, action buttons) may be partially hidden.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "accessibility_issues": [
+    {
+      "id": "A11Y-001",
+      "page": "ALL",
+      "component": "Touch targets",
+      "breakpoint": "390px",
+      "issue": "Multiple interactive elements are below the 44×44px minimum touch target: action buttons (Auto-Email ~80x30px), tab badges, source tags, dismiss buttons, admin controls. Minimum recommended by WCAG is 44x44px for touch targets.",
+      "why_it_matters": "Users with motor impairments or large fingers will mis-tap frequently.",
+      "risk": "HIGH",
+      "fix_category": "CSS"
+    },
+    {
+      "id": "A11Y-002",
+      "page": "ALL",
+      "component": "Color contrast on dark theme",
+      "breakpoint": "ALL",
+      "issue": "Text color #64748B on background #0F1720 has a contrast ratio of approximately 3.8:1, below the WCAG AA requirement of 4.5:1 for normal text. This affects all label text, descriptions, and secondary content across the platform.",
+      "why_it_matters": "Legal accessibility requirement. Low contrast text is unreadable in bright outdoor conditions.",
+      "risk": "MEDIUM",
+      "fix_category": "CSS"
+    }
+  ],
+
+  "performance_observations": [
+    {
+      "id": "PERF-001",
+      "observation": "Edge Function cold start on mobile 4G adds 8-15 seconds to first meaningful paint on /advisor and /market pages. Warmup ping exists but only fires on app load — if user navigates directly to /market, the Edge Function may be cold.",
+      "impact": "First load on mobile can take 20+ seconds",
+      "risk": "CRITICAL"
+    },
+    {
+      "id": "PERF-002",
+      "observation": "Market page makes 3 sequential API calls (snapshot/latest, market-intelligence, Edge Function) before rendering content. On mobile, these should be parallelized or the page should render progressively as each call returns.",
+      "impact": "Unnecessary sequential latency on mobile networks",
+      "risk": "HIGH"
+    },
+    {
+      "id": "PERF-003",
+      "observation": "DashboardLayout imports 20+ Lucide icons at the top level. Tree-shaking should handle this but worth verifying bundle size impact.",
+      "impact": "Potential bundle size inflation",
+      "risk": "LOW"
+    }
+  ],
+
+  "recommended_fixes_prioritized": [
+    {
+      "priority": 1,
+      "id": "FIX-001",
+      "title": "Add mobile grid breakpoints to ALL grid-cols-2+ without sm: fallback",
+      "affected": "MarketPage, AdvisorWatchtower, Settings, OnboardingWizard, HomePage, AdminDashboard, AlertsPageAuth, ForensicCalibration results",
+      "fix": "Replace grid-cols-2 with grid-cols-1 sm:grid-cols-2. Replace grid-cols-3 with grid-cols-1 sm:grid-cols-2 md:grid-cols-3. Replace grid-cols-4 with grid-cols-2 sm:grid-cols-4. Replace grid-cols-7 with grid-cols-3 sm:grid-cols-4 md:grid-cols-7.",
+      "effort": "2 hours",
+      "risk": "CRITICAL"
+    },
+    {
+      "priority": 2,
+      "id": "FIX-002",
+      "title": "Add overflow-x-hidden to root container",
+      "affected": "ALL pages",
+      "fix": "Add overflow-x: hidden to the body element or the root DashboardLayout container to prevent horizontal scroll from any overflowing grid.",
+      "effort": "5 minutes",
+      "risk": "CRITICAL"
+    },
+    {
+      "priority": 3,
+      "id": "FIX-003",
+      "title": "Increase touch targets to minimum 44px",
+      "affected": "Action buttons, tab badges, admin controls, dismiss buttons",
+      "fix": "Add min-h-[44px] min-w-[44px] to all interactive elements. For inline buttons, use padding to achieve minimum touch area. For the action bar buttons specifically: change py-1.5 to py-2.5 and px-3 to px-4.",
+      "effort": "1 hour",
+      "risk": "HIGH"
+    },
+    {
+      "priority": 4,
+      "id": "FIX-004",
+      "title": "Add scroll indicator to cognition tabs",
+      "affected": "/advisor page",
+      "fix": "Add a gradient fade-out on the right edge of the tab bar to indicate more tabs exist. Or add a horizontal scroll indicator dots below the tabs. CSS: mask-image: linear-gradient(to right, black 85%, transparent).",
+      "effort": "30 minutes",
+      "risk": "HIGH"
+    },
+    {
+      "priority": 5,
+      "id": "FIX-005",
+      "title": "Increase minimum font size to 11px on mobile",
+      "affected": "ALL text-[9px] and text-[10px] elements",
+      "fix": "Replace text-[9px] with text-[11px] sm:text-[9px] and text-[10px] with text-[11px] sm:text-[10px] for JetBrains Mono labels. This increases readability on mobile while preserving desktop density.",
+      "effort": "1 hour",
+      "risk": "HIGH"
+    },
+    {
+      "priority": 6,
+      "id": "FIX-006",
+      "title": "Parallelize Market page API calls",
+      "affected": "/market page",
+      "fix": "Change fetchSnapshot to call all 3 sources (snapshot/latest, market-intelligence, Edge Function) with Promise.allSettled instead of sequential try/catch. Use the first successful response.",
+      "effort": "30 minutes",
+      "risk": "HIGH"
+    },
+    {
+      "priority": 7,
+      "id": "FIX-007",
+      "title": "Add prefers-reduced-motion support",
+      "affected": "CognitiveLoadingScreen, CognitiveMesh, RadarSweep, all CSS animations",
+      "fix": "Add @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } } to global CSS.",
+      "effort": "15 minutes",
+      "risk": "MEDIUM"
+    },
+    {
+      "priority": 8,
+      "id": "FIX-008",
+      "title": "Add safe-area-inset padding for bottom elements",
+      "affected": "FloatingSoundboard, DashboardLayout",
+      "fix": "Add padding-bottom: env(safe-area-inset-bottom) to fixed bottom elements. For soundboard: bottom: calc(1.5rem + env(safe-area-inset-bottom)).",
+      "effort": "15 minutes",
+      "risk": "MEDIUM"
+    },
+    {
+      "priority": 9,
+      "id": "FIX-009",
+      "title": "Fix soundboard keyboard overlay on mobile",
+      "affected": "FloatingSoundboard expanded panel",
+      "fix": "Use visual viewport API to detect keyboard and adjust panel position. Or change from fixed positioning to a full-screen modal on mobile that properly handles keyboard resize.",
+      "effort": "1 hour",
+      "risk": "HIGH"
+    },
+    {
+      "priority": 10,
+      "id": "FIX-010",
+      "title": "Add bottom navigation bar for mobile",
+      "affected": "DashboardLayout",
+      "fix": "Add a fixed bottom nav bar (visible only at <lg breakpoint) with 5 core actions: Insights, Market, Revenue, Integrations, Settings. Hide when keyboard is open. Apply safe-area-inset-bottom padding.",
+      "effort": "2 hours",
+      "risk": "HIGH"
+    },
+    {
+      "priority": 11,
+      "id": "FIX-011",
+      "title": "Improve color contrast for secondary text",
+      "affected": "ALL #64748B text on #0F1720 background",
+      "fix": "Change secondary text color from #64748B to #8494A7 (contrast ratio 5.2:1) to meet WCAG AA compliance while maintaining the Liquid Steel aesthetic.",
+      "effort": "30 minutes",
+      "risk": "MEDIUM"
+    },
+    {
+      "priority": 12,
+      "id": "FIX-012",
+      "title": "Calibration identity bar mobile layout",
+      "affected": "/calibration page identity bar",
+      "fix": "Stack admin controls vertically on mobile or hide non-essential controls. Increase button padding to meet 44px touch target. Use flex-wrap with gap-2.",
+      "effort": "30 minutes",
+      "risk": "MEDIUM"
+    }
+  ]
+}
