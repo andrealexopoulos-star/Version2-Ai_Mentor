@@ -4,32 +4,119 @@ const HEAD = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
 const BODY = "'Inter', sans-serif";
 
-const FIRST_PACKS = [
-  { headline: 'Launching Your Command Centre', sub: 'Your competitors have no idea what\'s about to hit them.', steps: ['Scanning your digital footprint', 'Mapping competitive landscape', 'Calibrating AI agents', 'Building intelligence layer', 'Preparing executive briefing'] },
-  { headline: 'Waking Up Your AI Agents', sub: 'Your digital leadership team is stretching and warming up.', steps: ['Reading your business DNA', 'Detecting market signals', 'Calibrating the cognitive engine', 'Training your digital team', 'Generating your first insights'] },
-  { headline: 'Powering Up The Cognitive Engine', sub: 'Neurons firing. Patterns forming. Intelligence activating.', steps: ['Analysing your industry position', 'Identifying revenue patterns', 'Setting up risk monitors', 'Connecting intelligence feeds', 'Compiling your command brief'] },
-];
-
-const RETURN_PACKS = [
-  { headline: 'we caught some things overnight', sub: 'Your competitors moved, your inbox filled up, and deals shifted.', steps: ['Scanning overnight market signals', 'Analysing new email patterns', 'Detecting risks & opportunities', 'Updating your executive briefing'] },
-  { headline: 'your agents never sleep', sub: 'While you recharged, your digital team was on watch.', steps: ['Reviewing 24 hours of business signals', 'Analysing communication changes', 'Updating risk assessments', 'Finalising your intelligence update'] },
-  { headline: 'things have changed since yesterday', sub: 'New signals detected across your business.', steps: ['Checking what competitors did overnight', 'Processing new CRM activity', 'Recalculating your positions', 'Preparing your morning brief'] },
-];
-
-export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
-  const isFirst = mode === 'first';
-  const [progress, setProgress] = useState(0);
-
-  const pack = useMemo(() => {
-    const packs = isFirst ? FIRST_PACKS : RETURN_PACKS;
-    return packs[Math.floor(Math.random() * packs.length)];
-  }, [isFirst]);
+/**
+ * CognitiveIgnitionScreen — Phase 1: Cinematic ignition.
+ * Merges CognitiveLoadingScreen + InitiatingBIQC + onboard-welcome into single state.
+ * Max 6 seconds. No spinners. Smoke + lightning pulse.
+ */
+export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
+  const [phase, setPhase] = useState(0);
 
   useEffect(() => {
-    const duration = isFirst ? 12000 : 8000;
+    const t1 = setTimeout(() => setPhase(1), 1500);
+    const t2 = setTimeout(() => setPhase(2), 3000);
+    const t3 = setTimeout(() => setPhase(3), 5000);
+    const t4 = setTimeout(() => { if (onComplete) onComplete(); }, 6000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [onComplete]);
+
+  return (
+    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6 relative overflow-hidden" style={{ background: '#0F1720' }} data-testid="cognitive-ignition">
+      <style>{`
+        @keyframes ignSmoke{0%{opacity:0;transform:scale(0.8) translateY(20px)}50%{opacity:0.06}100%{opacity:0;transform:scale(1.4) translateY(-40px)}}
+        @keyframes ignPulse{0%,100%{box-shadow:0 0 30px rgba(255,106,0,0.15)}50%{box-shadow:0 0 80px rgba(255,106,0,0.4)}}
+        @keyframes ignLightning{0%,90%,100%{opacity:0}92%,98%{opacity:0.03}}
+        @keyframes ignFadeUp{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes ignBar{0%{width:0}100%{width:100%}}
+      `}</style>
+
+      {/* Smoke layers */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)', animation: 'ignSmoke 4s ease-out infinite', opacity: 0 }} />
+        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full" style={{ background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)', animation: 'ignSmoke 5s ease-out infinite 1s', opacity: 0 }} />
+      </div>
+
+      {/* Lightning flash */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: '#FFFFFF', animation: 'ignLightning 3s ease infinite' }} />
+
+      <div className="max-w-xl w-full text-center relative z-10">
+        {/* Logo */}
+        <div className="mb-10" style={{ animation: 'ignFadeUp 1s ease-out' }}>
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#FF6A00', animation: 'ignPulse 2s ease-in-out infinite' }}>
+            <span className="text-white font-bold text-3xl" style={{ fontFamily: MONO }}>B</span>
+          </div>
+        </div>
+
+        {/* Phase 0-1: Header */}
+        <div style={{ animation: 'ignFadeUp 1.2s ease-out', opacity: phase >= 0 ? 1 : 0, transition: 'opacity 0.8s ease' }}>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#F4F7FA] mb-4 tracking-tight" style={{ fontFamily: HEAD }}>
+            {ownerName ? `Welcome to BIQc, ${ownerName}.` : 'Welcome to BIQc.'}
+          </h1>
+        </div>
+
+        {/* Phase 1: Subheader */}
+        <div style={{ opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
+          <p className="text-lg text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>
+            This is not a dashboard. It's a strategic intelligence system.
+          </p>
+        </div>
+
+        {/* Phase 2: Body */}
+        <div style={{ opacity: phase >= 2 ? 1 : 0, transform: phase >= 2 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
+          <div className="max-w-md mx-auto mb-10">
+            <p className="text-sm text-[#64748B] leading-relaxed" style={{ fontFamily: BODY }}>
+              In the next 90 seconds, BIQc will analyse how your market sees you.
+            </p>
+            <p className="text-sm text-[#64748B] leading-relaxed mt-2" style={{ fontFamily: BODY }}>
+              Positioning. Authority. Competitive pressure.
+            </p>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed mt-2 font-medium" style={{ fontFamily: BODY }}>
+              What's forming. What's drifting. What's inevitable.
+            </p>
+          </div>
+        </div>
+
+        {/* Phase 3: CTA */}
+        <div style={{ opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
+          <button onClick={onComplete}
+            className="px-10 py-4 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110 active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEAD, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}
+            data-testid="ignition-cta">
+            Meet BIQc
+          </button>
+        </div>
+
+        {/* Progress */}
+        <div className="max-w-xs mx-auto mt-8">
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: '#243140' }}>
+            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #FF6A00, #3B82F6)', animation: 'ignBar 6s ease-in-out' }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * CognitiveLoadingScreen — Returning user intelligence update.
+ * Used when cache exists and background refresh is happening.
+ */
+export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
+  const [progress, setProgress] = useState(0);
+
+  const PACKS = useMemo(() => [
+    { headline: 'your agents never sleep', sub: 'While you recharged, your digital team was on watch.', steps: ['Reviewing 24 hours of business signals', 'Analysing communication changes', 'Updating risk assessments', 'Finalising your intelligence update'] },
+    { headline: 'we caught some things overnight', sub: 'Your competitors moved, your inbox filled up, and deals shifted.', steps: ['Scanning overnight market signals', 'Analysing new email patterns', 'Detecting risks & opportunities', 'Updating your executive briefing'] },
+    { headline: 'things have changed since yesterday', sub: 'New signals detected across your business.', steps: ['Checking what competitors did overnight', 'Processing new CRM activity', 'Recalculating your positions', 'Preparing your morning brief'] },
+  ], []);
+
+  const pack = useMemo(() => PACKS[Math.floor(Math.random() * PACKS.length)], [PACKS]);
+
+  useEffect(() => {
+    const duration = 8000;
     const interval = setInterval(() => setProgress(p => Math.min(p + 1, 100)), duration / 100);
     return () => clearInterval(interval);
-  }, [isFirst]);
+  }, []);
 
   const visibleSteps = pack.steps.filter((_, i) => progress > (i / pack.steps.length) * 80);
 
@@ -43,14 +130,12 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
       `}</style>
 
       <div className="max-w-lg w-full text-center">
-        {/* Branded Animation — Orbiting dots around B logo */}
         <div className="relative w-32 h-32 mx-auto mb-8">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#FF6A00', animation: 'cogPulseGlow 2s ease-in-out infinite' }}>
               <span className="text-white font-bold text-2xl" style={{ fontFamily: MONO }}>B</span>
             </div>
           </div>
-          {/* Orbiting dots */}
           {[0, 1, 2, 3, 4, 5].map(i => (
             <div key={i} className="absolute inset-0" style={{ animation: `cogOrbit ${3 + i * 0.5}s linear infinite`, animationDelay: `${i * 0.3}s` }}>
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED', '#F59E0B', '#EF4444'][i], opacity: 0.7 }} />
@@ -58,39 +143,29 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
           ))}
         </div>
 
-        {/* Message */}
         <div style={{ animation: 'cogFadeUp 0.6s ease-out' }}>
           <h2 className="text-2xl sm:text-3xl font-bold text-[#F4F7FA] mb-3 tracking-tight" style={{ fontFamily: HEAD }}>
-            {!isFirst && ownerName ? `${ownerName}, ` : ''}{pack.headline}
+            {ownerName ? `${ownerName}, ` : ''}{pack.headline}
           </h2>
-          <p className="text-base text-[#9FB0C3] leading-relaxed mb-8" style={{ fontFamily: BODY }}>
-            {pack.sub}
-          </p>
+          <p className="text-base text-[#9FB0C3] leading-relaxed mb-8" style={{ fontFamily: BODY }}>{pack.sub}</p>
         </div>
 
-        {/* Steps */}
         <div className="space-y-3 text-left max-w-sm mx-auto mb-8">
           {visibleSteps.map((step, i) => (
             <div key={i} className="flex items-center gap-3" style={{ animation: 'cogFadeUp 0.5s ease-out both' }}>
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED', '#F59E0B'][i % 5] + '20' }}>
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED', '#F59E0B'][i % 5], animation: `cogDotStep 1.4s ease-in-out infinite ${i * 0.2}s` }} />
+              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED'][i % 4] + '20' }}>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED'][i % 4], animation: `cogDotStep 1.4s ease-in-out infinite ${i * 0.2}s` }} />
               </div>
               <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: MONO }}>{step}</span>
             </div>
           ))}
         </div>
 
-        {/* Progress bar */}
         <div className="max-w-xs mx-auto">
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
-            <div className="h-full rounded-full transition-all duration-300" style={{
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, #FF6A00, #3B82F6, #10B981)',
-            }} />
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FF6A00, #3B82F6, #10B981)' }} />
           </div>
-          <p className="text-[10px] text-[#64748B] mt-2" style={{ fontFamily: MONO }}>
-            {isFirst ? 'First-time setup takes ~10 seconds' : 'Updating your intelligence...'}
-          </p>
+          <p className="text-[10px] text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Updating your intelligence...</p>
         </div>
       </div>
     </div>
