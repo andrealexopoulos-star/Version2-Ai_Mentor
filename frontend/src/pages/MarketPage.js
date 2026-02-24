@@ -125,10 +125,10 @@ const MarketPage = () => {
         {/* Signal Scores — from cognitive engine market_intelligence */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Positioning Verdict', value: mi.positioning_verdict || st.label, icon: Target, color: st.c },
-            { label: 'Acquisition Signal', value: mi.acquisition_signal?.label || (pipeline ? `$${Math.round(pipeline / 1000)}K` : 'Awaiting data'), icon: TrendingUp, color: '#3B82F6' },
-            { label: 'Retention Signal', value: mi.retention_signal?.label || (slaBreaches ? `${slaBreaches} risk${slaBreaches > 1 ? 's' : ''}` : 'Healthy'), icon: Shield, color: (mi.retention_signal?.risk_count || slaBreaches) > 0 ? '#F59E0B' : '#10B981' },
-            { label: 'Growth Signal', value: mi.growth_signal?.label || (stateStatus === 'CRITICAL' ? 'Blocked' : stateStatus === 'DRIFT' ? 'Under Pressure' : 'On Track'), icon: ArrowUpRight, color: stateStatus === 'STABLE' ? '#10B981' : '#F59E0B' },
+            { label: 'Positioning Verdict', value: mi.positioning_verdict || (stateStatus ? st.label : 'Awaiting data'), icon: Target, color: stateStatus ? st.c : '#64748B' },
+            { label: 'Acquisition Signal', value: mi.acquisition_signal?.label || (pipeline ? `$${Math.round(pipeline / 1000)}K` : 'Awaiting data'), icon: TrendingUp, color: pipeline ? '#3B82F6' : '#64748B' },
+            { label: 'Retention Signal', value: mi.retention_signal?.label || (slaBreaches ? `${slaBreaches} risk${slaBreaches > 1 ? 's' : ''}` : (snapshot ? 'Healthy' : 'Awaiting data')), icon: Shield, color: slaBreaches > 0 ? '#F59E0B' : (snapshot ? '#10B981' : '#64748B') },
+            { label: 'Growth Signal', value: mi.growth_signal?.label || (snapshot ? (stateStatus === 'CRITICAL' ? 'Blocked' : stateStatus === 'DRIFT' ? 'Under Pressure' : 'On Track') : 'Awaiting data'), icon: ArrowUpRight, color: snapshot ? (stateStatus === 'STABLE' ? '#10B981' : '#F59E0B') : '#64748B' },
           ].map(m => (
             <Panel key={m.label}>
               <div className="flex items-center gap-2 mb-2">
