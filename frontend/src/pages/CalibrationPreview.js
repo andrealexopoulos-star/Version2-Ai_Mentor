@@ -155,6 +155,30 @@ const CalibrationPreview = () => {
           </div>
         )}
 
+        {screen === 'cmo-snapshot' && (
+          <div className="h-[calc(100vh-40px)] flex flex-col" style={{ background: '#0F1720' }}>
+            <ExecutiveCMOSnapshot intelligenceData={{
+              cognitive: {
+                system_state: { status: 'DRIFT', confidence: 72, interpretation: 'Revenue concentration elevated. Top client represents 38% of pipeline. Subcontractor costs rising.', velocity: 'stable' },
+                cash_runway_months: 4.2,
+                pipeline_total: 185000,
+                sla_breaches: 2,
+                executive_memo: 'Your business is operationally stable but showing early signs of revenue concentration risk. Three enterprise deals have stalled at proposal stage, creating a $45K pipeline gap. Subcontractor costs have increased 12% in the last 45 days, compressing margins on Service B. Recommend: (1) Revised pricing proposals for stalled deals, (2) Supplier renegotiation or alternative sourcing, (3) Client diversification strategy.',
+                strategic_alignment_check: 'Current operational intent is partially misaligned with execution capabilities due to resource over-allocation.',
+                alignment: { contradictions: ['Growth targets vs. team capacity — 3 staff members exceeding 48h/week', 'Cost reduction goals vs. rising subcontractor expenses'] },
+              },
+              data_sources: ['business_profile', 'HubSpot CRM (30 contacts, 25 deals)', 'emails (25)', 'cognitive_profile'],
+            }} onContinue={() => setScreen('wizard-q1')} />
+          </div>
+        )}
+
+        {screen === 'forensic' && (
+          <div className="h-[calc(100vh-40px)] flex flex-col" style={{ background: '#0F1720' }}>
+            <ForensicCalibrationUI onSkip={() => setScreen('wizard-q1')} />
+          </div>
+        )}
+
+
         {screen === 'continuity' && (
           <div className="h-[calc(100vh-40px)] flex flex-col" style={{ background: '#0F1720' }}>
             <ContinuitySuite firstName="Andre" calStep={5} error={null} onResume={() => {}} />
