@@ -122,13 +122,13 @@ const MarketPage = () => {
           {interpretation && <p className="text-sm mt-3 text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
         </div>
 
-        {/* Signal Scores */}
+        {/* Signal Scores — from cognitive engine market_intelligence */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Positioning Verdict', value: st.label, icon: Target, color: st.c },
-            { label: 'Acquisition Signal', value: pipeline ? `$${Math.round(pipeline / 1000)}K` : 'Awaiting data', icon: TrendingUp, color: '#3B82F6' },
-            { label: 'Retention Signal', value: slaBreaches ? `${slaBreaches} risk${slaBreaches > 1 ? 's' : ''}` : 'Healthy', icon: Shield, color: slaBreaches > 0 ? '#F59E0B' : '#10B981' },
-            { label: 'Growth Signal', value: stateStatus === 'CRITICAL' ? 'Blocked' : stateStatus === 'DRIFT' ? 'Under Pressure' : 'On Track', icon: ArrowUpRight, color: stateStatus === 'STABLE' ? '#10B981' : '#F59E0B' },
+            { label: 'Positioning Verdict', value: mi.positioning_verdict || st.label, icon: Target, color: st.c },
+            { label: 'Acquisition Signal', value: mi.acquisition_signal?.label || (pipeline ? `$${Math.round(pipeline / 1000)}K` : 'Awaiting data'), icon: TrendingUp, color: '#3B82F6' },
+            { label: 'Retention Signal', value: mi.retention_signal?.label || (slaBreaches ? `${slaBreaches} risk${slaBreaches > 1 ? 's' : ''}` : 'Healthy'), icon: Shield, color: (mi.retention_signal?.risk_count || slaBreaches) > 0 ? '#F59E0B' : '#10B981' },
+            { label: 'Growth Signal', value: mi.growth_signal?.label || (stateStatus === 'CRITICAL' ? 'Blocked' : stateStatus === 'DRIFT' ? 'Under Pressure' : 'On Track'), icon: ArrowUpRight, color: stateStatus === 'STABLE' ? '#10B981' : '#F59E0B' },
           ].map(m => (
             <Panel key={m.label}>
               <div className="flex items-center gap-2 mb-2">
