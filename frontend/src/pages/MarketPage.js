@@ -329,22 +329,18 @@ const MarketPage = () => {
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
 
   const fetchSnapshot = useCallback(async () => {
-    // Fetch channels in parallel with snapshot
+    // Fetch channels in parallel
     apiClient.get('/integrations/channels/status').then(res => {
       if (res.data?.channels) setChannelsData(res.data);
     }).catch(() => {});
 
-    try {
-      const res = await apiClient.get('/snapshot/latest');
-      if (res.data?.cognitive) { setSnapshot(res.data.cognitive); return; }
-    } catch {}
-    try {
-      const res = await apiClient.get('/market-intelligence');
-      if (res.data?.cognitive && res.data?.has_data) { setSnapshot(res.data.cognitive); return; }
-    } catch {}
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+    // Parallelize all snapshot sources — use first successful response
+    const results = await Promise.allSettled([
+      apiClient.get('/snapshot/latest').then(r => r.data?.cognitive ? r.data.cognitive : Promise.reject('no data')),
+      apiClient.get('/market-intelligence').then(r => r.data?.cognitive && r.data?.has_data ? r.data.cognitive : Promise.reject('no data')),
+      (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('no session');
         const sbUrl = process.env.REACT_APP_SUPABASE_URL;
         const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
         const res = await fetch(`${sbUrl}/functions/v1/biqc-insights-cognitive`, {
@@ -352,9 +348,20 @@ const MarketPage = () => {
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': key },
           body: '{}',
         });
-        if (res.ok) { const d = await res.json(); if (d?.cognitive) setSnapshot(d.cognitive); }
+        if (!res.ok) throw new Error('edge fn failed');
+        const d = await res.json();
+        if (!d?.cognitive) throw new Error('no cognitive');
+        return d.cognitive;
+      })(),
+    ]);
+
+    // Use the first fulfilled result
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value) {
+        setSnapshot(r.value);
+        return;
       }
-    } catch {}
+    }
   }, []);
 
   useEffect(() => {
