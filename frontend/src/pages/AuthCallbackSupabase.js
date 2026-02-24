@@ -129,8 +129,38 @@ const AuthCallbackSupabase = () => {
                 console.log('[CALIBRATION ROUTING] Routing to /calibration');
                 navigate('/calibration', { replace: true });
               } else {
-                console.log('[CALIBRATION ROUTING] Routing to /advisor');
-                navigate('/advisor', { replace: true });
+                // MODULE A: Cognition-aware mobile landing
+                // On mobile (<768px), route to /market under DRIFT/COMPRESSION/CRITICAL
+                const isMobile = window.innerWidth < 768;
+                let landingRoute = '/advisor';
+                if (isMobile) {
+                  try {
+                    const snapRes = await fetch(`${BACKEND_URL}/api/snapshot/latest`, {
+                      headers: { 'Authorization': `Bearer ${sessionData.session.access_token}`, 'Accept': 'application/json' }
+                    });
+                    if (snapRes.ok) {
+                      const snapData = await snapRes.json();
+                      const cog = snapData?.cognitive;
+                      const state = typeof cog?.system_state === 'object' ? cog.system_state?.status : cog?.system_state;
+                      if (['DRIFT', 'COMPRESSION', 'CRITICAL'].includes(state)) {
+                        landingRoute = '/market';
+                        console.log(`[MOBILE LANDING] system_state=${state} → routing to /market`);
+                      }
+                    }
+                  } catch { /* fail-open to /advisor */ }
+                }
+
+                // Fire-and-forget: warm Edge Functions for faster subsequent loads
+                const sbUrl = process.env.REACT_APP_SUPABASE_URL || '';
+                const sbKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+                if (sbUrl && sbKey) {
+                  fetch(`${sbUrl}/functions/v1/warm-cognitive-engine`, {
+                    method: 'POST', headers: { 'apikey': sbKey, 'Content-Type': 'application/json' }, body: '{}'
+                  }).catch(() => {});
+                }
+
+                console.log(`[CALIBRATION ROUTING] Routing to ${landingRoute}`);
+                navigate(landingRoute, { replace: true });
               }
             } catch (profileCheckError) {
               console.warn('[CALIBRATION ROUTING] Profile check error → fail-open to /advisor');
