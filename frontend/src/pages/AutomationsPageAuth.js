@@ -1,86 +1,90 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { Workflow, Play, Pause, CheckCircle2, Clock, Zap, ArrowRight, Settings } from 'lucide-react';
+import FloatingSoundboard from '../components/FloatingSoundboard';
+import { useSnapshot } from '../hooks/useSnapshot';
+import { CognitiveMesh } from '../components/LoadingSystems';
+import { Workflow, Zap, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
+const HEAD = "'Cormorant Garamond', Georgia, serif";
+const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
-const AutomationsPageAuth = () => (
-  <DashboardLayout>
-    <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="automations-page">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Automations</h1>
-        <p className="text-sm text-[#9FB0C3]">AI-powered workflows running across your business systems.</p>
-      </div>
+const AutomationsPageAuth = () => {
+  const { cognitive, loading } = useSnapshot();
+  const c = cognitive || {};
+  const exec = c.execution || {};
+  const recs = exec.recs || [];
+  const rq = c.resolution_queue || [];
+  const automatable = rq.filter(r => (r.actions || []).some(a => a === 'auto-email' || a === 'quick-sms'));
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Active Flows', value: '6', color: '#10B981', icon: Play },
-          { label: 'Paused', value: '2', color: '#F59E0B', icon: Pause },
-          { label: 'Runs Today', value: '47', color: '#3B82F6', icon: Zap },
-          { label: 'Hours Saved', value: '12.5', color: '#FF6A00', icon: Clock },
-        ].map(m => (
-          <Panel key={m.label}>
-            <div className="flex items-center gap-2 mb-2">
-              <m.icon className="w-4 h-4" style={{ color: m.color }} />
-              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.label}</span>
-            </div>
-            <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{m.value}</span>
-          </Panel>
-        ))}
-      </div>
+  return (
+    <DashboardLayout>
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="automations-page">
+        <div>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Automations</h1>
+          <p className="text-sm text-[#9FB0C3]">AI-suggested automations based on resolution queue patterns.</p>
+        </div>
 
-      {/* Automation List */}
-      <div className="space-y-3">
-        {[
-          { name: 'Invoice Payment Reminders', trigger: 'Invoice overdue > 7 days', lastRun: '2h ago', runs: 156, status: 'active', saved: '4.2h/week' },
-          { name: 'Lead Response Auto-Email', trigger: 'New lead detected in CRM', lastRun: '45m ago', runs: 89, status: 'active', saved: '2.8h/week' },
-          { name: 'SOP Compliance Check', trigger: 'Daily at 9:00 AM AEST', lastRun: '6h ago', runs: 312, status: 'active', saved: '1.5h/week' },
-          { name: 'Client Engagement Monitor', trigger: 'Weekly engagement score < threshold', lastRun: '1d ago', runs: 24, status: 'active', saved: '1.2h/week' },
-          { name: 'Subcontractor Cost Alerts', trigger: 'Cost variance > 10%', lastRun: '3d ago', runs: 8, status: 'active', saved: '0.5h/week' },
-          { name: 'Calendar Conflict Detection', trigger: 'New meeting scheduled', lastRun: '4h ago', runs: 67, status: 'active', saved: '2.3h/week' },
-          { name: 'Quarterly BAS Prep', trigger: '30 days before BAS deadline', lastRun: '12d ago', runs: 4, status: 'paused', saved: '3h/quarter' },
-          { name: 'Team Overtime Alerts', trigger: 'Weekly hours > 45', lastRun: '5d ago', runs: 18, status: 'paused', saved: '0.8h/week' },
-        ].map((auto, i) => (
-          <Panel key={i}>
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: auto.status === 'active' ? '#10B98115' : '#F59E0B15' }}>
-                {auto.status === 'active' ? <Play className="w-4 h-4 text-[#10B981]" /> : <Pause className="w-4 h-4 text-[#F59E0B]" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h4 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>{auto.name}</h4>
-                  <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: auto.status === 'active' ? '#10B981' : '#F59E0B', background: (auto.status === 'active' ? '#10B981' : '#F59E0B') + '15', fontFamily: MONO }}>{auto.status}</span>
-                </div>
-                <p className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>Trigger: {auto.trigger}</p>
-              </div>
-              <div className="hidden md:flex items-center gap-6 shrink-0">
-                <div className="text-right">
-                  <span className="text-xs text-[#64748B] block" style={{ fontFamily: MONO }}>Last run</span>
-                  <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: MONO }}>{auto.lastRun}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs text-[#64748B] block" style={{ fontFamily: MONO }}>Total runs</span>
-                  <span className="text-xs text-[#F4F7FA] font-semibold" style={{ fontFamily: MONO }}>{auto.runs}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs text-[#64748B] block" style={{ fontFamily: MONO }}>Time saved</span>
-                  <span className="text-xs font-semibold" style={{ fontFamily: MONO, color: '#10B981' }}>{auto.saved}</span>
+        {loading && <CognitiveMesh message="Analysing automation opportunities..." />}
+
+        {!loading && (
+          <>
+            {/* Automation Opportunities */}
+            {automatable.length > 0 ? (
+              <div>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#FF6A00', fontFamily: MONO }}>Automatable Actions ({automatable.length})</h3>
+                <div className="space-y-3">
+                  {automatable.map((item, i) => (
+                    <Panel key={i}>
+                      <div className="flex items-start gap-3">
+                        <Zap className="w-4 h-4 text-[#FF6A00] shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{item.title}</p>
+                          <p className="text-xs text-[#9FB0C3] mt-1">{item.detail}</p>
+                          <div className="flex gap-2 mt-2">
+                            {(item.actions || []).filter(a => a === 'auto-email' || a === 'quick-sms').map(a => (
+                              <span key={a} className="text-[10px] px-2 py-1 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>{a}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </Panel>
+                  ))}
                 </div>
               </div>
-              <button className="p-2 rounded-lg hover:bg-white/5 shrink-0"><Settings className="w-4 h-4 text-[#64748B]" /></button>
-            </div>
-          </Panel>
-        ))}
+            ) : (
+              <Panel className="text-center py-8">
+                <Workflow className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                <p className="text-sm text-[#64748B]">No automation opportunities detected yet. As BIQc identifies repeating patterns in your resolution queue, automations will appear here.</p>
+              </Panel>
+            )}
+
+            {/* Operational Recommendations */}
+            {recs.length > 0 && (
+              <div>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Operational Recommendations</h3>
+                <div className="space-y-2">
+                  {recs.map((r, i) => (
+                    <Panel key={i}>
+                      <div className="flex items-start gap-3">
+                        <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
+                        <p className="text-sm text-[#9FB0C3]">{r}</p>
+                      </div>
+                    </Panel>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </div>
-  </DashboardLayout>
-);
+      <FloatingSoundboard context="Automations - AI-suggested workflows, operational recommendations" />
+    </DashboardLayout>
+  );
+};
 
 export default AutomationsPageAuth;

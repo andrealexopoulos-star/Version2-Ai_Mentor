@@ -1,82 +1,97 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { FileText, Download, Calendar, TrendingUp, DollarSign, Users, BarChart3 } from 'lucide-react';
+import FloatingSoundboard from '../components/FloatingSoundboard';
+import { useSnapshot } from '../hooks/useSnapshot';
+import { CognitiveMesh } from '../components/LoadingSystems';
+import { FileText, TrendingUp, DollarSign, Users, BarChart3, Download } from 'lucide-react';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
+const HEAD = "'Cormorant Garamond', Georgia, serif";
+const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
-const ReportsPage = () => (
-  <DashboardLayout>
-    <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="reports-page">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Reports</h1>
-        <p className="text-sm text-[#9FB0C3]">AI-generated business intelligence reports and analytics.</p>
-      </div>
+const ReportsPage = () => {
+  const { cognitive, loading, sources } = useSnapshot();
+  const c = cognitive || {};
+  const wb = c.weekly_brief || {};
+  const cap = c.capital || {};
+  const rev = c.revenue || {};
+  const exec = c.execution || {};
 
-      {/* Quick Reports */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { title: 'Weekly Executive Summary', period: 'Feb 17-23, 2026', icon: BarChart3, color: '#FF6A00', highlights: ['$4,200 cashflow recovered', '12 hours saved via automation', '3 risks mitigated'] },
-          { title: 'Revenue Report', period: 'February 2026', icon: TrendingUp, color: '#3B82F6', highlights: ['Pipeline: $185K', 'Win rate: 34%', '3 deals stalled'] },
-          { title: 'Operations Report', period: 'February 2026', icon: Users, color: '#10B981', highlights: ['87% SOP compliance', '2 SLA breaches', '14 active tasks'] },
-        ].map((report, i) => (
-          <Panel key={i}>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: report.color + '15' }}>
-                <report.icon className="w-4 h-4" style={{ color: report.color }} />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>{report.title}</h3>
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{report.period}</span>
-              </div>
-            </div>
-            <div className="space-y-1.5 mb-4">
-              {report.highlights.map((h, j) => (
-                <div key={j} className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: report.color }} />
-                  <span className="text-xs text-[#9FB0C3]">{h}</span>
-                </div>
-              ))}
-            </div>
-            <button className="flex items-center gap-1.5 text-xs font-medium" style={{ color: report.color }}>
-              <Download className="w-3.5 h-3.5" />Download PDF
-            </button>
-          </Panel>
-        ))}
-      </div>
-
-      {/* Report History */}
-      <Panel>
-        <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Report History</h3>
-        <div className="space-y-2">
-          {[
-            { name: 'Weekly Executive Summary', date: 'Feb 16, 2026', type: 'Executive', size: '2.4 MB' },
-            { name: 'Monthly Revenue Analysis', date: 'Jan 31, 2026', type: 'Revenue', size: '4.1 MB' },
-            { name: 'Q4 2025 Compliance Report', date: 'Dec 31, 2025', type: 'Compliance', size: '3.8 MB' },
-            { name: 'Annual Business Review', date: 'Dec 15, 2025', type: 'Executive', size: '8.2 MB' },
-            { name: 'Weekly Executive Summary', date: 'Feb 9, 2026', type: 'Executive', size: '2.1 MB' },
-            { name: 'Risk Assessment Q1 2026', date: 'Jan 15, 2026', type: 'Risk', size: '3.5 MB' },
-          ].map((r, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/[0.02] transition-colors cursor-pointer" style={{ border: '1px solid transparent' }}>
-              <FileText className="w-4 h-4 text-[#64748B] shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="text-sm text-[#F4F7FA] block">{r.name}</span>
-                <span className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>{r.date}</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded hidden sm:block" style={{ color: '#64748B', background: '#243140', fontFamily: MONO }}>{r.type}</span>
-              <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: MONO }}>{r.size}</span>
-              <Download className="w-4 h-4 text-[#64748B] shrink-0 hover:text-[#FF6A00] transition-colors" />
-            </div>
-          ))}
+  return (
+    <DashboardLayout>
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="reports-page">
+        <div>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Intelligence Reports</h1>
+          <p className="text-sm text-[#9FB0C3]">Consolidated intelligence summaries from all connected data sources.</p>
         </div>
-      </Panel>
-    </div>
-  </DashboardLayout>
-);
+
+        {loading && <CognitiveMesh message="Compiling reports..." />}
+
+        {!loading && (
+          <>
+            {/* Weekly Brief Summary */}
+            {(wb.actions_taken || wb.cashflow_recovered) ? (
+              <div className="rounded-xl p-5" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#FF6A00', fontFamily: MONO }}>This Week's Intelligence Summary</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    wb.cashflow_recovered && { label: 'Cash Recovered', value: `$${(wb.cashflow_recovered || 0).toLocaleString()}`, icon: DollarSign, color: '#FF6A00' },
+                    wb.hours_saved && { label: 'Hours Saved', value: `${wb.hours_saved}h`, icon: TrendingUp, color: '#10B981' },
+                    wb.actions_taken && { label: 'Actions Taken', value: String(wb.actions_taken), icon: BarChart3, color: '#3B82F6' },
+                    wb.sop_compliance && { label: 'SOP Compliance', value: `${wb.sop_compliance}%`, icon: FileText, color: '#7C3AED' },
+                  ].filter(Boolean).map(m => (
+                    <Panel key={m.label}>
+                      <m.icon className="w-4 h-4 mb-2" style={{ color: m.color }} />
+                      <span className="text-lg font-bold text-[#F4F7FA] block" style={{ fontFamily: MONO }}>{m.value}</span>
+                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.label}</span>
+                    </Panel>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Panel className="text-center py-6">
+                <FileText className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                <p className="text-sm text-[#64748B]">Weekly intelligence reports generate automatically as BIQc processes your data.</p>
+              </Panel>
+            )}
+
+            {/* Financial Snapshot */}
+            {(cap.runway || cap.margin) && (
+              <Panel>
+                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Financial Snapshot</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {cap.runway != null && <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}><span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Runway</span><span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{cap.runway}mo</span></div>}
+                  {cap.margin && <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}><span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Margin</span><span className="text-sm text-[#F4F7FA]">{cap.margin}</span></div>}
+                  {cap.spend && <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}><span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Spend</span><span className="text-sm text-[#F4F7FA]">{cap.spend}</span></div>}
+                </div>
+              </Panel>
+            )}
+
+            {/* Executive Memo */}
+            {(c.memo || c.executive_memo) && (
+              <Panel>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Executive Memo</h3>
+                <p className="text-sm text-[#9FB0C3] leading-relaxed whitespace-pre-line">{c.memo || c.executive_memo}</p>
+              </Panel>
+            )}
+
+            {/* Data Sources */}
+            {sources?.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-4" style={{ borderTop: '1px solid #243140' }}>
+                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Sources:</span>
+                {sources.map((s, i) => <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: '#141C26', fontFamily: MONO }}>{s}</span>)}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      <FloatingSoundboard context="Intelligence reports - weekly brief, financial snapshot, executive memo" />
+    </DashboardLayout>
+  );
+};
 
 export default ReportsPage;

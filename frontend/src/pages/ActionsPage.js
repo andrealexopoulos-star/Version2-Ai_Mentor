@@ -1,83 +1,118 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { Zap, Mail, MessageSquare, Users, Check, Clock, ArrowRight, Send } from 'lucide-react';
+import FloatingSoundboard from '../components/FloatingSoundboard';
+import { useSnapshot } from '../hooks/useSnapshot';
+import { CognitiveMesh } from '../components/LoadingSystems';
+import { Zap, Mail, MessageSquare, Users, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
+const HEAD = "'Cormorant Garamond', Georgia, serif";
+const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
-const ActionsPage = () => (
-  <DashboardLayout>
-    <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="actions-page">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Action Centre</h1>
-        <p className="text-sm text-[#9FB0C3]">AI-recommended actions ready for execution. Review, approve, and deploy.</p>
-      </div>
+const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
 
-      {/* Action Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Pending Actions', value: '5', color: '#FF6A00', icon: Clock },
-          { label: 'Executed Today', value: '3', color: '#10B981', icon: Check },
-          { label: 'Emails Sent', value: '12', color: '#3B82F6', icon: Mail },
-          { label: 'Handoffs Made', value: '2', color: '#F59E0B', icon: Users },
-        ].map(m => (
-          <Panel key={m.label}>
-            <div className="flex items-center gap-2 mb-2">
-              <m.icon className="w-4 h-4" style={{ color: m.color }} />
-              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.label}</span>
-            </div>
-            <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{m.value}</span>
-          </Panel>
-        ))}
-      </div>
+const ActionsPage = () => {
+  const { cognitive, loading } = useSnapshot();
+  const c = cognitive || {};
+  const rq = c.resolution_queue || [];
+  const reallocation = c.reallocation || [];
+  const priority = c.priority || {};
 
-      {/* Ready Actions */}
-      <div>
-        <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: SORA }}>Ready to Execute</h3>
-        <div className="space-y-3">
-          {[
-            { type: 'email', title: 'Payment reminder — Invoice #1847 ($3,200)', recipient: 'client47@example.com', preview: 'Dear [Client], This is a friendly reminder that Invoice #1847 for $3,200 is now 12 days overdue...', confidence: '94%', color: '#3B82F6' },
-            { type: 'email', title: 'Re-engagement email — Client B', recipient: 'clientb@example.com', preview: 'Hi [Client], We noticed it has been a while since our last conversation. We wanted to check in...', confidence: '87%', color: '#3B82F6' },
-            { type: 'email', title: 'Lead follow-up — 3 new contacts', recipient: '3 recipients', preview: 'Hello [Name], Thank you for your interest in our services. I would love to schedule a brief call...', confidence: '91%', color: '#3B82F6' },
-            { type: 'handoff', title: 'Escalate subcontractor costs to Operations', recipient: 'Operations Manager', preview: 'Subcontractor costs have increased 12% in 45 days. Recommend renegotiation or sourcing alternatives.', confidence: '88%', color: '#FF6A00' },
-            { type: 'sms', title: 'Overtime alert — Team leads notification', recipient: '3 team leads', preview: 'Hi [Name], BIQc detected overtime exceeding 15% target this week. Please review workload distribution.', confidence: '82%', color: '#10B981' },
-          ].map((action, i) => (
-            <Panel key={i}>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: action.color + '15' }}>
-                  {action.type === 'email' ? <Mail className="w-5 h-5" style={{ color: action.color }} /> :
-                   action.type === 'sms' ? <MessageSquare className="w-5 h-5" style={{ color: action.color }} /> :
-                   <Users className="w-5 h-5" style={{ color: action.color }} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>{action.title}</h4>
-                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>AI: {action.confidence}</span>
+  return (
+    <DashboardLayout>
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="actions-page">
+        <div>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Resolution Centre</h1>
+          <p className="text-sm text-[#9FB0C3]">AI-detected issues requiring action. Each item maps to a one-click resolution.</p>
+        </div>
+
+        {loading && <CognitiveMesh message="Scanning resolution queue..." />}
+
+        {!loading && (
+          <>
+            {/* Priority Focus */}
+            {(priority.primary || priority.secondary) && (
+              <div className="rounded-xl p-5" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#FF6A00', fontFamily: MONO }}>Priority Focus</h3>
+                {priority.primary && (
+                  <div className="mb-3">
+                    <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{priority.primary}</span>
+                    {priority.primary_hrs && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: MONO }}>{priority.primary_hrs}</span>}
                   </div>
-                  <p className="text-[11px] text-[#64748B] mb-2" style={{ fontFamily: MONO }}>To: {action.recipient}</p>
-                  <div className="p-3 rounded-lg mb-3" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <p className="text-xs text-[#9FB0C3] line-clamp-2">{action.preview}</p>
+                )}
+                {priority.secondary && (
+                  <div className="mb-2">
+                    <span className="text-sm text-[#9FB0C3]">{priority.secondary}</span>
+                    {priority.delegate && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: MONO }}>Delegate: {priority.delegate}</span>}
                   </div>
-                  <div className="flex gap-2">
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: '#FF6A00' }}>
-                      <Send className="w-3 h-3" />Execute
-                    </button>
-                    <button className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ color: '#9FB0C3', border: '1px solid #243140' }}>Edit</button>
-                    <button className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ color: '#64748B' }}>Dismiss</button>
-                  </div>
+                )}
+                {priority.noise && <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Ignore: {priority.noise}</p>}
+              </div>
+            )}
+
+            {/* Resolution Queue */}
+            {rq.length > 0 ? (
+              <div>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Resolution Queue ({rq.length})</h3>
+                <div className="space-y-3">
+                  {rq.map((item, i) => {
+                    const sv = SEV[item.severity] || SEV.medium;
+                    return (
+                      <div key={i} className="rounded-xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>
+                        <div className="flex items-start gap-3">
+                          <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{item.title}</p>
+                            {item.detail && <p className="text-xs mt-1 text-[#9FB0C3] leading-relaxed">{item.detail}</p>}
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#2563EB15', color: '#2563EB', border: '1px solid #2563EB30', fontFamily: MONO }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+                              {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#05966915', color: '#059669', border: '1px solid #05966930', fontFamily: MONO }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#F9731615', color: '#F97316', border: '1px solid #F9731630', fontFamily: MONO }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+                              <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: MONO }}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </Panel>
-          ))}
-        </div>
+            ) : (
+              <Panel className="text-center py-8">
+                <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
+                <p className="text-sm text-[#64748B]">No items in the resolution queue. Connect integrations to activate AI monitoring.</p>
+              </Panel>
+            )}
+
+            {/* Reallocation Recommendations */}
+            {reallocation.length > 0 && (
+              <div>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Resource Reallocation</h3>
+                <div className="space-y-2">
+                  {reallocation.map((r, i) => (
+                    <Panel key={i}>
+                      <div className="flex items-start gap-3">
+                        <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{r.action}</p>
+                          <p className="text-xs text-[#9FB0C3] mt-1">{r.impact}</p>
+                        </div>
+                      </div>
+                    </Panel>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </div>
-  </DashboardLayout>
-);
+      <FloatingSoundboard context="Resolution centre - action queue, priority focus, resource reallocation" />
+    </DashboardLayout>
+  );
+};
 
 export default ActionsPage;
