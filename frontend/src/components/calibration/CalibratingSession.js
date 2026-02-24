@@ -170,48 +170,7 @@ const CalibratingSession = ({
         </div>
       )}
 
-      {/* Chat Mode — Liquid Steel themed */}
-      {calMode === "chat" && !error && (
-        <>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-4" data-testid="calibration-messages">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`} data-testid={`message-${i}`}>
-                <div className="max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-xl text-sm leading-relaxed"
-                  style={{
-                    background: msg.role === "user" ? '#FF6A00' : '#141C26',
-                    border: msg.role === "user" ? 'none' : '1px solid #243140',
-                    color: msg.role === "user" ? 'white' : '#9FB0C3',
-                    fontFamily: BODY,
-                  }}>
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
-                </div>
-              </div>
-            ))}
-            {isSubmitting && (
-              <div className="flex justify-start">
-                <div className="px-4 py-3 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                  <span className="text-xs" style={{ color: '#FF6A00', fontFamily: MONO }}>thinking...</span>
-                </div>
-              </div>
-            )}
-          </div>
-          <form onSubmit={handleChatSubmit} className="px-4 sm:px-8 py-4" style={{ borderTop: '1px solid #243140' }} data-testid="calibration-form">
-            <div className="flex gap-2">
-              <input ref={inputRef} type="text" inputMode="text" enterKeyHint="send" autoComplete="off"
-                value={inputValue} onChange={(e) => setInputValue(e.target.value)} disabled={isSubmitting}
-                placeholder="Type your response..."
-                className="flex-1 rounded-xl px-4 py-3 text-sm focus:outline-none"
-                style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA', fontFamily: BODY }}
-                autoFocus data-testid="calibration-input" />
-              <button type="submit" disabled={isSubmitting || !inputValue.trim()}
-                className="px-6 py-3 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-30"
-                style={{ background: '#FF6A00', color: '#FFFFFF' }} data-testid="calibration-send-btn">
-                Send
-              </button>
-            </div>
-          </form>
-        </>
-      )}
+      {/* Chat Mode — ARCHIVED: All calibration now uses wizard mode */}
     </>
   );
 };
