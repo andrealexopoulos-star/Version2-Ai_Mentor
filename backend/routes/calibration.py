@@ -1555,3 +1555,163 @@ async def dismiss_checkin(current_user: dict = Depends(get_current_user)):
         return {"ok": True, "dismissed_until": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()}
     except Exception:
         return {"ok": True}
+
+
+# ═══════════════════════════════════════════════════════════════
+# FORENSIC MARKET CALIBRATION — Backend Scoring Engine
+# ═══════════════════════════════════════════════════════════════
+
+FORENSIC_WEIGHTS = {
+    "revenue": {"weight": 1.5, "labels": ["Maintain", "Steady Growth", "Aggressive", "Hypergrowth"]},
+    "timeline": {"weight": 1.3, "labels": ["Long-term", "Medium-term", "Urgent", "Immediate"]},
+    "cohort": {"weight": 1.0, "labels": ["Deepen", "Adjacent", "Diversify", "Upmarket"]},
+    "risk": {"weight": 1.4, "labels": ["Conservative", "Moderate", "Aggressive", "All-in"]},
+    "retention": {"weight": 1.2, "labels": ["Reactive", "Basic", "Structured", "Advanced"]},
+    "pricing": {"weight": 1.1, "labels": ["Low", "Moderate", "Confident", "Data-driven"]},
+    "channel": {"weight": 1.2, "labels": ["Single", "Dependent", "Diversified", "Highly Diversified"]},
+}
+
+
+class ForensicAnswer(BaseModel):
+    answer: str
+    index: int
+    weight: str
+
+
+class ForensicCalibrationRequest(BaseModel):
+    answers: Dict[str, ForensicAnswer]
+
+
+@router.post("/forensic/calibration")
+async def submit_forensic_calibration(
+    payload: ForensicCalibrationRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Score and persist forensic market calibration answers.
+    Weighted scoring engine — replaces frontend calculation.
+    """
+    user_id = current_user["id"]
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    try:
+        answers = payload.answers
+        if not answers or len(answers) == 0:
+            raise HTTPException(status_code=400, detail="No answers provided")
+
+        # Compute weighted scores
+        dimension_scores = {}
+        total_weighted = 0.0
+        total_weight = 0.0
+
+        for qid, answer in answers.items():
+            w_key = answer.weight
+            meta = FORENSIC_WEIGHTS.get(w_key, {"weight": 1.0, "labels": []})
+            idx = min(answer.index, 3)  # clamp 0-3
+            normalised = idx / 3.0  # 0.0 to 1.0
+            weighted = normalised * meta["weight"]
+            total_weighted += weighted
+            total_weight += meta["weight"]
+            label = meta["labels"][idx] if idx < len(meta["labels"]) else answer.answer
+            dimension_scores[w_key] = {
+                "score": round(normalised * 100),
+                "weighted_score": round(weighted * 100 / meta["weight"]),
+                "label": label,
+                "raw_index": idx,
+                "answer": answer.answer,
+            }
+
+        # Composite score (0-100)
+        composite = round((total_weighted / total_weight) * 100) if total_weight > 0 else 0
+
+        # Risk profile classification
+        if composite > 75:
+            risk_profile = "Aggressive"
+            risk_color = "#EF4444"
+        elif composite > 50:
+            risk_profile = "Growth-Oriented"
+            risk_color = "#FF6A00"
+        elif composite > 25:
+            risk_profile = "Moderate"
+            risk_color = "#F59E0B"
+        else:
+            risk_profile = "Conservative"
+            risk_color = "#10B981"
+
+        # Strategic signals
+        revenue_idx = dimension_scores.get("revenue", {}).get("raw_index", 0)
+        timeline_idx = dimension_scores.get("timeline", {}).get("raw_index", 0)
+        risk_idx = dimension_scores.get("risk", {}).get("raw_index", 0)
+        retention_idx = dimension_scores.get("retention", {}).get("raw_index", 0)
+        channel_idx = dimension_scores.get("channel", {}).get("raw_index", 0)
+
+        signals = []
+        if revenue_idx >= 2 and timeline_idx >= 2:
+            signals.append({"type": "warning", "text": "High growth ambition with tight timeline — monitor for execution risk."})
+        if risk_idx >= 3 and retention_idx <= 1:
+            signals.append({"type": "critical", "text": "Aggressive risk posture with weak retention — revenue base is vulnerable."})
+        if channel_idx <= 1:
+            signals.append({"type": "warning", "text": "High channel dependency — diversification recommended before scaling."})
+        if retention_idx >= 2 and revenue_idx >= 2:
+            signals.append({"type": "positive", "text": "Strong retention foundation supports aggressive growth trajectory."})
+        if not signals:
+            signals.append({"type": "info", "text": "Balanced profile — BIQc will optimise for steady growth."})
+
+        result = {
+            "composite_score": composite,
+            "risk_profile": risk_profile,
+            "risk_color": risk_color,
+            "dimensions": dimension_scores,
+            "signals": signals,
+            "completed_at": now_iso,
+        }
+
+        # Persist to user_operator_profile and business_profiles
+        try:
+            existing = get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+            existing_data = existing.data if existing else None
+            op = (existing_data.get("operator_profile") if existing_data else None) or {}
+            op["forensic_calibration"] = result
+            op["forensic_calibration_raw"] = {k: {"answer": v.answer, "index": v.index, "weight": v.weight} for k, v in answers.items()}
+            if existing_data:
+                get_sb().table("user_operator_profile").update({"operator_profile": op, "updated_at": now_iso}).eq("user_id", user_id).execute()
+            else:
+                get_sb().table("user_operator_profile").insert({"user_id": user_id, "operator_profile": op}).execute()
+        except Exception as e:
+            logger.warning(f"[forensic] operator_profile write failed: {e}")
+
+        # Also save to business_profiles for cognitive engine access
+        try:
+            bp_result = get_sb().table("business_profiles").select("id").eq("user_id", user_id).maybe_single().execute()
+            bp_data = bp_result.data if bp_result else None
+            if bp_data:
+                get_sb().table("business_profiles").update({"forensic_calibration": result, "updated_at": now_iso}).eq("user_id", user_id).execute()
+        except Exception as e:
+            logger.warning(f"[forensic] business_profiles write failed: {e}")
+
+        logger.info(f"[forensic] Scored user {user_id}: composite={composite}, risk={risk_profile}")
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[forensic] Scoring error: {e}")
+        raise HTTPException(status_code=500, detail="Forensic calibration scoring failed")
+
+
+@router.get("/forensic/calibration")
+async def get_forensic_calibration(current_user: dict = Depends(get_current_user)):
+    """Retrieve existing forensic calibration results for the user."""
+    user_id = current_user["id"]
+    try:
+        result = get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+        data = result.data if result else None
+        op = (data.get("operator_profile") if data else None) or {}
+        forensic = op.get("forensic_calibration")
+        if forensic:
+            return {"exists": True, **forensic}
+        return {"exists": False}
+    except Exception as e:
+        logger.error(f"[forensic] Read error: {e}")
+        return {"exists": False}
+
