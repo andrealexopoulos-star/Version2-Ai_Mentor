@@ -157,7 +157,8 @@ const FloatingSoundboard = ({ context = '' }) => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
