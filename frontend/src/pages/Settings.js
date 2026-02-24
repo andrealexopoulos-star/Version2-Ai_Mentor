@@ -161,7 +161,7 @@ const Settings = () => {
                 {calibrationStatus === 'complete' ? (
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" disabled={syncing} onClick={syncFromCalibration}>
-                      {syncing ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : <><RefreshCw className="w-3.5 h-3.5 mr-1" />Sync Profile</>}
+                      {syncing ? <InlineLoading text="syncing" /> : <><RefreshCw className="w-3.5 h-3.5 mr-1" />Sync Profile</>}
                     </Button>
                     <Button
                       size="sm"
@@ -179,7 +179,7 @@ const Settings = () => {
                       }
                     }}
                   >
-                    {resettingCalibration ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : 'Recalibrate'}
+                    {resettingCalibration ? <InlineLoading text="recalibrating" /> : 'Recalibrate'}
                   </Button>
                   </div>
                 ) : (

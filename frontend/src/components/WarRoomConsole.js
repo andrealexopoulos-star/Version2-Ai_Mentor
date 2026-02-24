@@ -72,7 +72,7 @@ const WarRoomConsole = () => {
         <div className="max-w-3xl mx-auto px-6 md:px-10 py-8 space-y-6">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20">
-              <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
+              <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>analyzing...</span>
               <p className="text-sm font-medium" style={{ color: '#374151' }}>Loading strategic brief...</p>
             </div>
           )}
