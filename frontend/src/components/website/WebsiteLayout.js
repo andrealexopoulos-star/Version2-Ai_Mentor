@@ -12,6 +12,7 @@ const TRUST_ITEMS = [
   { label: 'Data Processing Agreement', path: '/trust/dpa', icon: Lock },
   { label: 'Security & Infrastructure', path: '/trust/security', icon: Server },
   { label: 'Trust Centre', path: '/trust/centre', icon: Shield },
+  { label: 'Knowledge Base', path: '/knowledge-base', icon: BookOpen },
 ];
 
 const NAV_LINKS = [
