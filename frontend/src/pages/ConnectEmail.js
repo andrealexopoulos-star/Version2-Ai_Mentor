@@ -250,7 +250,7 @@ const ConnectEmail = () => {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+              <Loader2 className="w-8 h-8 " style={{ color: 'var(--accent-primary)' }} />
             </div>
           ) : (
             <>
@@ -330,7 +330,7 @@ const ConnectEmail = () => {
                         >
                           {connecting === 'outlook' ? (
                             <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              <Loader2 className="w-4 h-4 mr-2 " />
                               Connecting...
                             </>
                           ) : (
@@ -394,7 +394,7 @@ const ConnectEmail = () => {
                         >
                           {connecting === 'gmail' ? (
                             <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              <Loader2 className="w-4 h-4 mr-2 " />
                               Connecting...
                             </>
                           ) : (

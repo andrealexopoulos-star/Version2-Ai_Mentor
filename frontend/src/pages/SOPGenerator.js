@@ -214,7 +214,7 @@ const SOPGenerator = () => {
                             ) : (
                               <>
                                 {uploading ? (
-                                  <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+                                  <Loader2 className="w-8 h-8 " style={{ color: 'var(--accent-primary)' }} />
                                 ) : (
                                   <FileText className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
                                 )}
@@ -244,7 +244,7 @@ const SOPGenerator = () => {
                         />
                       </div>
                       <Button type="submit" className="w-full btn-lime rounded-sm py-6" disabled={loading} data-testid="generate-sop-btn">
-                        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                        {loading ? <Loader2 className="w-4 h-4 mr-2 " /> : <FileText className="w-4 h-4 mr-2" />}
                         Generate SOP
                       </Button>
                     </form>
@@ -273,7 +273,7 @@ const SOPGenerator = () => {
                         />
                       </div>
                       <Button type="submit" className="w-full btn-lime rounded-sm py-6" disabled={loading} data-testid="generate-checklist-btn">
-                        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckSquare className="w-4 h-4 mr-2" />}
+                        {loading ? <Loader2 className="w-4 h-4 mr-2 " /> : <CheckSquare className="w-4 h-4 mr-2" />}
                         Generate Checklist
                       </Button>
                     </form>
@@ -312,7 +312,7 @@ const SOPGenerator = () => {
                         />
                       </div>
                       <Button type="submit" className="w-full btn-lime rounded-sm py-6" disabled={loading} data-testid="generate-action-btn">
-                        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Target className="w-4 h-4 mr-2" />}
+                        {loading ? <Loader2 className="w-4 h-4 mr-2 " /> : <Target className="w-4 h-4 mr-2" />}
                         Generate Action Plan
                       </Button>
                     </form>

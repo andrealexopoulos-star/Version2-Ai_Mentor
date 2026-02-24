@@ -1169,7 +1169,7 @@ const Integrations = () => {
                                 data-testid="integrations-outlook-refresh-button"
                                 className="w-full btn-secondary"
                               >
-                                {syncing ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                                {syncing ? <RefreshCw className="w-4 h-4  mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
                                 Refresh
                               </Button>
                               <Button

@@ -589,7 +589,7 @@ const EmailInbox = () => {
             >
               {analyzing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 " />
                   Analyzing...
                 </>
               ) : (
@@ -605,7 +605,7 @@ const EmailInbox = () => {
         {/* Connection Status - Show if no provider connected */}
         {checkingConnection ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent-primary)' }} />
+            <Loader2 className="w-8 h-8 " style={{ color: 'var(--accent-primary)' }} />
           </div>
         ) : !activeProvider ? (
           <div 
@@ -662,7 +662,7 @@ const EmailInbox = () => {
         {/* Loading State */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin mb-4" style={{ color: 'var(--accent-primary)' }} />
+            <Loader2 className="w-8 h-8  mb-4" style={{ color: 'var(--accent-primary)' }} />
             <p style={{ color: 'var(--text-muted)' }}>Loading priority inbox...</p>
           </div>
         ) : !priorityAnalysis ? (
@@ -686,7 +686,7 @@ const EmailInbox = () => {
             <Button onClick={runPriorityAnalysis} disabled={analyzing} className="btn-primary">
               {analyzing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 " />
                   Analyzing...
                 </>
               ) : (
@@ -739,7 +739,7 @@ const EmailInbox = () => {
             className="p-8 rounded-2xl text-center"
             style={{ background: 'var(--bg-primary)' }}
           >
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'var(--accent-primary)' }} />
+            <Loader2 className="w-8 h-8  mx-auto mb-4" style={{ color: 'var(--accent-primary)' }} />
             <p style={{ color: 'var(--text-primary)' }}>Generating smart replies...</p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
               Analyzing context and crafting responses

@@ -104,7 +104,7 @@ const CalendarView = () => {
           >
             {syncing ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 " />
                 Syncing...
               </>
             ) : (
@@ -188,7 +188,7 @@ const CalendarView = () => {
         {/* Events List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin mb-4" style={{ color: 'var(--accent-primary)' }} />
+            <Loader2 className="w-8 h-8  mb-4" style={{ color: 'var(--accent-primary)' }} />
             <p style={{ color: 'var(--text-muted)' }}>Loading calendar...</p>
           </div>
         ) : events.length === 0 ? (
