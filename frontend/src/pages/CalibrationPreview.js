@@ -11,7 +11,8 @@ const SCREENS = [
   'welcome', 'manual-summary', 'analyzing', 'wow-summary', 'continuity',
   'wizard-q1', 'wizard-q2', 'wizard-q3', 'chat',
   'reveal-progress', 'reveal-complete',
-  'onboard-welcome', 'onboard-identity', 'onboard-market', 'onboard-goals',
+  'onboard-decision', 'onboard-welcome', 'onboard-identity', 'onboard-market', 'onboard-goals',
+  'first-login-notif', 'checkin-alert',
 ];
 
 const MONO = "'JetBrains Mono', monospace";
