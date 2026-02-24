@@ -278,7 +278,7 @@ const OnboardingWizard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#080c14]">
         <div className="text-center space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto" />
+          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
           <p className="text-sm text-white/40">Loading your profile...</p>
         </div>
       </div>
@@ -432,7 +432,7 @@ const OnboardingWizard = () => {
                       className="border-white/10 text-white/70 hover:bg-white/5"
                       data-testid="btn-enrich"
                     >
-                      {enriching ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
+                      {enriching ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : <ExternalLink className="w-4 h-4" />}
                       Detect
                     </Button>
                   </div>
@@ -770,7 +770,7 @@ const OnboardingWizard = () => {
                 data-testid="btn-next"
               >
                 {saving ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Completing...</>
+                  <><span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> Completing...</>
                 ) : currentStep === STEPS.length - 1 ? (
                   <><CheckCircle className="w-4 h-4 mr-1" /> Complete Setup</>
                 ) : currentStep === 0 ? (

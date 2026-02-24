@@ -145,7 +145,7 @@ const IntelligenceBaselinePage = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-full">
-          <Loader2 className="w-5 h-5 animate-spin text-white/30" />
+          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
         </div>
       </DashboardLayout>
     );

@@ -163,7 +163,7 @@ const Analysis = () => {
               {loading && (
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-[#F4F7FA] mx-auto mb-4" />
+                    <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
                     <p className="text-[#F4F7FA] font-medium">Analyzing your business...</p>
                     <p className="text-sm text-[#9FB0C3] mt-1">This may take a moment</p>
                   </CardContent>

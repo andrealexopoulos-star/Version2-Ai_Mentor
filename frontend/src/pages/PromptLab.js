@@ -274,7 +274,7 @@ export default function PromptLab() {
                       data-testid={`test-btn-${p.prompt_key}`}
                     >
                       {testing[p.prompt_key] ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
                       ) : (
                         <Play className="w-3 h-3" />
                       )}
@@ -460,7 +460,7 @@ export default function PromptLab() {
                   data-testid="prompt-test-btn"
                 >
                   {testing[selectedPrompt.prompt_key] ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
                   ) : (
                     <Play className="w-4 h-4" />
                   )}
@@ -476,7 +476,7 @@ export default function PromptLab() {
                     className="gap-2"
                     data-testid="prompt-save-btn"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : <Save className="w-4 h-4" />}
                     Save & Deploy
                   </Button>
                 </div>

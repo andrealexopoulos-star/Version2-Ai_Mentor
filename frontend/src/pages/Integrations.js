@@ -993,7 +993,7 @@ const Integrations = () => {
                           data-testid="integrations-outlook-disconnect-inline-button"
                           className="text-red-600 hover:bg-red-50 border-red-200"
                         >
-                          {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
+                          {disconnecting ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : 'Disconnect'}
                         </Button>
                       </div>
                     </div>
@@ -1019,7 +1019,7 @@ const Integrations = () => {
                           data-testid="integrations-gmail-disconnect-inline-button"
                           className="text-red-600 hover:bg-red-50 border-red-200"
                         >
-                          {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disconnect'}
+                          {disconnecting ? <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span> : 'Disconnect'}
                         </Button>
                       </div>
                     </div>

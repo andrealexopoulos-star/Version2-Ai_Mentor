@@ -64,7 +64,7 @@ const WarRoomConsole = () => {
           )}
         </div>
         <button onClick={refresh} disabled={refreshing || loading} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#9CA3AF' }} data-testid="refresh-btn">
-          <RefreshCw className={'w-3.5 h-3.5' + (refreshing ? ' animate-spin' : '')} />
+          <RefreshCw className="w-3.5 h-3.5" />
           {cacheAge !== null && cacheAge > 0 ? cacheAge + 'm ago' : 'Refresh'}
         </button>
       </header>
@@ -72,7 +72,7 @@ const WarRoomConsole = () => {
         <div className="max-w-3xl mx-auto px-6 md:px-10 py-8 space-y-6">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mb-5" />
+              <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
               <p className="text-sm font-medium" style={{ color: '#374151' }}>Loading strategic brief...</p>
             </div>
           )}

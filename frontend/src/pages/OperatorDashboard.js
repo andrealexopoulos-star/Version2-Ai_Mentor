@@ -76,7 +76,7 @@ const OperatorDashboard = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64 -mx-4 -my-4 md:-mx-6 md:-my-6" style={{ background: '#050505', minHeight: 'calc(100vh - 80px)' }}>
-          <Loader2 className="w-5 h-5 animate-spin text-white/30" />
+          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
         </div>
       </DashboardLayout>
     );

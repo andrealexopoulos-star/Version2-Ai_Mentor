@@ -129,7 +129,7 @@ const Documents = () => {
           {/* Documents Grid */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#F4F7FA]" />
+              <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
             </div>
           ) : filteredDocuments.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

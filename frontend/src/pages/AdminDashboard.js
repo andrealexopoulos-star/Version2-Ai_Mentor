@@ -123,7 +123,7 @@ const AdminDashboard = () => {
               <p className="text-xs text-[#64748B]" style={{ fontFamily: B }}>Enterprise governance & control plane</p>
             </div>
             <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#9FB0C3] hover:bg-white/5" style={{ border: '1px solid #243140', fontFamily: B }}>
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
           </div>
 
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  {loading ? <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-[#FF6A00]" /></div> :
+                  {loading ? <div className="flex justify-center py-16"><span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span></div> :
                   filteredUsers.map(u => (
                     <button key={u.id} onClick={() => loadUserDetail(u.id)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-white/5 transition-all" style={{ background: selectedUser === u.id ? '#FF6A0010' : 'transparent', border: `1px solid ${selectedUser === u.id ? '#FF6A0030' : '#243140'}` }} data-testid={`admin-user-${u.id}`}>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style={{ background: u.role === 'suspended' ? '#EF444420' : '#FF6A0020', color: u.role === 'suspended' ? '#EF4444' : '#FF6A00', fontFamily: B }}>{(u.full_name || u.email || '?').charAt(0).toUpperCase()}</div>
@@ -217,7 +217,7 @@ const AdminDashboard = () => {
                         <div key={l}><span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: M }}>{l}</span><p className="text-[#F4F7FA]" style={{ fontFamily: f }}>{v}</p></div>
                       ))}
                     </div>
-                    {loadingDetail ? <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-[#FF6A00]" /></div> : userDetail && (
+                    {loadingDetail ? <div className="flex justify-center py-4"><span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span></div> : userDetail && (
                       <div className="grid grid-cols-2 gap-2 mb-4" style={{ borderTop: '1px solid #243140', paddingTop: 12 }}>
                         {[['Calibrated', userDetail.operator_profile?.persona_calibration_status || 'No', userDetail.operator_profile?.persona_calibration_status === 'complete' ? '#10B981' : '#F59E0B'],
                           ['Integrations', `${userDetail.integrations.length}`, '#3B82F6'], ['Snapshots', `${userDetail.snapshots.length}`, '#F4F7FA'], ['Signals', `${userDetail.signal_count}`, '#F4F7FA']].map(([l, v, c]) => (

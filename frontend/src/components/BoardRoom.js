@@ -95,7 +95,7 @@ const BoardRoom = () => {
               <section data-testid="executive-zone">
                 {briefingLoading ? (
                   <div className="flex items-center justify-center py-16">
-                    <div className="w-5 h-5 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+                    <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
                   </div>
                 ) : (
                   <div className="space-y-5">
@@ -174,7 +174,7 @@ const BoardRoom = () => {
 
               {diagnosing && (
                 <div className="flex flex-col items-center justify-center py-24">
-                  <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mb-5" />
+                  <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
                   <p className="text-sm font-medium" style={{ color: '#374151' }}>Analysing {activeArea?.label}...</p>
                   <p className="text-[11px] mt-1.5" style={{ color: '#9CA3AF' }}>Reading your CRM, financials, and email signals</p>
                 </div>

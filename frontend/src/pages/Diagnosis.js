@@ -390,7 +390,7 @@ const Diagnosis = ({ embedded = false }) => {
     const loadingView = (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-gray-400" />
+          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
           <p className="font-medium text-gray-900">Analyzing your business signals...</p>
           <p className="text-sm mt-1 text-gray-500">BIQC is reviewing patterns in your data</p>
         </div>
@@ -419,7 +419,7 @@ const Diagnosis = ({ embedded = false }) => {
             onClick={handleRefresh}
             disabled={refreshing}
           >
-            <RefreshCw className={`w-4 h-4 mr-1.5 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className="w-3.5 h-3.5" />
             Refresh
           </Button>
         </div>

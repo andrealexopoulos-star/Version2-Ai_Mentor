@@ -180,7 +180,7 @@ const DataCenter = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-[#F4F7FA]" />
+          <span className="text-xs text-[#FF6A00]" style={{ fontFamily: "monospace" }}>loading...</span>
         </div>
       </DashboardLayout>
     );
