@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import FloatingSoundboard from '../components/FloatingSoundboard';
 import { CognitiveMesh, RadarSweep } from '../components/LoadingSystems';
+import InsufficientDataAlert from '../components/InsufficientDataAlert';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import {
