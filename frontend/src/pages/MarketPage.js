@@ -86,11 +86,18 @@ const ForensicCalibrationCard = ({ isSuperAdmin, navigate }) => {
 };
 
 
-const ChannelIntelligence = ({ navigate }) => {
-  const [channels, setChannels] = useState([]);
-  const [summary, setSummary] = useState(null);
+const ChannelIntelligence = ({ navigate, channelsData }) => {
+  const [channels, setChannels] = useState(channelsData?.channels || []);
+  const [summary, setSummary] = useState(channelsData?.summary || null);
 
   useEffect(() => {
+    // If parent already passed data, use it
+    if (channelsData?.channels?.length > 0) {
+      setChannels(channelsData.channels);
+      setSummary(channelsData.summary || null);
+      return;
+    }
+    // Otherwise fetch independently
     const fetchChannels = async () => {
       try {
         const res = await apiClient.get('/integrations/channels/status');
@@ -99,7 +106,7 @@ const ChannelIntelligence = ({ navigate }) => {
       } catch {}
     };
     fetchChannels();
-  }, []);
+  }, [channelsData]);
 
   return (
     <div data-testid="channel-intelligence">
