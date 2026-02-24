@@ -70,19 +70,9 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
         <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
           {firstName ? `Welcome to BIQc, ${firstName}.` : 'Welcome to BIQc.'}
         </h1>
-        <p className="text-base leading-relaxed mb-3" style={{ color: MUTED, maxWidth: 460, margin: '0 auto' }}>
-          Provide your website URL for an instant strategic audit — or describe your business in a few sentences.
+        <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 460, margin: '0 auto' }}>
+          Enter your website to begin a live strategic market audit.
         </p>
-        {/* Expectation setting */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-7"
-          style={{ background: '#F0F4FF', border: '1px solid #BFDBFE' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-          </svg>
-          <span className="text-xs font-medium" style={{ color: '#2563EB' }}>
-            9 quick questions · Takes ~3 minutes · Helps BIQc profile you accurately
-          </span>
-        </div>
 
         {error && <p className="text-sm text-red-500 mb-4" data-testid="calibration-error">{error}</p>}
 
@@ -92,29 +82,40 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
             value={websiteUrl}
             onChange={(e) => setWebsiteUrl(e.target.value)}
             placeholder="thestrategysquad.com"
-            className="w-full rounded-xl px-5 py-3.5 text-base text-center focus:outline-none transition-colors"
-            style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, color: CHARCOAL }}
+            className="w-full rounded-xl px-5 py-4 text-lg text-center focus:outline-none transition-colors"
+            style={{ background: CARD_BG, border: `2px solid ${CARD_BORDER}`, color: CHARCOAL, fontFamily: SERIF }}
             autoFocus
             data-testid="website-url-input"
           />
           <button
             type="submit"
             disabled={isSubmitting || !websiteUrl.trim()}
-            className="w-full px-8 py-3.5 rounded-full text-sm font-medium transition-opacity disabled:opacity-40"
-            style={{ background: CHARCOAL, color: '#FFFFFF' }}
+            className="w-full px-8 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+            style={{ background: '#FF6A00', color: '#FFFFFF', fontFamily: SERIF }}
             data-testid="begin-audit-btn"
           >
-            Begin Audit
+            Begin Strategic Audit
           </button>
         </form>
 
-        {/* Strategic Expansion Toggle */}
+        {/* Scan indicators */}
+        <div className="max-w-sm mx-auto mt-8 grid grid-cols-2 gap-3">
+          {['Market positioning', 'Competitive signals', 'Trust architecture', 'Growth pressure'].map(item => (
+            <div key={item} className="flex items-center gap-2 text-left">
+              <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#FF6A00' }} />
+              <span className="text-xs" style={{ color: MUTED, fontFamily: "'JetBrains Mono', monospace" }}>{item}</span>
+            </div>
+          ))}
+        </div>
+
         <button
-          onClick={() => setDrawerOpen(!drawerOpen)}
-          className="mt-6 text-xs font-medium cursor-pointer transition-colors inline-flex items-center gap-1.5"
-          style={{ color: AZ }}
-          data-testid="strategic-expansion-toggle"
+          onClick={onManualFallback}
+          className="mt-6 text-xs font-medium cursor-pointer transition-colors"
+          style={{ color: MUTED }}
+          data-testid="no-website-btn"
         >
+          I Don't Have a Website — Analyse My Business Manually
+        </button>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
           </svg>
