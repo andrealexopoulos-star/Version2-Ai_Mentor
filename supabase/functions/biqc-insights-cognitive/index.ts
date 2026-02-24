@@ -511,6 +511,71 @@ serve(async (req) => {
     // GATHER EVERYTHING
     const { ctx, sources, blind_spots } = await gatherFullContext(supabase, user.id, integrations || []);
 
+    // ═══ DETERMINISTIC OVERLAY — Runs BEFORE LLM synthesis ═══
+    // Anchors AI output in measurable signals, prevents pure inference drift
+    const contradictionCount = (ctx.contradictions || []).length;
+    const runwayMonths = ctx.capital?.runway || (ctx.financial ? 12 : 24);
+    const slaBreaches = ctx.execution?.sla_breaches || (ctx.escalations || []).filter((e: any) => e.pressure_level === 'high').length;
+    const prevSummary = ctx.previous_snapshot?.summary;
+    const prevState = typeof prevSummary === 'string' ? (() => { try { return JSON.parse(prevSummary); } catch { return {}; } })() : (prevSummary || {});
+    const prevPipeline = prevState.revenue?.pipeline || 0;
+    const currentPipeline = ctx.crm?.total_deals || 0;
+    const pipelineDeclining = prevPipeline > 0 && currentPipeline < prevPipeline;
+    const competitorPressure = (ctx.market_intelligence?.competitor_landscape || '').toLowerCase().includes('compet') || (ctx.escalations || []).some((e: any) => (e.domain || '').toLowerCase().includes('market'));
+    const prevSystemState = typeof prevState.system_state === 'object' ? prevState.system_state?.status : prevState.system_state;
+
+    // Compute deterministic adjustments
+    const deterministicOverlay: Record<string, any> = {
+      misalignment_boost: contradictionCount > 2 ? 15 : contradictionCount > 0 ? 5 : 0,
+      risk_amplification: runwayMonths < 3 ? 'CRITICAL' : runwayMonths < 6 ? 'ELEVATED' : runwayMonths < 12 ? 'MODERATE' : 'NORMAL',
+      operational_risk: slaBreaches > 5 ? 'CRITICAL' : slaBreaches > 3 ? 'HIGH' : slaBreaches > 0 ? 'MODERATE' : 'STABLE',
+      urgency: 'LOW',
+      compression_probability: (pipelineDeclining && competitorPressure) ? 25 : pipelineDeclining ? 10 : competitorPressure ? 10 : 0,
+      overall_risk_weight: 30,
+      pipeline_declining: pipelineDeclining,
+      competitor_pressure_rising: competitorPressure,
+      contradiction_count: contradictionCount,
+      sla_breaches: slaBreaches,
+      runway_months: runwayMonths,
+    };
+
+    // Urgency calculation (separate for clarity)
+    if (prevSystemState === 'CRITICAL' || (ctx.escalations || []).some((e: any) => e.pressure_level === 'critical')) {
+      deterministicOverlay.urgency = 'IMMEDIATE';
+      deterministicOverlay.overall_risk_weight = 90;
+    } else if ((prevSystemState === 'DRIFT' && (ctx.decision_pressure || []).some((p: any) => p.window_days < 14)) || runwayMonths < 6) {
+      deterministicOverlay.urgency = 'HIGH';
+      deterministicOverlay.overall_risk_weight = 75;
+    } else if (prevSystemState === 'DRIFT' || slaBreaches > 3 || contradictionCount > 2) {
+      deterministicOverlay.urgency = 'MODERATE';
+      deterministicOverlay.overall_risk_weight = 55;
+    } else if (prevSystemState === 'COMPRESSION') {
+      deterministicOverlay.urgency = 'HIGH';
+      deterministicOverlay.overall_risk_weight = 65;
+    }
+
+    // Also try calling the SQL function (non-blocking, optional enhancement)
+    try {
+      const { data: rpcResult } = await supabase.rpc('compute_market_risk_weight', {
+        contradiction_count: contradictionCount,
+        runway_months: runwayMonths,
+        sla_breaches: slaBreaches,
+        pipeline_declining: pipelineDeclining,
+        competitor_pressure_rising: competitorPressure,
+        system_state: prevSystemState || 'STABLE',
+        velocity: prevState.system_state?.velocity || 'stable',
+      });
+      if (rpcResult) {
+        // SQL function result overrides TypeScript calculation (database is authoritative)
+        Object.assign(deterministicOverlay, rpcResult);
+      }
+    } catch (rpcErr) {
+      console.warn('[biqc-insights] RPC compute_market_risk_weight failed (non-blocking):', rpcErr);
+    }
+
+    console.log(`[biqc-insights] Deterministic overlay: urgency=${deterministicOverlay.urgency}, risk=${deterministicOverlay.overall_risk_weight}, contradictions=${contradictionCount}`);
+
+
     // Name resolution
     const firstName = user.user_metadata?.full_name?.split(" ")[0]
       || user.user_metadata?.name?.split(" ")[0]
