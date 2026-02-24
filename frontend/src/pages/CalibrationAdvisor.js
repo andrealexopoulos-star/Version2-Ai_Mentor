@@ -112,6 +112,16 @@ const CalibrationAdvisor = () => {
 
       {cal.transitioning && <DissolveTransition firstName={cal.firstName} />}
 
+      {/* PHASE 4+5+7: Executive CMO Snapshot with Drift Visual and Misalignment */}
+      {cal.entry === "intelligence-first" && (
+        <ExecutiveCMOSnapshot intelligenceData={cal.intelligenceData} onContinue={cal.proceedFromIntelligence} />
+      )}
+
+      {/* PHASE 8: Forensic Calibration UI Shell (premium teaser) */}
+      {cal.entry === "forensic" && (
+        <ForensicCalibrationUI onSkip={() => cal.proceedFromIntelligence()} />
+      )}
+
       {cal.entry === "completing" && (
         <ExecutiveReveal firstName={cal.firstName} lastResponse={cal.lastResponse} revealPhase={cal.revealPhase} />
       )}
