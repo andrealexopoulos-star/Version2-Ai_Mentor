@@ -4,10 +4,10 @@ import { CalibratingSession } from '../components/calibration/CalibratingSession
 import { ExecutiveReveal, REVEAL_PHASES } from '../components/calibration/ExecutiveReveal';
 import { WowSummary } from '../components/calibration/WowSummary';
 import { ContinuitySuite } from '../components/calibration/ContinuitySuite';
-import { CognitiveLoadingScreen } from '../components/CognitiveLoadingScreen';
+import { CognitiveLoadingScreen, CognitiveIgnitionScreen } from '../components/CognitiveLoadingScreen';
 
 const SCREENS = [
-  'auth-loading', 'cognitive-first', 'cognitive-return',
+  'ignition', 'auth-loading', 'cognitive-return',
   'welcome', 'manual-summary', 'analyzing', 'wow-summary', 'continuity',
   'wizard-q1', 'wizard-q2', 'wizard-q3', 'chat',
   'reveal-progress', 'reveal-complete',
