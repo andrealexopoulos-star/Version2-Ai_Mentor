@@ -320,6 +320,23 @@ export const useCalibrationState = () => {
     finally { setIsSubmitting(false); }
   };
 
+  // Fetch intelligence snapshot for Phase 4 (intelligence-first display)
+  const fetchIntelligence = async () => {
+    try {
+      const token = session?.access_token;
+      if (!token) return;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+        body: '{}',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIntelligenceData(data);
+      }
+    } catch {}
+  };
+
   return {
     entry, setEntry, user, loading, firstName, userEmail, websiteUrl, setWebsiteUrl,
     wowSummary, editedFields, editingKey, editValue, setEditValue,
@@ -327,7 +344,7 @@ export const useCalibrationState = () => {
     calStep, calMode, question, options, allowText, insight,
     selectedOption, setSelectedOption, textValue, setTextValue,
     messages, inputValue, setInputValue,
-    currentStep,
+    currentStep, intelligenceData, fetchIntelligence,
     handleSignOut, handleAuditSubmit, handleManualSummary,
     handleConfirmWow, startEdit, commitEdit,
     startCalibration, handleWizardContinue, handleChatSubmit,
