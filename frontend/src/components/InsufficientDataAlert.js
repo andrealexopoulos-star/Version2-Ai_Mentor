@@ -30,7 +30,7 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
 
   return (
     <div className="rounded-xl overflow-hidden mb-6" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }} data-testid="insufficient-data-alert">
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-white/[0.02] transition-colors">
+      <div onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-white/[0.02] transition-colors cursor-pointer">
         <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
         <div className="flex-1">
           <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>
@@ -43,10 +43,10 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
         <span className="text-[10px] px-2 py-0.5 rounded-full shrink-0" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: MONO }}>
           {alerts.length} action{alerts.length > 1 ? 's' : ''}
         </span>
-        <button onClick={(e) => { e.stopPropagation(); setDismissed(true); }} className="p-1 rounded-lg hover:bg-white/5 shrink-0">
+        <button onClick={(e) => { e.stopPropagation(); setDismissed(true); }} className="p-1 rounded-lg hover:bg-white/5 shrink-0" data-testid="dismiss-data-alert">
           <X className="w-3.5 h-3.5 text-[#64748B]" />
         </button>
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-5 pb-4 space-y-2" style={{ borderTop: '1px solid #F59E0B15' }}>
