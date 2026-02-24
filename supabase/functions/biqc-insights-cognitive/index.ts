@@ -388,6 +388,7 @@ RULES:
 - Australian English. Direct. Pragmatic. No corporate fluff.
 - Maximum 3 inevitabilities, 5 resolution queue items. Compress ruthlessly.
 - The owner should finish reading and feel: clarity, reduced cognitive noise, increased confidence, and specific actions to take.
+- ACTION PLAN: The action_plan object is MANDATORY. It must model consequences, quantify probability shifts, and surface blindside risk. Use deterministic_inputs from the DETERMINISTIC RISK OVERLAY provided. Every recommendation must be anchored in SPECIFIC signals from the data — never generic marketing advice. The action_plan must feel inevitable, specific, and grounded in evidence. If data is insufficient, lower confidence_score and say what's missing.
 - ALWAYS generate the market_intelligence object with: positioning_verdict based on overall health, acquisition/retention/growth signal scores, drift_snapshot comparing current vs ideal benchmarks (0-100), market_kpis with estimated figures, competitor_signals (top 4), industry_trends (top 4 with confidence), misalignment_index (0=aligned, 100=contradictory), probability_of_goal_achievement (0-100 given current trajectory), gap_magnitude, strategic_risk_level.`;
 
 serve(async (req) => {
