@@ -36,8 +36,27 @@ export const CheckInAlerts = () => {
 
   useEffect(() => {
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 10 * 60 * 1000); // check every 10 min
-    return () => clearInterval(interval);
+
+    // Supabase Realtime — listen for calibration schedule changes
+    let channel;
+    const setup = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+      channel = supabase
+        .channel('checkin-updates')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'calibration_schedules',
+          filter: `user_id=eq.${session.user.id}`,
+        }, () => {
+          fetchAlerts();
+        })
+        .subscribe();
+    };
+    setup();
+
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [fetchAlerts]);
 
   const handleSchedule = async () => {
