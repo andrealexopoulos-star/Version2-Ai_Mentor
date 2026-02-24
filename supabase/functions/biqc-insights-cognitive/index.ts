@@ -397,6 +397,17 @@ serve(async (req) => {
   }
 
   try {
+    // Warmup ping — no auth required, return immediately
+    const rawBody = await req.text();
+    let body: any = {};
+    try { body = JSON.parse(rawBody); } catch {}
+
+    if (body.warmup) {
+      return new Response(JSON.stringify({ ok: true, warm: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No auth" }), {
@@ -410,15 +421,6 @@ serve(async (req) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const body = await req.json().catch(() => ({}));
-
-    // Warmup ping — return immediately
-    if (body.warmup) {
-      return new Response(JSON.stringify({ ok: true, warm: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
