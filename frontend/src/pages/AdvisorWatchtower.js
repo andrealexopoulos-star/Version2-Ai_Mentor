@@ -177,14 +177,15 @@ const AdvisorWatchtower = () => {
               <CheckInAlerts />
 
               {/* 5 COGNITION TABS */}
-              <div className="flex gap-2 mb-6 overflow-x-auto pb-2" data-testid="cognition-tabs">
+              <div className="relative mb-6">
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" data-testid="cognition-tabs" style={{ WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
                 {sortedGroups.map((g) => {
                   const d = groupData[g.id];
                   const isActive = activeId === g.id;
                   const Icon = g.icon;
                   return (
                     <button key={g.id} onClick={() => setActiveGroup(g.id)}
-                      className="flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all shrink-0"
+                      className="flex items-center gap-2.5 px-4 py-3 min-h-[48px] rounded-xl transition-all shrink-0"
                       style={{ background: isActive ? g.color : '#141C26', color: isActive ? 'white' : '#9FB0C3', border: `1.5px solid ${isActive ? g.color : '#243140'}`, boxShadow: isActive ? `0 4px 16px ${g.color}30` : 'none', fontFamily: HEAD }}
                       data-testid={`tab-${g.id}`}>
                       <Icon className="w-4 h-4" />
@@ -193,6 +194,8 @@ const AdvisorWatchtower = () => {
                     </button>
                   );
                 })}
+                </div>
+                <div className="absolute right-0 top-0 bottom-2 w-8 pointer-events-none sm:hidden" style={{ background: 'linear-gradient(to right, transparent, #0F1720)' }} />
               </div>
 
               {/* ACTIVE GROUP */}
