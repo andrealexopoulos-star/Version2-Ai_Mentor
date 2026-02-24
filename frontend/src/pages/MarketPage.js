@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import FloatingSoundboard from '../components/FloatingSoundboard';
+import { CognitiveMesh } from '../components/LoadingSystems';
 import { apiClient } from '../lib/api';
 import { Radar, TrendingUp, TrendingDown, Users, Globe, ArrowUpRight, Target, Shield, AlertTriangle, Activity } from 'lucide-react';
 
