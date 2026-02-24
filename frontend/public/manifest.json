@@ -1,7 +1,7 @@
 {
-  "short_name": "BIQC",
-  "name": "BIQC - Business IQ Centre",
-  "description": "Your personalised AI business advisor that continuously learns your business",
+  "short_name": "BIQc",
+  "name": "BIQc — Business Intelligence Centre",
+  "description": "Your sovereign AI cognition platform for Australian SMBs",
   "icons": [
     {
       "src": "favicon.ico",
@@ -23,8 +23,8 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#0066FF",
-  "background_color": "#FFFFFF",
+  "theme_color": "#0F1720",
+  "background_color": "#0F1720",
   "orientation": "portrait-primary",
   "scope": "/",
   "categories": ["business", "productivity", "finance"],
