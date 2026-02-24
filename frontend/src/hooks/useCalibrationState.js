@@ -202,22 +202,41 @@ export const useCalibrationState = () => {
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
     setError(null); setIsSubmitting(true); setEntry("analyzing");
     try {
-      try { await apiClient.put('/business-profile', { website: url }); } catch { /* non-blocking */ }
-      let data;
-      try { data = await callEdge({ step: 1, website_url: url }); }
-      catch { try { data = await callEdge({ step: 1 }); }
-      catch { try { data = await callEdge({ message: url }); }
-      catch { setEntry("manual_summary"); setIsSubmitting(false); return; } } }
-      if (data.status === "COMPLETE") { triggerComplete(); return; }
-      if (data.wow_summary || data.audit || data.summary) {
-        setWowSummary(data.wow_summary || data.audit || data.summary || data);
-        autoSave(1);
-        setEntry("wow_summary"); return;
+      // Save URL to profile
+      try { await apiClient.put('/business-profile', { website: url }); } catch {}
+
+      // Call calibration-business-dna (NOT calibration-psych) for website audit
+      const token = session?.access_token;
+      let auditData = null;
+      if (token) {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+            body: JSON.stringify({ website_url: url }),
+          });
+          if (res.ok) { auditData = await res.json(); }
+        } catch {}
       }
-      // No wow_summary returned — skip to intelligence-first → market
-      autoSave(1);
-      fetchIntelligence();
-      setEntry("intelligence-first");
+
+      // If we got extracted data, show as WOW Summary
+      if (auditData?.extracted_data) {
+        const ex = auditData.extracted_data;
+        setWowSummary({
+          business_overview: ex.business_overview || ex.description || ex.about || '',
+          industry_position: ex.industry_position || ex.market_position || ex.positioning || '',
+          competitive_advantages: ex.competitive_advantages || ex.differentiators || ex.usp || '',
+          target_market: ex.target_market || ex.ideal_customer || ex.audience || '',
+          key_challenges: ex.key_challenges || ex.challenges || ex.risks || '',
+        });
+        autoSave(1);
+        setEntry("wow_summary");
+      } else {
+        // No audit data — skip to intelligence-first
+        autoSave(1);
+        fetchIntelligence();
+        setEntry("intelligence-first");
+      }
     } catch { setEntry("manual_summary"); }
     finally { setIsSubmitting(false); }
   };
