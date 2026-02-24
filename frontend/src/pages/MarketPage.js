@@ -153,6 +153,165 @@ const ChannelIntelligence = ({ navigate, channelsData }) => {
   );
 };
 
+
+const URGENCY_COLORS = { immediate: '#EF4444', this_week: '#F59E0B', this_month: '#3B82F6', HIGH: '#EF4444', MODERATE: '#F59E0B', LOW: '#10B981', IMMEDIATE: '#EF4444' };
+
+const ActionPlanSection = ({ actionPlan, snapshot }) => {
+  if (!actionPlan) return null;
+
+  const moves = actionPlan.top_3_marketing_moves || [];
+  const blindside = actionPlan.primary_blindside_risk;
+  const lever = actionPlan.hidden_growth_lever;
+  const waste = actionPlan.marketing_waste_alert;
+  const projection = actionPlan['90_day_market_projection'];
+  const window = actionPlan.decision_window_pressure;
+  const probExec = actionPlan.probability_shift_if_executed;
+  const probIgnore = actionPlan.probability_shift_if_ignored;
+  const conf = actionPlan.confidence_score || 0;
+  const det = actionPlan.deterministic_inputs || {};
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #FF6A0006, #3B82F606)', border: '1px solid #FF6A0020' }} data-testid="action-plan">
+      <div className="px-6 py-5" style={{ borderBottom: '1px solid #FF6A0015' }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FF6A0015' }}>
+              <Zap className="w-5 h-5 text-[#FF6A00]" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>BIQc Suggested Action Plan</h3>
+              <p className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Cognition-as-a-Platform — consequence-modelled, signal-anchored</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {det.urgency && <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ color: URGENCY_COLORS[det.urgency] || '#64748B', background: (URGENCY_COLORS[det.urgency] || '#64748B') + '15', fontFamily: MONO }}>{det.urgency}</span>}
+            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: conf > 60 ? '#10B981' : conf > 30 ? '#F59E0B' : '#64748B', background: conf > 60 ? '#10B98115' : conf > 30 ? '#F59E0B15' : '#24314050', fontFamily: MONO }}>{conf}% confidence</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 py-5 space-y-5">
+        {/* Top 3 Marketing Moves */}
+        {moves.length > 0 && (
+          <div>
+            <h4 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#FF6A00', fontFamily: MONO }}>Top Strategic Moves</h4>
+            <div className="space-y-3">
+              {moves.map((m, i) => (
+                <div key={i} className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-[#FF6A00]" style={{ fontFamily: MONO }}>#{i + 1}</span>
+                      <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{m.move}</span>
+                    </div>
+                    {m.urgency && <span className="text-[9px] px-1.5 py-0.5 rounded shrink-0" style={{ color: URGENCY_COLORS[m.urgency] || '#64748B', background: (URGENCY_COLORS[m.urgency] || '#64748B') + '15', fontFamily: MONO }}>{m.urgency?.replace('_', ' ')}</span>}
+                  </div>
+                  <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{m.rationale}</p>
+                  <div className="flex items-center gap-3">
+                    {m.expected_impact && <span className="text-[10px] text-[#10B981]" style={{ fontFamily: MONO }}>{m.expected_impact}</span>}
+                    {m.confidence != null && <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.confidence}% confidence</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Probability Shift + Decision Window */}
+        {(probExec != null || probIgnore != null || window) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {probExec != null && (
+              <div className="p-4 rounded-lg text-center" style={{ background: '#10B98108', border: '1px solid #10B98125' }}>
+                <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If Executed</span>
+                <span className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: MONO }}>+{probExec}%</span>
+                <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>goal probability</span>
+              </div>
+            )}
+            {probIgnore != null && (
+              <div className="p-4 rounded-lg text-center" style={{ background: '#EF444408', border: '1px solid #EF444425' }}>
+                <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If Ignored</span>
+                <span className="text-2xl font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>-{Math.abs(probIgnore)}%</span>
+                <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>goal probability</span>
+              </div>
+            )}
+            {window && (
+              <div className="p-4 rounded-lg text-center" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
+                <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Decision Window</span>
+                <span className="text-2xl font-bold text-[#F59E0B]" style={{ fontFamily: MONO }}>{window.window_days}d</span>
+                <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{window.cost_of_delay_per_week || 'Act now'}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Blindside Risk + Hidden Lever */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {blindside && (
+            <div className="p-4 rounded-lg" style={{ background: '#EF444406', border: '1px solid #EF444420' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444]" />
+                <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#EF4444', fontFamily: MONO }}>Blindside Risk</span>
+                {blindside.probability != null && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444415', fontFamily: MONO }}>{blindside.probability}%</span>}
+              </div>
+              <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{blindside.risk}</p>
+              <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{blindside.evidence}</p>
+              {blindside.prevention_action && <p className="text-[10px] text-[#10B981]" style={{ fontFamily: MONO }}>Prevention: {blindside.prevention_action}</p>}
+            </div>
+          )}
+          {lever && (
+            <div className="p-4 rounded-lg" style={{ background: '#10B98106', border: '1px solid #10B98120' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-3.5 h-3.5 text-[#10B981]" />
+                <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#10B981', fontFamily: MONO }}>Hidden Growth Lever</span>
+              </div>
+              <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{lever.lever}</p>
+              <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{lever.evidence}</p>
+              {lever.potential_value && <span className="text-[10px] text-[#10B981] mr-2" style={{ fontFamily: MONO }}>{lever.potential_value}</span>}
+              {lever.first_step && <p className="text-[10px] text-[#3B82F6] mt-1" style={{ fontFamily: MONO }}>First step: {lever.first_step}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Marketing Waste Alert */}
+        {waste && waste.waste_identified && (
+          <div className="p-4 rounded-lg" style={{ background: '#F59E0B06', border: '1px solid #F59E0B20' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B]" />
+              <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#F59E0B', fontFamily: MONO }}>Marketing Waste Alert</span>
+              {waste.amount_at_risk && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: MONO }}>{waste.amount_at_risk}</span>}
+            </div>
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{waste.waste_identified}</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed">{waste.evidence}</p>
+            {waste.recommended_reallocation && <p className="text-[10px] text-[#10B981] mt-2" style={{ fontFamily: MONO }}>Redirect to: {waste.recommended_reallocation}</p>}
+          </div>
+        )}
+
+        {/* 90-Day Projection */}
+        {projection && (
+          <div>
+            <h4 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>90-Day Market Projection</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                { label: 'Best Case', content: projection.best_case, color: '#10B981' },
+                { label: 'Base Case', content: projection.base_case, color: '#F59E0B' },
+                { label: 'Worst Case', content: projection.worst_case, color: '#EF4444' },
+              ].map(p => (
+                <div key={p.label} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <span className="text-[10px] font-semibold block mb-1" style={{ color: p.color, fontFamily: MONO }}>{p.label}</span>
+                  <p className="text-xs text-[#9FB0C3] leading-relaxed">{p.content}</p>
+                </div>
+              ))}
+            </div>
+            {projection.key_variable && (
+              <p className="text-[10px] text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Key variable: {projection.key_variable}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 const ST = {
   STABLE: { c: '#10B981', label: 'Stable' },
   DRIFT: { c: '#F59E0B', label: 'Drift Detected' },
