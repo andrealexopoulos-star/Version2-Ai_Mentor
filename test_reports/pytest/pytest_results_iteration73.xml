@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="12" time="15.609" timestamp="2026-02-24T19:58:48.306489+00:00" hostname="agent-env-9271b7e8-9486-4c0f-a05d-9e50e0ff9433"><testcase classname="tests.test_iteration73_auth_insights.TestAuthResilience" name="test_auth_me_returns_200" time="2.231" /><testcase classname="tests.test_iteration73_auth_insights.TestAuthResilience" name="test_auth_me_without_token_returns_401" time="0.248" /><testcase classname="tests.test_iteration73_auth_insights.TestAuthResilience" name="test_auth_me_with_invalid_token_returns_401" time="0.494" /><testcase classname="tests.test_iteration73_auth_insights.TestCognitiveSnapshot" name="test_unified_cognitive_snapshot_returns_200" time="1.244"><failure message="AssertionError: Expected 200, got 404: {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration73_auth_insights.py:85: in test_unified_cognitive_snapshot_returns_200
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text[:300]}"
+E   AssertionError: Expected 200, got 404: {"detail":"Not Found"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration73_auth_insights.TestCognitiveSnapshot" name="test_cognitive_snapshot_has_money_data" time="1.235"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration73_auth_insights.py:97: in test_cognitive_snapshot_has_money_data
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration73_auth_insights.TestCognitiveSnapshot" name="test_cognitive_snapshot_has_revenue_data" time="1.284"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration73_auth_insights.py:113: in test_cognitive_snapshot_has_revenue_data
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration73_auth_insights.TestCognitiveSnapshot" name="test_cognitive_snapshot_has_execution_data" time="1.333"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration73_auth_insights.py:128: in test_cognitive_snapshot_has_execution_data
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration73_auth_insights.TestCognitiveSnapshot" name="test_cognitive_snapshot_has_founder_vitals" time="1.801"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration73_auth_insights.py:143: in test_cognitive_snapshot_has_founder_vitals
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration73_auth_insights.TestCognitiveSnapshot" name="test_cognitive_snapshot_has_market_data" time="1.119"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration73_auth_insights.py:158: in test_cognitive_snapshot_has_market_data
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration73_auth_insights.TestLoginFlow" name="test_login_returns_session" time="0.973" /><testcase classname="tests.test_iteration73_auth_insights.TestLoginFlow" name="test_login_with_wrong_password_returns_401" time="0.577" /><testcase classname="tests.test_iteration73_auth_insights.TestCheckProfile" name="test_check_profile_returns_200" time="2.933" /></testsuite></testsuites>
