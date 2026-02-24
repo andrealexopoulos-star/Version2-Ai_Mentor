@@ -118,9 +118,9 @@ const CalibrationPreview = () => {
       </div>
 
       <div className="pt-10" style={{ minHeight: 'calc(100vh - 40px)' }}>
+        {screen === 'ignition' && <CognitiveIgnitionScreen onComplete={() => setScreen('welcome')} ownerName="Andre" />}
         {screen === 'auth-loading' && <AuthLoadingPreview />}
 
-        {screen === 'cognitive-first' && <CognitiveLoadingScreen mode="first" ownerName="Andre" />}
         {screen === 'cognitive-return' && <CognitiveLoadingScreen mode="returning" ownerName="Andre" />}
 
         {screen === 'welcome' && (
