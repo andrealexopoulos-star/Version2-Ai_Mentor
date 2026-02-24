@@ -217,7 +217,124 @@ const CalibrationPreview = () => {
           </div>
         )}
 
-        {screen.startsWith('onboard-') && <OnboardPreview step={screen} />}
+        {screen === 'onboard-decision' && (
+          <div className="min-h-[calc(100vh-40px)] flex items-center justify-center p-4" style={{ background: '#0F1720' }}>
+            <div className="max-w-2xl w-full rounded-xl p-8 md:p-12" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A0020' }}>
+                  <span className="text-3xl">&#9889;</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Welcome to BIQc</h1>
+                <p className="text-base text-[#9FB0C3]" style={{ fontFamily: BODY }}>Let's set up your intelligent advisor</p>
+              </div>
+              <div className="p-4 rounded-lg mb-8" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>BIQc learns about your business to provide personalized intelligence. This 5-minute setup helps us understand your context and deliver relevant insights.</p>
+              </div>
+              <div className="space-y-4">
+                <button className="w-full p-6 rounded-xl text-left transition-all" style={{ background: '#FF6A0008', border: '2px solid #FF6A0040' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-[#FF6A00]">&#9889;</span>
+                        <h3 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Complete Setup Now</h3>
+                      </div>
+                      <p className="text-sm text-[#9FB0C3]">5 minutes to unlock personalized intelligence and insights</p>
+                    </div>
+                    <span className="text-[#FF6A00] text-xl">&#8594;</span>
+                  </div>
+                </button>
+                <button className="w-full p-6 rounded-xl text-left" style={{ background: '#141C26', border: '1px solid #243140' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-[#64748B]">&#128339;</span>
+                        <h3 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>I'll Do This Later</h3>
+                      </div>
+                      <p className="text-sm text-[#64748B]">You'll be asked again next time you sign in</p>
+                    </div>
+                    <span className="text-[#64748B] text-xl">&#8594;</span>
+                  </div>
+                </button>
+              </div>
+              <p className="text-xs text-center mt-6 text-[#64748B]" style={{ fontFamily: MONO }}>You can complete this anytime from Settings</p>
+            </div>
+          </div>
+        )}
+
+        {screen === 'first-login-notif' && (
+          <div className="min-h-[calc(100vh-40px)] relative" style={{ background: '#0F1720' }}>
+            <div className="absolute top-4 right-4 w-[360px] rounded-xl overflow-hidden shadow-2xl" style={{ background: '#141C26', border: '1px solid #FF6A0030' }}>
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#FF6A0020' }}>
+                      <span className="text-sm text-[#FF6A00]">&#128268;</span>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Get Started</h3>
+                      <p className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Connect your systems</p>
+                    </div>
+                  </div>
+                  <button className="p-1 rounded-lg text-[#64748B]">&#10005;</button>
+                </div>
+                <p className="text-xs text-[#9FB0C3] mb-4 leading-relaxed" style={{ fontFamily: BODY }}>Connect your email and integrations to unlock full intelligence capabilities.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <span className="text-[#3B82F6]">&#9993;</span>
+                    <div className="flex-1"><span className="text-sm text-[#F4F7FA] block">Connect Email</span><span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Outlook or Gmail</span></div>
+                    <span className="text-[#64748B]">&#8594;</span>
+                  </div>
+                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <span className="text-[#FF6A00]">&#128268;</span>
+                    <div className="flex-1"><span className="text-sm text-[#F4F7FA] block">Connect Integrations</span><span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Xero, HubSpot, CRM</span></div>
+                    <span className="text-[#64748B]">&#8594;</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-center h-full pt-20">
+              <p className="text-sm text-[#64748B]" style={{ fontFamily: MONO }}>First-login notification (appears top-right on dashboard)</p>
+            </div>
+          </div>
+        )}
+
+        {screen === 'checkin-alert' && (
+          <div className="min-h-[calc(100vh-40px)] p-8" style={{ background: '#0F1720' }}>
+            <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: HEAD }}>Weekly Check-In Alert (appears on dashboard)</h2>
+            <div className="max-w-3xl space-y-3">
+              <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#7C3AED10', border: '1px solid #7C3AED25' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#7C3AED15' }}>
+                  <span className="text-[#7C3AED]">&#127909;</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Weekly Check-In Available</p>
+                  <p className="text-xs mt-0.5 text-[#9FB0C3]" style={{ fontFamily: BODY }}>Schedule a video check-in with your BIQc advisor to review progress and priorities.</p>
+                  <div className="flex gap-2 mt-3">
+                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#7C3AED', fontFamily: MONO }}>Schedule Check-In</button>
+                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ color: '#9FB0C3', border: '1px solid #243140', fontFamily: MONO }}>Pick a Date</button>
+                    <button className="text-[11px] px-2 py-1.5 rounded-lg text-[#64748B]">&#10005;</button>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#F9731610', border: '1px solid #F9731625' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#F9731615' }}>
+                  <span className="text-[#F97316]">&#8635;</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Recalibration Recommended</p>
+                  <p className="text-xs mt-0.5 text-[#9FB0C3]" style={{ fontFamily: BODY }}>Your business context may have changed. A quick recalibration keeps BIQc accurate.</p>
+                  <div className="flex gap-2 mt-3">
+                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#F97316', fontFamily: MONO }}>Recalibrate Now</button>
+                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ color: '#9FB0C3', border: '1px solid #243140', fontFamily: MONO }}>Pick a Date</button>
+                    <button className="text-[11px] px-2 py-1.5 rounded-lg text-[#64748B]">&#10005;</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {screen.startsWith('onboard-') && screen !== 'onboard-decision' && <OnboardPreview step={screen} />}
       </div>
     </div>
   );
