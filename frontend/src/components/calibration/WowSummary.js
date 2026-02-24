@@ -125,10 +125,10 @@ const WowSummary = ({
           {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
           <button
             onClick={handleConfirmWow} disabled={isSubmitting}
-            className="px-8 py-3.5 rounded-full text-sm font-medium transition-opacity disabled:opacity-40"
-            style={{ background: CHARCOAL, color: '#FFFFFF' }}
+            className="px-8 py-3.5 rounded-full text-sm font-medium transition-all disabled:opacity-40 hover:brightness-110"
+            style={{ background: '#FF6A00', color: '#FFFFFF' }}
             data-testid="confirm-wow-btn"
-          >Confirm & Continue</button>
+          >{isSubmitting ? 'Confirming...' : 'Confirm & Continue'}</button>
         </div>
       </div>
     </div>
