@@ -119,7 +119,7 @@ const ChannelIntelligence = ({ navigate, channelsData }) => {
         )}
       </div>
       <p className="text-xs text-[#64748B] mb-4" style={{ fontFamily: MONO }}>Connect your marketing channels to activate real-time performance analysis.</p>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {(channels.length > 0 ? channels : [
           { key: 'crm', name: 'CRM', description: 'HubSpot, Salesforce, Pipedrive', color: '#FF7A59', status: 'not_connected', available: true },
           { key: 'google_ads', name: 'Google Ads', description: 'Search, Display, YouTube', color: '#4285F4', status: 'not_connected', available: false },
@@ -435,7 +435,7 @@ const MarketPage = () => {
         )}
 
         {/* Signal Scores — from cognitive engine market_intelligence */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Positioning Verdict', value: mi.positioning_verdict || (stateStatus ? st.label : 'Awaiting data'), icon: Target, color: stateStatus ? st.c : '#64748B' },
             { label: 'Acquisition Signal', value: mi.acquisition_signal?.label || (pipeline ? `$${Math.round(pipeline / 1000)}K` : 'Awaiting data'), icon: TrendingUp, color: pipeline ? '#3B82F6' : '#64748B' },
@@ -471,7 +471,7 @@ const MarketPage = () => {
         <div>
           <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Strategic Drift Analysis</h3>
           {(drift.cohort_actual || drift.trust_actual || drift.authority_actual || drift.position_actual) ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Current Cohort vs Ideal', actual: drift.cohort_actual, target: drift.cohort_target, unit: '%' },
               { label: 'Trust Score vs Required', actual: drift.trust_actual, target: drift.trust_target, unit: '%' },
@@ -528,7 +528,7 @@ const MarketPage = () => {
         <div className="rounded-xl p-5" style={{ background: '#141C26', border: `1px solid ${(misalignmentIndex || alignment) ? '#F59E0B25' : '#24314050'}` }}>
           <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: (misalignmentIndex || alignment) ? '#F59E0B' : '#64748B', fontFamily: MONO }}>Strategic Alignment Check</h3>
           {(misalignmentIndex || goalProb) ? (
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               {misalignmentIndex != null && (
                 <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Misalignment Index</span>
@@ -587,7 +587,7 @@ const MarketPage = () => {
           <p className="text-xs text-[#64748B] leading-relaxed" style={{ fontFamily: BODY }}>
             Connect your marketing channels above to unlock: CAC analysis, CPL tracking, ROAS measurement, conversion rate optimisation, channel dependency mapping, funnel drop-off detection, and saturation risk alerts.
           </p>
-          <div className="grid grid-cols-3 md:grid-cols-7 gap-2 mt-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 mt-4">
             {['CAC', 'CPL', 'ROAS', 'Conv Rate', 'Dependency', 'Drop-off', 'Saturation'].map(m => (
               <div key={m} className="p-2 rounded text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
                 <span className="text-lg font-bold text-[#243140] block" style={{ fontFamily: MONO }}>—</span>
