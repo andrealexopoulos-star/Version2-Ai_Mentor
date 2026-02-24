@@ -80,10 +80,10 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
         {/* Drift Delta Bars — Phase 5 Visual Only (reads existing system_state) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" style={{ animation: 'snapFade 1s ease-out' }}>
           {[
-            { label: 'Cash Position', value: cashRunway ? `${cashRunway}mo` : '—', icon: Activity, status: cashRunway && cashRunway < 4 ? 'warning' : 'good' },
             { label: 'Pipeline', value: pipeline ? `$${Math.round(pipeline / 1000)}K` : '—', icon: TrendingUp, status: 'good' },
             { label: 'SLA Health', value: slaBreaches ? `${slaBreaches} breach${slaBreaches > 1 ? 'es' : ''}` : 'Clear', icon: AlertTriangle, status: slaBreaches > 0 ? 'warning' : 'good' },
             { label: 'Market State', value: st.label, icon: Shield, status: stateStatus === 'STABLE' ? 'good' : 'warning' },
+            { label: 'Competitive Position', value: stateStatus === 'CRITICAL' ? 'At Risk' : stateStatus === 'DRIFT' ? 'Under Pressure' : 'Holding', icon: Target, status: stateStatus === 'STABLE' ? 'good' : 'warning' },
           ].map(m => {
             const barColor = m.status === 'good' ? '#10B981' : '#F59E0B';
             return (
