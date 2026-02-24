@@ -301,12 +301,9 @@ export const useCalibrationState = () => {
   };
 
   const startCalibration = async () => {
-    setError(null); setEntry("calibrating");
-    try {
-      const data = await callEdge({ step: calStep > 0 ? calStep : 1 });
-      if (data.status === "COMPLETE") { triggerComplete(); return; }
-      applyResponse(data);
-    } catch { setError("Calibration engine temporarily unavailable."); }
+    // Skip calibration questions during signup — go straight to intelligence → market
+    autoSave(9, "COMPLETE");
+    triggerComplete();
   };
 
   const handleWizardContinue = async () => {
