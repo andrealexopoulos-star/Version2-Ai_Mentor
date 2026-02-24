@@ -155,15 +155,16 @@ const MarketPage = () => {
           </Panel>
         )}
 
-        {/* ═══ PHASE 3: STRATEGIC DRIFT SNAPSHOT ═══ */}
+        {/* ═══ PHASE 3: STRATEGIC DRIFT SNAPSHOT — only show with real data ═══ */}
+        {(drift.cohort_actual || drift.trust_actual || drift.authority_actual || drift.position_actual) && (
         <div>
           <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Strategic Drift Analysis</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Current Cohort vs Ideal', actual: drift.cohort_actual || 62, target: drift.cohort_target || 85, unit: '%' },
-              { label: 'Trust Score vs Required', actual: drift.trust_actual || 71, target: drift.trust_target || 90, unit: '%' },
-              { label: 'Authority vs Benchmark', actual: drift.authority_actual || 55, target: drift.authority_target || 75, unit: '%' },
-              { label: 'Position vs Competitors', actual: drift.position_actual || 48, target: drift.position_target || 65, unit: '%' },
+              { label: 'Current Cohort vs Ideal', actual: drift.cohort_actual, target: drift.cohort_target, unit: '%' },
+              { label: 'Trust Score vs Required', actual: drift.trust_actual, target: drift.trust_target, unit: '%' },
+              { label: 'Authority vs Benchmark', actual: drift.authority_actual, target: drift.authority_target, unit: '%' },
+              { label: 'Position vs Competitors', actual: drift.position_actual, target: drift.position_target, unit: '%' },
             ].map(d => {
               const gap = d.target - d.actual;
               const color = gap > 20 ? '#EF4444' : gap > 10 ? '#F59E0B' : '#10B981';
