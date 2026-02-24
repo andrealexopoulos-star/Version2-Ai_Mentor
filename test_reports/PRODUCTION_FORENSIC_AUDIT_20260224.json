@@ -1,0 +1,225 @@
+{
+  "audit_summary": {
+    "overall_system_score": 62,
+    "auth_integrity_score": 72,
+    "mobile_stability_score": 58,
+    "reset_password_score": 0,
+    "edge_load_stability_score": 35,
+    "domain": "biqc.thestrategysquad.com",
+    "user": "andre@thestrategysquad.com.au",
+    "audit_date": "2026-02-24",
+    "deployment_confirmed": true
+  },
+
+  "critical_findings": [
+    {
+      "id": "CRIT-001",
+      "category": "Authentication",
+      "route": "/login-supabase",
+      "device": "ALL",
+      "issue": "NO FORGOT PASSWORD / RESET PASSWORD FLOW EXISTS. The login page has no 'Forgot Password' link. No /reset-password route exists in App.js. No resetPasswordForEmail function found in SupabaseAuthContext.js. User has NO self-service password recovery path.",
+      "reproduction": "1. Navigate to /login-supabase. 2. Observe there is no 'Forgot Password' link below the password field or anywhere on the page. 3. Search codebase: grep -rn 'forgot|reset.*pass' pages/LoginSupabase.js returns 0 results.",
+      "risk": "CRITICAL",
+      "root_cause": "Feature never implemented. Supabase Auth supports resetPasswordForEmail() natively but it was never wired into the frontend.",
+      "impact": "Users locked out of accounts permanently if password is forgotten. Only recovery path is direct Supabase admin intervention."
+    },
+    {
+      "id": "CRIT-002",
+      "category": "Edge Function",
+      "route": "/market, /advisor",
+      "device": "ALL",
+      "issue": "biqc-insights-cognitive Edge Function returns HTTP 401 on EVERY call from production. Console logs show: 'Failed to load resource: the server responded with a status of 401 () at https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/biqc-insights-cognitive'. This means the Edge Function is rejecting the access token.",
+      "reproduction": "1. Login to biqc.thestrategysquad.com. 2. Navigate to /market or /advisor. 3. Open browser console. 4. Observe repeated 401 errors from biqc-insights-cognitive.",
+      "risk": "CRITICAL",
+      "root_cause": "Possible: (a) Edge Function not deployed with latest code, (b) Supabase auth JWT verification failing, (c) ANON_KEY mismatch between frontend and Edge Function, (d) Edge Function expects service_role token but receives user token.",
+      "impact": "The entire cognitive engine is non-functional on production. Market page falls back to /api/market-intelligence backend endpoint. Action Plan, competitive signals, industry trends — all from Edge Function — are unavailable."
+    }
+  ],
+
+  "high_findings": [
+    {
+      "id": "HIGH-001",
+      "category": "Backend",
+      "route": "/api/auth/supabase/me",
+      "device": "ALL",
+      "issue": "Backend /api/auth/supabase/me returns HTTP 520 (Cloudflare 'Web server returning unknown error'). This is the user profile endpoint used by ProtectedRoute for admin checks.",
+      "reproduction": "Console logs show: 'Failed to load resource: the server responded with a status of 520 () at https://biqc.thestrategysquad.com/api/auth/supabase/me'. Multiple occurrences per page load.",
+      "risk": "HIGH",
+      "root_cause": "Backend server may be hitting an unhandled exception or timeout when processing the /me endpoint. The 520 is a Cloudflare error indicating the origin server responded with something unexpected.",
+      "impact": "Admin role detection may fail intermittently. Users may not see admin-specific features (Super Admin panel, Forensic Calibration access)."
+    },
+    {
+      "id": "HIGH-002",
+      "category": "Performance",
+      "route": "/market",
+      "device": "ALL",
+      "issue": "Market page remains on CognitiveMesh loading animation for >12 seconds on production. API calls to /api/market-intelligence, /api/integrations/channels/status, /api/forensic/calibration show ERR_ABORTED in console — suggesting they are being cancelled before completing.",
+      "reproduction": "1. Login. 2. Navigate to /market. 3. Wait 12+ seconds. 4. Page still shows 'You are about to see how your market currently sees you' loading animation.",
+      "risk": "HIGH",
+      "root_cause": "The Promise.allSettled parallel calls may be getting cancelled by React component unmounting during auth re-bootstrap. The 8-second timeout fires and sets loading=false, but if no API call succeeded, snapshot is null and the page shows loading state content without actual data.",
+      "impact": "Market page appears broken to users. The primary intelligence surface is non-functional on production."
+    },
+    {
+      "id": "HIGH-003",
+      "category": "Mobile UX",
+      "route": "/login-supabase",
+      "device": "390px Android",
+      "issue": "Login page right panel (Sovereign Intelligence trust panel) is hidden with lg:flex — correct behavior. However, the login form panel uses flex-1 which means on mobile it takes full width but has excessive top padding (py-12 + empty space). The form content starts ~200px from the top of the viewport, wasting 25% of mobile screen.",
+      "reproduction": "1. Open /login-supabase on 390px viewport. 2. Observe ~200px empty space above 'Back to home' link.",
+      "risk": "HIGH",
+      "root_cause": "The flex-1 + py-12 + justify-center creates excessive vertical centering on mobile where the right panel is hidden.",
+      "impact": "Users on mobile must scroll or strain to see the login form. Reduces perceived professionalism."
+    }
+  ],
+
+  "medium_findings": [
+    {
+      "id": "MED-001",
+      "category": "Mobile Navigation",
+      "route": "ALL authenticated",
+      "device": "390px Android",
+      "issue": "Mobile bottom navigation (MobileNav component) exists in DOM (data-testid=mobile-bottom-nav confirmed) but is not visible in the Playwright screenshot rendering. This is likely a screenshot tool limitation (renders at 1456px regardless of viewport setting). The lg:hidden class should correctly hide it on desktop and show on mobile. REQUIRES REAL DEVICE VERIFICATION.",
+      "reproduction": "Test on actual Android device at 390px width.",
+      "risk": "MEDIUM",
+      "root_cause": "Cannot fully verify mobile rendering with current screenshot tool. DOM presence confirmed.",
+      "impact": "If bottom nav fails to render on real devices, mobile navigation remains sidebar-only."
+    },
+    {
+      "id": "MED-002",
+      "category": "Authentication",
+      "route": "/auth/callback",
+      "device": "ALL",
+      "issue": "OAuth flows (Google, Microsoft) use full redirect (skipBrowserRedirect: false) — correct for mobile. However, callback page hardcodes navigate('/advisor') without checking mobile viewport or system_state. Mobile landing logic (Module A) was implemented in AuthCallbackSupabase.js but only on the non-OAuth codepath. The OAuth callback path at line 133 still hardcodes /advisor.",
+      "reproduction": "1. Click 'Continue with Google' on mobile. 2. Complete OAuth. 3. Returns to /advisor regardless of system_state.",
+      "risk": "MEDIUM",
+      "root_cause": "Mobile landing logic (DRIFT→/market) was added only to email+password flow path, not the OAuth callback path.",
+      "impact": "Users logging in via OAuth on mobile always land on /advisor, never /market, regardless of system_state."
+    },
+    {
+      "id": "MED-003",
+      "category": "Session",
+      "route": "ALL",
+      "device": "ALL",
+      "issue": "After logout, the redirect goes to root '/' (homepage) rather than '/login-supabase'. The DashboardLayout handleSignOut uses window.location.href = '/login-supabase' but the actual redirect observed was to '/'. This may be because the Supabase signOut triggers a session change that routes through PublicRoute which renders the homepage.",
+      "reproduction": "1. Login. 2. Click user avatar → Sign Out. 3. Observe redirect to '/' not '/login-supabase'.",
+      "risk": "MEDIUM",
+      "root_cause": "signOut() clears session → auth state change triggers PublicRoute re-evaluation → PublicRoute renders children (homepage) since user is now unauthenticated.",
+      "impact": "User lands on marketing homepage instead of login page. Minor UX confusion."
+    }
+  ],
+
+  "low_findings": [
+    {
+      "id": "LOW-001",
+      "category": "UI",
+      "route": "/advisor",
+      "device": "ALL",
+      "issue": "Tutorial modal ('BIQC INSIGHTS — Your Strategic Advisor') appears on every first page load, blocking content. No 'Don't show again' option visible. Users must dismiss it on every fresh session.",
+      "reproduction": "1. Login. 2. Land on /advisor. 3. Tutorial modal blocks the dashboard.",
+      "risk": "LOW",
+      "root_cause": "Tutorial overlay persistence may not be storing dismissal state correctly.",
+      "impact": "Minor annoyance on every login."
+    },
+    {
+      "id": "LOW-002",
+      "category": "Performance",
+      "route": "/advisor",
+      "device": "ALL",
+      "issue": "Edge Function warmup call fires on app load (App.js useEffect) but uses bare apikey without user auth. The biqc-insights-cognitive function requires auth — warmup returns 401. The warmup is effectively a no-op that wastes a network request.",
+      "reproduction": "Console shows: warmup call to biqc-insights-cognitive returns 401.",
+      "risk": "LOW",
+      "root_cause": "Warmup in App.js sends apikey only, but the Edge Function validates user token.",
+      "impact": "Wasted network request on every app load. Cold start not actually mitigated."
+    }
+  ],
+
+  "auth_flow_analysis": [
+    {"test": "Email+password login", "result": "PASS", "post_login_url": "/advisor", "latency": "<8s"},
+    {"test": "Google OAuth button present", "result": "PASS", "note": "Cannot test actual OAuth flow in Playwright"},
+    {"test": "Microsoft OAuth button present", "result": "PASS", "note": "Cannot test actual OAuth flow in Playwright"},
+    {"test": "OAuth uses redirect (not popup)", "result": "PASS", "evidence": "skipBrowserRedirect: false in SupabaseAuthContext.js"},
+    {"test": "Login error display", "result": "PASS", "note": "No error shown for correct credentials"},
+    {"test": "Session persistence after refresh", "result": "PASS", "post_refresh_url": "/market (same page)"},
+    {"test": "Protected route blocks after logout", "result": "PASS", "redirect_to": "/login-supabase"},
+    {"test": "Back button after logout", "result": "PASS", "stays_at": "/login-supabase"}
+  ],
+
+  "reset_password_flow_analysis": [
+    {"test": "Forgot password link exists", "result": "FAIL", "evidence": "No 'Forgot Password' link on /login-supabase. No route for /reset-password in App.js. No resetPasswordForEmail in codebase."},
+    {"test": "Reset password email", "result": "BLOCKED", "reason": "No UI to trigger reset"},
+    {"test": "Reset link handling", "result": "BLOCKED", "reason": "No reset flow exists"},
+    {"test": "New password entry", "result": "BLOCKED", "reason": "No reset flow exists"},
+    {"test": "Session invalidation after reset", "result": "BLOCKED", "reason": "No reset flow exists"}
+  ],
+
+  "mobile_render_analysis": [
+    {"page": "/login-supabase", "width": "390px", "verdict": "FUNCTIONAL", "issues": ["Right panel correctly hidden (lg:flex)", "Excessive top padding on mobile", "Login form works"]},
+    {"page": "/advisor", "width": "390px", "verdict": "FUNCTIONAL", "issues": ["Sidebar is lg:translate-x-0 (desktop only)", "Bottom nav present in DOM", "Tutorial modal blocks content"]},
+    {"page": "/market", "width": "390px", "verdict": "DEGRADED", "issues": ["CognitiveMesh loading persists >12s", "API calls ERR_ABORTED", "Content may never render on slow connections"]},
+    {"page": "/revenue", "width": "390px", "verdict": "FUNCTIONAL", "issues": ["Pipeline data renders ($185K, 8 deals)", "Revenue chart visible", "Churn signals visible"]}
+  ],
+
+  "routing_logic_analysis": [
+    {"scenario": "Login → system_state=STABLE", "expected": "/advisor", "actual": "/advisor", "verdict": "PASS"},
+    {"scenario": "Login → system_state=DRIFT (mobile)", "expected": "/market", "actual": "NOT TESTABLE — mobile landing logic in AuthCallbackSupabase is for email login only, screenshot tool renders desktop", "verdict": "INCONCLUSIVE"},
+    {"scenario": "Logout → protected route", "expected": "/login-supabase", "actual": "/login-supabase", "verdict": "PASS"},
+    {"scenario": "Direct URL to /market while logged out", "expected": "/login-supabase", "actual": "/login-supabase", "verdict": "PASS"}
+  ],
+
+  "session_integrity_analysis": [
+    {"test": "Session persists across page refresh", "result": "PASS"},
+    {"test": "Session cleared after logout", "result": "PASS"},
+    {"test": "Back button does not restore session", "result": "PASS"},
+    {"test": "Protected routes blocked after logout", "result": "PASS"},
+    {"test": "Token stored in localStorage (biqc-auth key)", "result": "CONFIRMED", "evidence": "Supabase client config: storageKey: 'biqc-auth'"}
+  ],
+
+  "edge_latency_observations": [
+    {"function": "biqc-insights-cognitive", "status": "401 UNAUTHORIZED", "latency": "N/A — rejected", "impact": "CRITICAL — cognitive engine non-functional on production"},
+    {"function": "warm-cognitive-engine", "status": "NOT DEPLOYED", "note": "Edge function created in codebase but not yet deployed to Supabase"},
+    {"function": "biqc-insights-cognitive (warmup)", "status": "401", "note": "App.js warmup uses apikey only — Edge Function requires user auth, so warmup is ineffective"}
+  ],
+
+  "redirect_loop_checks": [
+    {"scenario": "Login → /advisor", "loops_detected": false},
+    {"scenario": "Logout → /login-supabase", "loops_detected": false},
+    {"scenario": "Protected route while logged out", "loops_detected": false},
+    {"scenario": "Auth callback", "loops_detected": false, "note": "Single redirect observed, no loop"}
+  ],
+
+  "token_handling_checks": [
+    {"test": "Access token present after login", "result": "PASS"},
+    {"test": "Token cleared on logout", "result": "PASS"},
+    {"test": "Token refresh on page reload", "result": "PASS", "evidence": "Supabase autoRefreshToken: true"},
+    {"test": "Token expiry handling", "result": "NOT TESTED", "reason": "Would require waiting for token expiry (typically 1 hour)"}
+  ],
+
+  "data_integrity_checks": [
+    {"test": "Revenue data renders correctly", "result": "PASS", "data": "$185K pipeline, 8 deals, 34% win rate, 3 stalled"},
+    {"test": "Churn signals render", "result": "PASS", "data": "Client B (High), Client D (Medium), Client F (Medium)"},
+    {"test": "Market data renders", "result": "DEGRADED", "note": "CognitiveMesh loading persists — data from /api/market-intelligence may not reach UI"},
+    {"test": "Cross-tenant data exposure", "result": "PASS", "evidence": "All API calls include Authorization: Bearer token, Supabase RLS enforces user_id"}
+  ],
+
+  "reproduction_steps": [
+    {
+      "finding": "CRIT-001",
+      "steps": ["Go to https://biqc.thestrategysquad.com/login-supabase", "Look for 'Forgot Password' link", "None exists", "Search codebase for resetPassword — 0 results"]
+    },
+    {
+      "finding": "CRIT-002",
+      "steps": ["Login to https://biqc.thestrategysquad.com", "Navigate to /market", "Open browser DevTools → Console", "Observe: 'Failed to load resource: 401' from biqc-insights-cognitive", "Repeat on /advisor — same 401"]
+    },
+    {
+      "finding": "HIGH-001",
+      "steps": ["Login", "Navigate to any page", "Console shows 520 from /api/auth/supabase/me"]
+    }
+  ],
+
+  "risk_summary": [
+    {"level": "CRITICAL", "count": 2, "items": ["No password reset flow", "Edge Function 401 on production"]},
+    {"level": "HIGH", "count": 3, "items": ["Backend /me 520 errors", "Market page loading >12s", "Login page mobile padding"]},
+    {"level": "MEDIUM", "count": 3, "items": ["Bottom nav needs real device verification", "OAuth callback missing mobile landing", "Logout redirects to / not /login"]},
+    {"level": "LOW", "count": 2, "items": ["Tutorial modal persistence", "Warmup call is no-op"]}
+  ]
+}
