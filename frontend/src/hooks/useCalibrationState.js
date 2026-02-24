@@ -49,6 +49,7 @@ export const useCalibrationState = () => {
   const [lastResponse, setLastResponse] = useState("");
   const [transitioning, setTransitioning] = useState(false);
   const [intelligenceData, setIntelligenceData] = useState(null);
+  const [pendingCalibrationData, setPendingCalibrationData] = useState(null);
   const initCalled = useRef(false);
 
   const firstName = extractFirstName(
