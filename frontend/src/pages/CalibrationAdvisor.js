@@ -36,6 +36,10 @@ const CalibrationAdvisor = () => {
     }
   };
 
+  const handleIgnitionComplete = useCallback(() => {
+    cal.setEntry("welcome");
+  }, [cal]);
+
   // Pick the right tutorial key based on current entry
   const tutorialKey = cal.entry === 'welcome' ? 'calibration-welcome'
     : (cal.entry === 'calibrating') ? 'calibration-chat'
