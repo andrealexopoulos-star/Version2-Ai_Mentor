@@ -203,6 +203,7 @@ function AppRoutes() {
       <Route path="/compliance" element={<ProtectedRoute><CompliancePage /></ProtectedRoute>} />
       <Route path="/market" element={<ProtectedRoute><MarketPage /></ProtectedRoute>} />
       <Route path="/market/calibration" element={<ProtectedRoute><ForensicCalibration /></ProtectedRoute>} />
+      <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBasePage /></ProtectedRoute>} />
 
       {/* Protected Routes — Execution */}
       <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
