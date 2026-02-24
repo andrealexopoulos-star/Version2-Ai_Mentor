@@ -164,6 +164,14 @@ const AuthCallbackSupabase = () => {
               }
             } catch (profileCheckError) {
               console.warn('[CALIBRATION ROUTING] Profile check error → fail-open to /advisor');
+              // Warm Edge Functions even on fail-open
+              const sbUrl = process.env.REACT_APP_SUPABASE_URL || '';
+              const sbKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+              if (sbUrl && sbKey) {
+                fetch(`${sbUrl}/functions/v1/warm-cognitive-engine`, {
+                  method: 'POST', headers: { 'apikey': sbKey, 'Content-Type': 'application/json' }, body: '{}'
+                }).catch(() => {});
+              }
               navigate('/advisor', { replace: true });
             }
           } else {
