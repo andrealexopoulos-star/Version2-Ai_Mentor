@@ -530,7 +530,19 @@ FULL OPERATIONAL CONTEXT:
 ${JSON.stringify(ctx, null, 2)}
 
 KNOWN BLIND SPOTS (from missing integrations):
-${JSON.stringify(blind_spots)}`;
+${JSON.stringify(blind_spots)}
+
+DETERMINISTIC RISK OVERLAY (pre-computed, MUST be reflected in action_plan.deterministic_inputs):
+${JSON.stringify(deterministicOverlay)}
+
+ACTION PLAN INSTRUCTION:
+You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY values as anchors.
+- If urgency is HIGH or IMMEDIATE, decision_window_pressure must be < 14 days.
+- If risk_amplification is ELEVATED or CRITICAL, primary_blindside_risk probability must be > 60%.
+- If compression_probability > 15, top_3_marketing_moves must address competitive pressure.
+- Do NOT hallucinate market data. If data is missing, say so and lower confidence_score.
+- Every move must reference SPECIFIC signals from the operational context.
+- The action_plan must feel inevitable, specific, and consequence-modelled.`;
 
     // Call GPT-4o
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
