@@ -85,6 +85,11 @@ const CalibrationAdvisor = () => {
 
       {cal.entry === "loading" && <CalibrationLoading />}
 
+      {/* PHASE 1: Cognitive Ignition — cinematic entry before welcome */}
+      {cal.entry === "ignition" && (
+        <CognitiveIgnitionScreen onComplete={handleIgnitionComplete} ownerName={cal.firstName} />
+      )}
+
       {cal.entry === "welcome" && (
         <WelcomeHandshake firstName={cal.firstName} websiteUrl={cal.websiteUrl} setWebsiteUrl={cal.setWebsiteUrl}
           onSubmit={cal.handleAuditSubmit} onManualFallback={() => cal.setEntry("manual_summary")}
