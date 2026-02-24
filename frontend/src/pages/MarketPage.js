@@ -366,31 +366,7 @@ const MarketPage = () => {
         </Panel>
 
         {/* ═══ PHASE 8: FORENSIC MARKET CALIBRATION ═══ */}
-        <div className="rounded-xl p-6" style={{ background: 'linear-gradient(135deg, #FF6A0008, #3B82F608)', border: '1px solid #FF6A0020' }}>
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
-              <Eye className="w-6 h-6 text-[#FF6A00]" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Market Calibration</h3>
-                <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>Deep Analysis</span>
-              </div>
-              <p className="text-sm text-[#9FB0C3] mb-4">Weighted assessment of revenue ambition, growth timeline, cohort intention, risk appetite, retention maturity, and pricing confidence.</p>
-              {isSuperAdmin ? (
-                <button onClick={() => navigate('/market/calibration')} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="forensic-calibration-btn">
-                  Begin Forensic Calibration <ArrowRight className="w-4 h-4 inline ml-1" />
-                </button>
-              ) : (
-                <div>
-                  <button className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white opacity-60 cursor-not-allowed" style={{ background: '#FF6A00' }}>
-                    <Lock className="w-3.5 h-3.5 inline mr-1" /> Coming Soon — Pro Plan
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ForensicCalibrationCard isSuperAdmin={isSuperAdmin} navigate={navigate} />
 
         {/* ═══ PHASE 9: EXECUTIVE STRATEGIC BRIEF (Paid Output) ═══ */}
         <Panel>
