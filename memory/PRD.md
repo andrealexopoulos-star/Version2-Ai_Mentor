@@ -8,37 +8,25 @@
 - AI: OpenAI gpt-4o-mini (Edge Functions only)
 - Production: biqc.thestrategysquad.com
 
-## Completed (2026-02-24 — Full Session)
+## Completed (2026-02-24)
 - P0: Calibration questionnaire signup bug fix
+- P0: Password reset flow (ResetPassword + UpdatePassword pages)
 - P0: Forensic Calibration backend scoring engine
-- P0: Channel Intelligence status API
-- P0: Market Intelligence aggregator with live HubSpot data
-- P0: BIQc Action Plan (Edge Function extension with deterministic overlay)
-- P0: Password reset flow (CRIT-001 from production audit)
-- Mobile forensic audit (score 38→75)
-- Mobile bottom navigation (5 tabs + More sheet)
-- Soundboard full-screen modal with keyboard-aware viewport
-- Edge Function warm strategy
-- Parallelized Market page API calls
-- Cognition-aware mobile landing (DRIFT→/market)
-- Login page mobile padding fix
-- WOW Summary button/edit indicators
-- 15+ grid responsive breakpoints
-- Reduced motion + safe area + touch target fixes
-
-## Production Audit Results (post-fix)
-- CRIT-001: Password reset — FIXED (ResetPassword.js + UpdatePassword.js)
-- CRIT-002: Edge Function 401 — FIXED (user deployed)
-- HIGH-001: /api/auth/supabase/me 520 — needs investigation
-- HIGH-003: Login mobile padding — FIXED
+- P0: Channel Intelligence + Market Intelligence APIs
+- P0: BIQc Action Plan (Edge Function + deterministic overlay)
+- P0: Auth resilience (/api/auth/supabase/me fail-open pattern)
+- BIQc Insights 5-tab enrichment (Money, Revenue, Operations, People, Market) — metrics, deals, scenarios, competitors, recommendations rendered from unified cognitive snapshot
+- Mobile: Bottom nav, soundboard modal, responsive grids, touch targets, reduced motion, safe areas, parallelized APIs, cognitive-aware landing
+- SQL: compute_market_risk_weight() deployed, detect_contradictions() ready
 
 ## Deployment Required
-1. Deploy warm-cognitive-engine Edge Function
+1. Run SQL: `016_detect_contradictions.sql` in Supabase SQL Editor
 2. Save to GitHub + Deploy latest code
 
 ## Pending
-- P1: Investigate /api/auth/supabase/me 520 errors
-- P1: Wire BIQc Insights tabs (Money, Ops, People)
+- P1: SQL migration phase 2 (pressure_calibration → SQL)
+- P1: SQL migration phase 3 (evidence_freshness → SQL)
+- P1: SQL migration phase 4 (escalation_memory → SQL)
 - P2: Stripe paid gating
-- P2: SQL migration of Python cognition engines
 - P2: Real channel APIs (Google Ads, Meta, LinkedIn)
+- P3: Consolidate legacy pages
