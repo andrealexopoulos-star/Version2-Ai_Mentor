@@ -244,7 +244,7 @@ const SOPGenerator = () => {
                         />
                       </div>
                       <Button type="submit" className="w-full btn-lime rounded-sm py-6" disabled={loading} data-testid="generate-sop-btn">
-                        {loading ?  : <FileText className="w-4 h-4 mr-2" />}
+                        {loading ? null : <FileText className="w-4 h-4 mr-2" />}
                         Generate SOP
                       </Button>
                     </form>
@@ -273,7 +273,7 @@ const SOPGenerator = () => {
                         />
                       </div>
                       <Button type="submit" className="w-full btn-lime rounded-sm py-6" disabled={loading} data-testid="generate-checklist-btn">
-                        {loading ?  : <CheckSquare className="w-4 h-4 mr-2" />}
+                        {loading ? null : <CheckSquare className="w-4 h-4 mr-2" />}
                         Generate Checklist
                       </Button>
                     </form>
@@ -312,7 +312,7 @@ const SOPGenerator = () => {
                         />
                       </div>
                       <Button type="submit" className="w-full btn-lime rounded-sm py-6" disabled={loading} data-testid="generate-action-btn">
-                        {loading ?  : <Target className="w-4 h-4 mr-2" />}
+                        {loading ? null : <Target className="w-4 h-4 mr-2" />}
                         Generate Action Plan
                       </Button>
                     </form>

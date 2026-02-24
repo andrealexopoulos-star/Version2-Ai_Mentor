@@ -336,7 +336,7 @@ const Settings = () => {
                       </div>
                       <div className="flex justify-end pt-2">
                         <Button onClick={handleSaveProfile} variant="outline" size="sm" disabled={saving}>
-                          {saving ?  : <Save className="w-4 h-4 mr-1" />} Save
+                          {saving ? null : <Save className="w-4 h-4 mr-1" />} Save
                         </Button>
                       </div>
                     </div>
@@ -473,7 +473,7 @@ const Settings = () => {
 
                   <div className="flex justify-end pt-4">
                     <Button onClick={handleSaveProfile} className="btn-primary" disabled={saving}>
-                      {saving ?  : <Save className="w-4 h-4 mr-2" />}
+                      {saving ? null : <Save className="w-4 h-4 mr-2" />}
                       Save Preferences
                     </Button>
                   </div>
@@ -597,7 +597,7 @@ const Settings = () => {
 
                   <div className="flex justify-end pt-4">
                     <Button onClick={handleSaveProfile} className="btn-primary" disabled={saving}>
-                      {saving ?  : <Save className="w-4 h-4 mr-2" />}
+                      {saving ? null : <Save className="w-4 h-4 mr-2" />}
                       Save Tools
                     </Button>
                   </div>

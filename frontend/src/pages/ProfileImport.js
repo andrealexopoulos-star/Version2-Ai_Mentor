@@ -255,7 +255,7 @@ const ProfileImport = () => {
 
             <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
               <Button onClick={handleWebsiteScrape} disabled={!profileData.website || loading} className="btn-secondary">
-                {loading ?  : <Globe className="w-4 h-4 mr-2" />}
+                {loading ? null : <Globe className="w-4 h-4 mr-2" />}
                 Auto-fill from Website
               </Button>
               <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
