@@ -56,7 +56,7 @@ const LoginSupabase = () => {
   return (
     <div className="min-h-screen flex" style={{ background: '#0F1720' }}>
       {/* Left: Login Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 md:px-16 lg:px-20 py-12" style={{ background: '#0F1720' }}>
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: '#0F1720' }}>
         <div className="max-w-sm w-full mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 mb-10 text-sm transition-colors hover:text-[#FF6A00]" style={{ color: '#64748B', fontFamily: BODY }} data-testid="login-back-to-home-link">
             <ArrowLeft className="w-4 h-4" /> Back to home
