@@ -15,8 +15,20 @@ const FloatingSoundboard = ({ context = '' }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState('100dvh');
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
+
+  // Track visual viewport for keyboard-aware sizing on mobile
+  useEffect(() => {
+    if (!open) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => setViewportHeight(`${vv.height}px`);
+    vv.addEventListener('resize', onResize);
+    onResize();
+    return () => vv.removeEventListener('resize', onResize);
+  }, [open]);
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus();
