@@ -361,7 +361,7 @@ export const useCalibrationState = () => {
     calStep, calMode, question, options, allowText, insight,
     selectedOption, setSelectedOption, textValue, setTextValue,
     messages, inputValue, setInputValue,
-    currentStep, intelligenceData, fetchIntelligence,
+    currentStep, intelligenceData, fetchIntelligence, proceedFromIntelligence,
     handleSignOut, handleAuditSubmit, handleManualSummary,
     handleConfirmWow, startEdit, commitEdit,
     startCalibration, handleWizardContinue, handleChatSubmit,
