@@ -110,6 +110,15 @@ const MarketPage = () => {
           <p className="text-sm text-[#9FB0C3]">Strategic positioning, competitive landscape, and drift analysis.</p>
         </div>
 
+        {/* Insufficient Data Notification */}
+        <InsufficientDataAlert missingItems={[
+          ...(!mi.drift_snapshot?.cohort_actual ? ['forensic'] : []),
+          ...(!alignment && !misalignmentIndex ? ['goals'] : []),
+          ...(!pipeline && !c.crm ? ['crm'] : []),
+          ...(!c.financial && !c.capital?.runway ? ['accounting'] : []),
+          ...(!c.emails && !c.founder_vitals?.email_stress ? ['email'] : []),
+        ]} />
+
         {/* System State — only show with real data */}
         {snapshot ? (
         <div className="rounded-xl p-5" style={{ background: st.c + '08', border: `1px solid ${st.c}25` }}>
