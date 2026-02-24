@@ -181,7 +181,7 @@ const HomePage = () => (
 
     {/* ══ PERFORMANCE STATS ══ */}
     <section className="py-20 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }} data-testid="performance-section">
-      <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10">
+      <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-4 gap-10">
         <StatBlock value="94%" label="Faster Loads" />
         <StatBlock value="15+" label="Hrs/Week Reclaimed" />
         <StatBlock value="500+" label="Integrations" />
