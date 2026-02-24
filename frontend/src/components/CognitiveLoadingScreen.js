@@ -61,18 +61,25 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
           </p>
         </div>
 
-        {/* Phase 2: Body */}
+        {/* Phase 2: 4 Feature Areas */}
         <div style={{ opacity: phase >= 2 ? 1 : 0, transform: phase >= 2 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
-          <div className="max-w-md mx-auto mb-10">
-            <p className="text-sm text-[#64748B] leading-relaxed" style={{ fontFamily: BODY }}>
-              In the next 90 seconds, BIQc will analyse how your market sees you.
-            </p>
-            <p className="text-sm text-[#64748B] leading-relaxed mt-2" style={{ fontFamily: BODY }}>
-              Positioning. Authority. Competitive pressure.
-            </p>
-            <p className="text-sm text-[#9FB0C3] leading-relaxed mt-2 font-medium" style={{ fontFamily: BODY }}>
-              What's forming. What's drifting. What's inevitable.
-            </p>
+          <div className="max-w-md mx-auto mb-10 space-y-3">
+            {[
+              { title: 'Market Intelligence', desc: 'Real-time positioning, competitive signals, and drift analysis.' },
+              { title: 'Revenue & Operations', desc: 'Pipeline health, SOP compliance, bottleneck detection.' },
+              { title: 'Risk & Compliance', desc: 'Financial exposure, regulatory obligations, threat monitoring.' },
+              { title: 'Autonomous Execution', desc: 'AI-driven alerts, actions, and automations across your business.' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg text-left" style={{ background: '#141C2680', border: '1px solid #24314060' }}>
+                <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#FF6A0015' }}>
+                  <span className="text-xs font-bold" style={{ color: '#FF6A00', fontFamily: MONO }}>{i + 1}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{item.title}</p>
+                  <p className="text-xs text-[#64748B] mt-0.5" style={{ fontFamily: BODY }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
