@@ -8,11 +8,11 @@
 
 | Industry | URL |
 |---|---|
-| IT Services / MSP | https://admin-portal-launch.preview.emergentagent.com/site/platform/industry/msp |
-| Commercial Contractors / HVAC | https://admin-portal-launch.preview.emergentagent.com/site/platform/industry/construction |
-| Consulting / Professional Services | https://admin-portal-launch.preview.emergentagent.com/site/platform/industry/consulting |
-| Marketing / Digital Agencies | https://admin-portal-launch.preview.emergentagent.com/site/platform/industry/agency |
-| B2B SaaS | https://admin-portal-launch.preview.emergentagent.com/site/platform/industry/saas |
+| IT Services / MSP | https://market-cognitive.preview.emergentagent.com/site/platform/industry/msp |
+| Commercial Contractors / HVAC | https://market-cognitive.preview.emergentagent.com/site/platform/industry/construction |
+| Consulting / Professional Services | https://market-cognitive.preview.emergentagent.com/site/platform/industry/consulting |
+| Marketing / Digital Agencies | https://market-cognitive.preview.emergentagent.com/site/platform/industry/agency |
+| B2B SaaS | https://market-cognitive.preview.emergentagent.com/site/platform/industry/saas |
 
 ---
 

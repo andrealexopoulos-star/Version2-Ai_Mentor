@@ -1,46 +1,47 @@
-<analysis>**original_problem_statement:**
-The user's primary objective is to transform the BIQc platform into a high-performance, AI-driven Cognition-as-a-Platform for SMBs. The project involved a complete visual and architectural overhaul.
+<analysis>
+**original_problem_statement:**
+The user's primary objective is to transform their BIQc platform into a high-performance, AI-driven Cognition-as-a-Platform for SMBs. This has involved a complete visual and architectural overhaul to a Liquid Steel dark theme, migrating the backend from MongoDB to a Supabase-centric architecture, and building out numerous features, including a comprehensive Super Admin portal.
 
-Initial work focused on migrating from MongoDB to a Supabase-centric architecture. The scope then expanded to a full redesign of the website and authenticated platform to a new Liquid Steel dark theme, introducing new typography ( and ) for a more premium feel. This required creating dozens of new mockup pages, re-theming all existing pages, and fixing numerous font and color legibility issues.
-
-A significant part of the work was creating a comprehensive, enterprise-grade, 8-section Super Admin portal. The agent also produced multiple in-depth planning documents (, ) to map all existing, planned, and half-built features to the new architecture and UI.
-
-The final phase of the session was dedicated to debugging repeated deployment failures. The user reported that the newly designed UI was not appearing on the production site. The agent diagnosed and fixed code-level issues but identified a persistent, infrastructure-level blocker related to a mandatory MongoDB migration step in the deployment pipeline.
+A major recurring problem has been the user's new user onboarding experience. The user has a specific vision for an intelligence-first flow that shows AI-generated insights to the user *before* asking for any input, eliminating loading spinners in favor of cinematic animations, and feeling seamless and performant. The project has been marked by repeated attempts to fix bugs in this complex onboarding flow.
 
 PRODUCT REQUIREMENTS:
 - A premium, modern Liquid Steel aesthetic (dark theme with orange accents).
-- A fast, intuitive, and agentic user experience that enables users to act on insights.
-- Industry-contextualized intelligence and UI.
-- A comprehensive Super Admin portal for enterprise-grade governance and observability.
+- A fast, intuitive, and agentic user experience that shows intelligence first.
+- Replacement of all loading spinners with theme-appropriate cognitive animations.
+- A fully functional, bug-free new user signup and onboarding flow.
+- A comprehensive Super Admin portal.
 - Successful deployment of all new UI and features to the production environment.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack platform (React/FastAPI/Supabase) that has undergone a massive UI transformation. All public-facing website pages, authentication pages (Login/Register), and the core authenticated platform (dashboard layout, main content) have been rewritten to implement the new Liquid Steel dark theme with  and  fonts. An extensive 8-part Super Admin portal has been built. All work is committed, but is not yet live on production due to a deployment blocker. Multiple detailed planning documents for future work exist in .
+The application is a full-stack platform using React, FastAPI, and Supabase.
+-   **UI/Theme:** The Liquid Steel dark theme is implemented across the entire public-facing website and the authenticated platform. All loading spinners have been successfully replaced with custom  and  animations.
+-   **Onboarding Flow:** A new Cognitive Ignition onboarding flow has been built. It begins with a cinematic loading screen, prompts for a website URL for an automated audit, shows a WOW Summary (business overview) and a CMO Snapshot (live intelligence dashboard), and then directs the user to the Market page. The old 9-step calibration questionnaire has been removed from this initial signup flow.
+-   **Market Page:** This page has been completely redesigned to be the main landing area post-onboarding. It's a dynamic dashboard that shows live data from the cognitive engine (system state, drift analysis, KPIs). When data is unavailable, it displays intelligent prompts guiding the user to provide the necessary data, with links to a new Knowledge Base.
+-   **Knowledge Base:** A  page has been created with detailed guides on how to connect integrations and provide data to the system.
+-   **Backend Architecture:** Frontend polling has been replaced with Supabase Realtime for live data updates. The main  Edge Function has been updated to produce a richer  object. SQL functions and pg_cron jobs for background tasks have been defined.
 
 **Last working item**:
--   **Last item agent was working:** Debugging a critical deployment failure. The user reported that after deployment, the production site did not reflect any of the new Liquid Steel UI changes. The agent analyzed deployment logs, identified hardcoded URLs (which were fixed), and isolated the final blocker to an infrastructure-level issue.
--   **Status:** BLOCKED
--   **Agent Testing Done:** Y (via  and )
--   **Which testing method agent to use?** N/A. The issue is with the deployment infrastructure, not the code itself. The user must attempt to deploy again.
--   **User Testing Done:** Y (User confirmed the deployed site is not showing the new changes)
+-   **Last item agent was working:** Debugging a critical and recurring bug where the old 9-step calibration questionnaire was incorrectly appearing during the new user signup flow.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Manual testing by the user. The user must deploy the latest code, purge their account from Supabase, and perform a fresh signup to validate the fix.
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Production Deployment Not Reflecting Latest Changes (P0)**
-    -   **Description:** The primary blocker for the entire project. Despite all work being committed, the deployed application shows an old version of the UI.
-    -   **Attempted fixes:**
-        -   The agent confirmed all code changes were committed locally.
-        -   The agent fixed hardcoded production URLs in .
-        -   The agent analyzed deployment logs and determined the root cause is a  error. This error stems from the deployment system's template () and is an infrastructure issue the agent cannot fix.
+-   **Issue 1: Calibration Questions Incorrectly Appearing in Signup Flow (P0)**
+    -   **Description:** This is the highest priority bug. Despite multiple fixes, the old 9-step calibration questionnaire continues to appear after the user submits their website for an audit during signup. The user should be taken through the new intelligence-first flow without seeing these questions.
+    -   **Attempted fixes:** The agent has made several attempts to fix this by redirecting various code paths. The latest fix involved modifying all functions that could trigger the old calibration state (, ,  resume logic) to ensure they all lead to the new  flow and bypass the questionnaire.
     -   **Next debug checklist:**
-        1.  Instruct the user to use the **Save to GitHub** button in the Emergent UI to ensure all commits are pushed to their remote repository.
-        2.  Instruct the user to use the **Deploy** button to trigger a new deployment.
-        3.  If the deployment fails again with the  error, the user **must contact Emergent support** and request their deployment template be changed to one that does not include MongoDB (e.g., ) or for the migration step to be skipped.
-    -   **Why fix this issue and what will be achieved with the fix?** This will make all the UI/UX transformation work from this session live for the user. It is the highest priority.
-    -   **Status:** BLOCKED (on user action and platform support)
+        1.  The user must first deploy the latest changes via **Save to GitHub** and **Deploy**.
+        2.  The user must then purge their account from Supabase to ensure a clean test.
+        3.  The user signs up as a new user and goes through the flow.
+        4.  If the bug persists, the next agent must meticulously trace the  state variable within the  hook. The issue is that a code path is still incorrectly calling . A full codebase search for this string and its callers is required to find the final leak.
+    -   **Why fix this issue and what will be achieved with the fix?** This is the final blocker to achieving the user's core vision for the onboarding experience. Fixing it will make the signup flow seamless and intelligent as requested.
+    -   **Status:** IN PROGRESS
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Both. A full E2E test of the production site is mandatory after a successful deployment.
+    -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
 **In progress Task List**:
@@ -49,103 +50,106 @@ The application is a full-stack platform (React/FastAPI/Supabase) that has under
 **Upcoming and Future Tasks**
 
 -   **Upcoming Tasks:**
-    -   **(P0) Full Post-Deployment Verification:** Once the deployment is successful, perform a full end-to-end test of the production environment to confirm all features, styles, and data flows are working as expected.
-    -   **(P1) Implement Soundboard Capability:** The user has requested this feature, which existed in a previous version. It needs to be designed and integrated into the new Liquid Steel platform UI, likely within the Intelligence section.
-    -   **(P1) Recover Missing Edge Functions:** The source code for 5 critical Edge Functions (, , , , ) that are deployed on Supabase but missing from the local git repository must be recovered and version-controlled. This is a major stability risk.
+    -   **(P0) Full End-to-End Onboarding Verification:** Once the calibration bug is confirmed fixed, perform a comprehensive test of the entire new user journey, from signup to landing on the Market page.
+    -   **(P1) Implement Live Integration Data:** The UI for the Unlock Live Channel Intelligence on the Market page is a shell. This needs to be wired up to backend APIs for Google Ads, Meta, LinkedIn, etc., which the user will provide later.
+    -   **(P1) Implement Forensic Calibration Backend:** The  questionnaire exists, but its scoring logic is currently in the frontend. This needs to be moved to the backend by wiring the form to call the  SQL function via an API.
+
 -   **Future Tasks:**
-    -   **(P2) Build out the Action Layer Backend:** The UI for the Resolution Center (, , ) is in place, but the backend is not. This requires integrating with email, SMS, and ticketing providers.
-    -   **(P2) Implement Features from Blueprints:** Prioritize and build the extensive backlog of features detailed in  and , such as the SOP Generator and Vision Generator.
-    -   **(P3) Refactor Legacy Backend:** Continue migrating logic from legacy Python files into new Supabase Edge Functions.
+    -   **(P2) Implement Paid Gating:** The Forensic Calibration module needs to be feature-gated behind a payment system (Stripe).
+    -   **(P2) Build BIQc Insights Premium Feature:** The user has reserved the  page for a future premium feature.
+    -   **(P2) Recover Missing Edge Functions:** The source code for 5 critical Edge Functions (, , etc.) is missing from the local git repository and needs to be recovered.
+    -   **(P2) Build out Action Layer Backend:** The backend for the Resolution Center actions (Auto-Email, Quick-SMS) is not yet implemented.
 
 **Completed work in this session**
--   **Complete UI/UX Transformation (Liquid Steel):** Redesigned and re-themed the entire public website and authenticated platform to a new Liquid Steel dark theme, including new typography, colors, and layouts across more than 65 pages and components.
--   **Enterprise-Grade Super Admin Portal:** Built a new, comprehensive 8-section Super Admin portal covering Governance, Observability, Commercial Intelligence, Security, AI Governance, and more.
--   **In-depth Architectural Planning:** Created multiple detailed documents mapping all existing and future features to the new platform architecture (, , etc.).
--   **Deployment Debugging:** Diagnosed and fixed code-level deployment blockers and isolated the final remaining blocker as an infrastructure issue.
--   **Font & Legibility Fixes:** Conducted multiple audits to fix all font and color legibility issues, ensuring a crisp and readable UI on every page.
+-   **Deployment Root Cause Fixed:** Diagnosed and resolved the long-standing deployment issue by correctly swapping the old root pages with the new Liquid Steel themed pages.
+-   **Dashboard and Onboarding UI Overhaul:** Rebuilt the authenticated dashboard sidebar and created a new intelligence-first cinematic onboarding flow (Cognitive Ignition).
+-   **Spinner Eradication:** Replaced all loading spinners across the application with custom, theme-appropriate  and  animations using .
+-   **Live Data Integration (Phase 1):** Replaced hardcoded data on key pages with live data from backend APIs, with graceful fallbacks for when data is missing.
+-   **Backend & Supabase Enhancements:** Migrated from frontend polling to Supabase Realtime for live updates, enhanced the  Edge Function to produce richer data, and defined SQL functions and cron jobs for background processing.
+-   **Knowledge Base Creation:** Built a new  page with guides to help users provide data to the system.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Un-versioned Edge Functions:** 5 Edge Functions are deployed on Supabase without their source code being in the local git repository, posing a stability risk.
--   **Missing Webhook Handler:** A webhook secret for Merge.dev exists, but there is no API route to handle incoming events.
--   **Duplicate Supabase Secrets:** An audit identified duplicate secrets for Microsoft/Azure that need to be consolidated.
+-   **Missing Webhook Handler:** A Merge.dev webhook secret exists without a corresponding API route to handle incoming events.
+-   **Duplicate Supabase Secrets:** An audit found duplicate secrets that should be consolidated.
 
 **Known issue recurrence from previous fork**
--   None.
+-   **Deployment Failures:** The previous fork was blocked on a deployment issue. This session began by diagnosing the root cause (old UI at root URL) and fixing it. The new user flow bugs are the primary recurrence in this session.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **UI/UX Transformation:** A complete overhaul of the application's visual identity using Tailwind CSS and React.
--   **Font Hierarchy:** Introduced and enforced a new typographic system using  and .
--   **Deployment Debugging:** Analysis of Kubernetes deployment logs to differentiate between solvable code issues and unsolvable infrastructure issues.
--   **Component-Based Theming:** A systematic approach to rewriting styles across a large codebase by modifying shared components and utility classes.
+-   **Complex State Machine Orchestration:** The  hook has become a large, intricate state machine to manage the multi-phase onboarding flow.
+-   **Backend-First Architecture:** A strong emphasis on moving logic (like scoring and data processing) from the React frontend to Supabase Edge Functions and SQL, with the frontend acting as a rendering layer.
+-   **Supabase Realtime:** The application was refactored to use Supabase's WebSocket-based Realtime subscriptions instead of frontend polling for live data updates.
+-   **Dynamic UI Rendering:** Components are designed to render intelligent empty states or prompts when data is unavailable, rather than showing fake data or breaking.
 
 **key DB schema**
--   No changes were made to the database schema in this session.
+-   No new tables were created. SQL was provided to create a new function () and enable pg_cron jobs.
 
 **changes in tech stack**
--   **Fonts:** Added  and  as primary fonts for the frontend.
+-   The application was refactored to use **Supabase Realtime** for live data updates, moving away from a frontend  polling pattern.
 
 **All files of reference**
--   : The main layout wrapper for the authenticated application, now fully themed.
--   : The primary user dashboard, with its content now themed.
--   : The themed login page.
--   : The entry point for the new 8-section Super Admin portal.
--   : The master planning document outlining the new architecture and feature mapping.
+-   : The most critical file for the onboarding flow. It has been the source of and solution to the main recurring bug.
+-   : The new primary dashboard for authenticated users.
+-   : The core AI engine. The user has been given the complete, updated code to deploy.
+-   : The new help/guide page.
+-   : The main React component that orchestrates the UI for the entire signup/calibration flow.
 
 **Areas that need refactoring**:
--   The 5 un-versioned Supabase Edge Functions must have their source code recovered and added to the git repository.
--   The numerous mockup pages created under  and  should be integrated into the main application or removed to reduce clutter.
+-   The 5 un-versioned Supabase Edge Functions must have their source code recovered and added to the git repository for stability.
+-   The  hook is now over 400 lines and highly complex, making it a source of bugs. It would benefit from being simplified or broken down.
 
 **key api endpoints**
--   No new API endpoints were created. The work was focused on the frontend UI/UX and administrative interfaces.
+-   : A new endpoint to handle Complete/Ignore alert actions.
+-   : New endpoints to fetch financial data from Merge.dev.
 
 **Critical Info for New Agent**
--   **THE DEPLOYMENT IS BLOCKED.** Your primary mission is to guide the user to a successful deployment. The agent has fixed all identifiable code-level blockers. The final issue is an **infrastructure problem** ( error) that you cannot solve.
--   **User Action Required:** Instruct the user to first use the **Save to GitHub** button, then the **Deploy** button in the platform UI.
--   **Escalation Path:** If the deployment fails again with the same MongoDB error, tell the user they **must contact Emergent support** to have their deployment template changed.
--   **Project Context:** The entire application has been visually transformed to the Liquid Steel theme. Refer to the planning documents in  for the grand vision and feature backlog. Do not propose new UI styles; adhere to the established Liquid Steel design system.
+-   **Your #1 priority is to permanently fix the bug where the old calibration questions appear during signup.** The user is highly frustrated with this recurring issue. Your first action should be to understand the latest attempted fix and prepare a more robust debugging strategy if it fails again.
+-   **The user deploys frequently.** After every significant fix, you must instruct the user to **Save to GitHub**, then **Deploy**. To test the signup flow, they also need to **purge their user account** from Supabase.
+-   **The architecture is Supabase-first.** Do not implement business logic in the React frontend. Logic for scoring, data analysis, and state determination belongs in Supabase Edge Functions or SQL. The frontend's job is to render the state provided by the backend.
+-   **Follow the user's MASTER PROMPTS.** The user has provided detailed architectural documents. Adhere to them strictly to avoid architectural drift, especially regarding state management and AI pipelines.
 
 **documents and test reports created in this job**
--   
--   
--   
--   
--    contains multiple reports from , with the latest iterations validating the UI transformation.
+-   : A reference copy of the updated Edge Function code for the user to deploy.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Urgent:** New migration not present on deployment, must redirect to production URL. (User reports deployment failed to update UI).
-2.  . (User confirms UI is old).
-3.  Asks agent to use deployer agent, provides logs showing MongoDB auth failure. (Third time this error is seen).
-4.  . (User instruction to target production).
-5.  Asks agent to use deployer agent again.
-6.  . (Final pre-deployment quality check request).
-7.  .
-8.  Requests confirmation that animations, tutorials, and the full user journey are in place and asks for a product demo script.
-9.  . (Asks for a final list of deprecated functions).
-10. . (Requests industry-specific UI/UX).
+1.  **User:** The incorrect calibration screen comes up; the flow doesn't match the plan.
+2.  **User:** I have deployed several times and spent lots of credits. Implement today's changes immediately and archive the chat calibration feature.
+3.  **User:** The Meet BIQc button flashes and auto-advances; it should wait for a click. After calibration, it goes to the wrong page ( instead of ).
+4.  **User:** (Provides updated flow) move forward with all 9 phases, create shells, and I'll provide APIs later. Make the forensic questionnaire ungated for Super Admin for now.
+5.  **User:** The changes aren't visible on the production URL.
+6.  **User:** SQL to purge my user account is giving too many errors; give me an easier way.
+7.  **User:**  (Provides UUID to help with purge).
+8.  **User:** After entering my website and clicking audit, I was taken to the calibration questions again.
+9.  **User:** I didn't see the WOW Summary or the CMO Summary. The WOW Summary should be editable before proceeding.
+10. **User:** If there's no data, why are there percentages in the boxes and why does it say Stable? (Reporting fake default data).
 
 **Project Health Check:**
--   **Broken**: The production deployment pipeline. The application is unable to be deployed with the latest changes due to an infrastructure-level issue with the deployment template's mandatory MongoDB migration step.
--   **Mocked**: The Action Layer backend logic (for email/SMS/ticketing) is UI-only. Many new features requested by the user (e.g., Soundboard) exist only in planning documents.
+-   **Broken**: The new user signup flow is critically broken due to the recurring appearance of the old calibration questionnaire. This is the P0 blocker for the entire project.
+-   **Mocked**: The integration layer on the Market page (Unlock Live Channel Intelligence) is a UI shell. The Forensic Calibration scoring is not yet wired to the backend. Paid feature gating is not implemented.
 
 **3rd Party Integrations**
--   **Supabase (PostgreSQL, Auth, Edge Functions, pg_cron):** The core of the backend architecture.
--   **OpenAI & Perplexity:** Used by various Edge Functions for AI capabilities.
--   **Merge.dev:** Provides connectivity to CRM and Accounting data.
--   **Lottie:** Used for loading animations.
--   No new integrations were added in this session.
+-   **Supabase (PostgreSQL, Auth, Edge Functions, Realtime, pg_cron):** The core of the architecture. Now uses Realtime for live updates.
+-   **OpenAI (gpt-4o-mini):** Powers the main cognitive engine.
+-   **Perplexity:** Used for market intelligence searches.
+-   **Merge.dev:** Provides a unified API for CRM and Accounting data.
+-   **Framer Motion:** Used for the new  and  loading animations.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. Extensively used to validate every phase of the UI transformation across all pages.
--   **Troubleshoot agent used after agent stuck in loop**: YES. Used to analyze the deployment failure.
+-   **Testing agent used after significant changes**: YES, but the most recent and complex bugs in the onboarding flow have required manual debugging and user feedback.
+-   **Troubleshoot agent used after agent stuck in loop**: NO.
 -   **Test files created**: None.
--   **Known regressions**: None in the sandboxed environment. The only major issue is the inability to deploy.
+-   **Known regressions**: The appearance of the calibration questionnaire during signup is a major, persistent regression.
 
 **Credentials to test flow:**
 -   **User**: 
 -   **Password**: 
+-   **Note:** The user must be purged from Supabase and re-registered to properly test the new signup flow.
 
 **What agent forgot to execute**
--   The agent did not implement the Soundboard feature requested by the user, though it was captured in planning documents. Given the focus on the massive UI overhaul and critical deployment debugging, this was a reasonable prioritization.</analysis>
+-   The agent has been stuck in a reactive loop fixing the same bug (calibration questions appearing) without taking a step back to perform a comprehensive audit of all code paths that could lead to the incorrect state. Each fix has addressed a single path, only for another to be discovered by the user. A more proactive, deep-dive debugging approach is needed.
+Must fort to biqc.thestrategysquad.com and ensure all required end point are directed
+</analysis>

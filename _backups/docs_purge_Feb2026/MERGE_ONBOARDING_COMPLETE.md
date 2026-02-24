@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://admin-portal-launch.preview.emergentagent.com/login-supabase
+https://market-cognitive.preview.emergentagent.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://admin-portal-launch.preview.emergentagent.com/integrations
+https://market-cognitive.preview.emergentagent.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://admin-portal-launch.preview.emergentagent.com
+**Test URL:** https://market-cognitive.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://admin-portal-launch.preview.emergentagent.com/advisor
+- [ ] Navigate to https://market-cognitive.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://admin-portal-launch.preview.emergentagent.com/
+**Landing:** https://market-cognitive.preview.emergentagent.com/
 
-**Login:** https://admin-portal-launch.preview.emergentagent.com/login-supabase
+**Login:** https://market-cognitive.preview.emergentagent.com/login-supabase
 
-**Register:** https://admin-portal-launch.preview.emergentagent.com/register-supabase
+**Register:** https://market-cognitive.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://admin-portal-launch.preview.emergentagent.com/pricing
+**Pricing:** https://market-cognitive.preview.emergentagent.com/pricing
 
-**Terms:** https://admin-portal-launch.preview.emergentagent.com/terms
+**Terms:** https://market-cognitive.preview.emergentagent.com/terms
 
-**Advisor:** https://admin-portal-launch.preview.emergentagent.com/advisor
+**Advisor:** https://market-cognitive.preview.emergentagent.com/advisor
 
 ---
 

@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://admin-portal-launch.preview.emergentagent.com/advisor
+## For: https://market-cognitive.preview.emergentagent.com/advisor
 
 ---
 

@@ -74,12 +74,12 @@ if (integration.viaMerge) {
 ## TEST 1: Login Stability Check
 
 ### Steps:
-1. Navigate to: https://admin-portal-launch.preview.emergentagent.com/
+1. Navigate to: https://market-cognitive.preview.emergentagent.com/
 2. Click **"Log In"** button
 3. Click **"Continue with Google"**
 4. Complete Google OAuth login with: **andre@thestrategysquad.com.au**
 5. Verify you land on **/advisor** or **/dashboard**
-6. Navigate to: https://admin-portal-launch.preview.emergentagent.com/integrations
+6. Navigate to: https://market-cognitive.preview.emergentagent.com/integrations
 7. Wait 5 seconds
 
 ### Expected Results:

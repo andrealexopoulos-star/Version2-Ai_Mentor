@@ -4,7 +4,7 @@
 # Requires: Valid user authentication
 
 # Configuration
-API_URL="https://admin-portal-launch.preview.emergentagent.com/api"
+API_URL="https://market-cognitive.preview.emergentagent.com/api"
 
 # Color codes for output
 GREEN='\033[0;32m'
