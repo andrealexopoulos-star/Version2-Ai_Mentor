@@ -74,11 +74,30 @@ const DashboardLayout = ({ children }) => {
     localStorage.setItem('theme', 'dark');
   }, []);
 
-  // Notifications polling
+  // Notifications — Supabase Realtime (replaces polling)
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 300000);
-    return () => clearInterval(interval);
+
+    // Subscribe to watchtower_events for real-time alert updates
+    let channel;
+    const setup = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+      channel = supabase
+        .channel('notification-updates')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'watchtower_events',
+          filter: `user_id=eq.${session.user.id}`,
+        }, () => {
+          fetchNotifications();
+        })
+        .subscribe();
+    };
+    setup();
+
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
   const fetchNotifications = async () => {
