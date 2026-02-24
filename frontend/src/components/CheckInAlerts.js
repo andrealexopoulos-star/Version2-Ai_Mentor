@@ -183,7 +183,7 @@ export const CheckInAlerts = () => {
             {/* Time Selection */}
             <div className="mb-6">
               <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#64748B', fontFamily: MONO }}>Select Time (AEST)</label>
-              <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                 {timeSlots.map((t) => (
                   <button key={t} onClick={() => setSelectedTime(t)}
                     className="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"

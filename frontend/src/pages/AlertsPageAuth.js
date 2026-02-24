@@ -127,7 +127,7 @@ const AlertsPageAuth = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
             <div key={l} className="rounded-lg p-4 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
               <span className="text-2xl font-bold block" style={{ fontFamily: MONO, color: c }}>{v}</span>
