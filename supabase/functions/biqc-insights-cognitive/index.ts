@@ -620,7 +620,7 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
           { role: "user", content: userPrompt },
         ],
         temperature: 0.5,
-        max_tokens: 4000,
+        max_tokens: 6000,
         response_format: { type: "json_object" },
       }),
     });
