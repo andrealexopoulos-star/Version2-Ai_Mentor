@@ -103,7 +103,7 @@ const AuthLoadingPreview = () => (
 );
 
 const CalibrationPreview = () => {
-  const [screen, setScreen] = useState('auth-loading');
+  const [screen, setScreen] = useState('ignition');
 
   return (
     <div className="min-h-screen" style={{ background: '#0F1720' }}>
