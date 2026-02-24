@@ -1,0 +1,110 @@
+{
+  "summary": "Iteration 73: BIQc Auth Resilience and Insights Tabs Testing Complete. All features verified: (1) /api/auth/supabase/me returns 200 with user profile (not 520), (2) BIQc Insights page loads with all 5 cognition tabs (Money, Revenue, Operations, People, Market), (3) Each tab shows metrics cards from cognitive snapshot, (4) Revenue tab shows Deal Pipeline section, (5) Money tab shows Best/Base/Worst case scenarios, (6) Operations tab shows Recommendations section, (7) People tab shows Calendar and Email Stress, (8) Market tab shows Competitor Signals, (9) Desktop has no horizontal scroll, (10) Login page Forgot Password link present.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "BIQc Insights",
+        "issues": ["Initial cognitive data loading takes 30-40 seconds (shows CognitiveLoadingScreen). This is expected behavior when fresh data needs to be generated from Supabase Edge Function."]
+      }
+    ]
+  },
+  "tests_executed": {
+    "backend_auth_resilience": {
+      "test_auth_me_returns_200": "PASS - No 520 errors, returns user profile",
+      "test_auth_me_without_token": "PASS - Returns 401",
+      "test_auth_me_invalid_token": "PASS - Returns 401",
+      "test_login_returns_session": "PASS - Returns valid session with access_token",
+      "test_login_wrong_password": "PASS - Returns 401",
+      "test_check_profile": "PASS - Returns calibration_status"
+    },
+    "frontend_login_page": {
+      "forgot_password_link": "PASS - data-testid='login-forgot-password' present with text 'Forgot password?'",
+      "horizontal_scroll": "PASS - No horizontal scroll (1920 === 1920)"
+    },
+    "frontend_biqc_insights": {
+      "page_loads": "PASS - data-testid='biqc-insights-page' found",
+      "cognition_tabs_container": "PASS - data-testid='cognition-tabs' found",
+      "tabs_present": {
+        "tab-money": "PASS - 'Money' with 2 alerts",
+        "tab-revenue": "PASS - 'Revenue' with 2 alerts",
+        "tab-operations": "PASS - 'Operations'",
+        "tab-people": "PASS - 'People'",
+        "tab-market": "PASS - 'Market' with 1 alert"
+      },
+      "horizontal_scroll": "PASS - No horizontal scroll"
+    },
+    "frontend_tab_content": {
+      "money_tab": {
+        "metrics": "PASS - Runway, Margin, Spend cards visible",
+        "scenarios": "PASS - Best/Base/Worst case (30d) cards visible"
+      },
+      "revenue_tab": {
+        "metrics": "PASS - Pipeline, Weighted, Concentration cards visible",
+        "deal_pipeline": "INFO - Section header visible but no deal cards (expected when no HubSpot data)"
+      },
+      "operations_tab": {
+        "metrics": "PASS - SLA Breaches, Task Aging, Bottleneck cards visible",
+        "recommendations": "PASS - Recommendations section with actionable items"
+      },
+      "people_tab": {
+        "metrics": "PASS - Capacity (85%), Fatigue (medium), Pending Decisions (3)",
+        "calendar": "PASS - '5 meetings scheduled this week'",
+        "email_stress": "PASS - 'High volume of unread emails'"
+      },
+      "market_tab": {
+        "metrics": "PASS - Position (DRIFT), Misalignment (35/100), Goal Prob (50%)",
+        "competitors": "PASS - Competitor Signals section with Accenture, Deloitte, PwC, KPMG"
+      }
+    }
+  },
+  "features_verified": {
+    "auth_me_resilience": "PASS - /api/auth/supabase/me returns 200 with user profile, fail-open to minimal profile on DB errors",
+    "biqc_insights_5_tabs": "PASS - All 5 cognition tabs (Money, Revenue, Operations, People, Market) present and clickable",
+    "metrics_cards": "PASS - Each tab shows relevant metrics from cognitive snapshot",
+    "money_scenarios": "PASS - Best/Base/Worst case scenario cards visible",
+    "revenue_deals": "INFO - Deal Pipeline section present but empty (no CRM data)",
+    "operations_recs": "PASS - Recommendations section visible with actionable items",
+    "people_calendar_email": "PASS - Calendar and Email Stress sections visible",
+    "market_competitors": "PASS - Competitor Signals section with company cards",
+    "desktop_no_scroll": "PASS - No horizontal scroll at 1920px viewport",
+    "forgot_password_link": "PASS - Link present on login page"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration73_auth_insights.py",
+    "/app/test_reports/pytest/pytest_results_iteration73.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth_supabase.py verify_supabase_token (lines 178-228) correctly implements fail-open pattern - returns minimal profile on DB lookup failures",
+    "AdvisorWatchtower.js parseToGroups function correctly extracts enriched data from cognitive snapshot for all 5 tabs",
+    "Tab-specific panels (lines 288-358) properly render deals, scenarios, recommendations, calendar/email, competitors when data exists",
+    "All tab buttons have correct data-testid attributes (tab-money, tab-revenue, etc.)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration73_auth_insights.py"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6 tests passed)",
+    "frontend": "100% (all features verified)"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "BIQc_Test_2026!"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 73 complete. Auth resilience fix verified - /api/auth/supabase/me returns 200 (not 520). BIQc Insights page has all 5 cognition tabs with enriched data. Note: Initial page load takes 30-40 seconds while cognitive data is generated from Supabase Edge Function. The detect_contradictions() SQL function is a migration file (016_detect_contradictions.sql) ready for manual deployment to Supabase - NOT auto-deployed.",
+  "mocked_api_confirmation": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": ["Google Ads API", "Meta Ads API", "LinkedIn Ads API", "GA4 API", "Email Platform API"],
+    "note": "CRM (HubSpot) is REAL via Merge.dev. Cognitive data comes from Supabase Edge Function (biqc-insights-cognitive)."
+  },
+  "sql_migration_note": "detect_contradictions() SQL function is in supabase/migrations/016_detect_contradictions.sql - NOT yet deployed to Supabase (user must run manually)"
+}
