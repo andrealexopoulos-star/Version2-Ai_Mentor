@@ -5,11 +5,13 @@ import { ExecutiveReveal, REVEAL_PHASES } from '../components/calibration/Execut
 import { WowSummary } from '../components/calibration/WowSummary';
 import { ContinuitySuite } from '../components/calibration/ContinuitySuite';
 import { CognitiveLoadingScreen, CognitiveIgnitionScreen } from '../components/CognitiveLoadingScreen';
+import { ExecutiveCMOSnapshot, ForensicCalibrationUI } from '../components/calibration/IntelligencePhases';
 
 const SCREENS = [
   'ignition', 'auth-loading', 'cognitive-return',
-  'welcome', 'manual-summary', 'analyzing', 'wow-summary', 'continuity',
-  'wizard-q1', 'wizard-q2', 'wizard-q3', 'chat',
+  'welcome', 'manual-summary', 'analyzing', 'wow-summary',
+  'cmo-snapshot', 'forensic',
+  'continuity', 'wizard-q1', 'wizard-q2', 'wizard-q3', 'chat',
   'reveal-progress', 'reveal-complete',
   'onboard-decision', 'onboard-welcome', 'onboard-identity', 'onboard-market', 'onboard-goals',
   'first-login-notif', 'checkin-alert',
