@@ -20,6 +20,66 @@ const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
+const ChannelIntelligence = ({ navigate }) => {
+  const [channels, setChannels] = useState([]);
+  const [summary, setSummary] = useState(null);
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const res = await apiClient.get('/integrations/channels/status');
+        setChannels(res.data?.channels || []);
+        setSummary(res.data?.summary || null);
+      } catch {}
+    };
+    fetchChannels();
+  }, []);
+
+  return (
+    <div data-testid="channel-intelligence">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Unlock Live Channel Intelligence</h3>
+        {summary && (
+          <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: summary.connected > 0 ? '#10B981' : '#64748B', background: summary.connected > 0 ? '#10B98115' : '#24314050', fontFamily: MONO }}>
+            {summary.connected}/{summary.total} connected
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-[#64748B] mb-4" style={{ fontFamily: MONO }}>Connect your marketing channels to activate real-time performance analysis.</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {(channels.length > 0 ? channels : [
+          { key: 'crm', name: 'CRM', description: 'HubSpot, Salesforce, Pipedrive', color: '#FF7A59', status: 'not_connected', available: true },
+          { key: 'google_ads', name: 'Google Ads', description: 'Search, Display, YouTube', color: '#4285F4', status: 'not_connected', available: false },
+          { key: 'meta_ads', name: 'Meta Ads', description: 'Facebook, Instagram', color: '#1877F2', status: 'not_connected', available: false },
+          { key: 'linkedin', name: 'LinkedIn', description: 'Campaigns, Leads', color: '#0A66C2', status: 'not_connected', available: false },
+          { key: 'analytics', name: 'Analytics', description: 'GA4, Mixpanel', color: '#E37400', status: 'not_connected', available: false },
+          { key: 'email_platform', name: 'Email Platform', description: 'Mailchimp, ActiveCampaign', color: '#FFE01B', status: 'not_connected', available: false },
+        ]).map(ch => (
+          <div key={ch.key || ch.name} className="p-4 rounded-lg flex items-center gap-3" style={{ background: '#0F1720', border: `1px solid ${ch.status === 'connected' ? '#10B98130' : '#243140'}` }} data-testid={`channel-${ch.key}`}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ background: ch.color }}>{ch.name[0]}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm text-[#F4F7FA] block">{ch.name}</span>
+                {ch.provider && <span className="text-[9px] text-[#64748B]" style={{ fontFamily: MONO }}>({ch.provider})</span>}
+              </div>
+              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{ch.description}</span>
+            </div>
+            {ch.status === 'connected' ? (
+              <span className="text-[10px] px-2 py-1 rounded flex items-center gap-1" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>
+                <CheckCircle2 className="w-3 h-3" /> Live
+              </span>
+            ) : ch.available ? (
+              <button onClick={() => navigate('/integrations')} className="text-[10px] px-2 py-1 rounded transition-colors hover:bg-[#10B98125]" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }} data-testid={`connect-${ch.key}`}>Connect</button>
+            ) : (
+              <span className="text-[10px] px-2 py-1 rounded" style={{ color: '#64748B', background: '#24314050', fontFamily: MONO }}>Soon</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ST = {
   STABLE: { c: '#10B981', label: 'Stable' },
   DRIFT: { c: '#F59E0B', label: 'Drift Detected' },
