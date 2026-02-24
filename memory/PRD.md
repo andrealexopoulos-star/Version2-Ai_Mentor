@@ -6,44 +6,57 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 
 ## Architecture
 - Frontend: React + Tailwind (Liquid Steel dark theme)
-- Backend: FastAPI (120+ endpoints)
+- Backend: FastAPI (120+ endpoints) — rendering/routing only, NO cognition
 - Database: Supabase (PostgreSQL, Auth, Edge Functions, Realtime, pg_cron)
-- AI: OpenAI gpt-4o-mini (Edge Functions) + gpt-4o (backend)
+- AI: OpenAI gpt-4o-mini (Edge Functions) — ALL cognition is Supabase-first
 - Integrations: Merge.dev (CRM/HubSpot), Outlook, Gmail, Google Drive
 - Production URL: biqc.thestrategysquad.com
 
 ## Completed (This Session - 2026-02-24)
 
 ### Bug Fixes
-- **P0: Calibration questionnaire appearing during signup** — `/api/console/state` now writes to both `strategic_console_state` and `persona_calibration_status`
-- **WOW Summary button invisible** — Changed from near-white (#F4F7FA) to orange (#FF6A00) 
-- **WOW Summary edit indicators** — Added pencil icons, hover "Click to edit" text, gold border on editing
-- **Nested button HTML warning** — Fixed InsufficientDataAlert button-in-button to div-in-div
-- **Market page stuck on loading** — Removed phased ignition animation, content shows immediately
-- **Market Intelligence not showing data** — Backend now parses `summary` JSON string into `cognitive` object
+- P0: Calibration questionnaire appearing during signup — fixed `console/state` DB writes
+- WOW Summary button invisible — changed to orange (#FF6A00)
+- WOW Summary edit indicators — pencil icon, hover hints, gold border on editing
+- Nested button HTML warning in InsufficientDataAlert
+- Market page stuck on loading — removed phased ignition animation
+- Market Intelligence not showing data — parsed `summary` JSON string into `cognitive` object
 
 ### New Features
-- **Forensic Calibration Backend Scoring Engine** — POST/GET `/api/forensic/calibration` with weighted 7-dimension scoring (composite 0-100, risk profiles, strategic signals)
-- **Channel Intelligence Status API** — GET `/api/integrations/channels/status` aggregating Merge.dev CRM, email, drive connections
-- **Market Intelligence Aggregator** — GET `/api/market-intelligence` pulls live CRM data (HubSpot: 86 deals, $13,685 pipeline), forensic calibration, business profile
-- **Market Page Data Flow** — Now shows real DRIFT status (70% confidence), signal scores, drift analysis gaps, misalignment index, AI recommendations
-- **ForensicCalibrationCard on Market Page** — Shows existing calibration results inline with signals
+- Forensic Calibration Backend Scoring Engine (POST/GET /api/forensic/calibration)
+- Channel Intelligence Status API (GET /api/integrations/channels/status)
+- Market Intelligence Aggregator (GET /api/market-intelligence)
+- Market page data flow — HubSpot CRM data (86 deals, $13,685 pipeline) now visible
+
+### BIQc Action Plan (Cognition-as-a-Platform Flagship) — READY FOR DEPLOYMENT
+- **Extended `biqc-insights-cognitive` Edge Function** with:
+  - Deterministic overlay (runs BEFORE LLM) — misalignment boost, urgency, risk amplification, compression probability
+  - `compute_market_risk_weight()` SQL RPC call for database-side risk anchoring
+  - `action_plan` block in response: top_3_marketing_moves, primary_blindside_risk, hidden_growth_lever, marketing_waste_alert, 90_day_market_projection, decision_window_pressure, probability_shift_if_executed/ignored
+- **SQL function `compute_market_risk_weight()`** — deterministic risk scoring in PostgreSQL
+- **ActionPlanSection component on Market page** — renders all action_plan fields with consequence modelling
+- **No new backend endpoints** — all cognition stays in Supabase Edge Functions
+- **No schema mutations** — uses existing tables (intelligence_snapshots, user_operator_profile, business_profiles)
+
+### Deployment Required
+To activate the Action Plan:
+1. Deploy SQL: `supabase db push` or run `015_compute_market_risk_weight.sql` manually
+2. Deploy Edge Function: `supabase functions deploy biqc-insights-cognitive`
+3. Force refresh: call Edge Function with `{"force": true}` to regenerate snapshot with action_plan
+
+## Architecture Rules (ENFORCED)
+- ALL cognition lives in Supabase Edge Functions — NO FastAPI AI pipelines
+- Frontend renders structured JSON ONLY — no probability calculations, no risk computation
+- Deterministic overlay runs BEFORE LLM synthesis in every Edge Function call
+- SQL function provides database-side risk anchoring to prevent pure-AI drift
+- No static caching beyond 30min TTL; invalidate on profile/integration/calibration changes
 
 ## Pending / Backlog
 - P1: Full E2E onboarding verification (user testing)
-- P1: 9 calibration questions as Settings module
+- P1: Deploy Edge Function + SQL function to Supabase production
+- P1: Wire BIQc Insights tabs (Money, Ops, People) — Market tab is nucleus, others follow
 - P2: Stripe paid gating for premium features
-- P2: Build "BIQc Insights" premium feature (/advisor)
 - P2: Recover 5 missing Edge Function source files
 - P2: Build Action Layer backend (Auto-Email, Quick-SMS)
-- P2: Wire real APIs for Google Ads, Meta, LinkedIn, Analytics, Email Platform
+- P2: Wire real APIs for Google Ads, Meta, LinkedIn, Analytics
 - P3: Consolidate 16 legacy pages
-- P3: Refactor useCalibrationState.js
-
-## Key API Endpoints
-- `POST /api/forensic/calibration` — Submit & score forensic calibration
-- `GET /api/forensic/calibration` — Retrieve existing forensic results
-- `GET /api/integrations/channels/status` — Channel connection status
-- `GET /api/market-intelligence` — Live market intelligence aggregation
-- `GET /api/snapshot/latest` — Parsed cognitive snapshot
-- `POST /api/console/state` — Save calibration progress
