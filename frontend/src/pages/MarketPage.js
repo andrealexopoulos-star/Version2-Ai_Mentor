@@ -416,7 +416,7 @@ const MarketPage = () => {
         </div>
 
         {/* ═══ PHASE 5: INTEGRATION LAYER — Unlock Live Channel Intelligence ═══ */}
-        <ChannelIntelligence navigate={navigate} />
+        <ChannelIntelligence navigate={navigate} channelsData={channelsData} />
 
         {/* ═══ PHASE 6 + 7: Data Validation + Channel Calibration (placeholder — needs server-side) ═══ */}
         <Panel>
