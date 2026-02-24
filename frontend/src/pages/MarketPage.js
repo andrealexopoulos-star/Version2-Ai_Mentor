@@ -163,10 +163,17 @@ const MarketPage = () => {
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
 
   const fetchSnapshot = useCallback(async () => {
+    // Try 1: Existing snapshot with parsed cognitive data
     try {
       const res = await apiClient.get('/snapshot/latest');
       if (res.data?.cognitive) { setSnapshot(res.data.cognitive); return; }
     } catch {}
+    // Try 2: Live market intelligence aggregation (CRM + forensic + profile)
+    try {
+      const res = await apiClient.get('/market-intelligence');
+      if (res.data?.cognitive && res.data?.has_data) { setSnapshot(res.data.cognitive); return; }
+    } catch {}
+    // Try 3: Edge Function fallback
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
