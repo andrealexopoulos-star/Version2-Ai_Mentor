@@ -54,6 +54,7 @@ import PromptLab from './pages/PromptLab';
 import ContactPage from './pages/ContactPage';
 import CognitiveV2Mockup from './pages/CognitiveV2Mockup';
 import LoadingPreview from './pages/LoadingPreview';
+import CalibrationPreview from './pages/CalibrationPreview';
 
 // New Intelligence Pages
 import RevenuePage from './pages/RevenuePage';
