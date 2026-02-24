@@ -102,16 +102,23 @@ export const useCalibrationState = () => {
 
   const triggerComplete = () => {
     setCompleting(true); setEntry("completing"); setRevealPhase(0);
-    // Sync calibration data to business profile
+    // Sync calibration data to business profile AND refresh cognitive snapshot
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
+          // 1. Sync calibration → business profile
           await fetch(`${SUPABASE_URL}/functions/v1/calibration-sync`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
             body: '{}',
           });
+          // 2. Re-trigger cognitive snapshot (backend event, not frontend mutation)
+          await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+            body: '{"refresh": true}',
+          }).catch(() => {});
         }
       } catch (e) { console.warn('[calibration] Sync failed (non-blocking):', e); }
     })();
