@@ -155,6 +155,7 @@ function AppRoutes() {
       <Route path="/enterprise-terms" element={<EnterpriseTerms />} />
       <Route path="/cognitive-v2-preview" element={<CognitiveV2Mockup />} />
       <Route path="/loading-preview" element={<LoadingPreview />} />
+      <Route path="/calibration-preview" element={<CalibrationPreview />} />
 
       {/* Platform Demo Pages (Liquid Steel) */}
       <Route path="/platform/login" element={<PlatformLogin />} />
