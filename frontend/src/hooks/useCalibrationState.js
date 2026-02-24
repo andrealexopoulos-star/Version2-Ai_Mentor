@@ -135,7 +135,21 @@ export const useCalibrationState = () => {
     }
   };
 
+  // Predefined wizard questions — used when Edge Function returns chat-style response
+  const WIZARD_QUESTIONS = [
+    { step: 1, field: 'communication_style', question: 'How do you prefer to receive information?', options: ['Bullet points — Just the key facts, fast', 'Narrative — Tell me the story, I\'ll find the insight', 'Data-first — Numbers, charts, evidence, then conclusions', 'Conversational — Talk to me like a trusted advisor'], insight: 'Understanding your communication style helps BIQc deliver intelligence the way you process it best.' },
+    { step: 2, field: 'verbosity', question: 'How much detail do you want in your intelligence briefings?', options: ['Minimal — Headlines and actions only', 'Moderate — Key context with recommendations', 'Comprehensive — Full analysis with supporting evidence'], insight: 'This determines how deep your daily briefings go.' },
+    { step: 3, field: 'bluntness', question: 'How direct should BIQc be when flagging problems?', options: ['Blunt — Give it to me straight, no sugar-coating', 'Balanced — Direct but diplomatic', 'Diplomatic — Soften the edges, focus on solutions'], insight: 'Your directness preference shapes how BIQc delivers hard truths.' },
+    { step: 4, field: 'risk_posture', question: 'When it comes to risk, where do you sit?', options: ['Conservative — Protect what we have, minimise exposure', 'Moderate — Balanced approach, calculated risks only', 'Aggressive — Move fast, accept higher risk for higher reward'], insight: 'Your risk posture shapes how BIQc prioritises alerts and recommendations.' },
+    { step: 5, field: 'decision_style', question: 'How do you typically make business decisions?', options: ['Gut instinct — Trust my experience and intuition', 'Data-driven — Show me the numbers first', 'Consensus — I consult my team before deciding', 'Hybrid — Mix of data and instinct depending on stakes'], insight: 'BIQc adapts its recommendations to match your decision-making style.' },
+    { step: 6, field: 'accountability_cadence', question: 'How often do you want BIQc to check in with progress updates?', options: ['Daily — Keep me posted every day', 'Weekly — A weekly summary is enough', 'Ad-hoc — Only when something important happens', 'Milestone-based — Update me when goals are hit or missed'], insight: 'This sets the rhythm of your intelligence briefings.' },
+    { step: 7, field: 'time_constraints', question: 'How would you describe your typical time pressure?', options: ['Always rushed — Every minute counts', 'Moderate — Busy but manageable', 'Has breathing room — I make time for strategy'], insight: 'BIQc adjusts the depth and urgency of communications based on your schedule.' },
+    { step: 8, field: 'challenge_tolerance', question: 'How much should BIQc challenge your thinking?', options: ['Challenge me — Push back on my assumptions', 'Balanced — Challenge when it matters, support otherwise', 'Support me — Reinforce my direction, flag risks gently'], insight: 'This determines how assertive BIQc is in its advisory role.' },
+    { step: 9, field: 'boundaries', question: 'Are there any topics or areas BIQc should avoid?', options: ['No boundaries — Cover everything', 'Personal topics off-limits — Business only', 'Specific areas to avoid — I\'ll configure later'], insight: 'Setting boundaries ensures BIQc stays within your comfort zone.', allowText: true },
+  ];
+
   const applyResponse = async (data) => {
+    // If Edge Function returns structured wizard data, use it directly
     if (data.question && data.options && data.options.length > 0) {
       setQuestion(data.question); setOptions(data.options); setAllowText(data.allow_text === true);
       setInsight(data.insight || null); setIsProbe(data.probe === true);
@@ -143,28 +157,26 @@ export const useCalibrationState = () => {
       if (!data.probe) setCurrentStep(prev => data.step || prev + 1);
       setCalMode("wizard"); setEntry("calibrating"); return;
     }
-    if (data.message) {
-      setMessages(prev => [...prev, { role: "edge", text: data.message }]);
-      setCalMode("chat"); setEntry("calibrating");
-      // If response is just an acknowledgment (no question), auto-fetch next step
-      if (!data.message.includes('?')) {
-        try {
-          const followUp = await callEdge({ step: currentStep + 1, message: "continue" });
-          if (followUp.status === "COMPLETE") { triggerComplete(); return; }
-          if (followUp.question && followUp.options?.length > 0) {
-            setQuestion(followUp.question); setOptions(followUp.options); setAllowText(followUp.allow_text === true);
-            setInsight(followUp.insight || null); setIsProbe(followUp.probe === true);
-            setSelectedOption(null); setTextValue("");
-            if (!followUp.probe) setCurrentStep(prev => followUp.step || prev + 1);
-            setCalMode("wizard"); return;
-          }
-          if (followUp.message) setMessages(prev => [...prev, { role: "edge", text: followUp.message }]);
-        } catch { /* stay in chat mode */ }
-      }
+
+    // Edge Function returned chat-style response — convert to wizard using predefined questions
+    const nextStep = Math.min(currentStep + 1, 9);
+    const wizardQ = WIZARD_QUESTIONS.find(q => q.step === nextStep) || WIZARD_QUESTIONS.find(q => q.step === currentStep);
+    if (wizardQ) {
+      setQuestion(wizardQ.question);
+      setOptions(wizardQ.options);
+      setAllowText(wizardQ.allowText || false);
+      setInsight(wizardQ.insight || null);
+      setSelectedOption(null); setTextValue("");
+      setCurrentStep(wizardQ.step);
+      setCalMode("wizard"); setEntry("calibrating");
       return;
     }
-    const fb = data.text || data.response || JSON.stringify(data);
-    if (fb) { setMessages(prev => [...prev, { role: "edge", text: fb }]); setCalMode("chat"); setEntry("calibrating"); }
+
+    // Final fallback — should not reach here
+    if (data.message) {
+      setMessages(prev => [...prev, { role: "edge", text: data.message }]);
+      setCalMode("wizard"); setEntry("calibrating");
+    }
   };
 
   const detectState = async () => {
