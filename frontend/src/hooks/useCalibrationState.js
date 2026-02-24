@@ -214,7 +214,10 @@ export const useCalibrationState = () => {
         autoSave(1);
         setEntry("wow_summary"); return;
       }
-      applyResponse(data);
+      // No wow_summary returned — skip to intelligence-first → market
+      autoSave(1);
+      fetchIntelligence();
+      setEntry("intelligence-first");
     } catch { setEntry("manual_summary"); }
     finally { setIsSubmitting(false); }
   };
