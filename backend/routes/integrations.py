@@ -1381,3 +1381,115 @@ async def google_drive_disconnect(current_user: dict = Depends(get_current_user)
         raise HTTPException(status_code=500, detail="Failed to disconnect Google Drive")
 
 
+
+
+# ═══════════════════════════════════════════════════════════════
+# CHANNEL INTELLIGENCE — Integration Status + Data Aggregation
+# ═══════════════════════════════════════════════════════════════
+
+CHANNEL_REGISTRY = [
+    {"key": "crm", "name": "CRM", "desc": "HubSpot, Salesforce, Pipedrive", "color": "#FF7A59", "merge_category": "crm"},
+    {"key": "google_ads", "name": "Google Ads", "desc": "Search, Display, YouTube", "color": "#4285F4", "merge_category": None},
+    {"key": "meta_ads", "name": "Meta Ads", "desc": "Facebook, Instagram", "color": "#1877F2", "merge_category": None},
+    {"key": "linkedin", "name": "LinkedIn", "desc": "Campaigns, Leads", "color": "#0A66C2", "merge_category": None},
+    {"key": "analytics", "name": "Analytics", "desc": "GA4, Mixpanel", "color": "#E37400", "merge_category": None},
+    {"key": "email_platform", "name": "Email Platform", "desc": "Mailchimp, ActiveCampaign", "color": "#FFE01B", "merge_category": None},
+]
+
+
+@router.get("/integrations/channels/status")
+async def get_channel_status(current_user: dict = Depends(get_current_user)):
+    """
+    Return connection status for all marketing channels.
+    Checks Merge.dev integrations + direct integrations.
+    """
+    from workspace_helpers import get_user_account, get_account_integrations
+
+    user_id = current_user["id"]
+    channels = []
+
+    # Get Merge.dev connected integrations
+    merge_connected = {}
+    try:
+        account = await get_user_account(get_sb(), user_id)
+        if account:
+            account_id = account["id"]
+            records = await get_account_integrations(get_sb(), account_id)
+            for rec in records:
+                cat = rec.get("category", "")
+                provider = rec.get("provider", "")
+                if cat == "crm" and rec.get("merge_account_id"):
+                    merge_connected["crm"] = {
+                        "provider": provider,
+                        "connected_at": rec.get("connected_at") or rec.get("created_at"),
+                    }
+    except Exception as e:
+        logger.warning(f"[channels] Merge check failed: {e}")
+
+    # Check email connections (Outlook/Gmail via Supabase)
+    email_connected = False
+    try:
+        email_res = get_sb().table("email_connections").select("id, provider").eq("user_id", user_id).limit(1).execute()
+        email_data = email_res.data if email_res else None
+        if email_data and len(email_data) > 0:
+            email_connected = True
+    except Exception:
+        pass
+
+    # Check Google Drive
+    drive_connected = False
+    try:
+        drive_res = get_sb().table("integration_accounts").select("id").eq("user_id", user_id).eq("integration_slug", "google_drive").limit(1).execute()
+        drive_data = drive_res.data if drive_res else None
+        if drive_data and len(drive_data) > 0:
+            drive_connected = True
+    except Exception:
+        pass
+
+    # Build channel status list
+    for ch in CHANNEL_REGISTRY:
+        status = "not_connected"
+        provider_name = None
+        connected_at = None
+
+        if ch["key"] == "crm" and "crm" in merge_connected:
+            status = "connected"
+            provider_name = merge_connected["crm"]["provider"]
+            connected_at = merge_connected["crm"]["connected_at"]
+        elif ch["key"] == "email_platform" and email_connected:
+            status = "connected"
+
+        channels.append({
+            "key": ch["key"],
+            "name": ch["name"],
+            "description": ch["desc"],
+            "color": ch["color"],
+            "status": status,
+            "provider": provider_name,
+            "connected_at": connected_at,
+            "available": ch["merge_category"] is not None or ch["key"] == "crm",
+        })
+
+    # Get forensic calibration status
+    forensic_done = False
+    try:
+        op_res = get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+        op_data = op_res.data if op_res else None
+        if op_data:
+            op = op_data.get("operator_profile") or {}
+            forensic_done = bool(op.get("forensic_calibration"))
+    except Exception:
+        pass
+
+    return {
+        "channels": channels,
+        "summary": {
+            "total": len(channels),
+            "connected": sum(1 for c in channels if c["status"] == "connected"),
+            "available": sum(1 for c in channels if c["available"]),
+        },
+        "forensic_calibration_complete": forensic_done,
+        "email_connected": email_connected,
+        "drive_connected": drive_connected,
+    }
+
