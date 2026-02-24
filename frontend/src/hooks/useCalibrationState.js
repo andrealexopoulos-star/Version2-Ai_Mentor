@@ -186,8 +186,9 @@ export const useCalibrationState = () => {
       setUserName(d.user_name || '');
       if (d.status === 'COMPLETE') { window.location.href = '/market'; return; }
       if (d.status === 'IN_PROGRESS' && d.calibration_step > 1) {
-        setCalStep(d.calibration_step);
-        setEntry("continuity");
+        // Skip resuming questions — go straight to intelligence → market
+        autoSave(9, "COMPLETE");
+        triggerComplete();
         return;
       }
       // New users → ignition sequence first
