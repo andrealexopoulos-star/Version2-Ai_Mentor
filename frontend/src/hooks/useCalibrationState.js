@@ -184,7 +184,7 @@ export const useCalibrationState = () => {
       const res = await apiClient.get('/calibration/status');
       const d = res.data;
       setUserName(d.user_name || '');
-      if (d.status === 'COMPLETE') { window.location.href = '/advisor'; return; }
+      if (d.status === 'COMPLETE') { window.location.href = '/market'; return; }
       if (d.status === 'IN_PROGRESS' && d.calibration_step > 1) {
         setCalStep(d.calibration_step);
         setEntry("continuity");
