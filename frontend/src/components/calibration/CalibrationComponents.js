@@ -108,12 +108,49 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
           ))}
         </div>
 
-        <button
-          onClick={onManualFallback}
+        {/* Social Intelligence Handles — always visible, optional */}
+        <div className="max-w-md mx-auto mt-8 rounded-xl p-5 text-left" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} data-testid="social-handles-section">
+          <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: MUTED, fontFamily: "'JetBrains Mono', monospace" }}>
+            Social Intelligence Handles
+          </p>
+          <p className="text-xs mb-4" style={{ color: MUTED }}>
+            Optional. BIQc will crawl these for competitor news, staff sentiment, and SWOT signals.
+          </p>
+          <div className="space-y-3">
+            {[
+              { key: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/company/your-company', icon: 'in' },
+              { key: 'twitter', label: 'X (Twitter)', placeholder: '@yourhandle', icon: 'X' },
+              { key: 'instagram', label: 'Instagram', placeholder: '@yourhandle', icon: 'IG' },
+              { key: 'facebook', label: 'Facebook', placeholder: 'facebook.com/yourpage', icon: 'fb' },
+            ].map(s => (
+              <div key={s.key} className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  style={{ background: `${AZ}10`, color: AZ }}>
+                  {s.icon}
+                </span>
+                <input type="text" value={handles[s.key]}
+                  onChange={(e) => setHandles(p => ({ ...p, [s.key]: e.target.value }))}
+                  placeholder={s.placeholder}
+                  className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                  style={{ background: CREAM, border: `1px solid ${CARD_BORDER}`, color: CHARCOAL }}
+                  data-testid={`social-handle-${s.key}`} />
+              </div>
+            ))}
+          </div>
+          {hasAnyHandle && (
+            <button onClick={saveHandles} disabled={savingHandles}
+              className="mt-4 w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+              style={{ background: handlesSaved ? '#10B981' : AZ, color: '#fff' }}
+              data-testid="save-social-handles-btn">
+              {savingHandles ? 'Saving...' : handlesSaved ? 'Saved' : 'Save & Activate Recon'}
+            </button>
+          )}
+        </div>
+
+        <button onClick={onManualFallback}
           className="mt-6 text-xs font-medium cursor-pointer transition-colors"
           style={{ color: MUTED }}
-          data-testid="no-website-btn"
-        >
+          data-testid="no-website-btn">
           I Don't Have a Website — Analyse My Business Manually
         </button>
       </div>
