@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
-import { ArrowRight, ArrowLeft, CheckCircle2, Eye, Lock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Eye, Lock, AlertTriangle, TrendingUp, Shield, Target } from 'lucide-react';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
@@ -19,15 +19,32 @@ const QUESTIONS = [
   { id: 'channel_dependency', question: 'How dependent are you on a single acquisition channel?', options: ['Fully dependent — one channel drives everything', 'Mostly dependent — 70%+ from one channel', 'Diversified — spread across 3-4 channels', 'Highly diversified — no single channel > 30%'], weight: 'channel' },
 ];
 
+const SIGNAL_ICONS = { warning: AlertTriangle, critical: AlertTriangle, positive: TrendingUp, info: Shield };
+const SIGNAL_COLORS = { warning: '#F59E0B', critical: '#EF4444', positive: '#10B981', info: '#3B82F6' };
+
 const ForensicCalibration = () => {
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [selected, setSelected] = useState(null);
-  const [complete, setComplete] = useState(false);
+  const [result, setResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [existingResult, setExistingResult] = useState(null);
+  const [loadingExisting, setLoadingExisting] = useState(true);
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
+
+  // Check for existing calibration on mount
+  useEffect(() => {
+    const fetchExisting = async () => {
+      try {
+        const res = await apiClient.get('/forensic/calibration');
+        if (res.data?.exists) setExistingResult(res.data);
+      } catch {} finally { setLoadingExisting(false); }
+    };
+    fetchExisting();
+  }, []);
 
   if (!isSuperAdmin) {
     return (
@@ -37,7 +54,94 @@ const ForensicCalibration = () => {
             <Lock className="w-12 h-12 text-[#64748B] mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Coming Soon</h1>
             <p className="text-sm text-[#9FB0C3] mb-6">Forensic Market Calibration will be available in the Pro plan.</p>
-            <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: '#9FB0C3', border: '1px solid #243140' }}>Back to Market</button>
+            <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="forensic-back-btn">Back to Market</button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (loadingExisting) return <DashboardLayout><div className="flex items-center justify-center min-h-[60vh]"><div className="w-6 h-6 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" /></div></DashboardLayout>;
+
+  const handleSelect = (option) => setSelected(option);
+
+  const handleContinue = async () => {
+    if (!selected) return;
+    const updated = { ...answers, [QUESTIONS[step].id]: { answer: selected, index: QUESTIONS[step].options.indexOf(selected), weight: QUESTIONS[step].weight } };
+    setAnswers(updated);
+    setSelected(null);
+
+    if (step >= QUESTIONS.length - 1) {
+      setSubmitting(true);
+      try {
+        const res = await apiClient.post('/forensic/calibration', { answers: updated });
+        setResult(res.data);
+      } catch { setResult({ composite_score: 0, risk_profile: 'Error', risk_color: '#EF4444', dimensions: {}, signals: [{ type: 'critical', text: 'Scoring failed. Please try again.' }] }); }
+      finally { setSubmitting(false); }
+      return;
+    }
+    setStep(step + 1);
+  };
+
+  // Show existing or new results
+  const displayResult = result || (existingResult?.exists && !step ? existingResult : null);
+
+  if (displayResult && displayResult.composite_score != null) {
+    const dims = displayResult.dimensions || {};
+    return (
+      <DashboardLayout>
+        <div className="max-w-3xl mx-auto py-10 px-6" data-testid="forensic-results">
+          <div className="text-center mb-8">
+            <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Forensic Calibration Complete</h1>
+            <p className="text-sm text-[#9FB0C3]">Your strategic profile has been scored and calibrated.</p>
+          </div>
+
+          {/* Composite Score */}
+          <div className="text-center mb-8 p-6 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
+            <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Composite Score</span>
+            <span className="text-5xl font-bold block mb-2" style={{ fontFamily: MONO, color: displayResult.risk_color }}>{displayResult.composite_score}</span>
+            <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{ color: displayResult.risk_color, background: displayResult.risk_color + '15', fontFamily: MONO }}>{displayResult.risk_profile}</span>
+          </div>
+
+          {/* Dimension Scores */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {Object.entries(dims).map(([key, dim]) => (
+              <div key={key} className="p-4 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
+                <span className="text-[10px] text-[#64748B] block mb-1 capitalize" style={{ fontFamily: MONO }}>{key}</span>
+                <span className="text-lg font-bold text-[#F4F7FA] block" style={{ fontFamily: MONO }}>{dim.label}</span>
+                <div className="h-1.5 rounded-full mt-2" style={{ background: '#243140' }}>
+                  <div className="h-1.5 rounded-full transition-all" style={{ background: '#FF6A00', width: `${dim.score}%` }} />
+                </div>
+                <span className="text-[10px] text-[#64748B] mt-1 block" style={{ fontFamily: MONO }}>{dim.score}/100</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Strategic Signals */}
+          {displayResult.signals?.length > 0 && (
+            <div className="space-y-2 mb-8">
+              <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: MONO }}>Strategic Signals</span>
+              {displayResult.signals.map((sig, i) => {
+                const Icon = SIGNAL_ICONS[sig.type] || Shield;
+                const color = SIGNAL_COLORS[sig.type] || '#3B82F6';
+                return (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: color + '08', border: `1px solid ${color}25` }}>
+                    <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color }} />
+                    <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3' }}>{sig.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => { setResult(null); setExistingResult(null); setStep(0); setAnswers({}); }} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="forensic-recalibrate-btn">
+              Recalibrate
+            </button>
+            <button onClick={() => navigate('/market')} className="px-8 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="forensic-return-btn">
+              Return to Market Intelligence <ArrowRight className="w-4 h-4 inline ml-1" />
+            </button>
           </div>
         </div>
       </DashboardLayout>
@@ -47,69 +151,9 @@ const ForensicCalibration = () => {
   const q = QUESTIONS[step];
   const progress = Math.round((step / QUESTIONS.length) * 100);
 
-  const handleSelect = (option) => {
-    setSelected(option);
-  };
-
-  const handleContinue = async () => {
-    if (!selected) return;
-    const updated = { ...answers, [q.id]: { answer: selected, index: q.options.indexOf(selected), weight: q.weight } };
-    setAnswers(updated);
-    setSelected(null);
-
-    if (step >= QUESTIONS.length - 1) {
-      // Save results
-      try {
-        await apiClient.put('/business-profile', { forensic_calibration: updated });
-      } catch {}
-      setComplete(true);
-      return;
-    }
-    setStep(step + 1);
-  };
-
-  if (complete) {
-    // Calculate scores
-    const scores = {};
-    Object.values(answers).forEach(a => { scores[a.weight] = a.index; });
-    const avgScore = Object.values(scores).reduce((s, v) => s + v, 0) / Object.values(scores).length;
-    const riskLevel = avgScore > 2.5 ? 'Aggressive' : avgScore > 1.5 ? 'Moderate' : 'Conservative';
-
-    return (
-      <DashboardLayout>
-        <div className="max-w-3xl mx-auto py-10 px-6" data-testid="forensic-results">
-          <div className="text-center mb-8">
-            <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Forensic Calibration Complete</h1>
-            <p className="text-sm text-[#9FB0C3]">Your strategic profile has been calibrated.</p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-            {[
-              { label: 'Risk Profile', value: riskLevel, color: avgScore > 2.5 ? '#EF4444' : avgScore > 1.5 ? '#F59E0B' : '#10B981' },
-              { label: 'Revenue Ambition', value: ['Maintain', 'Steady', 'Aggressive', 'Hyper'][scores.revenue || 0], color: '#3B82F6' },
-              { label: 'Retention Maturity', value: ['Reactive', 'Basic', 'Structured', 'Advanced'][scores.retention || 0], color: '#10B981' },
-              { label: 'Pricing Confidence', value: ['Low', 'Some', 'Confident', 'Very High'][scores.pricing || 0], color: '#FF6A00' },
-            ].map(m => (
-              <div key={m.label} className="p-4 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{m.label}</span>
-                <span className="text-lg font-bold" style={{ fontFamily: MONO, color: m.color }}>{m.value}</span>
-              </div>
-            ))}
-          </div>
-
-          <button onClick={() => navigate('/market')} className="px-8 py-3 rounded-xl text-sm font-semibold text-white mx-auto block" style={{ background: '#FF6A00' }}>
-            Return to Market Intelligence <ArrowRight className="w-4 h-4 inline ml-1" />
-          </button>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto py-10 px-6" data-testid="forensic-calibration">
-        {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5 text-[#FF6A00]" />
@@ -121,7 +165,6 @@ const ForensicCalibration = () => {
           <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FF6A00, #3B82F6)' }} />
         </div>
 
-        {/* Question */}
         <div className="mb-8">
           <p className="text-xl font-bold text-[#F4F7FA] mb-6" style={{ fontFamily: HEAD }}>{q.question}</p>
           <div className="space-y-3">
@@ -141,15 +184,14 @@ const ForensicCalibration = () => {
           </div>
         </div>
 
-        {/* Nav */}
         <div className="flex justify-between">
           {step > 0 ? (
-            <button onClick={() => { setStep(step - 1); setSelected(answers[QUESTIONS[step - 1]?.id]?.answer || null); }} className="px-5 py-2.5 rounded-xl text-sm flex items-center gap-1" style={{ color: '#9FB0C3', border: '1px solid #243140' }}>
+            <button onClick={() => { setStep(step - 1); setSelected(answers[QUESTIONS[step - 1]?.id]?.answer || null); }} className="px-5 py-2.5 rounded-xl text-sm flex items-center gap-1" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="forensic-back-step">
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
           ) : <div />}
-          <button onClick={handleContinue} disabled={!selected} className="px-8 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-30 flex items-center gap-1" style={{ background: '#FF6A00' }} data-testid="forensic-continue">
-            {step >= QUESTIONS.length - 1 ? 'Complete' : 'Continue'} <ArrowRight className="w-4 h-4" />
+          <button onClick={handleContinue} disabled={!selected || submitting} className="px-8 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-30 flex items-center gap-1" style={{ background: '#FF6A00' }} data-testid="forensic-continue">
+            {submitting ? 'Scoring...' : step >= QUESTIONS.length - 1 ? 'Complete' : 'Continue'} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
