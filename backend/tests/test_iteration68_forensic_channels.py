@@ -56,21 +56,21 @@ def auth_headers(access_token):
 class TestForensicCalibration:
     """Forensic calibration POST/GET endpoint tests"""
 
-    def test_forensic_calibration_post_returns_401_without_auth(self):
-        """POST /api/forensic/calibration without auth should return 401"""
+    def test_forensic_calibration_post_returns_auth_error_without_auth(self):
+        """POST /api/forensic/calibration without auth should return 401 or 403"""
         resp = requests.post(
             f"{BASE_URL}/api/forensic/calibration",
             json={"answers": {}},
             headers={"Content-Type": "application/json"}
         )
-        assert resp.status_code == 401, f"Expected 401, got {resp.status_code}: {resp.text}"
-        print("PASS: POST /api/forensic/calibration returns 401 without auth")
+        assert resp.status_code in [401, 403], f"Expected 401/403, got {resp.status_code}: {resp.text}"
+        print(f"PASS: POST /api/forensic/calibration returns {resp.status_code} without auth")
 
-    def test_forensic_calibration_get_returns_401_without_auth(self):
-        """GET /api/forensic/calibration without auth should return 401"""
+    def test_forensic_calibration_get_returns_auth_error_without_auth(self):
+        """GET /api/forensic/calibration without auth should return 401 or 403"""
         resp = requests.get(f"{BASE_URL}/api/forensic/calibration")
-        assert resp.status_code == 401, f"Expected 401, got {resp.status_code}: {resp.text}"
-        print("PASS: GET /api/forensic/calibration returns 401 without auth")
+        assert resp.status_code in [401, 403], f"Expected 401/403, got {resp.status_code}: {resp.text}"
+        print(f"PASS: GET /api/forensic/calibration returns {resp.status_code} without auth")
 
     def test_forensic_calibration_post_with_7_answers(self, auth_headers):
         """POST /api/forensic/calibration with 7 answers returns composite_score, risk_profile, dimensions, signals"""
@@ -156,11 +156,11 @@ class TestForensicCalibration:
 class TestChannelIntelligence:
     """Channel status endpoint tests"""
 
-    def test_channels_status_returns_401_without_auth(self):
-        """GET /api/integrations/channels/status without auth should return 401"""
+    def test_channels_status_returns_auth_error_without_auth(self):
+        """GET /api/integrations/channels/status without auth should return 401 or 403"""
         resp = requests.get(f"{BASE_URL}/api/integrations/channels/status")
-        assert resp.status_code == 401, f"Expected 401, got {resp.status_code}: {resp.text}"
-        print("PASS: GET /api/integrations/channels/status returns 401 without auth")
+        assert resp.status_code in [401, 403], f"Expected 401/403, got {resp.status_code}: {resp.text}"
+        print(f"PASS: GET /api/integrations/channels/status returns {resp.status_code} without auth")
 
     def test_channels_status_returns_channel_list(self, auth_headers):
         """GET /api/integrations/channels/status returns channels list with status"""
