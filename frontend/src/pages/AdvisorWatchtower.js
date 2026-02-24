@@ -272,6 +272,91 @@ const AdvisorWatchtower = () => {
                 {/* AI Insight */}
                 {gd.insight && <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{gd.insight}</p></Card>}
 
+                {/* Tab Metrics — from cognitive snapshot */}
+                {gd.metrics.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {gd.metrics.map((m, i) => (
+                      <Card key={i} className="p-4">
+                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{m.label}</span>
+                        <span className="text-lg font-bold block" style={{ color: m.color, fontFamily: MONO }}>{m.value}</span>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tab-specific detail panels */}
+                {activeId === 'revenue' && gd.details?.deals?.length > 0 && (
+                  <div>
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Deal Pipeline</h3>
+                    <div className="space-y-2">
+                      {gd.details.deals.slice(0, 5).map((d, i) => (
+                        <Card key={i} className="p-4 flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{d.name}</span>
+                            {d.stall > 0 && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: MONO }}>{d.stall}d stalled</span>}
+                          </div>
+                          <div className="text-right">
+                            {d.value != null && <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>${d.value}K</span>}
+                            {d.prob != null && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{d.prob}% prob</span>}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeId === 'money' && gd.details && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      gd.details.best && { label: 'Best Case (30d)', value: gd.details.best, color: '#10B981' },
+                      gd.details.base && { label: 'Base Case (30d)', value: gd.details.base, color: '#F59E0B' },
+                      gd.details.worst && { label: 'Worst Case (30d)', value: gd.details.worst, color: '#EF4444' },
+                    ].filter(Boolean).map((s, i) => (
+                      <Card key={i} className="p-4">
+                        <span className="text-[10px] font-semibold block mb-1" style={{ color: s.color, fontFamily: MONO }}>{s.label}</span>
+                        <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{s.value}</p>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {activeId === 'operations' && gd.details?.recs?.length > 0 && (
+                  <div>
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Recommendations</h3>
+                    <div className="space-y-2">
+                      {gd.details.recs.map((r, i) => (
+                        <Card key={i} className="p-4">
+                          <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{r}</p>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeId === 'people' && gd.details && (
+                  <div className="space-y-3">
+                    {gd.details.calendar && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Calendar</span><p className="text-sm text-[#9FB0C3]">{gd.details.calendar}</p></Card>}
+                    {gd.details.email_stress && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Email Stress</span><p className="text-sm text-[#9FB0C3]">{gd.details.email_stress}</p></Card>}
+                  </div>
+                )}
+
+                {activeId === 'market' && gd.details?.competitors?.length > 0 && (
+                  <div>
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Competitor Signals</h3>
+                    <div className="space-y-2">
+                      {gd.details.competitors.map((comp, i) => (
+                        <Card key={i} className="p-4 flex items-start gap-3">
+                          <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#7C3AED' }} />
+                          <div>
+                            <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{comp.name}</span>
+                            <p className="text-xs text-[#9FB0C3] mt-0.5">{comp.signal}</p>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Resolution Items */}
                 {gd.resolutions.length > 0 ? (
                   <div>
