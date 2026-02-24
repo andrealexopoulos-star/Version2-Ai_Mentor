@@ -56,10 +56,28 @@ async def snapshot_generate(
 
 @router.get("/snapshot/latest")
 async def snapshot_latest(current_user: dict = Depends(get_current_user)):
+    import json as _json
     from snapshot_agent import get_snapshot_agent
     agent = get_snapshot_agent()
     snapshot = await agent.get_latest_snapshot(current_user["id"])
-    return {"snapshot": snapshot}
+
+    # Parse the summary JSON string into a cognitive object for the frontend
+    cognitive = None
+    if snapshot:
+        summary = snapshot.get("summary")
+        if isinstance(summary, str):
+            try:
+                cognitive = _json.loads(summary)
+            except Exception:
+                cognitive = None
+        elif isinstance(summary, dict):
+            cognitive = summary
+
+        # Merge executive_memo from snapshot top-level if not in cognitive
+        if cognitive and not cognitive.get("executive_memo") and snapshot.get("executive_memo"):
+            cognitive["executive_memo"] = snapshot["executive_memo"]
+
+    return {"snapshot": snapshot, "cognitive": cognitive}
 
 
 @router.get("/snapshot/history")
