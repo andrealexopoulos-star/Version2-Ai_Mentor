@@ -247,17 +247,13 @@ export const useCalibrationState = () => {
     try {
       const payload = { step: 2, confirmed_summary: true };
       if (Object.keys(editedFields).length > 0) payload.user_edits = editedFields;
-      const data = await callEdge(payload);
+      try { await callEdge(payload); } catch { /* non-blocking */ }
       autoSave(2);
       setTransitioning(false);
 
-      // Phase 4: Fetch intelligence snapshot and show before calibration questions
+      // Skip questions — go straight to intelligence-first → market
       fetchIntelligence();
       setEntry("intelligence-first");
-      // Store the next calibration response to apply after intelligence view
-      if (data.status !== "COMPLETE") {
-        setPendingCalibrationData(data);
-      }
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
   };
