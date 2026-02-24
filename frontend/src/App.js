@@ -126,7 +126,13 @@ function AppRoutes() {
         const sbUrl = process.env.REACT_APP_SUPABASE_URL;
         const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
         if (sbUrl && key) {
-          // Ping the main Edge Function with warmup flag
+          // Warm the lightweight engine (no auth required, returns 204)
+          fetch(`${sbUrl}/functions/v1/warm-cognitive-engine`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': key },
+            body: '{}',
+          }).catch(() => {});
+          // Also warm the main cognitive function with warmup flag
           fetch(`${sbUrl}/functions/v1/biqc-insights-cognitive`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': key },
