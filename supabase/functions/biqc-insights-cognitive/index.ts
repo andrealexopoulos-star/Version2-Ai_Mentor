@@ -296,6 +296,27 @@ YOUR OUTPUT MUST BE THIS EXACT JSON STRUCTURE:
     "competitors": [{"name":"X","signal":"What they did"}],
     "pricing": "Pricing benchmark vs market"
   },
+  "market_intelligence": {
+    "positioning_verdict": "STABLE|DRIFT|COMPRESSION|CRITICAL",
+    "acquisition_signal": {"score": 0-100, "label": "summary", "pipeline_value": 0},
+    "retention_signal": {"score": 0-100, "risk_count": 0, "label": "summary"},
+    "growth_signal": {"score": 0-100, "label": "On Track|Under Pressure|Blocked"},
+    "drift_snapshot": {
+      "cohort_actual": 0-100, "cohort_target": 0-100,
+      "trust_actual": 0-100, "trust_target": 0-100,
+      "authority_actual": 0-100, "authority_target": 0-100,
+      "position_actual": 0-100, "position_target": 0-100
+    },
+    "market_kpis": {
+      "market_share_est": "X%", "competitor_count": 0, "win_rate": "X%", "price_position": "Low|Mid-tier|Premium"
+    },
+    "competitor_signals": [{"name":"Competitor","signal":"What happened","impact":"High|Medium|Low|Opportunity","time":"Xd ago"}],
+    "industry_trends": [{"trend":"description","direction":"up|down|neutral","impact":"description","confidence":"X%"}],
+    "misalignment_index": 0-100,
+    "probability_of_goal_achievement": 0-100,
+    "gap_magnitude": "Low|Medium|High|Critical",
+    "strategic_risk_level": "Low|Moderate|High|Critical"
+  },
   "memo": "2-3 paragraphs. Written as a strategic partner. References SPECIFIC data — deal names, amounts, contact names. Includes 30/60/90 outlook. Ends with HARD recommendation, not just briefing.",
   "blind_spots": {
     "confidence": 0-100,
