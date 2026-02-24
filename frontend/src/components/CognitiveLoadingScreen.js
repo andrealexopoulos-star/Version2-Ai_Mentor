@@ -16,9 +16,9 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
     const t1 = setTimeout(() => setPhase(1), 1500);
     const t2 = setTimeout(() => setPhase(2), 3000);
     const t3 = setTimeout(() => setPhase(3), 5000);
-    const t4 = setTimeout(() => { if (onComplete) onComplete(); }, 6000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [onComplete]);
+    // NO auto-advance — user must click "Meet BIQc"
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
 
   return (
     <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6 relative overflow-hidden" style={{ background: '#0F1720' }} data-testid="cognitive-ignition">
