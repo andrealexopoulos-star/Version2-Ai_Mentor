@@ -1,0 +1,66 @@
+{
+  "summary": "P0 Bug Fix Verification - Console State Calibration Flow (Iteration 67). All 8 backend API tests pass. The fix ensures /api/console/state endpoint now writes to BOTH strategic_console_state and user_operator_profile.persona_calibration_status tables when status=COMPLETE. This fixes the old 9-step calibration questionnaire incorrectly appearing during new user signup flow.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tests_executed": {
+    "backend_api": {
+      "test_console_state_unauthenticated_returns_401": "PASS",
+      "test_calibration_status_returns_status_for_existing_user": "PASS",
+      "test_onboarding_status_returns_status_for_existing_user": "PASS",
+      "test_console_state_in_progress_authenticated": "PASS",
+      "test_new_user_calibration_status_needs_calibration": "PASS - New user gets NEEDS_CALIBRATION",
+      "test_console_state_complete_marks_both_tables": "PASS - P0 FIX VERIFIED",
+      "test_console_state_in_progress_does_not_complete": "PASS - IN_PROGRESS doesn't prematurely complete",
+      "test_health_endpoint": "PASS"
+    },
+    "frontend": {
+      "homepage": "PASS - Dark theme (#0F1720), BIQc branding visible",
+      "login_page": "PASS - Email/password fields visible, OAuth buttons (Google, Microsoft)",
+      "calibration_redirect": "PASS - /calibration redirects to /login-supabase for unauthenticated users"
+    }
+  },
+  "p0_bug_fix_verification": {
+    "root_cause": "/api/console/state was writing to wrong database fields (operator_profile.console_state) while /calibration/status reads from strategic_console_state.is_complete and user_operator_profile.persona_calibration_status",
+    "fix_applied": "/api/console/state endpoint (routes/calibration.py lines 449-494) now writes to BOTH tables when status=COMPLETE",
+    "verification_method": "Created temporary test user, called console/state with COMPLETE, verified calibration/status returns COMPLETE and onboarding/status returns completed=true",
+    "result": "FIX VERIFIED - All tests pass"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration67_console_state_fix.py",
+    "/app/test_reports/pytest/pytest_results_iteration67.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fix in routes/calibration.py lines 467-489: When status=COMPLETE, now sets persona_calibration_status='complete' AND upserts strategic_console_state with is_complete=True",
+    "Frontend fix in useCalibrationState.js line 111: triggerComplete now uses 'session' variable from hook instead of undefined 'supabase' reference"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration67_console_state_fix.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (3/3 UI tests passed)"
+  },
+  "test_credentials": {
+    "existing_user": {
+      "email": "andre@thestrategysquad.com.au",
+      "password": "BIQc_Test_2026!"
+    },
+    "temp_test_users": "Created and cleaned up automatically during tests"
+  },
+  "seed_data_creation": "Temporary test users created via Supabase admin API and cleaned up after tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "P0 bug fix for calibration flow is verified. The /api/console/state endpoint now correctly writes to both strategic_console_state and user_operator_profile tables when status=COMPLETE, ensuring new user signup flow doesn't show old 9-step calibration. All 8 backend tests pass including the critical test_console_state_complete_marks_both_tables which creates a fresh user and verifies the complete flow.",
+  "mocked_api_confirmation": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}
