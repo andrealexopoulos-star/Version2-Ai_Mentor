@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Pencil } from 'lucide-react';
 
 const CHARCOAL = '#F4F7FA';
 const MUTED = '#9FB0C3';
@@ -28,10 +29,20 @@ const WowField = ({ fieldKey, label, value, editingKey, editValue, setEditValue,
   const displayVal = typeof value === 'object' ? (value.summary || value.description || JSON.stringify(value)) : String(value);
 
   return (
-    <div className="rounded-xl px-5 py-4 transition-all duration-300" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-      <div className="flex items-center gap-2 mb-2">
-        <h4 className="text-xs font-medium uppercase tracking-wider" style={{ color: GOLD, letterSpacing: '0.12em' }}>{label}</h4>
-        {isUserEdited ? <ShieldIcon /> : <SparkleIcon />}
+    <div
+      className="rounded-xl px-5 py-4 transition-all duration-300 group"
+      style={{ background: CARD_BG, border: `1px solid ${isEditing ? GOLD : CARD_BORDER}`, cursor: isEditing ? 'text' : 'pointer' }}
+      onClick={() => !isEditing && startEdit(fieldKey, displayVal)}
+      data-testid={`wow-field-${fieldKey}`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <h4 className="text-xs font-medium uppercase tracking-wider" style={{ color: GOLD, letterSpacing: '0.12em' }}>{label}</h4>
+          {isUserEdited ? <ShieldIcon /> : <SparkleIcon />}
+        </div>
+        {!isEditing && (
+          <Pencil className="w-3.5 h-3.5 opacity-30 group-hover:opacity-100 transition-opacity" style={{ color: MUTED }} />
+        )}
       </div>
       {isEditing ? (
         <textarea
@@ -46,13 +57,16 @@ const WowField = ({ fieldKey, label, value, editingKey, editValue, setEditValue,
         />
       ) : (
         <p
-          className="text-sm leading-relaxed cursor-text transition-colors hover:bg-gray-50 rounded px-1 -mx-1 py-0.5"
+          className="text-sm leading-relaxed"
           style={{ color: CHARCOAL }}
-          onClick={() => startEdit(fieldKey, displayVal)}
-          title="Click to edit"
         >
           {displayVal}
         </p>
+      )}
+      {!isEditing && (
+        <span className="text-[10px] mt-2 block opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: MUTED }}>
+          Click to edit
+        </span>
       )}
     </div>
   );
