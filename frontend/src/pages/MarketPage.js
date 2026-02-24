@@ -220,19 +220,12 @@ const MarketPage = () => {
         {/* ═══ PHASE 1: INTELLIGENCE FIRST — Ignition overlay ═══ */}
         {loading && <CognitiveMesh message="You are about to see how your market currently sees you." />}
 
-        {phase === 'ignition' && !loading && (
-          <div className="rounded-xl p-8 text-center" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025', animation: 'snapFade 0.8s ease-out' }}>
-            <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
-            <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#FF6A00', fontFamily: MONO }}>Executive Intelligence Snapshot</span>
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Here's what BIQc sees.</h1>
-            <p className="text-sm text-[#9FB0C3]">Your market position based on available intelligence.</p>
-          </div>
-        )}
+        {!loading && <>
 
-        {phase === 'snapshot' && !loading && <>
+        <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
         {/* ═══ PHASE 2: EXECUTIVE CMO SNAPSHOT (Free Tier) ═══ */}
-        <div>
+        <div style={{ animation: 'snapFade 0.6s ease-out' }}>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Market Intelligence</h1>
           <p className="text-sm text-[#9FB0C3]">Strategic positioning, competitive landscape, and drift analysis.</p>
         </div>
