@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, Menu, X, Shield, FileText, Lock, Server, Eye } from 'lucide-react';
+import { ChevronDown, Menu, X, Shield, FileText, Lock, Server, Eye, BookOpen } from 'lucide-react';
 
 const NAV_FONT = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
