@@ -44,7 +44,13 @@ const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${c
 
 // Parse cognitive data into group structure
 function parseToGroups(c) {
-  const groups = { money: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, operations: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, people: { alerts: 0, severity: 'low', resolutions: [], insight: '' }, market: { alerts: 0, severity: 'low', resolutions: [], insight: '' } };
+  const groups = {
+    money: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
+    revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
+    operations: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
+    people: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
+    market: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
+  };
   if (!c) return groups;
 
   // Map resolution_queue items to groups
@@ -73,23 +79,76 @@ function parseToGroups(c) {
     else if (d.includes('operation') || d.includes('execution')) g = 'operations';
     else if (d.includes('people') || d.includes('team') || d.includes('founder')) g = 'people';
     else if (d.includes('market') || d.includes('compet') || d.includes('strategic')) g = 'market';
-    groups[g].resolutions.push({ severity: 'medium', title: item.signal || item.domain, detail: item.if_ignored || '', actions: ["hand-off", "dismiss"] });
+    groups[g].resolutions.push({ severity: item.intensity === 'imminent' ? 'high' : 'medium', title: item.signal || item.domain, detail: item.if_ignored || '', actions: item.actions || ["hand-off", "dismiss"], probability: item.probability, impact: item.impact, window: item.window });
     groups[g].alerts++;
     if (!groups[g].insight) groups[g].insight = item.signal;
   }
 
-  // Set insights from various fields
-  if (c.capital || c.cash_runway_months) groups.money.insight = groups.money.insight || (c.capital?.alert || c.executive_memo?.substring(0, 200) || 'Review financial position.');
-  if (c.revenue || c.pipeline_total) groups.revenue.insight = groups.revenue.insight || (c.revenue?.churn || 'Review revenue pipeline.');
-  if (c.execution || c.sla_breaches) groups.operations.insight = groups.operations.insight || (c.execution?.bottleneck || 'Review operational execution.');
-  if (c.founder_vitals || c.capacity_index) groups.people.insight = groups.people.insight || 'Review founder capacity and workload.';
-  groups.market.insight = groups.market.insight || c.market_position || c.market?.narrative || 'No urgent market signals.';
+  // ═══ MONEY TAB — Capital, runway, margins, spend ═══
+  const cap = c.capital || {};
+  if (cap.runway || cap.margin || cap.alert) {
+    groups.money.details = cap;
+    groups.money.metrics = [
+      cap.runway != null && { label: 'Runway', value: `${cap.runway}mo`, color: cap.runway < 6 ? '#EF4444' : cap.runway < 12 ? '#F59E0B' : '#10B981' },
+      cap.margin && { label: 'Margin', value: cap.margin, color: (cap.margin || '').includes('compress') ? '#EF4444' : '#10B981' },
+      cap.spend && { label: 'Spend', value: cap.spend, color: '#3B82F6' },
+    ].filter(Boolean);
+    groups.money.insight = cap.alert || cap.best || groups.money.insight || 'Review financial position.';
+  }
 
-  // Use executive memo as fallback insight for the top group
+  // ═══ REVENUE TAB — Pipeline, deals, churn ═══
+  const rev = c.revenue || {};
+  if (rev.pipeline || rev.weighted || rev.churn) {
+    groups.revenue.details = rev;
+    groups.revenue.metrics = [
+      rev.pipeline != null && { label: 'Pipeline', value: `$${Math.round((rev.pipeline || 0) / 1000)}K`, color: '#3B82F6' },
+      rev.weighted != null && { label: 'Weighted', value: `$${Math.round((rev.weighted || 0) / 1000)}K`, color: '#10B981' },
+      rev.entropy && { label: 'Concentration', value: rev.entropy, color: '#F59E0B' },
+    ].filter(Boolean);
+    groups.revenue.insight = rev.churn || groups.revenue.insight || 'Review revenue pipeline.';
+  }
+
+  // ═══ OPERATIONS TAB — SLA, tasks, bottlenecks ═══
+  const exec = c.execution || {};
+  if (exec.sla_breaches != null || exec.bottleneck || exec.task_aging) {
+    groups.operations.details = exec;
+    groups.operations.metrics = [
+      exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), color: exec.sla_breaches > 0 ? '#EF4444' : '#10B981' },
+      exec.task_aging != null && { label: 'Task Aging', value: `${exec.task_aging}%`, color: exec.task_aging > 30 ? '#F59E0B' : '#10B981' },
+      exec.bottleneck && { label: 'Bottleneck', value: exec.bottleneck, color: '#F59E0B' },
+    ].filter(Boolean);
+    groups.operations.insight = exec.bottleneck || groups.operations.insight || 'Review operational execution.';
+  }
+
+  // ═══ PEOPLE TAB — Founder vitals, capacity, fatigue ═══
+  const fv = c.founder_vitals || {};
+  if (fv.capacity_index || fv.fatigue || fv.recommendation) {
+    groups.people.details = fv;
+    groups.people.metrics = [
+      fv.capacity_index != null && { label: 'Capacity', value: `${fv.capacity_index}%`, color: fv.capacity_index > 100 ? '#EF4444' : fv.capacity_index > 80 ? '#F59E0B' : '#10B981' },
+      fv.fatigue && { label: 'Fatigue', value: fv.fatigue, color: fv.fatigue === 'high' ? '#EF4444' : fv.fatigue === 'medium' ? '#F59E0B' : '#10B981' },
+      fv.decisions != null && { label: 'Pending Decisions', value: String(fv.decisions), color: fv.decisions > 5 ? '#F59E0B' : '#10B981' },
+    ].filter(Boolean);
+    groups.people.insight = fv.recommendation || groups.people.insight || 'Review founder capacity and workload.';
+  }
+
+  // ═══ MARKET TAB — Positioning, competitors, trends ═══
+  const mkt = c.market || {};
+  const mi = c.market_intelligence || {};
+  if (mkt.narrative || mi.positioning_verdict) {
+    groups.market.details = { ...mkt, ...mi };
+    groups.market.metrics = [
+      mi.positioning_verdict && { label: 'Position', value: mi.positioning_verdict, color: mi.positioning_verdict === 'STABLE' ? '#10B981' : mi.positioning_verdict === 'DRIFT' ? '#F59E0B' : '#EF4444' },
+      mi.misalignment_index != null && { label: 'Misalignment', value: `${mi.misalignment_index}/100`, color: mi.misalignment_index > 50 ? '#EF4444' : mi.misalignment_index > 25 ? '#F59E0B' : '#10B981' },
+      mi.probability_of_goal_achievement != null && { label: 'Goal Prob', value: `${mi.probability_of_goal_achievement}%`, color: mi.probability_of_goal_achievement > 60 ? '#10B981' : '#F59E0B' },
+    ].filter(Boolean);
+    groups.market.insight = mkt.narrative || groups.market.insight || 'No urgent market signals.';
+  }
+
+  // Fallback insights from executive memo
   const topGroup = Object.entries(groups).sort((a, b) => b[1].alerts - a[1].alerts)[0];
-  if (!topGroup[1].insight && c.executive_memo) topGroup[1].insight = c.executive_memo.substring(0, 300);
+  if (!topGroup[1].insight && (c.executive_memo || c.memo)) topGroup[1].insight = (c.executive_memo || c.memo).substring(0, 300);
 
-  // Use priority compression
   const pc = c.priority_compression || c.priority || {};
   if (pc.primary_focus || pc.primary) {
     const mainGroup = Object.entries(groups).sort((a, b) => b[1].alerts - a[1].alerts)[0];
