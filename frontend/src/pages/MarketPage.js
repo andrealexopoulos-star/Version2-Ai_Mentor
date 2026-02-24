@@ -223,6 +223,7 @@ const MarketPage = () => {
             </div>
           </div>
         </Panel>
+        </>}
       </div>
       <FloatingSoundboard context="Market intelligence - competitive positioning, drift analysis, and strategic alignment" />
     </DashboardLayout>
