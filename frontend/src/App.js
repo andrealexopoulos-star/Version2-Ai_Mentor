@@ -70,6 +70,8 @@ import ReportsPage from './pages/ReportsPage';
 import AuditLogPage from './pages/AuditLogPage';
 import ForensicCalibration from './pages/ForensicCalibration';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import ResetPassword from './pages/ResetPassword';
+import UpdatePassword from './pages/UpdatePassword';
 
 // Website (Liquid Steel) pages
 import SiteHomePage from './pages/website/HomePage';
