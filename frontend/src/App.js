@@ -183,6 +183,8 @@ function AppRoutes() {
       {/* Auth Routes - Supabase Only (redirect to /advisor if already logged in) */}
       <Route path="/login-supabase" element={<PublicRoute><LoginSupabase /></PublicRoute>} />
       <Route path="/register-supabase" element={<PublicRoute><RegisterSupabase /></PublicRoute>} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/update-password" element={<UpdatePassword />} />
       <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
       <Route path="/auth-debug" element={<ProtectedRoute adminOnly><AuthDebug /></ProtectedRoute>} />
       
