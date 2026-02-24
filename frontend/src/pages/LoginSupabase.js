@@ -137,6 +137,13 @@ const LoginSupabase = () => {
               </div>
             </div>
 
+            {/* Forgot Password */}
+            <div className="text-right -mt-2">
+              <Link to="/reset-password" className="text-xs text-[#64748B] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: BODY }} data-testid="login-forgot-password">
+                Forgot password?
+              </Link>
+            </div>
+
             <button type="submit" disabled={loading || oauthLoading}
               className="w-full h-12 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 disabled:opacity-50"
               style={{ background: '#FF6A00', fontFamily: BODY, boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }}
