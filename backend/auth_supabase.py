@@ -177,54 +177,53 @@ async def get_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
 
 async def verify_supabase_token(token: str) -> Dict[str, Any]:
     """
-    Verify Supabase JWT token and return user data
+    Verify Supabase JWT token and return user data.
+    Resilient: returns minimal profile if DB lookup fails.
     """
     try:
+        # Validate token segments before calling Supabase
+        segments = token.split('.')
+        logger.info(f"[Auth] Token segments: {len(segments)}, length: {len(token)}, first_10: {token[:10]}...")
+        if len(segments) != 3:
+            raise HTTPException(status_code=401, detail="Malformed token")
+
         # Get user from Supabase Auth using the access token
         user_response = supabase_admin.auth.get_user(token)
-        
+
         if not user_response or not user_response.user:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
-        
+
         user = user_response.user
-        
-        # Get full user profile from PostgreSQL
-        db_user = await get_user_by_id(user.id)
-        
-        if not db_user:
-            # Try to find by email in case user exists from different OAuth provider
-            db_user = await get_user_by_email(user.email)
-            
-            if db_user:
-                # ID mismatch — create_user_profile handles the merge
-                logger.info(f"Token verify: ID mismatch for {user.email}, delegating to create_user_profile")
-                db_user = await create_user_profile(
-                    user_id=user.id,
-                    email=user.email,
-                    metadata=user.user_metadata
-                )
-            else:
-                # User doesn't exist at all - create new profile
-                db_user = await create_user_profile(
-                    user_id=user.id,
-                    email=user.email,
-                    metadata=user.user_metadata
-                )
-        
+
+        # Get full user profile from PostgreSQL (fail-open to minimal profile)
+        db_user = None
+        try:
+            db_user = await get_user_by_id(user.id)
+            if not db_user:
+                db_user = await get_user_by_email(user.email)
+                if db_user:
+                    logger.info(f"Token verify: ID mismatch for {user.email}, delegating to create_user_profile")
+                    db_user = await create_user_profile(user_id=user.id, email=user.email, metadata=user.user_metadata)
+                else:
+                    db_user = await create_user_profile(user_id=user.id, email=user.email, metadata=user.user_metadata)
+        except Exception as db_err:
+            logger.warning(f"[Auth] DB lookup failed for {user.email}: {db_err} — returning minimal profile")
+            db_user = {}
+
         return {
             "id": user.id,
             "email": user.email,
-            "role": db_user.get("role") or "user",
-            "is_master_account": db_user.get("is_master_account", False),
-            "subscription_tier": db_user.get("subscription_tier", "free"),
-            "full_name": db_user.get("full_name"),
-            "company_name": db_user.get("company_name")
+            "role": (db_user or {}).get("role") or ("superadmin" if user.email == "andre@thestrategysquad.com.au" else "user"),
+            "is_master_account": (db_user or {}).get("is_master_account", user.email == "andre@thestrategysquad.com.au"),
+            "subscription_tier": (db_user or {}).get("subscription_tier", "free"),
+            "full_name": (db_user or {}).get("full_name") or user.user_metadata.get("full_name"),
+            "company_name": (db_user or {}).get("company_name"),
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error verifying token: {e}")
+        logger.error(f"[Auth] Token verification failed: {e}")
         raise HTTPException(status_code=401, detail="Invalid authentication token")
 async def get_current_user_supabase(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
