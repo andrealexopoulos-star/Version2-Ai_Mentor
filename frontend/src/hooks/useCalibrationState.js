@@ -263,14 +263,11 @@ export const useCalibrationState = () => {
     finally { setIsSubmitting(false); }
   };
 
-  // Continue from intelligence-first to calibration questions
+  // Continue from intelligence-first → go straight to dashboard (calibration questions moved to Settings)
   const proceedFromIntelligence = () => {
-    if (pendingCalibrationData) {
-      applyResponse(pendingCalibrationData);
-      setPendingCalibrationData(null);
-    } else {
-      startCalibration();
-    }
+    // Mark calibration as complete and redirect to dashboard
+    autoSave(9, "COMPLETE");
+    triggerComplete();
   };
 
   const startEdit = (key, currentValue) => {
