@@ -27,7 +27,6 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
   const sources = intelligenceData?.data_sources || [];
 
   // Extract metrics from cognitive output (read-only — no computation)
-  const cashRunway = c.cash_runway_months;
   const pipeline = c.pipeline_total;
   const slaBreaches = c.sla_breaches || c.execution?.sla_breaches;
   const memo = c.executive_memo || c.memo || '';
