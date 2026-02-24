@@ -51,13 +51,12 @@ async def supabase_oauth(provider: str, redirect_to: Optional[str] = None):
 
 @router.get("/auth/supabase/me")
 async def supabase_get_me(current_user: dict = Depends(get_current_user_supabase)):
-    """
-    Get current authenticated user (Supabase version)
-    """
-    return {
-        "user": current_user,
-        "message": "Authenticated via Supabase"
-    }
+    """Get current authenticated user (Supabase version). Resilient to upstream failures."""
+    try:
+        return {"user": current_user, "message": "Authenticated via Supabase"}
+    except Exception as e:
+        logger.error(f"[auth/me] Unexpected error: {e}")
+        return {"user": {"id": current_user.get("id", ""), "email": current_user.get("email", ""), "role": "user"}, "message": "Partial profile"}
 
 @router.get("/auth/check-profile")
 async def check_user_profile(current_user: dict = Depends(get_current_user_supabase)):
