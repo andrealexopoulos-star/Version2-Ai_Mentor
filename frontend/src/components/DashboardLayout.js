@@ -5,6 +5,7 @@ import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { apiClient } from '../lib/api';
 import { useTutorial, HelpButton, TutorialModal } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
+import MobileNav from './MobileNav';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from './ui/dropdown-menu';
