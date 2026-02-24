@@ -969,3 +969,51 @@ input[type="password"]::placeholder {
         -webkit-overflow-scrolling: touch;
     }
 }
+
+/* ═══ MOBILE EXPERIENCE FIXES ═══ */
+
+/* Prevent horizontal scroll globally */
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* Safe area handling for notched/gesture-nav devices */
+.fixed.bottom-6 {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Reduced motion support (WCAG 2.1 AA compliance) */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Hide scrollbar on tab bars while keeping scroll functional */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile font minimum — prevent sub-11px text on small screens */
+@media (max-width: 639px) {
+    [style*="JetBrains Mono"] {
+        font-size: max(11px, inherit) !important;
+    }
+}
+
+/* Mobile touch target enforcement */
+@media (max-width: 639px) {
+    button, a[role="button"], [role="button"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
