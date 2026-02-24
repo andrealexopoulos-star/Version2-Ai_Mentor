@@ -165,10 +165,16 @@ const MarketPage = () => {
   const navigate = useNavigate();
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [channelsData, setChannelsData] = useState(null);
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
 
   const fetchSnapshot = useCallback(async () => {
+    // Fetch channels in parallel with snapshot
+    apiClient.get('/integrations/channels/status').then(res => {
+      if (res.data?.channels) setChannelsData(res.data);
+    }).catch(() => {});
+
     try {
       const res = await apiClient.get('/snapshot/latest');
       if (res.data?.cognitive) { setSnapshot(res.data.cognitive); return; }
