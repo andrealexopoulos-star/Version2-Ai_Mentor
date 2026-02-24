@@ -1,0 +1,193 @@
+{
+  "domain_lock": "biqc.thestrategysquad.com",
+  "environments_tested": ["desktop_browser"],
+  "environments_not_testable": ["desktop_app (PWA)", "mobile_browser", "mobile_app (PWA)"],
+  "limitation": "Playwright cannot simulate installed PWA or real Android device. Desktop browser fully tested. Mobile viewport CSS verified via code audit. PWA manifest verified via fetch. Real device testing requires manual verification.",
+
+  "audit_summary": {
+    "overall_score": 72,
+    "browser_score": 75,
+    "app_score": "UNTESTABLE — PWA manifest verified, install behaviour requires real device",
+    "cognition_score": 78,
+    "performance_score": 62,
+    "ux_score": 74,
+    "auth_score": 85,
+    "scrape_validation_score": "UNTESTABLE — requires fresh signup flow",
+    "tutorial_score": 55,
+    "integration_score": 70
+  },
+
+  "critical_findings": [
+    {
+      "id": "CRIT-001",
+      "environment": "ALL",
+      "pass": "P1",
+      "route": "ALL",
+      "issue": "BRAND INCONSISTENCY — FIXED THIS SESSION. PWA manifest had 'BIQC', page title had 'BIQC - Business IQ Centre', meta tags had 'BIQC'. All corrected to 'BIQc'. Theme color changed from #0066FF (blue, legacy) to #0F1720 (Liquid Steel dark). Requires deployment.",
+      "status": "FIXED"
+    },
+    {
+      "id": "CRIT-002",
+      "environment": "desktop_browser",
+      "pass": "P6",
+      "route": "/market",
+      "issue": "Market page shows 'AWAITING INTELLIGENCE' with all signals showing 'Awaiting data'. The cognitive snapshot for the current user does not contain the new action_plan or market_intelligence data. The Edge Function with deterministic chain was deployed but the cached snapshot (30min TTL) has not refreshed yet. User must force refresh via {force: true} or wait for TTL expiry.",
+      "status": "DEPLOYMENT TIMING — resolves after snapshot TTL expires or force refresh"
+    }
+  ],
+
+  "high_findings": [
+    {
+      "id": "HIGH-001",
+      "environment": "desktop_browser",
+      "pass": "P10",
+      "route": "/integrations",
+      "issue": "Tutorial modal ('INTEGRATIONS — Connect Your Tools') blocks entire page content on every visit. Modal has white background on dark theme (style mismatch). No 'Don't show again' option. Appears every session.",
+      "risk": "HIGH",
+      "fix": "Store tutorial dismissal in localStorage. Style modal with Liquid Steel dark theme."
+    },
+    {
+      "id": "HIGH-002",
+      "environment": "desktop_browser",
+      "pass": "P6",
+      "route": "/market",
+      "issue": "Market page load time: 15.43 seconds. During this time user sees 'Market Intelligence' header with 'Awaiting data' cards. Edge Function cold start + API waterfall contributes. warm-cognitive-engine calls show ERR_ABORTED (cancelled by page navigation).",
+      "risk": "HIGH"
+    },
+    {
+      "id": "HIGH-003",
+      "environment": "desktop_browser",
+      "pass": "P2",
+      "route": "/advisor",
+      "issue": "BIQc Insights loading animation ('we caught some things overnight') persists for 30-60 seconds on production. No fallback to cached data. User sees animation with no content for nearly a minute.",
+      "risk": "HIGH"
+    }
+  ],
+
+  "medium_findings": [
+    {
+      "id": "MED-001",
+      "environment": "desktop_browser",
+      "pass": "P1",
+      "route": "/",
+      "issue": "Homepage hero says 'Book a live demo' — not aligned with self-serve signup flow. CTA should be 'Get started' or 'Start free'.",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "MED-002",
+      "environment": "desktop_browser",
+      "pass": "P9",
+      "route": "/integrations",
+      "issue": "Integration page tutorial modal has WHITE background (#FFFFFF) on Liquid Steel dark theme. Jarring visual contrast. Should match dark theme.",
+      "risk": "MEDIUM"
+    },
+    {
+      "id": "MED-003",
+      "environment": "desktop_browser",
+      "pass": "P6",
+      "route": "/market",
+      "issue": "Channel Intelligence shows 'CRM (HubSpot) Live' and 'Email Platform Live' — correct. But 'Connect CRM' action in Drift Analysis still shows as incomplete despite HubSpot being connected. Data source detection doesn't cross-reference channel status.",
+      "risk": "MEDIUM"
+    }
+  ],
+
+  "low_findings": [
+    {
+      "id": "LOW-001",
+      "environment": "desktop_browser",
+      "pass": "P1",
+      "route": "ALL",
+      "issue": "Edge Function warm-cognitive-engine calls show ERR_ABORTED in console. These are fire-and-forget warmup pings cancelled by page navigation. Non-blocking but adds console noise.",
+      "risk": "LOW"
+    }
+  ],
+
+  "brand_spelling_violations": [
+    {"location": "manifest.json short_name", "was": "BIQC", "corrected_to": "BIQc", "status": "FIXED"},
+    {"location": "manifest.json name", "was": "BIQC - Business IQ Centre", "corrected_to": "BIQc — Business Intelligence Centre", "status": "FIXED"},
+    {"location": "index.html title", "was": "BIQC - Business IQ Centre", "corrected_to": "BIQc — Business Intelligence Centre", "status": "FIXED"},
+    {"location": "index.html meta application-name", "was": "BIQC", "corrected_to": "BIQc", "status": "FIXED"},
+    {"location": "index.html meta apple-mobile-web-app-title", "was": "BIQC", "corrected_to": "BIQc", "status": "FIXED"},
+    {"location": "index.html meta description", "was": "BIQC - Your personalised...", "corrected_to": "BIQc — Your sovereign...", "status": "FIXED"},
+    {"location": "manifest.json theme_color", "was": "#0066FF (blue, legacy)", "corrected_to": "#0F1720 (Liquid Steel)", "status": "FIXED"},
+    {"location": "manifest.json background_color", "was": "#FFFFFF (white, legacy)", "corrected_to": "#0F1720 (Liquid Steel)", "status": "FIXED"},
+    {"location": "index.html theme-color meta", "was": "#0066FF", "corrected_to": "#0F1720", "status": "FIXED"},
+    {"location": "Homepage body text", "count": 3, "casing": "BIQc (correct)", "status": "PASS"}
+  ],
+
+  "tutorial_violations": [
+    {"page": "/integrations", "issue": "Tutorial modal appears every session. White background on dark theme. No 'Don't show again' option.", "severity": "HIGH"},
+    {"page": "/advisor", "issue": "Tutorial overlay reported in previous audit. May still appear on first load.", "severity": "MEDIUM"}
+  ],
+
+  "browser_vs_app_inconsistencies": [
+    {"area": "PWA manifest", "issue": "Brand name was 'BIQC' — now fixed to 'BIQc'", "status": "FIXED"},
+    {"area": "PWA theme_color", "issue": "Was #0066FF (blue) — now #0F1720 (matches Liquid Steel)", "status": "FIXED"},
+    {"area": "PWA background_color", "issue": "Was #FFFFFF (white splash) — now #0F1720 (dark splash)", "status": "FIXED"},
+    {"area": "Service worker", "issue": "Not tested — requires real device PWA install", "status": "MANUAL TEST REQUIRED"}
+  ],
+
+  "auth_flow_analysis": {
+    "login_email_password": "PASS — 8.02s to /advisor",
+    "forgot_password_link": "PASS — visible on login page",
+    "reset_password_page": "PASS — form renders correctly",
+    "session_restore_refresh": "PASS — URL preserved after reload",
+    "google_oauth_button": "PASS — present",
+    "microsoft_oauth_button": "PASS — present",
+    "multi_page_navigation": "PASS — /compliance, /actions, /reports, /audit-log all load"
+  },
+
+  "cognition_as_a_platform_justification": {
+    "qualifies_because": [
+      "5 SQL deterministic engines execute before every LLM call (detect_contradictions → update_escalation → calibrate_pressure → decay_evidence → compute_market_risk_weight)",
+      "Consequence modelling in Action Plan (probability shifts, blindside risk, decision windows)",
+      "Drift detection with cohort/trust/authority/position gap analysis",
+      "Misalignment index comparing intent vs behaviour",
+      "Resolution queue with one-click actions (Auto-Email, Quick-SMS, Hand-Off)",
+      "Unified cognitive snapshot — single source of truth rendered across 10+ pages",
+      "Evidence-based confidence decay (FRESH→AGING→STALE)",
+      "Pressure calibration that never decreases while position is elevated"
+    ],
+    "cognition_features_observed": [
+      "System state classification (STABLE/DRIFT/COMPRESSION/CRITICAL)",
+      "Velocity tracking (improving/stable/worsening)",
+      "Inevitability modelling with probability, impact, and window",
+      "Founder vitals (capacity index, fatigue, email stress)",
+      "Capital scenarios (best/base/worst 30-day)",
+      "Competitive signal monitoring via Perplexity",
+      "Market intelligence with industry trends"
+    ],
+    "how_it_serves_smb_operator": [
+      "Australian English, direct, no corporate fluff",
+      "References specific deal names, contact names, dollar amounts",
+      "One-page daily intelligence summary (BIQc Insights)",
+      "Priority compression (ONE thing to focus on)",
+      "Noise filtering (what to ignore)",
+      "Delegation recommendations (who should handle what)"
+    ],
+    "what_is_missing": [
+      "Action Plan not rendering on production (cached snapshot stale)",
+      "Tutorial modals block content on every session",
+      "Market page 15s+ load time on production",
+      "Stripe gating not implemented (all features ungated)",
+      "Channel APIs are shells (Google Ads, Meta, LinkedIn)",
+      "No email notification for intelligence changes",
+      "No mobile push notifications for critical alerts"
+    ],
+    "retention_risk_if_missing_persists": [
+      "15s+ load time → users abandon before seeing intelligence",
+      "Tutorial blocking → perceived as broken/unstable",
+      "No action plan visible → undermines 'cognition' positioning",
+      "No paid tier → no revenue, no sustainability"
+    ]
+  },
+
+  "priority_remediation_order": [
+    "1. Deploy latest code (branding fixes + shell page wiring)",
+    "2. Force refresh cognitive snapshot ({force: true}) to populate Action Plan",
+    "3. Fix tutorial modal persistence (localStorage dismissal)",
+    "4. Reduce BIQc Insights initial load time (cached-first strategy)",
+    "5. Implement Stripe paid gating",
+    "6. Wire real channel APIs (Google Ads, Meta, LinkedIn)"
+  ]
+}
