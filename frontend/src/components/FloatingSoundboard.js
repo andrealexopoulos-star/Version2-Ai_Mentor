@@ -100,7 +100,7 @@ const FloatingSoundboard = ({ context = '' }) => {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="h-[320px] overflow-y-auto px-4 py-3 space-y-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-8">
             <Lightbulb className="w-8 h-8 mx-auto mb-3 text-[#FF6A00]/30" />
