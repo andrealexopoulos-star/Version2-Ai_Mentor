@@ -64,17 +64,25 @@ const FloatingSoundboard = ({ context = '' }) => {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-50 w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
         style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', boxShadow: '0 8px 32px rgba(255,106,0,0.4)' }}
         data-testid="soundboard-fab"
       >
-        <Lightbulb className="w-6 h-6 text-white" />
+        <Lightbulb className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] rounded-2xl shadow-2xl overflow-hidden" style={{ background: '#0A1018', border: '1px solid #243140' }} data-testid="soundboard-panel">
+    <>
+      {/* Mobile: full-screen overlay */}
+      <div className="fixed inset-0 bg-black/60 z-[1200] lg:hidden" onClick={() => setOpen(false)} />
+      {/* Panel: full-screen on mobile, floating on desktop */}
+      <div
+        className="fixed z-[1201] lg:bottom-6 lg:right-6 lg:w-[380px] lg:rounded-2xl inset-0 lg:inset-auto flex flex-col shadow-2xl overflow-hidden"
+        style={{ background: '#0A1018', border: '1px solid #243140', height: window.innerWidth < 1024 ? viewportHeight : 'auto' }}
+        data-testid="soundboard-panel"
+      >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #243140' }}>
         <div className="flex items-center gap-2">
