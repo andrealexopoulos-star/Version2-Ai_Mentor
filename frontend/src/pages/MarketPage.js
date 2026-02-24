@@ -165,10 +165,10 @@ const MarketPage = () => {
           </Panel>
         )}
 
-        {/* ═══ PHASE 3: STRATEGIC DRIFT SNAPSHOT — only show with real data ═══ */}
-        {(drift.cohort_actual || drift.trust_actual || drift.authority_actual || drift.position_actual) && (
+        {/* ═══ PHASE 3: STRATEGIC DRIFT SNAPSHOT — always visible ═══ */}
         <div>
           <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Strategic Drift Analysis</h3>
+          {(drift.cohort_actual || drift.trust_actual || drift.authority_actual || drift.position_actual) ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Current Cohort vs Ideal', actual: drift.cohort_actual, target: drift.cohort_target, unit: '%' },
@@ -193,38 +193,84 @@ const MarketPage = () => {
               );
             })}
           </div>
-        </div>
-        )}
-
-        {/* ═══ PHASE 8.5: MISALIGNMENT QUANTIFICATION ═══ */}
-        {(misalignmentIndex || goalProb || alignment || contradictions.length > 0) && (
+          ) : (
           <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #F59E0B25' }}>
-            <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#F59E0B', fontFamily: MONO }}>Strategic Alignment Check</h3>
-            {(misalignmentIndex || goalProb) && (
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {misalignmentIndex && (
-                  <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Misalignment Index</span>
-                    <span className="text-2xl font-bold" style={{ fontFamily: MONO, color: misalignmentIndex > 50 ? '#EF4444' : misalignmentIndex > 25 ? '#F59E0B' : '#10B981' }}>{misalignmentIndex}</span>
-                    <span className="text-xs text-[#64748B]">/100</span>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
+              <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Insufficient Data for Drift Detection</span>
+            </div>
+            <p className="text-sm text-[#9FB0C3] mb-4 leading-relaxed">BIQc needs more context to calculate strategic drift. Complete the following to activate drift monitoring:</p>
+            <div className="space-y-2">
+              {[
+                { action: 'Complete Forensic Calibration', detail: 'Revenue ambition, growth timeline, cohort targets, risk appetite', path: '/market/calibration', done: false },
+                { action: 'Define Business Goals & KPIs', detail: 'Targets for acquisition, retention, and growth', path: '/business-profile', done: false },
+                { action: 'Connect CRM', detail: 'Pipeline data enables positioning and acquisition scoring', path: '/integrations', done: !!pipeline },
+                { action: 'Connect Accounting', detail: 'Financial data enables trust and retention scoring', path: '/integrations', done: !!c.financial },
+              ].map((item, i) => (
+                <button key={i} onClick={() => !item.done && navigate(item.path)} className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all hover:bg-white/[0.02]" style={{ background: '#0F1720', border: `1px solid ${item.done ? '#10B98130' : '#24314080'}` }}>
+                  {item.done ? <CheckCircle2 className="w-4 h-4 text-[#10B981] shrink-0" /> : <div className="w-4 h-4 rounded-full border shrink-0" style={{ borderColor: '#F59E0B' }} />}
+                  <div className="flex-1">
+                    <span className="text-sm text-[#F4F7FA] block" style={{ fontFamily: BODY }}>{item.action}</span>
+                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{item.detail}</span>
                   </div>
-                )}
-                {goalProb && (
-                  <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Goal Achievement Probability</span>
-                    <span className="text-2xl font-bold" style={{ fontFamily: MONO, color: goalProb > 70 ? '#10B981' : goalProb > 40 ? '#F59E0B' : '#EF4444' }}>{goalProb}%</span>
-                  </div>
-                )}
-              </div>
-            )}
-            {alignment && <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3">{alignment}</p>}
-            {contradictions.map((ct, i) => (
-              <div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}>
-                <p className="text-xs" style={{ color: '#F59E0B', fontFamily: MONO }}>&#x26A0; {ct}</p>
-              </div>
-            ))}
+                  {!item.done && <ArrowRight className="w-4 h-4 text-[#64748B]" />}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-[#64748B] mt-3" style={{ fontFamily: MONO }}>Drift analysis activates automatically as data is ingested.</p>
           </div>
-        )}
+          )}
+        </div>
+
+        {/* ═══ PHASE 8.5: MISALIGNMENT QUANTIFICATION — always visible ═══ */}
+        <div className="rounded-xl p-5" style={{ background: '#141C26', border: `1px solid ${(misalignmentIndex || alignment) ? '#F59E0B25' : '#24314050'}` }}>
+          <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: (misalignmentIndex || alignment) ? '#F59E0B' : '#64748B', fontFamily: MONO }}>Strategic Alignment Check</h3>
+          {(misalignmentIndex || goalProb) ? (
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {misalignmentIndex != null && (
+                <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Misalignment Index</span>
+                  <span className="text-2xl font-bold" style={{ fontFamily: MONO, color: misalignmentIndex > 50 ? '#EF4444' : misalignmentIndex > 25 ? '#F59E0B' : '#10B981' }}>{misalignmentIndex}</span>
+                  <span className="text-xs text-[#64748B]">/100</span>
+                </div>
+              )}
+              {goalProb != null && (
+                <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Goal Achievement Probability</span>
+                  <span className="text-2xl font-bold" style={{ fontFamily: MONO, color: goalProb > 70 ? '#10B981' : goalProb > 40 ? '#F59E0B' : '#EF4444' }}>{goalProb}%</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4 text-[#64748B]" />
+              <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>Insufficient data for misalignment scoring</span>
+            </div>
+          )}
+          {alignment && <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3">{alignment}</p>}
+          {contradictions.length > 0 && contradictions.map((ct, i) => (
+            <div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}>
+              <p className="text-xs" style={{ color: '#F59E0B', fontFamily: MONO }}>&#x26A0; {ct}</p>
+            </div>
+          ))}
+          {!alignment && !misalignmentIndex && (
+            <div className="space-y-2 mt-3">
+              <p className="text-xs text-[#64748B] leading-relaxed">To activate misalignment detection, BIQc needs:</p>
+              {[
+                'Business goals, objectives, and KPIs defined in Business DNA',
+                'Marketing strategy and acquisition/retention targets',
+                'Forensic Calibration completed (revenue ambition, growth timeline)',
+                'At least one integration connected (CRM, Accounting, or Email)',
+              ].map((req, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
+                  <span className="text-xs text-[#9FB0C3]">{req}</span>
+                </div>
+              ))}
+              <p className="text-[10px] text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Misalignment engine activates automatically as context builds.</p>
+            </div>
+          )}
+        </div>
 
         {/* ═══ PHASE 5: INTEGRATION LAYER — Unlock Live Channel Intelligence ═══ */}
         <div>
