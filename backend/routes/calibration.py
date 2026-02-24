@@ -448,20 +448,45 @@ class ConsoleStateSave(BaseModel):
 
 @router.post("/console/state")
 async def save_console_state(request: Request, payload: ConsoleStateSave):
-    """Persist console step to user_operator_profile.operator_profile.console_state."""
+    """Persist console step. When status=COMPLETE, also marks authoritative routing tables."""
     try:
         current_user = await get_current_user_from_request(request)
         user_id = current_user.get("id")
     except Exception:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
+        now_iso = datetime.now(timezone.utc).isoformat()
         existing = get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
         op = (existing.data.get("operator_profile") if existing.data else None) or {}
-        op["console_state"] = {"current_step": payload.current_step, "status": payload.status, "updated_at": datetime.now(timezone.utc).isoformat()}
+        op["console_state"] = {"current_step": payload.current_step, "status": payload.status, "updated_at": now_iso}
+
+        update_data = {"operator_profile": op}
+
+        # When marking COMPLETE, also set persona_calibration_status (read by /calibration/status)
+        if payload.status == "COMPLETE":
+            update_data["persona_calibration_status"] = "complete"
+            update_data["updated_at"] = now_iso
+
         if existing.data:
-            get_sb().table("user_operator_profile").update({"operator_profile": op}).eq("user_id", user_id).execute()
+            get_sb().table("user_operator_profile").update(update_data).eq("user_id", user_id).execute()
         else:
-            get_sb().table("user_operator_profile").insert({"user_id": user_id, "operator_profile": op}).execute()
+            update_data["user_id"] = user_id
+            get_sb().table("user_operator_profile").insert(update_data).execute()
+
+        # When COMPLETE, also upsert strategic_console_state (authoritative for routing)
+        if payload.status == "COMPLETE":
+            try:
+                get_sb().table("strategic_console_state").upsert({
+                    "user_id": user_id,
+                    "status": "COMPLETE",
+                    "is_complete": True,
+                    "current_step": payload.current_step,
+                    "updated_at": now_iso,
+                }).execute()
+                logger.info(f"[console/state] Marked COMPLETE for user {user_id} in both tables")
+            except Exception as e:
+                logger.warning(f"[console/state] strategic_console_state upsert failed: {e}")
+
         return {"ok": True}
     except Exception as e:
         logger.error(f"[console/state] Error: {e}")
