@@ -68,7 +68,7 @@ const HomePage = () => (
 
     {/* ══ STATS BAR ══ */}
     <section className="border-y" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }} data-testid="stats-section">
-      <div className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-5 gap-8">
+      <div className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
         <StatBlock value="40%" label="Operational Improvement" />
         <StatBlock value="50%" label="Reduced Manual Work" />
         <StatBlock value="80%" label="Lower Processing Costs" />
