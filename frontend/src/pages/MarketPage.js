@@ -26,9 +26,28 @@ const MarketPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
+        // Try snapshot/latest first (cached data)
         const res = await apiClient.get('/snapshot/latest');
-        if (res.data?.cognitive) setSnapshot(res.data.cognitive);
-      } catch {} finally { setLoading(false); }
+        if (res.data?.cognitive) { setSnapshot(res.data.cognitive); setLoading(false); return; }
+      } catch {}
+      // Fallback: trigger a fresh cognitive snapshot
+      try {
+        const { data: { session } } = await (await import('../context/SupabaseAuthContext')).supabase.auth.getSession();
+        if (session) {
+          const sbUrl = process.env.REACT_APP_SUPABASE_URL;
+          const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
+          const res = await fetch(`${sbUrl}/functions/v1/biqc-insights-cognitive`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': key },
+            body: '{}',
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.cognitive) setSnapshot(data.cognitive);
+          }
+        }
+      } catch {}
+      setLoading(false);
     };
     load();
   }, []);
