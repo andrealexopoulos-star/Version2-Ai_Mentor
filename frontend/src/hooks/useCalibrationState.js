@@ -223,14 +223,13 @@ export const useCalibrationState = () => {
     setIsSubmitting(true); setEntry("analyzing");
     try {
       await apiClient.put('/business-profile', { mission_statement: summary });
-      let data;
-      try { data = await callEdge({ step: 1, message: summary }); }
-      catch { try { data = await callEdge({ message: summary }); }
-      catch { setEntry("calibrating"); setIsSubmitting(false); return; } }
-      if (data.status === "COMPLETE") { triggerComplete(); return; }
+      try { await callEdge({ step: 1, message: summary }); }
+      catch { /* non-blocking */ }
       autoSave(1);
-      applyResponse(data);
-    } catch { setEntry("calibrating"); }
+      // Skip questions — go to intelligence-first → market
+      fetchIntelligence();
+      setEntry("intelligence-first");
+    } catch { setError("Failed to save. Please try again."); }
     finally { setIsSubmitting(false); }
   };
 
