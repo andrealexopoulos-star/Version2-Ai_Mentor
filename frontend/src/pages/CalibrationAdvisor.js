@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useCalibrationState } from "../hooks/useCalibrationState";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
@@ -11,6 +11,7 @@ import { ExecutiveReveal } from "../components/calibration/ExecutiveReveal";
 import { ContinuitySuite } from "../components/calibration/ContinuitySuite";
 import { CalibratingSession } from "../components/calibration/CalibratingSession";
 import { CalibrationTutorial } from "../components/TutorialOverlay";
+import { CognitiveIgnitionScreen } from "../components/CognitiveLoadingScreen";
 import { SkipForward, ArrowLeft } from 'lucide-react';
 
 const CREAM = '#0F1720';
