@@ -456,8 +456,9 @@ async def save_console_state(request: Request, payload: ConsoleStateSave):
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         now_iso = datetime.now(timezone.utc).isoformat()
-        existing = get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
-        op = (existing.data.get("operator_profile") if existing.data else None) or {}
+        existing_result = get_sb().table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+        existing_data = existing_result.data if existing_result else None
+        op = (existing_data.get("operator_profile") if existing_data else None) or {}
         op["console_state"] = {"current_step": payload.current_step, "status": payload.status, "updated_at": now_iso}
 
         update_data = {"operator_profile": op}
@@ -467,7 +468,7 @@ async def save_console_state(request: Request, payload: ConsoleStateSave):
             update_data["persona_calibration_status"] = "complete"
             update_data["updated_at"] = now_iso
 
-        if existing.data:
+        if existing_data:
             get_sb().table("user_operator_profile").update(update_data).eq("user_id", user_id).execute()
         else:
             update_data["user_id"] = user_id
