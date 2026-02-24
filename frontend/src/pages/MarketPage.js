@@ -20,6 +20,72 @@ const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
+const ForensicCalibrationCard = ({ isSuperAdmin, navigate }) => {
+  const [forensicResult, setForensicResult] = useState(null);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await apiClient.get('/forensic/calibration');
+        if (res.data?.exists) setForensicResult(res.data);
+      } catch {}
+    };
+    fetch();
+  }, []);
+
+  return (
+    <div className="rounded-xl p-6" style={{ background: 'linear-gradient(135deg, #FF6A0008, #3B82F608)', border: '1px solid #FF6A0020' }} data-testid="forensic-section">
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
+          <Eye className="w-6 h-6 text-[#FF6A00]" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Market Calibration</h3>
+            {forensicResult ? (
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: forensicResult.risk_color || '#10B981', background: (forensicResult.risk_color || '#10B981') + '15', fontFamily: MONO }}>{forensicResult.risk_profile} — {forensicResult.composite_score}/100</span>
+            ) : (
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>Deep Analysis</span>
+            )}
+          </div>
+          {forensicResult ? (
+            <div>
+              <p className="text-sm text-[#9FB0C3] mb-3">Calibration complete. Your market strategy has been scored.</p>
+              {forensicResult.signals?.length > 0 && (
+                <div className="space-y-1.5 mb-4">
+                  {forensicResult.signals.slice(0, 2).map((sig, i) => (
+                    <p key={i} className="text-xs text-[#9FB0C3] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: sig.type === 'positive' ? '#10B981' : sig.type === 'critical' ? '#EF4444' : '#F59E0B' }} />
+                      {sig.text}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => navigate('/market/calibration')} className="px-6 py-2.5 rounded-xl text-sm font-semibold" style={{ color: '#FF6A00', border: '1px solid #FF6A0040' }} data-testid="forensic-calibration-btn">
+                View Full Results <ArrowRight className="w-4 h-4 inline ml-1" />
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-[#9FB0C3] mb-4">Weighted assessment of revenue ambition, growth timeline, cohort intention, risk appetite, retention maturity, and pricing confidence.</p>
+              {isSuperAdmin ? (
+                <button onClick={() => navigate('/market/calibration')} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="forensic-calibration-btn">
+                  Begin Forensic Calibration <ArrowRight className="w-4 h-4 inline ml-1" />
+                </button>
+              ) : (
+                <button className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white opacity-60 cursor-not-allowed" style={{ background: '#FF6A00' }}>
+                  <Lock className="w-3.5 h-3.5 inline mr-1" /> Coming Soon — Pro Plan
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const ChannelIntelligence = ({ navigate }) => {
   const [channels, setChannels] = useState([]);
   const [summary, setSummary] = useState(null);
