@@ -441,6 +441,9 @@ const MarketPage = () => {
         {/* ═══ PHASE 8: FORENSIC MARKET CALIBRATION ═══ */}
         <ForensicCalibrationCard isSuperAdmin={isSuperAdmin} navigate={navigate} />
 
+        {/* ═══ BIQc SUGGESTED ACTION PLAN — Cognition-as-a-Platform Flagship ═══ */}
+        <ActionPlanSection actionPlan={c.action_plan} snapshot={snapshot} />
+
         {/* ═══ PHASE 9: EXECUTIVE STRATEGIC BRIEF (Paid Output) ═══ */}
         <Panel>
           <div className="flex items-center gap-3 mb-3">
