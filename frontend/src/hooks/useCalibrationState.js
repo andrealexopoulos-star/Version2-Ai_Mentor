@@ -236,12 +236,28 @@ export const useCalibrationState = () => {
       const payload = { step: 2, confirmed_summary: true };
       if (Object.keys(editedFields).length > 0) payload.user_edits = editedFields;
       const data = await callEdge(payload);
-      if (data.status === "COMPLETE") { autoSave(2, "COMPLETE"); triggerComplete(); return; }
       autoSave(2);
       setTransitioning(false);
-      applyResponse(data);
+
+      // Phase 4: Fetch intelligence snapshot and show before calibration questions
+      fetchIntelligence();
+      setEntry("intelligence-first");
+      // Store the next calibration response to apply after intelligence view
+      if (data.status !== "COMPLETE") {
+        setPendingCalibrationData(data);
+      }
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
+  };
+
+  // Continue from intelligence-first to calibration questions
+  const proceedFromIntelligence = () => {
+    if (pendingCalibrationData) {
+      applyResponse(pendingCalibrationData);
+      setPendingCalibrationData(null);
+    } else {
+      startCalibration();
+    }
   };
 
   const startEdit = (key, currentValue) => {
