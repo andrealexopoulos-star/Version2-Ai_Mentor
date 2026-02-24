@@ -3,15 +3,16 @@ import { supabase } from '../context/SupabaseAuthContext';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 min
 const CACHE_KEY = 'biqc_snapshot_cache';
 
 /**
- * useSnapshot — STALE-WHILE-REVALIDATE strategy.
- * 1. ALWAYS show cached data instantly (never loading spinner for returning users)
- * 2. Background refresh if cache > 5 min old
- * 3. Show "Updated X min ago" indicator
- * 4. Loading spinner ONLY on first-ever visit (no cache exists)
+ * useSnapshot — SUPABASE REALTIME strategy (replaces polling).
+ * 
+ * 1. Show cached data instantly on mount
+ * 2. Fetch fresh data from Edge Function once
+ * 3. Subscribe to intelligence_snapshots table via Supabase Realtime
+ * 4. When pg_cron inserts a new snapshot → auto-update (no polling)
+ * 5. Manual refresh still available via refresh()
  */
 export function useSnapshot() {
   const [cognitive, setCognitive] = useState(null);
@@ -23,7 +24,6 @@ export function useSnapshot() {
   const [error, setError] = useState(null);
   const [cacheAge, setCacheAge] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const intervalRef = useRef(null);
   const mountedRef = useRef(true);
 
   const getCache = useCallback(() => {
@@ -68,18 +68,14 @@ export function useSnapshot() {
     return res.json();
   }, []);
 
-  // STALE-WHILE-REVALIDATE: Always show data, refresh in background
+  // Initial load: cache first, then fresh fetch
   const loadSnapshot = useCallback(async () => {
     setError(null);
-
-    // Step 1: Show ANY cached data immediately (even stale)
     const cached = getCache();
     if (cached?.cognitive) {
       applyData(cached);
-      setLoading(false); // Never show spinner if we have cache
+      setLoading(false);
     }
-
-    // Step 2: Background refresh
     setRefreshing(true);
     try {
       const fresh = await fetchFresh();
@@ -92,10 +88,7 @@ export function useSnapshot() {
         setError('Connect integrations for full insights.');
       }
     } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-        setRefreshing(false);
-      }
+      if (mountedRef.current) { setLoading(false); setRefreshing(false); }
     }
   }, [getCache, applyData, fetchFresh, setCache]);
 
@@ -103,26 +96,45 @@ export function useSnapshot() {
     setRefreshing(true);
     try {
       const fresh = await fetchFresh();
-      if (fresh && mountedRef.current) {
-        applyData(fresh);
-        setCache(fresh);
-      }
+      if (fresh && mountedRef.current) { applyData(fresh); setCache(fresh); }
     } catch { setError('Refresh failed.'); }
     finally { if (mountedRef.current) setRefreshing(false); }
   }, [fetchFresh, applyData, setCache]);
 
-  // On mount
+  // On mount: load once + subscribe to Realtime
   useEffect(() => {
     mountedRef.current = true;
-    loadSnapshot(false);
-    intervalRef.current = setInterval(() => loadSnapshot(true), REFRESH_INTERVAL);
+    loadSnapshot();
+
+    // Supabase Realtime subscription — listen for new snapshots
+    let channel;
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+
+      channel = supabase
+        .channel('snapshot-updates')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'intelligence_snapshots',
+          filter: `user_id=eq.${session.user.id}`,
+        }, (payload) => {
+          // New snapshot inserted (by pg_cron or manual trigger) → refresh
+          console.log('[Realtime] New snapshot detected, refreshing...');
+          refresh();
+        })
+        .subscribe();
+    };
+    setupRealtime();
+
     return () => {
       mountedRef.current = false;
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (channel) supabase.removeChannel(channel);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load context memo from Supabase directly (for Board Room)
+  // Context memo from Supabase (for Board Room)
   useEffect(() => {
     async function loadContext() {
       try {
