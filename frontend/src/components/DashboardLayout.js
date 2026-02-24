@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
+import { useSupabaseAuth, AUTH_STATE, supabase } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { apiClient } from '../lib/api';
 import { useTutorial, HelpButton, TutorialModal } from './TutorialOverlay';
