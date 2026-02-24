@@ -70,7 +70,7 @@ export const useCalibrationState = () => {
       setRevealPhase(p => {
         if (p >= REVEAL_PHASES.length - 1) {
           clearInterval(interval);
-          setTimeout(() => { window.location.href = '/advisor'; }, 1200);
+          setTimeout(() => { window.location.href = '/market'; }, 1200);
           return p;
         }
         return p + 1;
