@@ -109,7 +109,8 @@ const MarketPage = () => {
           <p className="text-sm text-[#9FB0C3]">Strategic positioning, competitive landscape, and drift analysis.</p>
         </div>
 
-        {/* System State */}
+        {/* System State — only show with real data */}
+        {snapshot ? (
         <div className="rounded-xl p-5" style={{ background: st.c + '08', border: `1px solid ${st.c}25` }}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -121,6 +122,15 @@ const MarketPage = () => {
           </div>
           {interpretation && <p className="text-sm mt-3 text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
         </div>
+        ) : (
+        <div className="rounded-xl p-5" style={{ background: '#64748B08', border: '1px solid #24314050' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full" style={{ background: '#64748B' }} />
+            <span className="text-sm font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>AWAITING INTELLIGENCE</span>
+          </div>
+          <p className="text-sm mt-3 text-[#64748B] leading-relaxed">Connect integrations and complete calibration to generate your market intelligence snapshot.</p>
+        </div>
+        )}
 
         {/* Signal Scores — from cognitive engine market_intelligence */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
