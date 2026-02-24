@@ -8,29 +8,37 @@
 - AI: OpenAI gpt-4o-mini (Edge Functions only)
 - Production: biqc.thestrategysquad.com
 
-## Completed (2026-02-24)
-- P0 Fix: Calibration questionnaire signup bug
-- UI: WOW Summary button/edit indicators
-- Backend: Forensic Calibration scoring, Channel Intelligence, Market Intelligence aggregator
-- BIQc Action Plan: Edge Function extension with deterministic overlay (DEPLOY NEEDED)
-- Mobile Audit: Score 38→75 (6 critical/high fixes)
-- Mobile Hardening: 6 modules implemented (all 100% tested):
-  - Module A: Cognition-aware mobile landing (DRIFT→/market)
-  - Module B: Bottom navigation (5 tabs + More sheet)
-  - Module C: Soundboard full-screen modal with keyboard-aware viewport
-  - Module D: Edge Function warm strategy (warm-cognitive-engine)
-  - Module E: Parallelized API calls (Promise.allSettled)
-  - Module F: OAuth verified redirect-based (no popup on mobile)
+## Completed (2026-02-24 — Full Session)
+- P0: Calibration questionnaire signup bug fix
+- P0: Forensic Calibration backend scoring engine
+- P0: Channel Intelligence status API
+- P0: Market Intelligence aggregator with live HubSpot data
+- P0: BIQc Action Plan (Edge Function extension with deterministic overlay)
+- P0: Password reset flow (CRIT-001 from production audit)
+- Mobile forensic audit (score 38→75)
+- Mobile bottom navigation (5 tabs + More sheet)
+- Soundboard full-screen modal with keyboard-aware viewport
+- Edge Function warm strategy
+- Parallelized Market page API calls
+- Cognition-aware mobile landing (DRIFT→/market)
+- Login page mobile padding fix
+- WOW Summary button/edit indicators
+- 15+ grid responsive breakpoints
+- Reduced motion + safe area + touch target fixes
+
+## Production Audit Results (post-fix)
+- CRIT-001: Password reset — FIXED (ResetPassword.js + UpdatePassword.js)
+- CRIT-002: Edge Function 401 — FIXED (user deployed)
+- HIGH-001: /api/auth/supabase/me 520 — needs investigation
+- HIGH-003: Login mobile padding — FIXED
 
 ## Deployment Required
-1. SQL: compute_market_risk_weight() function
-2. Edge Function: biqc-insights-cognitive (updated with action_plan)
-3. Edge Function: warm-cognitive-engine (NEW)
+1. Deploy warm-cognitive-engine Edge Function
+2. Save to GitHub + Deploy latest code
 
 ## Pending
-- P1: Deploy Edge Functions + SQL to Supabase
+- P1: Investigate /api/auth/supabase/me 520 errors
 - P1: Wire BIQc Insights tabs (Money, Ops, People)
 - P2: Stripe paid gating
 - P2: SQL migration of Python cognition engines
 - P2: Real channel APIs (Google Ads, Meta, LinkedIn)
-- P3: Consolidate legacy pages
