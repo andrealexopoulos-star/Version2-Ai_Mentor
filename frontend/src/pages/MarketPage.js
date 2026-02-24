@@ -184,7 +184,11 @@ const MarketPage = () => {
 
   useEffect(() => {
     const init = async () => {
-      await fetchSnapshot();
+      // Race the snapshot fetch against a 6-second timeout so the page always renders
+      await Promise.race([
+        fetchSnapshot(),
+        new Promise(r => setTimeout(r, 6000)),
+      ]);
       setLoading(false);
       setPhase('ignition');
       setTimeout(() => setPhase('snapshot'), 3000);
