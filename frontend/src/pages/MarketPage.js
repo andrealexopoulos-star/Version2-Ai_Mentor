@@ -283,33 +283,7 @@ const MarketPage = () => {
         </div>
 
         {/* ═══ PHASE 5: INTEGRATION LAYER — Unlock Live Channel Intelligence ═══ */}
-        <div>
-          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Unlock Live Channel Intelligence</h3>
-          <p className="text-xs text-[#64748B] mb-4" style={{ fontFamily: MONO }}>Connect your marketing channels to activate real-time performance analysis.</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {[
-              { name: 'CRM', desc: 'HubSpot, Salesforce, Pipedrive', color: '#FF7A59', status: 'available' },
-              { name: 'Google Ads', desc: 'Search, Display, YouTube', color: '#4285F4', status: 'coming' },
-              { name: 'Meta Ads', desc: 'Facebook, Instagram', color: '#1877F2', status: 'coming' },
-              { name: 'LinkedIn', desc: 'Campaigns, Leads', color: '#0A66C2', status: 'coming' },
-              { name: 'Analytics', desc: 'GA4, Mixpanel', color: '#E37400', status: 'coming' },
-              { name: 'Email Platform', desc: 'Mailchimp, ActiveCampaign', color: '#FFE01B', status: 'coming' },
-            ].map(ch => (
-              <div key={ch.name} className="p-4 rounded-lg flex items-center gap-3" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ background: ch.color }}>{ch.name[0]}</div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm text-[#F4F7FA] block">{ch.name}</span>
-                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{ch.desc}</span>
-                </div>
-                {ch.status === 'available' ? (
-                  <button onClick={() => navigate('/integrations')} className="text-[10px] px-2 py-1 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>Connect</button>
-                ) : (
-                  <span className="text-[10px] px-2 py-1 rounded" style={{ color: '#64748B', background: '#24314050', fontFamily: MONO }}>Soon</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <ChannelIntelligence navigate={navigate} />
 
         {/* ═══ PHASE 6 + 7: Data Validation + Channel Calibration (placeholder — needs server-side) ═══ */}
         <Panel>
