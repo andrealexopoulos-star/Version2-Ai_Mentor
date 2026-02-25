@@ -58,8 +58,20 @@ export const useCalibrationState = () => {
   const userEmail = user?.email || session?.user?.email || '';
 
   const handleSignOut = async () => {
-    try { await signOut(); localStorage.clear(); sessionStorage.clear(); window.location.href = '/login-supabase'; }
-    catch { window.location.href = '/login-supabase'; }
+    try {
+      await signOut();
+      // Preserve tutorials and preferences
+      const tutorials = localStorage.getItem('biqc_tutorials_seen');
+      localStorage.clear(); sessionStorage.clear();
+      if (tutorials) localStorage.setItem('biqc_tutorials_seen', tutorials);
+      window.location.href = '/login-supabase';
+    }
+    catch {
+      const tutorials = localStorage.getItem('biqc_tutorials_seen');
+      localStorage.clear(); sessionStorage.clear();
+      if (tutorials) localStorage.setItem('biqc_tutorials_seen', tutorials);
+      window.location.href = '/login-supabase';
+    }
   };
 
   useEffect(() => { if (!loading && !user) navigate("/login-supabase"); }, [loading, user, navigate]);
