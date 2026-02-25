@@ -259,9 +259,9 @@ export const useCalibrationState = () => {
       try { await callEdge({ step: 1, message: summary }); }
       catch { /* non-blocking */ }
       autoSave(1);
-      // Skip questions — go to intelligence-first → market
-      fetchIntelligence();
-      setEntry("intelligence-first");
+      // Create WOW summary from manual input and show it
+      setWowSummary({ what_you_do: summary, who_you_serve: '', what_sets_you_apart: '', biggest_challenges: '', growth_opportunity: '' });
+      setEntry("wow_summary");
     } catch { setError("Failed to save. Please try again."); }
     finally { setIsSubmitting(false); }
   };
