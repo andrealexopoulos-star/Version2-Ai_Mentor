@@ -419,7 +419,8 @@ export const useCalibrationState = () => {
     messages, inputValue, setInputValue,
     currentStep, intelligenceData, fetchIntelligence, proceedFromIntelligence,
     handleSignOut, handleAuditSubmit, handleManualSummary,
-    handleConfirmWow, startEdit, commitEdit,
+    handleConfirmWow, handleApproveIdentity, handleRejectIdentity,
+    startEdit, commitEdit,
     startCalibration, handleWizardContinue, handleChatSubmit,
   };
 };
