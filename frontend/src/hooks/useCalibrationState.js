@@ -196,6 +196,13 @@ export const useCalibrationState = () => {
     } catch { setEntry("ignition"); }
   };
 
+  // WOW Summary quality check — must have ≥3 non-empty fields
+  const isWowSufficient = (wow) => {
+    if (!wow || typeof wow !== 'object') return false;
+    const vals = Object.values(wow).filter(v => typeof v === 'string' && v.trim().length > 20);
+    return vals.length >= 3;
+  };
+
   const handleAuditSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting || !websiteUrl.trim()) return;
@@ -203,10 +210,8 @@ export const useCalibrationState = () => {
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
     setError(null); setIsSubmitting(true); setEntry("analyzing");
     try {
-      // Save URL to profile
       try { await apiClient.put('/business-profile', { website: url }); } catch {}
 
-      // Call calibration-business-dna (NOT calibration-psych) for website audit
       const token = session?.access_token;
       let auditData = null;
       if (token) {
@@ -220,23 +225,28 @@ export const useCalibrationState = () => {
         } catch {}
       }
 
-      // If we got extracted data, show as WOW Summary
       if (auditData?.extracted_data) {
         const ex = auditData.extracted_data;
-        setWowSummary({
-          business_overview: ex.business_overview || ex.description || ex.about || '',
-          industry_position: ex.industry_position || ex.market_position || ex.positioning || '',
-          competitive_advantages: ex.competitive_advantages || ex.differentiators || ex.usp || '',
-          target_market: ex.target_market || ex.ideal_customer || ex.audience || '',
-          key_challenges: ex.key_challenges || ex.challenges || ex.risks || '',
-        });
+        const wow = {
+          business_name: ex.business_name || ex.name || ex.company || '',
+          what_you_do: ex.business_overview || ex.description || ex.about || '',
+          who_you_serve: ex.target_market || ex.ideal_customer || ex.audience || '',
+          what_sets_you_apart: ex.competitive_advantages || ex.differentiators || ex.usp || '',
+          biggest_challenges: ex.key_challenges || ex.challenges || ex.risks || '',
+          growth_opportunity: ex.industry_position || ex.market_position || ex.opportunity || '',
+        };
+
+        // Quality floor: if too thin, add fallback fields
+        if (!isWowSufficient(wow)) {
+          wow.what_you_do = wow.what_you_do || 'Unable to extract enough detail — please describe your business below.';
+        }
+
+        setWowSummary(wow);
         autoSave(1);
         setEntry("wow_summary");
       } else {
-        // No audit data — skip to intelligence-first
-        autoSave(1);
-        fetchIntelligence();
-        setEntry("intelligence-first");
+        // No audit data — go to manual summary
+        setEntry("manual_summary");
       }
     } catch { setEntry("manual_summary"); }
     finally { setIsSubmitting(false); }
