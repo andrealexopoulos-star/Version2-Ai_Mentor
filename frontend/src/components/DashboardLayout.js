@@ -28,15 +28,23 @@ const DashboardLayout = ({ children }) => {
   const isCalibrated = authState === AUTH_STATE.READY;
   const { showTutorial, closeTutorial, openTutorial, tutorial } = useTutorial(location.pathname);
 
+  // Selective clear — preserve tutorials and preferences on logout
+  const clearAuthStorage = () => {
+    const preserve = ['biqc_tutorials_seen', 'sidebar-collapsed'];
+    const saved = {};
+    preserve.forEach(k => { const v = localStorage.getItem(k); if (v) saved[k] = v; });
+    localStorage.clear();
+    sessionStorage.clear();
+    Object.entries(saved).forEach(([k, v]) => localStorage.setItem(k, v));
+  };
+
   const logout = async () => {
     try {
       await signOut();
-      localStorage.clear();
-      sessionStorage.clear();
+      clearAuthStorage();
       setTimeout(() => { window.location.href = '/'; }, 100);
     } catch (error) {
-      localStorage.clear();
-      sessionStorage.clear();
+      clearAuthStorage();
       window.location.href = '/';
     }
   };
