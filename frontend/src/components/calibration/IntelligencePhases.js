@@ -141,16 +141,16 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           </div>
         )}
 
-        {/* Continue CTA */}
-        <div className="text-center" style={{ animation: 'snapFade 1.8s ease-out' }}>
+        {/* Continue CTA — delayed 3s fade-in for perceived intelligence pacing */}
+        <div className="text-center" style={{ animation: 'snapFade 3s ease-out' }}>
           <button onClick={onContinue}
             className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 inline-flex items-center gap-2"
             style={{ background: '#FF6A00', fontFamily: HEAD }}
             data-testid="cmo-continue-btn">
-            Continue to Calibration <ArrowRight className="w-4 h-4" />
+            Continue to Dashboard <ArrowRight className="w-4 h-4" />
           </button>
           <p className="text-[10px] text-[#64748B] mt-3" style={{ fontFamily: MONO }}>
-            Your intelligence will sharpen after calibration
+            Your intelligence will sharpen as more data connects
           </p>
         </div>
       </div>
