@@ -105,10 +105,11 @@ const CalibrationAdvisor = () => {
       {cal.entry === "analyzing" && <AuditProgress />}
 
       {cal.entry === "wow_summary" && cal.wowSummary && !cal.transitioning && (
-        <WowSummary firstName={cal.firstName} wowSummary={cal.wowSummary} editedFields={cal.editedFields}
-          editingKey={cal.editingKey} editValue={cal.editValue} setEditValue={cal.setEditValue}
-          startEdit={cal.startEdit} commitEdit={cal.commitEdit}
-          handleConfirmWow={cal.handleConfirmWow} isSubmitting={cal.isSubmitting} error={cal.error} />
+        <ChiefMarketingSummary
+          wowSummary={cal.wowSummary}
+          onConfirm={cal.handleConfirmWow}
+          isSubmitting={cal.isSubmitting}
+        />
       )}
 
       {cal.transitioning && <DissolveTransition firstName={cal.firstName} />}
