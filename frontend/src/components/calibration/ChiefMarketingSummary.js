@@ -88,6 +88,30 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting }) => {
           </div>
         </div>
 
+        {/* Insufficient Footprint Warning */}
+        {overall < 40 && (
+          <div className="rounded-xl p-5" style={{ background: '#EF444408', border: '1px solid #EF444425', animation: 'cmsFade 0.8s ease-out' }} data-testid="insufficient-warning">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-[#EF4444] shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>
+                  Your digital footprint is too thin for BIQc to confidently map your market position.
+                </p>
+                <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">
+                  Customer acquisition will likely be harder until your online positioning is clearer.
+                </p>
+                <div className="space-y-1">
+                  {LAYERS.filter(l => scoreLayer(l, full).score === null || scoreLayer(l, full).score < 30).slice(0, 3).map((l, i) => (
+                    <span key={i} className="text-[11px] text-[#EF4444] block" style={{ fontFamily: MONO }}>
+                      Missing: {l.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Score Breakdown */}
         <div style={{ animation: 'cmsFade 0.9s ease-out' }}>
           <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Footprint Breakdown</h3>
