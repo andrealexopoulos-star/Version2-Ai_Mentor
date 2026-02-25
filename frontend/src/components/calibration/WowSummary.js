@@ -10,6 +10,21 @@ const SERIF = "var(--font-heading)";
 
 const WOW_CATEGORIES = ['Profile', 'Market', 'Product', 'Team', 'Strategy'];
 
+// SMB-friendly field labels
+const SMB_LABELS = {
+  business_name: 'Your Business',
+  what_you_do: 'What You Do',
+  who_you_serve: 'Who You Serve',
+  what_sets_you_apart: 'What Sets You Apart',
+  biggest_challenges: 'Biggest Challenges',
+  growth_opportunity: 'Growth Opportunity',
+  business_overview: 'What You Do',
+  industry_position: 'Market Position',
+  competitive_advantages: 'What Sets You Apart',
+  target_market: 'Who You Serve',
+  key_challenges: 'Challenges',
+};
+
 const SparkleIcon = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}>
     <path d="M8 0L9.8 6.2L16 8L9.8 9.8L8 16L6.2 9.8L0 8L6.2 6.2L8 0Z" fill={GOLD} />
