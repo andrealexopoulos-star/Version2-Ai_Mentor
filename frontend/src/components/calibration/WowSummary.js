@@ -94,23 +94,17 @@ const WowSummary = ({
   const renderWowFields = () => {
     if (!wowSummary) return null;
     if (typeof wowSummary === 'string') {
-      return <WowField fieldKey="summary" label="Summary" value={wowSummary}
+      return <WowField fieldKey="summary" label="About Your Business" value={wowSummary}
         editingKey={editingKey} editValue={editValue} setEditValue={setEditValue}
         startEdit={startEdit} commitEdit={commitEdit} editedFields={editedFields} />;
     }
-    const standardFields = WOW_CATEGORIES.map(cat => {
-      const key = cat.toLowerCase();
-      const val = wowSummary[key] || wowSummary[cat] || wowSummary[`${key}_summary`];
-      if (!val) return null;
-      return <WowField key={key} fieldKey={key} label={cat} value={val}
-        editingKey={editingKey} editValue={editValue} setEditValue={setEditValue}
-        startEdit={startEdit} commitEdit={commitEdit} editedFields={editedFields} />;
-    }).filter(Boolean);
-    if (standardFields.length > 0) return standardFields;
+    // Render all non-empty fields with SMB-friendly labels
     return Object.entries(wowSummary)
-      .filter(([, v]) => v && (typeof v === 'string' || typeof v === 'object'))
+      .filter(([, v]) => v && typeof v === 'string' && v.trim().length > 0)
       .map(([key, val]) => (
-        <WowField key={key} fieldKey={key} label={key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())} value={val}
+        <WowField key={key} fieldKey={key}
+          label={SMB_LABELS[key] || key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())}
+          value={val}
           editingKey={editingKey} editValue={editValue} setEditValue={setEditValue}
           startEdit={startEdit} commitEdit={commitEdit} editedFields={editedFields} />
       ));
