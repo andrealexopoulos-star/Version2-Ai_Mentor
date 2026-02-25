@@ -201,21 +201,21 @@ const TutorialModal = ({ tutorial, onClose }) => {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       {/* Modal */}
       <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl mx-4"
-        style={{ background: '#FFFFFF', border: '1px solid #E8E6E1' }}>
+        style={{ background: '#141C26', border: '1px solid #243140' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
-          <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#B8860B' }}>
+          <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#FF6A00' }}>
             {tutorial.title}
           </span>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/5 transition-colors"
             data-testid="tutorial-close-btn" aria-label="Close tutorial">
             <X className="w-4 h-4" style={{ color: '#64748B' }} />
           </button>
         </div>
         {/* Body */}
         <div className="px-6 py-4" style={{ minHeight: 120 }}>
-          <h3 className="text-lg font-semibold mb-2" style={{ color: '#1E293B' }}>{current.title}</h3>
-          <p className="text-sm leading-relaxed" style={{ color: '#64748B' }}>{current.body}</p>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#F4F7FA' }}>{current.title}</h3>
+          <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{current.body}</p>
         </div>
         {/* Footer */}
         <div className="flex items-center justify-between px-6 pb-5 pt-2">
