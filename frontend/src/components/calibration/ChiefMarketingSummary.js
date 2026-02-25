@@ -5,21 +5,21 @@ const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
-// 13 footprint layers — scored from extracted data presence + quality
+// 13 footprint layers — mapped to directive specification
 const LAYERS = [
-  { key: 'website', label: 'Website Positioning', fields: ['main_products_services', 'unique_value_proposition', 'business_name'] },
-  { key: 'paid', label: 'Paid Ad Presence', fields: [] }, // Cannot detect without integration
-  { key: 'organic', label: 'Organic Visibility', fields: ['website', 'competitive_moat'] },
-  { key: 'reviews', label: 'Reviews & Reputation', fields: ['customer_count'] }, // Limited from scrape
-  { key: 'social', label: 'Social Activity', fields: [] }, // Requires social scan
-  { key: 'local', label: 'Local Competition', fields: ['location', 'geographic_focus'] },
-  { key: 'category', label: 'Category Positioning', fields: ['industry', 'business_model', 'competitive_advantages'] },
-  { key: 'funnel', label: 'Funnel Friction', fields: ['pricing_model', 'sales_cycle_length'] },
-  { key: 'demand', label: 'Demand Capture', fields: ['growth_strategy', 'growth_goals'] },
-  { key: 'saturation', label: 'Market Saturation', fields: ['location', 'industry'] },
-  { key: 'trust', label: 'Trust Signals', fields: ['team_size', 'founder_background', 'competitive_moat'] },
-  { key: 'consistency', label: 'Channel Consistency', fields: ['mission_statement', 'vision_statement', 'unique_value_proposition'] },
-  { key: 'team', label: 'Team Strength', fields: ['team_size', 'team_strengths', 'team_gaps', 'key_team_members'] },
+  { key: 'messaging', label: 'Website Messaging', fields: ['main_products_services', 'unique_value_proposition', 'business_name'] },
+  { key: 'offer', label: 'Offer & CTA Clarity', fields: ['pricing_model', 'sales_cycle_length'] },
+  { key: 'paid', label: 'Paid Ad Presence', fields: [] },
+  { key: 'organic', label: 'Organic Footprint', fields: ['website', 'competitive_moat'] },
+  { key: 'reviews', label: 'Reviews & Sentiment', fields: ['customer_count'] },
+  { key: 'social', label: 'Social Activity', fields: [] },
+  { key: 'gbp', label: 'Google Business Presence', fields: ['location', 'geographic_focus'] },
+  { key: 'competitors', label: 'Local Competitor Map', fields: ['industry', 'competitive_advantages'] },
+  { key: 'category', label: 'Category Positioning', fields: ['business_model', 'competitive_moat'] },
+  { key: 'funnel', label: 'Funnel Friction', fields: ['growth_strategy', 'growth_goals'] },
+  { key: 'saturation', label: 'Market Density', fields: ['location', 'industry'] },
+  { key: 'trust', label: 'Trust Signals', fields: ['team_size', 'founder_background', 'key_team_members'] },
+  { key: 'consistency', label: 'Cross-Channel Consistency', fields: ['mission_statement', 'vision_statement', 'unique_value_proposition'] },
 ];
 
 function scoreLayer(layer, data) {
