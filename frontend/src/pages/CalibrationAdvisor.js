@@ -13,7 +13,7 @@ import { CalibratingSession } from "../components/calibration/CalibratingSession
 import { CalibrationTutorial } from "../components/TutorialOverlay";
 import { CognitiveIgnitionScreen } from "../components/CognitiveLoadingScreen";
 import { ExecutiveCMOSnapshot, ForensicCalibrationUI } from "../components/calibration/IntelligencePhases";
-import { SkipForward, ArrowLeft } from 'lucide-react';
+import { SkipForward, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 const CREAM = '#0F1720';
 const CHARCOAL = '#F4F7FA';
