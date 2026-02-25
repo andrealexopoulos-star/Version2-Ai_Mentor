@@ -221,15 +221,26 @@ export const AuditProgress = () => {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6" data-testid="analyzing-state">
-      <div className="mb-10" style={{ width: 100, height: 100 }}>
-        <svg width="100" height="100" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="42" fill="none" stroke={CARD_BORDER} strokeWidth="3" />
-          <circle cx="50" cy="50" r="42" fill="none" stroke={GOLD} strokeWidth="3"
-            strokeDasharray="264" strokeDashoffset="66" strokeLinecap="round" transform="rotate(-90 50 50)">
-            <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="2s" repeatCount="indefinite" />
-          </circle>
+      <style>{`
+        @keyframes meshFloat{0%,100%{transform:translate(0,0)}25%{transform:translate(3px,-4px)}50%{transform:translate(-2px,3px)}75%{transform:translate(4px,2px)}}
+        @keyframes meshLine{0%{opacity:0;stroke-dashoffset:60}50%{opacity:0.3}100%{opacity:0;stroke-dashoffset:0}}
+        @keyframes meshPulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.8;transform:scale(1.3)}}
+      `}</style>
+
+      {/* Cognitive mesh animation — replaces rotating circle */}
+      <div className="relative mb-8" style={{ width: 200, height: 150 }}>
+        <svg width="200" height="150" viewBox="0 0 200 150">
+          {[[40,30,100,40],[100,40,160,70],[60,90,120,80],[120,80,170,100],[40,30,60,90],[100,40,120,80],[160,70,170,100]].map(([x1,y1,x2,y2], i) => (
+            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#FF6A00" strokeWidth="0.5" strokeDasharray="60"
+              style={{ animation: `meshLine ${3+i*0.7}s ease-in-out infinite`, animationDelay: `${i*0.4}s` }} />
+          ))}
+          {[[40,30],[100,40],[160,70],[60,90],[120,80],[170,100],[80,60],[140,50],[30,65],[175,40],[90,110],[150,120]].map(([cx,cy], i) => (
+            <circle key={i} cx={cx} cy={cy} r={i < 4 ? 3 : 2} fill="#FF6A00"
+              style={{ animation: `meshFloat ${4+i*0.3}s ease-in-out infinite, meshPulse ${2+i*0.5}s ease-in-out infinite`, animationDelay: `${i*0.2}s`, opacity: i < 6 ? 0.6 : 0.25 }} />
+          ))}
         </svg>
       </div>
+
       <p className="text-base text-center leading-relaxed transition-opacity duration-1000"
         style={{ fontFamily: SERIF, color: CHARCOAL, maxWidth: 440 }}>
         {ANALYZE_PHASES[phase]}
