@@ -239,16 +239,26 @@ export const useCalibrationState = () => {
 
       if (auditData?.extracted_data) {
         const ex = auditData.extracted_data;
-        const wow = {
-          business_name: ex.business_name || ex.name || ex.company || '',
-          what_you_do: ex.business_overview || ex.description || ex.about || '',
-          who_you_serve: ex.target_market || ex.ideal_customer || ex.audience || '',
-          what_sets_you_apart: ex.competitive_advantages || ex.differentiators || ex.usp || '',
-          biggest_challenges: ex.key_challenges || ex.challenges || ex.risks || '',
-          growth_opportunity: ex.industry_position || ex.market_position || ex.opportunity || '',
+
+        // Store full extraction for Chief Marketing Summary scoring
+        const fullExtraction = {
+          ...ex,
+          _sources: auditData.data_sources || [],
+          _website: url,
+          _generated_at: auditData.generated_at || new Date().toISOString(),
         };
 
-        // Quality floor: if too thin, add fallback fields
+        // Build WOW summary fields (SMB-friendly)
+        const wow = {
+          business_name: ex.business_name || ex.name || ex.company || '',
+          what_you_do: ex.main_products_services || ex.business_overview || ex.description || ex.about || '',
+          who_you_serve: ex.target_market || ex.ideal_customer_profile || ex.audience || '',
+          what_sets_you_apart: ex.competitive_advantages || ex.unique_value_proposition || ex.differentiators || '',
+          biggest_challenges: ex.main_challenges || ex.key_challenges || ex.challenges || '',
+          growth_opportunity: ex.growth_strategy || ex.industry_position || ex.market_position || '',
+          _full: fullExtraction,
+        };
+
         if (!isWowSufficient(wow)) {
           wow.what_you_do = wow.what_you_do || 'Unable to extract enough detail — please describe your business below.';
         }
