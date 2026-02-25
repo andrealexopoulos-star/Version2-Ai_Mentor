@@ -7,6 +7,7 @@ import {
   AuditProgress,
 } from "../components/calibration/CalibrationComponents";
 import { WowSummary, DissolveTransition } from "../components/calibration/WowSummary";
+import ChiefMarketingSummary from "../components/calibration/ChiefMarketingSummary";
 import { ExecutiveReveal } from "../components/calibration/ExecutiveReveal";
 import { ContinuitySuite } from "../components/calibration/ContinuitySuite";
 import { CalibratingSession } from "../components/calibration/CalibratingSession";
