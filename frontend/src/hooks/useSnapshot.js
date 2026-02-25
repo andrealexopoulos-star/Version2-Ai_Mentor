@@ -75,15 +75,21 @@ export function useSnapshot() {
     return res.json();
   }, []);
 
-  // Initial load: cache first, then fresh fetch
+  // Initial load: cache first → fast backend → edge function background
   const loadSnapshot = useCallback(async () => {
     setError(null);
     const cached = getCache();
     if (cached?.cognitive) {
       applyData(cached);
-      setLoading(false);
+      setLoading(false); // Show cached instantly
     }
     setRefreshing(true);
+
+    // Hard timeout: if no data after 5s, stop loading (show empty state)
+    const loadingTimeout = setTimeout(() => {
+      if (mountedRef.current && loading) setLoading(false);
+    }, 5000);
+
     try {
       const fresh = await fetchFresh();
       if (fresh && mountedRef.current) {
@@ -95,9 +101,10 @@ export function useSnapshot() {
         setError('Connect integrations for full insights.');
       }
     } finally {
+      clearTimeout(loadingTimeout);
       if (mountedRef.current) { setLoading(false); setRefreshing(false); }
     }
-  }, [getCache, applyData, fetchFresh, setCache]);
+  }, [getCache, applyData, fetchFresh, setCache]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
