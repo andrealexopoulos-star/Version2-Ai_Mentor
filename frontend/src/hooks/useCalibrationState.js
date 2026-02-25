@@ -275,20 +275,42 @@ export const useCalibrationState = () => {
       }
       setWowSummary(updated);
     }
-    await new Promise(r => setTimeout(r, 2500));
+    await new Promise(r => setTimeout(r, 2000));
     setIsSubmitting(true);
     try {
       const payload = { step: 2, confirmed_summary: true };
       if (Object.keys(editedFields).length > 0) payload.user_edits = editedFields;
       try { await callEdge(payload); } catch { /* non-blocking */ }
+
+      // Save WOW summary to business profile
+      try {
+        const wowToSave = { ...(wowSummary || {}), ...editedFields };
+        await apiClient.put('/business-profile', {
+          business_name: wowToSave.business_name || '',
+          mission_statement: wowToSave.what_you_do || '',
+          target_market: wowToSave.who_you_serve || '',
+        });
+      } catch {}
+
       autoSave(2);
       setTransitioning(false);
 
-      // Skip questions — go straight to intelligence-first → market
-      fetchIntelligence();
-      setEntry("intelligence-first");
+      // FLOW GATE: Go to approve_identity, NOT directly to intelligence
+      setEntry("approve_identity");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
+  };
+
+  // Identity approved → proceed to CMO snapshot
+  const handleApproveIdentity = () => {
+    autoSave(3);
+    fetchIntelligence();
+    setEntry("intelligence-first");
+  };
+
+  // Identity rejected → go back to wow_summary for editing
+  const handleRejectIdentity = () => {
+    setEntry("wow_summary");
   };
 
   // Continue from intelligence-first → go straight to dashboard (calibration questions moved to Settings)
