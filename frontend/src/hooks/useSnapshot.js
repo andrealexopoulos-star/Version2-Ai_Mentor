@@ -52,18 +52,25 @@ export function useSnapshot() {
   const fetchFresh = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
-    let res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
+
+    // FAST PATH: Try backend snapshot first (1-2s DB read)
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+      const snapRes = await fetch(`${backendUrl}/api/snapshot/latest`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json' },
+      });
+      if (snapRes.ok) {
+        const snapData = await snapRes.json();
+        if (snapData?.cognitive) return { cognitive: snapData.cognitive, data_sources: [], owner: '', time_of_day: '' };
+      }
+    } catch {}
+
+    // SLOW PATH: Edge Function (full cognition — 10-30s)
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
       body: '{}',
     });
-    if (!res.ok) {
-      res = await fetch(`${SUPABASE_URL}/functions/v1/intelligence-snapshot`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: '{}',
-      });
-    }
     if (!res.ok) throw new Error(`${res.status}`);
     return res.json();
   }, []);
