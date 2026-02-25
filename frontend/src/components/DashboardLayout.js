@@ -330,10 +330,12 @@ const DashboardLayout = ({ children }) => {
       {/* Mobile Overlay */}
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}
 
-      {/* ═══ MAIN CONTENT ═══ */}
-      <main className={`${sidebarMargin} pt-14 pb-[76px] lg:pb-0 transition-all duration-300`} style={{ background: '#0F1720', minHeight: '100dvh' }}>
-        <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
-      </main>
+      {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD CONSOLE ═══ */}
+      <div className={`${sidebarMargin} pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex`} style={{ minHeight: '100dvh' }}>
+        <main className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }}>
+          <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
+        </main>
+      </div>
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />
