@@ -228,21 +228,21 @@ const TutorialModal = ({ tutorial, onClose }) => {
           <div className="flex gap-2">
             {step > 0 && (
               <button onClick={() => setStep(s => s - 1)}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100"
-                style={{ color: '#64748B' }} data-testid="tutorial-prev-btn">
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-white/5"
+                style={{ color: '#9FB0C3' }} data-testid="tutorial-prev-btn">
                 <ChevronLeft className="w-3.5 h-3.5" /> Back
               </button>
             )}
             {step < total - 1 ? (
               <button onClick={() => setStep(s => s + 1)}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-medium text-white transition-opacity"
-                style={{ background: '#1E293B' }} data-testid="tutorial-next-btn">
+                style={{ background: '#243140' }} data-testid="tutorial-next-btn">
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>
             ) : (
               <button onClick={onClose}
                 className="px-4 py-2 rounded-lg text-xs font-medium text-white transition-opacity"
-                style={{ background: '#B8860B' }} data-testid="tutorial-done-btn">
+                style={{ background: '#FF6A00' }} data-testid="tutorial-done-btn">
                 Got it
               </button>
             )}
