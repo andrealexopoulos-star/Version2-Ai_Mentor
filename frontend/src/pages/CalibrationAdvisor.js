@@ -112,7 +112,63 @@ const CalibrationAdvisor = () => {
 
       {cal.transitioning && <DissolveTransition firstName={cal.firstName} />}
 
-      {/* PHASE 4+5+7: Executive CMO Snapshot with Drift Visual and Misalignment */}
+      {/* FLOW GATE: Business Identity Verification */}
+      {cal.entry === "approve_identity" && cal.wowSummary && (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-8" data-testid="approve-identity">
+          <div className="max-w-xl mx-auto space-y-6">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", color: '#F4F7FA' }}>
+                Is this your business?
+              </h1>
+              <p className="text-sm" style={{ color: '#9FB0C3' }}>
+                Confirm the details below so BIQc can calibrate accurately.
+              </p>
+            </div>
+
+            <div className="rounded-xl p-6" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              {cal.wowSummary.business_name && (
+                <div className="mb-4">
+                  <span className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#FF6A00', fontFamily: "'JetBrains Mono', monospace" }}>Business Name</span>
+                  <span className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{cal.wowSummary.business_name}</span>
+                </div>
+              )}
+              <div className="mb-4">
+                <span className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>Website</span>
+                <span className="text-sm text-[#9FB0C3]">{cal.websiteUrl || 'Not provided'}</span>
+              </div>
+              {cal.wowSummary.what_you_do && (
+                <div className="mb-4">
+                  <span className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>What You Do</span>
+                  <span className="text-sm text-[#9FB0C3]">{typeof cal.wowSummary.what_you_do === 'string' ? cal.wowSummary.what_you_do.substring(0, 200) : ''}</span>
+                </div>
+              )}
+              {cal.wowSummary.who_you_serve && (
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>Who You Serve</span>
+                  <span className="text-sm text-[#9FB0C3]">{cal.wowSummary.who_you_serve}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button onClick={cal.handleApproveIdentity}
+                className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 flex items-center justify-center gap-2"
+                style={{ background: '#FF6A00' }}
+                data-testid="approve-identity-yes">
+                <CheckCircle2 className="w-4 h-4" /> Yes, this is my business
+              </button>
+              <button onClick={cal.handleRejectIdentity}
+                className="w-full py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                style={{ color: '#9FB0C3', border: '1px solid #243140' }}
+                data-testid="approve-identity-edit">
+                <ArrowLeft className="w-4 h-4" /> Edit details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CMO Snapshot — must view before dashboard */}
       {cal.entry === "intelligence-first" && (
         <ExecutiveCMOSnapshot intelligenceData={cal.intelligenceData} onContinue={cal.proceedFromIntelligence} />
       )}
