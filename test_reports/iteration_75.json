@@ -1,0 +1,111 @@
+{
+  "summary": "Iteration 75: BIQc Trust Restoration Testing - All 6 deliverables verified. (1) Flow gate confirmed wow→approve_identity→cmo→dashboard in useCalibrationState.js, (2) WOW summary has SMB-friendly labels (What You Do, Who You Serve, etc.), (3) Business identity verification screen has correct data-testids, (4) channelsData canonical source in MarketPage, (5) Market page SMB UI verified (status-banner, gaps-section collapsible), (6) Desktop layout uses flex with no horizontal scroll. Mobile bottom nav working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "MarketPage",
+        "issues": ["focus-section only appears when action_plan.top_3_marketing_moves exists - shows placeholder text 'BIQc needs more data...' when empty. This is expected behavior per code logic (line 118)."]
+      }
+    ]
+  },
+  "tests_executed": {
+    "login": {
+      "credentials": "andre@thestrategysquad.com.au / BIQc_Test_2026!",
+      "result": "PASS - redirects to /advisor after login"
+    },
+    "market_page_smb_layout": {
+      "data_testid_market_page": "PASS - found",
+      "data_testid_status_banner": "PASS - found, shows 'On Track' or 'Waiting for data' SMB-friendly labels",
+      "data_testid_focus_section": "INFO - only visible when action_plan has moves (expected)",
+      "data_testid_gaps_section": "PASS - found, collapsible 'Your Marketing Gaps'",
+      "horizontal_scroll_desktop": "PASS - scrollWidth === clientWidth (1920)"
+    },
+    "mobile_bottom_nav": {
+      "data_testid_mobile_bottom_nav": "PASS - found and visible at bottom",
+      "nav_items": "PASS - Pulse, Market, Revenue, Alerts, More tabs present"
+    },
+    "approve_identity_code_review": {
+      "data_testid_approve_identity": "PASS - in CalibrationAdvisor.js line 117",
+      "data_testid_approve_identity_yes": "PASS - line 157, 'Yes, this is my business' button",
+      "data_testid_approve_identity_edit": "PASS - line 163, 'Edit details' button"
+    },
+    "flow_gate_verification": {
+      "wow_to_approve_identity": "PASS - useCalibrationState.js line 299",
+      "approve_to_intelligence": "PASS - handleApproveIdentity() line 308",
+      "reject_to_wow_summary": "PASS - handleRejectIdentity() line 313",
+      "intelligence_to_dashboard": "PASS - proceedFromIntelligence() line 319-320"
+    },
+    "wow_summary_smb_labels": {
+      "labels_present": "PASS - WowSummary.js lines 14-26",
+      "verified_labels": ["Your Business", "What You Do", "Who You Serve", "What Sets You Apart", "Biggest Challenges", "Growth Opportunity"]
+    },
+    "dashboard_layout_flex": {
+      "flex_main_content": "PASS - DashboardLayout.js line 334 uses 'flex' class",
+      "no_horizontal_scroll": "PASS - verified at 1920px viewport"
+    }
+  },
+  "code_review": {
+    "useCalibrationState.js": {
+      "flow_gates": "CORRECT - wow→approve_identity→intelligence-first→dashboard",
+      "handleConfirmWow": "Line 299 sets entry to 'approve_identity'",
+      "handleApproveIdentity": "Lines 305-309 calls fetchIntelligence() and sets entry to 'intelligence-first'",
+      "handleRejectIdentity": "Lines 312-314 sets entry back to 'wow_summary'"
+    },
+    "CalibrationAdvisor.js": {
+      "approve_identity_screen": "Lines 116-169 - renders when entry === 'approve_identity'",
+      "data_testids": "approve-identity, approve-identity-yes, approve-identity-edit all present"
+    },
+    "WowSummary.js": {
+      "SMB_LABELS": "Lines 14-26 - business_name→'Your Business', what_you_do→'What You Do', etc."
+    },
+    "MarketPage.js": {
+      "channelsData_source": "Line 46-48 fetches from /integrations/channels/status API",
+      "status_map": "Lines 23-27 - STABLE→'On Track', DRIFT→'Slipping', COMPRESSION→'Under Pressure', CRITICAL→'At Risk'"
+    },
+    "DashboardLayout.js": {
+      "flex_layout": "Line 334 uses flex class for main+console layout"
+    }
+  },
+  "features_verified": {
+    "flow_gate_fix": "PASS - wow→approve_identity→cmo→dashboard, no skips",
+    "wow_summary_quality_floor": "PASS - SMB-friendly labels with ≥3 fields check (isWowSufficient)",
+    "business_identity_verification_gate": "PASS - approve_identity screen in code with correct buttons",
+    "integration_truth_reconciliation": "PASS - channelsData canonical source from /integrations/channels/status",
+    "market_tab_smb_ui": "PASS - status-banner with SMB labels, collapsible gaps section",
+    "desktop_soundboard_console_layout": "PASS - flex layout in DashboardLayout, no horizontal scroll"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Flow gates implemented correctly - user cannot skip from WOW to dashboard without identity verification",
+    "SMB_LABELS constant provides human-friendly field names for all WOW summary fields",
+    "STATUS_MAP uses business-friendly terms (On Track, Slipping, Under Pressure, At Risk) instead of enterprise jargon",
+    "Mobile bottom nav has correct data-testid and is visible only on mobile (lg:hidden)",
+    "DashboardLayout flex layout ready for future right-panel soundboard console"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend only testing)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "BIQc_Test_2026!"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 75 complete. All 6 BIQc trust restoration deliverables verified. approve_identity screen only shows during new user onboarding (entry='approve_identity'), not for already-calibrated users. Test user has calibration COMPLETE so approve_identity won't appear in normal flow - verified via code review. Market page shows 'Waiting for data' when no cognitive snapshot available, 'On Track' when data exists. Mobile nav only appears after full app boot loader completes (30-60 seconds).",
+  "mocked_api_confirmation": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": ["Google Ads API", "Meta Ads API", "LinkedIn Ads API", "GA4 API", "Email Platform API"],
+    "note": "CRM (HubSpot) is REAL via Merge.dev. Cognitive data comes from Supabase Edge Function (biqc-insights-cognitive)."
+  },
+  "note_on_approve_identity_testing": "approve_identity screen cannot be tested via UI with existing calibrated user - only shows for new users during onboarding. Code structure and data-testids verified via code review."
+}
