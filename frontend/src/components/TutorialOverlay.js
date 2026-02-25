@@ -222,7 +222,7 @@ const TutorialModal = ({ tutorial, onClose }) => {
           <div className="flex gap-1.5">
             {Array.from({ length: total }).map((_, i) => (
               <div key={i} className="w-2 h-2 rounded-full transition-colors"
-                style={{ background: i === step ? '#B8860B' : '#E8E6E1' }} />
+                style={{ background: i === step ? '#FF6A00' : '#243140' }} />
             ))}
           </div>
           <div className="flex gap-2">
