@@ -162,7 +162,7 @@ const DashboardLayout = ({ children }) => {
 
   const isActive = (path) => location.pathname === path;
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
-  const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
+const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: '#0F1720', color: '#F4F7FA' }}>
