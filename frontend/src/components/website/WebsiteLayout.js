@@ -21,6 +21,7 @@ const NAV_LINKS = [
   { label: 'Intelligence', path: '/intelligence' },
   { label: 'Integrations', path: '/our-integrations' },
   { label: 'Pricing', path: '/pricing' },
+  { label: 'Blog', path: '/blog' },
   { label: 'Trust', path: '/trust', dropdown: true },
 ];
 
