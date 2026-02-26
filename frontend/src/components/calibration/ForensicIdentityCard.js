@@ -131,7 +131,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
   const [editFields, setEditFields] = useState({});
   const [rejectFields, setRejectFields] = useState({ legalName: '', suburb: '', abn: '' });
 
-  const signals = identitySignals || {};
+  const signals = useMemo(() => identitySignals || {}, [identitySignals]);
   const confidence = useMemo(() => computeIdentityConfidence(signals), [signals]);
   const confColor = confidence.level === 'High' ? '#10B981' : confidence.level === 'Medium' ? '#F59E0B' : '#EF4444';
 
