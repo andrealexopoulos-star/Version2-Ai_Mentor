@@ -70,10 +70,10 @@ const PricingPage = () => (
             </div>
             <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#EF4444]" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Total Annual Cost</span>
-                <span className="text-xl font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>$470,000+</span>
+                <span className="text-sm font-semibold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Cost of inaction</span>
+                <span className="text-xl font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>Compounding</span>
               </div>
-              <span className="text-xs text-[#EF4444]/60 mt-1 block" style={{ fontFamily: MONO }}>+ super + benefits + recruitment + ramp time</span>
+              <span className="text-xs text-[#EF4444]/60 mt-1 block" style={{ fontFamily: MONO }}>missed signals + delayed decisions + preventable losses</span>
             </div>
           </div>
 
