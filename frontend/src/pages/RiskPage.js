@@ -26,18 +26,18 @@ const RiskPage = () => {
     fetch();
   }, []);
 
-  const cashRunway = snapshot?.cash_runway_months || 4.2;
-  const riskLevel = cashRunway < 3 ? 'CRITICAL' : cashRunway < 6 ? 'MODERATE' : 'LOW';
-  const riskColor = riskLevel === 'CRITICAL' ? '#EF4444' : riskLevel === 'MODERATE' ? '#F59E0B' : '#10B981';
+  const cashRunway = snapshot?.cash_runway_months ?? snapshot?.capital?.runway ?? null;
+  const riskLevel = cashRunway !== null ? (cashRunway < 3 ? 'CRITICAL' : cashRunway < 6 ? 'MODERATE' : 'LOW') : null;
+  const riskColor = riskLevel === 'CRITICAL' ? '#EF4444' : riskLevel === 'MODERATE' ? '#F59E0B' : riskLevel === 'LOW' ? '#10B981' : '#64748B';
 
   return (
   <DashboardLayout>
     <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="risk-page">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Risk Intelligence</h1>
+        <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Risk & Governance</h1>
         <p className="text-sm text-[#9FB0C3]">
-          Business risk exposure, financial threats, and operational vulnerabilities.
-          {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
+          {cashRunway !== null ? 'Risk exposure from connected data.' : 'Connect financial data to assess risk.'}
+          {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: MONO }}>syncing...</span>}
         </p>
       </div>
 
