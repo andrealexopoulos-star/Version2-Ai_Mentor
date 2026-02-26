@@ -154,6 +154,20 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
     onReject({ ...rejectFields, editFields });
   };
 
+  const handleAbnLookupClick = async () => {
+    if (!onAbnLookup || lookingUp) return;
+    setLookingUp(true);
+    setLookupResult(null);
+    const result = await onAbnLookup({
+      business_name_hint: signals.businessName || editFields.businessName || '',
+      location_hint: signals.address || signals.geo || editFields.address || '',
+      abn: signals.abn || editFields.abn || '',
+      domain: signals.domain || websiteUrl || '',
+    });
+    setLookupResult(result);
+    setLookingUp(false);
+  };
+
   if (mode === 'edit') {
     return (
       <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="identity-edit-mode">
