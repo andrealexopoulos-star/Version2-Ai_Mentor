@@ -198,7 +198,7 @@ function parseToGroups(c, connectedIntegrations) {
 
 const AdvisorWatchtower = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
-  const c = cognitive || {};
+  const c = useMemo(() => cognitive || {}, [cognitive]);
   const [connectedIntegrations, setConnectedIntegrations] = useState([]);
 
   // Fetch integration status to determine what data is real
