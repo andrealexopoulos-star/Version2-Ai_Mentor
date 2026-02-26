@@ -5,7 +5,7 @@ import { LayoutDashboard, Radar, TrendingUp, Bell, MoreHorizontal, X, Link2, Act
 const MONO = "'JetBrains Mono', monospace";
 
 const NAV_ITEMS = [
-  { id: 'pulse', label: 'Pulse', icon: LayoutDashboard, path: '/advisor' },
+  { id: 'pulse', label: 'Overview', icon: LayoutDashboard, path: '/advisor' },
   { id: 'market', label: 'Market', icon: Radar, path: '/market' },
   { id: 'revenue', label: 'Revenue', icon: TrendingUp, path: '/revenue' },
   { id: 'alerts', label: 'Alerts', icon: Bell, path: '/alerts' },
