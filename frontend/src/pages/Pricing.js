@@ -337,7 +337,7 @@ const Pricing = () => {
               onClick={() => navigate('/register-supabase')}
               className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 h-12 rounded-lg"
             >
-              Get Started Free
+              Try It For Free
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
             <Button 
