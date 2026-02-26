@@ -38,10 +38,13 @@ const OperationsPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="operations-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Delivery & Operations</h1>
-          <p className="text-sm text-[#9FB0C3]">
-            Task execution, SOP compliance, bottlenecks, and delivery performance.
-            {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-[#9FB0C3]">
+              {hasOpsData ? 'Operational signals from connected data.' : 'Connect integrations to assess operations.'}
+              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: MONO }}>syncing...</span>}
+            </p>
+            <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: slaBreaches } } : null} />
+          </div>
         </div>
 
         {/* KPI Strip */}
