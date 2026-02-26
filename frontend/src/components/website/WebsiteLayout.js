@@ -7,11 +7,12 @@ const MONO = "'JetBrains Mono', monospace";
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
 const TRUST_ITEMS = [
-  { label: 'Terms & Conditions', path: '/trust/terms', icon: FileText },
-  { label: 'Privacy Policy', path: '/trust/privacy', icon: Eye },
-  { label: 'Data Processing Agreement', path: '/trust/dpa', icon: Lock },
+  { label: 'BIQc AI Learning Guarantee', path: '/trust/ai-learning-guarantee', icon: Shield, bold: true },
   { label: 'Security & Infrastructure', path: '/trust/security', icon: Server },
   { label: 'Trust Centre', path: '/trust/centre', icon: Shield },
+  { label: 'Data Processing Agreement', path: '/trust/dpa', icon: Lock },
+  { label: 'Privacy Policy', path: '/trust/privacy', icon: Eye },
+  { label: 'Terms & Conditions', path: '/trust/terms', icon: FileText },
   { label: 'Knowledge Base', path: '/knowledge-base', icon: BookOpen },
 ];
 
