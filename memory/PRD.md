@@ -75,6 +75,22 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
    - Requires `ABR_GUID` secret (free registration at abr.business.gov.au)
    - Frontend: "Search ABR" button appears on ForensicIdentityCard when confidence is Low/Medium
 
+10. **Cognition Maturity: Level 3 Instrumentation** (Phase 1 — Instrument, Observe, Refine):
+    - New `insight_outcomes` SQL table for prediction tracking (no automated evaluation yet)
+    - Enhanced `biqc-insights-cognitive` GPT output schema:
+      - `drift_velocity`: accelerating/decelerating/stable
+      - `signal_freshness_hours`: data age indicator
+      - `trajectory_projection_90_days`: projected state, risk/compression probability, best/base/worst case, key variable
+      - `data_gaps[]`: area, status, impact_on_confidence, fix
+      - `snapshot_confidence`: 0-100 overall confidence
+      - Strategic moves now include: `measurable_outcome`, `timeframe_days`, `impact_band`, `metric_source`, `outcome_tracking_enabled`
+      - Blindside risk now includes: `probability_band`, `time_window_days`, `severity`, `confidence`
+      - Hidden growth lever now includes: `underutilisation_score`, `upside_band`, `confidence`
+    - Predictions auto-stored in `insight_outcomes` after each snapshot generation
+    - `intelligence_snapshots` table gains `snapshot_confidence` column
+    - Frontend Snapshot v2 UI: 7 sections (System State → Trajectory → Moves → Blindside → Lever → Data Gaps → Confidence)
+    - **No automated cron evaluation** — Phase 2 will add manual admin evaluation, Phase 3 adds pg_cron after 60-90 days of observation
+
 ### Previous Sessions (inherited):
 - Liquid Steel dark theme applied globally
 - Mobile forensic audit + bottom navigation
