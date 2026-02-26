@@ -384,6 +384,25 @@ YOUR OUTPUT MUST BE THIS EXACT JSON STRUCTURE:
     }
   },
   "memo": "2-3 paragraphs. Written as a strategic partner. References SPECIFIC data — deal names, amounts, contact names. Includes 30/60/90 outlook. Ends with HARD recommendation, not just briefing.",
+  "trajectory_projection_90_days": {
+    "projected_state": "STABLE|DRIFT|COMPRESSION|CRITICAL",
+    "risk_probability": 0-100,
+    "compression_probability": 0-100,
+    "best_case": "If all recommendations executed",
+    "base_case": "If current trajectory continues",
+    "worst_case": "If issues ignored",
+    "key_variable": "The ONE factor that determines which scenario plays out",
+    "confidence": 0-100
+  },
+  "data_gaps": [
+    {
+      "area": "CRM|Accounting|Email|Marketing|Analytics",
+      "status": "not_connected|partial|stale",
+      "impact_on_confidence": "How much this gap reduces overall confidence (0-30)",
+      "fix": "What to connect to fill this gap"
+    }
+  ],
+  "snapshot_confidence": 0-100,
   "blind_spots": {
     "confidence": 0-100,
     "detail": "What limits confidence",
