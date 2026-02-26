@@ -5,6 +5,8 @@ import { apiClient } from '../lib/api';
 import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 
+import { useSnapshot } from '../hooks/useSnapshot';
+
 const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
