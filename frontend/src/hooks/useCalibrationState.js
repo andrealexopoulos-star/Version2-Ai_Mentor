@@ -253,7 +253,48 @@ export const useCalibrationState = () => {
         setWowSummary(wow);
 
         // Parse identity signals from extracted data
+        // Merge deterministic signals from Edge Function if available
         const signals = parseIdentitySignals(ex, url);
+
+        // Merge Edge Function's deterministic identity_signals (ABN, phone, email, socials, address)
+        const edgeSignals = auditData.identity_signals || ex._identity_signals || {};
+        if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
+          signals.abn = edgeSignals.abn_candidates[0];
+        }
+        if (edgeSignals.phone_numbers?.length > 0 && signals.phones?.length === 0) {
+          signals.phones = edgeSignals.phone_numbers;
+        }
+        if (edgeSignals.email_addresses?.length > 0 && signals.emails?.length === 0) {
+          signals.emails = edgeSignals.email_addresses;
+        }
+        if (edgeSignals.address_candidates?.length > 0 && !signals.address) {
+          signals.address = edgeSignals.address_candidates[0];
+        }
+        if (edgeSignals.geographic_mentions?.length > 0 && !signals.geo) {
+          signals.geo = edgeSignals.geographic_mentions.join(', ');
+        }
+        if (edgeSignals.social_media_links && (!signals.socials || signals.socials.length === 0)) {
+          signals.socials = Object.entries(edgeSignals.social_media_links)
+            .filter(([, url]) => url)
+            .map(([platform, url]) => ({ platform, url }));
+        }
+        // Merge AI-extracted identity fields
+        if (ex.contact_email && signals.emails?.length === 0) {
+          signals.emails = [ex.contact_email];
+        }
+        if (ex.contact_phone && signals.phones?.length === 0) {
+          signals.phones = [ex.contact_phone];
+        }
+        if (ex.abn && ex.abn !== 'Not available from current data' && !signals.abn) {
+          signals.abn = ex.abn;
+        }
+        if (ex.address && ex.address !== 'Not available from current data' && !signals.address) {
+          signals.address = ex.address;
+        }
+        if (ex.city && !signals.city) signals.city = ex.city;
+        if (ex.state && !signals.state) signals.state = ex.state;
+        if (ex.trading_name) signals.tradingName = ex.trading_name;
+
         setIdentitySignals(signals);
         setIdentityConfirmed(false);
 
