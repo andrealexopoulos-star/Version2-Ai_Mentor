@@ -98,7 +98,7 @@ const HomePage = () => (
             { icon: Zap, title: 'Prevents & Corrects', desc: 'Recommends actions, drafts communications, and automates corrective workflows across your business.' },
             { icon: BarChart3, title: 'Executive Briefings', desc: 'Daily intelligence briefs compiled from all your data sources. No dashboard digging required.' },
             { icon: Lock, title: 'Australian Sovereign', desc: 'Data hosted in Australia. No offshore processing. Full audit trail. Enterprise-grade security.' },
-            { icon: Users, title: 'Replaces Headcount', desc: 'Functions of a COO, CFO, and compliance officer — deployed autonomously across your business.' },
+            { icon: Users, title: 'Maximise Output', desc: 'Increase executive leverage, elevate team performance, and reduce burnout without expanding headcount.' },
           ].map((item, i) => (
             <GlassCard key={i}>
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(255,106,0,0.1)' }}>
