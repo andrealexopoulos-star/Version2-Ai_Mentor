@@ -60,6 +60,21 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
    - Report confidence capped based on identity confidence level
    - Medium identity confidence caps report confidence at Medium (never High)
 
+8. **Enhanced Domain Scan** - `calibration-business-dna` Edge Function v2:
+   - Added deterministic identity signal extraction (no AI needed): ABN/ACN regex, phone patterns, email extraction, social URL detection, address patterns, geographic signals
+   - Now scrapes `/contact` page in addition to `/about`, `/team`, `/services`
+   - Merges deterministic signals with AI extraction (deterministic wins for identity fields)
+   - Accepts user hints (`business_name_hint`, `location_hint`, `abn_hint`) for re-scans
+   - Returns `identity_signals` object alongside `extracted_data`
+
+9. **ABN Registry Lookup** - `business-identity-lookup` Edge Function (NEW):
+   - Uses free ABR (Australian Business Register) JSON API
+   - Supports: direct ABN lookup, name-based search
+   - Returns: legal_name, trading_name, ABN, address, match_confidence, match_reason
+   - Includes suggestion list for ambiguous matches
+   - Requires `ABR_GUID` secret (free registration at abr.business.gov.au)
+   - Frontend: "Search ABR" button appears on ForensicIdentityCard when confidence is Low/Medium
+
 ### Previous Sessions (inherited):
 - Liquid Steel dark theme applied globally
 - Mobile forensic audit + bottom navigation
