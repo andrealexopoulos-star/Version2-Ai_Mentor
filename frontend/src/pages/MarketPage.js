@@ -90,11 +90,27 @@ const MarketPage = () => {
   const blindside = ap.primary_blindside_risk;
   const lever = ap.hidden_growth_lever;
   const hasCRM = channelsData?.channels?.some(ch => ch.key === 'crm' && ch.status === 'connected');
-  const pipeline = c.pipeline_total || c.revenue?.pipeline;
+  const hasEmail = channelsData?.channels?.some(ch => ch.key === 'email' && ch.status === 'connected');
+  const pipeline = hasCRM ? (c.pipeline_total || c.revenue?.pipeline) : null;
+
+  // Integration truth suppression: filter out CRM/email claims without integration
+  const CRM_TERMS = ['pipeline', 'stale lead', 'churn', 'follow-up', 'cashflow', 'follow up', 'leads'];
+  const containsCRMClaim = (text) => {
+    if (!text || typeof text !== 'string') return false;
+    const lower = text.toLowerCase();
+    return CRM_TERMS.some(term => lower.includes(term));
+  };
+
+  // Suppress moves/risks/levers that reference CRM data without integration
+  const filteredMoves = hasCRM ? moves : moves.filter(m => !containsCRMClaim(m.move) && !containsCRMClaim(m.rationale));
+  const filteredBlindside = blindside && (!containsCRMClaim(blindside.risk) || hasCRM) ? blindside : null;
+  const filteredLever = lever && (!containsCRMClaim(lever.lever) || hasCRM) ? lever : null;
+  const filteredMemo = memo && (!containsCRMClaim(memo) || hasCRM) ? memo : '';
+  const filteredAlignment = alignment && (!containsCRMClaim(alignment) || hasCRM) ? alignment : '';
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: BODY }} data-testid="market-page">
+      <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: BODY, overflowY: 'visible' }} data-testid="market-page">
         <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
         {loading && <CognitiveMesh message="Pulling your latest signals..." />}
