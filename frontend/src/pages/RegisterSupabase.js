@@ -59,7 +59,7 @@ const RegisterSupabase = () => {
 
   const set = (k, v) => setFormData(p => ({ ...p, [k]: v }));
 
-  const inputStyle = { fontFamily: BODY, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' };
+  const inputStyle = { fontFamily: BODY, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA', caretColor: '#F4F7FA' };
 
   return (
     <div className="min-h-screen flex" style={{ background: '#0F1720' }}>
@@ -132,7 +132,7 @@ const RegisterSupabase = () => {
             <div>
               <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: BODY }}>Password <span className="text-[#EF4444]">*</span></label>
               <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => set('password', e.target.value)} placeholder="Min 6 characters" className="h-11 pr-12 text-sm rounded-xl" style={inputStyle} required minLength={6} data-testid="register-password-input" />
+                <Input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => set('password', e.target.value)} placeholder="Min 6 characters" className="h-11 pr-12 text-sm rounded-xl" style={{ ...inputStyle, WebkitTextSecurity: showPassword ? 'none' : 'disc' }} required minLength={6} data-testid="register-password-input" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#9FB0C3]" data-testid="register-toggle-password">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -141,7 +141,7 @@ const RegisterSupabase = () => {
             <div>
               <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: BODY }}>Confirm Password <span className="text-[#EF4444]">*</span></label>
               <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={(e) => set('confirmPassword', e.target.value)} placeholder="Re-enter password" className="h-11 text-sm rounded-xl"
-                style={{ ...inputStyle, borderColor: formData.confirmPassword && !passwordsMatch ? '#EF4444' : '#243140' }}
+                style={{ ...inputStyle, borderColor: formData.confirmPassword && !passwordsMatch ? '#EF4444' : '#243140', WebkitTextSecurity: showPassword ? 'none' : 'disc' }}
                 required minLength={6} data-testid="register-confirm-password-input" />
               {formData.confirmPassword && !passwordsMatch && <p className="text-xs mt-1 text-[#EF4444]" data-testid="password-mismatch-error">Passwords do not match</p>}
             </div>
