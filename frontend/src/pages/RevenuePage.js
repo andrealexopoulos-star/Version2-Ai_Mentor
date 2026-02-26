@@ -187,7 +187,6 @@ const RevenuePage = () => {
           </Panel>
         )}
       </div>
-      <FloatingSoundboard context="Revenue engine - pipeline deals, win rate, churn signals" />
     </DashboardLayout>
   );
 };
