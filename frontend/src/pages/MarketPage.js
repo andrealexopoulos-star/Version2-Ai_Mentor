@@ -212,6 +212,12 @@ const MarketPage = () => {
                         {m.confidence != null && <span className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.confidence}% confidence</span>}
                         {m.urgency && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: m.urgency === 'immediate' ? '#EF4444' : '#F59E0B', background: (m.urgency === 'immediate' ? '#EF4444' : '#F59E0B') + '15', fontFamily: MONO }}>{m.urgency?.replace('_', ' ')}</span>}
                       </div>
+                      <button onClick={() => sendToChat(`Help me execute: ${m.move}. ${m.rationale}`)}
+                        className="flex items-center gap-1.5 mt-3 text-[11px] px-3 py-1.5 rounded-lg transition-colors hover:bg-[#FF6A0015]"
+                        style={{ color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: MONO }}
+                        data-testid={`execute-move-${i}`}>
+                        <MessageSquare className="w-3 h-3" /> Execute in Chat
+                      </button>
                     </div>
                   </div>
                 </div>
