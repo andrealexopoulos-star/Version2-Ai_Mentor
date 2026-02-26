@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { apiClient } from '../lib/api';
 import DashboardLayout from '../components/DashboardLayout';
 import { CheckInAlerts } from '../components/CheckInAlerts';
 import { CognitiveLoadingScreen } from '../components/CognitiveLoadingScreen';
-import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2, Plug } from 'lucide-react';
 
 import DataConfidence from '../components/DataConfidence';
 
@@ -31,11 +32,11 @@ const ActionBar = ({ actions }) => {
 };
 
 const GROUPS = {
-  money: { id: 'money', label: 'Money', icon: DollarSign, color: '#F97316', description: 'Cash, invoices, margins, runway, spend' },
-  revenue: { id: 'revenue', label: 'Revenue', icon: TrendingUp, color: '#2563EB', description: 'Pipeline, deals, leads, churn, pricing' },
-  operations: { id: 'operations', label: 'Operations', icon: SettingsIcon, color: '#059669', description: 'Tasks, SOPs, bottlenecks, delivery' },
-  people: { id: 'people', label: 'People', icon: User, color: '#EF4444', description: 'Capacity, calendar, decisions, burnout' },
-  market: { id: 'market', label: 'Market', icon: Radar, color: '#7C3AED', description: 'Competitors, positioning, trends, regulatory' },
+  money: { id: 'money', label: 'Money', icon: DollarSign, color: '#F97316', description: 'Cash, invoices, margins, runway, spend', requires: 'accounting' },
+  revenue: { id: 'revenue', label: 'Revenue', icon: TrendingUp, color: '#2563EB', description: 'Pipeline, deals, leads, churn, pricing', requires: 'crm' },
+  operations: { id: 'operations', label: 'Operations', icon: SettingsIcon, color: '#059669', description: 'Tasks, SOPs, bottlenecks, delivery', requires: 'crm' },
+  people: { id: 'people', label: 'People', icon: User, color: '#EF4444', description: 'Capacity, calendar, decisions, burnout', requires: 'email' },
+  market: { id: 'market', label: 'Market', icon: Radar, color: '#7C3AED', description: 'Competitors, positioning, trends, regulatory', requires: null },
 };
 
 const ST = { STABLE: { c: '#10B981', bg: '#10B98108', b: '#10B98125', d: '#10B981' }, DRIFT: { c: '#F59E0B', bg: '#F59E0B08', b: '#F59E0B25', d: '#F59E0B' }, COMPRESSION: { c: '#FF6A00', bg: '#FF6A0008', b: '#FF6A0025', d: '#FF6A00' }, CRITICAL: { c: '#EF4444', bg: '#EF444408', b: '#EF444425', d: '#EF4444' } };
@@ -44,29 +45,58 @@ const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: {
 
 const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>);
 
-// Parse cognitive data into group structure
-function parseToGroups(c) {
+/* Integration-aware empty state */
+const IntegrationRequired = ({ groupId, color }) => {
+  const labels = {
+    revenue: { title: 'CRM Not Connected', desc: 'Connect your CRM (HubSpot, Salesforce) to view pipeline, deal velocity, and churn signals.', cta: 'Connect CRM' },
+    money: { title: 'Accounting Not Connected', desc: 'Connect your accounting tool (Xero, QuickBooks) to view cash flow, margins, and runway.', cta: 'Connect Accounting' },
+    operations: { title: 'Integrations Required', desc: 'Connect CRM and project management tools to view SOP compliance, bottlenecks, and task data.', cta: 'Connect Tools' },
+    people: { title: 'Email/Calendar Not Connected', desc: 'Connect your email and calendar to view capacity, fatigue, and workload signals.', cta: 'Connect Email' },
+    market: { title: 'Market Data Unavailable', desc: 'Complete calibration to enable market positioning analysis.', cta: 'Start Calibration' },
+  };
+  const l = labels[groupId] || labels.market;
+  return (
+    <Card className="p-8 text-center">
+      <Plug className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
+      <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{l.title}</p>
+      <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#64748B', fontFamily: BODY }}>{l.desc}</p>
+      <a href="/integrations" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: color }} data-testid={`connect-${groupId}`}>
+        <Plug className="w-3.5 h-3.5" /> {l.cta}
+      </a>
+    </Card>
+  );
+};
+
+// Parse cognitive data into group structure — only from verified integration data
+function parseToGroups(c, connectedIntegrations) {
   const groups = {
-    money: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
-    revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
-    operations: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
-    people: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
-    market: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null },
+    money: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
+    revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
+    operations: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
+    people: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
+    market: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
   };
   if (!c) return groups;
 
-  // Map resolution_queue items to groups
+  const hasCRM = connectedIntegrations.includes('crm') || connectedIntegrations.includes('hubspot') || connectedIntegrations.includes('salesforce') || connectedIntegrations.includes('pipedrive');
+  const hasAccounting = connectedIntegrations.includes('accounting') || connectedIntegrations.includes('xero') || connectedIntegrations.includes('quickbooks') || connectedIntegrations.includes('myob');
+  const hasEmail = connectedIntegrations.includes('email') || connectedIntegrations.includes('gmail') || connectedIntegrations.includes('outlook');
+
+  // Map resolution_queue items to groups — only if integration available
   const rq = c.resolution_queue || [];
   for (const item of rq) {
     const t = item.type || '';
     let g = 'operations';
-    if (t.includes('payment') || t.includes('invoice') || t.includes('cash') || t.includes('budget')) g = 'money';
-    else if (t.includes('deal') || t.includes('lead') || t.includes('churn') || t.includes('revenue') || t.includes('pipeline')) g = 'revenue';
-    else if (t.includes('sop') || t.includes('task') || t.includes('overtime') || t.includes('breach')) g = 'operations';
-    else if (t.includes('capacity') || t.includes('burnout') || t.includes('fatigue') || t.includes('team')) g = 'people';
-    else if (t.includes('competitor') || t.includes('market') || t.includes('regulatory') || t.includes('compliance')) g = 'market';
+    let allowed = hasCRM;
+    if (t.includes('payment') || t.includes('invoice') || t.includes('cash') || t.includes('budget')) { g = 'money'; allowed = hasAccounting; }
+    else if (t.includes('deal') || t.includes('lead') || t.includes('churn') || t.includes('revenue') || t.includes('pipeline')) { g = 'revenue'; allowed = hasCRM; }
+    else if (t.includes('sop') || t.includes('task') || t.includes('overtime') || t.includes('breach')) { g = 'operations'; allowed = hasCRM; }
+    else if (t.includes('capacity') || t.includes('burnout') || t.includes('fatigue') || t.includes('team')) { g = 'people'; allowed = hasEmail; }
+    else if (t.includes('competitor') || t.includes('market') || t.includes('regulatory') || t.includes('compliance')) { g = 'market'; allowed = true; }
+    if (!allowed) continue;
     groups[g].resolutions.push(item);
     groups[g].alerts++;
+    groups[g].hasData = true;
     if (item.severity === 'high') groups[g].severity = 'high';
     else if (item.severity === 'medium' && groups[g].severity !== 'high') groups[g].severity = 'medium';
   }
@@ -76,85 +106,91 @@ function parseToGroups(c) {
   for (const item of inv) {
     const d = (item.domain || '').toLowerCase();
     let g = 'operations';
-    if (d.includes('financ') || d.includes('money') || d.includes('cash')) g = 'money';
-    else if (d.includes('revenue') || d.includes('sales') || d.includes('pipeline')) g = 'revenue';
-    else if (d.includes('operation') || d.includes('execution')) g = 'operations';
-    else if (d.includes('people') || d.includes('team') || d.includes('founder')) g = 'people';
-    else if (d.includes('market') || d.includes('compet') || d.includes('strategic')) g = 'market';
+    let allowed = hasCRM;
+    if (d.includes('financ') || d.includes('money') || d.includes('cash')) { g = 'money'; allowed = hasAccounting; }
+    else if (d.includes('revenue') || d.includes('sales') || d.includes('pipeline')) { g = 'revenue'; allowed = hasCRM; }
+    else if (d.includes('operation') || d.includes('execution')) { g = 'operations'; allowed = hasCRM; }
+    else if (d.includes('people') || d.includes('team') || d.includes('founder')) { g = 'people'; allowed = hasEmail; }
+    else if (d.includes('market') || d.includes('compet') || d.includes('strategic')) { g = 'market'; allowed = true; }
+    if (!allowed) continue;
     groups[g].resolutions.push({ severity: item.intensity === 'imminent' ? 'high' : 'medium', title: item.signal || item.domain, detail: item.if_ignored || '', actions: item.actions || ["hand-off", "dismiss"], probability: item.probability, impact: item.impact, window: item.window });
     groups[g].alerts++;
+    groups[g].hasData = true;
     if (!groups[g].insight) groups[g].insight = item.signal;
   }
 
-  // ═══ MONEY TAB — Capital, runway, margins, spend ═══
-  const cap = c.capital || {};
-  if (cap.runway || cap.margin || cap.alert) {
-    groups.money.details = cap;
-    groups.money.metrics = [
-      cap.runway != null && { label: 'Runway', value: `${cap.runway}mo`, color: cap.runway < 6 ? '#EF4444' : cap.runway < 12 ? '#F59E0B' : '#10B981' },
-      cap.margin && { label: 'Margin', value: cap.margin, color: (cap.margin || '').includes('compress') ? '#EF4444' : '#10B981' },
-      cap.spend && { label: 'Spend', value: cap.spend, color: '#3B82F6' },
-    ].filter(Boolean);
-    groups.money.insight = cap.alert || cap.best || groups.money.insight || 'Review financial position.';
+  // ═══ MONEY TAB — Only with accounting integration ═══
+  if (hasAccounting) {
+    const cap = c.capital || {};
+    if (cap.runway || cap.margin || cap.alert) {
+      groups.money.details = cap;
+      groups.money.hasData = true;
+      groups.money.metrics = [
+        cap.runway != null && { label: 'Runway', value: `${cap.runway}mo`, color: cap.runway < 6 ? '#EF4444' : cap.runway < 12 ? '#F59E0B' : '#10B981' },
+        cap.margin && { label: 'Margin', value: cap.margin, color: (cap.margin || '').includes('compress') ? '#EF4444' : '#10B981' },
+        cap.spend && { label: 'Spend', value: cap.spend, color: '#3B82F6' },
+      ].filter(Boolean);
+      groups.money.insight = cap.alert || cap.best || groups.money.insight;
+    }
   }
 
-  // ═══ REVENUE TAB — Pipeline, deals, churn ═══
-  const rev = c.revenue || {};
-  if (rev.pipeline || rev.weighted || rev.churn) {
-    groups.revenue.details = rev;
-    groups.revenue.metrics = [
-      rev.pipeline != null && { label: 'Pipeline', value: `$${Math.round((rev.pipeline || 0) / 1000)}K`, color: '#3B82F6' },
-      rev.weighted != null && { label: 'Weighted', value: `$${Math.round((rev.weighted || 0) / 1000)}K`, color: '#10B981' },
-      rev.entropy && { label: 'Concentration', value: rev.entropy, color: '#F59E0B' },
-    ].filter(Boolean);
-    groups.revenue.insight = rev.churn || groups.revenue.insight || 'Review revenue pipeline.';
+  // ═══ REVENUE TAB — Only with CRM integration ═══
+  if (hasCRM) {
+    const rev = c.revenue || {};
+    if (rev.pipeline || rev.weighted || rev.churn) {
+      groups.revenue.details = rev;
+      groups.revenue.hasData = true;
+      groups.revenue.metrics = [
+        rev.pipeline != null && { label: 'Pipeline', value: `$${Math.round((rev.pipeline || 0) / 1000)}K`, color: '#3B82F6' },
+        rev.weighted != null && { label: 'Weighted', value: `$${Math.round((rev.weighted || 0) / 1000)}K`, color: '#10B981' },
+        rev.entropy && { label: 'Concentration', value: rev.entropy, color: '#F59E0B' },
+      ].filter(Boolean);
+      groups.revenue.insight = rev.churn || groups.revenue.insight;
+    }
   }
 
-  // ═══ OPERATIONS TAB — SLA, tasks, bottlenecks ═══
-  const exec = c.execution || {};
-  if (exec.sla_breaches != null || exec.bottleneck || exec.task_aging) {
-    groups.operations.details = exec;
-    groups.operations.metrics = [
-      exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), color: exec.sla_breaches > 0 ? '#EF4444' : '#10B981' },
-      exec.task_aging != null && { label: 'Task Aging', value: `${exec.task_aging}%`, color: exec.task_aging > 30 ? '#F59E0B' : '#10B981' },
-      exec.bottleneck && { label: 'Bottleneck', value: exec.bottleneck, color: '#F59E0B' },
-    ].filter(Boolean);
-    groups.operations.insight = exec.bottleneck || groups.operations.insight || 'Review operational execution.';
+  // ═══ OPERATIONS TAB — Only with CRM/PM integration ═══
+  if (hasCRM) {
+    const exec = c.execution || {};
+    if (exec.sla_breaches != null || exec.bottleneck || exec.task_aging) {
+      groups.operations.details = exec;
+      groups.operations.hasData = true;
+      groups.operations.metrics = [
+        exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), color: exec.sla_breaches > 0 ? '#EF4444' : '#10B981' },
+        exec.task_aging != null && { label: 'Task Aging', value: `${exec.task_aging}%`, color: exec.task_aging > 30 ? '#F59E0B' : '#10B981' },
+        exec.bottleneck && { label: 'Bottleneck', value: exec.bottleneck, color: '#F59E0B' },
+      ].filter(Boolean);
+      groups.operations.insight = exec.bottleneck || groups.operations.insight;
+    }
   }
 
-  // ═══ PEOPLE TAB — Founder vitals, capacity, fatigue ═══
-  const fv = c.founder_vitals || {};
-  if (fv.capacity_index || fv.fatigue || fv.recommendation) {
-    groups.people.details = fv;
-    groups.people.metrics = [
-      fv.capacity_index != null && { label: 'Capacity', value: `${fv.capacity_index}%`, color: fv.capacity_index > 100 ? '#EF4444' : fv.capacity_index > 80 ? '#F59E0B' : '#10B981' },
-      fv.fatigue && { label: 'Fatigue', value: fv.fatigue, color: fv.fatigue === 'high' ? '#EF4444' : fv.fatigue === 'medium' ? '#F59E0B' : '#10B981' },
-      fv.decisions != null && { label: 'Pending Decisions', value: String(fv.decisions), color: fv.decisions > 5 ? '#F59E0B' : '#10B981' },
-    ].filter(Boolean);
-    groups.people.insight = fv.recommendation || groups.people.insight || 'Review founder capacity and workload.';
+  // ═══ PEOPLE TAB — Only with email/calendar integration ═══
+  if (hasEmail) {
+    const fv = c.founder_vitals || {};
+    if (fv.capacity_index || fv.fatigue || fv.recommendation) {
+      groups.people.details = fv;
+      groups.people.hasData = true;
+      groups.people.metrics = [
+        fv.capacity_index != null && { label: 'Capacity', value: `${fv.capacity_index}%`, color: fv.capacity_index > 100 ? '#EF4444' : fv.capacity_index > 80 ? '#F59E0B' : '#10B981' },
+        fv.fatigue && { label: 'Fatigue', value: fv.fatigue, color: fv.fatigue === 'high' ? '#EF4444' : fv.fatigue === 'medium' ? '#F59E0B' : '#10B981' },
+        fv.decisions != null && { label: 'Pending Decisions', value: String(fv.decisions), color: fv.decisions > 5 ? '#F59E0B' : '#10B981' },
+      ].filter(Boolean);
+      groups.people.insight = fv.recommendation || groups.people.insight;
+    }
   }
 
-  // ═══ MARKET TAB — Positioning, competitors, trends ═══
+  // ═══ MARKET TAB — Always allowed (from web scraping/calibration) ═══
   const mkt = c.market || {};
   const mi = c.market_intelligence || {};
   if (mkt.narrative || mi.positioning_verdict) {
     groups.market.details = { ...mkt, ...mi };
+    groups.market.hasData = true;
     groups.market.metrics = [
       mi.positioning_verdict && { label: 'Position', value: mi.positioning_verdict, color: mi.positioning_verdict === 'STABLE' ? '#10B981' : mi.positioning_verdict === 'DRIFT' ? '#F59E0B' : '#EF4444' },
       mi.misalignment_index != null && { label: 'Misalignment', value: `${mi.misalignment_index}/100`, color: mi.misalignment_index > 50 ? '#EF4444' : mi.misalignment_index > 25 ? '#F59E0B' : '#10B981' },
       mi.probability_of_goal_achievement != null && { label: 'Goal Prob', value: `${mi.probability_of_goal_achievement}%`, color: mi.probability_of_goal_achievement > 60 ? '#10B981' : '#F59E0B' },
     ].filter(Boolean);
-    groups.market.insight = mkt.narrative || groups.market.insight || 'No urgent market signals.';
-  }
-
-  // Fallback insights from executive memo
-  const topGroup = Object.entries(groups).sort((a, b) => b[1].alerts - a[1].alerts)[0];
-  if (!topGroup[1].insight && (c.executive_memo || c.memo)) topGroup[1].insight = (c.executive_memo || c.memo).substring(0, 300);
-
-  const pc = c.priority_compression || c.priority || {};
-  if (pc.primary_focus || pc.primary) {
-    const mainGroup = Object.entries(groups).sort((a, b) => b[1].alerts - a[1].alerts)[0];
-    if (!mainGroup[1].insight) mainGroup[1].insight = pc.primary_focus || pc.primary;
+    groups.market.insight = mkt.narrative || groups.market.insight;
   }
 
   return groups;
@@ -163,6 +199,25 @@ function parseToGroups(c) {
 const AdvisorWatchtower = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
   const c = cognitive || {};
+  const [connectedIntegrations, setConnectedIntegrations] = useState([]);
+
+  // Fetch integration status to determine what data is real
+  useEffect(() => {
+    const checkIntegrations = async () => {
+      try {
+        const res = await apiClient.get('/integrations/merge/connected');
+        if (res.data?.integrations) {
+          const names = Object.entries(res.data.integrations)
+            .filter(([, v]) => v)
+            .map(([k]) => k.toLowerCase());
+          setConnectedIntegrations(names);
+        }
+      } catch {
+        setConnectedIntegrations([]);
+      }
+    };
+    checkIntegrations();
+  }, []);
 
   // Parse system state (handle both string and object formats)
   const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
@@ -171,16 +226,19 @@ const AdvisorWatchtower = () => {
   const stateVelocity = typeof c.system_state === 'object' ? c.system_state?.velocity : null;
   const st = ST[stateStatus] || ST.STABLE;
 
-  const groupData = useMemo(() => parseToGroups(c), [c]);
+  const groupData = useMemo(() => parseToGroups(c, connectedIntegrations), [c, connectedIntegrations]);
   const sortedGroups = useMemo(() => Object.values(GROUPS).sort((a, b) => {
     const sevW = { high: 3, medium: 2, low: 1 };
     return (groupData[b.id].alerts * (sevW[groupData[b.id].severity] || 1)) - (groupData[a.id].alerts * (sevW[groupData[a.id].severity] || 1));
   }), [groupData]);
 
   const [activeGroup, setActiveGroup] = useState(null);
-  const activeId = activeGroup || sortedGroups[0]?.id || 'money';
+  const activeId = activeGroup || sortedGroups[0]?.id || 'market';
   const gd = groupData[activeId];
   const group = GROUPS[activeId];
+
+  // Check if the active tab's required integration is connected
+  const isTabConnected = !group.requires || connectedIntegrations.some(i => i.includes(group.requires));
 
   const [briefOpen, setBriefOpen] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
@@ -254,7 +312,7 @@ const AdvisorWatchtower = () => {
                       data-testid={`tab-${g.id}`}>
                       <Icon className="w-4 h-4" />
                       <span className="text-sm font-semibold">{g.label}</span>
-                      {d.alerts > 0 && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: isActive ? 'rgba(255,255,255,0.25)' : SEV[d.severity].bg, color: isActive ? 'white' : SEV[d.severity].d, fontFamily: MONO }}>{d.alerts}</span>}
+                      {d.alerts > 0 && d.hasData && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: isActive ? 'rgba(255,255,255,0.25)' : SEV[d.severity].bg, color: isActive ? 'white' : SEV[d.severity].d, fontFamily: MONO }}>{d.alerts}</span>}
                     </button>
                   );
                 })}
@@ -274,128 +332,135 @@ const AdvisorWatchtower = () => {
                   </div>
                 </div>
 
-                {/* AI Insight — never blank */}
-                {gd.insight ? (
-                  <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{gd.insight}</p></Card>
+                {/* Show integration-required state if tab needs unconnected integration */}
+                {!isTabConnected && !gd.hasData ? (
+                  <IntegrationRequired groupId={activeId} color={group.color} />
                 ) : (
-                  <Card className="p-5"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>
-                    {gd.alerts === 0 ? 'No active signals detected for this module. Connect relevant integrations to activate monitoring.' : 'Insufficient data to generate insight.'}
-                  </p></Card>
-                )}
+                  <>
+                    {/* AI Insight */}
+                    {gd.insight ? (
+                      <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{gd.insight}</p></Card>
+                    ) : (
+                      <Card className="p-5"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>
+                        {gd.hasData ? 'Insufficient data to generate insight.' : 'No active signals detected. Connect relevant integrations to activate monitoring.'}
+                      </p></Card>
+                    )}
 
-                {/* Tab Metrics — from cognitive snapshot */}
-                {gd.metrics.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {gd.metrics.map((m, i) => (
-                      <Card key={i} className="p-4">
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{m.label}</span>
-                        <span className="text-lg font-bold block" style={{ color: m.color, fontFamily: MONO }}>{m.value}</span>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                    {/* Tab Metrics — from cognitive snapshot */}
+                    {gd.metrics.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {gd.metrics.map((m, i) => (
+                          <Card key={i} className="p-4">
+                            <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{m.label}</span>
+                            <span className="text-lg font-bold block" style={{ color: m.color, fontFamily: MONO }}>{m.value}</span>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
 
-                {/* Tab-specific detail panels */}
-                {activeId === 'revenue' && gd.details?.deals?.length > 0 && (
-                  <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Deal Pipeline</h3>
-                    <div className="space-y-2">
-                      {gd.details.deals.slice(0, 5).map((d, i) => (
-                        <Card key={i} className="p-4 flex items-center justify-between">
-                          <div>
-                            <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{d.name}</span>
-                            {d.stall > 0 && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: MONO }}>{d.stall}d stalled</span>}
-                          </div>
-                          <div className="text-right">
-                            {d.value != null && <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>${d.value}K</span>}
-                            {d.prob != null && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{d.prob}% prob</span>}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {activeId === 'money' && gd.details && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[
-                      gd.details.best && { label: 'Best Case (30d)', value: gd.details.best, color: '#10B981' },
-                      gd.details.base && { label: 'Base Case (30d)', value: gd.details.base, color: '#F59E0B' },
-                      gd.details.worst && { label: 'Worst Case (30d)', value: gd.details.worst, color: '#EF4444' },
-                    ].filter(Boolean).map((s, i) => (
-                      <Card key={i} className="p-4">
-                        <span className="text-[10px] font-semibold block mb-1" style={{ color: s.color, fontFamily: MONO }}>{s.label}</span>
-                        <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{s.value}</p>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-
-                {activeId === 'operations' && gd.details?.recs?.length > 0 && (
-                  <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Recommendations</h3>
-                    <div className="space-y-2">
-                      {gd.details.recs.map((r, i) => (
-                        <Card key={i} className="p-4">
-                          <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{r}</p>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {activeId === 'people' && gd.details && (
-                  <div className="space-y-3">
-                    {gd.details.calendar && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Calendar</span><p className="text-sm text-[#9FB0C3]">{gd.details.calendar}</p></Card>}
-                    {gd.details.email_stress && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Email Stress</span><p className="text-sm text-[#9FB0C3]">{gd.details.email_stress}</p></Card>}
-                  </div>
-                )}
-
-                {activeId === 'market' && gd.details?.competitors?.length > 0 && (
-                  <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Competitor Signals</h3>
-                    <div className="space-y-2">
-                      {gd.details.competitors.map((comp, i) => (
-                        <Card key={i} className="p-4 flex items-start gap-3">
-                          <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#7C3AED' }} />
-                          <div>
-                            <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{comp.name}</span>
-                            <p className="text-xs text-[#9FB0C3] mt-0.5">{comp.signal}</p>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Resolution Items */}
-                {gd.resolutions.length > 0 ? (
-                  <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Needs Attention</h3>
-                    <div className="space-y-3">
-                      {gd.resolutions.map((item, i) => {
-                        const sv = SEV[item.severity] || SEV.medium;
-                        return (
-                          <div key={i} className="rounded-2xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>
-                            <div className="flex items-start gap-3">
-                              <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{item.title}</p>
-                                {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{item.detail}</p>}
-                                <ActionBar actions={item.actions || ["hand-off", "dismiss"]} />
+                    {/* Tab-specific detail panels */}
+                    {activeId === 'revenue' && gd.details?.deals?.length > 0 && (
+                      <div>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Deal Pipeline</h3>
+                        <div className="space-y-2">
+                          {gd.details.deals.slice(0, 5).map((d, i) => (
+                            <Card key={i} className="p-4 flex items-center justify-between">
+                              <div>
+                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{d.name}</span>
+                                {d.stall > 0 && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: MONO }}>{d.stall}d stalled</span>}
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>No items need attention right now. All clear.</p></Card>
+                              <div className="text-right">
+                                {d.value != null && <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>${d.value}K</span>}
+                                {d.prob != null && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{d.prob}% prob</span>}
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeId === 'money' && gd.details && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                          gd.details.best && { label: 'Best Case (30d)', value: gd.details.best, color: '#10B981' },
+                          gd.details.base && { label: 'Base Case (30d)', value: gd.details.base, color: '#F59E0B' },
+                          gd.details.worst && { label: 'Worst Case (30d)', value: gd.details.worst, color: '#EF4444' },
+                        ].filter(Boolean).map((s, i) => (
+                          <Card key={i} className="p-4">
+                            <span className="text-[10px] font-semibold block mb-1" style={{ color: s.color, fontFamily: MONO }}>{s.label}</span>
+                            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{s.value}</p>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    {activeId === 'operations' && gd.details?.recs?.length > 0 && (
+                      <div>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Recommendations</h3>
+                        <div className="space-y-2">
+                          {gd.details.recs.map((r, i) => (
+                            <Card key={i} className="p-4">
+                              <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{r}</p>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeId === 'people' && gd.details && (
+                      <div className="space-y-3">
+                        {gd.details.calendar && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Calendar</span><p className="text-sm text-[#9FB0C3]">{gd.details.calendar}</p></Card>}
+                        {gd.details.email_stress && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Email Stress</span><p className="text-sm text-[#9FB0C3]">{gd.details.email_stress}</p></Card>}
+                      </div>
+                    )}
+
+                    {activeId === 'market' && gd.details?.competitors?.length > 0 && (
+                      <div>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Competitor Signals</h3>
+                        <div className="space-y-2">
+                          {gd.details.competitors.map((comp, i) => (
+                            <Card key={i} className="p-4 flex items-start gap-3">
+                              <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#7C3AED' }} />
+                              <div>
+                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{comp.name}</span>
+                                <p className="text-xs text-[#9FB0C3] mt-0.5">{comp.signal}</p>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Resolution Items */}
+                    {gd.resolutions.length > 0 ? (
+                      <div>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Needs Attention</h3>
+                        <div className="space-y-3">
+                          {gd.resolutions.map((item, i) => {
+                            const sv = SEV[item.severity] || SEV.medium;
+                            return (
+                              <div key={i} className="rounded-2xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>
+                                <div className="flex items-start gap-3">
+                                  <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{item.title}</p>
+                                    {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{item.detail}</p>}
+                                    <ActionBar actions={item.actions || ["hand-off", "dismiss"]} />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      !gd.hasData ? null : <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>No items need attention right now. All clear.</p></Card>
+                    )}
+                  </>
                 )}
 
-                {/* Alignment Gaps */}
-                {(alignment || contradictions.length > 0) && (
+                {/* Alignment Gaps — only if from real data */}
+                {isTabConnected && (alignment || contradictions.length > 0) && (
                   <div>
                     <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Alignment</h3>
                     {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{alignment}</p></Card>}
@@ -404,28 +469,42 @@ const AdvisorWatchtower = () => {
                 )}
               </div>
 
-              {/* WEEKLY BRIEF */}
-              <div className="mt-8 mb-4">
-                <Card className="p-0 overflow-hidden">
-                  <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors">
-                    <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
-                      <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#64748B', fontFamily: MONO }}>This Week</span>
-                      {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#FF6A00', fontFamily: HEAD }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>recovered</span></div>}
-                      {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#10B981', fontFamily: HEAD }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>saved</span></div>}
-                      {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#3B82F6', fontFamily: HEAD }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>actions</span></div>}
-                      {wb.sop_compliance && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#7C3AED', fontFamily: HEAD }}>{wb.sop_compliance}%</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>sop</span></div>}
-                      {!wb.cashflow_recovered && !wb.hours_saved && <span className="text-xs" style={{ color: '#64748B', fontFamily: BODY }}>Connect integrations to see weekly activity</span>}
-                    </div>
-                    {briefOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
-                  </button>
-                  {briefOpen && wb.actions_taken && (
-                    <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid #243140' }}>
-                      <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>
-                      <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>
-                    </div>
-                  )}
-                </Card>
-              </div>
+              {/* WEEKLY BRIEF — only show if integrations provide real data */}
+              {connectedIntegrations.length > 0 && (wb.cashflow_recovered || wb.hours_saved || wb.actions_taken) && (
+                <div className="mt-8 mb-4">
+                  <Card className="p-0 overflow-hidden">
+                    <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors">
+                      <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
+                        <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#64748B', fontFamily: MONO }}>This Week</span>
+                        {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#FF6A00', fontFamily: HEAD }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>recovered</span></div>}
+                        {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#10B981', fontFamily: HEAD }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>saved</span></div>}
+                        {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#3B82F6', fontFamily: HEAD }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>actions</span></div>}
+                      </div>
+                      {briefOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
+                    </button>
+                    {briefOpen && (
+                      <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid #243140' }}>
+                        {wb.cashflow_recovered && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>}
+                        {wb.hours_saved && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>}
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              )}
+
+              {/* Connect integrations prompt if nothing connected */}
+              {connectedIntegrations.length === 0 && !loading && (
+                <div className="mt-8 mb-4">
+                  <Card className="p-6 text-center">
+                    <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Connect your business tools</p>
+                    <p className="text-xs text-[#64748B] mb-4 max-w-lg mx-auto">Connect your CRM, accounting, and email integrations to unlock verified intelligence across all modules.</p>
+                    <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="overview-connect-cta">
+                      <Plug className="w-4 h-4" /> Connect Integrations
+                    </a>
+                  </Card>
+                </div>
+              )}
 
               {/* EXECUTIVE MEMO */}
               {memo && (
