@@ -183,6 +183,9 @@ const DashboardLayout = ({ children }) => {
         <div className="flex items-center gap-2">
           {tutorial && <HelpButton onClick={openTutorial} />}
 
+          {/* Business Verification Score Badge */}
+          <VerificationBadge navigate={navigate} />
+
           {/* Notifications */}
           <div className="relative">
             <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-lg hover:bg-white/5 transition-colors relative" style={{ color: '#9FB0C3' }} aria-label="Notifications">
