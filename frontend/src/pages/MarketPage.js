@@ -108,7 +108,12 @@ const MarketPage = () => {
               <div className="w-3 h-3 rounded-full" style={{ background: st.color, boxShadow: `0 0 12px ${st.color}50` }} />
               <span className="text-lg font-bold" style={{ color: st.color, fontFamily: HEAD }}>{snapshot ? st.label : 'Waiting for data'}</span>
             </div>
-            {confidence && <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: MONO }}>{confidence}% confidence</span>}
+            <div className="flex items-center gap-2">
+              {confidence && <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: MONO }}>{confidence}% confidence</span>}
+              <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-white/5" data-testid="market-refresh">
+                <RefreshCw className="w-3.5 h-3.5 text-[#64748B]" />
+              </button>
+            </div>
           </div>
           {interpretation && <p className="text-sm text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
           {!snapshot && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
