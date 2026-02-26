@@ -39,10 +39,10 @@ const ContactPage = () => {
           {/* LEFT — Contact Form */}
           <div className="lg:col-span-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ fontFamily: 'var(--font-heading)', color: CHARCOAL, letterSpacing: '-0.03em' }}>
-              Book a live demo
+              Get in touch
             </h1>
             <p className="text-base text-slate-500 mb-8" style={{ fontFamily: 'var(--font-body)' }}>
-              See BIQc in your workflow with a specialist. We'll show you exactly how it works for your business.
+              Have questions? We'll show you exactly how BIQc works for your business.
             </p>
 
             {submitted ? (
