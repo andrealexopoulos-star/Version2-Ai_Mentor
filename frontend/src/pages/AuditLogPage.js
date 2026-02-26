@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { useSnapshot } from '../hooks/useSnapshot';
-import { CognitiveMesh } from '../components/LoadingSystems';
-import { ClipboardList, User, RefreshCw } from 'lucide-react';
+import { supabase } from '../context/SupabaseAuthContext';
+import { ClipboardList, Plug, Loader2, Shield } from 'lucide-react';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
@@ -13,54 +12,125 @@ const Panel = ({ children, className = '' }) => (
 );
 
 const AuditLogPage = () => {
-  const { cognitive, loading, sources } = useSnapshot();
-  const c = cognitive || {};
-  const rq = c.resolution_queue || [];
-  const inv = c.inevitabilities || [];
+  const [events, setEvents] = useState([]);
+  const [integrations, setIntegrations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Build audit log from cognitive events
-  const events = [
-    ...rq.map(r => ({ type: 'resolution', title: r.title, severity: r.severity, source: 'AI Detection' })),
-    ...inv.map(r => ({ type: 'inevitability', title: r.signal || r.domain, severity: r.intensity === 'imminent' ? 'high' : 'medium', source: r.domain })),
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setLoading(false); return; }
+        const userId = session.user.id;
+
+        // Query workspace_integrations for connected integrations
+        const { data: intData, error: intErr } = await supabase
+          .from('workspace_integrations')
+          .select('*')
+          .eq('workspace_id', userId)
+          .eq('status', 'connected');
+
+        if (intErr) {
+          // Table may not exist yet — show null state
+          console.warn('[AuditLog] workspace_integrations query failed:', intErr.message);
+          setIntegrations([]);
+        } else {
+          setIntegrations(intData || []);
+        }
+
+        // Only fetch governance events if integrations exist
+        if (intData && intData.length > 0) {
+          const { data: evData, error: evErr } = await supabase
+            .from('governance_events')
+            .select('*')
+            .eq('workspace_id', userId)
+            .order('signal_timestamp', { ascending: false })
+            .limit(100);
+
+          if (evErr) {
+            console.warn('[AuditLog] governance_events query failed:', evErr.message);
+            setEvents([]);
+          } else {
+            setEvents(evData || []);
+          }
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const renderNullState = () => (
+    <Panel className="text-center py-12">
+      <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+      <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>No verified signals available.</p>
+      <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">
+        Connect your business integrations to begin recording governance events.
+        Audit entries are created only from verified, connected data sources.
+      </p>
+      <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="audit-connect-cta">
+        <Plug className="w-4 h-4" /> Connect Integrations
+      </a>
+    </Panel>
+  );
 
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="audit-log-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Audit Log</h1>
-          <p className="text-sm text-[#9FB0C3]">Record of all AI-detected events, actions, and system decisions.</p>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Governance Audit Log</h1>
+          <p className="text-sm text-[#9FB0C3]">Verified events from connected integrations. No AI-generated entries.</p>
         </div>
 
-        {loading && <CognitiveMesh message="Loading audit trail..." />}
+        {loading && (
+          <Panel className="text-center py-8">
+            <Loader2 className="w-6 h-6 text-[#FF6A00] mx-auto mb-3 animate-spin" />
+            <p className="text-sm text-[#9FB0C3]">Loading audit trail...</p>
+          </Panel>
+        )}
 
-        {!loading && (
+        {!loading && integrations.length === 0 && renderNullState()}
+
+        {!loading && integrations.length > 0 && events.length === 0 && (
+          <Panel className="text-center py-8">
+            <Shield className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>No governance events recorded.</p>
+            <p className="text-xs text-[#64748B]">Events will appear as BIQc processes verified signals from your {integrations.length} connected integration{integrations.length > 1 ? 's' : ''}.</p>
+          </Panel>
+        )}
+
+        {!loading && events.length > 0 && (
           <>
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>{events.length} events</span>
-              {sources?.length > 0 && <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{sources.length} data sources</span>}
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>{events.length} verified events</span>
+              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{integrations.length} connected source{integrations.length > 1 ? 's' : ''}</span>
             </div>
 
-            {events.length > 0 ? (
-              <div className="space-y-2">
-                {events.map((ev, i) => {
-                  const color = ev.severity === 'high' ? '#EF4444' : ev.severity === 'medium' ? '#F59E0B' : '#10B981';
-                  return (
-                    <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
-                      <span className="text-sm text-[#F4F7FA] flex-1" style={{ fontFamily: BODY }}>{ev.title}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: '#64748B', background: '#24314050', fontFamily: MONO }}>{ev.type}</span>
-                      <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: MONO }}>{ev.source}</span>
+            <div className="space-y-2">
+              {events.map((ev) => {
+                const color = ev.confidence_score >= 0.8 ? '#10B981' : ev.confidence_score >= 0.5 ? '#F59E0B' : '#EF4444';
+                return (
+                  <div key={ev.id} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }} data-testid={`audit-event-${ev.id}`}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: BODY }}>{ev.event_type}</span>
+                      {ev.signal_reference && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>ref: {ev.signal_reference}</span>}
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <Panel className="text-center py-8">
-                <ClipboardList className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                <p className="text-sm text-[#64748B]">No audit events recorded yet. Events will appear as BIQc detects signals from your connected integrations.</p>
-              </Panel>
-            )}
+                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: '#9FB0C3', background: '#24314050', fontFamily: MONO }}>{ev.source_system}</span>
+                    {ev.confidence_score != null && (
+                      <span className="text-[10px] shrink-0" style={{ color, fontFamily: MONO }}>{Math.round(ev.confidence_score * 100)}%</span>
+                    )}
+                    <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: MONO }}>
+                      {new Date(ev.signal_timestamp).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </>
         )}
       </div>
