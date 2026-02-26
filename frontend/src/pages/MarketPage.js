@@ -214,21 +214,21 @@ const MarketPage = () => {
         )}
 
         {/* ═══ SECTION 4 — GROWTH OPPORTUNITY YOU'RE MISSING ═══ */}
-        {lever && (
+        {filteredLever && (
           <div className="rounded-xl p-5" style={{ background: '#10B98106', border: '1px solid #10B98120', animation: 'snapFade 0.8s ease-out' }} data-testid="opportunity-section">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-[#10B981]" />
               <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Growth Opportunity You're Missing</h2>
             </div>
-            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{lever.lever}</p>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{lever.evidence}</p>
-            {lever.potential_value && <span className="text-xs text-[#10B981] mr-3" style={{ fontFamily: MONO }}>Potential: {lever.potential_value}</span>}
-            {lever.first_step && <p className="text-xs text-[#3B82F6] mt-1" style={{ fontFamily: MONO }}>First step: {lever.first_step}</p>}
+            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{filteredLever.lever}</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{filteredLever.evidence}</p>
+            {filteredLever.potential_value && <span className="text-xs text-[#10B981] mr-3" style={{ fontFamily: MONO }}>Potential: {filteredLever.potential_value}</span>}
+            {filteredLever.first_step && <p className="text-xs text-[#3B82F6] mt-1" style={{ fontFamily: MONO }}>First step: {filteredLever.first_step}</p>}
           </div>
         )}
 
         {/* ═══ SECTION 5 — ARE YOU ON TRACK? ═══ */}
-        {(goalProb != null || alignment) && (
+        {(goalProb != null || filteredAlignment) && (
           <Panel data-testid="track-section">
             <h2 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Are You On Track?</h2>
             {goalProb != null && (
