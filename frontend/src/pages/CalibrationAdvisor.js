@@ -111,6 +111,7 @@ const CalibrationAdvisor = () => {
           onRegenerate={cal.handleRegenerateIdentity}
           onReject={cal.handleRejectIdentity}
           isRegenerating={cal.isRegenerating}
+          onAbnLookup={cal.handleAbnLookup}
         />
       )}
 
