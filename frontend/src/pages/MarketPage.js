@@ -136,11 +136,11 @@ const MarketPage = () => {
         </div>
 
         {/* ═══ SECTION 2 — WHAT TO FOCUS ON NEXT ═══ */}
-        {moves.length > 0 && (
+        {filteredMoves.length > 0 && (
           <div style={{ animation: 'snapFade 0.6s ease-out' }} data-testid="focus-section">
             <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: HEAD }}>What To Focus On Next</h2>
             <div className="space-y-3">
-              {moves.map((m, i) => (
+              {filteredMoves.map((m, i) => (
                 <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
                   <div className="flex items-start gap-3">
                     <span className="text-sm font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: MONO }}>#{i + 1}</span>
