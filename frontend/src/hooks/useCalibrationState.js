@@ -579,7 +579,7 @@ export const useCalibrationState = () => {
     currentStep, intelligenceData, fetchIntelligence, proceedFromIntelligence,
     // Identity verification
     identitySignals, identityConfirmed, identityConfidence, isRegenerating,
-    handleConfirmIdentity, handleRegenerateIdentity, handleRejectIdentity,
+    handleConfirmIdentity, handleRegenerateIdentity, handleRejectIdentity, handleAbnLookup,
     handleSignOut, handleAuditSubmit, handleManualSummary,
     handleConfirmWow,
     startEdit, commitEdit,
