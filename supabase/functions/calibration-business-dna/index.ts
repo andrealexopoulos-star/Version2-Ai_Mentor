@@ -310,8 +310,8 @@ serve(async (req) => {
 
     // STEP 2: AI extraction
     const contextBlock = [
-      websiteContent ? `WEBSITE CONTENT:\n${websiteContent.substring(0, 10000)}` : "",
-      searchContent ? `WEB SEARCH RESULTS:\n${searchContent}` : "",
+      perplexityContent ? `PERPLEXITY INTELLIGENCE (PRIMARY SOURCE):\n${perplexityContent.substring(0, 12000)}` : "",
+      websiteContent ? `RAW WEBSITE CONTENT (SUPPLEMENTAL):\n${websiteContent.substring(0, 4000)}` : "",
       businessDescription ? `OWNER DESCRIPTION:\n${businessDescription}` : "",
       businessNameHint ? `USER HINT - BUSINESS NAME: ${businessNameHint}` : "",
       locationHint ? `USER HINT - LOCATION: ${locationHint}` : "",
