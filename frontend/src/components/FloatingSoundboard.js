@@ -16,8 +16,10 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [viewportHeight, setViewportHeight] = useState('100dvh');
+  const [integrationStatus, setIntegrationStatus] = useState(null);
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
+  const onboardingSent = useRef(false);
 
   // Track visual viewport for keyboard-aware sizing on mobile
   useEffect(() => {
@@ -29,6 +31,38 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
     onResize();
     return () => vv.removeEventListener('resize', onResize);
   }, [open]);
+
+  // Fetch integration status for onboarding message
+  useEffect(() => {
+    apiClient.get('/integrations/channels/status').then(res => {
+      if (res.data?.channels) setIntegrationStatus(res.data.channels);
+    }).catch(() => {});
+  }, []);
+
+  // Auto-send integration onboarding message on first open (Market page)
+  useEffect(() => {
+    if (!open || onboardingSent.current || messages.length > 0) return;
+    if (!context.toLowerCase().includes('market')) return;
+    onboardingSent.current = true;
+
+    const channels = integrationStatus || [];
+    const crmCh = channels.find(c => c.key === 'crm');
+    const emailCh = channels.find(c => c.key === 'email' || c.key === 'email_platform');
+    const crmStatus = crmCh?.status === 'connected' ? 'Connected' : 'Not connected';
+    const emailStatus = emailCh?.status === 'connected' ? 'Connected' : 'Not connected';
+
+    setMessages([
+      { role: 'assistant', text: "I'm currently using public digital signals only." },
+      { role: 'assistant', text: "To answer questions like 'Google spend last year' or 'leads this quarter', connect your systems:\n\n" +
+        `CRM (HubSpot) — ${crmStatus}\n` +
+        `Email — ${emailStatus}\n` +
+        `Google Ads — Not connected\n` +
+        `Meta Ads — Not connected\n` +
+        `Analytics (GA4) — Not connected\n` +
+        `Calendar — Not connected\n\n` +
+        "Connect integrations from the Systems menu to unlock deeper insights." },
+    ]);
+  }, [open, integrationStatus, context, messages.length]);
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus();
