@@ -152,21 +152,14 @@ const RevenuePage = () => {
 
           <Panel>
             <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
+              <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
               <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Churn Signals</h3>
             </div>
-            <div className="space-y-3">
-              {DEMO.churn.map((c) => (
-                <div key={c.client} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
-                  <div className="flex-1">
-                    <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{c.client}</span>
-                    <p className="text-[11px] text-[#64748B]">{c.signal}</p>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: c.color, background: c.color + '15', fontFamily: MONO }}>{c.risk}</span>
-                </div>
-              ))}
-            </div>
+            {c.revenue?.churn ? (
+              <p className="text-xs text-[#9FB0C3] leading-relaxed">{c.revenue.churn}</p>
+            ) : (
+              <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>Insufficient data to assess churn risk. Connect CRM with engagement tracking.</p>
+            )}
           </Panel>
         </div>
 
