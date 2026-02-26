@@ -18,10 +18,10 @@ const InteractiveDemoExpanded = ({ onClose }) => {
       icon: Zap,
       color: "#3b82f6",
       signals: [
-        "Email response time: Client A degrading from 4h → 18h average",
-        "Calendar: Team at 94% utilization, no buffer capacity",
-        "CRM: Deal pipeline +22% vs. last quarter",
-        "Payment data: Invoice-to-payment stretched from 21 → 34 days"
+        "Email response times increasing across key accounts",
+        "Calendar density approaching maximum capacity",
+        "CRM pipeline momentum accelerating",
+        "Invoice-to-payment cycle extending beyond target"
       ]
     },
     {
