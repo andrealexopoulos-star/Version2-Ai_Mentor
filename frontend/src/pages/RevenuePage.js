@@ -149,7 +149,7 @@ const RevenuePage = () => {
               <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Deal Breakdown</h3>
             </div>
             <div className="space-y-2">
-              {(deals || DEMO.deals).slice(0, 6).map((d, i) => {
+              {hasDeals && deals.slice(0, 6).map((d, i) => {
                 const name = d.name || d.deal_name || `Deal ${i + 1}`;
                 const amount = parseFloat(d.amount) || 0;
                 const stage = d.stage?.name || d.stage || 'Unknown';
