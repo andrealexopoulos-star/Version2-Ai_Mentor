@@ -165,6 +165,7 @@ const RevenuePage = () => {
             )}
           </Panel>
         </div>
+        </>}
 
         {/* Deal Velocity — only from real data */}
         {hasDeals && (
