@@ -106,14 +106,21 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - `NEW: /app/frontend/src/components/calibration/ForensicIdentityCard.js`
 - `NEW: /app/frontend/src/constants/integrationTruth.js`
 - `NEW: /app/supabase/functions/business-identity-lookup/index.ts` (ABN lookup)
+- `NEW: /app/supabase/functions/query-integrations-data/index.ts` (Soundboard data queries)
+- `NEW: /app/supabase/migrations/020_insight_outcomes.sql` (Prediction tracking)
 - `ENHANCED: /app/supabase/functions/calibration-business-dna/index.ts` (identity signals v2)
-- `MODIFIED: /app/frontend/src/hooks/useCalibrationState.js` - Flow reorder + identity handlers + ABN lookup
+- `ENHANCED: /app/supabase/functions/biqc-insights-cognitive/index.ts` (Snapshot v2 + prediction storage)
+- `MODIFIED: /app/frontend/src/hooks/useCalibrationState.js` - Flow reorder + identity + ABN lookup
 - `MODIFIED: /app/frontend/src/pages/CalibrationAdvisor.js` - Wired ForensicIdentityCard + ABN lookup
-- `MODIFIED: /app/frontend/src/components/calibration/IntelligencePhases.js` - CTA gating + suppression
+- `MODIFIED: /app/frontend/src/components/calibration/IntelligencePhases.js` - Snapshot v2 7-section UI
 - `MODIFIED: /app/frontend/src/components/calibration/ChiefMarketingSummary.js` - Confidence capping
 - `MODIFIED: /app/frontend/src/pages/MarketPage.js` - Scroll fix + integration suppression
-- `MODIFIED: /app/frontend/src/components/FloatingSoundboard.js` - Integration onboarding
-- `MODIFIED: /app/frontend/src/components/DashboardLayout.js` - Scroll fix
+- `MODIFIED: /app/frontend/src/components/FloatingSoundboard.js` - Data queries + BNA updates + onboarding
+- `MODIFIED: /app/frontend/src/components/DashboardLayout.js` - Scroll fix + VerificationBadge
+- `MODIFIED: /app/frontend/src/pages/website/HomePage.js` - CTA: Try It For Free
+- `MODIFIED: /app/frontend/src/pages/LandingIntelligent.js` - CTA: Try It For Free
+- `MODIFIED: /app/frontend/src/pages/Pricing.js` - CTA: Try It For Free
+- `MODIFIED: /app/frontend/src/components/website/WebsiteLayout.js` - Nav: Try It Free
 - `NEW: /app/memory/ROADMAP.md` - Full sprint plan + tech debt + enhancement ideas
 
 ---
