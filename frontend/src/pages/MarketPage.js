@@ -204,12 +204,12 @@ const MarketPage = () => {
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
               <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Biggest Risk Right Now</h2>
-              {blindside.probability != null && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444415', fontFamily: MONO }}>{blindside.probability}% likely</span>}
+              {filteredBlindside.probability != null && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444415', fontFamily: MONO }}>{filteredBlindside.probability}% likely</span>}
             </div>
-            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{blindside.risk}</p>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{blindside.evidence}</p>
-            {blindside.impact_if_materialises && <p className="text-xs text-[#EF4444] mb-2" style={{ fontFamily: MONO }}>Impact: {blindside.impact_if_materialises}</p>}
-            {blindside.prevention_action && <p className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>What to do: {blindside.prevention_action}</p>}
+            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{filteredBlindside.risk}</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{filteredBlindside.evidence}</p>
+            {filteredBlindside.impact_if_materialises && <p className="text-xs text-[#EF4444] mb-2" style={{ fontFamily: MONO }}>Impact: {filteredBlindside.impact_if_materialises}</p>}
+            {filteredBlindside.prevention_action && <p className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>What to do: {filteredBlindside.prevention_action}</p>}
           </div>
         )}
 
