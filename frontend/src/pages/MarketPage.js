@@ -291,13 +291,13 @@ const MarketPage = () => {
         <ForensicCalibrationCard isSuperAdmin={isSuperAdmin} navigate={navigate} />
 
         {/* ═══ SECTION 8 — EXECUTIVE BRIEF (compact preview) ═══ */}
-        {memo && (
+        {filteredMemo && (
           <Panel data-testid="brief-section">
             <div className="flex items-center gap-2 mb-2">
               <Zap className="w-3.5 h-3.5 text-[#FF6A00]" />
               <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Executive Brief</h2>
             </div>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed">{memo.substring(0, 400)}{memo.length > 400 ? '...' : ''}</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
           </Panel>
         )}
 
