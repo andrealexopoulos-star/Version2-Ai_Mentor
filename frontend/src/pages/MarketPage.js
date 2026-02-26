@@ -115,14 +115,32 @@ const MarketPage = () => {
   const filteredMemo = memo && (!containsCRMClaim(memo) || hasCRM) ? memo : '';
   const filteredAlignment = alignment && (!containsCRMClaim(alignment) || hasCRM) ? alignment : '';
 
+  const sendToChat = (msg) => setActionMessage(msg);
+
   return (
-    <DashboardLayout>
+    <DashboardLayout actionMessage={actionMessage} onActionConsumed={() => setActionMessage('')}>
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: BODY, overflowY: 'visible' }} data-testid="market-page">
         <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
         {loading && <CognitiveMesh message="Pulling your latest signals..." />}
 
         {!loading && <>
+
+        {/* ═══ TAB NAVIGATION ═══ */}
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: '#141C26', border: '1px solid #1E293B' }} data-testid="market-tabs">
+          <button onClick={() => setActiveTab('intelligence')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'intelligence' ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
+            style={{ background: activeTab === 'intelligence' ? '#FF6A0015' : 'transparent', fontFamily: MONO }}
+            data-testid="tab-intelligence">
+            What to Focus on Next
+          </button>
+          <button onClick={() => setActiveTab('reports')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'reports' ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
+            style={{ background: activeTab === 'reports' ? '#FF6A0015' : 'transparent', fontFamily: MONO }}
+            data-testid="tab-reports">
+            <FileText className="w-3.5 h-3.5" /> Reports
+          </button>
+        </div>
 
         {/* ═══ SECTION 1 — WHERE YOU STAND RIGHT NOW ═══ */}
         <div className="rounded-xl p-6" style={{ background: st.bg, border: `1px solid ${st.b}`, animation: 'snapFade 0.5s ease-out' }} data-testid="status-banner">
