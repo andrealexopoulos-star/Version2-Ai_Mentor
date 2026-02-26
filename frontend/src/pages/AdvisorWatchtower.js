@@ -275,8 +275,14 @@ const AdvisorWatchtower = () => {
                   </div>
                 </div>
 
-                {/* AI Insight */}
-                {gd.insight && <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{gd.insight}</p></Card>}
+                {/* AI Insight — never blank */}
+                {gd.insight ? (
+                  <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{gd.insight}</p></Card>
+                ) : (
+                  <Card className="p-5"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>
+                    {gd.alerts === 0 ? 'No active signals detected for this module. Connect relevant integrations to activate monitoring.' : 'Insufficient data to generate insight.'}
+                  </p></Card>
+                )}
 
                 {/* Tab Metrics — from cognitive snapshot */}
                 {gd.metrics.length > 0 && (
