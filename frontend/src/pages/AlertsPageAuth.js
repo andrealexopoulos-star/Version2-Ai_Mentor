@@ -76,7 +76,7 @@ const AlertItem = ({ alert, onAction }) => {
 };
 
 const AlertsPageAuth = () => {
-  const [alerts, setAlerts] = useState(DEMO_ALERTS);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
@@ -94,7 +94,7 @@ const AlertsPageAuth = () => {
             time: e.created_at ? timeAgo(e.created_at) : 'Recent',
             actions: e.severity === 'critical' || e.severity === 'high' ? ['email', 'handoff'] : ['handoff'],
           }));
-          setAlerts([...mapped, ...DEMO_ALERTS.slice(mapped.length)]);
+          setAlerts(mapped);
         }
       } catch {} finally { setLoading(false); }
     };
