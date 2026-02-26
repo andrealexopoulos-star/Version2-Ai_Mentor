@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import FloatingSoundboard from '../components/FloatingSoundboard';
 import { apiClient } from '../lib/api';
 import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
