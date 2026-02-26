@@ -38,7 +38,7 @@ const TrustDropdown = ({ open, onClose }) => {
       {TRUST_ITEMS.map((item) => (
         <Link key={item.path} to={item.path} onClick={onClose} className="flex items-center gap-3 px-5 py-3.5 transition-all hover:bg-white/5 group" data-testid={`trust-dropdown-${item.label.toLowerCase().replace(/\s+/g,'-')}`}>
           <item.icon className="w-4 h-4 text-[#9FB0C3] group-hover:text-[#FF6A00] transition-colors" />
-          <span className="text-sm text-[#F4F7FA] group-hover:text-white" style={{ fontFamily: NAV_FONT }}>{item.label}</span>
+          <span className="text-sm text-[#F4F7FA] group-hover:text-white" style={{ fontFamily: NAV_FONT, fontWeight: item.bold ? 600 : 400 }}>{item.label}</span>
         </Link>
       ))}
     </div>
