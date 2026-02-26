@@ -87,13 +87,24 @@ const RevenuePage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="revenue-page">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Revenue Intelligence</h1>
-          <p className="text-sm text-[#9FB0C3]">
-            {deals ? 'Live data from HubSpot CRM.' : 'Pipeline health, deal velocity, and churn signals.'}
-            {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Revenue Engine</h1>
+            <p className="text-sm text-[#9FB0C3]">
+              {hasDeals ? 'Live data from CRM.' : 'Connect CRM to view revenue data.'}
+              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: MONO }}>syncing...</span>}
+            </p>
+          </div>
+          <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} />
         </div>
+
+        {!loading && !hasDeals && (
+          <Panel className="text-center py-8">
+            <DollarSign className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Revenue data not connected.</p>
+            <p className="text-xs text-[#64748B]">Connect your CRM to view pipeline, deal velocity, and revenue concentration.</p>
+          </Panel>
+        )}
 
         {/* Revenue Health */}
         <Panel>
