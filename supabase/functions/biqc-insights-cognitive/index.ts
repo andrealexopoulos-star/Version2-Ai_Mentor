@@ -723,13 +723,107 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
 
     // Cache snapshot
     try {
+      const snapshotId = crypto.randomUUID();
+      const snapshotConfidence = cognitive.snapshot_confidence || cognitive.system_state?.confidence || 50;
+
       await supabase.from("intelligence_snapshots").insert({
-        id: crypto.randomUUID(),
+        id: snapshotId,
         user_id: user.id,
         snapshot_type: "cognitive_v2",
         summary: cognitive,
+        snapshot_confidence: snapshotConfidence,
         generated_at: new Date().toISOString(),
       });
+
+      // ═══ PHASE 1: PREDICTION INSTRUMENTATION ═══
+      // Store every actionable prediction for future outcome validation
+      // No automated evaluation — just collect for observation
+      const predictions: any[] = [];
+
+      // Extract predictions from strategic moves
+      const moves = cognitive.action_plan?.top_3_marketing_moves || [];
+      for (const move of moves) {
+        if (move.move && move.confidence) {
+          predictions.push({
+            user_id: user.id,
+            snapshot_id: snapshotId,
+            prediction_type: 'growth',
+            predicted_outcome: move.measurable_outcome || move.expected_impact || move.move,
+            predicted_timeframe_days: move.timeframe_days || 30,
+            predicted_impact_low: move.impact_band?.low || null,
+            predicted_impact_high: move.impact_band?.high || null,
+            prediction_confidence: move.confidence,
+            metric_source: move.metric_source || 'internal',
+            metric_reference: move.move,
+            action_required: move.move,
+            evaluation_status: 'pending',
+          });
+        }
+      }
+
+      // Extract prediction from blindside risk
+      const blindside = cognitive.action_plan?.primary_blindside_risk;
+      if (blindside?.risk && blindside?.probability) {
+        predictions.push({
+          user_id: user.id,
+          snapshot_id: snapshotId,
+          prediction_type: 'risk',
+          predicted_outcome: blindside.risk,
+          predicted_timeframe_days: blindside.time_window_days || 60,
+          predicted_impact_low: null,
+          predicted_impact_high: null,
+          prediction_confidence: blindside.confidence || blindside.probability,
+          metric_source: 'internal',
+          metric_reference: blindside.impact_if_materialises,
+          action_required: blindside.prevention_action,
+          evaluation_status: 'pending',
+        });
+      }
+
+      // Extract prediction from hidden growth lever
+      const lever = cognitive.action_plan?.hidden_growth_lever;
+      if (lever?.lever && lever?.confidence) {
+        predictions.push({
+          user_id: user.id,
+          snapshot_id: snapshotId,
+          prediction_type: 'growth',
+          predicted_outcome: lever.lever,
+          predicted_timeframe_days: 90,
+          predicted_impact_low: lever.upside_band?.low || null,
+          predicted_impact_high: lever.upside_band?.high || null,
+          prediction_confidence: lever.confidence,
+          metric_source: 'internal',
+          metric_reference: lever.potential_value,
+          action_required: lever.first_step,
+          evaluation_status: 'pending',
+        });
+      }
+
+      // Extract trajectory prediction
+      const trajectory = cognitive.trajectory_projection_90_days;
+      if (trajectory?.projected_state) {
+        predictions.push({
+          user_id: user.id,
+          snapshot_id: snapshotId,
+          prediction_type: 'alignment',
+          predicted_outcome: `90-day projection: ${trajectory.projected_state} (risk ${trajectory.risk_probability}%)`,
+          predicted_timeframe_days: 90,
+          predicted_impact_low: null,
+          predicted_impact_high: null,
+          prediction_confidence: trajectory.confidence || 50,
+          metric_source: 'internal',
+          metric_reference: 'system_state',
+          action_required: trajectory.key_variable,
+          evaluation_status: 'pending',
+        });
+      }
+
+      // Batch insert predictions
+      if (predictions.length > 0) {
+        const { error: predError } = await supabase.from("insight_outcomes").insert(predictions);
+        if (predError) console.warn('[biqc-insights] Prediction storage failed:', predError);
+        else console.log(`[biqc-insights] Stored ${predictions.length} predictions for outcome tracking`);
+      }
     } catch (e) { console.error("[biqc-insights] Cache failed:", e); }
 
     return new Response(JSON.stringify({
