@@ -45,9 +45,17 @@ function computeOverall(layers, data) {
   return { overall, confidence, layersScored: count, layersTotal: layers.length };
 }
 
-const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting }) => {
+const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityConfidence }) => {
   const full = wowSummary?._full || wowSummary || {};
-  const { overall, confidence, layersScored, layersTotal } = computeOverall(LAYERS, full);
+  const raw = computeOverall(LAYERS, full);
+  // Cap report confidence based on identity confidence (Section 8.3)
+  const cappedConfidence = identityConfidence === 'Low' ? 'Low'
+    : identityConfidence === 'Medium' ? (raw.confidence === 'High' ? 'Medium' : raw.confidence)
+    : raw.confidence;
+  const overall = raw.overall;
+  const confidence = cappedConfidence;
+  const layersScored = raw.layersScored;
+  const layersTotal = raw.layersTotal;
   const scoreColor = overall > 70 ? '#10B981' : overall > 45 ? '#F59E0B' : '#EF4444';
 
   // Executive blocks
