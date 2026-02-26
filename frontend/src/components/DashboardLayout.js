@@ -324,11 +324,15 @@ const DashboardLayout = ({ children }) => {
           {!sidebarCollapsed && (
             <div className="mt-auto pt-4 pb-2" style={{ borderTop: '1px solid #243140' }}>
               {[
-                { label: 'Enterprise Terms', path: '/enterprise-terms' },
+                { label: 'BIQc AI Learning Guarantee', path: '/trust/ai-learning-guarantee', bold: true },
+                { label: 'Security & Infrastructure', path: '/trust/security' },
+                { label: 'Trust Centre', path: '/trust/centre' },
+                { label: 'Data Processing Agreement', path: '/trust/dpa' },
+                { label: 'Privacy Policy', path: '/trust/privacy' },
                 { label: 'Terms & Conditions', path: '/terms' },
-                { label: 'Trust & Security', path: '/trust' },
-              ].map(({ label, path }) => (
-                <button key={path} onClick={() => navigate(path)} className="text-left text-xs px-3 py-2 rounded-lg w-full transition-colors hover:bg-white/5" style={{ color: '#64748B', fontFamily: BODY }}>{label}</button>
+                { label: 'Knowledge Base', path: '/knowledge-base' },
+              ].map(({ label, path, bold }) => (
+                <button key={path} onClick={() => navigate(path)} className="text-left text-xs px-3 py-2 rounded-lg w-full transition-colors hover:bg-white/5" style={{ color: '#64748B', fontFamily: BODY, fontWeight: bold ? 600 : 400 }}>{label}</button>
               ))}
             </div>
           )}
