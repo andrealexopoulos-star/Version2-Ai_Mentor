@@ -156,6 +156,7 @@ function AppRoutes() {
       <Route path="/our-integrations" element={<SiteIntegrationsPage />} />
       <Route path="/pricing" element={<SitePricingPage />} />
       <Route path="/trust" element={<SiteTrustLandingPage />} />
+      <Route path="/trust/ai-learning-guarantee" element={<AILearningGuarantee />} />
       <Route path="/trust/terms" element={<SiteTermsPage />} />
       <Route path="/trust/privacy" element={<SitePrivacyPage />} />
       <Route path="/trust/dpa" element={<SiteDPAPage />} />
