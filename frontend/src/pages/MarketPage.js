@@ -5,6 +5,7 @@ import FloatingSoundboard from '../components/FloatingSoundboard';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
+import { containsCRMClaim } from '../constants/integrationTruth';
 import {
   TrendingUp, ArrowRight, Target, Shield, AlertTriangle,
   Zap, CheckCircle2, Eye, ChevronDown, ChevronUp, Link2, RefreshCw
