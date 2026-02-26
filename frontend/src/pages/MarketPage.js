@@ -368,6 +368,8 @@ const MarketPage = () => {
         )}
 
         </>}
+
+        </>}
       </div>
     </DashboardLayout>
   );
