@@ -80,6 +80,26 @@ const PricingPage = () => (
           <h2 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: HEAD }}>Choose Your Level of Discipline</h2>
         </div>
 
+        {/* Free tier compact bar */}
+        <div className="rounded-xl p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ background: 'rgba(255,106,0,0.03)', border: '1px solid rgba(255,106,0,0.12)' }} data-testid="free-tier-bar">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-0.5 rounded-full" style={{ background: '#FF6A00' }} />
+            <div>
+              <span className="text-sm font-bold text-white" style={{ fontFamily: HEAD }}>Market Intelligence Brief</span>
+              <span className="text-[10px] tracking-[0.12em] uppercase ml-2" style={{ color: '#FF6A00', fontFamily: MONO }}>Free</span>
+            </div>
+          </div>
+          <p className="text-xs text-[#7A8FA3] text-center sm:text-left flex-1 px-4" style={{ fontFamily: BODY }}>
+            13-layer digital footprint scan, Market Presence Score, competitive overview, category positioning, trust comparison. Public signals only.
+          </p>
+          <Link to="/register-supabase"
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-semibold text-white shrink-0 transition-all hover:brightness-110"
+            style={{ background: '#FF6A00', fontFamily: BODY }}
+            data-testid="cta-free-bar">
+            Request Market Assessment <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* FOUNDATION */}
           <PlanCard
