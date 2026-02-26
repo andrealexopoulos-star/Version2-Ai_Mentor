@@ -51,7 +51,7 @@ const HomePage = () => (
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
             <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="hero-cta">
-              Book a live demo <ArrowRight className="w-4 h-4" />
+              Try It For Free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
