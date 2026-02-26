@@ -193,6 +193,22 @@ function parseToGroups(c, connectedIntegrations) {
     groups.market.insight = mkt.narrative || groups.market.insight;
   }
 
+  // ═══ WEIGHTED SCORING FORMULA ═══
+  // Score = (severity_weight * alert_count * data_quality_multiplier)
+  // severity_weight: high=3, medium=2, low=1
+  // data_quality_multiplier: based on number of metrics and integration status
+  const sevWeights = { high: 3, medium: 2, low: 1 };
+  for (const gid of Object.keys(groups)) {
+    const g = groups[gid];
+    if (!g.hasData) { g.score = 0; continue; }
+    const sevWeight = sevWeights[g.severity] || 1;
+    const alertScore = g.alerts * sevWeight;
+    const metricBonus = g.metrics.length * 5;
+    const detailBonus = g.details ? 10 : 0;
+    const insightBonus = g.insight ? 5 : 0;
+    g.score = Math.min(Math.round(alertScore + metricBonus + detailBonus + insightBonus), 100);
+  }
+
   return groups;
 }
 
