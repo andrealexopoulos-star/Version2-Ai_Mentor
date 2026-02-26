@@ -346,6 +346,11 @@ const AdvisorWatchtower = () => {
                     <h2 className="text-lg font-bold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{group.label}</h2>
                     <p className="text-xs" style={{ color: '#64748B', fontFamily: MONO }}>{group.description}</p>
                   </div>
+                  {gd.score > 0 && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full ml-auto" style={{ color: gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981', background: (gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981') + '15', fontFamily: MONO }} data-testid="insight-score">
+                      Score: {gd.score}
+                    </span>
+                  )}
                 </div>
 
                 {/* Show integration-required state if tab needs unconnected integration */}
