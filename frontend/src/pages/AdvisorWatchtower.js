@@ -217,7 +217,7 @@ const AdvisorWatchtower = () => {
               <div className="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ background: st.d, boxShadow: `0 0 8px ${st.d}50` }} />
-                  <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: MONO }}>{stateStatus || 'STABLE'}</span>
+                  <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: MONO }}>{ST_LABELS[stateStatus] || 'On Track'}</span>
                   {stateVelocity && <span className="text-[11px]" style={{ color: st.c }}>{stateVelocity === 'worsening' ? '↘' : stateVelocity === 'improving' ? '↗' : '→'} {stateVelocity}</span>}
                   {stateConf && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: MONO }}>{typeof stateConf === 'number' ? `${stateConf}%` : stateConf}</span>}
                 </div>
