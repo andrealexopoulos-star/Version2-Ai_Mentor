@@ -99,7 +99,7 @@ const RevenueModule = () => (
           </div>
           {/* Client risk items */}
           <div className="space-y-2 mb-4">
-            {[{ name: 'Client B', signal: 'Response time up 3x. Engagement declining 30 days.', risk: 'HIGH' },
+            {[{ name: 'Key Account #1', signal: 'Response time elevated. Engagement declining over 30 days.', risk: 'HIGH' },
               { name: 'Client F', signal: 'Contract renewal in 45 days. No renewal discussion initiated.', risk: 'MODERATE' }].map(c => (
               <div key={c.name} className="p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid #243140' }}>
                 <div className="flex items-center justify-between mb-1">
@@ -111,7 +111,7 @@ const RevenueModule = () => (
             ))}
           </div>
           <div className="pt-3" style={{ borderTop: '1px solid #243140' }}>
-            <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: INTER }}><strong className="text-[#F4F7FA]">What to do:</strong> Draft re-engagement email for Client B. Schedule renewal call for Client F.</p>
+            <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: INTER }}><strong className="text-[#F4F7FA]">What to do:</strong> Draft re-engagement email for at-risk accounts. Schedule renewal calls.</p>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Auto-re-engage</span>
               <div className="w-8 h-4 rounded-full cursor-pointer" style={{ background: '#243140' }}><div className="w-3.5 h-3.5 rounded-full bg-[#9FB0C3] ml-0.5 mt-[1px]" /></div>
