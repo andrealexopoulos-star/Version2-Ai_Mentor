@@ -371,7 +371,7 @@ const Landing = () => {
                   variant={plan.highlight ? 'default' : 'outline'}
                   className={`w-full h-12 font-semibold rounded-xl ${plan.highlight ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-2'}`}
                 >
-                  Get Started
+                  Try It For Free
                 </Button>
               </div>
             ))}
