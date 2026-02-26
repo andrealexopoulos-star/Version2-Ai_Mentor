@@ -14,7 +14,7 @@ import {
   Settings, LogOut, Menu, X, ChevronDown, Shield, User,
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
-  ClipboardList, Inbox
+  ClipboardList, Inbox, MessageSquare
 } from 'lucide-react';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
