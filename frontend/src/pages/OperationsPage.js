@@ -169,7 +169,6 @@ const OperationsPage = () => {
           </div>
         </Panel>
       </div>
-      <FloatingSoundboard context="Operations intelligence - SOP compliance and workload" />
     </DashboardLayout>
   );
 };
