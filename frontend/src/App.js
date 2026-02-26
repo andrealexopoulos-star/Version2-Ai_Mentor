@@ -79,6 +79,7 @@ import SitePlatformPage from './pages/website/PlatformPage';
 import SiteIntelligencePage from './pages/website/IntelligencePage';
 import SiteIntegrationsPage from './pages/website/IntegrationsPage';
 import SitePricingPage from './pages/website/PricingPage';
+import AILearningGuarantee from './pages/AILearningGuarantee';
 import SiteTrustLandingPage from './pages/website/TrustLandingPage';
 import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
 
