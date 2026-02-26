@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, AlertTriangle, Shield, ArrowRight, Target } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Shield, ArrowRight, Target, Activity, BarChart3, Eye, Link2 } from 'lucide-react';
 import { containsCRMClaim } from '../../constants/integrationTruth';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
@@ -21,24 +21,21 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
   const confidence = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
   const interpretation = typeof c.system_state === 'object' ? c.system_state?.interpretation : c.system_state_interpretation;
   const velocity = typeof c.system_state === 'object' ? c.system_state?.velocity : null;
+  const driftVelocity = typeof c.system_state === 'object' ? c.system_state?.drift_velocity : null;
+  const signalFreshness = typeof c.system_state === 'object' ? c.system_state?.signal_freshness_hours : null;
   const st = ST_COLORS[stateStatus] || ST_COLORS.STABLE;
   const sources = intelligenceData?.data_sources || [];
 
-  // Determine if snapshot is ready (has actual data vs still analyzing)
   const isReady = !!(stateStatus && stateStatus !== 'ANALYZING');
   const hasData = !!(c.executive_memo || c.memo || stateStatus);
 
-  // CTA gating: only show after READY + 3s delay
   useEffect(() => {
-    if (!isReady) {
-      setCtaVisible(false);
-      return;
-    }
+    if (!isReady) { setCtaVisible(false); return; }
     const timer = setTimeout(() => setCtaVisible(true), 3000);
     return () => clearTimeout(timer);
   }, [isReady]);
 
-  // Integration truth check — suppress CRM claims if no integration source
+  // Integration truth — suppress CRM claims without integration
   const hasCRMSource = sources.some(s => ['crm', 'hubspot', 'email', 'pipeline'].includes(s?.toLowerCase?.()));
   const rawMemo = c.executive_memo || c.memo || '';
   const memo = hasCRMSource ? rawMemo : (containsCRMClaim(rawMemo) ? '' : rawMemo);
@@ -47,9 +44,22 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
   const alignment = hasCRMSource ? rawAlignment : (containsCRMClaim(rawAlignment) ? '' : rawAlignment);
   const contradictions = (c.alignment?.contradictions || []).filter(ct => hasCRMSource || !containsCRMClaim(ct));
 
-  // Suppress pipeline metrics without CRM
   const pipeline = hasCRMSource ? c.pipeline_total : null;
   const slaBreaches = hasCRMSource ? (c.sla_breaches || c.execution?.sla_breaches) : null;
+
+  // v2 fields
+  const trajectory = c.trajectory_projection_90_days || {};
+  const dataGaps = c.data_gaps || [];
+  const snapshotConfidence = c.snapshot_confidence || confidence || null;
+  const ap = c.action_plan || {};
+  const moves = ap.top_3_marketing_moves || [];
+  const blindside = ap.primary_blindside_risk || {};
+  const lever = ap.hidden_growth_lever || {};
+
+  // Filter CRM claims from moves
+  const filteredMoves = hasCRMSource ? moves : moves.filter(m => !containsCRMClaim(m.move) && !containsCRMClaim(m.rationale));
+  const showBlindside = blindside.risk && (hasCRMSource || !containsCRMClaim(blindside.risk));
+  const showLever = lever.lever && (hasCRMSource || !containsCRMClaim(lever.lever));
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="cmo-snapshot">
@@ -73,8 +83,8 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           </p>
         </div>
 
-        {/* System State */}
-        <div className="rounded-xl p-5 mb-6" style={{ background: st.c + '08', border: `1px solid ${st.c}25`, animation: 'snapFade 0.8s ease-out' }}>
+        {/* ═══ SECTION 1 — System State + Drift Velocity ═══ */}
+        <div className="rounded-xl p-5 mb-6" style={{ background: st.c + '08', border: `1px solid ${st.c}25`, animation: 'snapFade 0.8s ease-out' }} data-testid="snapshot-system-state">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full" style={{ background: st.c, boxShadow: `0 0 12px ${st.c}50`, animation: !isReady ? 'pulseGlow 2s ease-in-out infinite' : 'none' }} />
@@ -87,51 +97,189 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
                 </span>
               )}
             </div>
-            {confidence && isReady && (
-              <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: MONO }}>
-                {typeof confidence === 'number' ? `${confidence}% confidence` : confidence}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {driftVelocity && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: driftVelocity === 'accelerating' ? '#EF4444' : '#64748B', background: driftVelocity === 'accelerating' ? '#EF444415' : '#24314050', fontFamily: MONO }}>
+                  {driftVelocity}
+                </span>
+              )}
+              {confidence && isReady && (
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: MONO }}>
+                  {typeof confidence === 'number' ? `${confidence}%` : confidence}
+                </span>
+              )}
+              {signalFreshness != null && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: signalFreshness > 48 ? '#F59E0B' : '#64748B', background: '#24314050', fontFamily: MONO }}>
+                  {signalFreshness < 1 ? 'Live' : signalFreshness < 24 ? `${Math.round(signalFreshness)}h old` : `${Math.round(signalFreshness / 24)}d old`}
+                </span>
+              )}
+            </div>
           </div>
           {interpretation && <p className="text-sm mt-3 text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{interpretation}</p>}
         </div>
 
-        {/* Drift Delta Bars */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" style={{ animation: 'snapFade 1s ease-out' }}>
-          {[
-            { label: 'Pipeline', value: pipeline ? `$${Math.round(pipeline / 1000)}K` : '\u2014', icon: TrendingUp, status: pipeline ? 'good' : 'none' },
-            { label: 'SLA Health', value: slaBreaches ? `${slaBreaches} breach${slaBreaches > 1 ? 'es' : ''}` : 'Clear', icon: AlertTriangle, status: slaBreaches > 0 ? 'warning' : 'good' },
-            { label: 'Market State', value: isReady ? st.label : 'Analyzing...', icon: Shield, status: stateStatus === 'STABLE' ? 'good' : 'warning' },
-            { label: 'Competitive Position', value: stateStatus === 'CRITICAL' ? 'At Risk' : stateStatus === 'DRIFT' ? 'Under Pressure' : 'Holding', icon: Target, status: stateStatus === 'STABLE' ? 'good' : 'warning' },
-          ].map(m => {
-            const barColor = m.status === 'good' ? '#10B981' : m.status === 'none' ? '#243140' : '#F59E0B';
-            return (
-              <div key={m.label} className="p-3 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <m.icon className="w-3.5 h-3.5" style={{ color: barColor }} />
-                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.label}</span>
-                </div>
-                <span className="text-lg font-bold text-[#F4F7FA] block" style={{ fontFamily: MONO }}>{m.value}</span>
-                <div className="h-1 rounded-full mt-2" style={{ background: '#243140' }}>
-                  <div className="h-1 rounded-full" style={{ background: barColor, width: m.status === 'good' ? '80%' : m.status === 'none' ? '0%' : '45%', transition: 'width 1s ease' }} />
-                </div>
+        {/* ═══ SECTION 2 — 90-Day Trajectory Projection ═══ */}
+        {(trajectory.projected_state || trajectory.best_case) && (
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 0.9s ease-out' }} data-testid="snapshot-trajectory">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4 text-[#3B82F6]" />
+              <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>90-Day Trajectory</h3>
+              {trajectory.confidence != null && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full ml-auto" style={{ color: '#3B82F6', background: '#3B82F615', fontFamily: MONO }}>{trajectory.confidence}% confidence</span>
+              )}
+            </div>
+            {trajectory.projected_state && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-[#9FB0C3]">Projected state:</span>
+                <span className="text-xs font-semibold" style={{ color: ST_COLORS[trajectory.projected_state]?.c || '#64748B', fontFamily: MONO }}>{trajectory.projected_state}</span>
               </div>
-            );
-          })}
-        </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { label: 'Best case', value: trajectory.best_case, color: '#10B981' },
+                { label: 'Base case', value: trajectory.base_case, color: '#F59E0B' },
+                { label: 'Worst case', value: trajectory.worst_case, color: '#EF4444' },
+              ].filter(s => s.value).map(s => (
+                <div key={s.label} className="p-3 rounded-lg" style={{ background: s.color + '06', border: `1px solid ${s.color}20` }}>
+                  <span className="text-[10px] block mb-1" style={{ color: s.color, fontFamily: MONO }}>{s.label}</span>
+                  <p className="text-xs text-[#9FB0C3] leading-relaxed">{s.value}</p>
+                </div>
+              ))}
+            </div>
+            {trajectory.key_variable && (
+              <p className="text-xs text-[#3B82F6] mt-3" style={{ fontFamily: MONO }}>Key variable: {trajectory.key_variable}</p>
+            )}
+          </div>
+        )}
 
-        {/* No CRM notice */}
-        {!hasCRMSource && (
-          <div className="rounded-xl p-4 mb-6" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20', animation: 'snapFade 1.1s ease-out' }}>
+        {/* ═══ SECTION 3 — Strategic Moves (with impact bands) ═══ */}
+        {filteredMoves.length > 0 && (
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 1s ease-out' }} data-testid="snapshot-moves">
+            <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#64748B', fontFamily: MONO }}>Strategic Moves</h3>
+            <div className="space-y-3">
+              {filteredMoves.map((m, i) => (
+                <div key={i} className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #24314080' }}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: MONO }}>#{i + 1}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{m.move}</p>
+                      <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{m.rationale}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {m.measurable_outcome && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98110', fontFamily: MONO }}>{m.measurable_outcome}</span>}
+                        {m.timeframe_days && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#3B82F6', background: '#3B82F610', fontFamily: MONO }}>{m.timeframe_days}d window</span>}
+                        {m.impact_band?.low != null && m.impact_band?.high != null && (
+                          <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#F59E0B', background: '#F59E0B10', fontFamily: MONO }}>
+                            ${m.impact_band.low}K-${m.impact_band.high}K impact
+                          </span>
+                        )}
+                        {m.confidence != null && <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.confidence}% confidence</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SECTION 4 — Blindside Risk ═══ */}
+        {showBlindside && (
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#EF444406', border: '1px solid #EF444420', animation: 'snapFade 1.1s ease-out' }} data-testid="snapshot-blindside">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
+              <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Blindside Risk</h3>
+              {blindside.probability != null && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444415', fontFamily: MONO }}>{blindside.probability_band || `${blindside.probability}%`}</span>}
+            </div>
+            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{blindside.risk}</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{blindside.evidence}</p>
+            <div className="flex flex-wrap gap-2">
+              {blindside.time_window_days && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444410', fontFamily: MONO }}>{blindside.time_window_days}d window</span>}
+              {blindside.severity != null && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444410', fontFamily: MONO }}>severity {blindside.severity}/100</span>}
+              {blindside.confidence != null && <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{blindside.confidence}% confidence</span>}
+            </div>
+            {blindside.prevention_action && <p className="text-xs text-[#10B981] mt-2" style={{ fontFamily: MONO }}>Prevention: {blindside.prevention_action}</p>}
+          </div>
+        )}
+
+        {/* ═══ SECTION 5 — Hidden Growth Lever ═══ */}
+        {showLever && (
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#10B98106', border: '1px solid #10B98120', animation: 'snapFade 1.2s ease-out' }} data-testid="snapshot-lever">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4 text-[#10B981]" />
+              <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Hidden Growth Lever</h3>
+              {lever.underutilisation_score != null && <span className="text-[10px] px-2 py-0.5 rounded ml-auto" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>{lever.underutilisation_score}% underutilised</span>}
+            </div>
+            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{lever.lever}</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{lever.evidence}</p>
+            <div className="flex flex-wrap gap-2">
+              {lever.upside_band?.low != null && lever.upside_band?.high != null && (
+                <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98110', fontFamily: MONO }}>${lever.upside_band.low}K-${lever.upside_band.high}K upside</span>
+              )}
+              {lever.potential_value && <span className="text-[10px] text-[#10B981]" style={{ fontFamily: MONO }}>{lever.potential_value}</span>}
+              {lever.confidence != null && <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{lever.confidence}% confidence</span>}
+            </div>
+            {lever.first_step && <p className="text-xs text-[#3B82F6] mt-2" style={{ fontFamily: MONO }}>First step: {lever.first_step}</p>}
+          </div>
+        )}
+
+        {/* ═══ SECTION 6 — Data Gaps Limiting Confidence ═══ */}
+        {dataGaps.length > 0 && (
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #F59E0B20', animation: 'snapFade 1.3s ease-out' }} data-testid="snapshot-data-gaps">
+            <div className="flex items-center gap-2 mb-3">
+              <Link2 className="w-4 h-4 text-[#F59E0B]" />
+              <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Data Gaps Limiting Confidence</h3>
+            </div>
+            <div className="space-y-2">
+              {dataGaps.map((gap, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: gap.status === 'not_connected' ? '#EF4444' : gap.status === 'stale' ? '#F59E0B' : '#64748B' }} />
+                    <span className="text-xs text-[#9FB0C3]">{gap.area}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: gap.status === 'not_connected' ? '#EF4444' : '#F59E0B', background: (gap.status === 'not_connected' ? '#EF4444' : '#F59E0B') + '10', fontFamily: MONO }}>{gap.status?.replace('_', ' ')}</span>
+                  </div>
+                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>-{gap.impact_on_confidence || '?'}% confidence</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No CRM notice (fallback when data_gaps not populated) */}
+        {!hasCRMSource && dataGaps.length === 0 && (
+          <div className="rounded-xl p-4 mb-6" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20', animation: 'snapFade 1.3s ease-out' }}>
             <p className="text-xs text-[#F59E0B] leading-relaxed" style={{ fontFamily: MONO }}>
               Pipeline, lead, and churn metrics require CRM integration. Connect HubSpot or your CRM to unlock internal performance analysis.
             </p>
           </div>
         )}
 
-        {/* Executive Memo — suppressed if contains CRM claims without integration */}
+        {/* ═══ SECTION 7 — Snapshot Confidence (Insight Performance Preview) ═══ */}
+        {snapshotConfidence != null && (
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 1.4s ease-out' }} data-testid="snapshot-confidence">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart3 className="w-4 h-4 text-[#3B82F6]" />
+              <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Snapshot Confidence</h3>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-3xl font-bold" style={{ color: snapshotConfidence > 70 ? '#10B981' : snapshotConfidence > 40 ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>{Math.round(snapshotConfidence)}%</span>
+              <div className="flex-1">
+                <div className="h-2 rounded-full" style={{ background: '#243140' }}>
+                  <div className="h-2 rounded-full transition-all" style={{ width: `${snapshotConfidence}%`, background: snapshotConfidence > 70 ? '#10B981' : snapshotConfidence > 40 ? '#F59E0B' : '#EF4444' }} />
+                </div>
+                <p className="text-[10px] text-[#64748B] mt-1" style={{ fontFamily: MONO }}>
+                  {snapshotConfidence > 70 ? 'Strong data coverage' : snapshotConfidence > 40 ? 'Moderate — connect more systems to improve' : 'Limited — most insights based on public signals only'}
+                </p>
+              </div>
+            </div>
+            <p className="text-[10px] text-[#64748B] mt-3" style={{ fontFamily: MONO }}>
+              Insight performance tracking active. Predictions stored for future accuracy measurement.
+            </p>
+          </div>
+        )}
+
+        {/* Executive Memo */}
         {memo && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 1.2s ease-out' }}>
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 1.5s ease-out' }}>
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>AI Advisory</h3>
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{memo.substring(0, 500)}</p>
           </div>
@@ -139,7 +287,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* Alignment */}
         {(alignment || contradictions.length > 0) && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #F59E0B25', animation: 'snapFade 1.4s ease-out' }}>
+          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #F59E0B25', animation: 'snapFade 1.6s ease-out' }}>
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#F59E0B', fontFamily: MONO }}>Alignment Check</h3>
             {alignment && <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3" style={{ fontFamily: BODY }}>{alignment}</p>}
             {contradictions.map((ct, i) => (
@@ -150,24 +298,20 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           </div>
         )}
 
-        {/* No data fallback — shown when ANALYZING */}
+        {/* No data — ANALYZING state */}
         {!isReady && (
           <div className="rounded-xl p-8 mb-6 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <div className="flex justify-center mb-4">
               <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#FF6A00', borderTopColor: 'transparent' }} />
             </div>
-            <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>
-              Generating your executive snapshot...
-            </p>
-            <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: MONO }}>
-              Intelligence snapshot will populate as BIQc connects to your systems.
-            </p>
+            <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>Generating your executive snapshot...</p>
+            <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Intelligence snapshot will populate as BIQc connects to your systems.</p>
           </div>
         )}
 
         {/* Sources */}
         {sources.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-8" style={{ animation: 'snapFade 1.6s ease-out' }}>
+          <div className="flex flex-wrap gap-2 mb-8" style={{ animation: 'snapFade 1.7s ease-out' }}>
             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Sources:</span>
             {sources.map((s, i) => (
               <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: '#141C26', fontFamily: MONO }}>{s}</span>
@@ -175,7 +319,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           </div>
         )}
 
-        {/* CTA — GATED: Hidden during ANALYZING, delayed 3s fade-in after READY */}
+        {/* CTA — GATED */}
         {ctaVisible ? (
           <div className="text-center" style={{ animation: 'ctaReveal 0.6s ease-out' }}>
             <button onClick={onContinue}
