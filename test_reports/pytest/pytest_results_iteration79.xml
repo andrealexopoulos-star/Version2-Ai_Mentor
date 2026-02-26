@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="8" time="1.512" timestamp="2026-02-26T20:53:26.461412+00:00" hostname="agent-env-bf119d19-edea-4253-ae35-b0d2f6ef72d1"><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestHealthEndpoints" name="test_root_health" time="0.278"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">/root/.venv/lib/python3.11/site-packages/requests/models.py:976: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+backend/tests/test_iteration79_trust_reconstruction.py:19: in test_root_health
+    data = response.json()
+           ^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/models.py:980: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestHealthEndpoints" name="test_api_health" time="0.306" /><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestPDFEndpoints" name="test_generate_pdf_endpoint_exists" time="0.145" /><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestPDFEndpoints" name="test_download_pdf_endpoint_exists" time="0.158" /><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestIntegrationsEndpoint" name="test_merge_connected_endpoint_without_auth" time="0.134" /><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestIntegrationsEndpoint" name="test_crm_deals_endpoint_without_auth" time="0.120" /><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestIntegrationsEndpoint" name="test_accounting_summary_endpoint_without_auth" time="0.138" /><testcase classname="backend.tests.test_iteration79_trust_reconstruction.TestSnapshotEndpoint" name="test_snapshot_latest_requires_auth" time="0.127" /></testsuite></testsuites>
