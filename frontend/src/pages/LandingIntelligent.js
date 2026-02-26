@@ -447,8 +447,8 @@ const LandingIntelligent = () => {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-4">
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a chatbot.</span>
-          <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
-            <Shield className="w-4 h-4" strokeWidth={1.5} /> Book a live demo
+          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
+            <Shield className="w-4 h-4" strokeWidth={1.5} /> Try It For Free
           </button>
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a dashboard.</span>
         </div>
