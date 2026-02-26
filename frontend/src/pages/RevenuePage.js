@@ -25,26 +25,6 @@ const MiniChart = ({ data, color }) => {
   );
 };
 
-// Demo data fallback
-const DEMO = {
-  totalPipeline: 185000, activeDeals: 8, stalled: 3, winRate: 34, topClientPct: 38,
-  deals: [
-    { name: 'Enterprise Platform Upgrade', amount: 45000, stage: 'Proposal', status: 'stalled', days: 12 },
-    { name: 'Analytics Integration', amount: 28000, stage: 'Negotiation', status: 'active', days: 3 },
-    { name: 'Data Migration Project', amount: 15000, stage: 'Proposal', status: 'stalled', days: 9 },
-    { name: 'Compliance Audit Package', amount: 22000, stage: 'Discovery', status: 'active', days: 1 },
-    { name: 'Annual Support Renewal', amount: 35000, stage: 'Closed Won', status: 'won', days: 0 },
-    { name: 'Custom Reporting Suite', amount: 18000, stage: 'Proposal', status: 'stalled', days: 14 },
-    { name: 'Cloud Hosting Migration', amount: 12000, stage: 'Discovery', status: 'active', days: 2 },
-    { name: 'Staff Training Program', amount: 10000, stage: 'Closed Won', status: 'won', days: 0 },
-  ],
-  churn: [
-    { client: 'Client B', signal: 'Response time 3x slower', risk: 'High', color: '#EF4444' },
-    { client: 'Client D', signal: 'Usage down 45%', risk: 'Medium', color: '#F59E0B' },
-    { client: 'Client F', signal: 'Invoice dispute pending', risk: 'Medium', color: '#F59E0B' },
-  ],
-};
-
 const RevenuePage = () => {
   const [deals, setDeals] = useState(null);
   const [financials, setFinancials] = useState(null);
