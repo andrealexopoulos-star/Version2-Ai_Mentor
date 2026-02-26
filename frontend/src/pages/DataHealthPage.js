@@ -61,22 +61,15 @@ const DataHealthPage = () => {
     }
   }
 
-  // If no live data, use demo
+  // If no live data, show empty state — NO DEMO FALLBACK
   if (systems.length === 0) {
-    [
-      { name: 'Xero', type: 'Accounting', status: 'connected', color: '#13B5EA', health: 98 },
-      { name: 'HubSpot', type: 'CRM', status: 'connected', color: '#FF7A59', health: 95 },
-      { name: 'Outlook', type: 'Email', status: 'connected', color: '#0078D4', health: 100 },
-      { name: 'Google Calendar', type: 'Calendar', status: 'connected', color: '#4285F4', health: 100 },
-      { name: 'Slack', type: 'Communication', status: 'pending', color: '#4A154B', health: 0 },
-      { name: 'Jira', type: 'Project Mgmt', status: 'pending', color: '#0052CC', health: 0 },
-    ].forEach(s => systems.push(s));
+    // No fake data. Show actual state.
   }
 
   const connectedCount = systems.filter(s => s.status === 'connected').length;
 
-  // Data quality from readiness
-  const dqCompleteness = readiness?.score ? Math.round(readiness.score) : 94;
+  // Data quality from readiness — no fallback
+  const dqCompleteness = readiness?.score ? Math.round(readiness.score) : 0;
   const dqSources = readiness?.connected_sources || connectedCount;
 
   return (
