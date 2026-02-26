@@ -127,7 +127,15 @@ const AlertsPageAuth = () => {
         </div>
 
         <div className="space-y-3">
-          {filtered.map(a => <AlertItem key={a.id} alert={a} />)}
+          {filtered.length > 0 ? (
+            filtered.map(a => <AlertItem key={a.id} alert={a} />)
+          ) : !loading ? (
+            <div className="rounded-lg p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <Bell className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+              <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: SORA }}>No alerts detected.</p>
+              <p className="text-xs text-[#64748B] mt-1">Alerts generate automatically as BIQc processes signals from connected integrations.</p>
+            </div>
+          ) : null}
         </div>
       </div>
     </DashboardLayout>
