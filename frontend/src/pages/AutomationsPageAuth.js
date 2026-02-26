@@ -1,6 +1,5 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import FloatingSoundboard from '../components/FloatingSoundboard';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { Workflow, Zap, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
