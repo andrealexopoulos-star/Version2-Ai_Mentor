@@ -36,9 +36,17 @@ const RegisterSupabase = () => {
       navigate('/login-supabase');
     } catch (error) {
       const msg = (error.message || '').toLowerCase();
-      if (msg.includes('already') || msg.includes('exists') || msg.includes('registered') || msg.includes('duplicate')) {
+      if (msg.includes('already') || msg.includes('exists') || msg.includes('registered') || msg.includes('duplicate') || msg.includes('unique')) {
         toast.error('An account with this email already exists. Please sign in instead.');
         setTimeout(() => navigate('/login-supabase'), 2000);
+      } else if (msg.includes('weak') || msg.includes('password')) {
+        toast.error('Password is too weak. Use at least 6 characters with a mix of letters and numbers.');
+      } else if (msg.includes('invalid') && msg.includes('email')) {
+        toast.error('Please enter a valid email address.');
+      } else if (msg.includes('rate') || msg.includes('limit') || msg.includes('too many')) {
+        toast.error('Too many attempts. Please wait a moment and try again.');
+      } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('timeout')) {
+        toast.error('Network error. Please check your connection and try again.');
       } else {
         toast.error(error.message || 'Registration failed. Please try again.');
       }
