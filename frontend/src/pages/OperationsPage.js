@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import FloatingSoundboard from '../components/FloatingSoundboard';
 import { apiClient } from '../lib/api';
 import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2 } from 'lucide-react';
+import DataConfidence from '../components/DataConfidence';
 
 const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
