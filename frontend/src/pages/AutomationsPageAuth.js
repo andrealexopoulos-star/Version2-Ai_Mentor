@@ -81,7 +81,6 @@ const AutomationsPageAuth = () => {
           </>
         )}
       </div>
-      <FloatingSoundboard context="Automations - AI-suggested workflows, operational recommendations" />
     </DashboardLayout>
   );
 };
