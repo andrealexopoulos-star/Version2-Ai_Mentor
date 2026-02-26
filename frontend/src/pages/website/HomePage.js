@@ -199,7 +199,7 @@ const HomePage = () => (
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="bottom-cta">
-          Get started <ArrowRight className="w-4 h-4" />
+          Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
         <p className="mt-4 text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
