@@ -37,19 +37,26 @@ async function scrapeWebsite(url: string): Promise<string> {
     });
     if (res.ok) {
       const data = await res.json();
-      return (data.data?.markdown || "").substring(0, 8000);
+      const md = data.data?.markdown || "";
+      // Only return if we got meaningful content (not error pages or empty shells)
+      if (md.length > 200) return md.substring(0, 8000);
     }
   } catch (e) { console.error("[scrape]", e); }
   return "";
 }
 
-async function searchWeb(query: string): Promise<string> {
+// Perplexity deep search — primary intelligence source
+async function deepSearch(query: string, maxTokens = 800): Promise<string> {
   if (!PERPLEXITY_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${PERPLEXITY_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 500 }),
+      body: JSON.stringify({
+        model: "sonar",
+        messages: [{ role: "user", content: query }],
+        max_tokens: maxTokens,
+      }),
     });
     if (res.ok) {
       const d = await res.json();
