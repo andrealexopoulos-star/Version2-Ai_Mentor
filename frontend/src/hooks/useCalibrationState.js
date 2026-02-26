@@ -537,6 +537,38 @@ export const useCalibrationState = () => {
     } catch {}
   };
 
+  // ABN Registry Lookup — calls business-identity-lookup Edge Function
+  const handleAbnLookup = async (lookupParams) => {
+    try {
+      const token = session?.access_token;
+      if (!token) return null;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/business-identity-lookup`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+        body: JSON.stringify(lookupParams),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'found' || data.status === 'ambiguous') {
+          // Merge lookup results into identity signals
+          setIdentitySignals(prev => ({
+            ...prev,
+            businessName: data.legal_name || prev?.businessName || '',
+            tradingName: data.trading_name || prev?.tradingName || '',
+            abn: data.abn || prev?.abn || '',
+            address: data.address || prev?.address || '',
+            state: data.address_state || prev?.state || '',
+            _abnLookupResult: data,
+          }));
+        }
+        return data;
+      }
+    } catch (e) {
+      console.warn('[calibration] ABN lookup failed:', e);
+    }
+    return null;
+  };
+
   return {
     entry, setEntry, user, loading, firstName, userEmail, websiteUrl, setWebsiteUrl,
     wowSummary, editedFields, editingKey, editValue, setEditValue,
