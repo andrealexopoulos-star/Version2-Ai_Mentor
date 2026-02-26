@@ -369,7 +369,6 @@ const MarketPage = () => {
 
         </>}
       </div>
-      <FloatingSoundboard context="Market intelligence - business health, risks, opportunities, action priorities" />
     </DashboardLayout>
   );
 };
