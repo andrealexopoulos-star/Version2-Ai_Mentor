@@ -165,40 +165,30 @@ const RevenuePage = () => {
           </Panel>
         </div>
 
-        {/* Revenue Trend */}
-        <Panel>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Monthly Revenue Trend</h3>
-            <div className="flex items-center gap-1"><ArrowUpRight className="w-3.5 h-3.5 text-[#10B981]" /><span className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>+8.3% MoM</span></div>
-          </div>
-          <MiniChart data={[32, 35, 33, 38, 36, 42, 40, 45, 43, 48, 46, 52]} color="#10B981" />
-          <div className="flex justify-between mt-2">
-            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => (
-              <span key={m} className="text-[9px] text-[#64748B]" style={{ fontFamily: MONO }}>{m}</span>
+        {/* Deal Velocity — only from real data */}
+        {hasDeals && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              totalPipeline != null && { label: 'Pipeline Value', value: '$' + Math.round(totalPipeline / 1000) + 'K' },
+              activeDeals != null && { label: 'Active Deals', value: String(activeDeals) },
+              winRate != null && { label: 'Win Rate', value: winRate + '%' },
+              stalledCount != null && { label: 'Stalled', value: String(stalledCount) },
+            ].filter(Boolean).map(m => (
+              <Panel key={m.label}>
+                <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{m.label}</span>
+                <span className="text-xl font-bold text-[#F4F7FA] block" style={{ fontFamily: MONO }}>{m.value}</span>
+              </Panel>
             ))}
           </div>
-        </Panel>
+        )}
 
-        {/* Deal Velocity */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Avg Close Time', value: '18 days', trend: '-2d', up: true },
-            { label: 'Win Rate', value: winRate + '%', trend: winRate > 30 ? '+3%' : '-5%', up: winRate > 30 },
-            { label: 'Pipeline Value', value: '$' + Math.round(totalPipeline / 1000) + 'K', trend: '+$12K', up: true },
-            { label: 'Active Deals', value: String(activeDeals), trend: '+2', up: true },
-          ].map(m => (
-            <Panel key={m.label}>
-              <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{m.label}</span>
-              <span className="text-xl font-bold text-[#F4F7FA] block" style={{ fontFamily: MONO }}>{m.value}</span>
-              <div className="flex items-center gap-1 mt-1">
-                {m.up ? <ArrowUpRight className="w-3 h-3 text-[#10B981]" /> : <ArrowDownRight className="w-3 h-3 text-[#EF4444]" />}
-                <span className="text-[10px]" style={{ color: m.up ? '#10B981' : '#EF4444', fontFamily: MONO }}>{m.trend}</span>
-              </div>
-            </Panel>
-          ))}
-        </div>
+        {!hasDeals && !loading && (
+          <Panel>
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>Revenue trend data unavailable. Connect accounting integration to view monthly trends.</p>
+          </Panel>
+        )}
       </div>
-      <FloatingSoundboard context="Revenue intelligence - pipeline deals and churn" />
+      <FloatingSoundboard context="Revenue engine - pipeline deals, win rate, churn signals" />
     </DashboardLayout>
   );
 };
