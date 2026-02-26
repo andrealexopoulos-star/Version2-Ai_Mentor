@@ -635,7 +635,7 @@ const LandingIntelligent = () => {
           <p className="text-base sm:text-lg text-slate-400 mb-8" style={{ fontFamily: 'var(--font-body)' }}>Connect your systems. Let BIQc build context. Act with confidence.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#F97316', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
-            <button onClick={() => nav('/contact')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Book a live demo</button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Try It For Free</button>
           </div>
           <p className="text-xs text-slate-600 mt-5" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Free to start · No credit card · Australian owned and operated</p>
         </div>
