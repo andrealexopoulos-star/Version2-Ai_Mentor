@@ -166,6 +166,8 @@ function AppRoutes() {
       <Route path="/trust/centre" element={<SiteTrustCentrePage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/blog/:slug" element={<BlogArticlePage />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/enterprise-terms" element={<EnterpriseTerms />} />
       <Route path="/cognitive-v2-preview" element={<CognitiveV2Mockup />} />
