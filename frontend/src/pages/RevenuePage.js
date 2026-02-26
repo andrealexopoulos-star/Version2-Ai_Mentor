@@ -28,6 +28,8 @@ const MiniChart = ({ data, color }) => {
 };
 
 const RevenuePage = () => {
+  const { cognitive } = useSnapshot();
+  const c = cognitive || {};
   const [deals, setDeals] = useState(null);
   const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
