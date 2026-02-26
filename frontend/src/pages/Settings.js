@@ -615,7 +615,7 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    <div className="p-6 rounded-lg border" style={{ borderColor: 'var(--border-medium)', background: 'var(--bg-tertiary)' }}>
+                    <div className="p-6 rounded-lg" style={{ borderColor: '#243140', border: '1px solid #243140', background: '#141C26' }}>
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Current Plan</h3>
