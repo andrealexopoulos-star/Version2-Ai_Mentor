@@ -332,6 +332,51 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           </div>
         )}
 
+        {/* ABN Registry Lookup — available when confidence needs improvement */}
+        {onAbnLookup && (confidence.level === 'Low' || confidence.level === 'Medium') && (
+          <div className="rounded-lg p-4" style={{ background: '#3B82F608', border: '1px solid #3B82F625', animation: 'idFade 0.95s ease-out' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#3B82F6] font-semibold mb-1" style={{ fontFamily: MONO }}>ABN Registry Lookup</p>
+                <p className="text-[11px] text-[#64748B]">Search the Australian Business Register to verify identity</p>
+              </div>
+              <button onClick={handleAbnLookupClick} disabled={lookingUp}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 flex items-center gap-1.5"
+                style={{ color: '#3B82F6', background: '#3B82F615', border: '1px solid #3B82F630' }}
+                data-testid="abn-lookup-btn">
+                {lookingUp ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Hash className="w-3 h-3" />}
+                {lookingUp ? 'Searching...' : 'Search ABR'}
+              </button>
+            </div>
+            {lookupResult && (
+              <div className="mt-3 pt-3" style={{ borderTop: '1px solid #24314050' }}>
+                {lookupResult.status === 'found' && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>Match found in Australian Business Register</p>
+                    {lookupResult.legal_name && <p className="text-sm text-[#F4F7FA]">Legal name: {lookupResult.legal_name}</p>}
+                    {lookupResult.abn && <p className="text-sm text-[#9FB0C3]">ABN: {lookupResult.abn}</p>}
+                    {lookupResult.address && <p className="text-sm text-[#9FB0C3]">Location: {lookupResult.address}</p>}
+                  </div>
+                )}
+                {lookupResult.status === 'ambiguous' && lookupResult.suggestions?.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-[#F59E0B]" style={{ fontFamily: MONO }}>Multiple matches — review below</p>
+                    {lookupResult.suggestions.slice(0, 3).map((s, i) => (
+                      <p key={i} className="text-[11px] text-[#9FB0C3]">{s.name} (ABN: {s.abn}) — {s.state}</p>
+                    ))}
+                  </div>
+                )}
+                {lookupResult.status === 'not_found' && (
+                  <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{lookupResult.match_reason || 'No match found'}</p>
+                )}
+                {lookupResult.status === 'unavailable' && (
+                  <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{lookupResult.message}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-3 pt-2" style={{ animation: 'idFade 1s ease-out' }}>
           <button onClick={handleConfirm}
             className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 flex items-center justify-center gap-2"
