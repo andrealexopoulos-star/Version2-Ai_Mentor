@@ -10,7 +10,7 @@ const MONO = "'JetBrains Mono', monospace";
  * FloatingSoundboard — A floating brainstorm/question widget for Intelligence pages.
  * Appears as a button in the bottom-right, expands to a panel.
  */
-const FloatingSoundboard = ({ context = '' }) => {
+const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrationState = {} }) => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -50,6 +50,8 @@ const FloatingSoundboard = ({ context = '' }) => {
         message: userMsg,
         context: context,
         current_module: window.location.pathname,
+        subscription_tier: subscriptionTier,
+        integration_state: integrationState,
         conversation_id: null,
       });
       const reply = res.data?.response || res.data?.message || 'Let me think about that...';
