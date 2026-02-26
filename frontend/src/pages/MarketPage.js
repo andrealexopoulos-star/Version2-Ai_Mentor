@@ -40,8 +40,22 @@ const MarketPage = () => {
   const [loading, setLoading] = useState(true);
   const [channelsData, setChannelsData] = useState(null);
   const [gapsOpen, setGapsOpen] = useState(false);
+  const [actionMessage, setActionMessage] = useState('');
+  const [activeTab, setActiveTab] = useState('intelligence');
+  const [reports, setReports] = useState([]);
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
+
+  // Load past reports (CMO summaries, forensic reports)
+  useEffect(() => {
+    apiClient.get('/snapshot/latest').then(res => {
+      const snaps = [];
+      if (res.data?.generated_at) {
+        snaps.push({ type: 'Cognitive Snapshot', date: res.data.generated_at, data: res.data.cognitive });
+      }
+      setReports(snaps);
+    }).catch(() => {});
+  }, []);
 
   const fetchSnapshot = useCallback(async () => {
     apiClient.get('/integrations/channels/status').then(res => {
