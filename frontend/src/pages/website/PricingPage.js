@@ -163,15 +163,15 @@ const PricingPage = () => (
     {/* 4-TIER PRICING */}
     <section className="py-14 px-4 sm:px-6" data-testid="pricing-plans">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {plans.map((plan) => (
             <div key={plan.name}
               className={`relative rounded-2xl p-6 flex flex-col transition-all ${plan.highlight ? 'ring-2 ring-[#FF6A00] z-10' : ''}`}
               style={{
-                background: plan.highlight ? 'rgba(255,106,0,0.03)' : 'rgba(255,255,255,0.015)',
-                border: `1px solid ${plan.highlight ? 'rgba(255,106,0,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                background: plan.isFree ? 'rgba(255,106,0,0.02)' : plan.highlight ? 'rgba(255,106,0,0.03)' : 'rgba(255,255,255,0.015)',
+                border: `1px solid ${plan.isFree ? 'rgba(255,106,0,0.15)' : plan.highlight ? 'rgba(255,106,0,0.25)' : 'rgba(255,255,255,0.06)'}`,
               }}
-              data-testid={`plan-${plan.name.toLowerCase()}`}>
+              data-testid={`plan-${plan.name.toLowerCase().replace(/\s/g, '-')}`}>
 
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
