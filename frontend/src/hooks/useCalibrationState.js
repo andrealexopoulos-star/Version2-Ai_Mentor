@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
 import { REVEAL_PHASES } from "../components/calibration/ExecutiveReveal";
+import { parseIdentitySignals } from "../components/calibration/ForensicIdentityCard";
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -25,6 +26,12 @@ export const useCalibrationState = () => {
   const [calStep, setCalStep] = useState(0);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [wowSummary, setWowSummary] = useState(null);
+
+  // Identity verification state
+  const [identitySignals, setIdentitySignals] = useState(null);
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [identityConfidence, setIdentityConfidence] = useState(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const [question, setQuestion] = useState(null);
   const [options, setOptions] = useState([]);
@@ -49,7 +56,6 @@ export const useCalibrationState = () => {
   const [lastResponse, setLastResponse] = useState("");
   const [transitioning, setTransitioning] = useState(false);
   const [intelligenceData, setIntelligenceData] = useState(null);
-  const [pendingCalibrationData, setPendingCalibrationData] = useState(null);
   const initCalled = useRef(false);
 
   const firstName = extractFirstName(
@@ -60,7 +66,6 @@ export const useCalibrationState = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      // Preserve tutorials and preferences
       const tutorials = localStorage.getItem('biqc_tutorials_seen');
       localStorage.clear(); sessionStorage.clear();
       if (tutorials) localStorage.setItem('biqc_tutorials_seen', tutorials);
@@ -116,18 +121,15 @@ export const useCalibrationState = () => {
 
   const triggerComplete = () => {
     setCompleting(true); setEntry("completing"); setRevealPhase(0);
-    // Sync calibration data to business profile AND refresh cognitive snapshot
     (async () => {
       try {
         const token = session?.access_token;
         if (token) {
-          // 1. Sync calibration → business profile
           await fetch(`${SUPABASE_URL}/functions/v1/calibration-sync`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
             body: '{}',
           }).catch(() => {});
-          // 2. Re-trigger cognitive snapshot
           await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
@@ -138,7 +140,6 @@ export const useCalibrationState = () => {
     })();
   };
 
-  // Auto-save calibration progress after each step
   const autoSave = async (step, status = "IN_PROGRESS") => {
     try {
       await apiClient.post('/console/state', { current_step: step, status });
@@ -147,7 +148,6 @@ export const useCalibrationState = () => {
     }
   };
 
-  // Predefined wizard questions — used when Edge Function returns chat-style response
   const WIZARD_QUESTIONS = [
     { step: 1, field: 'communication_style', question: 'How do you prefer to receive information?', options: ['Bullet points — Just the key facts, fast', 'Narrative — Tell me the story, I\'ll find the insight', 'Data-first — Numbers, charts, evidence, then conclusions', 'Conversational — Talk to me like a trusted advisor'], insight: 'Understanding your communication style helps BIQc deliver intelligence the way you process it best.' },
     { step: 2, field: 'verbosity', question: 'How much detail do you want in your intelligence briefings?', options: ['Minimal — Headlines and actions only', 'Moderate — Key context with recommendations', 'Comprehensive — Full analysis with supporting evidence'], insight: 'This determines how deep your daily briefings go.' },
@@ -161,7 +161,6 @@ export const useCalibrationState = () => {
   ];
 
   const applyResponse = async (data) => {
-    // If Edge Function returns structured wizard data, use it directly
     if (data.question && data.options && data.options.length > 0) {
       setQuestion(data.question); setOptions(data.options); setAllowText(data.allow_text === true);
       setInsight(data.insight || null); setIsProbe(data.probe === true);
@@ -169,22 +168,14 @@ export const useCalibrationState = () => {
       if (!data.probe) setCurrentStep(prev => data.step || prev + 1);
       setCalMode("wizard"); setEntry("calibrating"); return;
     }
-
-    // Edge Function returned chat-style response — convert to wizard using predefined questions
     const nextStep = Math.min(currentStep + 1, 9);
     const wizardQ = WIZARD_QUESTIONS.find(q => q.step === nextStep) || WIZARD_QUESTIONS.find(q => q.step === currentStep);
     if (wizardQ) {
-      setQuestion(wizardQ.question);
-      setOptions(wizardQ.options);
-      setAllowText(wizardQ.allowText || false);
-      setInsight(wizardQ.insight || null);
-      setSelectedOption(null); setTextValue("");
-      setCurrentStep(wizardQ.step);
-      setCalMode("wizard"); setEntry("calibrating");
-      return;
+      setQuestion(wizardQ.question); setOptions(wizardQ.options);
+      setAllowText(wizardQ.allowText || false); setInsight(wizardQ.insight || null);
+      setSelectedOption(null); setTextValue(""); setCurrentStep(wizardQ.step);
+      setCalMode("wizard"); setEntry("calibrating"); return;
     }
-
-    // Final fallback — should not reach here
     if (data.message) {
       setMessages(prev => [...prev, { role: "edge", text: data.message }]);
       setCalMode("wizard"); setEntry("calibrating");
@@ -198,23 +189,21 @@ export const useCalibrationState = () => {
       setUserName(d.user_name || '');
       if (d.status === 'COMPLETE') { window.location.href = '/market'; return; }
       if (d.status === 'IN_PROGRESS' && d.calibration_step > 1) {
-        // Skip resuming questions — go straight to intelligence → market
         autoSave(9, "COMPLETE");
         triggerComplete();
         return;
       }
-      // New users → ignition sequence first
       setEntry("ignition");
     } catch { setEntry("ignition"); }
   };
 
-  // WOW Summary quality check — must have ≥3 non-empty fields
   const isWowSufficient = (wow) => {
     if (!wow || typeof wow !== 'object') return false;
     const vals = Object.values(wow).filter(v => typeof v === 'string' && v.trim().length > 20);
     return vals.length >= 3;
   };
 
+  // ═══ PHASE 1: Domain Entry + Scan ═══
   const handleAuditSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting || !websiteUrl.trim()) return;
@@ -240,7 +229,6 @@ export const useCalibrationState = () => {
       if (auditData?.extracted_data) {
         const ex = auditData.extracted_data;
 
-        // Store full extraction for Chief Marketing Summary scoring
         const fullExtraction = {
           ...ex,
           _sources: auditData.data_sources || [],
@@ -248,7 +236,6 @@ export const useCalibrationState = () => {
           _generated_at: auditData.generated_at || new Date().toISOString(),
         };
 
-        // Build WOW summary fields (SMB-friendly)
         const wow = {
           business_name: ex.business_name || ex.name || ex.company || '',
           what_you_do: ex.main_products_services || ex.business_overview || ex.description || ex.about || '',
@@ -264,10 +251,16 @@ export const useCalibrationState = () => {
         }
 
         setWowSummary(wow);
+
+        // Parse identity signals from extracted data
+        const signals = parseIdentitySignals(ex, url);
+        setIdentitySignals(signals);
+        setIdentityConfirmed(false);
+
         autoSave(1);
-        setEntry("wow_summary");
+        // NEW FLOW: Go to identity_verification BEFORE footprint report
+        setEntry("identity_verification");
       } else {
-        // No audit data — go to manual summary
         setEntry("manual_summary");
       }
     } catch { setEntry("manual_summary"); }
@@ -278,16 +271,107 @@ export const useCalibrationState = () => {
     setIsSubmitting(true); setEntry("analyzing");
     try {
       await apiClient.put('/business-profile', { mission_statement: summary });
-      try { await callEdge({ step: 1, message: summary }); }
-      catch { /* non-blocking */ }
+      try { await callEdge({ step: 1, message: summary }); } catch {}
       autoSave(1);
-      // Create WOW summary from manual input and show it
       setWowSummary({ what_you_do: summary, who_you_serve: '', what_sets_you_apart: '', biggest_challenges: '', growth_opportunity: '' });
-      setEntry("wow_summary");
+      // Manual entry goes to identity verification with minimal signals
+      setIdentitySignals({ domain: websiteUrl, businessName: '', whatYouDo: summary });
+      setIdentityConfirmed(false);
+      setEntry("identity_verification");
     } catch { setError("Failed to save. Please try again."); }
     finally { setIsSubmitting(false); }
   };
 
+  // ═══ PHASE 3: Identity Verification Handlers ═══
+  const handleConfirmIdentity = (confirmedSignals) => {
+    setIdentityConfirmed(true);
+    setIdentityConfidence(confirmedSignals.confidence || 'Medium');
+    setIdentitySignals(confirmedSignals);
+
+    // Save confirmed identity to business profile
+    (async () => {
+      try {
+        const updates = {};
+        if (confirmedSignals.businessName) updates.business_name = confirmedSignals.businessName;
+        if (confirmedSignals.address) updates.location = confirmedSignals.address;
+        if (confirmedSignals.abn) updates.abn = confirmedSignals.abn;
+        if (Object.keys(updates).length > 0) await apiClient.put('/business-profile', updates);
+      } catch {}
+    })();
+
+    autoSave(2);
+    // Proceed to Chief Marketing Summary (footprint report)
+    setEntry("wow_summary");
+  };
+
+  const handleRegenerateIdentity = async (hints) => {
+    setIsRegenerating(true);
+    setIdentityConfirmed(false);
+    setIdentitySignals(null);
+    setEntry("analyzing");
+
+    let url = websiteUrl.trim();
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
+
+    try {
+      const token = session?.access_token;
+      if (token) {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+          body: JSON.stringify({
+            website_url: url,
+            business_name_hint: hints?.businessName || hints?.legalName || '',
+            location_hint: hints?.address || hints?.suburb || '',
+            abn_hint: hints?.abn || '',
+          }),
+        });
+        if (res.ok) {
+          const auditData = await res.json();
+          if (auditData?.extracted_data) {
+            const ex = auditData.extracted_data;
+            const fullExtraction = { ...ex, _sources: auditData.data_sources || [], _website: url, _generated_at: new Date().toISOString() };
+
+            const wow = {
+              business_name: ex.business_name || ex.name || ex.company || '',
+              what_you_do: ex.main_products_services || ex.business_overview || ex.description || ex.about || '',
+              who_you_serve: ex.target_market || ex.ideal_customer_profile || ex.audience || '',
+              what_sets_you_apart: ex.competitive_advantages || ex.unique_value_proposition || ex.differentiators || '',
+              biggest_challenges: ex.main_challenges || ex.key_challenges || ex.challenges || '',
+              growth_opportunity: ex.growth_strategy || ex.industry_position || ex.market_position || '',
+              _full: fullExtraction,
+            };
+            setWowSummary(wow);
+
+            const signals = parseIdentitySignals(ex, url);
+            // Merge user hints into signals
+            if (hints?.businessName || hints?.legalName) signals.businessName = hints.businessName || hints.legalName || signals.businessName;
+            if (hints?.address || hints?.suburb) signals.address = hints.address || hints.suburb || signals.address;
+            if (hints?.abn) signals.abn = hints.abn || signals.abn;
+            setIdentitySignals(signals);
+            setEntry("identity_verification");
+            setIsRegenerating(false);
+            return;
+          }
+        }
+      }
+      setEntry("identity_verification");
+    } catch {
+      setEntry("identity_verification");
+    }
+    setIsRegenerating(false);
+  };
+
+  const handleRejectIdentity = async (rejectData) => {
+    // Reject clears identity and re-scans with user-provided hints
+    await handleRegenerateIdentity({
+      legalName: rejectData?.legalName || '',
+      suburb: rejectData?.suburb || '',
+      abn: rejectData?.abn || '',
+    });
+  };
+
+  // ═══ PHASE 4: Footprint Report (CMS) Confirmation ═══
   const handleConfirmWow = async () => {
     setError(null); setTransitioning(true);
     if (Object.keys(editedFields).length > 0 && wowSummary && typeof wowSummary === 'object') {
@@ -302,9 +386,8 @@ export const useCalibrationState = () => {
     try {
       const payload = { step: 2, confirmed_summary: true };
       if (Object.keys(editedFields).length > 0) payload.user_edits = editedFields;
-      try { await callEdge(payload); } catch { /* non-blocking */ }
+      try { await callEdge(payload); } catch {}
 
-      // Save WOW summary to business profile
       try {
         const wowToSave = { ...(wowSummary || {}), ...editedFields };
         await apiClient.put('/business-profile', {
@@ -314,30 +397,18 @@ export const useCalibrationState = () => {
         });
       } catch {}
 
-      autoSave(2);
+      autoSave(3);
       setTransitioning(false);
 
-      // FLOW GATE: Go to approve_identity, NOT directly to intelligence
-      setEntry("approve_identity");
+      // Identity is already confirmed (Phase 3). Go straight to snapshot.
+      fetchIntelligence();
+      setEntry("intelligence-first");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
   };
 
-  // Identity approved → proceed to CMO snapshot
-  const handleApproveIdentity = () => {
-    autoSave(3);
-    fetchIntelligence();
-    setEntry("intelligence-first");
-  };
-
-  // Identity rejected → go back to wow_summary for editing
-  const handleRejectIdentity = () => {
-    setEntry("wow_summary");
-  };
-
-  // Continue from intelligence-first → go straight to dashboard (calibration questions moved to Settings)
+  // ═══ PHASE 5: Snapshot → Dashboard ═══
   const proceedFromIntelligence = () => {
-    // Mark calibration as complete and redirect to dashboard
     autoSave(9, "COMPLETE");
     triggerComplete();
   };
@@ -356,7 +427,6 @@ export const useCalibrationState = () => {
   };
 
   const startCalibration = async () => {
-    // Skip calibration questions during signup — go straight to intelligence → market
     autoSave(9, "COMPLETE");
     triggerComplete();
   };
@@ -369,10 +439,8 @@ export const useCalibrationState = () => {
     if (isProbe) payload.probe = true;
     try {
       const data = await callEdge(payload);
-      // Auto-save progress after each wizard step
       autoSave(currentStep, data.status === "COMPLETE" ? "COMPLETE" : "IN_PROGRESS");
       if (data.status === "COMPLETE") { triggerComplete(); return; }
-      // Fallback: if we've answered all 9 steps but backend didn't flag COMPLETE, force it
       if (currentStep >= 9) { autoSave(9, "COMPLETE"); triggerComplete(); return; }
       await new Promise(r => setTimeout(r, 400));
       applyResponse(data);
@@ -388,18 +456,15 @@ export const useCalibrationState = () => {
     setMessages(prev => [...prev, { role: "user", text: msg }]);
     try {
       const data = await callEdge({ message: msg, step: currentStep });
-      // Increment step counter on each chat exchange
       setCurrentStep(prev => {
         const next = data.step || prev + 1;
         return Math.min(next, 9);
       });
-      // Auto-save progress after each chat response
       autoSave(currentStep + 1);
       if (data.status === "COMPLETE") { autoSave(9, "COMPLETE"); triggerComplete(); return; }
       if (data.question && data.options?.length > 0) { applyResponse(data); return; }
       if (data.message) {
         setMessages(prev => [...prev, { role: "edge", text: data.message }]);
-        // If the AI response doesn't contain a question, auto-request the next step
         const hasQuestion = data.message.includes('?');
         if (!hasQuestion) {
           try {
@@ -408,14 +473,13 @@ export const useCalibrationState = () => {
             if (followUp.status === "COMPLETE") { autoSave(9, "COMPLETE"); triggerComplete(); return; }
             if (followUp.question && followUp.options?.length > 0) { applyResponse(followUp); return; }
             if (followUp.message) setMessages(prev => [...prev, { role: "edge", text: followUp.message }]);
-          } catch { /* silently continue in chat mode */ }
+          } catch {}
         }
       }
     } catch { setError("Calibration engine temporarily unavailable."); setInputValue(msg); }
     finally { setIsSubmitting(false); }
   };
 
-  // Fetch intelligence snapshot for Phase 4 (intelligence-first display)
   const fetchIntelligence = async () => {
     try {
       const token = session?.access_token;
@@ -440,8 +504,11 @@ export const useCalibrationState = () => {
     selectedOption, setSelectedOption, textValue, setTextValue,
     messages, inputValue, setInputValue,
     currentStep, intelligenceData, fetchIntelligence, proceedFromIntelligence,
+    // Identity verification
+    identitySignals, identityConfirmed, identityConfidence, isRegenerating,
+    handleConfirmIdentity, handleRegenerateIdentity, handleRejectIdentity,
     handleSignOut, handleAuditSubmit, handleManualSummary,
-    handleConfirmWow, handleApproveIdentity, handleRejectIdentity,
+    handleConfirmWow,
     startEdit, commitEdit,
     startCalibration, handleWizardContinue, handleChatSubmit,
   };
