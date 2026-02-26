@@ -232,34 +232,77 @@ serve(async (req) => {
 
     const sources: string[] = [];
     let websiteContent = "";
-    let searchContent = "";
+    let perplexityContent = "";
 
     if (websiteUrl) {
       const url = websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`;
+      const domain = url.replace(/https?:\/\//, "").replace(/\/.*/, "");
 
-      // Scrape main page + key subpages in parallel (now includes /contact)
-      const [mainContent, aboutContent, contactContent, servicesContent, teamContent] = await Promise.all([
-        scrapeWebsite(url),
-        scrapeWebsite(`${url}/about`),
-        scrapeWebsite(`${url}/contact`),
-        scrapeWebsite(`${url}/services`),
-        scrapeWebsite(`${url}/team`),
+      // ═══ PRIMARY: Perplexity deep search (multiple targeted queries in parallel) ═══
+      // This is the main intelligence source — accurate, contextual, current
+      const [
+        identityResult,
+        servicesResult,
+        marketResult,
+        teamResult,
+        competitorResult,
+      ] = await Promise.all([
+        deepSearch(
+          `What is the business at ${domain}? Provide: exact registered business name, trading name, ABN if available, physical address, city, state, country, phone number, email address, industry, business type (Pty Ltd, sole trader, etc), years operating. Be specific and factual. If information is not publicly available, say so.` +
+          (businessNameHint ? ` The business may be called "${businessNameHint}".` : '') +
+          (locationHint ? ` Located near ${locationHint}.` : ''),
+          600
+        ),
+        deepSearch(
+          `What products and services does ${domain} offer? Provide: detailed list of all services/products, pricing model if visible, unique value proposition, competitive advantages, target market, ideal customer profile. Be specific about what they actually do, not generic descriptions.` +
+          (businessNameHint ? ` Business name: "${businessNameHint}".` : ''),
+          600
+        ),
+        deepSearch(
+          `What is the market position of ${domain}? Provide: geographic focus, business model (B2B/B2C/etc), customer count estimate, revenue range estimate, growth strategy, main business challenges, industry position. Be factual — state what is publicly observable.`,
+          500
+        ),
+        deepSearch(
+          `Who runs ${domain}? Provide: founder name and background, key team members and roles, team size, hiring status. Also provide: mission statement, vision, short-term goals, long-term goals if publicly stated on their website or LinkedIn.`,
+          500
+        ),
+        deepSearch(
+          `Who are the main competitors of ${domain}? List their top 3-5 competitors in the same industry and geographic area. For each: name, website, what they offer, how they compare. Also: what is ${domain}'s competitive moat — what protects them from competition?`,
+          500
+        ),
       ]);
 
-      if (mainContent) { websiteContent = mainContent; sources.push(`scraped: ${url}`); }
-      if (aboutContent) { websiteContent += "\n\n--- ABOUT PAGE ---\n" + aboutContent; sources.push("about page"); }
-      if (contactContent) { websiteContent += "\n\n--- CONTACT PAGE ---\n" + contactContent; sources.push("contact page"); }
-      if (servicesContent) { websiteContent += "\n\n--- SERVICES PAGE ---\n" + servicesContent; sources.push("services page"); }
-      if (teamContent) { websiteContent += "\n\n--- TEAM PAGE ---\n" + teamContent; sources.push("team page"); }
+      if (identityResult) { perplexityContent += "--- BUSINESS IDENTITY ---\n" + identityResult + "\n\n"; sources.push("Perplexity (identity)"); }
+      if (servicesResult) { perplexityContent += "--- SERVICES & PRODUCTS ---\n" + servicesResult + "\n\n"; sources.push("Perplexity (services)"); }
+      if (marketResult) { perplexityContent += "--- MARKET POSITION ---\n" + marketResult + "\n\n"; sources.push("Perplexity (market)"); }
+      if (teamResult) { perplexityContent += "--- TEAM & LEADERSHIP ---\n" + teamResult + "\n\n"; sources.push("Perplexity (team)"); }
+      if (competitorResult) { perplexityContent += "--- COMPETITOR LANDSCAPE ---\n" + competitorResult + "\n\n"; sources.push("Perplexity (competitors)"); }
 
-      const domain = url.replace(/https?:\/\//, "").replace(/\/.*/, "");
-      const searchQuery = [domain, "company information products services team", businessNameHint ? `"${businessNameHint}"` : "", locationHint].filter(Boolean).join(" ");
-      searchContent = await searchWeb(searchQuery);
-      if (searchContent) sources.push("web search");
+      // ═══ SECONDARY: Firecrawl site scrape (supplemental — only if available) ═══
+      // Used for raw page content that Perplexity might miss (footer ABN, contact details)
+      if (FIRECRAWL_API_KEY) {
+        const mainContent = await scrapeWebsite(url);
+        if (mainContent) {
+          websiteContent = mainContent;
+          sources.push(`scraped: ${url}`);
+        }
+      }
+    }
+
+    // If only business description provided (no URL)
+    if (!websiteUrl && businessDescription) {
+      const descResult = await deepSearch(
+        `Based on this business description, provide comprehensive business intelligence: "${businessDescription}". ` +
+        `Include: likely industry, target market, business model, competitive landscape, growth opportunities, main challenges.` +
+        (businessNameHint ? ` Business name: "${businessNameHint}".` : '') +
+        (locationHint ? ` Located: ${locationHint}.` : ''),
+        800
+      );
+      if (descResult) { perplexityContent = descResult; sources.push("Perplexity (from description)"); }
     }
 
     // STEP 1: Deterministic identity signal extraction
-    const allContent = [websiteContent, searchContent, businessDescription].filter(Boolean).join("\n\n");
+    const allContent = [perplexityContent, websiteContent, businessDescription].filter(Boolean).join("\n\n");
     const identitySignals = extractIdentitySignals(allContent, websiteUrl);
     if (abnHint) identitySignals.abn_hint = abnHint;
     if (businessNameHint) identitySignals.business_name_hint = businessNameHint;
