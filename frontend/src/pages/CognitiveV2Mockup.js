@@ -55,14 +55,14 @@ const groupData = {
       { severity: "medium", title: "Subcontractor costs up 12% in 45 days", detail: "Margin compression detected. Consider renegotiating or sourcing alternatives.", actions: ["hand-off", "dismiss"] },
     ],
     metrics: { runway: 4.2, margin: "compressing (-3%)", outstanding: "$12,400", overdue: "$5,000" },
-    scenarios: { best: "Deal Alpha closes → 5.1mo runway", base: "Flat → 4.2mo", worst: "Deal A + Client B lost → 2.8mo" },
+    scenarios: { best: "Top deal closes — extended runway", base: "Flat — current runway holds", worst: "Key deals lost — compressed runway" },
     insight: "Your cash position is stable but margins are compressing. Two overdue invoices totalling $5,000 need immediate chase. Subcontractor cost increase is the structural risk — address within 30 days.",
   },
   revenue: {
     alerts: 2, severity: 'high',
     resolutions: [
       { severity: "high", title: "3 enterprise deals stalled at proposal stage", detail: "Close rate compression predicts $45K revenue gap in Q2. Pricing objection common across all 3.", actions: ["auto-email", "hand-off"] },
-      { severity: "high", title: "Client B — engagement declining, response time up 3x", detail: "30-day communication decline. Churn risk increasing. AI can draft re-engagement email.", actions: ["auto-email", "quick-sms", "hand-off", "dismiss"] },
+      { severity: "high", title: "Key account — engagement declining, response time elevated", detail: "30-day communication decline. Churn risk increasing.", actions: ["auto-email", "quick-sms", "hand-off", "dismiss"] },
     ],
     metrics: { pipeline: "$185K", weighted: "$74K", entropy: "High — 60% in 2 deals", deals: 8, stalled: 2 },
     deals: [
