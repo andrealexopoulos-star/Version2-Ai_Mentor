@@ -235,7 +235,7 @@ const Settings = () => {
                         value={accountData.email}
                         disabled
                         className="mt-2"
-                        style={{ background: 'var(--bg-tertiary)' }}
+                        style={{ background: '#141C26' }}
                       />
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Email cannot be changed</p>
                     </div>
@@ -346,7 +346,7 @@ const Settings = () => {
                   <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
                     <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Account Details</h3>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: '#141C26' }}>
                         <div>
                           <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Account Type</p>
                           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your current role</p>
@@ -355,7 +355,7 @@ const Settings = () => {
                           {user?.role || 'user'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: '#141C26' }}>
                         <div>
                           <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Member Since</p>
                           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Account creation date</p>
@@ -385,28 +385,28 @@ const Settings = () => {
                       onValueChange={(val) => updateProfile('advice_style', val)}
                       className="space-y-3"
                     >
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-gray-50" style={{ borderColor: 'var(--border-medium)' }}>
+                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: '#243140', background: '#141C26' }}>
                         <RadioGroupItem value="concise" id="style-concise" className="mt-1" />
                         <Label htmlFor="style-concise" className="cursor-pointer flex-1">
                           <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Quick & Concise</div>
                           <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Brief, actionable bullet points</div>
                         </Label>
                       </div>
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-gray-50" style={{ borderColor: 'var(--border-medium)' }}>
+                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: '#243140', background: '#141C26' }}>
                         <RadioGroupItem value="detailed" id="style-detailed" className="mt-1" />
                         <Label htmlFor="style-detailed" className="cursor-pointer flex-1">
                           <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Detailed & Thorough</div>
                           <div className="text-sm" style={{ color: 'var(--text-muted)' }}>In-depth explanations with context and reasoning</div>
                         </Label>
                       </div>
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-gray-50" style={{ borderColor: 'var(--border-medium)' }}>
+                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: '#243140', background: '#141C26' }}>
                         <RadioGroupItem value="conversational" id="style-conversational" className="mt-1" />
                         <Label htmlFor="style-conversational" className="cursor-pointer flex-1">
                           <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Conversational</div>
                           <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Like chatting with a trusted business partner</div>
                         </Label>
                       </div>
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-gray-50" style={{ borderColor: 'var(--border-medium)' }}>
+                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: '#243140', background: '#141C26' }}>
                         <RadioGroupItem value="data-driven" id="style-data" className="mt-1" />
                         <Label htmlFor="style-data" className="cursor-pointer flex-1">
                           <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Data-Driven</div>
@@ -454,7 +454,7 @@ const Settings = () => {
                         return (
                           <label
                             key={format}
-                            className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50"
+                            className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-white/5"
                             style={{ 
                               borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-medium)',
                               background: isSelected ? 'rgba(0,102,255,0.05)' : 'transparent'
@@ -514,7 +514,7 @@ const Settings = () => {
                         return (
                           <label
                             key={tool}
-                            className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-gray-50"
+                            className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-white/5"
                             style={{ 
                               borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-medium)',
                               background: isSelected ? 'rgba(0,102,255,0.05)' : 'transparent'
