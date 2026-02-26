@@ -20,6 +20,55 @@ const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
+// Business Verification Score Badge — shows identity confidence + data coverage
+const VerificationBadge = ({ navigate }) => {
+  const [score, setScore] = useState(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    // Fetch latest snapshot confidence
+    apiClient.get('/snapshot/latest').then(res => {
+      const conf = res.data?.cognitive?.snapshot_confidence || res.data?.cognitive?.system_state?.confidence;
+      if (conf) setScore(Math.round(conf));
+    }).catch(() => {});
+  }, []);
+
+  if (score === null) return null;
+
+  const color = score > 70 ? '#10B981' : score > 40 ? '#F59E0B' : '#EF4444';
+
+  return (
+    <div className="relative hidden md:block">
+      <button
+        onClick={() => setShowTooltip(!showTooltip)}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors hover:bg-white/5"
+        data-testid="verification-badge"
+      >
+        <div className="w-2 h-2 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}50` }} />
+        <span className="text-[11px] font-semibold" style={{ color, fontFamily: MONO }}>{score}%</span>
+      </button>
+      {showTooltip && (
+        <div className="absolute right-0 top-10 w-64 rounded-xl p-4 shadow-xl z-50" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: MONO }}>Snapshot Confidence</span>
+            <span className="text-xs font-bold" style={{ color, fontFamily: MONO }}>{score}%</span>
+          </div>
+          <div className="h-1.5 rounded-full mb-3" style={{ background: '#243140' }}>
+            <div className="h-1.5 rounded-full" style={{ width: `${score}%`, background: color }} />
+          </div>
+          <p className="text-[11px] text-[#9FB0C3] mb-3" style={{ fontFamily: BODY }}>
+            {score > 70 ? 'Strong data coverage. Intelligence is well-grounded.' : score > 40 ? 'Moderate coverage. Connect more systems to improve.' : 'Limited data. Most insights based on public signals.'}
+          </p>
+          <button onClick={() => { setShowTooltip(false); navigate('/integrations'); }}
+            className="text-[11px] text-[#FF6A00] hover:underline w-full text-left" style={{ fontFamily: MONO }}>
+            Improve score — connect systems
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
