@@ -26,10 +26,11 @@ const OperationsPage = () => {
     fetch();
   }, []);
 
-  // Extract ops data from snapshot or use demo
-  const slaBreaches = snapshot?.sla_breaches || snapshot?.execution?.sla_breaches || 2;
-  const sopCompliance = snapshot?.sop_compliance || 87;
-  const activeTasks = snapshot?.active_tasks || 14;
+  // Extract ops data — no fabrication, null if unavailable
+  const slaBreaches = snapshot?.sla_breaches ?? snapshot?.execution?.sla_breaches ?? null;
+  const sopCompliance = snapshot?.sop_compliance ?? null;
+  const activeTasks = snapshot?.active_tasks ?? null;
+  const hasOpsData = slaBreaches !== null || sopCompliance !== null;
 
   return (
     <DashboardLayout>
