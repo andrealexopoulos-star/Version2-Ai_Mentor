@@ -12,7 +12,7 @@ import sys
 from typing import Dict, List, Tuple
 
 # Get backend URL from environment
-BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://market-cognitive.preview.emergentagent.com')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://liquid-steel-preview.preview.emergentagent.com')
 API_BASE_URL = f"{BACKEND_URL}/api"
 
 # Test credentials

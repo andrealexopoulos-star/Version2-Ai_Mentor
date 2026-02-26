@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://market-cognitive.preview.emergentagent.com/advisor
+## For: https://liquid-steel-preview.preview.emergentagent.com/advisor
 
 ---
 

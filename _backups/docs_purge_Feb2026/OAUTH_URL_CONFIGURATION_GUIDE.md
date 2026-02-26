@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://market-cognitive.preview.emergentagent.com
+https://liquid-steel-preview.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://market-cognitive.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://market-cognitive.preview.emergentagent.com
+https://liquid-steel-preview.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://market-cognitive.preview.emergentagent.com/**
-https://market-cognitive.preview.emergentagent.com/auth/callback
-https://market-cognitive.preview.emergentagent.com/auth-callback-supabase
-https://market-cognitive.preview.emergentagent.com/connect-email
-https://market-cognitive.preview.emergentagent.com/integrations
+https://liquid-steel-preview.preview.emergentagent.com/**
+https://liquid-steel-preview.preview.emergentagent.com/auth/callback
+https://liquid-steel-preview.preview.emergentagent.com/auth-callback-supabase
+https://liquid-steel-preview.preview.emergentagent.com/connect-email
+https://liquid-steel-preview.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://market-cognitive.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://market-cognitive.preview.emergentagent.com/api/auth/outlook/callback
+https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://market-cognitive.preview.emergentagent.com
+https://liquid-steel-preview.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://market-cognitive.preview.emergentagent.com/api/auth/gmail/callback
+https://liquid-steel-preview.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

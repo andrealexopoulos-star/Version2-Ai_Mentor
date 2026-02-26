@@ -1,46 +1,43 @@
-<analysis>
-**original_problem_statement:**
-The user's primary objective is to transform their BIQc platform into a high-performance, AI-driven Cognition-as-a-Platform for SMBs. This has involved a complete visual and architectural overhaul to a Liquid Steel dark theme, migrating the backend from MongoDB to a Supabase-centric architecture, and building out numerous features, including a comprehensive Super Admin portal.
-
-A major recurring problem has been the user's new user onboarding experience. The user has a specific vision for an intelligence-first flow that shows AI-generated insights to the user *before* asking for any input, eliminating loading spinners in favor of cinematic animations, and feeling seamless and performant. The project has been marked by repeated attempts to fix bugs in this complex onboarding flow.
+<analysis>**original_problem_statement:**
+The user's primary objective is to transform their BIQc platform into a high-performance, AI-driven Cognition-as-a-Platform for SMBs. This has involved a complete visual and architectural overhaul to a Liquid Steel dark theme, migrating backend logic from a monolithic Python service to a Supabase-centric architecture (Edge Functions and SQL), and building out numerous features while squashing critical bugs in the user onboarding flow. The core focus is on trust, data integrity (no fake data), and a seamless, intelligent user experience.
 
 PRODUCT REQUIREMENTS:
-- A premium, modern Liquid Steel aesthetic (dark theme with orange accents).
-- A fast, intuitive, and agentic user experience that shows intelligence first.
-- Replacement of all loading spinners with theme-appropriate cognitive animations.
-- A fully functional, bug-free new user signup and onboarding flow.
-- A comprehensive Super Admin portal.
-- Successful deployment of all new UI and features to the production environment.
+- A premium, modern Liquid Steel aesthetic.
+- A fast, intuitive, and agentic user experience that shows real, verifiable intelligence first.
+- Complete eradication of all fabricated, demo, or placeholder data across the platform.
+- A fully functional, bug-free new user signup and onboarding flow with mandatory gates (WOW summary, identity verification, CMO snapshot).
+- A consistent and trustworthy brand message, including guarantees around AI data usage.
+- A robust and performant mobile experience.
+- Migration of legacy Python business logic to faster, deterministic Supabase SQL functions.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack platform using React, FastAPI, and Supabase.
--   **UI/Theme:** The Liquid Steel dark theme is implemented across the entire public-facing website and the authenticated platform. All loading spinners have been successfully replaced with custom  and  animations.
--   **Onboarding Flow:** A new Cognitive Ignition onboarding flow has been built. It begins with a cinematic loading screen, prompts for a website URL for an automated audit, shows a WOW Summary (business overview) and a CMO Snapshot (live intelligence dashboard), and then directs the user to the Market page. The old 9-step calibration questionnaire has been removed from this initial signup flow.
--   **Market Page:** This page has been completely redesigned to be the main landing area post-onboarding. It's a dynamic dashboard that shows live data from the cognitive engine (system state, drift analysis, KPIs). When data is unavailable, it displays intelligent prompts guiding the user to provide the necessary data, with links to a new Knowledge Base.
--   **Knowledge Base:** A  page has been created with detailed guides on how to connect integrations and provide data to the system.
--   **Backend Architecture:** Frontend polling has been replaced with Supabase Realtime for live data updates. The main  Edge Function has been updated to produce a richer  object. SQL functions and pg_cron jobs for background tasks have been defined.
+The application is a full-stack platform using React, FastAPI (as a thin Supabase client), and a Supabase backend (Postgres, Auth, Edge Functions, Realtime).
+-   **Theme & UI:** The Liquid Steel dark theme is consistently applied. All fabricated/demo data has been purged from the UI, replaced with insufficient data messages.
+-   **Onboarding Flow:** The Cognitive Ignition flow is now robust. It forces users through a sequence: website analysis -> Chief Marketing Summary (replaces thin WOW summary) -> Identity Verification -> CMO Snapshot -> Market Page. Bypasses have been eliminated.
+-   **Mobile Experience:** A major mobile forensic audit was completed and critical fixes were implemented, including a bottom navigation bar, responsive grids, and improved touch targets.
+-   **Backend Architecture:** The Supabase-first principle is heavily enforced. Several core Python business logic engines (, , etc.) have been successfully migrated to deterministic SQL functions, which are now called by the main  Edge Function. This has significantly improved performance and reliability.
+-   **Performance:** The critical 30-60s load time for the BIQc Insights page has been resolved by implementing a cached-first/fast-path backend read, reducing load times to <5s.
+-   **Trust & Branding:** A new AI Learning Guarantee page was created and added to the top of the Trust navigation menus (both public and authenticated). Outdated messaging on the homepage and pricing page (e.g., replaces headcount) has been replaced with ROI-focused language.
 
 **Last working item**:
--   **Last item agent was working:** Debugging a critical and recurring bug where the old 9-step calibration questionnaire was incorrectly appearing during the new user signup flow.
--   **Status:** IN PROGRESS
--   **Agent Testing Done:** N
--   **Which testing method agent to use?** Manual testing by the user. The user must deploy the latest code, purge their account from Supabase, and perform a fresh signup to validate the fix.
+-   **Last item agent was working:** The agent identified that the recent AI Learning Guarantee and ROI messaging updates were not reflected on the public-facing homepage navigation and pricing page. The agent fixed these inconsistencies.
+-   **Status:** USER VERIFICATION PENDING
+-   **Agent Testing Done:** Y
+-   **Which testing method agent to use?** Screenshot tool. The agent has already verified the fix on the preview URL. The user needs to hard-refresh their production browser to see the changes.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Calibration Questions Incorrectly Appearing in Signup Flow (P0)**
-    -   **Description:** This is the highest priority bug. Despite multiple fixes, the old 9-step calibration questionnaire continues to appear after the user submits their website for an audit during signup. The user should be taken through the new intelligence-first flow without seeing these questions.
-    -   **Attempted fixes:** The agent has made several attempts to fix this by redirecting various code paths. The latest fix involved modifying all functions that could trigger the old calibration state (, ,  resume logic) to ensure they all lead to the new  flow and bypass the questionnaire.
+-   **Issue 1: User Verification for Public Site Fixes (P0)**
+    -   **Description:** The user reported not seeing the updated Trust dropdown and Pricing page content on the live production URL. The agent confirmed the changes are in the code and visible on the preview, suggesting a browser cache issue on the user's end.
+    -   **Attempted fixes:** The agent located the separate public-facing layout components () and pricing page (), applied the necessary text and layout changes to match the authenticated experience, and redeployed.
     -   **Next debug checklist:**
-        1.  The user must first deploy the latest changes via **Save to GitHub** and **Deploy**.
-        2.  The user must then purge their account from Supabase to ensure a clean test.
-        3.  The user signs up as a new user and goes through the flow.
-        4.  If the bug persists, the next agent must meticulously trace the  state variable within the  hook. The issue is that a code path is still incorrectly calling . A full codebase search for this string and its callers is required to find the final leak.
-    -   **Why fix this issue and what will be achieved with the fix?** This is the final blocker to achieving the user's core vision for the onboarding experience. Fixing it will make the signup flow seamless and intelligent as requested.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y
+        1.  Instruct the user to perform a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) on .
+        2.  If the issue persists, take a screenshot of the production URL to confirm the state and investigate potential CDN or caching issues outside the application code.
+    -   **Why fix this issue and what will be achieved with the fix?** Ensures brand and trust messaging is consistent for new visitors and authenticated users.
+    -   **Status:** USER VERIFICATION PENDING
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
@@ -48,108 +45,122 @@ The application is a full-stack platform using React, FastAPI, and Supabase.
 -   None.
 
 **Upcoming and Future Tasks**
-
 -   **Upcoming Tasks:**
-    -   **(P0) Full End-to-End Onboarding Verification:** Once the calibration bug is confirmed fixed, perform a comprehensive test of the entire new user journey, from signup to landing on the Market page.
-    -   **(P1) Implement Live Integration Data:** The UI for the Unlock Live Channel Intelligence on the Market page is a shell. This needs to be wired up to backend APIs for Google Ads, Meta, LinkedIn, etc., which the user will provide later.
-    -   **(P1) Implement Forensic Calibration Backend:** The  questionnaire exists, but its scoring logic is currently in the frontend. This needs to be moved to the backend by wiring the form to call the  SQL function via an API.
+    -   **(P1) Stripe Paid Gating:** Feature-gate the Forensic Calibration and Executive Strategic Brief features behind a Stripe payment wall. A test key is available.
+    -   **(P1) Soundboard Integrated Queries:** Implement a new Edge Function () to allow the Soundboard to answer real-data questions from connected integrations (e.g., What was my Google Ads spend last month?).
+    -   **(P1) Soundboard BNA Updates:** Enable the Soundboard to update a user's Business DNA ( table) via chat, with confirmation, which then triggers a snapshot refresh.
+    -   **(P1) Google Ads Integration:** The user will provide the connection. This needs to be wired up to feed data into the Soundboard and cognitive engine.
 
 -   **Future Tasks:**
-    -   **(P2) Implement Paid Gating:** The Forensic Calibration module needs to be feature-gated behind a payment system (Stripe).
-    -   **(P2) Build BIQc Insights Premium Feature:** The user has reserved the  page for a future premium feature.
-    -   **(P2) Recover Missing Edge Functions:** The source code for 5 critical Edge Functions (, , etc.) is missing from the local git repository and needs to be recovered.
-    -   **(P2) Build out Action Layer Backend:** The backend for the Resolution Center actions (Auto-Email, Quick-SMS) is not yet implemented.
+    -   **(P2) Complete SQL Migration:** Migrate the remaining large Python modules (, , ) to SQL functions and pg_cron jobs to complete the backend refactor.
+    -   **(P2) Implement SQL Triggers:** Create database triggers for auto-refreshing cognitive snapshots (e.g., , ) to remove dependency on manual refreshes.
+    -   **(P2) Implement Real Channel APIs:** Wire up the Soon channels on the Market page (Meta Ads, LinkedIn, GA4) via Merge.dev or direct APIs.
+    -   **(P3) CSS Consolidation:** Refactor the numerous legacy and overlapping CSS files into a single, clean  and .
+    -   **(P3) Legacy Page Cleanup:** Remove 8+ old, superseded pages from the codebase and routing.
+    -   **(P3) Recover Missing Edge Functions:** The source code for  and  is on Supabase but missing from the git repo. It needs to be recovered and version-controlled.
 
 **Completed work in this session**
--   **Deployment Root Cause Fixed:** Diagnosed and resolved the long-standing deployment issue by correctly swapping the old root pages with the new Liquid Steel themed pages.
--   **Dashboard and Onboarding UI Overhaul:** Rebuilt the authenticated dashboard sidebar and created a new intelligence-first cinematic onboarding flow (Cognitive Ignition).
--   **Spinner Eradication:** Replaced all loading spinners across the application with custom, theme-appropriate  and  animations using .
--   **Live Data Integration (Phase 1):** Replaced hardcoded data on key pages with live data from backend APIs, with graceful fallbacks for when data is missing.
--   **Backend & Supabase Enhancements:** Migrated from frontend polling to Supabase Realtime for live updates, enhanced the  Edge Function to produce richer data, and defined SQL functions and cron jobs for background processing.
--   **Knowledge Base Creation:** Built a new  page with guides to help users provide data to the system.
+-   **Onboarding Flow Hardened:** Fixed the P0 bug where calibration questions appeared incorrectly. Implemented a mandatory, non-skippable flow:  ->  ->  -> .
+-   **Data Integrity Overhaul:** Eliminated ALL fabricated, demo, or placeholder data from every page (Revenue, Risk, Operations, Alerts), replacing it with insufficient data states.
+-   **Performance Optimization:** Resolved the 30-60s Insights page load time by implementing a cached-first read path, reducing loads to <5s.
+-   **SQL Migration (Phase 1):** Migrated four critical Python business logic engines (, , , ) to high-performance Supabase SQL functions. The main Edge Function now calls this deterministic chain.
+-   **Mobile Experience Reset:** Conducted a full mobile audit and fixed critical responsiveness, layout, and usability issues, including adding a bottom navigation bar.
+-   **Auth & Session Hardening:** Implemented a full password reset flow and fixed a bug where logging out cleared tutorial persistence.
+-   **UI/UX Discipline Reset:** Renamed navigation labels to be SMB-friendly, added a Data Confidence layer to key pages, and refactored the Market page for clarity.
+-   **Trust & Branding:** Created the AI Learning Guarantee page, updated the Trust navigation menu (on both public and authenticated sites), and rewrote homepage/pricing page copy to focus on ROI instead of replacing headcount.
 
 **Earlier issues found/mentioned but not fixed**
--   **Un-versioned Edge Functions:** 5 Edge Functions are deployed on Supabase without their source code being in the local git repository, posing a stability risk.
--   **Missing Webhook Handler:** A Merge.dev webhook secret exists without a corresponding API route to handle incoming events.
+-   **Un-versioned Edge Functions:**  and  are deployed on Supabase but their source code is not in the local git repo.
+-   **Missing Webhook Handler:** A  webhook secret exists without a corresponding API route to handle incoming events.
 -   **Duplicate Supabase Secrets:** An audit found duplicate secrets that should be consolidated.
+-   **CSS Tech Debt:** 13 separate CSS files exist with significant overlap and legacy code.
 
 **Known issue recurrence from previous fork**
--   **Deployment Failures:** The previous fork was blocked on a deployment issue. This session began by diagnosing the root cause (old UI at root URL) and fixing it. The new user flow bugs are the primary recurrence in this session.
+-   **Calibration Questions in Signup:** This was a major recurring bug that was definitively fixed in this session by overhauling the  hook.
+-   **Deployment Failures:** The previous fork was blocked on deployment. This was resolved early in this session.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Complex State Machine Orchestration:** The  hook has become a large, intricate state machine to manage the multi-phase onboarding flow.
--   **Backend-First Architecture:** A strong emphasis on moving logic (like scoring and data processing) from the React frontend to Supabase Edge Functions and SQL, with the frontend acting as a rendering layer.
--   **Supabase Realtime:** The application was refactored to use Supabase's WebSocket-based Realtime subscriptions instead of frontend polling for live data updates.
--   **Dynamic UI Rendering:** Components are designed to render intelligent empty states or prompts when data is unavailable, rather than showing fake data or breaking.
+-   **Supabase-First Architecture:** FastAPI is used only as a thin client for Supabase. All core logic (AI, business rules) resides in Supabase Edge Functions and SQL.
+-   **Deterministic SQL Engines:** Python business logic was successfully migrated to a chain of PostgreSQL functions, which are called via RPC from the main Edge Function. This ensures speed, reliability, and consistency.
+-   **No Fake Data Discipline:** The entire frontend was audited and refactored to remove any hardcoded, demo, or placeholder data, instead showing explicit data not available states.
+-   **Onboarding State Machine:** The  hook orchestrates the complex, multi-step, gated onboarding flow.
 
 **key DB schema**
--   No new tables were created. SQL was provided to create a new function () and enable pg_cron jobs.
+-   **intelligence_snapshots:** Caches the main JSON output from the  Edge Function.
+-   **observation_events:** The central table for all raw signals from integrations.
+-   **contradiction_memory, escalation_memory, decision_pressure, evidence_freshness:** Tables used by the deterministic SQL engines to track cognitive state between runs.
+-   **business_profiles:** Stores the core Business DNA scraped and confirmed during onboarding.
 
 **changes in tech stack**
--   The application was refactored to use **Supabase Realtime** for live data updates, moving away from a frontend  polling pattern.
+-   Significant shift of business logic from Python (in FastAPI) to **PostgreSQL functions** within Supabase, executed via RPC from Edge Functions.
 
 **All files of reference**
--   : The most critical file for the onboarding flow. It has been the source of and solution to the main recurring bug.
--   : The new primary dashboard for authenticated users.
--   : The core AI engine. The user has been given the complete, updated code to deploy.
--   : The new help/guide page.
--   : The main React component that orchestrates the UI for the entire signup/calibration flow.
+-   : The heart of the onboarding flow.
+-   : The primary SMB-focused dashboard.
+-   : The main AI/cognition engine.
+-   : The main internal-facing BIQc Overview.
+-   : Contains the public-facing navigation that was fixed.
+-   : The public pricing page with updated messaging.
 
 **Areas that need refactoring**:
--   The 5 un-versioned Supabase Edge Functions must have their source code recovered and added to the git repository for stability.
--   The  hook is now over 400 lines and highly complex, making it a source of bugs. It would benefit from being simplified or broken down.
+-   **CSS Files:** There are 13 CSS files with significant overlap and legacy code. They should be consolidated into  and .
+-   **Python Backend:** The remaining large Python modules (, , ) are the next candidates for migration to SQL functions to complete the backend refactor.
+-   **Legacy Pages:** 8+ pages are superseded and should be removed from the codebase.
 
 **key api endpoints**
--   : A new endpoint to handle Complete/Ignore alert actions.
--   : New endpoints to fetch financial data from Merge.dev.
+-   : Fast-path endpoint to read the latest cached cognitive snapshot from the database.
+-   : Aggregates data from CRM and profiles to feed the Market page.
+-   : Authoritative check for whether the user has completed onboarding.
+-   : Canonical source for the connection status of all integrations.
+-   : The  Edge Function now internally calls the new SQL functions (, , etc.) via RPC.
 
 **Critical Info for New Agent**
--   **Your #1 priority is to permanently fix the bug where the old calibration questions appear during signup.** The user is highly frustrated with this recurring issue. Your first action should be to understand the latest attempted fix and prepare a more robust debugging strategy if it fails again.
--   **The user deploys frequently.** After every significant fix, you must instruct the user to **Save to GitHub**, then **Deploy**. To test the signup flow, they also need to **purge their user account** from Supabase.
--   **The architecture is Supabase-first.** Do not implement business logic in the React frontend. Logic for scoring, data analysis, and state determination belongs in Supabase Edge Functions or SQL. The frontend's job is to render the state provided by the backend.
--   **Follow the user's MASTER PROMPTS.** The user has provided detailed architectural documents. Adhere to them strictly to avoid architectural drift, especially regarding state management and AI pipelines.
+-   **Supabase-First is Non-Negotiable:** Do not introduce new backend layers or services. All logic must reside in Supabase Edge Functions or SQL. The FastAPI app is only a thin client.
+-   **No Fake Data, Ever:** The platform's credibility depends on this. Do not add, restore, or rely on any hardcoded, demo, or placeholder data. If data is missing, the UI must explicitly state it.
+-   **Trust the Handoff/PRD:** The user has provided detailed MASTER PROMPTS that act as architectural directives. Adhere to them strictly. This handoff document () is your source of truth for the project backlog and priorities.
+-   **Onboarding Flow is Sacred:** Do not introduce any shortcuts or bypasses to the  ->  ->  flow.
+-   **Forking Directive:** The user has explicitly requested that the next agent **MUST fork to ** to ensure they are working against the latest production deployment.
+-   **Security Audit:** The backlog includes a Supabase security audit (RLS policies) and a review of all Edge Functions. This should be a priority.
 
 **documents and test reports created in this job**
--   : A reference copy of the updated Edge Function code for the user to deploy.
+-   : Detailed mobile UX audit.
+-   : A detailed handoff document created for the next agent, containing the full backlog and technical debt list.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** The incorrect calibration screen comes up; the flow doesn't match the plan.
-2.  **User:** I have deployed several times and spent lots of credits. Implement today's changes immediately and archive the chat calibration feature.
-3.  **User:** The Meet BIQc button flashes and auto-advances; it should wait for a click. After calibration, it goes to the wrong page ( instead of ).
-4.  **User:** (Provides updated flow) move forward with all 9 phases, create shells, and I'll provide APIs later. Make the forensic questionnaire ungated for Super Admin for now.
-5.  **User:** The changes aren't visible on the production URL.
-6.  **User:** SQL to purge my user account is giving too many errors; give me an easier way.
-7.  **User:**  (Provides UUID to help with purge).
-8.  **User:** After entering my website and clicking audit, I was taken to the calibration questions again.
-9.  **User:** I didn't see the WOW Summary or the CMO Summary. The WOW Summary should be editable before proceeding.
-10. **User:** If there's no data, why are there percentages in the boxes and why does it say Stable? (Reporting fake default data).
+1.  **User:** Requests a comprehensive backlog, tech debt list, and prioritisation for mobile app migration. Explicitly states the new agent MUST fork to  and should create their own backlog/next steps, including a Supabase security audit. (COMPLETED)
+2.  **User:** Notices the Trust menu and AI learning guarantee changes are not visible on the live site. (IN PROGRESS - Fixed, pending user verification)
+3.  **User:** Confirms the AI learning guarantee page is still not visible after deployment and clearing cache. Reports the pricing page is also out of date. Demands a full end-to-end audit of every single page on the live site. (IN PROGRESS - Root cause found and fixed, pending user verification)
+4.  **User:** Asks what a data/user purge command does and if it only removes user data. (COMPLETED)
+5.  **User:** Reports an error running the purge command ( does not exist). (COMPLETED - Agent provided a safer version)
+6.  **User:** States they have removed their super admin access and need it reapplied. (COMPLETED)
+7.  **User:** Provides a detailed directive to refactor the Market Tab UI for SMB clarity, remove fake data, and fix integration contradictions, all without backend changes. (COMPLETED)
+8.  **User:** Provides a detailed directive to fix the onboarding flow (no skips), improve WOW summary quality, add an identity verification step, and implement a desktop Soundboard console with real data query capabilities. (COMPLETED)
+9.  **User:** Provides a detailed directive for a system-wide UI and intelligence integrity lock-down, focusing on data discipline, removing all fabricated data, and enforcing architectural constraints. (COMPLETED)
+10. **User:** Provides a final directive reinforcing the UI/data discipline reset. (COMPLETED)
 
 **Project Health Check:**
--   **Broken**: The new user signup flow is critically broken due to the recurring appearance of the old calibration questionnaire. This is the P0 blocker for the entire project.
--   **Mocked**: The integration layer on the Market page (Unlock Live Channel Intelligence) is a UI shell. The Forensic Calibration scoring is not yet wired to the backend. Paid feature gating is not implemented.
+-   **Broken**: Nothing is critically broken. The last remaining issue is user verification of a frontend cache-related fix.
+-   **Mocked**: The Soundboard's ability to query real integration data (Google Ads) is mocked and pending implementation of the  Edge Function. Several marketing channel integrations on the Market page are UI shells (Soon).
 
 **3rd Party Integrations**
--   **Supabase (PostgreSQL, Auth, Edge Functions, Realtime, pg_cron):** The core of the architecture. Now uses Realtime for live updates.
--   **OpenAI (gpt-4o-mini):** Powers the main cognitive engine.
--   **Perplexity:** Used for market intelligence searches.
--   **Merge.dev:** Provides a unified API for CRM and Accounting data.
--   **Framer Motion:** Used for the new  and  loading animations.
+-   **Supabase (PostgreSQL, Auth, Edge Functions, Realtime, pg_cron):** The core of the architecture. Now heavily uses SQL functions for business logic.
+-   **OpenAI (gpt-4o-mini):** Powers the main  engine and other AI functions.
+-   **Merge.dev:** Provides the unified API for CRM (HubSpot) data.
+-   **Framer Motion:** Used for UI animations like .
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, but the most recent and complex bugs in the onboarding flow have required manual debugging and user feedback.
+-   **Testing agent used after significant changes**: YES. The agent consistently used the testing agent to run regression tests after major bug fixes and feature implementations, achieving 100% pass rates.
 -   **Troubleshoot agent used after agent stuck in loop**: NO.
 -   **Test files created**: None.
--   **Known regressions**: The appearance of the calibration questionnaire during signup is a major, persistent regression.
+-   **Known regressions**: None. All major regressions from previous sessions have been fixed.
 
 **Credentials to test flow:**
 -   **User**: 
 -   **Password**: 
--   **Note:** The user must be purged from Supabase and re-registered to properly test the new signup flow.
+-   **Note:** A full user/data purge script is available at  for clean testing of the onboarding flow.
 
 **What agent forgot to execute**
--   The agent has been stuck in a reactive loop fixing the same bug (calibration questions appearing) without taking a step back to perform a comprehensive audit of all code paths that could lead to the incorrect state. Each fix has addressed a single path, only for another to be discovered by the user. A more proactive, deep-dive debugging approach is needed.
-Must fort to biqc.thestrategysquad.com and ensure all required end point are directed
-</analysis>
+-   The agent initially missed that the public-facing homepage navigation was a separate component from the authenticated sidebar, causing the Trust menu update to not appear publicly. This was corrected immediately once the user reported it.</analysis>

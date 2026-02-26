@@ -15,7 +15,7 @@ import requests
 import os
 import re
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://market-cognitive.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://liquid-steel-preview.preview.emergentagent.com').rstrip('/')
 
 
 class TestCodeReview:

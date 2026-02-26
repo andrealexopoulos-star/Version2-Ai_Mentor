@@ -10,8 +10,8 @@ BIQC email integration requires OAuth apps to be configured with Microsoft and G
 
 Based on your deployment configuration:
 
-- **Backend URL**: `https://market-cognitive.preview.emergentagent.com`
-- **Frontend URL**: `https://market-cognitive.preview.emergentagent.com`
+- **Backend URL**: `https://liquid-steel-preview.preview.emergentagent.com`
+- **Frontend URL**: `https://liquid-steel-preview.preview.emergentagent.com`
 - **Supabase URL**: `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ---
@@ -28,7 +28,7 @@ Based on your deployment configuration:
 
 4. **Add Redirect URI**:
    ```
-   https://market-cognitive.preview.emergentagent.com/api/auth/outlook/callback
+   https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback
    ```
 
 5. **API Permissions Required**:
@@ -65,7 +65,7 @@ AZURE_TENANT_ID=common  # or your specific tenant ID
 
 4. **Add Authorized Redirect URI**:
    ```
-   https://market-cognitive.preview.emergentagent.com/api/auth/gmail/callback
+   https://liquid-steel-preview.preview.emergentagent.com/api/auth/gmail/callback
    ```
 
 5. **Scopes Required**:
@@ -98,14 +98,14 @@ Both Edge Functions need access to OAuth credentials. Set these in Supabase Dash
 2. Add secrets:
    - `AZURE_CLIENT_ID`
    - `AZURE_CLIENT_SECRET`
-   - `BACKEND_URL` = `https://market-cognitive.preview.emergentagent.com`
+   - `BACKEND_URL` = `https://liquid-steel-preview.preview.emergentagent.com`
 
 **For `gmail_prod` function**:
 1. Go to: Supabase Dashboard → Edge Functions → gmail_prod → Settings
 2. Add secrets:
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
-   - `BACKEND_URL` = `https://market-cognitive.preview.emergentagent.com`
+   - `BACKEND_URL` = `https://liquid-steel-preview.preview.emergentagent.com`
 
 ---
 
@@ -301,8 +301,8 @@ SELECT user_id, email, token_expiry FROM gmail_connections WHERE user_id = 'YOUR
 
 **Fix**:
 1. Verify exact URL in Azure/Google Console matches:
-   - Outlook: `https://market-cognitive.preview.emergentagent.com/api/auth/outlook/callback`
-   - Gmail: `https://market-cognitive.preview.emergentagent.com/api/auth/gmail/callback`
+   - Outlook: `https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback`
+   - Gmail: `https://liquid-steel-preview.preview.emergentagent.com/api/auth/gmail/callback`
 2. No trailing slashes
 3. HTTPS required (not HTTP)
 

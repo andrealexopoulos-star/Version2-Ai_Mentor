@@ -8,11 +8,11 @@
 
 | Industry | URL |
 |---|---|
-| IT Services / MSP | https://market-cognitive.preview.emergentagent.com/site/platform/industry/msp |
-| Commercial Contractors / HVAC | https://market-cognitive.preview.emergentagent.com/site/platform/industry/construction |
-| Consulting / Professional Services | https://market-cognitive.preview.emergentagent.com/site/platform/industry/consulting |
-| Marketing / Digital Agencies | https://market-cognitive.preview.emergentagent.com/site/platform/industry/agency |
-| B2B SaaS | https://market-cognitive.preview.emergentagent.com/site/platform/industry/saas |
+| IT Services / MSP | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/msp |
+| Commercial Contractors / HVAC | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/construction |
+| Consulting / Professional Services | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/consulting |
+| Marketing / Digital Agencies | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/agency |
+| B2B SaaS | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/saas |
 
 ---
 

@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://market-cognitive.preview.emergentagent.com
+**Test URL:** https://liquid-steel-preview.preview.emergentagent.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://market-cognitive.preview.emergentagent.com/advisor
+- [ ] Navigate to https://liquid-steel-preview.preview.emergentagent.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://market-cognitive.preview.emergentagent.com/
+**Landing:** https://liquid-steel-preview.preview.emergentagent.com/
 
-**Login:** https://market-cognitive.preview.emergentagent.com/login-supabase
+**Login:** https://liquid-steel-preview.preview.emergentagent.com/login-supabase
 
-**Register:** https://market-cognitive.preview.emergentagent.com/register-supabase
+**Register:** https://liquid-steel-preview.preview.emergentagent.com/register-supabase
 
-**Pricing:** https://market-cognitive.preview.emergentagent.com/pricing
+**Pricing:** https://liquid-steel-preview.preview.emergentagent.com/pricing
 
-**Terms:** https://market-cognitive.preview.emergentagent.com/terms
+**Terms:** https://liquid-steel-preview.preview.emergentagent.com/terms
 
-**Advisor:** https://market-cognitive.preview.emergentagent.com/advisor
+**Advisor:** https://liquid-steel-preview.preview.emergentagent.com/advisor
 
 ---
 

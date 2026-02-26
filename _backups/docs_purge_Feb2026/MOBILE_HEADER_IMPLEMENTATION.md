@@ -200,7 +200,7 @@
 ## 🚀 READY FOR TESTING
 
 **Test on Real Devices:**
-1. Login at: https://market-cognitive.preview.emergentagent.com
+1. Login at: https://liquid-steel-preview.preview.emergentagent.com
 2. Test credentials: `testing@biqc.demo` / `TestPass123!`
 3. Verify hamburger menu opens/closes
 4. Check header alignment and spacing
