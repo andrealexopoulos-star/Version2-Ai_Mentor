@@ -118,7 +118,7 @@ const RevenuePage = () => {
               <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Pipeline Overview</h3>
             </div>
             <div className="space-y-3 mb-4">
-              {[['Total Pipeline', '$' + totalPipeline.toLocaleString()], ['Active Deals', String(activeDeals)], ['Win Rate', winRate + '%']].map(([k, v]) => (
+              {[['Total Pipeline', '$' + (totalPipeline || 0).toLocaleString()], ['Active Deals', String(activeDeals || 0)], ['Win Rate', (winRate || 0) + '%']].map(([k, v]) => (
                 <div key={k} className="flex justify-between"><span className="text-xs text-[#9FB0C3]">{k}</span><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{v}</span></div>
               ))}
               <div className="flex justify-between"><span className="text-xs text-[#9FB0C3]">Stalled (&gt;7d)</span><span className="text-sm font-semibold" style={{ fontFamily: MONO, color: '#FF6A00' }}>{stalledCount}</span></div>
