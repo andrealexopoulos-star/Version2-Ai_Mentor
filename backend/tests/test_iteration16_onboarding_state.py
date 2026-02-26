@@ -15,7 +15,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://liquid-steel-preview.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biqc-ai-insights.preview.emergentagent.com').rstrip('/')
 
 
 class TestOnboardingUnauthenticated:
@@ -64,7 +64,7 @@ class TestBackendIsRunning:
         """Backend should have CORS headers"""
         response = requests.options(
             f"{BASE_URL}/api/onboarding/status",
-            headers={"Origin": "https://liquid-steel-preview.preview.emergentagent.com"}
+            headers={"Origin": "https://biqc-ai-insights.preview.emergentagent.com"}
         )
         # CORS preflight should return 200 or the actual response
         assert response.status_code in [200, 401, 403, 405], f"Unexpected status: {response.status_code}"

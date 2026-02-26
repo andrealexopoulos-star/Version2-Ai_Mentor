@@ -41,7 +41,7 @@ This is causing OAuth redirect failures because:
 
 **APP_BASE_URL (Single Source of Truth):**
 ```
-https://liquid-steel-preview.preview.emergentagent.com
+https://biqc-ai-insights.preview.emergentagent.com
 ```
 
 **Propagation Map:**
@@ -90,13 +90,13 @@ Navigate to: **Supabase Dashboard** → **Authentication** → **URL Configurati
 
 **Site URL:**
 ```
-https://liquid-steel-preview.preview.emergentagent.com
+https://biqc-ai-insights.preview.emergentagent.com
 ```
 
 **Redirect URLs:** (Add all)
 ```
-https://liquid-steel-preview.preview.emergentagent.com/auth/callback
-https://liquid-steel-preview.preview.emergentagent.com/**
+https://biqc-ai-insights.preview.emergentagent.com/auth/callback
+https://biqc-ai-insights.preview.emergentagent.com/**
 ```
 
 ---

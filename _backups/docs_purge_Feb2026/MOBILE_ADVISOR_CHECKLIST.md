@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://liquid-steel-preview.preview.emergentagent.com/advisor
+## For: https://biqc-ai-insights.preview.emergentagent.com/advisor
 
 ---
 

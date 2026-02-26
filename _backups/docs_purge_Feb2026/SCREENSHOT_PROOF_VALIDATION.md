@@ -1,6 +1,6 @@
 # 📸 SCREENSHOT PROOF - ALL FEATURES VALIDATED
 
-**Canonical URL:** https://liquid-steel-preview.preview.emergentagent.com  
+**Canonical URL:** https://biqc-ai-insights.preview.emergentagent.com  
 **Validation Date:** January 22, 2026  
 **Status:** ✅ ALL CLAIMED FEATURES VERIFIED WITH VISUAL PROOF
 
@@ -165,7 +165,7 @@ Full strategic analysis including:
 
 ## 🔗 CANONICAL TEST URL (VALIDATED)
 
-# **https://liquid-steel-preview.preview.emergentagent.com**
+# **https://biqc-ai-insights.preview.emergentagent.com**
 
 **Validation Status:** ✅ **CONFIRMED WITH SCREENSHOT PROOF**
 

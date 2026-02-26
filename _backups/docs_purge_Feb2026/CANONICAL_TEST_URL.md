@@ -8,7 +8,7 @@
 
 ## 🌐 CANONICAL TEST URL
 
-# **https://liquid-steel-preview.preview.emergentagent.com**
+# **https://biqc-ai-insights.preview.emergentagent.com**
 
 **This URL contains only validated, working functionality and supports full end-to-end testing from sign-in through all core platform features. Upon approval, it is cleared for migration and production deployment.**
 
@@ -172,7 +172,7 @@ The following are NOT included in this test URL as they are incomplete:
 
 ## 🔗 FINAL DELIVERABLE
 
-**Canonical Test URL:** https://liquid-steel-preview.preview.emergentagent.com
+**Canonical Test URL:** https://biqc-ai-insights.preview.emergentagent.com
 
 **Confirmation:**
 

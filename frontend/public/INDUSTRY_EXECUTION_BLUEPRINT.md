@@ -8,11 +8,11 @@
 
 | Industry | URL |
 |---|---|
-| IT Services / MSP | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/msp |
-| Commercial Contractors / HVAC | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/construction |
-| Consulting / Professional Services | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/consulting |
-| Marketing / Digital Agencies | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/agency |
-| B2B SaaS | https://liquid-steel-preview.preview.emergentagent.com/site/platform/industry/saas |
+| IT Services / MSP | https://biqc-ai-insights.preview.emergentagent.com/site/platform/industry/msp |
+| Commercial Contractors / HVAC | https://biqc-ai-insights.preview.emergentagent.com/site/platform/industry/construction |
+| Consulting / Professional Services | https://biqc-ai-insights.preview.emergentagent.com/site/platform/industry/consulting |
+| Marketing / Digital Agencies | https://biqc-ai-insights.preview.emergentagent.com/site/platform/industry/agency |
+| B2B SaaS | https://biqc-ai-insights.preview.emergentagent.com/site/platform/industry/saas |
 
 ---
 

@@ -9,7 +9,7 @@ Go to: **Supabase Dashboard → Authentication → URL Configuration**
 ## 📍 Site URL
 
 ```
-https://liquid-steel-preview.preview.emergentagent.com
+https://biqc-ai-insights.preview.emergentagent.com
 ```
 
 **What it's for**: The main URL of your application
@@ -22,7 +22,7 @@ Add **ALL** of these to the "Redirect URLs" list:
 
 ### 1. Production Frontend
 ```
-https://liquid-steel-preview.preview.emergentagent.com/**
+https://biqc-ai-insights.preview.emergentagent.com/**
 ```
 
 ### 2. Local Development (if needed)
@@ -32,15 +32,15 @@ http://localhost:3000/**
 
 ### 3. Specific Auth Callbacks
 ```
-https://liquid-steel-preview.preview.emergentagent.com/auth/callback
+https://biqc-ai-insights.preview.emergentagent.com/auth/callback
 ```
 
 ```
-https://liquid-steel-preview.preview.emergentagent.com/connect-email
+https://biqc-ai-insights.preview.emergentagent.com/connect-email
 ```
 
 ```
-https://liquid-steel-preview.preview.emergentagent.com/integrations
+https://biqc-ai-insights.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -48,11 +48,11 @@ https://liquid-steel-preview.preview.emergentagent.com/integrations
 ## 📋 Copy-Paste Format (one per line)
 
 ```
-https://liquid-steel-preview.preview.emergentagent.com/**
+https://biqc-ai-insights.preview.emergentagent.com/**
 http://localhost:3000/**
-https://liquid-steel-preview.preview.emergentagent.com/auth/callback
-https://liquid-steel-preview.preview.emergentagent.com/connect-email
-https://liquid-steel-preview.preview.emergentagent.com/integrations
+https://biqc-ai-insights.preview.emergentagent.com/auth/callback
+https://biqc-ai-insights.preview.emergentagent.com/connect-email
+https://biqc-ai-insights.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -62,9 +62,9 @@ https://liquid-steel-preview.preview.emergentagent.com/integrations
 ### Additional Redirect URLs
 If you have other pages that use Supabase Auth:
 ```
-https://liquid-steel-preview.preview.emergentagent.com/dashboard
-https://liquid-steel-preview.preview.emergentagent.com/login
-https://liquid-steel-preview.preview.emergentagent.com/signup
+https://biqc-ai-insights.preview.emergentagent.com/dashboard
+https://biqc-ai-insights.preview.emergentagent.com/login
+https://biqc-ai-insights.preview.emergentagent.com/signup
 ```
 
 ---
@@ -74,7 +74,7 @@ https://liquid-steel-preview.preview.emergentagent.com/signup
 1. **Go to**: Supabase Dashboard
 2. **Click**: Authentication (left sidebar)
 3. **Click**: URL Configuration (tab at top)
-4. **Set Site URL**: `https://liquid-steel-preview.preview.emergentagent.com`
+4. **Set Site URL**: `https://biqc-ai-insights.preview.emergentagent.com`
 5. **Add Redirect URLs**: Paste each URL from above (one per line)
 6. **Click**: Save
 
@@ -116,7 +116,7 @@ After configuration, test:
 
 **Cause**: Site URL doesn't match your domain
 
-**Fix**: Set Site URL to `https://liquid-steel-preview.preview.emergentagent.com`
+**Fix**: Set Site URL to `https://biqc-ai-insights.preview.emergentagent.com`
 
 ---
 

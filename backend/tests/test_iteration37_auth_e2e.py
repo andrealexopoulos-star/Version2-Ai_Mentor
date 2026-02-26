@@ -7,7 +7,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://liquid-steel-preview.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biqc-ai-insights.preview.emergentagent.com').rstrip('/')
 
 # Test credentials created by main agent
 TEST_EMAIL = "e2e-rca-test@test.com"

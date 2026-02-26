@@ -65,7 +65,7 @@ Click **"Save"** or **"Update"** button.
 
 ## 🧪 TEST THE CONNECTION
 
-1. Navigate to: https://liquid-steel-preview.preview.emergentagent.com/integrations
+1. Navigate to: https://biqc-ai-insights.preview.emergentagent.com/integrations
 2. Click "Connect" on HubSpot
 3. Merge modal opens
 4. Click HubSpot

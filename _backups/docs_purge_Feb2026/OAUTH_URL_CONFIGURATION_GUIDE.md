@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://liquid-steel-preview.preview.emergentagent.com
+https://biqc-ai-insights.preview.emergentagent.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://liquid-steel-preview.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://liquid-steel-preview.preview.emergentagent.com
+https://biqc-ai-insights.preview.emergentagent.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://liquid-steel-preview.preview.emergentagent.com/**
-https://liquid-steel-preview.preview.emergentagent.com/auth/callback
-https://liquid-steel-preview.preview.emergentagent.com/auth-callback-supabase
-https://liquid-steel-preview.preview.emergentagent.com/connect-email
-https://liquid-steel-preview.preview.emergentagent.com/integrations
+https://biqc-ai-insights.preview.emergentagent.com/**
+https://biqc-ai-insights.preview.emergentagent.com/auth/callback
+https://biqc-ai-insights.preview.emergentagent.com/auth-callback-supabase
+https://biqc-ai-insights.preview.emergentagent.com/connect-email
+https://biqc-ai-insights.preview.emergentagent.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://liquid-steel-preview.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-ai-insights.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://liquid-steel-preview.preview.emergentagent.com
+https://biqc-ai-insights.preview.emergentagent.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://liquid-steel-preview.preview.emergentagent.com/api/auth/gmail/callback
+https://biqc-ai-insights.preview.emergentagent.com/api/auth/gmail/callback
 ```
 
 ---

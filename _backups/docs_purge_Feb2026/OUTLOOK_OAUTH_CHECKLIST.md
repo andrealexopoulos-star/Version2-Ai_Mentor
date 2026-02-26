@@ -27,7 +27,7 @@ Azure Portal → Microsoft Entra ID → App registrations
 - Click **"+ Add URI"**
 - Paste this EXACT value:
 ```
-https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-ai-insights.preview.emergentagent.com/api/auth/outlook/callback
 ```
 - Click **"Save"**
 
@@ -93,7 +93,7 @@ AZURE_CLIENT_SECRET=biqc-advisor
 
 ### Secret 3: BACKEND_URL
 ```
-https://liquid-steel-preview.preview.emergentagent.com
+https://biqc-ai-insights.preview.emergentagent.com
 ```
 
 ### Secret 4: AZURE_TENANT_ID (if exists)
@@ -131,7 +131,7 @@ navigator.serviceWorker.getRegistrations().then(registrations => {
 ## ✅ STEP 5: VERIFICATION CHECKLIST
 
 ### Azure Portal Verification
-- [ ] Redirect URI added: `https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback`
+- [ ] Redirect URI added: `https://biqc-ai-insights.preview.emergentagent.com/api/auth/outlook/callback`
 - [ ] Redirect URI saved (clicked Save button)
 - [ ] All 6 API permissions present
 - [ ] Admin consent granted (if required)
@@ -141,7 +141,7 @@ navigator.serviceWorker.getRegistrations().then(registrations => {
 - [ ] `outlook-auth` function exists
 - [ ] AZURE_CLIENT_ID secret = `5d6e3cbb-cd88-4694-aa19-9b7115666866`
 - [ ] AZURE_CLIENT_SECRET secret = `2f5697f4-5a3a-4aca-893a-6a40334c579f`
-- [ ] BACKEND_URL secret = `https://liquid-steel-preview.preview.emergentagent.com`
+- [ ] BACKEND_URL secret = `https://biqc-ai-insights.preview.emergentagent.com`
 - [ ] Edge Function redeployed after secret updates
 
 ### Backend Verification
@@ -159,7 +159,7 @@ navigator.serviceWorker.getRegistrations().then(registrations => {
 
 **After completing ALL above steps**:
 
-1. Navigate to: `https://liquid-steel-preview.preview.emergentagent.com/connect-email`
+1. Navigate to: `https://biqc-ai-insights.preview.emergentagent.com/connect-email`
 
 2. Click **"Connect Outlook"**
 
@@ -182,7 +182,7 @@ navigator.serviceWorker.getRegistrations().then(registrations => {
 
 **Verify Redirect URI is EXACTLY**:
 ```
-https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-ai-insights.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 **Common mistakes**:
@@ -235,7 +235,7 @@ a75a808f-8c78-46dd-bda8-faa925d316d9
 
 **Redirect URI** (must be in Azure Portal):
 ```
-https://liquid-steel-preview.preview.emergentagent.com/api/auth/outlook/callback
+https://biqc-ai-insights.preview.emergentagent.com/api/auth/outlook/callback
 ```
 
 ---
