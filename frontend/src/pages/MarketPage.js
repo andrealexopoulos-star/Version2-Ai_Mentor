@@ -160,6 +160,41 @@ const MarketPage = () => {
           {!snapshot && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
         </div>
 
+        {/* ═══ REPORTS TAB ═══ */}
+        {activeTab === 'reports' && (
+          <div className="space-y-4" data-testid="reports-tab">
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Intelligence Reports</h2>
+            {reports.length === 0 && (
+              <div className="rounded-xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #1E293B' }}>
+                <FileText className="w-8 h-8 mx-auto mb-3 text-[#64748B]/30" />
+                <p className="text-sm text-[#64748B]">Reports will appear here after your first cognitive snapshot.</p>
+              </div>
+            )}
+            {reports.map((r, i) => (
+              <div key={i} className="rounded-xl p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: '#141C26', border: '1px solid #1E293B' }}
+                onClick={() => sendToChat(`Summarise my ${r.type} from ${new Date(r.date).toLocaleDateString()}`)}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#FF6A00]" />
+                    <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{r.type}</span>
+                  </div>
+                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{new Date(r.date).toLocaleDateString()}</span>
+                </div>
+                {r.data?.system_state && (
+                  <p className="text-xs text-[#9FB0C3]">State: {typeof r.data.system_state === 'object' ? r.data.system_state.status : r.data.system_state} | Confidence: {typeof r.data.system_state === 'object' ? r.data.system_state.confidence : '—'}%</p>
+                )}
+                <div className="flex items-center gap-1 mt-2">
+                  <MessageSquare className="w-3 h-3 text-[#FF6A00]" />
+                  <span className="text-[10px] text-[#FF6A00]" style={{ fontFamily: MONO }}>Discuss in SoundBoard</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ═══ INTELLIGENCE TAB ═══ */}
+        {activeTab === 'intelligence' && <>
+
         {/* ═══ SECTION 2 — WHAT TO FOCUS ON NEXT ═══ */}
         {filteredMoves.length > 0 && (
           <div style={{ animation: 'snapFade 0.6s ease-out' }} data-testid="focus-section">
