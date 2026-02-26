@@ -126,10 +126,12 @@ const SignalBlock = ({ icon: Icon, label, value, sub, warning, hint }) => (
   </div>
 );
 
-const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegenerate, onReject, isRegenerating }) => {
+const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegenerate, onReject, isRegenerating, onAbnLookup }) => {
   const [mode, setMode] = useState('view');
   const [editFields, setEditFields] = useState({});
   const [rejectFields, setRejectFields] = useState({ legalName: '', suburb: '', abn: '' });
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupResult, setLookupResult] = useState(null);
 
   const signals = useMemo(() => identitySignals || {}, [identitySignals]);
   const confidence = useMemo(() => computeIdentityConfidence(signals), [signals]);
