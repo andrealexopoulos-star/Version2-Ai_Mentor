@@ -73,26 +73,7 @@ const Pricing = () => {
     }
   ];
 
-  const testimonials = [
-    {
-      quote: "The Strategy Squad helped me identify bottlenecks I didn't even know existed. Revenue up 40% in 3 months.",
-      author: "Sarah Chen",
-      role: "Founder, Bloom Digital",
-      avatar: "SC"
-    },
-    {
-      quote: "Like having a McKinsey consultant on retainer, but affordable. The SOPs alone saved us 20 hours/week.",
-      author: "Marcus Johnson",
-      role: "CEO, TechFlow Solutions",
-      avatar: "MJ"
-    },
-    {
-      quote: "Finally, an AI that actually understands MY business. Not generic advice - real, actionable strategies.",
-      author: "Elena Rodriguez",
-      role: "Owner, Craft & Co",
-      avatar: "ER"
-    }
-  ];
+  const testimonials = [];
 
   const faqs = [
     {
