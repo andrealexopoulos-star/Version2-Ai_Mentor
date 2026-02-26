@@ -25,7 +25,7 @@ const Pricing = () => {
         { text: 'Priority AI responses', included: false },
         { text: 'Team collaboration', included: false },
       ],
-      cta: 'Get Started Free',
+      cta: 'Try It For Free',
       ctaVariant: 'outline'
     },
     {
