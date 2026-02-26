@@ -162,7 +162,6 @@ const RiskPage = () => {
           </>
         )}
       </div>
-      <FloatingSoundboard context="Risk & governance - financial risk, operational risk, SPOFs, alignment" />
     </DashboardLayout>
   );
 };
