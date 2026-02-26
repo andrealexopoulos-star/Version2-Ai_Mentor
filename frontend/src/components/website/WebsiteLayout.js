@@ -147,7 +147,7 @@ const WebsiteFooter = () => (
         <div>
           <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: MONO }}>Company</h4>
           <div className="space-y-2.5">
-            {[['Contact', '/contact'], ['Trust', '/trust'], ['Book a Demo', '/contact']].map(([l, p]) => (
+            {[['Contact', '/contact'], ['Trust', '/trust'], ['Try It Free', '/register-supabase']].map(([l, p]) => (
               <Link key={l} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: NAV_FONT }}>{l}</Link>
             ))}
           </div>
