@@ -70,11 +70,11 @@ const IntegrationRequired = ({ groupId, color }) => {
 // Parse cognitive data into group structure — only from verified integration data
 function parseToGroups(c, connectedIntegrations) {
   const groups = {
-    money: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
-    revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
-    operations: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
-    people: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
-    market: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false },
+    money: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
+    revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
+    operations: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
+    people: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
+    market: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
   };
   if (!c) return groups;
 
