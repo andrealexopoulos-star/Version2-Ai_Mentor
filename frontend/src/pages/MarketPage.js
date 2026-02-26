@@ -7,7 +7,7 @@ import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import {
   TrendingUp, ArrowRight, Target, Shield, AlertTriangle,
-  Zap, CheckCircle2, Eye, ChevronDown, ChevronUp, Link2
+  Zap, CheckCircle2, Eye, ChevronDown, ChevronUp, Link2, RefreshCw
 } from 'lucide-react';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
