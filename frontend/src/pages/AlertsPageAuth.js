@@ -7,16 +7,6 @@ const SORA = "'Cormorant Garamond', Georgia, serif";
 const INTER = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
-const DEMO_ALERTS = [
-  { id: 1, severity: 'critical', title: 'Invoice #1847 overdue 12 days — $3,200', impact: 'Cash flow impact. Client has been unresponsive to previous follow-up.', action: 'Send firm payment reminder. Follow up via phone if no response in 48 hours.', time: '2h ago', actions: ['email', 'sms'] },
-  { id: 2, severity: 'critical', title: '3 deals stalled at proposal stage', impact: 'Combined pipeline value: $88K. Pricing objection detected across all 3.', action: 'Review proposal pricing. Consider offering phased engagement or pilot scope.', time: '4h ago', actions: ['email', 'handoff'] },
-  { id: 3, severity: 'moderate', title: 'Subcontractor costs increasing 12%', impact: 'Margin compression on Service B. Affects 4 active projects.', action: 'Renegotiate rates with current supplier or source alternatives.', time: '1d ago', actions: ['handoff'] },
-  { id: 4, severity: 'moderate', title: 'Staff overtime 15% above target', impact: '3 team members exceeded 48 hours this week. Burnout risk.', action: 'Redistribute Monday workload. Review project allocation.', time: '1d ago', actions: ['handoff'] },
-  { id: 5, severity: 'moderate', title: 'Client B engagement declining', impact: 'Response time increased 3x over 30 days. Churn risk elevated.', action: 'Schedule check-in call. AI has drafted re-engagement email.', time: '2d ago', actions: ['email', 'sms'] },
-  { id: 6, severity: 'info', title: 'BAS Q3 deadline in 18 days', impact: 'All documents prepared. No action required at this time.', action: 'Review and submit before deadline.', time: '3d ago', actions: [] },
-  { id: 7, severity: 'info', title: 'Workers compensation renewal in 45 days', impact: 'Current policy expires. Renewal documentation gathered.', action: 'Compare renewal quotes. Contact broker.', time: '5d ago', actions: [] },
-];
-
 const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
 
 const AlertItem = ({ alert, onAction }) => {
