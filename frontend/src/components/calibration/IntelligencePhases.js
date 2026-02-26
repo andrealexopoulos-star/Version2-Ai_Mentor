@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, AlertTriangle, Shield, ArrowRight, Target } from 'lucide-react';
+import { containsCRMClaim } from '../../constants/integrationTruth';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
