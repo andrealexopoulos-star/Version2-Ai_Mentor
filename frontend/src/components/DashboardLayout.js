@@ -70,13 +70,14 @@ const VerificationBadge = ({ navigate }) => {
   );
 };
 
-const DashboardLayout = ({ children }) => {
+const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, authState } = useSupabaseAuth();
   const { isNavOpen, openNav, closeAll } = useMobileDrawer();
   const isCalibrated = authState === AUTH_STATE.READY;
   const { showTutorial, closeTutorial, openTutorial, tutorial } = useTutorial(location.pathname);
+  const [sbOpen, setSbOpen] = useState(false);
 
   // Selective clear — preserve tutorials and preferences on logout
   const clearAuthStorage = () => {
