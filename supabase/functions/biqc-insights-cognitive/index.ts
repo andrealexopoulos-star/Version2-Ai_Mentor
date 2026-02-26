@@ -207,7 +207,9 @@ YOUR OUTPUT MUST BE THIS EXACT JSON STRUCTURE:
     "confidence": 0-100,
     "interpretation": "One sentence.",
     "velocity": "improving|stable|worsening",
-    "burn_rate_overlay": "Cash runway summary."
+    "drift_velocity": "accelerating|decelerating|stable",
+    "burn_rate_overlay": "Cash runway summary.",
+    "signal_freshness_hours": 0
   },
   "weekly_brief": {
     "actions_taken": number,
