@@ -237,7 +237,7 @@ const MarketPage = () => {
                 <span className="text-sm text-[#9FB0C3]">chance of hitting your goals at current pace</span>
               </div>
             )}
-            {alignment && <p className="text-sm text-[#9FB0C3] leading-relaxed">{alignment}</p>}
+            {filteredAlignment && <p className="text-sm text-[#9FB0C3] leading-relaxed">{filteredAlignment}</p>}
           </Panel>
         )}
 
