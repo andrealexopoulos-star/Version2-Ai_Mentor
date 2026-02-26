@@ -1,0 +1,175 @@
+{
+  "summary": "Iteration 76: Forensic Trust Overhaul P0 - Complete code verification of all 6 requirements. (1) Flow reorder confirmed: welcome→analyzing→identity_verification→wow_summary→intelligence-first→completing→dashboard. (2) ForensicIdentityCard has all 4 buttons (Confirm, Edit, Regenerate, Not My Business) with correct data-testids. (3) CTA gating: ctaVisible state with 3s delay after READY in ExecutiveCMOSnapshot. (4) Integration truth suppression via CRM_TERMS in both MarketPage and IntelligencePhases. (5) FloatingSoundboard onboarding message on first open. (6) Scroll fix with overflowY:visible in DashboardLayout main element.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "ForensicIdentityCard",
+        "issues": ["ESLint warning: Line 134 signals useMemo dependency issue (non-blocking, component compiles)"]
+      }
+    ]
+  },
+  "tests_executed": {
+    "webpack_compilation": {
+      "result": "PASS - compiled successfully with 1 ESLint warning (non-breaking)"
+    },
+    "backend_health": {
+      "endpoint": "/api/health",
+      "result": "PASS - returns {\"status\":\"healthy\"}"
+    },
+    "approve_identity_removal": {
+      "search_result": "PASS - No 'approve_identity' references found in codebase"
+    },
+    "flow_order_verification": {
+      "expected": "welcome→analyzing→identity_verification→wow_summary→intelligence-first→completing→dashboard",
+      "entry_states_in_code": [
+        "loading", "ignition", "welcome", "manual_summary", "analyzing",
+        "identity_verification", "wow_summary", "intelligence-first", "forensic", "completing", "continuity", "calibrating"
+      ],
+      "result": "PASS - Flow order matches specification, identity_verification BEFORE wow_summary"
+    },
+    "forensic_identity_card_buttons": {
+      "confirm_btn": "PASS - data-testid='identity-confirm-btn', label='Yes — this is my business'",
+      "edit_btn": "PASS - data-testid='identity-edit-btn', label='Edit details'",
+      "regenerate_btn": "PASS - data-testid='identity-regenerate-btn', label='Regenerate scan'",
+      "not_my_business_btn": "PASS - data-testid='identity-reject-btn', label='Not my business'"
+    },
+    "forensic_identity_card_modes": {
+      "view_mode": "PASS - data-testid='forensic-identity-card'",
+      "edit_mode": "PASS - data-testid='identity-edit-mode'",
+      "reject_mode": "PASS - data-testid='identity-reject-mode'"
+    },
+    "not_my_business_validation": {
+      "validation_logic": "disabled={(!rejectFields.legalName && !rejectFields.suburb && !rejectFields.abn) || isRegenerating}",
+      "result": "PASS - Button disabled until at least one identifier provided (ABN/suburb/legal name)"
+    },
+    "cta_gating_snapshot": {
+      "useState_ctaVisible": "PASS - Line 24: const [ctaVisible, setCtaVisible] = useState(false)",
+      "useEffect_delay": "PASS - Lines 39-45: 3s setTimeout after isReady before setCtaVisible(true)",
+      "conditional_render": "PASS - Line 186: {ctaVisible ? (...CTA button...) : isReady ? (...loading message...) : null}",
+      "result": "PASS - CTA hidden during ANALYZING, appears with fade animation after READY+3s"
+    },
+    "crm_truth_suppression": {
+      "market_page": {
+        "CRM_TERMS": "['pipeline', 'stale lead', 'churn', 'follow-up', 'cashflow', 'follow up', 'leads']",
+        "containsCRMClaim": "PASS - Line 98-101",
+        "filteredMoves": "PASS - Line 105",
+        "filteredBlindside": "PASS - Line 106",
+        "filteredLever": "PASS - Line 107",
+        "filteredMemo": "PASS - Line 108",
+        "filteredAlignment": "PASS - Line 109"
+      },
+      "intelligence_phases": {
+        "CRM_TERMS": "PASS - Line 16",
+        "containsCRMClaim": "PASS - Lines 17-20",
+        "memo_suppression": "PASS - Line 51",
+        "alignment_suppression": "PASS - Lines 54-55",
+        "no_crm_notice": "PASS - Lines 131-136"
+      },
+      "result": "PASS - Pipeline/lead/churn claims suppressed when no CRM connected"
+    },
+    "soundboard_onboarding": {
+      "integrationStatus_state": "PASS - Line 19: const [integrationStatus, setIntegrationStatus] = useState(null)",
+      "onboardingSent_ref": "PASS - Line 22: const onboardingSent = useRef(false)",
+      "auto_send_logic": "PASS - Lines 44-64: Sends integration status message on first open on Market page",
+      "context_check": "PASS - Line 46: if (!context.toLowerCase().includes('market')) return",
+      "result": "PASS - FloatingSoundboard auto-sends integration status on first Market page open"
+    },
+    "scroll_fix": {
+      "css_import_index": "PASS - /app/frontend/src/index.js Line 9: import '@/scroll-fix-critical.css'",
+      "css_import_app": "PASS - /app/frontend/src/App.js Line 3: import '@/scroll-fix-critical.css'",
+      "dashboard_overflow": "PASS - DashboardLayout.js Line 347: overflowY: 'visible'",
+      "market_page_overflow": "PASS - MarketPage.js Line 113: overflowY: 'visible'",
+      "result": "PASS - Scroll fix implemented with overflow-y:visible, no scroll trapping"
+    },
+    "identity_confidence_capping": {
+      "cms_prop": "PASS - ChiefMarketingSummary accepts identityConfidence prop (Line 48)",
+      "capping_logic": "PASS - Lines 52-54: cappedConfidence based on identityConfidence",
+      "result": "PASS - Report confidence capped based on identity confidence level"
+    },
+    "signal_blocks": {
+      "domain": "PASS - SignalBlock with Globe icon",
+      "business_name": "PASS - SignalBlock with Building2 icon",
+      "location": "PASS - SignalBlock with MapPin icon",
+      "abn": "PASS - SignalBlock with Hash icon",
+      "contacts": "PASS - Mail/Phone icons block",
+      "socials": "PASS - Link2 icon block",
+      "confidence": "PASS - Shield icon with confidence score/reasons"
+    }
+  },
+  "code_review": {
+    "ForensicIdentityCard.js": {
+      "lines": "1-347",
+      "parseIdentitySignals": "Exported function (Line 60-115) - parses extracted_data into identity signals",
+      "computeIdentityConfidence": "Internal function (Lines 7-58) - calculates High/Medium/Low confidence",
+      "view_mode": "Lines 226-343 - Main identity verification screen",
+      "edit_mode": "Lines 155-188 - Editable fields with Regenerate Scan button",
+      "reject_mode": "Lines 190-224 - Not My Business form with validation"
+    },
+    "useCalibrationState.js": {
+      "identity_states": "identitySignals, identityConfirmed, identityConfidence, isRegenerating (Lines 31-34)",
+      "handlers": "handleConfirmIdentity (286), handleRegenerateIdentity (307), handleRejectIdentity (365)",
+      "flow_gates": "identity_verification → wow_summary (Line 304), wow_summary → intelligence-first (Line 405)"
+    },
+    "CalibrationAdvisor.js": {
+      "identity_verification_render": "Lines 106-115 - Renders ForensicIdentityCard when entry === 'identity_verification'",
+      "wow_summary_blocked": "Line 118 - Requires cal.identityConfirmed before showing ChiefMarketingSummary"
+    },
+    "IntelligencePhases.js": {
+      "CTA_gating": "Lines 39-45 - useEffect with 3s delay after isReady",
+      "CRM_suppression": "Lines 16-20, 49-59 - Filters out CRM claims without integration"
+    },
+    "MarketPage.js": {
+      "CRM_suppression": "Lines 97-109 - Filters moves/risks/levers/memo/alignment",
+      "scroll_fix": "Line 113 - overflowY: 'visible'"
+    }
+  },
+  "features_verified": {
+    "flow_reorder": "PASS - Domain Entry → Domain Scan → Identity Verification → Chief Marketing Summary → Executive Snapshot → Dashboard",
+    "forensic_identity_card_4_buttons": "PASS - Confirm, Edit, Regenerate, Not My Business all present",
+    "edit_mode_regenerate": "PASS - Edit mode shows editable fields and Regenerate Scan button",
+    "not_my_business_validation": "PASS - Requires at least one identifier (ABN/suburb/legal name)",
+    "cta_gating_analyzing": "PASS - CTA hidden during ANALYZING state",
+    "cta_gating_ready_delay": "PASS - CTA appears with fade animation after READY + 3s",
+    "crm_suppression_snapshot": "PASS - Pipeline/CRM metrics suppressed without CRM source",
+    "crm_suppression_market": "PASS - Moves/risks/levers filtered when no CRM connected",
+    "market_scroll_fix": "PASS - No overflow:hidden trapping content",
+    "soundboard_onboarding": "PASS - Auto-sends integration status on first Market page open",
+    "confidence_capping": "PASS - ChiefMarketingSummary caps confidence based on identity confidence",
+    "approve_identity_removed": "PASS - No references to old approve_identity flow"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ESLint warning in ForensicIdentityCard.js Line 134 about useMemo dependencies - non-blocking but should be fixed",
+    "All 4 buttons in ForensicIdentityCard have correct data-testids for testing",
+    "CRM_TERMS list is duplicated in MarketPage.js and IntelligencePhases.js - consider extracting to shared constant",
+    "Flow gate is enforced: wow_summary requires identityConfirmed (Line 118 CalibrationAdvisor.js)",
+    "CTA gating uses proper React patterns: useState + useEffect with cleanup timer"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (health check passed)",
+    "frontend": "100% (all code structure verified)"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "BIQc_Test_2026!",
+    "note": "Supabase auth returned 400 in preview environment - code verification only"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 76 complete. P0 Forensic Trust Overhaul fully verified via code review. Supabase auth does not work in preview environment - login redirects to homepage. All 6 deliverables confirmed: (1) Flow reorder, (2) ForensicIdentityCard with 4 buttons, (3) CTA gating, (4) CRM truth suppression, (5) Soundboard onboarding, (6) Scroll fix. The ForensicIdentityCard is only visible during new user onboarding (entry='identity_verification'), not for already-calibrated users.",
+  "mocked_api_confirmation": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": [],
+    "note": "All endpoints are real Supabase Edge Functions and FastAPI routes. CRM integration via Merge.dev is real."
+  },
+  "auth_note": "Supabase auth credentials (andre@thestrategysquad.com.au / BIQc_Test_2026!) do not work in preview environment. Testing focused on code structure verification as instructed."
+}
