@@ -4,141 +4,104 @@
 Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with a premium "Liquid Steel" dark theme, Supabase-first architecture, and zero fake data discipline.
 
 ## Architecture
-- **Frontend**: React (CRA) + Tailwind + Shadcn/UI + Framer Motion
+- **Frontend**: React (CRA) + Tailwind + Shadcn/UI
 - **Backend**: FastAPI (thin Supabase client only)
-- **Database**: Supabase (PostgreSQL, Auth, Edge Functions, Realtime, pg_cron)
-- **AI Engine**: OpenAI gpt-4o-mini via `biqc-insights-cognitive` Edge Function
+- **Database**: Supabase (PostgreSQL, Auth, Edge Functions, Realtime)
+- **AI Engine**: OpenAI gpt-4o-mini via Edge Functions
 - **CRM Integration**: Merge.dev (HubSpot)
 
 ## Core Principles
-1. **Supabase-First**: FastAPI is only a thin client. All logic in Edge Functions / SQL.
+1. **Supabase-First**: FastAPI is only a thin client.
 2. **No Fake Data**: UI shows "insufficient data" states, never fabricated metrics.
-3. **Trust by Default**: Identity verification before scoring. Integration truth before claims.
+3. **Trust by Default**: Integration truth before claims.
 4. **Deterministic Integrity**: No AI narrative filler without verified signal data.
-5. **Signal Provenance**: Every data point must trace to a connected source.
 
 ---
 
-## What's Been Implemented
+## Completed Work
 
-### Session: Feb 27, 2026 — Trust Reconstruction (7 Sections)
+### Session 3: Feb 27, 2026 — Deep Intelligence Modules
 
-**Section 1 — Database Contract:**
-- Created SQL migration `021_trust_reconstruction.sql` with:
-  - `workspace_integrations` table (single source of truth for integration status)
-  - `governance_events` table (audit log reads ONLY from this)
-  - `report_exports` table (PDF audit trail)
-  - `business_profiles` alterations: `source_map`, `confidence_map`, `timestamp_map` columns
-  - RLS policies and indexes
-- **Status**: Migration file ready, needs deployment to Supabase
+**Workforce Intelligence (RiskPage.js):**
+- Two-tab structure: Risk & Governance + Workforce Intelligence
+- Workforce tab: Capacity utilisation meter, fatigue level, pending decisions, calendar density, email stress, key-person dependency (SPOF)
+- Integration-gated: Requires email/calendar connection
+- Null state with "Connect email and calendar" CTA
 
-**Section 2 — Frontend Hard Gating:**
-- Rewrote `AuditLogPage.js` to query `governance_events` from Supabase directly. No AI-generated free-text entries. Null state if table absent or empty.
-- Rewrote `ReportsPage.js` with financial snapshot gated behind `workspace_integrations.accounting`. Executive memo requires governance events. PDF export button integrated.
-- Rewrote `AdvisorWatchtower.js` with integration-aware data filtering. Revenue/Money/Operations/People tabs show `IntegrationRequired` component when corresponding integration absent.
-- Rewrote `OperationsPage.js` — zero hardcoded data. All bottlenecks, SOP compliance, team workload removed. Shows null state without integrations.
+**Growth/Scenario Planning (RevenuePage.js):**
+- Three-tab structure: Pipeline + Scenarios + Concentration
+- Scenarios tab: Best/base/worst case projections computed from real CRM deal probability data
+- Pipeline by probability distribution (high/medium/low tiers with bars)
+- Win/loss analysis from real data
+- Concentration tab: Revenue risk by client company with percentage bars, top client share, diversification score
+- All computed from real CRM deals only
 
-**Section 3 — Scrape Engine Hard Lock:**
-- Created `scrape-business-profile` Edge Function with deterministic-only extraction
-- Extracts: `<title>`, `meta[description]`, OpenGraph tags, JSON-LD structured data
-- Competitors ONLY from explicit JSON-LD `competitor`/`competitors` fields
-- No LLM enrichment, no industry guessing, no inferred competitor names
-- Returns `"no_structured_competitor_data"` status when no competitors found
-- **Status**: Edge Function ready, needs deployment to Supabase
+**Weighted Scoring Formula (AdvisorWatchtower.js):**
+- Score = (severity_weight * alert_count) + (metrics * 5) + (details ? 10 : 0) + (insight ? 5 : 0)
+- Severity weights: high=3, medium=2, low=1
+- Score displayed in group header with color-coded badge (green/yellow/red)
+- Max score capped at 100
 
-**Section 4 — PDF Generation Engine:**
-- Created `/api/reports/generate-pdf` backend route using fpdf2
-- PDF includes: workspace ID, generated timestamp, report version, integration list, signal summary, confidence score, raw data snapshot appendix
-- Created `/api/reports/download/{filename}` for serving generated PDFs
-- Stores export records in `report_exports` table
-- Explicit statement when no integrations connected
+### Session 2: Feb 27, 2026 — Trust Reconstruction (7 Sections)
+- SQL migration 021_trust_reconstruction.sql (workspace_integrations, governance_events, report_exports, business_profiles provenance)
+- AuditLogPage queries governance_events from Supabase (no AI-generated entries)
+- ReportsPage financial snapshot gated behind accounting integration
+- PDF generation engine (/api/reports/generate-pdf)
+- Scrape engine hard lock (deterministic metadata extraction only)
+- Synthetic string purge (Client A/B removed)
 
-**Section 5 — Synthetic String Purge:**
-- Removed all "Client A", "Client B" references from:
-  - `InteractiveDemoExpanded.js`
-  - `CognitiveV2Mockup.js`
-  - `RevenueModule.js` (website demo)
-  - `AlertsPage.js` (website demo)
-- Replaced with generic, non-specific language
-- Verified zero matches for: Client A, Client B, $280K, 24mo, stable margin, Stale Leads, Budget Overrun
-
-**Section 6 — Test Matrix:**
-- Test 1 (Fresh Workspace): All null states render correctly
-- Test 2 (Synthetic Purge): Zero synthetic strings in non-blog files
-- Test 3-4 (PDF): Endpoints exist and functional
-- Test 5-7 (Dashboard): All tabs show integration-required states
-- Test 8 (SQL): Migration file verified
-- Test 9 (Scrape): Deterministic extraction confirmed
-- Test 10 (Public): Blog + KB accessible
-
-### Previous Session: Full-Spectrum Integrity Lockdown (7 Phases)
-- Phase 1: Placeholder eradication across all dashboard pages
-- Phase 3: Blog engine with 16 verified-citation articles
-- Phase 4: Knowledge Base public access
-- Phase 5: Try for Free routing
-- Phase 6: Signup error handling
-- Phase 7: Password dot visibility
+### Session 1: Feb 27, 2026 — Full-Spectrum Integrity Lockdown (7 Phases)
+- Placeholder eradication across all dashboard pages
+- Blog engine with 16 verified-citation articles
+- Knowledge Base public access with 7 guides + 10 FAQs
+- Password dot visibility fix
+- Try for Free routing verification
+- Signup error handling improvements
 
 ### Earlier Sessions (inherited):
-- Liquid Steel dark theme
-- Forensic Identity Card for onboarding
-- Snapshot v2 with drift_velocity, trajectory, data_gaps
+- Liquid Steel dark theme, mobile navigation
+- Forensic Identity Card, Snapshot v2
 - High-ticket pricing page (5 tiers)
-- Soundboard panel (ChatGPT-style right panel)
-- Mobile forensic audit + bottom navigation
-- Auth/session hardening, password reset flow
+- Soundboard panel (ChatGPT-style)
+- Auth hardening, password reset
 
 ---
 
-## Files Modified (This Session — Trust Reconstruction)
-- `REWRITTEN: /app/frontend/src/pages/AuditLogPage.js` — Queries governance_events, null states
-- `REWRITTEN: /app/frontend/src/pages/ReportsPage.js` — Hard gated, PDF export
-- `MODIFIED: /app/frontend/src/components/InteractiveDemoExpanded.js` — Synthetic strings removed
-- `MODIFIED: /app/frontend/src/pages/CognitiveV2Mockup.js` — Synthetic strings removed
-- `MODIFIED: /app/frontend/src/pages/website/platform/RevenueModule.js` — Client B removed
-- `MODIFIED: /app/frontend/src/pages/website/platform/AlertsPage.js` — Client B removed
-- `MODIFIED: /app/backend/server.py` — Reports router registered
-- `NEW: /app/backend/routes/reports.py` — PDF generation + download
-- `NEW: /app/supabase/migrations/021_trust_reconstruction.sql` — Trust tables
-- `NEW: /app/supabase/functions/scrape-business-profile/index.ts` — Deterministic scrape
+## Deployment Queue (USER ACTION REQUIRED)
 
----
-
-## Deployment Queue (User Action Required)
-
-| Item | Type | File | Action |
-|------|------|------|--------|
-| Trust tables | SQL Migration | `021_trust_reconstruction.sql` | Run in Supabase SQL Editor |
-| Scrape engine | Edge Function | `scrape-business-profile/index.ts` | `supabase functions deploy` |
-| `calibration-business-dna` v2 | Edge Function UPDATE | Already in codebase | `supabase functions deploy` |
-| `biqc-insights-cognitive` v2 | Edge Function UPDATE | Already in codebase | `supabase functions deploy` |
-| `query-integrations-data` | Edge Function NEW | Already in codebase | `supabase functions deploy` |
-| `insight_outcomes` table | SQL Migration | `020_insight_outcomes.sql` | Run in Supabase SQL Editor |
+| Item | Action |
+|------|--------|
+| `021_trust_reconstruction.sql` | Run in Supabase SQL Editor |
+| `scrape-business-profile` | `supabase functions deploy scrape-business-profile` |
+| `calibration-business-dna` v2 | `supabase functions deploy calibration-business-dna` |
+| `biqc-insights-cognitive` v2 | `supabase functions deploy biqc-insights-cognitive` |
+| `query-integrations-data` | `supabase functions deploy query-integrations-data` |
+| `020_insight_outcomes.sql` | Run in Supabase SQL Editor |
 
 ---
 
 ## Prioritized Backlog
 
-### P0 (Critical)
-- [x] Full-Spectrum Integrity Lockdown — COMPLETED
-- [x] Trust Reconstruction (7 Sections) — COMPLETED
+### P0 (Critical) — COMPLETED
+- [x] Full-Spectrum Integrity Lockdown
+- [x] Trust Reconstruction
+- [x] Deep Intelligence Modules
 
 ### P1 (High Priority)
-- [ ] Deep Intelligence Modules: Workforce, Growth, Deep Market
-- [ ] Stripe Paid Gating: Feature-gate behind Stripe paywall
+- [ ] Stripe Paid Gating (test key in pod)
 - [ ] Google Ads Integration
 - [ ] Populate governance_events from integration syncs
+- [ ] Deep Market Modeling (saturation, demand capture, funnel friction) — MarketPage enhancement
 
 ### P2 (Medium Priority)
 - [ ] Signal Provenance Layer (C1)
-- [ ] State Justification Formalisation (C2)
-- [ ] "Since Your Last Visit" feature (C3)
-- [ ] Tension Framing (C4)
-- [ ] Chat Determinism completion (C5)
-- [ ] Complete SQL Migration
+- [ ] State Justification (C2)
+- [ ] "Since Your Last Visit" (C3)
+- [ ] Chat Determinism (C5)
+- [ ] SQL Migration remaining modules
 - [ ] Supabase Security Audit
 
-### P3 (Low Priority / Tech Debt)
-- [ ] CSS Consolidation: 13 files -> 2
-- [ ] Legacy Page Cleanup: Remove 8+ superseded pages
+### P3 (Tech Debt)
+- [ ] CSS Consolidation (13 -> 2 files)
+- [ ] Legacy Page Cleanup (8+ pages)
 - [ ] Recover Missing Edge Functions
