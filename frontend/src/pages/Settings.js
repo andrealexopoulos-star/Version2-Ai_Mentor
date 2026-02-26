@@ -456,7 +456,7 @@ const Settings = () => {
                             key={format}
                             className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-white/5"
                             style={{ 
-                              borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-medium)',
+                              borderColor: isSelected ? '#FF6A00' : '#243140',
                               background: isSelected ? 'rgba(0,102,255,0.05)' : 'transparent'
                             }}
                           >
@@ -516,7 +516,7 @@ const Settings = () => {
                             key={tool}
                             className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-white/5"
                             style={{ 
-                              borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-medium)',
+                              borderColor: isSelected ? '#FF6A00' : '#243140',
                               background: isSelected ? 'rgba(0,102,255,0.05)' : 'transparent'
                             }}
                           >
