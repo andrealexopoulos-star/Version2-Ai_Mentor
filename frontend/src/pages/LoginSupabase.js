@@ -127,7 +127,7 @@ const LoginSupabase = () => {
                   value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="Enter password" required
                   className="h-12 pr-12 text-sm rounded-xl"
-                  style={{ fontFamily: BODY, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
+                  style={{ fontFamily: BODY, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA', WebkitTextSecurity: showPassword ? 'none' : 'disc' }}
                   data-testid="login-password-input" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#9FB0C3] transition-colors"
