@@ -67,22 +67,17 @@ const RevenuePage = () => {
     fetchData();
   }, []);
 
-  // Calculate metrics from live data or use demo
-  const liveDeals = deals || DEMO.deals;
-  const totalPipeline = deals
-    ? deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0)
-    : DEMO.totalPipeline;
-  const activeDeals = deals
-    ? deals.filter(d => !d.status?.includes('WON') && !d.status?.includes('LOST')).length
-    : DEMO.activeDeals;
-  const stalledCount = deals
-    ? deals.filter(d => {
-        if (!d.last_modified_at) return false;
-        return (Date.now() - new Date(d.last_modified_at).getTime()) > 7 * 86400000;
-      }).length
-    : DEMO.stalled;
-  const wonCount = deals ? deals.filter(d => d.status === 'WON').length : 2;
-  const winRate = deals ? (deals.length > 0 ? Math.round((wonCount / deals.length) * 100) : 0) : DEMO.winRate;
+  // Use ONLY real data — no demo fallback
+  const hasDeals = deals && deals.length > 0;
+  const hasFinancials = financials && financials.connected;
+  const totalPipeline = hasDeals ? deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) : null;
+  const activeDeals = hasDeals ? deals.filter(d => !d.status?.includes('WON') && !d.status?.includes('LOST')).length : null;
+  const stalledCount = hasDeals ? deals.filter(d => {
+    if (!d.last_modified_at) return false;
+    return (Date.now() - new Date(d.last_modified_at).getTime()) > 7 * 86400000;
+  }).length : null;
+  const wonCount = hasDeals ? deals.filter(d => d.status === 'WON').length : 0;
+  const winRate = hasDeals ? (deals.length > 0 ? Math.round((wonCount / deals.length) * 100) : 0) : null;
 
   const healthScore = winRate > 50 ? 'good' : winRate > 30 ? 'moderate' : 'critical';
   const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#FF6A00';
