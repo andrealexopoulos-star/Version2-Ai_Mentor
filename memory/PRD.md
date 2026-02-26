@@ -89,13 +89,16 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 ## Files Modified (This Session)
 - `NEW: /app/frontend/src/components/calibration/ForensicIdentityCard.js`
 - `NEW: /app/frontend/src/constants/integrationTruth.js`
-- `MODIFIED: /app/frontend/src/hooks/useCalibrationState.js` - Flow reorder + identity handlers
-- `MODIFIED: /app/frontend/src/pages/CalibrationAdvisor.js` - Wired ForensicIdentityCard
+- `NEW: /app/supabase/functions/business-identity-lookup/index.ts` (ABN lookup)
+- `ENHANCED: /app/supabase/functions/calibration-business-dna/index.ts` (identity signals v2)
+- `MODIFIED: /app/frontend/src/hooks/useCalibrationState.js` - Flow reorder + identity handlers + ABN lookup
+- `MODIFIED: /app/frontend/src/pages/CalibrationAdvisor.js` - Wired ForensicIdentityCard + ABN lookup
 - `MODIFIED: /app/frontend/src/components/calibration/IntelligencePhases.js` - CTA gating + suppression
 - `MODIFIED: /app/frontend/src/components/calibration/ChiefMarketingSummary.js` - Confidence capping
 - `MODIFIED: /app/frontend/src/pages/MarketPage.js` - Scroll fix + integration suppression
 - `MODIFIED: /app/frontend/src/components/FloatingSoundboard.js` - Integration onboarding
 - `MODIFIED: /app/frontend/src/components/DashboardLayout.js` - Scroll fix
+- `NEW: /app/memory/ROADMAP.md` - Full sprint plan + tech debt + enhancement ideas
 
 ---
 
