@@ -63,9 +63,9 @@ const RevenuePage = () => {
   const wonCount = hasDeals ? deals.filter(d => d.status === 'WON').length : 0;
   const winRate = hasDeals ? (deals.length > 0 ? Math.round((wonCount / deals.length) * 100) : 0) : null;
 
-  const healthScore = winRate > 50 ? 'good' : winRate > 30 ? 'moderate' : 'critical';
+  const healthScore = winRate != null ? (winRate > 50 ? 'good' : winRate > 30 ? 'moderate' : 'critical') : null;
   const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#FF6A00';
-  const healthPct = Math.min(Math.round(winRate * 2), 100);
+  const healthPct = winRate != null ? Math.min(Math.round(winRate * 2), 100) : 0;
 
   return (
     <DashboardLayout>
@@ -81,14 +81,16 @@ const RevenuePage = () => {
           <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} />
         </div>
 
-        {!loading && !hasDeals && (
+        {!loading && !hasDeals && !hasFinancials && (
           <Panel className="text-center py-8">
             <DollarSign className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
             <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Revenue data not connected.</p>
-            <p className="text-xs text-[#64748B]">Connect your CRM to view pipeline, deal velocity, and revenue concentration.</p>
+            <p className="text-xs text-[#64748B] mb-4">Connect your CRM to view pipeline, deal velocity, and revenue concentration.</p>
+            <p className="text-xs text-[#64748B]">Connect accounting tools (Xero/QuickBooks) for cashflow analysis.</p>
           </Panel>
         )}
 
+        {hasDeals && <>
         {/* Revenue Health */}
         <Panel>
           <div className="flex items-center justify-between flex-wrap gap-4">
