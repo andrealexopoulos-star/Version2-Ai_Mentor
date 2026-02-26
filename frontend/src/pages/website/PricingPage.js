@@ -9,6 +9,29 @@ const BODY = "'Inter', sans-serif";
 
 const plans = [
   {
+    name: 'Market Intelligence Brief',
+    tagline: 'Complimentary',
+    price: 'Free',
+    period: '',
+    target: 'Any business with a website',
+    color: '#FF6A00',
+    highlight: false,
+    isFree: true,
+    features: [
+      '13-layer public digital footprint scan',
+      'Market Presence Score',
+      'Competitive Position Overview',
+      'Category Positioning Map (public signals)',
+      'Funnel friction flags (observable only)',
+      'Trust footprint comparison',
+      'Market saturation visibility',
+      'Data confidence indicator',
+    ],
+    notIncluded: 'No integrations. No internal modelling. No stored history.',
+    cta: 'Generate Market Brief',
+    link: '/register-supabase',
+  },
+  {
     name: 'Foundation',
     tagline: 'Performance Visibility',
     price: '$750',
