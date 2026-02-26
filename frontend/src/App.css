@@ -257,3 +257,12 @@
     opacity: 1;
     visibility: visible;
 }
+
+/* Password dot visibility on dark theme */
+input[type="password"] {
+    color: #F4F7FA !important;
+    -webkit-text-fill-color: #F4F7FA !important;
+}
+input[type="password"]::placeholder {
+    -webkit-text-fill-color: #64748B !important;
+}
