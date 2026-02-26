@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import FloatingSoundboard from '../components/FloatingSoundboard';
-import { apiClient } from '../lib/api';
-import { AlertTriangle, Shield, DollarSign, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { useSnapshot } from '../hooks/useSnapshot';
+import { CognitiveMesh } from '../components/LoadingSystems';
+import DataConfidence from '../components/DataConfidence';
+import { AlertTriangle, Shield, DollarSign, TrendingDown, CheckCircle2 } from 'lucide-react';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
+const HEAD = "'Cormorant Garamond', Georgia, serif";
+const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
@@ -13,152 +15,156 @@ const Panel = ({ children, className = '' }) => (
 );
 
 const RiskPage = () => {
-  const [snapshot, setSnapshot] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { cognitive, loading } = useSnapshot();
+  const c = cognitive || {};
+  const risk = c.risk || {};
+  const cap = c.capital || {};
+  const exec = c.execution || {};
+  const alignment = c.alignment || {};
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await apiClient.get('/snapshot/latest');
-        if (res.data?.cognitive) setSnapshot(res.data.cognitive);
-      } catch {} finally { setLoading(false); }
-    };
-    fetch();
-  }, []);
+  const spofs = risk.spof || [];
+  const regulatory = risk.regulatory || [];
+  const concentration = risk.concentration || '';
+  const runway = cap.runway;
+  const slaBreaches = exec.sla_breaches;
+  const contradictions = alignment.contradictions || [];
 
-  const cashRunway = snapshot?.cash_runway_months ?? snapshot?.capital?.runway ?? null;
-  const riskLevel = cashRunway !== null ? (cashRunway < 3 ? 'CRITICAL' : cashRunway < 6 ? 'MODERATE' : 'LOW') : null;
-  const riskColor = riskLevel === 'CRITICAL' ? '#EF4444' : riskLevel === 'MODERATE' ? '#F59E0B' : riskLevel === 'LOW' ? '#10B981' : '#64748B';
+  const hasData = runway != null || slaBreaches != null || spofs.length > 0 || concentration;
 
   return (
-  <DashboardLayout>
-    <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="risk-page">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Risk & Governance</h1>
-        <p className="text-sm text-[#9FB0C3]">
-          {cashRunway !== null ? 'Risk exposure from connected data.' : 'Connect financial data to assess risk.'}
-          {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: MONO }}>syncing...</span>}
-        </p>
-      </div>
-
-      {/* Risk Overview */}
-      <Panel>
-        <div className="flex items-center justify-between flex-wrap gap-4">
+    <DashboardLayout>
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="risk-page">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Overall Risk Score</h2>
-            <p className="text-sm text-[#9FB0C3]">Composite assessment across financial, operational, and market factors.</p>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Risk & Governance</h1>
+            <p className="text-sm text-[#9FB0C3]">{hasData ? 'Risk signals from connected data.' : 'Connect integrations to assess risk.'}</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <span className="text-3xl font-bold" style={{ fontFamily: MONO, color: riskColor }}>{riskLevel}</span>
-              <span className="block text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{cashRunway} months runway</span>
-            </div>
-          </div>
+          <DataConfidence cognitive={cognitive} />
         </div>
-      </Panel>
 
-      {/* Risk Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <Panel>
-          <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="w-4 h-4 text-[#FF6A00]" />
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Financial Risk</h3>
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>HIGH</span>
-          </div>
-          <div className="space-y-3">
-            {[
-              { title: 'Cash runway declining', detail: '4.2 months at current burn rate. Down from 5.8 months.', severity: '#FF6A00' },
-              { title: 'Revenue concentration', detail: 'Top client = 38% of revenue. Single point of failure.', severity: '#F59E0B' },
-              { title: 'Overdue receivables', detail: '$12,400 outstanding >30 days. $3,200 critical.', severity: '#FF6A00' },
-            ].map((r, i) => (
-              <div key={i} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: r.severity }} />
-                  <div>
-                    <p className="text-xs font-semibold text-[#F4F7FA]">{r.title}</p>
-                    <p className="text-[11px] text-[#64748B] mt-0.5">{r.detail}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
+        {loading && <CognitiveMesh message="Scanning risk signals..." />}
 
-        <Panel>
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Operational Risk</h3>
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: MONO }}>MODERATE</span>
-          </div>
-          <div className="space-y-3">
-            {[
-              { title: '2 SLA breaches this month', detail: 'Project Alpha and Client D deliverables delayed.', severity: '#FF6A00' },
-              { title: 'Staff overtime 15% above target', detail: '3 team members exceeded 48h. Burnout risk.', severity: '#F59E0B' },
-              { title: 'Subcontractor costs rising', detail: '12% increase in 45 days. Margin compression.', severity: '#F59E0B' },
-            ].map((r, i) => (
-              <div key={i} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: r.severity }} />
-                  <div>
-                    <p className="text-xs font-semibold text-[#F4F7FA]">{r.title}</p>
-                    <p className="text-[11px] text-[#64748B] mt-0.5">{r.detail}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
+        {!loading && !hasData && (
+          <Panel className="text-center py-8">
+            <Shield className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Insufficient data to assess risk.</p>
+            <p className="text-xs text-[#64748B]">Connect CRM, financial, and operational integrations to enable risk detection.</p>
+          </Panel>
+        )}
 
-        <Panel>
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-4 h-4 text-[#10B981]" />
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Market Risk</h3>
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>LOW</span>
-          </div>
-          <div className="space-y-3">
-            {[
-              { title: 'Competitor launched similar service', detail: 'Pricing 15% lower. Monitor client reactions.', severity: '#F59E0B' },
-              { title: 'Industry regulation changes', detail: 'New compliance requirements effective Q3.', severity: '#3B82F6' },
-              { title: 'Market sentiment stable', detail: 'No significant macro changes detected.', severity: '#10B981' },
-            ].map((r, i) => (
-              <div key={i} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: r.severity }} />
-                  <div>
-                    <p className="text-xs font-semibold text-[#F4F7FA]">{r.title}</p>
-                    <p className="text-[11px] text-[#64748B] mt-0.5">{r.detail}</p>
-                  </div>
+        {!loading && hasData && (
+          <>
+            {/* Financial Risk */}
+            {(runway != null || concentration) && (
+              <Panel>
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="w-4 h-4 text-[#FF6A00]" />
+                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Financial Risk</h3>
                 </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
+                <div className="space-y-3">
+                  {runway != null && (
+                    <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: runway < 6 ? '#EF4444' : '#F59E0B' }} />
+                        <div>
+                          <p className="text-xs font-semibold text-[#F4F7FA]">Cash Runway: {runway} months</p>
+                          <p className="text-[11px] text-[#64748B] mt-0.5">{runway < 3 ? 'Critical — immediate attention required.' : runway < 6 ? 'Below comfort threshold.' : 'Acceptable range.'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {concentration && (
+                    <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#F59E0B' }} />
+                        <div>
+                          <p className="text-xs font-semibold text-[#F4F7FA]">Revenue Concentration</p>
+                          <p className="text-[11px] text-[#64748B] mt-0.5">{concentration}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {cap.margin && (
+                    <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#F59E0B' }} />
+                        <div>
+                          <p className="text-xs font-semibold text-[#F4F7FA]">Margin</p>
+                          <p className="text-[11px] text-[#64748B] mt-0.5">{cap.margin}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Panel>
+            )}
+
+            {/* Operational Risk */}
+            {slaBreaches != null && (
+              <Panel>
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="w-4 h-4" style={{ color: slaBreaches > 0 ? '#F59E0B' : '#10B981' }} />
+                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Operational Risk</h3>
+                </div>
+                <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <p className="text-xs font-semibold text-[#F4F7FA]">SLA Breaches: {slaBreaches}</p>
+                  <p className="text-[11px] text-[#64748B] mt-0.5">{slaBreaches === 0 ? 'No breaches detected.' : `${slaBreaches} breach${slaBreaches > 1 ? 'es' : ''} detected this period.`}</p>
+                </div>
+                {exec.bottleneck && (
+                  <div className="p-3 rounded-lg mt-2" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <p className="text-xs font-semibold text-[#F4F7FA]">Bottleneck</p>
+                    <p className="text-[11px] text-[#64748B] mt-0.5">{exec.bottleneck}</p>
+                  </div>
+                )}
+              </Panel>
+            )}
+
+            {/* SPOFs */}
+            {spofs.length > 0 && (
+              <Panel>
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
+                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Single Points of Failure</h3>
+                </div>
+                <div className="space-y-2">
+                  {spofs.map((s, i) => (
+                    <div key={i} className="flex items-start gap-2 p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444425' }}>
+                      <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#EF4444' }} />
+                      <p className="text-xs text-[#9FB0C3]">{s}</p>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            )}
+
+            {/* Contradictions / Alignment Risk */}
+            {contradictions.length > 0 && (
+              <Panel>
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingDown className="w-4 h-4 text-[#F59E0B]" />
+                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Alignment Issues</h3>
+                </div>
+                <div className="space-y-2">
+                  {contradictions.map((ct, i) => (
+                    <div key={i} className="px-3 py-2 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
+                      <p className="text-xs" style={{ color: '#F59E0B' }}>{ct}</p>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            )}
+
+            {/* Missing Data Notice */}
+            {!runway && (
+              <Panel>
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>Financial data unavailable. Connect accounting integration to assess cash runway, margin, and cost structure.</p>
+              </Panel>
+            )}
+          </>
+        )}
       </div>
-
-      {/* Risk Timeline */}
-      <Panel>
-        <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Upcoming Risk Events</h3>
-        <div className="space-y-3">
-          {[
-            { date: '18 days', event: 'BAS Q3 submission deadline', type: 'Compliance', color: '#3B82F6' },
-            { date: '30 days', event: 'Cash runway drops below 4 months', type: 'Financial', color: '#FF6A00' },
-            { date: '45 days', event: 'Workers compensation renewal', type: 'Insurance', color: '#F59E0B' },
-            { date: '60 days', event: 'Largest client contract renewal', type: 'Revenue', color: '#EF4444' },
-          ].map((e, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-              <span className="text-sm font-bold shrink-0 w-16 text-right" style={{ color: e.color, fontFamily: MONO }}>{e.date}</span>
-              <div className="w-px h-8" style={{ background: '#243140' }} />
-              <div className="flex-1">
-                <p className="text-sm text-[#F4F7FA]">{e.event}</p>
-                <span className="text-[10px]" style={{ color: '#64748B', fontFamily: MONO }}>{e.type}</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-[#64748B]" />
-            </div>
-          ))}
-        </div>
-      </Panel>
-    </div>
-  </DashboardLayout>
+      <FloatingSoundboard context="Risk & governance - financial risk, operational risk, SPOFs, alignment" />
+    </DashboardLayout>
   );
 };
 
