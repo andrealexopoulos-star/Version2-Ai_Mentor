@@ -323,23 +323,35 @@ YOUR OUTPUT MUST BE THIS EXACT JSON STRUCTURE:
         "move": "Specific marketing action with named channels/tactics",
         "rationale": "Why this move matters NOW based on signals",
         "expected_impact": "$XK revenue / X% improvement",
+        "measurable_outcome": "Specific metric that will change (e.g. pipeline increase by $XK, conversion rate +X%)",
+        "timeframe_days": 30,
+        "impact_band": { "low": 0, "high": 0 },
         "urgency": "immediate|this_week|this_month",
-        "confidence": 0-100
+        "confidence": 0-100,
+        "outcome_tracking_enabled": true,
+        "metric_source": "crm|accounting|email|market|internal"
       }
     ],
     "primary_blindside_risk": {
       "risk": "Specific risk the owner hasn't considered",
       "evidence": "What signals suggest this",
       "probability": 0-100,
+      "probability_band": "X-Y%",
+      "time_window_days": 30,
+      "severity": 0-100,
       "impact_if_materialises": "Quantified consequence",
-      "prevention_action": "What to do NOW"
+      "prevention_action": "What to do NOW",
+      "confidence": 0-100
     },
     "hidden_growth_lever": {
       "lever": "Overlooked opportunity in current data",
       "evidence": "What signals reveal this",
       "potential_value": "$XK-$YK range",
+      "underutilisation_score": 0-100,
+      "upside_band": { "low": 0, "high": 0 },
       "effort_to_activate": "low|medium|high",
-      "first_step": "Specific actionable first step"
+      "first_step": "Specific actionable first step",
+      "confidence": 0-100
     },
     "marketing_waste_alert": {
       "waste_identified": "Where effort/spend is being wasted",
