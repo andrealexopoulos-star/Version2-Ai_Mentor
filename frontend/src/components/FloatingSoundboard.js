@@ -49,6 +49,7 @@ const FloatingSoundboard = ({ context = '' }) => {
       const res = await apiClient.post('/soundboard/chat', {
         message: userMsg,
         context: context,
+        current_module: window.location.pathname,
         conversation_id: null,
       });
       const reply = res.data?.response || res.data?.message || 'Let me think about that...';
