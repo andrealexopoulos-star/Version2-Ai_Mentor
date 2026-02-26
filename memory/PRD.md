@@ -19,77 +19,46 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 
 ## What's Been Implemented
 
-### Session: Feb 26, 2026 — P0 Forensic Trust Overhaul
+### Session: Feb 27, 2026 — Full-Spectrum Integrity Lockdown
 
-**F1-F7 Defect Fixes (from FORENSIC MASTER PROMPT):**
+**Phase 1 — Total Placeholder Eradication:**
+- Rewrote `AdvisorWatchtower.js` to check integration status via `/integrations/merge/connected` API
+- Revenue, Money, Operations, People tabs now show "Connect integrations to view verified data" when corresponding integrations are not connected
+- Market tab shows web-scraped data (allowed without CRM)
+- Removed all hardcoded fake data from `OperationsPage.js` (eliminated fabricated bottlenecks, SOP compliance numbers, team workload, and AI advisory fallback)
+- `RevenuePage.js` already clean — only shows real CRM data
+- Integration-aware `IntegrationRequired` component displays per-tab connection prompts
 
-1. **Flow Reorder (F1/F2 fix)** - Canonical onboarding flow enforced:
-   - Domain Entry -> Domain Scan (extraction only) -> Identity Verification Gate -> Footprint Report (CMS) -> Executive Snapshot -> Dashboard
-   - Identity verification now happens BEFORE footprint scoring, preventing wrong-business audits.
+**Phase 3 — Blog Engine (16 articles):**
+- Created `BlogPage.js` with search, category filtering, and article grid
+- Created `BlogArticlePage.js` with individual article rendering and citation display
+- Created `blogArticles.js` data file with 16 industry-specific articles
+- All statistics cite verified sources: McKinsey, BCG, PwC, Menlo Ventures, Wharton School, Microsoft, US Census Bureau
+- Each citation includes source name, publication year, and direct URL
+- Industries covered: Healthcare, Finance, Manufacturing, Retail, Construction, Legal, SMB, Technology, Accounting, Logistics, Marketing, Real Estate, Education, Cross-Industry, Regional
+- FOMO/urgency tone based on evidence-driven adoption data
 
-2. **Forensic Identity Verification Card (F3 fix)** - New `ForensicIdentityCard.js`:
-   - Shows 7 signal blocks: Domain, Business Name, Location, ABN/ACN, Contact Signals, Social Links, Identity Confidence
-   - 4 mandatory buttons: Yes (confirm), Edit details, Regenerate scan, Not my business
-   - Identity confidence scoring (High/Medium/Low) based on available signals
-   - Edit mode with editable fields + forced regenerate
-   - "Not my business" requires at least one identifier (ABN/suburb/legal name)
-   - Footprint report BLOCKED until identity confirmed
+**Phase 4 — Knowledge Base Public Access:**
+- Removed `ProtectedRoute` wrapper from Knowledge Base route
+- KnowledgeBasePage now conditionally renders WebsiteLayout (public) or DashboardLayout (authenticated)
+- Added 7 comprehensive guides + 10 FAQs
+- Moved route to public section in App.js
 
-3. **Snapshot CTA Gating (F4 fix)** - `ExecutiveCMOSnapshot`:
-   - CTA button hidden during ANALYZING state
-   - Loading animation shown instead
-   - CTA appears only after READY state + 3s delay with fade-in animation
-   - Users cannot bypass to dashboard during analysis
+**Phase 5 — Try for Free Routing:**
+- Verified all "Try It Free" buttons route to `/register-supabase`
+- Nav, homepage hero, blog CTA, article CTA all confirmed
 
-4. **Integration Truth Suppression (F5 fix)** - No-CRM-No-Claims layer:
-   - CRM-dependent terms (pipeline, churn, leads, etc.) suppressed in both Market page and Executive Snapshot
-   - Shared `integrationTruth.js` constant used across components
-   - "Connect CRM to unlock" notices shown when integration missing
+**Phase 6 — Signup Error Handling:**
+- Added deterministic error messages for: existing email, weak password, invalid email, rate limiting, network errors
+- No generic "Something went wrong" messages
 
-5. **Chat Integration Onboarding (F6 fix)** - `FloatingSoundboard`:
-   - Auto-sends integration status message on first Market page open
-   - Shows live connection status for CRM, Email, Google Ads, Meta, Analytics, Calendar
-   - Directs users to Systems menu for integration
+**Phase 7 — Password Dot Visibility:**
+- Added `-webkit-text-fill-color: #F4F7FA` to all password inputs
+- Added global CSS rule for `input[type="password"]` in App.css
+- White dots now visible on dark background
 
-6. **Market Page Scroll Fix (F7 fix)**:
-   - Removed `overflow-y-auto` from DashboardLayout main element
-   - Set `overflow-y: visible` to let HTML be sole scroll container
-   - Consistent with `scroll-fix-critical.css` strategy
-
-7. **Confidence Capping** - `ChiefMarketingSummary`:
-   - Report confidence capped based on identity confidence level
-   - Medium identity confidence caps report confidence at Medium (never High)
-
-8. **Enhanced Domain Scan** - `calibration-business-dna` Edge Function v2:
-   - Added deterministic identity signal extraction (no AI needed): ABN/ACN regex, phone patterns, email extraction, social URL detection, address patterns, geographic signals
-   - Now scrapes `/contact` page in addition to `/about`, `/team`, `/services`
-   - Merges deterministic signals with AI extraction (deterministic wins for identity fields)
-   - Accepts user hints (`business_name_hint`, `location_hint`, `abn_hint`) for re-scans
-   - Returns `identity_signals` object alongside `extracted_data`
-
-9. **ABN Registry Lookup** - `business-identity-lookup` Edge Function (NEW):
-   - Uses free ABR (Australian Business Register) JSON API
-   - Supports: direct ABN lookup, name-based search
-   - Returns: legal_name, trading_name, ABN, address, match_confidence, match_reason
-   - Includes suggestion list for ambiguous matches
-   - Requires `ABR_GUID` secret (free registration at abr.business.gov.au)
-   - Frontend: "Search ABR" button appears on ForensicIdentityCard when confidence is Low/Medium
-
-10. **Cognition Maturity: Level 3 Instrumentation** (Phase 1 — Instrument, Observe, Refine):
-    - New `insight_outcomes` SQL table for prediction tracking (no automated evaluation yet)
-    - Enhanced `biqc-insights-cognitive` GPT output schema:
-      - `drift_velocity`: accelerating/decelerating/stable
-      - `signal_freshness_hours`: data age indicator
-      - `trajectory_projection_90_days`: projected state, risk/compression probability, best/base/worst case, key variable
-      - `data_gaps[]`: area, status, impact_on_confidence, fix
-      - `snapshot_confidence`: 0-100 overall confidence
-      - Strategic moves now include: `measurable_outcome`, `timeframe_days`, `impact_band`, `metric_source`, `outcome_tracking_enabled`
-      - Blindside risk now includes: `probability_band`, `time_window_days`, `severity`, `confidence`
-      - Hidden growth lever now includes: `underutilisation_score`, `upside_band`, `confidence`
-    - Predictions auto-stored in `insight_outcomes` after each snapshot generation
-    - `intelligence_snapshots` table gains `snapshot_confidence` column
-    - Frontend Snapshot v2 UI: 7 sections (System State → Trajectory → Moves → Blindside → Lever → Data Gaps → Confidence)
-    - **No automated cron evaluation** — Phase 2 will add manual admin evaluation, Phase 3 adds pg_cron after 60-90 days of observation
+**Navigation Updates:**
+- Added "Blog" link to website navigation (WebsiteLayout)
 
 ### Previous Sessions (inherited):
 - Liquid Steel dark theme applied globally
@@ -99,29 +68,25 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - Auth/session hardening, password reset flow
 - AI Learning Guarantee page
 - Trust navigation menus updated
+- Forensic Identity Card for onboarding
+- Snapshot v2 with drift_velocity, trajectory, data_gaps
+- High-ticket pricing page (5 tiers)
+- Soundboard panel (ChatGPT-style right panel)
 
 ---
 
 ## Files Modified (This Session)
-- `NEW: /app/frontend/src/components/calibration/ForensicIdentityCard.js`
-- `NEW: /app/frontend/src/constants/integrationTruth.js`
-- `NEW: /app/supabase/functions/business-identity-lookup/index.ts` (ABN lookup)
-- `NEW: /app/supabase/functions/query-integrations-data/index.ts` (Soundboard data queries)
-- `NEW: /app/supabase/migrations/020_insight_outcomes.sql` (Prediction tracking)
-- `ENHANCED: /app/supabase/functions/calibration-business-dna/index.ts` (identity signals v2)
-- `ENHANCED: /app/supabase/functions/biqc-insights-cognitive/index.ts` (Snapshot v2 + prediction storage)
-- `MODIFIED: /app/frontend/src/hooks/useCalibrationState.js` - Flow reorder + identity + ABN lookup
-- `MODIFIED: /app/frontend/src/pages/CalibrationAdvisor.js` - Wired ForensicIdentityCard + ABN lookup
-- `MODIFIED: /app/frontend/src/components/calibration/IntelligencePhases.js` - Snapshot v2 7-section UI
-- `MODIFIED: /app/frontend/src/components/calibration/ChiefMarketingSummary.js` - Confidence capping
-- `MODIFIED: /app/frontend/src/pages/MarketPage.js` - Scroll fix + integration suppression
-- `MODIFIED: /app/frontend/src/components/FloatingSoundboard.js` - Data queries + BNA updates + onboarding
-- `MODIFIED: /app/frontend/src/components/DashboardLayout.js` - Scroll fix + VerificationBadge
-- `MODIFIED: /app/frontend/src/pages/website/HomePage.js` - CTA: Try It For Free
-- `MODIFIED: /app/frontend/src/pages/LandingIntelligent.js` - CTA: Try It For Free
-- `MODIFIED: /app/frontend/src/pages/Pricing.js` - CTA: Try It For Free
-- `MODIFIED: /app/frontend/src/components/website/WebsiteLayout.js` - Nav: Try It Free
-- `NEW: /app/memory/ROADMAP.md` - Full sprint plan + tech debt + enhancement ideas
+- `REWRITTEN: /app/frontend/src/pages/AdvisorWatchtower.js` — Integration-aware data filtering
+- `REWRITTEN: /app/frontend/src/pages/OperationsPage.js` — No fake data, integration checks
+- `REWRITTEN: /app/frontend/src/pages/KnowledgeBasePage.js` — Public/auth-aware with guides + FAQs
+- `MODIFIED: /app/frontend/src/pages/LoginSupabase.js` — Password dot visibility
+- `MODIFIED: /app/frontend/src/pages/RegisterSupabase.js` — Password dots + error handling
+- `MODIFIED: /app/frontend/src/App.js` — Blog routes, KB public route
+- `MODIFIED: /app/frontend/src/App.css` — Password input dark theme CSS
+- `MODIFIED: /app/frontend/src/components/website/WebsiteLayout.js` — Blog nav link
+- `NEW: /app/frontend/src/pages/BlogPage.js` — Blog listing page
+- `NEW: /app/frontend/src/pages/BlogArticlePage.js` — Individual article page
+- `NEW: /app/frontend/src/data/blogArticles.js` — 16 articles with verified citations
 
 ---
 
@@ -129,46 +94,37 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 
 ### P0 (Critical)
 - [x] Forensic Trust Overhaul (F1-F7) - COMPLETED
+- [x] Full-Spectrum Integrity Lockdown (7 phases) - COMPLETED
 
 ### P1 (High Priority)
-- [ ] Stripe Paid Gating: Feature-gate Forensic Calibration + Executive Strategic Brief behind Stripe paywall
-- [ ] Soundboard Integrated Queries: Edge Function `query-integrations-data` for real-data answers
+- [ ] Competitor URL scrape accuracy lock (Phase 2 from lockdown)
+- [ ] Deep Intelligence Modules: Workforce, Growth, Deep Market
+- [ ] Stripe Paid Gating: Feature-gate behind Stripe paywall
 - [ ] Soundboard BNA Updates: Allow Soundboard to update Business DNA via chat
-- [ ] Google Ads Integration: Wire up data feed into Soundboard and cognitive engine
+- [ ] Google Ads Integration: Wire up data feed
 
 ### P2 (Medium Priority)
-- [ ] Complete SQL Migration: Remaining Python modules (merge_emission_layer, watchtower_engine, silence_detection)
-- [ ] SQL Triggers: Auto-refresh cognitive snapshots on integration connect / calibration complete
-- [ ] Real Channel APIs: Wire up Meta Ads, LinkedIn, GA4 via Merge.dev or direct APIs
-- [ ] Supabase Security Audit: RLS policies, Edge Function review
+- [ ] Complete SQL Migration: Remaining Python modules
+- [ ] SQL Triggers: Auto-refresh cognitive snapshots
+- [ ] Real Channel APIs: Meta Ads, LinkedIn, GA4
+- [ ] Supabase Security Audit: RLS policies
+- [ ] Signal Provenance Layer (C1)
+- [ ] State Justification Formalisation (C2)
+- [ ] "Since Your Last Visit" feature (C3)
+- [ ] Tension Framing (C4)
+- [ ] Chat Determinism completion (C5)
 
 ### P3 (Low Priority / Tech Debt)
-- [ ] CSS Consolidation: 13 files -> 2 (index.css + mobile.css)
+- [ ] CSS Consolidation: 13 files -> 2
 - [ ] Legacy Page Cleanup: Remove 8+ superseded pages
-- [ ] Recover Missing Edge Functions: intelligence-snapshot, social-enrichment source code
+- [ ] Recover Missing Edge Functions
 - [ ] Duplicate Supabase Secrets cleanup
-- [ ] Missing Merge.dev webhook handler
 
 ---
 
-## Edge Function / SQL Advisory (for this session's changes)
-
-### Recommended Edge Function Enhancement:
-The `calibration-business-dna` Edge Function should be enhanced to extract more identity signals from website scanning:
-- Contact emails (from contact page)
-- Phone numbers
-- Physical address / headquarters
-- ABN/ACN patterns (Australian Business Number regex)
-- Social media profile URLs (LinkedIn, Facebook, Instagram, Twitter/X)
-- Services keywords (top 20 terms)
-- Industry keywords (top 20 terms)
-- Geographic signals (city/state/country mentions)
-- About/Contact/Services page existence detection
-- Case studies/testimonials detection
-- Brand logo alt text
-
-### Optional New Edge Function:
-`business-identity-lookup` - Only needed if domain scan consistently fails to find ABN/address and confidence stays Low after user hints. Would use registry API keys from Supabase secrets.
-
-### No SQL Changes Required:
-The identity verification is purely UI-level gating. No schema changes needed.
+## Edge Function / SQL Advisory
+- `calibration-business-dna` v2 — AWAITING DEPLOY
+- `business-identity-lookup` — BACKLOG (needs ABR_GUID)
+- `query-integrations-data` — AWAITING DEPLOY
+- `biqc-insights-cognitive` v2 — AWAITING DEPLOY
+- `insight_outcomes` table — AWAITING SQL RUN
