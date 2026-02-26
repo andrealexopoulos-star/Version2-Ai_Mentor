@@ -1,6 +1,5 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import FloatingSoundboard from '../components/FloatingSoundboard';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { FileText, TrendingUp, DollarSign, Users, BarChart3, Download } from 'lucide-react';
@@ -89,7 +88,6 @@ const ReportsPage = () => {
           </>
         )}
       </div>
-      <FloatingSoundboard context="Intelligence reports - weekly brief, financial snapshot, executive memo" />
     </DashboardLayout>
   );
 };

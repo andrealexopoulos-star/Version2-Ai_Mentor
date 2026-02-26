@@ -1,6 +1,5 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import FloatingSoundboard from '../components/FloatingSoundboard';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { Zap, Mail, MessageSquare, Users, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
@@ -110,7 +109,6 @@ const ActionsPage = () => {
           </>
         )}
       </div>
-      <FloatingSoundboard context="Resolution centre - action queue, priority focus, resource reallocation" />
     </DashboardLayout>
   );
 };

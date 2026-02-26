@@ -1,6 +1,5 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import FloatingSoundboard from '../components/FloatingSoundboard';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { Shield, CheckCircle2, AlertTriangle, Clock, FileText } from 'lucide-react';
@@ -111,7 +110,6 @@ const CompliancePage = () => {
           </>
         )}
       </div>
-      <FloatingSoundboard context="Compliance intelligence - regulatory obligations, risk exposure, SPOFs" />
     </DashboardLayout>
   );
 };
