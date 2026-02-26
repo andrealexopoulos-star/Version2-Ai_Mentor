@@ -121,12 +121,12 @@ const DashboardLayout = ({ children }) => {
 
   const navSections = [
     { id: 'intelligence', label: 'Intelligence', items: [
-      { icon: LayoutDashboard, label: 'BIQc Insights', path: '/advisor', showBadge: true },
+      { icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true },
       { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
       { icon: Settings, label: 'Operations', path: '/operations' },
       { icon: AlertTriangle, label: 'Risk', path: '/risk' },
       { icon: Shield, label: 'Compliance', path: '/compliance' },
-      { icon: Radar, label: 'Market', path: '/market' },
+      { icon: Radar, label: 'Market & Positioning', path: '/market' },
     ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Bell, label: 'Alerts', path: '/alerts' },
