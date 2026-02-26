@@ -188,15 +188,18 @@ const MarketPage = () => {
         )}
 
         {/* No action plan yet — show what's needed */}
-        {moves.length === 0 && snapshot && (
+        {filteredMoves.length === 0 && snapshot && (
           <Panel>
             <h2 className="text-sm font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>What To Focus On Next</h2>
             <p className="text-sm text-[#9FB0C3] leading-relaxed">BIQc needs more data to generate specific recommendations. Complete forensic calibration and connect your key tools to unlock personalised action priorities.</p>
+            {!hasCRM && (
+              <p className="text-xs text-[#F59E0B] mt-2" style={{ fontFamily: MONO }}>Connect CRM to unlock lead, pipeline, and churn intelligence.</p>
+            )}
           </Panel>
         )}
 
         {/* ═══ SECTION 3 — BIGGEST RISK RIGHT NOW ═══ */}
-        {blindside && (
+        {filteredBlindside && (
           <div className="rounded-xl p-5" style={{ background: '#EF444406', border: '1px solid #EF444420', animation: 'snapFade 0.7s ease-out' }} data-testid="risk-section">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
