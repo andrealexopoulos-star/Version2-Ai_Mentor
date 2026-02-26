@@ -94,14 +94,6 @@ const MarketPage = () => {
   const hasEmail = channelsData?.channels?.some(ch => ch.key === 'email' && ch.status === 'connected');
   const pipeline = hasCRM ? (c.pipeline_total || c.revenue?.pipeline) : null;
 
-  // Integration truth suppression: filter out CRM/email claims without integration
-  const CRM_TERMS = ['pipeline', 'stale lead', 'churn', 'follow-up', 'cashflow', 'follow up', 'leads'];
-  const containsCRMClaim = (text) => {
-    if (!text || typeof text !== 'string') return false;
-    const lower = text.toLowerCase();
-    return CRM_TERMS.some(term => lower.includes(term));
-  };
-
   // Suppress moves/risks/levers that reference CRM data without integration
   const filteredMoves = hasCRM ? moves : moves.filter(m => !containsCRMClaim(m.move) && !containsCRMClaim(m.rationale));
   const filteredBlindside = blindside && (!containsCRMClaim(blindside.risk) || hasCRM) ? blindside : null;
