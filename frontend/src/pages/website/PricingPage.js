@@ -37,10 +37,10 @@ const PricingPage = () => (
       <div className="max-w-5xl mx-auto px-6 pt-24 pb-16 relative z-10 text-center">
         <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>Pricing</span>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
-          Less Than <span style={{ color: '#FF6A00' }}>One Senior Hire.</span>
+          Increase <span style={{ color: '#FF6A00' }}>Return on Talent.</span>
         </h1>
         <p className="text-lg text-[#9FB0C3] max-w-xl mx-auto" style={{ fontFamily: BODY }}>
-          The intelligence of an entire leadership team — at a fraction of a single salary.
+          Transform leadership time into measurable impact. Reduce operational drag, prevent burnout, and improve performance without increasing payroll.
         </p>
       </div>
     </section>
@@ -49,17 +49,22 @@ const PricingPage = () => (
     <section className="py-20" style={{ background: '#141C26' }} data-testid="pricing-comparison">
       <div className="max-w-5xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Hiring Column */}
+          {/* Cost Without BIQc */}
           <div className="rounded-2xl p-8" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center gap-2 mb-6">
               <X className="w-5 h-5 text-[#EF4444]" />
-              <h3 className="text-lg font-semibold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Traditional Hiring</h3>
+              <h3 className="text-lg font-semibold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Without BIQc</h3>
             </div>
             <div className="space-y-4 mb-8">
-              {hiresCost.map((hire) => (
-                <div key={hire.role} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>{hire.role}</span>
-                  <span className="text-sm font-semibold text-[#EF4444]" style={{ fontFamily: MONO }}>{hire.salary}</span>
+              {[
+                { item: 'Missed revenue signals', cost: 'Hidden cost' },
+                { item: 'Delayed risk detection', cost: 'Weeks of exposure' },
+                { item: 'Manual reporting overhead', cost: '10+ hrs/week' },
+                { item: 'Reactive decision-making', cost: 'Compounding losses' },
+              ].map((row) => (
+                <div key={row.item} className="flex items-center justify-between px-4 py-3 rounded-xl" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>{row.item}</span>
+                  <span className="text-sm font-semibold text-[#EF4444]" style={{ fontFamily: MONO }}>{row.cost}</span>
                 </div>
               ))}
             </div>
