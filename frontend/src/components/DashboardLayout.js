@@ -344,7 +344,7 @@ const DashboardLayout = ({ children }) => {
 
       {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD CONSOLE ═══ */}
       <div className={`${sidebarMargin} pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex`} style={{ minHeight: '100dvh' }}>
-        <main className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }}>
+        <main className="flex-1" style={{ background: '#0F1720', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
         </main>
       </div>
