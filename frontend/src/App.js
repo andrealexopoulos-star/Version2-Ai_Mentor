@@ -208,59 +208,54 @@ function AppRoutes() {
       <Route path="/login" element={<Navigate to="/login-supabase" replace />} />
       <Route path="/register" element={<Navigate to="/register-supabase" replace />} />
 
-      {/* Onboarding */}
+      {/* Onboarding — Free tier */}
       <Route path="/onboarding-decision" element={<ProtectedRoute><OnboardingDecision /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
       <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
       <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
-      {/* Protected Routes — Intelligence */}
+      {/* Subscribe */}
+      <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
+
+      {/* Free Tier Routes */}
       <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
       <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
-      <Route path="/revenue" element={<ProtectedRoute><RevenuePage /></ProtectedRoute>} />
-      <Route path="/operations" element={<ProtectedRoute><OperationsPage /></ProtectedRoute>} />
-      <Route path="/risk" element={<ProtectedRoute><RiskPage /></ProtectedRoute>} />
-      <Route path="/compliance" element={<ProtectedRoute><CompliancePage /></ProtectedRoute>} />
       <Route path="/market" element={<ProtectedRoute><MarketPage /></ProtectedRoute>} />
       <Route path="/market/calibration" element={<ProtectedRoute><ForensicCalibration /></ProtectedRoute>} />
-
-      {/* Protected Routes — Execution */}
-      <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
-      <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
-      <Route path="/automations" element={<ProtectedRoute><AutomationsPageAuth /></ProtectedRoute>} />
-
-      {/* Protected Routes — Systems */}
+      <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
       <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+      <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
       <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
-
-      {/* Protected Routes — Governance */}
-      <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-      <Route path="/audit-log" element={<ProtectedRoute><AuditLogPage /></ProtectedRoute>} />
       <Route path="/forensic-audit" element={<ProtectedRoute><ForensicAuditPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
-      {/* Legacy Routes (still accessible) */}
-      <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
-      <Route path="/oac" element={<ProtectedRoute><OpsAdvisoryCentre /></ProtectedRoute>} />
-      <Route path="/intel-centre" element={<ProtectedRoute><IntelCentre /></ProtectedRoute>} />
-      <Route path="/outlook-test" element={<ProtectedRoute adminOnly><OutlookTest /></ProtectedRoute>} />
-      <Route path="/gmail-test" element={<ProtectedRoute adminOnly><GmailTest /></ProtectedRoute>} />
-      <Route path="/diagnosis" element={<ProtectedRoute><Diagnosis /></ProtectedRoute>} />
-      <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
-      <Route path="/market-analysis" element={<ProtectedRoute><MarketAnalysis /></ProtectedRoute>} />
-      <Route path="/sop-generator" element={<ProtectedRoute><SOPGenerator /></ProtectedRoute>} />
-      <Route path="/data-center" element={<ProtectedRoute><DataCenter /></ProtectedRoute>} />
-      <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-      <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
-      <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
-      <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
-      <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
-      <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
-      <Route path="/watchtower" element={<ProtectedRoute><Watchtower /></ProtectedRoute>} />
-      <Route path="/war-room" element={<ProtectedRoute><div className="h-screen bg-black"><WarRoomConsole /></div></ProtectedRoute>} />
-      <Route path="/board-room" element={<ProtectedRoute><div className="h-screen bg-black"><BoardRoom /></div></ProtectedRoute>} />
-      <Route path="/intelligence-baseline" element={<ProtectedRoute><IntelligenceBaseline /></ProtectedRoute>} />
-      <Route path="/operator" element={<ProtectedRoute><OperatorDashboard /></ProtectedRoute>} />
+      {/* Paid Tier Routes (starter+) — TierGate enforced */}
+      <Route path="/revenue" element={<ProtectedRoute><TierGate><RevenuePage /></TierGate></ProtectedRoute>} />
+      <Route path="/operations" element={<ProtectedRoute><TierGate><OperationsPage /></TierGate></ProtectedRoute>} />
+      <Route path="/risk" element={<ProtectedRoute><TierGate><RiskPage /></TierGate></ProtectedRoute>} />
+      <Route path="/compliance" element={<ProtectedRoute><TierGate><CompliancePage /></TierGate></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><TierGate><ReportsPage /></TierGate></ProtectedRoute>} />
+      <Route path="/audit-log" element={<ProtectedRoute><TierGate><AuditLogPage /></TierGate></ProtectedRoute>} />
+      <Route path="/alerts" element={<ProtectedRoute><TierGate><AlertsPageAuth /></TierGate></ProtectedRoute>} />
+      <Route path="/actions" element={<ProtectedRoute><TierGate><ActionsPage /></TierGate></ProtectedRoute>} />
+      <Route path="/automations" element={<ProtectedRoute><TierGate><AutomationsPageAuth /></TierGate></ProtectedRoute>} />
+      <Route path="/soundboard" element={<ProtectedRoute><TierGate><MySoundBoard /></TierGate></ProtectedRoute>} />
+      <Route path="/war-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><WarRoomConsole /></div></TierGate></ProtectedRoute>} />
+      <Route path="/board-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><BoardRoom /></div></TierGate></ProtectedRoute>} />
+      <Route path="/sop-generator" element={<ProtectedRoute><TierGate><SOPGenerator /></TierGate></ProtectedRoute>} />
+      <Route path="/email-inbox" element={<ProtectedRoute><TierGate><EmailInbox /></TierGate></ProtectedRoute>} />
+      <Route path="/calendar" element={<ProtectedRoute><TierGate><CalendarView /></TierGate></ProtectedRoute>} />
+      <Route path="/diagnosis" element={<ProtectedRoute><TierGate><Diagnosis /></TierGate></ProtectedRoute>} />
+      <Route path="/analysis" element={<ProtectedRoute><TierGate><Analysis /></TierGate></ProtectedRoute>} />
+      <Route path="/documents" element={<ProtectedRoute><TierGate><Documents /></TierGate></ProtectedRoute>} />
+      <Route path="/documents/:id" element={<ProtectedRoute><TierGate><DocumentView /></TierGate></ProtectedRoute>} />
+      <Route path="/data-center" element={<ProtectedRoute><TierGate><DataCenter /></TierGate></ProtectedRoute>} />
+      <Route path="/intelligence-baseline" element={<ProtectedRoute><TierGate><IntelligenceBaseline /></TierGate></ProtectedRoute>} />
+      <Route path="/intel-centre" element={<ProtectedRoute><TierGate><IntelCentre /></TierGate></ProtectedRoute>} />
+      <Route path="/watchtower" element={<ProtectedRoute><TierGate><Watchtower /></TierGate></ProtectedRoute>} />
+      <Route path="/operator" element={<ProtectedRoute><TierGate><OperatorDashboard /></TierGate></ProtectedRoute>} />
+      <Route path="/market-analysis" element={<ProtectedRoute><TierGate><MarketAnalysis /></TierGate></ProtectedRoute>} />
+      <Route path="/oac" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
