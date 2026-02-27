@@ -1,36 +1,38 @@
 # BIQc Platform - PRD
 
-## Architecture
-- Frontend: React + Tailwind + Shadcn/UI
-- Backend: FastAPI → Supabase SQL Functions (17 endpoints)
-- Database: Supabase PostgreSQL + 10 SQL Functions + 3 Triggers + 4 pg_cron Jobs
-- Forensic Engine: 3-layer deterministic audit (Extraction → Cleaning → Synthesis)
+## Access Control Architecture (NEW)
 
-## Completed
+### Central Tier Resolver
+- **Backend**: `/app/backend/tier_resolver.py` — SINGLE source of truth
+- **Frontend**: `/app/frontend/src/lib/tierResolver.js` — mirrors backend exactly
+- Super admin: `andre@thestrategysquad.com.au` — immutable, email-based, overrides DB
 
-### Forensic Ingestion Engine (NEW)
-- 3-layer audit: Extraction (HTTP/DOM/noise), Cleaning (boilerplate/weighting), Synthesis (hallucination/lost signal)
-- Failure type codes: A1-A5 (extraction), B1-B4 (cleaning), C1-C5 (synthesis), D1-D3 (metadata)
-- Noise ratio calculation, unique sentence ratio, core content weighting
-- Hallucination detection: numeric invention, industry assumption, competitor guesswork, AI narrative fill
-- Lost signal detection: ABN, phone, email, location mentions missed by snapshot
-- Root cause verdict matrix with confidence scoring and remediation recommendations
-- SQL table: ingestion_audits (stores full audit trail)
-- API: POST /api/forensic/ingestion-audit, GET /api/forensic/ingestion-history
-- Tested against thestrategysquad.com.au — all layers functional
+### Tiers: free → starter → professional → enterprise → super_admin
 
-### Deep Market Modeling (MarketPage — 5 tabs)
-### Deep Intelligence Modules (SQL-Backed — 10 functions)
-### Trust Reconstruction (7 sections)
-### Integrity Lockdown (7 phases)
+### Free Tier Includes
+- BIQc Overview, Market (basic), Business DNA, Forensic Audit (1/mo), Snapshots (3/mo), Email Integration, Data Health, Integrations, Settings, Calibration
 
-## Deploy Queue
-| File | Action |
+### Free Tier Excludes (redirects to /subscribe)
+- Revenue, Operations, Risk, Compliance, Reports, Audit Log, Soundboard, War Room, Board Room, SOP Generator, Priority Inbox, Calendar, Alerts, Actions, Automations
+
+### Enforcement Layers
+1. Frontend TierGate component wraps all paid routes
+2. Backend tier_resolver checks API access
+3. SQL atomic counters for monthly limits (increment_snapshot_counter, increment_audit_counter)
+4. Super admin override at all layers
+
+### SQL: `028_access_control.sql`
+- subscription_tier, monthly_snapshot_count, monthly_audit_refresh_count, billing_cycle_start on business_profiles
+- increment_snapshot_counter() — atomic, transaction-safe
+- increment_audit_counter() — atomic
+- reset_monthly_counters() — pg_cron daily
+
+## Deployment Queue
+| File | Status |
 |------|--------|
-| `024_sql_hotfix.sql` | Supabase SQL Editor |
-| `026_ingestion_audits.sql` | Supabase SQL Editor |
+| `028_access_control.sql` | **NEEDS DEPLOY** |
+| `027_ingestion_engine.sql` | **NEEDS DEPLOY** |
 
 ## Backlog
-### P1: Stripe Paid Gating
-### P2: Signal Provenance, "Since Last Visit"
-### P3: CSS Consolidation, Legacy Cleanup
+### P1: Stripe checkout integration (wire upgrade buttons)
+### P2: Signal Provenance, CSS cleanup
