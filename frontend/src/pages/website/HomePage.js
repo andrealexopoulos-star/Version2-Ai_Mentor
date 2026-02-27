@@ -30,14 +30,14 @@ const HomePage = () => (
       {/* Orange glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
 
-      <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10">
+      <div className="max-w-5xl mx-auto px-6 pt-12 sm:pt-24 pb-16 sm:pb-20 relative z-10">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
             <Shield className="w-3.5 h-3.5 text-[#FF6A00]" />
-            <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>
+            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#F4F7FA' }}>
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#F4F7FA' }}>
             Run Your Business Like The<br />
             <span style={{ color: '#FF6A00' }}>Big Players</span> Without The Cost
           </h1>
