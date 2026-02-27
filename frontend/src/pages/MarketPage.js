@@ -8,18 +8,17 @@ import { containsCRMClaim } from '../constants/integrationTruth';
 import {
   TrendingUp, ArrowRight, Target, Shield, AlertTriangle,
   Zap, CheckCircle2, Eye, ChevronDown, ChevronUp, Link2, RefreshCw,
-  MessageSquare, FileText
+  MessageSquare, FileText, Layers, Crosshair, Filter, BarChart3, Plug, Activity
 } from 'lucide-react';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
-const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+const Panel = ({ children, className = '', ...props }) => (
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }} {...props}>{children}</div>
 );
 
-// SMB-friendly status labels (replace enterprise DRIFT/COMPRESSION)
 const STATUS_MAP = {
   STABLE: { label: 'On Track', color: '#10B981', bg: '#10B98108', b: '#10B98125' },
   DRIFT: { label: 'Slipping', color: '#F59E0B', bg: '#F59E0B08', b: '#F59E0B25' },
@@ -27,11 +26,23 @@ const STATUS_MAP = {
   CRITICAL: { label: 'At Risk', color: '#EF4444', bg: '#EF444408', b: '#EF444425' },
 };
 
-// ═══════════════════════════════════════════════════════════════
-// MARKET PAGE — SMB-First Cognition Interface
-// Structure: Status → Focus → Risk → Opportunity → Track → Gaps
-// No synthetic data. No enterprise jargon. No chaos.
-// ═══════════════════════════════════════════════════════════════
+const GaugeMeter = ({ value, label, suffix = '%', thresholds = [30, 60, 80] }) => {
+  const color = value >= thresholds[2] ? '#10B981' : value >= thresholds[1] ? '#F59E0B' : value >= thresholds[0] ? '#FF6A00' : '#EF4444';
+  return (
+    <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{label}</span>
+      <div className="flex items-end gap-1">
+        <span className="text-2xl font-bold" style={{ color, fontFamily: MONO }}>{value != null ? value : '—'}</span>
+        {value != null && <span className="text-xs mb-0.5" style={{ color: '#64748B', fontFamily: MONO }}>{suffix}</span>}
+      </div>
+      {value != null && (
+        <div className="h-1.5 rounded-full mt-2" style={{ background: color + '20' }}>
+          <div className="h-1.5 rounded-full transition-all" style={{ background: color, width: Math.min(value, 100) + '%' }} />
+        </div>
+      )}
+    </div>
+  );
+};
 
 const MarketPage = () => {
   const { user } = useSupabaseAuth();
@@ -43,10 +54,12 @@ const MarketPage = () => {
   const [actionMessage, setActionMessage] = useState('');
   const [activeTab, setActiveTab] = useState('intelligence');
   const [reports, setReports] = useState([]);
+  const [watchtower, setWatchtower] = useState(null);
+  const [pressure, setPressure] = useState(null);
+  const [freshness, setFreshness] = useState(null);
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
 
-  // Load past reports (CMO summaries, forensic reports)
   useEffect(() => {
     apiClient.get('/snapshot/latest').then(res => {
       const snaps = [];
@@ -55,6 +68,10 @@ const MarketPage = () => {
       }
       setReports(snaps);
     }).catch(() => {});
+    // Fetch SQL-backed intelligence
+    apiClient.get('/intelligence/watchtower').then(res => { if (res.data?.positions) setWatchtower(res.data); }).catch(() => {});
+    apiClient.get('/intelligence/pressure').then(res => { if (res.data?.pressures) setPressure(res.data); }).catch(() => {});
+    apiClient.get('/intelligence/freshness').then(res => { if (res.data?.freshness) setFreshness(res.data); }).catch(() => {});
   }, []);
 
   const fetchSnapshot = useCallback(async () => {
@@ -100,15 +117,14 @@ const MarketPage = () => {
   const memo = c.executive_memo || c.memo || '';
   const alignment = c.alignment?.narrative || '';
   const goalProb = c.market_intelligence?.probability_of_goal_achievement || c.probability_of_goal_achievement;
+  const mi = c.market_intelligence || {};
   const ap = c.action_plan || {};
   const moves = ap.top_3_marketing_moves || [];
   const blindside = ap.primary_blindside_risk;
   const lever = ap.hidden_growth_lever;
   const hasCRM = channelsData?.channels?.some(ch => ch.key === 'crm' && ch.status === 'connected');
-  const hasEmail = channelsData?.channels?.some(ch => ch.key === 'email' && ch.status === 'connected');
   const pipeline = hasCRM ? (c.pipeline_total || c.revenue?.pipeline) : null;
 
-  // Suppress moves/risks/levers that reference CRM data without integration
   const filteredMoves = hasCRM ? moves : moves.filter(m => !containsCRMClaim(m.move) && !containsCRMClaim(m.rationale));
   const filteredBlindside = blindside && (!containsCRMClaim(blindside.risk) || hasCRM) ? blindside : null;
   const filteredLever = lever && (!containsCRMClaim(lever.lever) || hasCRM) ? lever : null;
@@ -116,6 +132,20 @@ const MarketPage = () => {
   const filteredAlignment = alignment && (!containsCRMClaim(alignment) || hasCRM) ? alignment : '';
 
   const sendToChat = (msg) => setActionMessage(msg);
+
+  // Deep Market Modeling data extraction
+  const competitors = c.market?.competitors || mi.competitors || [];
+  const saturationScore = mi.misalignment_index != null ? Math.max(0, 100 - mi.misalignment_index) : null;
+  const demandCapture = mi.probability_of_goal_achievement || null;
+  const positionVerdict = mi.positioning_verdict || stateStatus || null;
+
+  const TABS = [
+    { id: 'intelligence', label: 'Focus', icon: Zap },
+    { id: 'saturation', label: 'Saturation', icon: Layers },
+    { id: 'demand', label: 'Demand', icon: Crosshair },
+    { id: 'friction', label: 'Friction', icon: Filter },
+    { id: 'reports', label: 'Reports', icon: FileText },
+  ];
 
   return (
     <DashboardLayout actionMessage={actionMessage} onActionConsumed={() => setActionMessage('')}>
@@ -126,23 +156,7 @@ const MarketPage = () => {
 
         {!loading && <>
 
-        {/* ═══ TAB NAVIGATION ═══ */}
-        <div className="flex gap-1 p-1 rounded-lg" style={{ background: '#141C26', border: '1px solid #1E293B' }} data-testid="market-tabs">
-          <button onClick={() => setActiveTab('intelligence')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'intelligence' ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
-            style={{ background: activeTab === 'intelligence' ? '#FF6A0015' : 'transparent', fontFamily: MONO }}
-            data-testid="tab-intelligence">
-            What to Focus on Next
-          </button>
-          <button onClick={() => setActiveTab('reports')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'reports' ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
-            style={{ background: activeTab === 'reports' ? '#FF6A0015' : 'transparent', fontFamily: MONO }}
-            data-testid="tab-reports">
-            <FileText className="w-3.5 h-3.5" /> Reports
-          </button>
-        </div>
-
-        {/* ═══ SECTION 1 — WHERE YOU STAND RIGHT NOW ═══ */}
+        {/* ═══ STATUS BANNER ═══ */}
         <div className="rounded-xl p-6" style={{ background: st.bg, border: `1px solid ${st.b}`, animation: 'snapFade 0.5s ease-out' }} data-testid="status-banner">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -160,6 +174,370 @@ const MarketPage = () => {
           {!snapshot && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
         </div>
 
+        {/* ═══ TAB NAVIGATION ═══ */}
+        <div className="flex gap-1 p-1 rounded-lg overflow-x-auto" style={{ background: '#141C26', border: '1px solid #1E293B' }} data-testid="market-tabs">
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors shrink-0 ${activeTab === tab.id ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
+              style={{ background: activeTab === tab.id ? '#FF6A0015' : 'transparent', fontFamily: MONO }}
+              data-testid={`tab-${tab.id}`}>
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* ═══ INTELLIGENCE TAB (existing) ═══ */}
+        {/* ═══════════════════════════════════════════════════ */}
+        {activeTab === 'intelligence' && <>
+          {filteredMoves.length > 0 && (
+            <div style={{ animation: 'snapFade 0.6s ease-out' }} data-testid="focus-section">
+              <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: HEAD }}>What To Focus On Next</h2>
+              <div className="space-y-3">
+                {filteredMoves.map((m, i) => (
+                  <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
+                    <div className="flex items-start gap-3">
+                      <span className="text-sm font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: MONO }}>#{i + 1}</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{m.move}</p>
+                        <p className="text-xs text-[#9FB0C3] leading-relaxed mb-3">{m.rationale}</p>
+                        <div className="flex flex-wrap gap-3">
+                          {m.expected_impact && <span className="text-[11px] text-[#10B981]" style={{ fontFamily: MONO }}>{m.expected_impact}</span>}
+                          {m.confidence != null && <span className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.confidence}% confidence</span>}
+                          {m.urgency && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: m.urgency === 'immediate' ? '#EF4444' : '#F59E0B', background: (m.urgency === 'immediate' ? '#EF4444' : '#F59E0B') + '15', fontFamily: MONO }}>{m.urgency?.replace('_', ' ')}</span>}
+                        </div>
+                        <button onClick={() => sendToChat(`Help me execute: ${m.move}. ${m.rationale}`)}
+                          className="flex items-center gap-1.5 mt-3 text-[11px] px-3 py-1.5 rounded-lg transition-colors hover:bg-[#FF6A0015]"
+                          style={{ color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: MONO }}
+                          data-testid={`execute-move-${i}`}>
+                          <MessageSquare className="w-3 h-3" /> Execute in Chat
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {(ap.probability_shift_if_executed || ap.probability_shift_if_ignored) && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                  {ap.probability_shift_if_executed != null && (
+                    <div className="p-4 rounded-lg text-center" style={{ background: '#10B98108', border: '1px solid #10B98125' }}>
+                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If you act</span>
+                      <span className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: MONO }}>+{ap.probability_shift_if_executed}%</span>
+                    </div>
+                  )}
+                  {ap.probability_shift_if_ignored != null && (
+                    <div className="p-4 rounded-lg text-center" style={{ background: '#EF444408', border: '1px solid #EF444425' }}>
+                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If you don't</span>
+                      <span className="text-2xl font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>-{Math.abs(ap.probability_shift_if_ignored)}%</span>
+                    </div>
+                  )}
+                  {ap.decision_window_pressure && (
+                    <div className="p-4 rounded-lg text-center" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
+                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Time to act</span>
+                      <span className="text-2xl font-bold text-[#F59E0B]" style={{ fontFamily: MONO }}>{ap.decision_window_pressure.window_days}d</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {filteredMoves.length === 0 && snapshot && (
+            <Panel><p className="text-sm text-[#9FB0C3]">Complete forensic calibration and connect integrations to unlock personalised action priorities.</p></Panel>
+          )}
+          {filteredBlindside && (
+            <div className="rounded-xl p-5" style={{ background: '#EF444406', border: '1px solid #EF444420' }} data-testid="risk-section">
+              <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-[#EF4444]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Biggest Risk Right Now</h2></div>
+              <p className="text-sm text-[#F4F7FA] mb-2">{filteredBlindside.risk}</p>
+              {filteredBlindside.evidence && <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{filteredBlindside.evidence}</p>}
+              {filteredBlindside.prevention_action && <p className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>What to do: {filteredBlindside.prevention_action}</p>}
+            </div>
+          )}
+          {filteredLever && (
+            <div className="rounded-xl p-5" style={{ background: '#10B98106', border: '1px solid #10B98120' }} data-testid="opportunity-section">
+              <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4 text-[#10B981]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Growth Opportunity You're Missing</h2></div>
+              <p className="text-sm text-[#F4F7FA] mb-2">{filteredLever.lever}</p>
+              {filteredLever.evidence && <p className="text-xs text-[#9FB0C3] mb-2">{filteredLever.evidence}</p>}
+              {filteredLever.potential_value && <span className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>Potential: {filteredLever.potential_value}</span>}
+            </div>
+          )}
+          {(goalProb != null || filteredAlignment) && (
+            <Panel data-testid="track-section">
+              <h2 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Are You On Track?</h2>
+              {goalProb != null && <div className="flex items-center gap-4 mb-3"><span className="text-3xl font-bold" style={{ fontFamily: MONO, color: goalProb > 60 ? '#10B981' : '#F59E0B' }}>{goalProb}%</span><span className="text-sm text-[#9FB0C3]">chance of hitting your goals</span></div>}
+              {filteredAlignment && <p className="text-sm text-[#9FB0C3] leading-relaxed">{filteredAlignment}</p>}
+            </Panel>
+          )}
+          <GapsSection channelsData={channelsData} hasCRM={hasCRM} pipeline={pipeline} gapsOpen={gapsOpen} setGapsOpen={setGapsOpen} navigate={navigate} />
+          <ForensicCalibrationCard isSuperAdmin={isSuperAdmin} navigate={navigate} />
+          {filteredMemo && (
+            <Panel data-testid="brief-section">
+              <div className="flex items-center gap-2 mb-2"><Zap className="w-3.5 h-3.5 text-[#FF6A00]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Executive Brief</h2></div>
+              <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
+            </Panel>
+          )}
+        </>}
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* ═══ SATURATION ANALYSIS TAB (NEW) ═══ */}
+        {/* ═══════════════════════════════════════════════════ */}
+        {activeTab === 'saturation' && (
+          <div className="space-y-6" data-testid="saturation-tab">
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Market Saturation Analysis</h2>
+            <p className="text-xs text-[#64748B]">How crowded is your market and where do you stand relative to competitors.</p>
+
+            {!snapshot && !watchtower ? (
+              <Panel className="text-center py-10">
+                <Layers className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Complete calibration to unlock saturation analysis.</p>
+                <p className="text-xs text-[#64748B] mb-4">BIQc needs your business context to assess market density, positioning, and competitive pressure.</p>
+                <button onClick={() => navigate('/market/calibration')} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#7C3AED' }} data-testid="saturation-calibrate-cta">
+                  <Eye className="w-4 h-4" /> Start Calibration
+                </button>
+              </Panel>
+            ) : (
+              <>
+                {/* Saturation Score */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <GaugeMeter value={saturationScore} label="Market Position Score" suffix="/100" thresholds={[25, 50, 75]} />
+                  <GaugeMeter value={demandCapture} label="Demand Capture Rate" suffix="%" thresholds={[30, 50, 70]} />
+                  <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Position Verdict</span>
+                    <span className="text-xl font-bold" style={{ color: positionVerdict === 'STABLE' ? '#10B981' : positionVerdict === 'DRIFT' ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>
+                      {positionVerdict || '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Competitor Density */}
+                <Panel>
+                  <div className="flex items-center gap-2 mb-4">
+                    <BarChart3 className="w-4 h-4 text-[#7C3AED]" />
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Competitive Landscape</h3>
+                  </div>
+                  {competitors.length > 0 ? (
+                    <div className="space-y-2">
+                      {competitors.map((comp, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: HEAD }}>{comp.name}</span>
+                            {comp.signal && <p className="text-[10px] text-[#64748B] mt-0.5">{comp.signal}</p>}
+                          </div>
+                          {comp.threat_level && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: comp.threat_level === 'high' ? '#EF4444' : '#F59E0B', background: (comp.threat_level === 'high' ? '#EF4444' : '#F59E0B') + '15', fontFamily: MONO }}>{comp.threat_level}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#64748B]">No competitor data from calibration. Complete calibration to identify your competitive landscape.</p>
+                  )}
+                </Panel>
+
+                {/* Watchtower Positions */}
+                {watchtower?.positions && Object.keys(watchtower.positions).length > 0 && (
+                  <Panel>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Activity className="w-4 h-4 text-[#3B82F6]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Signal Positions by Source</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {Object.entries(watchtower.positions).map(([domain, pos]) => {
+                        const posColor = pos.position === 'CRITICAL' ? '#EF4444' : pos.position === 'COMPRESSION' ? '#FF6A00' : pos.position === 'DRIFT' ? '#F59E0B' : '#10B981';
+                        return (
+                          <div key={domain} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: posColor, background: posColor + '15', fontFamily: MONO }}>{pos.position}</span>
+                            </div>
+                            <div className="flex gap-3 text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>
+                              <span>{pos.events_30d} events</span>
+                              <span>{pos.velocity}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Panel>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* ═══ DEMAND CAPTURE TAB (NEW) ═══ */}
+        {/* ═══════════════════════════════════════════════════ */}
+        {activeTab === 'demand' && (
+          <div className="space-y-6" data-testid="demand-tab">
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Demand Capture Analysis</h2>
+            <p className="text-xs text-[#64748B]">How effectively you're capturing available market demand and converting interest into revenue.</p>
+
+            {!hasCRM && !snapshot ? (
+              <Panel className="text-center py-10">
+                <Crosshair className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Connect CRM to analyse demand capture.</p>
+                <p className="text-xs text-[#64748B] mb-4">Demand capture analysis requires CRM data (deals, contacts) and calibration to assess market opportunity.</p>
+                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#3B82F6' }} data-testid="demand-connect-cta">
+                  <Plug className="w-4 h-4" /> Connect CRM
+                </a>
+              </Panel>
+            ) : (
+              <>
+                {/* Demand Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <GaugeMeter value={demandCapture} label="Goal Achievement Probability" suffix="%" thresholds={[30, 50, 70]} />
+                  <GaugeMeter value={mi.misalignment_index != null ? mi.misalignment_index : null} label="Misalignment Index" suffix="/100" thresholds={[60, 40, 20]} />
+                  {pipeline != null && (
+                    <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Active Pipeline</span>
+                      <span className="text-2xl font-bold text-[#3B82F6]" style={{ fontFamily: MONO }}>${Math.round(pipeline / 1000)}K</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pressure Analysis */}
+                {pressure?.pressures && (
+                  <Panel>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Target className="w-4 h-4 text-[#FF6A00]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Demand Pressure by Channel</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(pressure.pressures).map(([domain, p]) => {
+                        const levelColor = p.level === 'critical' ? '#EF4444' : p.level === 'elevated' ? '#FF6A00' : p.level === 'moderate' ? '#F59E0B' : p.level === 'low' ? '#10B981' : '#64748B';
+                        return (
+                          <div key={domain}>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: levelColor, background: levelColor + '15', fontFamily: MONO }}>{p.level}</span>
+                                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{p.events_14d} signals</span>
+                              </div>
+                            </div>
+                            <div className="h-1.5 rounded-full" style={{ background: levelColor + '20' }}>
+                              <div className="h-1.5 rounded-full transition-all" style={{ background: levelColor, width: Math.min(p.score * 3, 100) + '%' }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Panel>
+                )}
+
+                {/* Channel Gaps */}
+                <GapsSection channelsData={channelsData} hasCRM={hasCRM} pipeline={pipeline} gapsOpen={gapsOpen} setGapsOpen={setGapsOpen} navigate={navigate} />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════ */}
+        {/* ═══ FUNNEL FRICTION TAB (NEW) ═══ */}
+        {/* ═══════════════════════════════════════════════════ */}
+        {activeTab === 'friction' && (
+          <div className="space-y-6" data-testid="friction-tab">
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Funnel Friction Analysis</h2>
+            <p className="text-xs text-[#64748B]">Where prospects drop off and where your conversion engine has resistance.</p>
+
+            {!hasCRM && !snapshot ? (
+              <Panel className="text-center py-10">
+                <Filter className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Connect CRM to analyse funnel friction.</p>
+                <p className="text-xs text-[#64748B] mb-4">Funnel analysis requires deal stage data from your CRM to identify where deals stall, drop off, or slow down.</p>
+                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#F59E0B' }} data-testid="friction-connect-cta">
+                  <Plug className="w-4 h-4" /> Connect CRM
+                </a>
+              </Panel>
+            ) : (
+              <>
+                {/* Evidence Freshness */}
+                {freshness?.freshness && (
+                  <Panel>
+                    <div className="flex items-center gap-2 mb-4">
+                      <RefreshCw className="w-4 h-4 text-[#3B82F6]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Data Freshness by Source</h3>
+                    </div>
+                    <p className="text-xs text-[#64748B] mb-4">Stale data creates blind spots. Fresh data reduces friction in decision-making.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {Object.entries(freshness.freshness).filter(([, f]) => f.status !== 'no_data').map(([domain, f]) => {
+                        const fColor = f.status === 'fresh' ? '#10B981' : f.status === 'recent' ? '#3B82F6' : f.status === 'aging' ? '#F59E0B' : '#EF4444';
+                        return (
+                          <div key={domain} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: fColor, background: fColor + '15', fontFamily: MONO }}>{f.status}</span>
+                            </div>
+                            <span className="text-lg font-bold block" style={{ color: fColor, fontFamily: MONO }}>{f.hours_old != null ? (f.hours_old < 24 ? Math.round(f.hours_old) + 'h' : Math.round(f.hours_old / 24) + 'd') : '—'}</span>
+                            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Decay: {f.decay_factor != null ? Math.round(f.decay_factor * 100) + '%' : '—'} signal strength</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Panel>
+                )}
+
+                {/* Friction Points */}
+                <Panel>
+                  <div className="flex items-center gap-2 mb-4">
+                    <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Identified Friction Points</h3>
+                  </div>
+                  {c.data_gaps && c.data_gaps.length > 0 ? (
+                    <div className="space-y-2">
+                      {c.data_gaps.map((gap, i) => {
+                        const impactColor = gap.impact_on_confidence === 'high' ? '#EF4444' : gap.impact_on_confidence === 'medium' ? '#F59E0B' : '#10B981';
+                        return (
+                          <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                            <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: impactColor }} />
+                            <div className="flex-1">
+                              <span className="text-xs font-semibold text-[#F4F7FA]">{gap.area}</span>
+                              <span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{ color: impactColor, background: impactColor + '15', fontFamily: MONO }}>{gap.status}</span>
+                              {gap.fix && <p className="text-[10px] text-[#64748B] mt-1">{gap.fix}</p>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {!hasCRM && <FrictionItem label="CRM not connected" detail="Deal stage data unavailable. Cannot assess funnel conversion rates." impact="high" />}
+                      {!channelsData?.channels?.some(ch => ch.key === 'google_ads' && ch.status === 'connected') && <FrictionItem label="No paid acquisition data" detail="Cannot measure cost per acquisition or channel efficiency." impact="medium" />}
+                      {!channelsData?.channels?.some(ch => ch.key === 'analytics' && ch.status === 'connected') && <FrictionItem label="No website analytics" detail="Cannot track website-to-lead conversion or traffic sources." impact="medium" />}
+                      {!channelsData?.channels?.some(ch => ch.key === 'email' && ch.status === 'connected') && <FrictionItem label="No email data" detail="Cannot assess email engagement or nurture effectiveness." impact="low" />}
+                    </div>
+                  )}
+                </Panel>
+
+                {/* Conversion Intelligence */}
+                {(goalProb != null || mi.misalignment_index != null) && (
+                  <Panel>
+                    <div className="flex items-center gap-2 mb-4">
+                      <TrendingUp className="w-4 h-4 text-[#10B981]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Conversion Intelligence</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {goalProb != null && (
+                        <div className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Goal Achievement</span>
+                          <span className="text-3xl font-bold" style={{ color: goalProb > 60 ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{goalProb}%</span>
+                          <span className="text-[10px] text-[#64748B] block mt-1">probability at current pace</span>
+                        </div>
+                      )}
+                      {mi.misalignment_index != null && (
+                        <div className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Strategy-Execution Gap</span>
+                          <span className="text-3xl font-bold" style={{ color: mi.misalignment_index > 50 ? '#EF4444' : mi.misalignment_index > 25 ? '#F59E0B' : '#10B981', fontFamily: MONO }}>{mi.misalignment_index}</span>
+                          <span className="text-[10px] text-[#64748B] block mt-1">misalignment index (lower is better)</span>
+                        </div>
+                      )}
+                    </div>
+                  </Panel>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {/* ═══ REPORTS TAB ═══ */}
         {activeTab === 'reports' && (
           <div className="space-y-4" data-testid="reports-tab">
@@ -172,202 +550,16 @@ const MarketPage = () => {
             )}
             {reports.map((r, i) => (
               <div key={i} className="rounded-xl p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: '#141C26', border: '1px solid #1E293B' }}
-                onClick={() => sendToChat(`Summarise my ${r.type} from ${new Date(r.date).toLocaleDateString()}`)}>
+                onClick={() => sendToChat(`Summarise my ${r.type}`)}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#FF6A00]" />
-                    <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{r.type}</span>
-                  </div>
+                  <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-[#FF6A00]" /><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{r.type}</span></div>
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{new Date(r.date).toLocaleDateString()}</span>
                 </div>
-                {r.data?.system_state && (
-                  <p className="text-xs text-[#9FB0C3]">State: {typeof r.data.system_state === 'object' ? r.data.system_state.status : r.data.system_state} | Confidence: {typeof r.data.system_state === 'object' ? r.data.system_state.confidence : '—'}%</p>
-                )}
-                <div className="flex items-center gap-1 mt-2">
-                  <MessageSquare className="w-3 h-3 text-[#FF6A00]" />
-                  <span className="text-[10px] text-[#FF6A00]" style={{ fontFamily: MONO }}>Discuss in SoundBoard</span>
-                </div>
+                <div className="flex items-center gap-1 mt-2"><MessageSquare className="w-3 h-3 text-[#FF6A00]" /><span className="text-[10px] text-[#FF6A00]" style={{ fontFamily: MONO }}>Discuss in SoundBoard</span></div>
               </div>
             ))}
           </div>
         )}
-
-        {/* ═══ INTELLIGENCE TAB ═══ */}
-        {activeTab === 'intelligence' && <>
-
-        {/* ═══ SECTION 2 — WHAT TO FOCUS ON NEXT ═══ */}
-        {filteredMoves.length > 0 && (
-          <div style={{ animation: 'snapFade 0.6s ease-out' }} data-testid="focus-section">
-            <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: HEAD }}>What To Focus On Next</h2>
-            <div className="space-y-3">
-              {filteredMoves.map((m, i) => (
-                <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                  <div className="flex items-start gap-3">
-                    <span className="text-sm font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: MONO }}>#{i + 1}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{m.move}</p>
-                      <p className="text-xs text-[#9FB0C3] leading-relaxed mb-3">{m.rationale}</p>
-                      <div className="flex flex-wrap gap-3">
-                        {m.expected_impact && <span className="text-[11px] text-[#10B981]" style={{ fontFamily: MONO }}>{m.expected_impact}</span>}
-                        {m.confidence != null && <span className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.confidence}% confidence</span>}
-                        {m.urgency && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: m.urgency === 'immediate' ? '#EF4444' : '#F59E0B', background: (m.urgency === 'immediate' ? '#EF4444' : '#F59E0B') + '15', fontFamily: MONO }}>{m.urgency?.replace('_', ' ')}</span>}
-                      </div>
-                      <button onClick={() => sendToChat(`Help me execute: ${m.move}. ${m.rationale}`)}
-                        className="flex items-center gap-1.5 mt-3 text-[11px] px-3 py-1.5 rounded-lg transition-colors hover:bg-[#FF6A0015]"
-                        style={{ color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: MONO }}
-                        data-testid={`execute-move-${i}`}>
-                        <MessageSquare className="w-3 h-3" /> Execute in Chat
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* If executed vs ignored */}
-            {(ap.probability_shift_if_executed || ap.probability_shift_if_ignored || ap.decision_window_pressure) && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                {ap.probability_shift_if_executed != null && (
-                  <div className="p-4 rounded-lg text-center" style={{ background: '#10B98108', border: '1px solid #10B98125' }}>
-                    <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If you act</span>
-                    <span className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: MONO }}>+{ap.probability_shift_if_executed}%</span>
-                    <span className="text-[11px] text-[#64748B] block">chance of hitting goals</span>
-                  </div>
-                )}
-                {ap.probability_shift_if_ignored != null && (
-                  <div className="p-4 rounded-lg text-center" style={{ background: '#EF444408', border: '1px solid #EF444425' }}>
-                    <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If you don't</span>
-                    <span className="text-2xl font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>-{Math.abs(ap.probability_shift_if_ignored)}%</span>
-                    <span className="text-[11px] text-[#64748B] block">chance of hitting goals</span>
-                  </div>
-                )}
-                {ap.decision_window_pressure && (
-                  <div className="p-4 rounded-lg text-center" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
-                    <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Time to act</span>
-                    <span className="text-2xl font-bold text-[#F59E0B]" style={{ fontFamily: MONO }}>{ap.decision_window_pressure.window_days}d</span>
-                    <span className="text-[11px] text-[#64748B] block">{ap.decision_window_pressure.cost_of_delay_per_week || 'Before it costs you'}</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* No action plan yet — show what's needed */}
-        {filteredMoves.length === 0 && snapshot && (
-          <Panel>
-            <h2 className="text-sm font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>What To Focus On Next</h2>
-            <p className="text-sm text-[#9FB0C3] leading-relaxed">BIQc needs more data to generate specific recommendations. Complete forensic calibration and connect your key tools to unlock personalised action priorities.</p>
-            {!hasCRM && (
-              <p className="text-xs text-[#F59E0B] mt-2" style={{ fontFamily: MONO }}>Connect CRM to unlock lead, pipeline, and churn intelligence.</p>
-            )}
-          </Panel>
-        )}
-
-        {/* ═══ SECTION 3 — BIGGEST RISK RIGHT NOW ═══ */}
-        {filteredBlindside && (
-          <div className="rounded-xl p-5" style={{ background: '#EF444406', border: '1px solid #EF444420', animation: 'snapFade 0.7s ease-out' }} data-testid="risk-section">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Biggest Risk Right Now</h2>
-              {filteredBlindside.probability != null && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444415', fontFamily: MONO }}>{filteredBlindside.probability}% likely</span>}
-            </div>
-            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{filteredBlindside.risk}</p>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{filteredBlindside.evidence}</p>
-            {filteredBlindside.impact_if_materialises && <p className="text-xs text-[#EF4444] mb-2" style={{ fontFamily: MONO }}>Impact: {filteredBlindside.impact_if_materialises}</p>}
-            {filteredBlindside.prevention_action && <p className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>What to do: {filteredBlindside.prevention_action}</p>}
-          </div>
-        )}
-
-        {/* ═══ SECTION 4 — GROWTH OPPORTUNITY YOU'RE MISSING ═══ */}
-        {filteredLever && (
-          <div className="rounded-xl p-5" style={{ background: '#10B98106', border: '1px solid #10B98120', animation: 'snapFade 0.8s ease-out' }} data-testid="opportunity-section">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4 text-[#10B981]" />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Growth Opportunity You're Missing</h2>
-            </div>
-            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{filteredLever.lever}</p>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{filteredLever.evidence}</p>
-            {filteredLever.potential_value && <span className="text-xs text-[#10B981] mr-3" style={{ fontFamily: MONO }}>Potential: {filteredLever.potential_value}</span>}
-            {filteredLever.first_step && <p className="text-xs text-[#3B82F6] mt-1" style={{ fontFamily: MONO }}>First step: {filteredLever.first_step}</p>}
-          </div>
-        )}
-
-        {/* ═══ SECTION 5 — ARE YOU ON TRACK? ═══ */}
-        {(goalProb != null || filteredAlignment) && (
-          <Panel data-testid="track-section">
-            <h2 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Are You On Track?</h2>
-            {goalProb != null && (
-              <div className="flex items-center gap-4 mb-3">
-                <span className="text-3xl font-bold" style={{ fontFamily: MONO, color: goalProb > 60 ? '#10B981' : goalProb > 40 ? '#F59E0B' : '#EF4444' }}>{goalProb}%</span>
-                <span className="text-sm text-[#9FB0C3]">chance of hitting your goals at current pace</span>
-              </div>
-            )}
-            {filteredAlignment && <p className="text-sm text-[#9FB0C3] leading-relaxed">{filteredAlignment}</p>}
-          </Panel>
-        )}
-
-        {/* ═══ SECTION 6 — YOUR MARKETING GAPS ═══ */}
-        <div data-testid="gaps-section">
-          <button onClick={() => setGapsOpen(!gapsOpen)} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors hover:bg-white/[0.02]" style={{ background: '#141C26', border: '1px solid #243140' }}>
-            <div className="flex items-center gap-3">
-              <Link2 className="w-4 h-4 text-[#3B82F6]" />
-              <div className="text-left">
-                <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Your Marketing Gaps</h2>
-                <div className="flex gap-3 mt-1">
-                  <span className="text-[11px]" style={{ color: hasCRM ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{hasCRM ? 'CRM connected' : 'CRM not connected'}</span>
-                  <span className="text-[11px]" style={{ color: pipeline ? '#10B981' : '#64748B', fontFamily: MONO }}>{pipeline ? `$${Math.round(pipeline / 1000)}K pipeline` : 'No pipeline data'}</span>
-                  <span className="text-[11px]" style={{ color: '#64748B', fontFamily: MONO }}>{channelsData?.summary?.connected || 0}/{channelsData?.summary?.total || 6} channels</span>
-                </div>
-              </div>
-            </div>
-            {gapsOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
-          </button>
-
-          {gapsOpen && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {(channelsData?.channels || [
-                { key: 'crm', name: 'CRM', description: 'HubSpot, Salesforce', color: '#FF7A59', status: 'not_connected', available: true },
-                { key: 'google_ads', name: 'Google Ads', description: 'Search, Display', color: '#4285F4', status: 'not_connected', available: false },
-                { key: 'meta_ads', name: 'Meta Ads', description: 'Facebook, Instagram', color: '#1877F2', status: 'not_connected', available: false },
-                { key: 'linkedin', name: 'LinkedIn', description: 'Campaigns', color: '#0A66C2', status: 'not_connected', available: false },
-                { key: 'analytics', name: 'Analytics', description: 'GA4', color: '#E37400', status: 'not_connected', available: false },
-                { key: 'email_platform', name: 'Email', description: 'Mailchimp', color: '#FFE01B', status: 'not_connected', available: false },
-              ]).map(ch => (
-                <div key={ch.key} className="p-3 rounded-lg flex items-center gap-3" style={{ background: '#0F1720', border: `1px solid ${ch.status === 'connected' ? '#10B98130' : '#243140'}` }} data-testid={`channel-${ch.key}`}>
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-xs" style={{ background: ch.color }}>{ch.name[0]}</div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm text-[#F4F7FA]">{ch.name}</span>
-                    {ch.provider && <span className="text-[10px] text-[#64748B] ml-1">({ch.provider})</span>}
-                  </div>
-                  {ch.status === 'connected' ? (
-                    <span className="text-[11px] px-2 py-1 rounded flex items-center gap-1" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}><CheckCircle2 className="w-3 h-3" /> Live</span>
-                  ) : ch.available ? (
-                    <button onClick={() => navigate('/integrations')} className="text-[11px] px-2 py-1 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>Connect</button>
-                  ) : (
-                    <span className="text-[11px] px-2 py-1 rounded" style={{ color: '#64748B', background: '#24314050', fontFamily: MONO }}>Soon</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ═══ SECTION 7 — FORENSIC CALIBRATION (secondary) ═══ */}
-        <ForensicCalibrationCard isSuperAdmin={isSuperAdmin} navigate={navigate} />
-
-        {/* ═══ SECTION 8 — EXECUTIVE BRIEF (compact preview) ═══ */}
-        {filteredMemo && (
-          <Panel data-testid="brief-section">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-3.5 h-3.5 text-[#FF6A00]" />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Executive Brief</h2>
-            </div>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
-          </Panel>
-        )}
-
-        </>}
 
         </>}
       </div>
@@ -375,26 +567,83 @@ const MarketPage = () => {
   );
 };
 
-// ═══ ForensicCalibrationCard (secondary placement) ═══
+// ═══ Friction Item Component ═══
+const FrictionItem = ({ label, detail, impact }) => {
+  const color = impact === 'high' ? '#EF4444' : impact === 'medium' ? '#F59E0B' : '#10B981';
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+      <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: color }} />
+      <div>
+        <span className="text-xs font-semibold text-[#F4F7FA]">{label}</span>
+        <p className="text-[10px] text-[#64748B] mt-0.5">{detail}</p>
+      </div>
+    </div>
+  );
+};
+
+// ═══ Gaps Section Component ═══
+const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, navigate }) => (
+  <div data-testid="gaps-section">
+    <button onClick={() => setGapsOpen(!gapsOpen)} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors hover:bg-white/[0.02]" style={{ background: '#141C26', border: '1px solid #243140' }}>
+      <div className="flex items-center gap-3">
+        <Link2 className="w-4 h-4 text-[#3B82F6]" />
+        <div className="text-left">
+          <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Your Marketing Gaps</h2>
+          <div className="flex gap-3 mt-1">
+            <span className="text-[11px]" style={{ color: hasCRM ? '#10B981' : '#F59E0B', fontFamily: "'JetBrains Mono', monospace" }}>{hasCRM ? 'CRM connected' : 'CRM not connected'}</span>
+            <span className="text-[11px]" style={{ color: pipeline ? '#10B981' : '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>{pipeline ? `$${Math.round(pipeline / 1000)}K pipeline` : 'No pipeline data'}</span>
+            <span className="text-[11px]" style={{ color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>{channelsData?.summary?.connected || 0}/{channelsData?.summary?.total || 6} channels</span>
+          </div>
+        </div>
+      </div>
+      {gapsOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
+    </button>
+    {gapsOpen && (
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        {(channelsData?.channels || [
+          { key: 'crm', name: 'CRM', color: '#FF7A59', status: 'not_connected', available: true },
+          { key: 'google_ads', name: 'Google Ads', color: '#4285F4', status: 'not_connected', available: false },
+          { key: 'meta_ads', name: 'Meta Ads', color: '#1877F2', status: 'not_connected', available: false },
+          { key: 'linkedin', name: 'LinkedIn', color: '#0A66C2', status: 'not_connected', available: false },
+          { key: 'analytics', name: 'Analytics', color: '#E37400', status: 'not_connected', available: false },
+          { key: 'email_platform', name: 'Email', color: '#FFE01B', status: 'not_connected', available: false },
+        ]).map(ch => (
+          <div key={ch.key} className="p-3 rounded-lg flex items-center gap-3" style={{ background: '#0F1720', border: `1px solid ${ch.status === 'connected' ? '#10B98130' : '#243140'}` }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-xs" style={{ background: ch.color }}>{ch.name[0]}</div>
+            <span className="text-sm text-[#F4F7FA] flex-1">{ch.name}</span>
+            {ch.status === 'connected' ? (
+              <span className="text-[11px] px-2 py-1 rounded flex items-center gap-1" style={{ color: '#10B981', background: '#10B98115', fontFamily: "'JetBrains Mono', monospace" }}><CheckCircle2 className="w-3 h-3" /> Live</span>
+            ) : ch.available ? (
+              <button onClick={() => navigate('/integrations')} className="text-[11px] px-2 py-1 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: "'JetBrains Mono', monospace" }}>Connect</button>
+            ) : (
+              <span className="text-[11px] px-2 py-1 rounded" style={{ color: '#64748B', background: '#24314050', fontFamily: "'JetBrains Mono', monospace" }}>Soon</span>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+// ═══ ForensicCalibrationCard ═══
 const ForensicCalibrationCard = ({ isSuperAdmin, navigate }) => {
   const [forensicResult, setForensicResult] = useState(null);
   useEffect(() => {
     apiClient.get('/forensic/calibration').then(res => { if (res.data?.exists) setForensicResult(res.data); }).catch(() => {});
   }, []);
-
   return (
     <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="forensic-section">
       <div className="flex items-start gap-3">
         <Eye className="w-4 h-4 text-[#FF6A00] mt-0.5 shrink-0" />
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Calibration</h3>
-            {forensicResult && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: forensicResult.risk_color || '#10B981', background: (forensicResult.risk_color || '#10B981') + '15', fontFamily: MONO }}>{forensicResult.risk_profile} — {forensicResult.composite_score}/100</span>}
+            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Forensic Calibration</h3>
+            {forensicResult && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: forensicResult.risk_color || '#10B981', background: (forensicResult.risk_color || '#10B981') + '15', fontFamily: "'JetBrains Mono', monospace" }}>{forensicResult.risk_profile} — {forensicResult.composite_score}/100</span>}
           </div>
           {forensicResult ? (
-            <button onClick={() => navigate('/market/calibration')} className="text-xs text-[#FF6A00] hover:underline" style={{ fontFamily: MONO }}>View results</button>
+            <button onClick={() => navigate('/market/calibration')} className="text-xs text-[#FF6A00] hover:underline" style={{ fontFamily: "'JetBrains Mono', monospace" }}>View results</button>
           ) : isSuperAdmin ? (
-            <button onClick={() => navigate('/market/calibration')} className="text-xs px-4 py-2 rounded-lg text-white mt-2" style={{ background: '#FF6A00', fontFamily: BODY }}>
+            <button onClick={() => navigate('/market/calibration')} className="text-xs px-4 py-2 rounded-lg text-white mt-2" style={{ background: '#FF6A00' }}>
               Complete calibration <ArrowRight className="w-3 h-3 inline ml-1" />
             </button>
           ) : (
