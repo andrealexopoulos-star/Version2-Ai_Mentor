@@ -79,7 +79,7 @@ const RegisterSupabase = () => {
           </Link>
 
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FF6A00' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FF6A00' }}>
               <span className="text-white font-bold text-sm" style={{ fontFamily: MONO }}>B</span>
             </div>
             <div>
