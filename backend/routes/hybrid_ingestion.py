@@ -173,10 +173,10 @@ async def headless_fetch_page(url: str, browser_context) -> Dict[str, Any]:
     result = {'url': url, 'html': '', 'html_length': 0, 'status': 0, 'fetch_time_ms': 0}
     try:
         page = await browser_context.new_page()
-        response = await page.goto(url, wait_until='networkidle', timeout=HEADLESS_TIMEOUT)
+        response = await page.goto(url, wait_until='domcontentloaded', timeout=20000)
         result['status'] = response.status if response else 0
         result['url'] = page.url
-        await page.wait_for_timeout(1500)
+        await page.wait_for_timeout(2000)
         result['html'] = await page.content()
         result['html_length'] = len(result['html'])
         await page.close()
