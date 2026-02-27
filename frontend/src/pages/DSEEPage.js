@@ -25,9 +25,9 @@ const DSEEPage = () => {
     if (!url.trim()) return;
     setRunning(true); setError(null); setResult(null);
     try {
-      const res = await apiClient.post('/dsee/scan', { url: url.trim(), business_name: name || undefined, location: location || undefined, public_mode: true });
+      const res = await apiClient.post('/dsee/scan', { url: url.trim(), business_name: name || undefined, location: location || undefined, public_mode: true }, { timeout: 90000 });
       setResult(res.data);
-    } catch (err) { setError(err.response?.data?.detail || 'Scan failed'); }
+    } catch (err) { setError(err.response?.data?.detail || err.message || 'Scan failed — try again'); }
     finally { setRunning(false); }
   };
 
