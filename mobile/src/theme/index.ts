@@ -1,36 +1,31 @@
 /**
- * BIQc Liquid Steel Theme — React Native
- * Matches web app exactly.
+ * BIQc Mobile Theme — Derived from Design System Tokens
+ * Ensures mobile app matches web exactly.
  */
+
+// Import web tokens for consistency
+// Note: In React Native, we can't import web modules directly
+// but we mirror the exact values from design-system/tokens.js
+
 export const theme = {
   colors: {
-    // Backgrounds
     bg: '#0F1720',
     bgCard: '#141C26',
     bgInput: '#0A1018',
-    bgHover: 'rgba(255,255,255,0.02)',
-
-    // Borders
+    bgElevated: '#1A2332',
     border: '#243140',
     borderFocus: '#FF6A00',
-
-    // Text
     text: '#F4F7FA',
     textSecondary: '#9FB0C3',
     textMuted: '#64748B',
-
-    // Brand
     brand: '#FF6A00',
+    brandDark: '#E85D00',
     brandDim: 'rgba(255,106,0,0.15)',
-
-    // Status
     success: '#10B981',
     warning: '#F59E0B',
     danger: '#EF4444',
     info: '#3B82F6',
     purple: '#7C3AED',
-
-    // Transparent overlays
     successDim: 'rgba(16,185,129,0.08)',
     warningDim: 'rgba(245,158,11,0.08)',
     dangerDim: 'rgba(239,68,68,0.08)',
@@ -38,39 +33,72 @@ export const theme = {
   },
 
   fonts: {
-    head: 'Cormorant-SemiBold',
+    display: 'Cormorant-SemiBold',
     body: 'Inter-Regular',
     bodyMedium: 'Inter-Medium',
     bodySemiBold: 'Inter-SemiBold',
     mono: 'JetBrainsMono-Regular',
   },
 
+  // 8px spacing system — matches web tokens exactly
   spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    xxl: 24,
-    xxxl: 32,
+    xs: 8,
+    sm: 16,
+    md: 24,
+    lg: 32,
+    xl: 48,
+    xxl: 64,
   },
 
+  // Font sizes — mobile column from web tokens
+  fontSize: {
+    h1: 28,
+    h2: 22,
+    h3: 18,
+    bodyLarge: 16,
+    body: 14,
+    caption: 12,
+    micro: 10,
+  },
+
+  fontWeight: {
+    display: '700',
+    headline: '600',
+    body: '400',
+    meta: '300',
+  },
+
+  lineHeight: {
+    tight: 1.15,
+    heading: 1.2,
+    body: 1.5,
+    relaxed: 1.7,
+  },
+
+  // Border radius — matches web tokens
   radius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
+    card: 16,
+    cardSm: 12,
+    button: 14,
+    input: 12,
+    badge: 8,
     full: 999,
   },
 
   shadow: {
     card: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 3,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.35,
+      shadowRadius: 24,
+      elevation: 8,
     },
+  },
+
+  // Touch targets
+  touch: {
+    minHeight: 44,
+    minWidth: 44,
   },
 };
 
