@@ -181,6 +181,9 @@ api_router.include_router(reports_router)
 from routes.intelligence_modules import router as intelligence_modules_router
 api_router.include_router(intelligence_modules_router)
 
+from routes.forensic_audit import router as forensic_audit_router
+api_router.include_router(forensic_audit_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
