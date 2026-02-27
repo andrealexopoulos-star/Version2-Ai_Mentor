@@ -1,112 +1,81 @@
-"""Intelligence Spine — Event Logging Middleware v2.
+"""Intelligence Spine v3 — Production-Hardened Middleware.
 
-FIXES APPLIED:
+Fixes applied:
 1. Fail-fast when enabled, fail-open when disabled
-2. LLM call instrumentation with token/latency tracking
-3. Snapshot determinism enforcement (pure SQL only)
-4. Validation report uses volume/consistency, not arbitrary confidence
-5. Enable/disable logs governance events
-6. Async non-blocking writes via background thread
-
-Feature flag is TENANT-SCOPED, not global.
+2. Postgres-backed durable queue (not in-memory)
+3. Feature flag caching with 60s TTL (not per-request DB hit)
+4. LLM call instrumentation with token/latency tracking
+5. Tenant-scoped feature flags
+6. Event-to-snapshot correlation awareness
 """
 import time
 import logging
-import threading
-import queue
+import hashlib
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
-from functools import wraps, lru_cache
+from typing import Optional
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
-# Background write queue — async, non-blocking
-_write_queue = queue.Queue(maxsize=1000)
-_writer_running = False
+# ═══ FEATURE FLAG CACHE (60s TTL) ═══
+_flag_cache = {}  # {key: (value, timestamp)}
+FLAG_TTL_SECONDS = 60
 
 
-def _start_writer():
-    """Start background thread for spine writes. Non-blocking."""
-    global _writer_running
-    if _writer_running:
-        return
-    _writer_running = True
+def _get_cached_flag(flag_name: str) -> bool:
+    """Check feature flag with 60s in-memory cache. One DB read per minute max."""
+    now = time.time()
+    cached = _flag_cache.get(flag_name)
+    if cached and (now - cached[1]) < FLAG_TTL_SECONDS:
+        return cached[0]
 
-    def writer():
-        while True:
-            try:
-                task = _write_queue.get(timeout=5)
-                if task is None:
-                    break
-                table, data = task
-                from supabase_client import get_supabase_client
-                sb = get_supabase_client()
-                sb.table(table).insert(data).execute()
-            except queue.Empty:
-                continue
-            except Exception as e:
-                logger.error(f"[Spine Writer] WRITE FAILED (fail-fast): {e}")
-                # Re-queue failed writes (up to 3 retries via json_payload.retry_count)
-                if isinstance(data, dict):
-                    retries = data.get('json_payload', {}).get('_retry', 0) if isinstance(data.get('json_payload'), dict) else 0
-                    if retries < 3:
-                        if isinstance(data.get('json_payload'), dict):
-                            data['json_payload']['_retry'] = retries + 1
-                        try:
-                            _write_queue.put_nowait((table, data))
-                        except queue.Full:
-                            logger.error("[Spine Writer] Queue full, dropping event")
-
-    t = threading.Thread(target=writer, daemon=True, name="spine-writer")
-    t.start()
+    # Cache miss — read from DB
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.table('ic_feature_flags').select('enabled').eq('flag_name', flag_name).execute()
+        value = result.data[0].get('enabled', False) if result.data else False
+        _flag_cache[flag_name] = (value, now)
+        return value
+    except Exception:
+        # Tables don't exist = disabled
+        _flag_cache[flag_name] = (False, now)
+        return False
 
 
 def _get_spine_enabled_for_tenant(tenant_id: str) -> bool:
-    """Check if Intelligence Spine is enabled for a specific tenant.
-    
-    TENANT-SCOPED flag check. Falls back to global flag.
-    Returns False if tables don't exist (fail-open when disabled).
-    """
-    try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
-        
-        # Check tenant-specific override first
-        tenant_flag = sb.table('ic_feature_flags') \
-            .select('enabled') \
-            .eq('flag_name', f'spine_enabled_{tenant_id}') \
-            .execute()
-        if tenant_flag.data:
-            return tenant_flag.data[0].get('enabled', False)
-        
-        # Fall back to global flag
-        global_flag = sb.table('ic_feature_flags') \
-            .select('enabled') \
-            .eq('flag_name', 'intelligence_spine_enabled') \
-            .execute()
-        if global_flag.data:
-            return global_flag.data[0].get('enabled', False)
-        
-        return False
-    except Exception:
-        # Tables don't exist = spine not deployed = disabled
-        return False
+    """Tenant-scoped flag with cache. One DB read per 60s per tenant."""
+    # Check tenant-specific first
+    tenant_flag = _get_cached_flag(f'spine_enabled_{tenant_id}')
+    if tenant_flag:
+        return True
+    # Fall back to global
+    return _get_cached_flag('intelligence_spine_enabled')
 
 
 def _get_spine_enabled() -> bool:
-    """Global spine check (for non-tenant contexts)."""
-    try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
-        result = sb.table('ic_feature_flags').select('enabled').eq('flag_name', 'intelligence_spine_enabled').execute()
-        return result.data[0].get('enabled', False) if result.data else False
-    except Exception:
-        return False
+    """Global spine check with cache."""
+    return _get_cached_flag('intelligence_spine_enabled')
 
 
 class SpineWriteError(Exception):
     """Raised when spine is ENABLED but write fails. Fail-fast."""
     pass
+
+
+def _queue_write(table: str, data: dict, tenant_id: str) -> None:
+    """Write to Postgres-backed durable queue. Fail-fast when enabled."""
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        sb.table('ic_event_queue').insert({
+            'table_name': table,
+            'payload': data,
+            'status': 'pending',
+        }).execute()
+    except Exception as e:
+        logger.error(f"[Spine] DURABLE QUEUE WRITE FAILED: {e}")
+        raise SpineWriteError(f"Failed to queue spine event to durable store: {e}")
 
 
 def emit_spine_event(
@@ -118,20 +87,15 @@ def emit_spine_event(
     json_payload: Optional[dict] = None,
     confidence_score: Optional[float] = None,
 ) -> Optional[str]:
-    """Emit event to Intelligence Spine.
-    
+    """Emit event to Intelligence Spine via durable Postgres queue.
+
     - When DISABLED: returns None silently (fail-open)
-    - When ENABLED: queues write. If queue full, raises SpineWriteError (fail-fast)
+    - When ENABLED: writes to ic_event_queue. Raises SpineWriteError on failure (fail-fast)
     """
     if not _get_spine_enabled_for_tenant(tenant_id):
-        return None  # Fail-open when disabled
+        return None
 
-    _start_writer()
-
-    data = {
-        'tenant_id': tenant_id,
-        'event_type': event_type,
-    }
+    data = {'tenant_id': tenant_id, 'event_type': event_type}
     if object_id:
         data['object_id'] = object_id
     if model_name:
@@ -143,12 +107,8 @@ def emit_spine_event(
     if confidence_score is not None:
         data['confidence_score'] = confidence_score
 
-    try:
-        _write_queue.put_nowait(('ic_intelligence_events', data))
-        return 'queued'
-    except queue.Full:
-        logger.error(f"[Spine] EVENT QUEUE FULL — FAIL FAST. Event: {event_type} for {tenant_id}")
-        raise SpineWriteError(f"Intelligence Spine event queue full. Cannot log {event_type}.")
+    _queue_write('ic_intelligence_events', data, tenant_id)
+    return 'queued'
 
 
 def log_model_execution(
@@ -161,11 +121,9 @@ def log_model_execution(
     input_hash: Optional[str] = None,
     token_count: Optional[int] = None,
 ) -> None:
-    """Log model execution. Fail-fast when enabled, fail-open when disabled."""
+    """Log model execution via durable queue. Fail-fast when enabled."""
     if not _get_spine_enabled_for_tenant(tenant_id):
         return
-
-    _start_writer()
 
     data = {
         'model_name': model_name,
@@ -180,11 +138,7 @@ def log_model_execution(
         },
     }
 
-    try:
-        _write_queue.put_nowait(('ic_model_executions', data))
-    except queue.Full:
-        logger.error(f"[Spine] EXECUTION QUEUE FULL — FAIL FAST. Model: {model_name}")
-        raise SpineWriteError(f"Intelligence Spine execution queue full. Cannot log {model_name}.")
+    _queue_write('ic_model_executions', data, tenant_id)
 
 
 def log_llm_call(
@@ -197,7 +151,7 @@ def log_llm_call(
     input_hash: Optional[str] = None,
     confidence: float = 1.0,
 ) -> None:
-    """Log an LLM call with full telemetry. For GPT/Claude/Gemini calls."""
+    """Log LLM call with full telemetry via durable queue."""
     if not _get_spine_enabled_for_tenant(tenant_id):
         return
 
@@ -205,7 +159,7 @@ def log_llm_call(
         tenant_id=tenant_id,
         event_type='MODEL_EXECUTED',
         model_name=model_name,
-        numeric_payload=execution_time_ms,
+        numeric_payload=float(execution_time_ms),
         json_payload={
             'prompt_length': prompt_length,
             'response_length': response_length,
@@ -222,17 +176,14 @@ def log_llm_call(
         model_version='1.0',
         execution_time_ms=execution_time_ms,
         confidence_score=confidence,
-        output_summary={
-            'prompt_length': prompt_length,
-            'response_length': response_length,
-        },
+        output_summary={'prompt_length': prompt_length, 'response_length': response_length},
         input_hash=input_hash,
         token_count=token_count,
     )
 
 
 def spine_instrument(event_type: str, model_name: Optional[str] = None):
-    """Decorator to instrument async endpoints. Non-blocking via queue."""
+    """Decorator to instrument async endpoints. Uses durable queue."""
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -255,13 +206,12 @@ def spine_instrument(event_type: str, model_name: Optional[str] = None):
                         tenant_id=tenant_id,
                         event_type=event_type,
                         model_name=model_name,
-                        numeric_payload=elapsed,
+                        numeric_payload=float(elapsed),
                         json_payload={'execution_time_ms': elapsed, 'status': 'success'},
                         confidence_score=1.0,
                     )
                 except SpineWriteError:
-                    # Fail-fast logged but don't break the endpoint
-                    pass
+                    logger.error(f"[Spine] Failed to log {event_type} — queue write failed")
 
             return result
         return wrapper
