@@ -69,6 +69,7 @@ import DataHealthPage from './pages/DataHealthPage';
 import ReportsPage from './pages/ReportsPage';
 import AuditLogPage from './pages/AuditLogPage';
 import ForensicCalibration from './pages/ForensicCalibration';
+import ForensicAuditPage from './pages/ForensicAuditPage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import ResetPassword from './pages/ResetPassword';
 import UpdatePassword from './pages/UpdatePassword';
