@@ -170,8 +170,142 @@ const ForensicAuditPage = () => {
         {/* Results */}
         {result && !running && (
           <div className="space-y-4">
-            {/* Verdict Banner */}
-            <div className="rounded-xl p-6" style={{
+            {/* NEW FORMAT: Quality Score Banner */}
+            {isNewFormat && (
+              <div className="rounded-xl p-6" style={{
+                background: result.quality_score >= 70 ? '#10B98108' : result.quality_score >= 50 ? '#F59E0B08' : '#EF444408',
+                border: `1px solid ${result.quality_score >= 70 ? '#10B98125' : result.quality_score >= 50 ? '#F59E0B25' : '#EF444425'}`,
+              }} data-testid="audit-verdict">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {result.quality_score >= 70 ? <CheckCircle2 className="w-5 h-5 text-[#10B981]" /> : <AlertTriangle className="w-5 h-5 text-[#EF4444]" />}
+                    <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>
+                      Ingestion Quality: {result.confidence_level}
+                    </h2>
+                  </div>
+                  <span className="text-2xl font-bold" style={{ color: result.quality_score >= 70 ? '#10B981' : result.quality_score >= 50 ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>
+                    {result.quality_score}/100
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Pages Crawled</span>
+                    <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{result.pages_crawled}/7</span>
+                  </div>
+                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Noise Ratio</span>
+                    <span className="text-lg font-bold" style={{ color: result.noise_ratio > 0.35 ? '#EF4444' : '#10B981', fontFamily: MONO }}>{result.noise_ratio}</span>
+                  </div>
+                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Hallucination</span>
+                    <span className="text-lg font-bold" style={{ color: result.hallucination_score > 0.05 ? '#EF4444' : '#10B981', fontFamily: MONO }}>{result.hallucination_score}</span>
+                  </div>
+                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Fields Found</span>
+                    <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{Object.keys(result.dna_trace || {}).length}</span>
+                  </div>
+                </div>
+                {result.failure_codes?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {result.failure_codes.map((c, i) => <span key={i} className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444415', fontFamily: MONO }}>{c}</span>)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* NEW FORMAT: Pages Crawled */}
+            {isNewFormat && result.pages?.length > 0 && (
+              <CollapsibleSection title="Pages Crawled" icon={Layers} color="#3B82F6" status={result.extraction_status || 'pass'} defaultOpen>
+                <div className="space-y-2">
+                  {result.pages.map((p, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <span className="text-[10px] w-6 text-center font-bold" style={{ color: '#FF6A00', fontFamily: MONO }}>P{p.priority}</span>
+                      <span className="text-xs text-[#F4F7FA] flex-1 truncate">{p.url}</span>
+                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{(p.html_length || 0).toLocaleString()} chars</span>
+                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{p.fetch_time_ms}ms</span>
+                    </div>
+                  ))}
+                </div>
+                {result.canonical_url && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-[#9FB0C3]">
+                    <ExternalLink className="w-3 h-3" /> Canonical: <span style={{ fontFamily: MONO }}>{result.canonical_url}</span>
+                  </div>
+                )}
+              </CollapsibleSection>
+            )}
+
+            {/* NEW FORMAT: Business DNA Trace */}
+            {isNewFormat && result.dna_trace && Object.keys(result.dna_trace).length > 0 && (
+              <CollapsibleSection title="Business DNA Trace" icon={Brain} color="#7C3AED" status="pass" defaultOpen>
+                <div className="space-y-2">
+                  {Object.entries(result.dna_trace).map(([field, trace]) => (
+                    <div key={field} className="p-3 rounded" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-[#F4F7FA] capitalize">{field.replace(/_/g, ' ')}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: trace.confidence >= 0.8 ? '#10B981' : '#F59E0B', background: (trace.confidence >= 0.8 ? '#10B981' : '#F59E0B') + '15', fontFamily: MONO }}>{Math.round(trace.confidence * 100)}%</span>
+                      </div>
+                      <span className="text-sm text-[#3B82F6] block" style={{ fontFamily: MONO }}>{trace.value}</span>
+                      <span className="text-[10px] text-[#64748B] block mt-1 italic">"{trace.snippet}"</span>
+                      {trace.source_url && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Source: {trace.source_url}</span>}
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* NEW FORMAT: Hallucinations & Lost Signals */}
+            {isNewFormat && (result.hallucinations?.length > 0 || result.lost_signals?.length > 0) && (
+              <CollapsibleSection title="Integrity Check" icon={Shield} color="#EF4444" status={result.hallucination_score > 0.05 ? 'fail' : result.hallucinations?.length > 0 ? 'warning' : 'pass'}>
+                {result.hallucinations?.length > 0 && (
+                  <div className="mb-3">
+                    <span className="text-[10px] font-semibold text-[#EF4444] block mb-2" style={{ fontFamily: MONO }}>HALLUCINATIONS ({result.hallucinations.length})</span>
+                    {result.hallucinations.map((h, i) => (
+                      <div key={i} className="p-2 rounded mb-1 text-xs" style={{ background: '#EF444408', border: '1px solid #EF444415' }}>
+                        <span className="text-[#F4F7FA] font-semibold">{h.claim}</span>
+                        <span className="text-[#64748B] ml-2">— {h.evidence}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {result.lost_signals?.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-semibold text-[#F59E0B] block mb-2" style={{ fontFamily: MONO }}>LOST SIGNALS ({result.lost_signals.length})</span>
+                    {result.lost_signals.map((s, i) => (
+                      <div key={i} className="p-2 rounded mb-1 text-xs" style={{ background: '#F59E0B08', border: '1px solid #F59E0B15' }}>
+                        <span className="text-[#F4F7FA]">{s.sentence?.substring(0, 120)}...</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CollapsibleSection>
+            )}
+
+            {/* NEW FORMAT: Quality Breakdown */}
+            {isNewFormat && result.quality_breakdown && (
+              <CollapsibleSection title="Quality Score Breakdown" icon={Filter} color="#10B981" status={result.quality_score >= 70 ? 'pass' : 'warning'}>
+                <div className="space-y-2">
+                  {Object.entries(result.quality_breakdown).map(([k, v]) => {
+                    const isNegative = v < 0;
+                    const color = isNegative ? '#EF4444' : '#10B981';
+                    const pct = Math.abs(v);
+                    return (
+                      <div key={k}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-xs text-[#9FB0C3] capitalize">{k.replace(/_/g, ' ')}</span>
+                          <span className="text-xs font-semibold" style={{ color, fontFamily: MONO }}>{isNegative ? '' : '+'}{v}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full" style={{ background: color + '20' }}>
+                          <div className="h-1.5 rounded-full" style={{ background: color, width: Math.min(pct * 4, 100) + '%' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* OLD FORMAT: Verdict Banner (fallback) */}
+            {!isNewFormat && (
               background: verdict.primary_failure_layer === 'none' ? '#10B98108' : '#EF444408',
               border: `1px solid ${verdict.primary_failure_layer === 'none' ? '#10B98125' : '#EF444425'}`,
             }} data-testid="audit-verdict">
