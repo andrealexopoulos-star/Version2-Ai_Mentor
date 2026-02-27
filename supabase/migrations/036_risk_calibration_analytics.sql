@@ -192,6 +192,22 @@ BEGIN
         v_issues := v_issues || '"Risk range < 0.15. Scores may not be informative."'::JSONB;
     END IF;
 
+    -- Check 6: Per-index variance — detect flat indices hiding behind composite
+    IF v_execution_count >= 7 THEN
+        IF COALESCE(v_distribution.stddev_rvi, 0) < 0.02 THEN
+            v_issues := v_issues || '"RVI stddev near zero. Volatility threshold likely too wide. Revenue signal is flat."'::JSONB;
+        END IF;
+        IF COALESCE(v_distribution.stddev_eds, 0) < 0.02 THEN
+            v_issues := v_issues || '"EDS stddev near zero. Engagement decay threshold too wide. Engagement signal is flat."'::JSONB;
+        END IF;
+        IF COALESCE(v_distribution.stddev_cdr, 0) < 0.02 THEN
+            v_issues := v_issues || '"CDR stddev near zero. Cash deviation threshold too wide. Cash signal is flat."'::JSONB;
+        END IF;
+        IF COALESCE(v_distribution.stddev_ads, 0) < 0.02 THEN
+            v_issues := v_issues || '"ADS stddev near zero. Anomaly density signal is flat."'::JSONB;
+        END IF;
+    END IF;
+
     -- Pass if: sufficient data AND no critical issues
     v_calibration_pass := v_execution_count >= 7 AND jsonb_array_length(v_issues) = 0;
 
