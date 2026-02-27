@@ -2,10 +2,13 @@
 Exposes: workforce, scenarios, scores, concentration, contradictions,
 pressure, freshness, silence, escalations, profile completeness,
 data readiness, watchtower positions, full summary.
+
+Instrumented with Intelligence Spine event logging.
 """
 import logging
 from fastapi import APIRouter, Depends
 from supabase_client import get_supabase_client
+from intelligence_spine import emit_spine_event
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,7 +21,16 @@ def _rpc(fn_name, workspace_id):
     try:
         sb = get_supabase_client()
         result = sb.rpc(fn_name, {'p_workspace_id': workspace_id}).execute()
-        return result.data if result.data else {"status": "no_data", "has_data": False}
+        data = result.data if result.data else {"status": "no_data", "has_data": False}
+        # Spine instrumentation
+        emit_spine_event(
+            tenant_id=workspace_id,
+            event_type='MODEL_EXECUTED',
+            model_name=fn_name,
+            json_payload={'status': data.get('status', 'ok') if isinstance(data, dict) else 'ok'},
+            confidence_score=data.get('confidence', 1.0) if isinstance(data, dict) else 1.0,
+        )
+        return data
     except Exception as e:
         logger.warning(f"RPC {fn_name} failed: {e}")
         return {"status": "error", "has_data": False, "message": f"Deploy SQL migration 023 to enable {fn_name}."}
