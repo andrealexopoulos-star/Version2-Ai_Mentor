@@ -199,6 +199,9 @@ api_router.include_router(stripe_payments_router)
 from routes.spine_api import router as spine_api_router
 api_router.include_router(spine_api_router)
 
+from routes.dsee import router as dsee_router
+api_router.include_router(dsee_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
