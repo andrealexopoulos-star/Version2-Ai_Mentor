@@ -187,26 +187,42 @@ async def get_validation_report(current_user: dict = Depends(get_current_user)):
         # Anomaly check
         total_anomalies = sum(s.get('anomaly_count', 0) for s in snap_list)
 
-        # Validation checks
+        # Validation checks — volume/consistency based, NOT model quality
+        # No arbitrary confidence thresholds
+        has_duplicate_snapshots = len(snap_list) != len(set(s.get('snapshot_date') for s in snap_list))
+        has_null_metrics = any(
+            s.get('risk_score') is None and s.get('engagement_score') is None
+            for s in snap_list
+        )
+        # Event volume stability: at least 1 event per day on average
+        events_per_day = len(event_list) / max(7, 1)
+
         checks = {
             'spine_enabled': _get_spine_enabled(),
             'events_flowing': len(event_list) > 0,
+            'event_volume_stable': events_per_day >= 1.0,
+            'events_per_day': round(events_per_day, 1),
             'snapshots_generating': snapshot_days > 0,
             'snapshot_coverage_7d': f'{snapshot_days}/7 days',
+            'snapshot_consistency': not has_duplicate_snapshots,
+            'no_null_critical_metrics': not has_null_metrics,
+            'no_duplicate_snapshots': not has_duplicate_snapshots,
             'models_executing': len(exec_list) > 0,
-            'avg_confidence': avg_confidence,
+            'execution_logging_present': len(exec_list) > 0,
             'anomalies_detected': total_anomalies,
             'event_types_observed': list(event_by_type.keys()),
             'models_observed': list(model_stats.keys()),
         }
 
-        # Pass/fail
+        # Pass/fail — based ONLY on volume, consistency, presence
+        # NOT on model quality metrics (those come after modelling activation)
         validation_pass = (
             checks['spine_enabled']
             and checks['events_flowing']
             and checks['snapshots_generating']
             and snapshot_days >= 3
-            and avg_confidence > 0.3
+            and not has_duplicate_snapshots
+            and not has_null_metrics
         )
 
         return {
@@ -218,19 +234,21 @@ async def get_validation_report(current_user: dict = Depends(get_current_user)):
             'event_summary': {
                 'total_events': len(event_list),
                 'by_type': event_by_type,
-                'avg_confidence': avg_confidence,
+                'events_per_day': round(events_per_day, 1),
             },
             'snapshot_summary': {
                 'days_covered': snapshot_days,
                 'snapshots': snap_list,
+                'has_duplicates': has_duplicate_snapshots,
+                'has_null_metrics': has_null_metrics,
                 'total_anomalies': total_anomalies,
             },
             'model_summary': {
                 'total_executions': len(exec_list),
                 'by_model': model_stats,
             },
-            'recommendation': 'Spine data collection sufficient. Ready for modelling activation.' if validation_pass
-                else f'Need more data. {7 - snapshot_days} more days of snapshots required. Ensure spine is enabled and engines are running.',
+            'recommendation': 'Spine data collection sufficient. Volume stable, snapshots consistent, no null metrics. Ready for risk baseline activation.' if validation_pass
+                else f'Need more data. {max(0, 3 - snapshot_days)} more days of snapshots required. Ensure spine is enabled and engines are running.',
         }
     except Exception as e:
         return {'validation_status': 'ERROR', 'error': str(e)}
