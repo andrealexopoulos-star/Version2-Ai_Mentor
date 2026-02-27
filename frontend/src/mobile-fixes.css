@@ -69,12 +69,6 @@ aside [class*="overflow-y"] {
 
   .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl {
     max-width: 100% !important;
-    width: 100% !important;
-  }
-
-  [class*="max-w-"] {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
   }
 
   main {
