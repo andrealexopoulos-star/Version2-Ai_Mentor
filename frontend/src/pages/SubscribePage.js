@@ -1,97 +1,130 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
-import { Lock, ArrowRight, Check, Zap, Shield, TrendingUp, BarChart3 } from 'lucide-react';
+import { apiClient } from '../lib/api';
+import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
 const FEATURE_LABELS = {
-  '/revenue': 'Revenue Engine',
-  '/operations': 'Operations Intelligence',
-  '/risk': 'Risk & Workforce',
-  '/compliance': 'Compliance Intelligence',
-  '/reports': 'Intelligence Reports',
-  '/audit-log': 'Governance Audit Log',
-  '/soundboard': 'Soundboard Chat',
-  '/war-room': 'War Room',
-  '/board-room': 'Board Room',
-  '/sop-generator': 'SOP Generator',
-  '/alerts': 'Alerts',
-  '/actions': 'Actions',
-  '/email-inbox': 'Priority Inbox',
-  '/market': 'Market Deep Analysis',
+  '/revenue': 'Revenue Engine', '/operations': 'Operations Intelligence', '/risk': 'Risk & Workforce',
+  '/compliance': 'Compliance', '/reports': 'Intelligence Reports', '/audit-log': 'Governance Audit Log',
+  '/soundboard': 'Soundboard Chat', '/war-room': 'War Room', '/board-room': 'Board Room',
+  '/sop-generator': 'SOP Generator', '/market': 'Market Deep Analysis',
 };
 
 const PLANS = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: '/month',
-    color: '#64748B',
-    current: true,
-    features: ['Market Intelligence (basic)', 'Business DNA', '1 Forensic Audit/month', '3 Snapshots/month', 'Email Integration'],
-  },
-  {
-    name: 'Starter',
-    price: '$197',
-    period: '/month',
-    color: '#FF6A00',
-    recommended: true,
-    features: ['Everything in Free', 'Revenue Engine', 'Risk & Workforce', 'Operations Intelligence', 'Compliance', 'Reports & Audit Log', 'Soundboard Chat', 'SOP Generator', 'Priority Inbox', 'Unlimited Snapshots'],
-  },
-  {
-    name: 'Professional',
-    price: '$497',
-    period: '/month',
-    color: '#7C3AED',
-    features: ['Everything in Starter', 'War Room', 'Board Room', 'Deep Market Analysis', 'Outcome Tracking', 'Custom Integrations', 'Priority Support'],
-  },
+  { id: 'free', name: 'Free', price: '$0', period: '/month', color: '#64748B',
+    features: ['Market Intelligence (basic)', 'Business DNA', '1 Forensic Audit/month', '3 Snapshots/month', 'Email Integration'] },
+  { id: 'starter', name: 'Starter', price: '$197', period: '/month', color: '#FF6A00', recommended: true,
+    features: ['Everything in Free', 'Revenue Engine', 'Risk & Workforce', 'Operations Intelligence', 'Compliance', 'Reports & Audit Log', 'Soundboard Chat', 'SOP Generator', 'Priority Inbox', 'Unlimited Snapshots'] },
+  { id: 'professional', name: 'Professional', price: '$497', period: '/month', color: '#7C3AED',
+    features: ['Everything in Starter', 'War Room', 'Board Room', 'Deep Market Analysis', 'Outcome Tracking', 'Priority Support'] },
 ];
 
 const SubscribePage = () => {
   const { user } = useSupabaseAuth();
   const [searchParams] = useSearchParams();
   const from = searchParams.get('from') || '';
-  const featureLabel = FEATURE_LABELS[from] || from.replace('/', '').replace('-', ' ');
+  const sessionId = searchParams.get('session_id');
+  const status = searchParams.get('status');
+  const featureLabel = FEATURE_LABELS[from] || (from ? from.replace(/\//g, '').replace(/-/g, ' ') : '');
   const currentTier = resolveTier(user);
+
+  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null);
+  const [loading, setLoading] = useState(null);
+
+  // Poll payment status if returning from Stripe
+  useEffect(() => {
+    if (sessionId && status === 'success') {
+      pollPaymentStatus(sessionId, 0);
+    }
+  }, [sessionId, status]);
+
+  const pollPaymentStatus = async (sid, attempt) => {
+    if (attempt >= 5) {
+      setPaymentResult({ status: 'timeout', message: 'Payment verification timed out. Please refresh.' });
+      return;
+    }
+    setCheckingPayment(true);
+    try {
+      const res = await apiClient.get(`/payments/status/${sid}`);
+      if (res.data?.payment_status === 'paid') {
+        setPaymentResult({ status: 'success', message: 'Payment successful! Your account has been upgraded.', tier: res.data.metadata?.tier });
+        setCheckingPayment(false);
+        return;
+      }
+      if (res.data?.status === 'expired') {
+        setPaymentResult({ status: 'expired', message: 'Payment session expired.' });
+        setCheckingPayment(false);
+        return;
+      }
+      setTimeout(() => pollPaymentStatus(sid, attempt + 1), 2000);
+    } catch {
+      setPaymentResult({ status: 'error', message: 'Error checking payment. Please refresh.' });
+      setCheckingPayment(false);
+    }
+  };
+
+  const handleUpgrade = async (packageId) => {
+    setLoading(packageId);
+    try {
+      const origin = window.location.origin;
+      const res = await apiClient.post('/payments/checkout', { package_id: packageId, origin_url: origin });
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12" style={{ background: '#0F1720' }} data-testid="subscribe-page">
-      {/* Header */}
+      {/* Payment Result Banner */}
+      {paymentResult && (
+        <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{
+          background: paymentResult.status === 'success' ? '#10B98110' : '#EF444410',
+          border: `1px solid ${paymentResult.status === 'success' ? '#10B98130' : '#EF444430'}`,
+        }}>
+          {paymentResult.status === 'success' ? <CheckCircle2 className="w-5 h-5 text-[#10B981]" /> : <XCircle className="w-5 h-5 text-[#EF4444]" />}
+          <p className="text-sm" style={{ color: paymentResult.status === 'success' ? '#10B981' : '#EF4444' }}>{paymentResult.message}</p>
+        </div>
+      )}
+
+      {checkingPayment && (
+        <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: '#FF6A0010', border: '1px solid #FF6A0030' }}>
+          <Loader2 className="w-5 h-5 text-[#FF6A00] animate-spin" />
+          <p className="text-sm text-[#FF6A00]">Verifying payment...</p>
+        </div>
+      )}
+
       <div className="text-center mb-10 max-w-xl">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A0015' }}>
           <Lock className="w-6 h-6 text-[#FF6A00]" />
         </div>
-        {featureLabel && (
-          <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: MONO }}>
-            {featureLabel} requires a paid plan
-          </p>
-        )}
-        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>
-          Upgrade Your Intelligence
-        </h1>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>
-          Unlock the full power of BIQc's cognitive platform. Your current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong>
-        </p>
+        {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: MONO }}>{featureLabel} requires a paid plan</p>}
+        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Upgrade Your Intelligence</h1>
+        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
       </div>
 
-      {/* Plans */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full mb-8">
         {PLANS.map(plan => {
-          const isCurrent = plan.name.toLowerCase() === currentTier;
+          const isCurrent = plan.id === currentTier;
           return (
-            <div key={plan.name} className="rounded-xl p-6 relative" style={{
+            <div key={plan.id} className="rounded-xl p-6 relative" style={{
               background: '#141C26',
-              border: `2px solid ${plan.recommended ? plan.color : isCurrent ? '#243140' : '#243140'}`,
+              border: `2px solid ${plan.recommended ? plan.color : '#243140'}`,
               boxShadow: plan.recommended ? `0 8px 32px ${plan.color}20` : 'none',
-            }} data-testid={`plan-${plan.name.toLowerCase()}`}>
+            }} data-testid={`plan-${plan.id}`}>
               {plan.recommended && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: plan.color, fontFamily: MONO }}>
-                  RECOMMENDED
-                </span>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: plan.color, fontFamily: MONO }}>RECOMMENDED</span>
               )}
               <h3 className="text-lg font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-4">
@@ -107,10 +140,14 @@ const SubscribePage = () => {
                 ))}
               </div>
               {isCurrent ? (
-                <span className="block text-center text-xs text-[#64748B] py-2" style={{ fontFamily: MONO }}>Current Plan</span>
+                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: MONO }}>Current Plan</span>
+              ) : plan.id === 'free' ? (
+                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: MONO }}>Free Forever</span>
               ) : (
-                <button className="w-full py-2.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2" style={{ background: plan.color }} data-testid={`select-${plan.name.toLowerCase()}`}>
-                  {plan.name === 'Free' ? 'Downgrade' : 'Upgrade'} <ArrowRight className="w-4 h-4" />
+                <button onClick={() => handleUpgrade(plan.id)} disabled={loading === plan.id}
+                  className="w-full py-2.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ background: plan.color }} data-testid={`upgrade-${plan.id}`}>
+                  {loading === plan.id ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : <>Upgrade <ArrowRight className="w-4 h-4" /></>}
                 </button>
               )}
             </div>
@@ -118,10 +155,7 @@ const SubscribePage = () => {
         })}
       </div>
 
-      {/* Back link */}
-      <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3] transition-colors" style={{ fontFamily: MONO }}>
-        Back to dashboard
-      </Link>
+      <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: MONO }}>Back to dashboard</Link>
     </div>
   );
 };
