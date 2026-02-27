@@ -141,9 +141,9 @@ aside [class*="overflow-y"] {
   .space-y-8 > * + * { margin-top: 1.5rem !important; }
   .space-y-6 > * + * { margin-top: 1rem !important; }
 
-  [class*="rounded-"] {
+  /* Card containers only - not icons or badges */
+  .rounded-2xl, .rounded-xl {
     max-width: 100%;
-    width: 100%;
   }
 }
 
