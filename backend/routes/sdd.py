@@ -52,10 +52,26 @@ async def _fetch_page(url: str) -> str:
 
 
 def _extract_text(html: str) -> str:
+    """Extract text with boilerplate suppression — removes nav, footer, header, repeated blocks."""
     soup = BeautifulSoup(html, 'html.parser')
-    for tag in soup(['script', 'style', 'nav', 'footer', 'header', 'noscript']):
+    # Remove structural noise
+    for tag in soup(['script', 'style', 'nav', 'footer', 'header', 'noscript', 'aside', 'iframe']):
         tag.decompose()
-    return soup.get_text(' ', strip=True).lower()
+    # Remove cookie banners
+    for sel in ['[class*="cookie"]', '[class*="consent"]', '[class*="gdpr"]', '[id*="cookie"]']:
+        for tag in soup.select(sel):
+            tag.decompose()
+    text = soup.get_text(' ', strip=True).lower()
+    # Deduplicate repeated blocks (boilerplate suppression)
+    lines = text.split('\n')
+    seen = set()
+    unique_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and stripped not in seen:
+            seen.add(stripped)
+            unique_lines.append(stripped)
+    return ' '.join(unique_lines)
 
 
 def _count_keyword(text: str, keyword: str) -> int:
