@@ -164,7 +164,7 @@ const KnowledgeBaseContent = () => {
   return (
     <div className="max-w-[900px] mx-auto space-y-8 px-6 py-8" style={{ fontFamily: BODY }} data-testid="knowledge-base-page">
       <div>
-        <h1 className="text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Knowledge Base</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD, textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #F4F7FA' }}>Knowledge Base</h1>
         <p className="text-sm text-[#9FB0C3]">Step-by-step guides to activate every intelligence layer in BIQc, plus frequently asked questions.</p>
       </div>
 
