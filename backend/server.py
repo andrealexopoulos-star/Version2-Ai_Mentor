@@ -190,6 +190,9 @@ api_router.include_router(ingestion_engine_router)
 from routes.hybrid_ingestion import router as hybrid_ingestion_router
 api_router.include_router(hybrid_ingestion_router)
 
+from routes.engagement_engine import router as engagement_engine_router
+api_router.include_router(engagement_engine_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
