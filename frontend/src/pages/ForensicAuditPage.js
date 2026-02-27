@@ -111,11 +111,9 @@ const ForensicAuditPage = () => {
       setRunning(false);
     }
   };
-    } finally {
-      setRunning(false);
-    }
-  };
 
+  // Support both old audit format and new ingestion format
+  const isNewFormat = result?.quality_score != null;
   const ext = result?.extraction || {};
   const cln = result?.cleaning || {};
   const syn = result?.synthesis || {};
