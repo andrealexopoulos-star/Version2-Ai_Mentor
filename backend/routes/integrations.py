@@ -524,7 +524,55 @@ async def get_crm_deals(
             page_size=page_size
         )
         
-        logger.info(f"✅ Retrieved {len(data.get('results', []))} deals")
+        deals = data.get('results', [])
+        logger.info(f"✅ Retrieved {len(deals)} deals")
+        
+        # GOVERNANCE: Emit events for significant deal signals
+        try:
+            for deal in deals:
+                deal_status = (deal.get('status') or '').upper()
+                deal_name = deal.get('name', 'Unknown')
+                deal_amount = deal.get('amount')
+                
+                # Detect recently won deals
+                if deal_status == 'WON':
+                    get_sb().rpc("emit_governance_event", {
+                        "p_workspace_id": user_id,
+                        "p_event_type": "deal_won",
+                        "p_source_system": "crm",
+                        "p_signal_reference": deal.get('id', deal_name),
+                        "p_confidence_score": 0.95,
+                    }).execute()
+                
+                # Detect lost deals
+                elif 'LOST' in deal_status:
+                    get_sb().rpc("emit_governance_event", {
+                        "p_workspace_id": user_id,
+                        "p_event_type": "deal_lost",
+                        "p_source_system": "crm",
+                        "p_signal_reference": deal.get('id', deal_name),
+                        "p_confidence_score": 0.95,
+                    }).execute()
+                
+                # Detect stalled deals (>7 days no update)
+                elif deal.get('last_modified_at'):
+                    from datetime import datetime, timezone
+                    try:
+                        last_mod = datetime.fromisoformat(deal['last_modified_at'].replace('Z', '+00:00'))
+                        days_stalled = (datetime.now(timezone.utc) - last_mod).days
+                        if days_stalled > 7:
+                            get_sb().rpc("emit_governance_event", {
+                                "p_workspace_id": user_id,
+                                "p_event_type": "deal_stalled",
+                                "p_source_system": "crm",
+                                "p_signal_reference": deal.get('id', deal_name),
+                                "p_confidence_score": 0.7,
+                            }).execute()
+                    except Exception:
+                        pass
+        except Exception as gov_err:
+            logger.warning(f"⚠️ Deal governance events failed (non-blocking): {gov_err}")
+        
         return data
         
     except HTTPException:
