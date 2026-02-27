@@ -174,20 +174,57 @@ const ForensicAuditPage = () => {
             {/* NEW FORMAT: Quality Score Banner */}
             {isNewFormat && (
               <div className="rounded-xl p-6" style={{
-                background: result.quality_score >= 70 ? '#10B98108' : result.quality_score >= 50 ? '#F59E0B08' : '#EF444408',
-                border: `1px solid ${result.quality_score >= 70 ? '#10B98125' : result.quality_score >= 50 ? '#F59E0B25' : '#EF444425'}`,
+                background: (result.scores?.trust_integrity_score || result.quality_score) >= 70 ? '#10B98108' : (result.scores?.trust_integrity_score || result.quality_score) >= 50 ? '#F59E0B08' : '#EF444408',
+                border: `1px solid ${(result.scores?.trust_integrity_score || result.quality_score) >= 70 ? '#10B98125' : (result.scores?.trust_integrity_score || result.quality_score) >= 50 ? '#F59E0B25' : '#EF444425'}`,
               }} data-testid="audit-verdict">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    {result.quality_score >= 70 ? <CheckCircle2 className="w-5 h-5 text-[#10B981]" /> : <AlertTriangle className="w-5 h-5 text-[#EF4444]" />}
+                    {(result.scores?.trust_integrity_score || result.quality_score) >= 70 ? <CheckCircle2 className="w-5 h-5 text-[#10B981]" /> : <AlertTriangle className="w-5 h-5 text-[#EF4444]" />}
                     <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>
-                      Ingestion Quality: {result.confidence_level}
+                      {result.scores ? `Trust Integrity: ${result.scores.confidence_level}` : `Ingestion Quality: ${result.confidence_level}`}
                     </h2>
                   </div>
-                  <span className="text-2xl font-bold" style={{ color: result.quality_score >= 70 ? '#10B981' : result.quality_score >= 50 ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>
-                    {result.quality_score}/100
+                  <span className="text-2xl font-bold" style={{ color: (result.scores?.trust_integrity_score || result.quality_score) >= 70 ? '#10B981' : (result.scores?.trust_integrity_score || result.quality_score) >= 50 ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>
+                    {result.scores?.trust_integrity_score || result.quality_score}/100
                   </span>
                 </div>
+                {/* Trust Message */}
+                {result.trust_message && (
+                  <div className="p-3 rounded-lg mb-3 flex items-start gap-2" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
+                    <Shield className="w-4 h-4 text-[#F59E0B] shrink-0 mt-0.5" />
+                    <p className="text-xs text-[#F59E0B]">{result.trust_message}</p>
+                  </div>
+                )}
+                {/* Render Mode */}
+                {result.render_mode && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: result.render_mode === 'headless' ? '#7C3AED' : '#3B82F6', background: (result.render_mode === 'headless' ? '#7C3AED' : '#3B82F6') + '15', fontFamily: MONO }}>
+                      {result.render_mode === 'headless' ? 'HEADLESS RENDER' : result.render_mode === 'static_fallback' ? 'STATIC FALLBACK' : 'STATIC FETCH'}
+                    </span>
+                    {result.js_detection?.spa_signatures?.length > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: MONO }}>
+                        JS: {result.js_detection.spa_signatures.join(', ')}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Layer Scores */}
+                {result.scores && (
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="p-3 rounded text-center" style={{ background: '#0F1720' }}>
+                      <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Extraction</span>
+                      <span className="text-lg font-bold" style={{ color: result.scores.extraction_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{result.scores.extraction_score}</span>
+                    </div>
+                    <div className="p-3 rounded text-center" style={{ background: '#0F1720' }}>
+                      <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Cleaning</span>
+                      <span className="text-lg font-bold" style={{ color: result.scores.cleaning_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{result.scores.cleaning_score}</span>
+                    </div>
+                    <div className="p-3 rounded text-center" style={{ background: '#0F1720' }}>
+                      <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Synthesis</span>
+                      <span className="text-lg font-bold" style={{ color: result.scores.synthesis_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{result.scores.synthesis_score}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                   <div className="p-3 rounded" style={{ background: '#0F1720' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Pages Crawled</span>
