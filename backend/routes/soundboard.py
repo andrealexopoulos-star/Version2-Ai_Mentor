@@ -132,6 +132,23 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
         response = await chat.send_message(UserMessage(text=req.message))
 
+        # Spine: log LLM call
+        try:
+            from llm_instrumentation import instrumented_llm_call
+            from intelligence_spine import log_llm_call
+            import hashlib
+            log_llm_call(
+                tenant_id=user_id,
+                model_name=AI_MODEL,
+                prompt_length=len(req.message),
+                response_length=len(response) if isinstance(response, str) else 0,
+                execution_time_ms=0,
+                token_count=(len(req.message) + len(response if isinstance(response, str) else '')) // 4,
+                input_hash=hashlib.md5(req.message[:200].encode()).hexdigest()[:12],
+            )
+        except Exception:
+            pass
+
         # Generate title for new conversations
         conversation_title = None
         if not conversation:
