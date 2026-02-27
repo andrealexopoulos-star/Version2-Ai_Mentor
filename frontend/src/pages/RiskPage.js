@@ -42,13 +42,26 @@ const RiskPage = () => {
 
   const [integrations, setIntegrations] = useState([]);
   const [activeTab, setActiveTab] = useState('governance');
+  const [sqlWorkforce, setSqlWorkforce] = useState(null);
+  const [sqlScores, setSqlScores] = useState(null);
 
   useEffect(() => {
+    // Fetch integration status from both Merge and workspace_integrations
     apiClient.get('/integrations/merge/connected').then(res => {
       if (res.data?.integrations) {
         const names = Object.entries(res.data.integrations).filter(([, v]) => v).map(([k]) => k.toLowerCase());
         setIntegrations(names);
       }
+    }).catch(() => {});
+
+    // Fetch SQL-backed workforce health
+    apiClient.get('/intelligence/workforce').then(res => {
+      if (res.data?.has_data) setSqlWorkforce(res.data);
+    }).catch(() => {});
+
+    // Fetch weighted insight scores
+    apiClient.get('/intelligence/scores').then(res => {
+      if (res.data?.scores) setSqlScores(res.data.scores);
     }).catch(() => {});
   }, []);
 
