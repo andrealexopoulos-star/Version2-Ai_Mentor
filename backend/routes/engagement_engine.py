@@ -137,13 +137,22 @@ def classify_structure(cleaned_text: str, html: str, search_results: Dict) -> Di
         structure = 'single_location_service'
         confidence = 0.6
 
-    # Extract services list
+    # Extract services list — from bullet points and service sections, not page labels
     services = []
-    service_matches = re.findall(r'(?:^|\n)\s*[-•]\s*(.{10,60})(?:\n|$)', cleaned_text)
-    if not service_matches:
-        service_matches = re.findall(r'(?:services?|solutions?|we\s+offer|we\s+provide)[:\s]+(.{20,200})', lower)
-    for m in service_matches[:10]:
-        services.append(m.strip())
+    # Look for bullet-point lists in service sections
+    service_section = re.search(r'(?:services?|solutions?|what\s+we\s+(?:do|offer)|capabilities)[:\s]+([\s\S]{20,500}?)(?:\n\n|$)', lower)
+    if service_section:
+        items = re.findall(r'(?:^|\n)\s*[-•*]\s*(.{5,60})(?:\n|$)', service_section.group(1))
+        services.extend([i.strip().title() for i in items if not i.startswith('---')])
+    
+    # Fallback: heading-style service names
+    if not services:
+        h_services = re.findall(r'(?:^|\n)([A-Z][a-z]+(?:\s+[A-Z&][a-z]*)*(?:\s+(?:Services?|Solutions?|Management|Advisory|Consulting|Planning|Strategy)))', cleaned_text)
+        services.extend([s.strip() for s in h_services if len(s) > 5 and '---' not in s])
+    
+    # Use industry as fallback
+    if not services and industry_detected:
+        services = [industry_detected]
 
     return {
         'structure': structure,
