@@ -81,8 +81,11 @@ const ForensicAuditPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    apiClient.get('/ingestion/history').then(res => {
+      setHistory(res.data?.sessions || []);
+    }).catch(() => {});
     apiClient.get('/forensic/ingestion-history').then(res => {
-      setHistory(res.data?.audits || []);
+      if (!history.length) setHistory(res.data?.audits || []);
     }).catch(() => {});
   }, []);
 
@@ -92,12 +95,22 @@ const ForensicAuditPage = () => {
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.post('/forensic/ingestion-audit', { url: url.trim() });
+      // Use new multi-page ingestion engine
+      const res = await apiClient.post('/ingestion/run', { url: url.trim() });
       setResult(res.data);
-      // Refresh history
-      apiClient.get('/forensic/ingestion-history').then(r => setHistory(r.data?.audits || [])).catch(() => {});
+      apiClient.get('/ingestion/history').then(r => setHistory(r.data?.sessions || [])).catch(() => {});
     } catch (err) {
-      setError(err.response?.data?.detail || 'Audit failed');
+      // Fallback to old single-page audit
+      try {
+        const res2 = await apiClient.post('/forensic/ingestion-audit', { url: url.trim() });
+        setResult(res2.data);
+      } catch (err2) {
+        setError(err2.response?.data?.detail || err.response?.data?.detail || 'Audit failed');
+      }
+    } finally {
+      setRunning(false);
+    }
+  };
     } finally {
       setRunning(false);
     }
