@@ -378,6 +378,7 @@ def compute_confidence(
     }
 
 
+@router.post("/dsee/scan")
 async def run_dsee_scan(req: DSEERequest, current_user: dict = Depends(get_current_user)):
     """Run Deterministic Structural Exposure Engine scan."""
     url = req.url.strip()
