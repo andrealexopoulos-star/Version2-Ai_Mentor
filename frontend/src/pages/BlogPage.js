@@ -25,7 +25,7 @@ const BlogPage = () => {
         {/* Hero */}
         <div className="max-w-5xl mx-auto px-6 py-16 text-center">
           <span className="text-[10px] font-semibold tracking-[0.2em] uppercase block mb-4" style={{ color: '#FF6A00', fontFamily: MONO }}>Intelligence Blog</span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4" style={{ fontFamily: HEAD, color: '#F4F7FA' }}>
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-4" style={{ fontFamily: HEAD, color: '#FFFFFF', textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #FFFFFF' }}>
             AI Is Reshaping Business.<br />
             <span style={{ color: '#FF6A00' }}>Are You Keeping Up?</span>
           </h1>
