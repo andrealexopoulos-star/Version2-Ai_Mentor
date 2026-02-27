@@ -85,7 +85,8 @@ aside [class*="overflow-y"] {
     min-height: 100dvh !important;
   }
 
-  *:not([class*="fixed"]):not([data-testid="sovereign-badge"]) {
+  /* Prevent horizontal overflow on text/images only */
+  img, video, iframe, table, pre {
     max-width: 100%;
   }
 
