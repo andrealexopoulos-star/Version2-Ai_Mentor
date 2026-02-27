@@ -193,6 +193,9 @@ api_router.include_router(hybrid_ingestion_router)
 from routes.engagement_engine import router as engagement_engine_router
 api_router.include_router(engagement_engine_router)
 
+from routes.stripe_payments import router as stripe_payments_router
+api_router.include_router(stripe_payments_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
