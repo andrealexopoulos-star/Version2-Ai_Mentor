@@ -14,7 +14,7 @@ import {
   Settings, LogOut, Menu, X, ChevronDown, Shield, User,
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
-  ClipboardList, Inbox, MessageSquare, Lock
+  ClipboardList, Inbox, MessageSquare, Lock, Eye
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 
