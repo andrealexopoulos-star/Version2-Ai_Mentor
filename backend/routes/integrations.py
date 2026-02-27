@@ -233,6 +233,29 @@ async def exchange_merge_account_token(
         
         logger.info(f"✅ Integration account stored successfully: {result.data}")
         
+        # GOVERNANCE: Record integration connection as a governance event
+        try:
+            integration_type = 'crm' if category in ('crm', 'hris') else 'accounting' if category == 'accounting' else 'marketing' if category == 'marketing' else category
+            # Update workspace_integrations table
+            get_sb().table("workspace_integrations").upsert({
+                "workspace_id": user_id,
+                "integration_type": integration_type,
+                "status": "connected",
+                "connected_at": datetime.now(timezone.utc).isoformat(),
+                "last_sync_at": datetime.now(timezone.utc).isoformat(),
+            }, on_conflict="workspace_id,integration_type").execute()
+            # Emit governance event via SQL function
+            get_sb().rpc("emit_governance_event", {
+                "p_workspace_id": user_id,
+                "p_event_type": f"integration_connected_{integration_name}",
+                "p_source_system": integration_type,
+                "p_signal_reference": merge_account_id or integration_name,
+                "p_confidence_score": 1.0,
+            }).execute()
+            logger.info(f"✅ Governance event emitted: integration_connected_{integration_name}")
+        except Exception as gov_err:
+            logger.warning(f"⚠️ Governance event emission failed (non-blocking): {gov_err}")
+        
         return {
             "success": True,
             "provider": integration_name,
