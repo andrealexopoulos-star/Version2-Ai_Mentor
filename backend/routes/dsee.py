@@ -229,8 +229,18 @@ def classify_structure(html: str, domain: str) -> Dict:
 # ═══════════════════════════════════════════════════════════════
 
 async def identify_competitors(business_name: str, primary_service: str, city: str, subject_domain: str) -> List[Dict]:
+    """Competitor identification with stability filter. No directories, no aggregators."""
     competitors = []
     seen_domains = {subject_domain}
+
+    # Extended directory/aggregator exclusion list
+    EXCLUDED_DOMAINS = DIRECTORY_DOMAINS + [
+        'wikipedia.org', 'gov.au', 'edu.au', 'abc.net.au', 'news.com',
+        'smh.com.au', 'theaustralian.com', 'bbc.com', 'reddit.com',
+        'quora.com', 'medium.com', 'amazon.com', 'ebay.com', 'gumtree.com',
+        'seek.com', 'indeed.com', 'glassdoor.com', 'productreview.com',
+        'commercialrealestate.com', 'realestate.com.au', 'domain.com.au',
+    ]
 
     # Primary query: service + city
     query = f'{primary_service} {city}' if city else primary_service
@@ -239,14 +249,29 @@ async def identify_competitors(business_name: str, primary_service: str, city: s
     for item in results.get('organic', [])[:15]:
         link = item.get('link', '')
         title = item.get('title', '')
+        snippet = (item.get('snippet', '') or '').lower()
         parsed = urlparse(link)
         domain = parsed.netloc.replace('www.', '')
 
         if domain in seen_domains:
             continue
-        if any(d in link for d in DIRECTORY_DOMAINS):
+        if any(d in domain for d in EXCLUDED_DOMAINS):
             continue
         if not domain or '.' not in domain:
+            continue
+
+        # Competitor stability validation
+        # 1. Service keyword presence check (in title or snippet)
+        service_match = primary_service.lower() in title.lower() or primary_service.lower() in snippet
+        # 2. Geographic match (city mentioned)
+        geo_match = city.lower() in title.lower() or city.lower() in snippet if city else True
+        # 3. Entity check: not a blog post or news article
+        is_entity = not any(p in link for p in ['/blog/', '/news/', '/article/', '/post/', '/wiki/'])
+
+        # Require at least service OR geo match, and must be an entity
+        if not is_entity:
+            continue
+        if not service_match and not geo_match:
             continue
 
         seen_domains.add(domain)
@@ -255,23 +280,31 @@ async def identify_competitors(business_name: str, primary_service: str, city: s
             'domain': domain,
             'url': link,
             'source_query': query,
+            'service_match': service_match,
+            'geo_match': geo_match,
         })
         if len(competitors) >= 3:
             break
 
-    # Fallback: category-level without city
+    # Fallback: broader query without city
     if len(competitors) < 3 and city:
-        fallback = await _serper(primary_service, num=10)
+        fallback = await _serper(f'{primary_service} Australia', num=10)
         for item in fallback.get('organic', [])[:10]:
             link = item.get('link', '')
             parsed = urlparse(link)
             domain = parsed.netloc.replace('www.', '')
-            if domain in seen_domains or any(d in link for d in DIRECTORY_DOMAINS):
+            if domain in seen_domains or any(d in domain for d in EXCLUDED_DOMAINS):
+                continue
+            if not domain or '.' not in domain:
+                continue
+            is_entity = not any(p in link for p in ['/blog/', '/news/', '/article/', '/post/'])
+            if not is_entity:
                 continue
             seen_domains.add(domain)
             competitors.append({
                 'name': item.get('title', '').split(' - ')[0].split(' | ')[0].strip()[:60],
-                'domain': domain, 'url': link, 'source_query': primary_service,
+                'domain': domain, 'url': link, 'source_query': f'{primary_service} Australia',
+                'service_match': True, 'geo_match': False,
             })
             if len(competitors) >= 3:
                 break
