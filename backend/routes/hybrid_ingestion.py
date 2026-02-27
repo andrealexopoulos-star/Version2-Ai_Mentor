@@ -129,12 +129,12 @@ async def headless_fetch(url: str) -> Dict[str, Any]:
             )
 
             try:
-                response = await page.goto(url, wait_until='networkidle', timeout=HEADLESS_TIMEOUT)
+                response = await page.goto(url, wait_until='domcontentloaded', timeout=20000)
                 result['status'] = response.status if response else 0
                 result['url'] = page.url
 
-                # Wait extra for JS hydration
-                await page.wait_for_timeout(2000)
+                # Wait for JS hydration (DOM content loaded + extra time)
+                await page.wait_for_timeout(3000)
 
                 # Extract rendered HTML
                 html = await page.content()
