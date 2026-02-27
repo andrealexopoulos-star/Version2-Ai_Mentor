@@ -342,6 +342,42 @@ async def build_asymmetries(
     )
 
 
+
+def compute_confidence(
+    structure_confidence, review_data, search_position,
+    authority_total, asymmetry_count, domain_integrity, public_mode,
+    fallback_used=False, pages_crawled=1, estimated_total_pages=5, structure_ambiguity=False,
+):
+    """Full confidence decomposition with penalty rules."""
+    sources = sum([1 if review_data.get('reviews', 0) > 0 else 0, 1 if search_position else 0, 1 if authority_total > 0 else 0, 1])
+    source_diversity = round(sources / 4.0, 3)
+    corroboration = 0.5 + (0.2 if review_data.get('reviews', 0) > 0 and authority_total > 0 else 0) + (0.15 if search_position and search_position <= 5 else 0)
+    corroboration = round(min(corroboration, 1.0), 3)
+    structure_clarity = round(min(structure_confidence, 1.0), 3)
+    review_completeness = round(0.3 + (0.4 if review_data.get('reviews', 0) > 0 else 0) + (0.3 if review_data.get('rating') else 0), 3)
+    recency = 0.80
+    domain_score = 1.0 if domain_integrity else 0.0
+    raw = source_diversity * 0.25 + corroboration * 0.20 + structure_clarity * 0.15 + review_completeness * 0.15 + recency * 0.10 + domain_score * 0.15
+    raw += min(asymmetry_count * 0.03, 0.12)
+    penalties = {}
+    if fallback_used: raw -= 0.10; penalties['fallback_crawl'] = -0.10
+    if review_data.get('reviews', 0) == 0: raw -= 0.08; penalties['empty_review_layer'] = -0.08
+    if structure_ambiguity: raw -= 0.10; penalties['structure_ambiguity'] = -0.10
+    coverage_ratio = pages_crawled / max(estimated_total_pages, 1)
+    if coverage_ratio < 0.5: raw -= 0.12; penalties['low_crawl_coverage'] = -0.12
+    if not domain_integrity: raw -= 0.15; penalties['domain_integrity_failure'] = -0.15
+    raw = round(max(raw, 0.05), 4)
+    capped = min(raw, 0.70) if public_mode else raw
+    return {
+        'confidence_overall': round(capped, 4), 'confidence_raw': round(raw, 4),
+        'confidence_cap_applied': raw > 0.70 and public_mode,
+        'confidence_components': {'source_diversity': source_diversity, 'cross_source_corroboration': corroboration, 'structure_clarity': structure_clarity, 'review_layer_completeness': review_completeness, 'recency': recency, 'domain_integrity': domain_score},
+        'penalties_applied': penalties, 'penalty_total': round(sum(penalties.values()), 3),
+        'scope_coverage': {'pages_crawled': pages_crawled, 'estimated_total_pages': estimated_total_pages, 'coverage_ratio': round(coverage_ratio, 2)},
+        'fallback_used': fallback_used, 'structure_ambiguity_penalty': structure_ambiguity, 'public_mode': public_mode,
+    }
+
+
 async def run_dsee_scan(req: DSEERequest, current_user: dict = Depends(get_current_user)):
     """Run Deterministic Structural Exposure Engine scan."""
     url = req.url.strip()
