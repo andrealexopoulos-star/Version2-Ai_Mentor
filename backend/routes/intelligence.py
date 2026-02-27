@@ -58,6 +58,16 @@ async def snapshot_generate(
 
     if result is None:
         return {"generated": False, "reason": "no_material_change"}
+    
+    # Spine: log snapshot generation
+    emit_spine_event(
+        tenant_id=current_user["id"],
+        event_type='FORECAST_RUN',
+        model_name='snapshot_agent',
+        json_payload={'snapshot_type': snapshot_type, 'generated': True},
+        confidence_score=1.0,
+    )
+    
     return {"generated": True, "snapshot": result}
 
 
