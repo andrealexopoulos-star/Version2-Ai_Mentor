@@ -270,6 +270,10 @@ const MarketPage = () => {
             </Panel>
           )}
           <GapsSection channelsData={channelsData} hasCRM={hasCRM} pipeline={pipeline} gapsOpen={gapsOpen} setGapsOpen={setGapsOpen} navigate={navigate} />
+          
+          {/* Engagement Scan */}
+          <EngagementScanCard url={c.website || ''} businessName={c.business_name || ''} location={c.location || ''} />
+          
           <ForensicCalibrationCard isSuperAdmin={isSuperAdmin} navigate={navigate} />
           {filteredMemo && (
             <Panel data-testid="brief-section">
