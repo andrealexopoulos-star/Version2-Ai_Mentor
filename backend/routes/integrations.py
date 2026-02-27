@@ -285,6 +285,25 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
             "user_id", user_id
         ).eq("provider", payload.provider).execute()
         logger.info(f"[merge/disconnect] Disconnected {payload.provider} for {user_id}")
+        
+        # GOVERNANCE: Record disconnection
+        try:
+            integration_type = 'crm' if payload.category in ('crm', 'hris') else 'accounting' if payload.category == 'accounting' else payload.category
+            get_sb().table("workspace_integrations").upsert({
+                "workspace_id": user_id,
+                "integration_type": integration_type,
+                "status": "disconnected",
+            }, on_conflict="workspace_id,integration_type").execute()
+            get_sb().rpc("emit_governance_event", {
+                "p_workspace_id": user_id,
+                "p_event_type": f"integration_disconnected_{payload.provider}",
+                "p_source_system": integration_type,
+                "p_signal_reference": payload.provider,
+                "p_confidence_score": 1.0,
+            }).execute()
+        except Exception as gov_err:
+            logger.warning(f"⚠️ Governance disconnect event failed: {gov_err}")
+        
         return {"ok": True, "provider": payload.provider}
     except Exception as e:
         logger.error(f"[merge/disconnect] Error: {e}")
