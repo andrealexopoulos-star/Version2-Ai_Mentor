@@ -206,11 +206,11 @@ const KnowledgeBaseContent = () => {
 
             <div className="space-y-3">
               {guide.steps.map((s, i) => (
-                <div key={i} className="flex items-start gap-3">
+                <div key={i} className="flex items-start gap-3 min-w-0">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: guide.color + '15' }}>
                     <span className="text-xs font-bold" style={{ color: guide.color, fontFamily: MONO }}>{i + 1}</span>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[#F4F7FA]">{s.step}</p>
                     <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">{s.detail}</p>
                   </div>
