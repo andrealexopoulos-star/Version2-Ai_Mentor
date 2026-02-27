@@ -157,12 +157,23 @@ CREATE POLICY "manage_registry" ON ic_model_registry FOR ALL USING (true) WITH C
 CREATE POLICY "read_executions" ON ic_model_executions FOR SELECT USING (true);
 CREATE POLICY "manage_executions" ON ic_model_executions FOR ALL USING (true) WITH CHECK (true);
 
--- Feature flag check function
+-- Feature flag check function (tenant-scoped with global fallback)
 CREATE OR REPLACE FUNCTION is_spine_enabled()
 RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER AS $$
     SELECT COALESCE((SELECT enabled FROM ic_feature_flags WHERE flag_name = 'intelligence_spine_enabled'), false);
 $$;
+
+CREATE OR REPLACE FUNCTION is_spine_enabled_for(p_tenant_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER AS $$
+    SELECT COALESCE(
+        (SELECT enabled FROM ic_feature_flags WHERE flag_name = 'spine_enabled_' || p_tenant_id::TEXT),
+        (SELECT enabled FROM ic_feature_flags WHERE flag_name = 'intelligence_spine_enabled'),
+        false
+    );
+$$;
+
 GRANT EXECUTE ON FUNCTION is_spine_enabled() TO authenticated;
+GRANT EXECUTE ON FUNCTION is_spine_enabled_for(UUID) TO authenticated;
 
 -- Snapshot generator function
 CREATE OR REPLACE FUNCTION ic_generate_daily_snapshot(p_tenant_id UUID)
