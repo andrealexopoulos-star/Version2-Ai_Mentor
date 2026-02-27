@@ -305,7 +305,8 @@ const ForensicAuditPage = () => {
             )}
 
             {/* OLD FORMAT: Verdict Banner (fallback) */}
-            {!isNewFormat && (
+            {!isNewFormat && (<>
+            <div className="rounded-xl p-6" style={{
               background: verdict.primary_failure_layer === 'none' ? '#10B98108' : '#EF444408',
               border: `1px solid ${verdict.primary_failure_layer === 'none' ? '#10B98125' : '#EF444425'}`,
             }} data-testid="audit-verdict">
