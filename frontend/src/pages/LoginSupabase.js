@@ -64,12 +64,12 @@ const LoginSupabase = () => {
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FF6A00' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FF6A00' }}>
               <span className="text-white font-bold text-sm" style={{ fontFamily: MONO }}>B</span>
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="text-xl font-semibold text-[#F4F7FA] block" style={{ fontFamily: DISPLAY }}>BIQc</span>
-              <span className="text-[10px] text-[#64748B] -mt-0.5 block" style={{ fontFamily: MONO }}>powered by The Strategy Squad</span>
+              <span className="text-[10px] text-[#64748B] -mt-0.5 block truncate" style={{ fontFamily: MONO }}>powered by The Strategy Squad</span>
             </div>
           </div>
 
