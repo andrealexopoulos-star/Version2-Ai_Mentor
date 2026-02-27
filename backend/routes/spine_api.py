@@ -188,6 +188,20 @@ async def get_risk_weight_configs(current_user: dict = Depends(get_current_user)
         return {'configs': [], 'message': 'Deploy 034_configurable_risk_weights.sql'}
 
 
+@router.get("/spine/risk-calibration-report")
+async def get_risk_calibration_report(current_user: dict = Depends(get_current_user)):
+    """Get 14-day risk calibration report.
+    Checks: distribution variance, industry separation, index dominance.
+    Must PASS before probabilistic engines are activated."""
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.rpc('ic_risk_calibration_report', {}).execute()
+        return result.data if result.data else {'calibration_status': 'NO_DATA'}
+    except Exception as e:
+        return {'calibration_status': 'ERROR', 'error': str(e), 'message': 'Deploy 036_risk_calibration_analytics.sql'}
+
+
 @router.get("/spine/events")
 async def get_spine_events(current_user: dict = Depends(get_current_user)):
     """Get Intelligence Spine event log for tenant."""
