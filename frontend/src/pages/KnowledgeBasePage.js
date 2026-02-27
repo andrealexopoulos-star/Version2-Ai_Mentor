@@ -207,7 +207,7 @@ const KnowledgeBaseContent = () => {
             <div className="space-y-3">
               {guide.steps.map((s, i) => (
                 <div key={i} className="flex items-start gap-3 overflow-hidden">
-                  <div style={{ width: 28, minWidth: 28, height: 28 }} className="rounded-lg flex items-center justify-center mt-0.5" style={{ background: guide.color + '15', width: 28, minWidth: 28, height: 28 }}>
+                  <div className="rounded-lg flex items-center justify-center mt-0.5" style={{ background: guide.color + '15', width: 28, minWidth: 28, height: 28 }}>
                     <span className="text-xs font-bold" style={{ color: guide.color, fontFamily: MONO }}>{i + 1}</span>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
