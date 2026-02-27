@@ -156,6 +156,21 @@ async def get_risk_baseline_history(current_user: dict = Depends(get_current_use
         return {'executions': []}
 
 
+@router.get("/spine/risk-weights")
+async def get_risk_weight_configs(current_user: dict = Depends(get_current_user)):
+    """Get all active risk weight configurations."""
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.table('ic_risk_weight_configs') \
+            .select('*') \
+            .eq('is_active', True) \
+            .order('industry_code').execute()
+        return {'configs': result.data or []}
+    except Exception:
+        return {'configs': [], 'message': 'Deploy 034_configurable_risk_weights.sql'}
+
+
 @router.get("/spine/events")
 async def get_spine_events(current_user: dict = Depends(get_current_user)):
     """Get Intelligence Spine event log for tenant."""
