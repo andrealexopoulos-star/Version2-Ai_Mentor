@@ -41,8 +41,14 @@ body {
 }
 
 /* ═══ TOUCH TARGETS — 44px minimum ═══ */
-button, a, input, textarea, select, [role="button"] {
+/* Only apply to actual interactive elements, not decorative uses */
+button:not([class*="w-1"]):not([class*="w-2"]):not([class*="w-7"]):not([class*="shrink-0"]),
+input, textarea, select {
   min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+a {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
