@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { CognitiveMesh } from '../components/LoadingSystems';
+import EngagementScanCard from '../components/EngagementScanCard';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { containsCRMClaim } from '../constants/integrationTruth';
