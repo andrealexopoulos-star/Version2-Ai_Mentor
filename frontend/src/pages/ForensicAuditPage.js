@@ -494,6 +494,7 @@ const ForensicAuditPage = () => {
                 </div>
               </Panel>
             )}
+            </>)}
           </div>
         )}
 
@@ -503,7 +504,8 @@ const ForensicAuditPage = () => {
             <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Past Audits</h3>
             <div className="space-y-2">
               {history.map(a => {
-                const verdictColor = a.primary_failure_layer === 'none' ? '#10B981' : '#EF4444';
+                const qScore = a.quality_score;
+                const verdictColor = qScore != null ? (qScore >= 70 ? '#10B981' : qScore >= 50 ? '#F59E0B' : '#EF4444') : (a.primary_failure_layer === 'none' ? '#10B981' : '#EF4444');
                 return (
                   <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/[0.02]" style={{ background: '#0F1720', border: '1px solid #243140' }}
                     onClick={() => { setUrl(a.target_url); }}>
@@ -511,7 +513,10 @@ const ForensicAuditPage = () => {
                     <div className="flex-1 min-w-0">
                       <span className="text-xs text-[#F4F7FA] block truncate">{a.target_url}</span>
                       <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>
-                        {a.primary_failure_layer === 'none' ? 'All pass' : `Failure: ${a.primary_failure_layer}`} | Noise: {a.noise_ratio} | Confidence: {Math.round((a.confidence_score || 0) * 100)}%
+                        {qScore != null
+                          ? `Score: ${qScore}/100 | ${a.confidence_level || '—'} | Pages: ${a.pages_crawled || '—'}`
+                          : `${a.primary_failure_layer === 'none' ? 'All pass' : `Failure: ${a.primary_failure_layer}`} | Noise: ${a.noise_ratio}`
+                        }
                       </span>
                     </div>
                     <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: MONO }}>
