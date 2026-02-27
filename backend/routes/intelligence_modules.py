@@ -1,4 +1,8 @@
-"""Intelligence module routes — SQL-backed workforce, scenarios, scoring."""
+"""Intelligence module routes — ALL SQL-backed functions.
+Exposes: workforce, scenarios, scores, concentration, contradictions,
+pressure, freshness, silence, escalations, profile completeness,
+data readiness, watchtower positions, full summary.
+"""
 import logging
 from fastapi import APIRouter, Depends
 from supabase_client import get_supabase_client
@@ -9,64 +13,105 @@ router = APIRouter()
 from routes.auth import get_current_user
 
 
-@router.get("/intelligence/workforce")
-async def get_workforce_health(current_user: dict = Depends(get_current_user)):
-    """Compute workforce health from SQL function."""
+def _rpc(fn_name, workspace_id):
+    """Call a Supabase RPC function, return result or error fallback."""
     try:
         sb = get_supabase_client()
-        result = sb.rpc('compute_workforce_health', {'p_workspace_id': current_user['id']}).execute()
+        result = sb.rpc(fn_name, {'p_workspace_id': workspace_id}).execute()
         return result.data if result.data else {"status": "no_data", "has_data": False}
     except Exception as e:
-        logger.warning(f"Workforce health query failed: {e}")
-        return {"status": "error", "has_data": False, "message": "Workforce intelligence not yet available. Deploy SQL migration 022."}
+        logger.warning(f"RPC {fn_name} failed: {e}")
+        return {"status": "error", "has_data": False, "message": f"Deploy SQL migration 023 to enable {fn_name}."}
+
+
+# ═══ EXISTING ENDPOINTS (from 022) ═══
+
+@router.get("/intelligence/workforce")
+async def get_workforce_health(current_user: dict = Depends(get_current_user)):
+    return _rpc('compute_workforce_health', current_user['id'])
 
 
 @router.get("/intelligence/scenarios")
 async def get_revenue_scenarios(current_user: dict = Depends(get_current_user)):
-    """Compute revenue scenarios from SQL function."""
-    try:
-        sb = get_supabase_client()
-        result = sb.rpc('compute_revenue_scenarios', {'p_workspace_id': current_user['id']}).execute()
-        return result.data if result.data else {"status": "no_data", "has_data": False}
-    except Exception as e:
-        logger.warning(f"Revenue scenarios query failed: {e}")
-        return {"status": "error", "has_data": False, "message": "Scenario modeling not yet available. Deploy SQL migration 022."}
+    return _rpc('compute_revenue_scenarios', current_user['id'])
 
 
 @router.get("/intelligence/scores")
 async def get_insight_scores(current_user: dict = Depends(get_current_user)):
-    """Compute weighted insight scores from SQL function."""
-    try:
-        sb = get_supabase_client()
-        result = sb.rpc('compute_insight_scores', {'p_workspace_id': current_user['id']}).execute()
-        return result.data if result.data else {"status": "no_data", "scores": {}}
-    except Exception as e:
-        logger.warning(f"Insight scores query failed: {e}")
-        return {"status": "error", "scores": {}, "message": "Scoring not yet available. Deploy SQL migration 022."}
+    return _rpc('compute_insight_scores', current_user['id'])
 
 
 @router.get("/intelligence/concentration")
 async def get_concentration_risk(current_user: dict = Depends(get_current_user)):
-    """Compute revenue concentration risk from SQL function."""
-    try:
-        sb = get_supabase_client()
-        result = sb.rpc('compute_concentration_risk', {'p_workspace_id': current_user['id']}).execute()
-        return result.data if result.data else {"status": "no_data", "has_data": False}
-    except Exception as e:
-        logger.warning(f"Concentration risk query failed: {e}")
-        return {"status": "error", "has_data": False, "message": "Concentration analysis not yet available. Deploy SQL migration 022."}
+    return _rpc('compute_concentration_risk', current_user['id'])
 
+
+# ═══ NEW ENDPOINTS (from 023) ═══
+
+@router.get("/intelligence/contradictions")
+async def get_contradictions(current_user: dict = Depends(get_current_user)):
+    """Detect priority mismatches, action-inaction gaps, repeated ignores."""
+    return _rpc('detect_contradictions', current_user['id'])
+
+
+@router.get("/intelligence/pressure")
+async def get_pressure_levels(current_user: dict = Depends(get_current_user)):
+    """Compute pressure levels across all domains."""
+    return _rpc('compute_pressure_levels', current_user['id'])
+
+
+@router.get("/intelligence/freshness")
+async def get_evidence_freshness(current_user: dict = Depends(get_current_user)):
+    """Track signal age and decay scoring per domain."""
+    return _rpc('compute_evidence_freshness', current_user['id'])
+
+
+@router.get("/intelligence/silence")
+async def get_silence_detection(current_user: dict = Depends(get_current_user)):
+    """Detect user absence and unactioned critical signals."""
+    return _rpc('detect_silence', current_user['id'])
+
+
+@router.get("/intelligence/escalations")
+async def get_escalation_summary(current_user: dict = Depends(get_current_user)):
+    """Get active escalation history and patterns."""
+    return _rpc('get_escalation_summary', current_user['id'])
+
+
+@router.get("/intelligence/completeness")
+async def get_profile_completeness(current_user: dict = Depends(get_current_user)):
+    """Compute business profile completeness score."""
+    return _rpc('compute_profile_completeness', current_user['id'])
+
+
+@router.get("/intelligence/readiness")
+async def get_data_readiness(current_user: dict = Depends(get_current_user)):
+    """Compute workspace data readiness score with checklist."""
+    return _rpc('compute_data_readiness', current_user['id'])
+
+
+@router.get("/intelligence/watchtower")
+async def get_watchtower_positions(current_user: dict = Depends(get_current_user)):
+    """Compute domain-level positions (stable/drift/compression/critical)."""
+    return _rpc('compute_watchtower_positions', current_user['id'])
+
+
+@router.get("/intelligence/summary")
+async def get_full_summary(current_user: dict = Depends(get_current_user)):
+    """Build complete intelligence summary across all modules."""
+    return _rpc('build_intelligence_summary', current_user['id'])
+
+
+# ═══ INTEGRATION STATUS (direct table query) ═══
 
 @router.get("/intelligence/integration-status")
 async def get_integration_status(current_user: dict = Depends(get_current_user)):
-    """Get workspace integration status from workspace_integrations table."""
     try:
         sb = get_supabase_client()
         result = sb.table('workspace_integrations') \
             .select('integration_type, status, connected_at, last_sync_at') \
             .eq('workspace_id', current_user['id']) \
             .execute()
-        
         integrations = {}
         for row in (result.data or []):
             integrations[row['integration_type']] = {
@@ -74,7 +119,6 @@ async def get_integration_status(current_user: dict = Depends(get_current_user))
                 'connected_at': row.get('connected_at'),
                 'last_sync_at': row.get('last_sync_at'),
             }
-        
         return {
             "integrations": integrations,
             "connected_count": sum(1 for v in integrations.values() if v['status'] == 'connected'),
@@ -87,7 +131,6 @@ async def get_integration_status(current_user: dict = Depends(get_current_user))
 
 @router.get("/intelligence/governance-summary")
 async def get_governance_summary(current_user: dict = Depends(get_current_user)):
-    """Get governance events summary for the workspace."""
     try:
         sb = get_supabase_client()
         result = sb.table('governance_events') \
@@ -96,15 +139,11 @@ async def get_governance_summary(current_user: dict = Depends(get_current_user))
             .order('signal_timestamp', desc=True) \
             .limit(50) \
             .execute()
-        
         events = result.data or []
-        
-        # Summary stats
         avg_confidence = 0
         if events:
             scores = [e.get('confidence_score', 0) for e in events if e.get('confidence_score') is not None]
             avg_confidence = round(sum(scores) / len(scores) * 100) if scores else 0
-        
         return {
             "events": events,
             "total_count": len(events),
