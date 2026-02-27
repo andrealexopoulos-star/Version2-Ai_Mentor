@@ -332,6 +332,23 @@ async def _check_authority(name: str) -> Dict:
     return {'awards': awards, 'media': media, 'total': awards + media}
 
 
+BLOCKED_PATTERNS = [r'\$\d', r'revenue', r'profit', r'turnover', r'income', r'\d+%\s*growth', r'ROI', r'return on', r'margin\s*\d', r'forecast', r'project(?:ed|ion)', r'financial', r'earning', r'valuation', r'market cap']
+
+def validate_no_projections(output):
+    violations = []
+    def scan(obj, path=''):
+        if isinstance(obj, str):
+            for pattern in BLOCKED_PATTERNS:
+                if re.search(pattern, obj, re.IGNORECASE):
+                    violations.append({'path': path, 'pattern': pattern, 'text': obj[:100]})
+        elif isinstance(obj, dict):
+            for k, v in obj.items(): scan(v, f'{path}.{k}')
+        elif isinstance(obj, list):
+            for i, v in enumerate(obj): scan(v, f'{path}[{i}]')
+    scan(output)
+    return {'clean': len(violations) == 0, 'violations': violations, 'violation_count': len(violations)}
+
+
 async def build_asymmetries(
     subject_name, subject_domain, location, subject_structure, competitors
 ):
