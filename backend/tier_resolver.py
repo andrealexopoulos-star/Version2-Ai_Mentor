@@ -1,0 +1,253 @@
+"""BIQc Central Tier Resolver — SINGLE SOURCE OF TRUTH.
+
+ALL tier checks in the entire platform MUST go through this file.
+No scattered tier logic allowed anywhere else.
+
+Responsibilities:
+- Tier resolution from database
+- Super admin override (email-based, immutable)
+- Route access mapping
+- Feature gating mapping
+- Usage limit enforcement
+"""
+import logging
+from typing import Optional
+from functools import lru_cache
+
+logger = logging.getLogger(__name__)
+
+# ═══ SUPER ADMIN — IMMUTABLE, EMAIL-BASED ═══
+SUPER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
+
+# ═══ TIER DEFINITIONS ═══
+TIERS = ['free', 'starter', 'professional', 'enterprise', 'super_admin']
+
+# ═══ ROUTE ACCESS MAP ═══
+# Route pattern → minimum tier required
+# 'free' = available to all, 'starter' = paid, 'super_admin' = admin only
+ROUTE_ACCESS = {
+    # FREE TIER — allowed
+    '/advisor': 'free',              # BIQc Overview (Market tab only gated separately)
+    '/market': 'free',               # Market tab (sub-gating inside)
+    '/business-profile': 'free',     # Business DNA
+    '/forensic-audit': 'free',       # Ingestion audit (1/month limit)
+    '/knowledge-base': 'free',       # Public
+    '/settings': 'free',             # Account settings
+    '/integrations': 'free',         # Connect integrations
+    '/connect-email': 'free',        # Email integration
+    '/data-health': 'free',          # Data health check
+    '/calibration': 'free',          # Onboarding calibration
+    '/onboarding': 'free',
+    '/onboarding-decision': 'free',
+    '/profile-import': 'free',
+
+    # PAID TIER — requires starter or above
+    '/revenue': 'starter',
+    '/operations': 'starter',
+    '/risk': 'starter',
+    '/compliance': 'starter',
+    '/reports': 'starter',
+    '/audit-log': 'starter',
+    '/soundboard': 'starter',
+    '/war-room': 'starter',
+    '/board-room': 'starter',
+    '/sop-generator': 'starter',
+    '/alerts': 'starter',
+    '/actions': 'starter',
+    '/automations': 'starter',
+    '/email-inbox': 'starter',
+    '/calendar': 'starter',
+    '/analysis': 'starter',
+    '/diagnosis': 'starter',
+    '/documents': 'starter',
+    '/data-center': 'starter',
+    '/intelligence-baseline': 'starter',
+    '/intel-centre': 'starter',
+    '/watchtower': 'starter',
+    '/operator': 'starter',
+
+    # ADMIN — super admin only
+    '/admin': 'super_admin',
+    '/auth-debug': 'super_admin',
+    '/prompt-lab': 'super_admin',
+}
+
+# ═══ API ACCESS MAP ═══
+# API route prefix → minimum tier
+API_ACCESS = {
+    # FREE
+    '/snapshot/latest': 'free',
+    '/business-profile': 'free',
+    '/integrations': 'free',
+    '/intelligence/integration-status': 'free',
+    '/intelligence/completeness': 'free',
+    '/intelligence/readiness': 'free',
+    '/calibration': 'free',
+    '/onboarding': 'free',
+    '/auth': 'free',
+    '/health': 'free',
+    '/warmup': 'free',
+    '/ingestion': 'free',           # Gated by counter, not tier
+    '/forensic': 'free',            # Gated by counter
+    '/market-intelligence': 'free',
+
+    # PAID
+    '/revenue': 'starter',
+    '/snapshot/generate': 'free',    # Gated by counter (3/month)
+    '/intelligence/workforce': 'starter',
+    '/intelligence/scenarios': 'starter',
+    '/intelligence/scores': 'starter',
+    '/intelligence/concentration': 'starter',
+    '/intelligence/contradictions': 'starter',
+    '/intelligence/pressure': 'starter',
+    '/intelligence/freshness': 'starter',
+    '/intelligence/silence': 'starter',
+    '/intelligence/escalations': 'starter',
+    '/intelligence/watchtower': 'starter',
+    '/intelligence/summary': 'starter',
+    '/intelligence/governance-summary': 'starter',
+    '/reports': 'starter',
+    '/soundboard': 'starter',
+    '/boardroom': 'starter',
+    '/strategic-console': 'starter',
+    '/generate': 'starter',
+    '/cognitive': 'starter',
+    '/advisory': 'starter',
+    '/watchtower': 'starter',
+    '/emission': 'starter',
+    '/email/priority-inbox': 'starter',
+    '/email/analyze': 'starter',
+    '/email/suggest': 'starter',
+
+    # ADMIN
+    '/admin': 'super_admin',
+}
+
+# ═══ MARKET SUB-FEATURES GATING ═══
+MARKET_SUB_FEATURES = {
+    'intelligence': 'free',     # Focus tab — allowed
+    'saturation': 'starter',    # Saturation tab — paid
+    'demand': 'starter',        # Demand tab — paid
+    'friction': 'starter',      # Friction tab — paid
+    'reports': 'free',          # Reports tab — allowed
+}
+
+# ═══ EMAIL CATEGORIES ═══
+FREE_EMAIL_CATEGORIES = ['lead', 'marketing', 'inquiry', 'campaign', 'general']
+PAID_EMAIL_CATEGORIES = ['financial', 'churn', 'risk', 'operational', 'escalation']
+
+
+def resolve_tier(user: dict) -> str:
+    """Resolve user's effective tier. Super admin override is immutable."""
+    email = (user.get('email') or '').lower().strip()
+
+    # SUPER ADMIN OVERRIDE — cannot be restricted
+    if email == SUPER_ADMIN_EMAIL.lower():
+        return 'super_admin'
+
+    # Database tier
+    db_tier = (user.get('subscription_tier') or 'free').lower().strip()
+    if db_tier in TIERS:
+        return db_tier
+
+    return 'free'
+
+
+def tier_rank(tier: str) -> int:
+    """Numeric rank for tier comparison."""
+    ranks = {'free': 0, 'starter': 1, 'professional': 2, 'enterprise': 3, 'super_admin': 99}
+    return ranks.get(tier, 0)
+
+
+def has_access(user_tier: str, required_tier: str) -> bool:
+    """Check if user tier meets required tier."""
+    return tier_rank(user_tier) >= tier_rank(required_tier)
+
+
+def check_route_access(route: str, user: dict) -> dict:
+    """Check if user can access a frontend route."""
+    tier = resolve_tier(user)
+
+    # Find matching route
+    required = None
+    for pattern, req_tier in ROUTE_ACCESS.items():
+        if route == pattern or route.startswith(pattern + '/'):
+            required = req_tier
+            break
+
+    if required is None:
+        # Unknown route — allow (public pages, etc.)
+        return {'allowed': True, 'tier': tier, 'route': route}
+
+    if has_access(tier, required):
+        return {'allowed': True, 'tier': tier, 'route': route}
+
+    return {
+        'allowed': False,
+        'tier': tier,
+        'required_tier': required,
+        'route': route,
+        'redirect': f'/subscribe?from={route}',
+        'error': 'subscription_required',
+    }
+
+
+def check_api_access(api_path: str, user: dict) -> dict:
+    """Check if user can access an API endpoint."""
+    tier = resolve_tier(user)
+
+    # Find matching API pattern
+    required = None
+    for pattern, req_tier in sorted(API_ACCESS.items(), key=lambda x: -len(x[0])):
+        if api_path.startswith(pattern):
+            required = req_tier
+            break
+
+    if required is None:
+        return {'allowed': True, 'tier': tier}
+
+    if has_access(tier, required):
+        return {'allowed': True, 'tier': tier}
+
+    return {
+        'allowed': False,
+        'tier': tier,
+        'required_tier': required,
+        'error': 'subscription_required',
+        'redirect': '/subscribe',
+    }
+
+
+def check_market_sub_feature(feature: str, user: dict) -> dict:
+    """Check if user can access a Market sub-tab."""
+    tier = resolve_tier(user)
+    required = MARKET_SUB_FEATURES.get(feature, 'starter')
+
+    if has_access(tier, required):
+        return {'allowed': True, 'tier': tier}
+
+    return {
+        'allowed': False,
+        'tier': tier,
+        'required_tier': required,
+        'redirect': '/subscribe?from=/market',
+    }
+
+
+def filter_email_categories(user: dict) -> list:
+    """Return allowed email categories for user's tier."""
+    tier = resolve_tier(user)
+    if has_access(tier, 'starter'):
+        return FREE_EMAIL_CATEGORIES + PAID_EMAIL_CATEGORIES
+    return FREE_EMAIL_CATEGORIES
+
+
+def get_usage_limits(tier: str) -> dict:
+    """Get monthly usage limits for tier."""
+    if tier == 'super_admin':
+        return {'snapshots': 999, 'audits': 999}
+    if tier == 'free':
+        return {'snapshots': 3, 'audits': 1}
+    if tier == 'starter':
+        return {'snapshots': 20, 'audits': 10}
+    return {'snapshots': 999, 'audits': 999}
