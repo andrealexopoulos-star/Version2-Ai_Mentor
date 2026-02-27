@@ -36,7 +36,8 @@ async def spine_status(current_user: dict = Depends(get_current_user)):
 
 @router.post("/spine/enable")
 async def enable_spine(current_user: dict = Depends(get_current_user)):
-    """Enable the Intelligence Spine (super admin only)."""
+    """Enable Intelligence Spine logging + snapshots (super admin only).
+    Does NOT activate modelling. Only logging and data collection."""
     from tier_resolver import resolve_tier
     if resolve_tier(current_user) != 'super_admin':
         raise HTTPException(status_code=403, detail="Super admin only")
@@ -44,14 +45,33 @@ async def enable_spine(current_user: dict = Depends(get_current_user)):
         from supabase_client import get_supabase_client
         sb = get_supabase_client()
         sb.table('ic_feature_flags').update({'enabled': True}).eq('flag_name', 'intelligence_spine_enabled').execute()
-        return {'status': 'enabled', 'intelligence_spine_enabled': True}
+        # Log enable event to governance
+        try:
+            sb.rpc('emit_governance_event', {
+                'p_workspace_id': current_user['id'],
+                'p_event_type': 'spine_enabled',
+                'p_source_system': 'manual',
+                'p_signal_reference': 'intelligence_spine',
+                'p_confidence_score': 1.0,
+            }).execute()
+        except Exception:
+            pass
+        # Also log to spine itself
+        from intelligence_spine import emit_spine_event
+        emit_spine_event(
+            tenant_id=current_user['id'],
+            event_type='STATE_TRANSITION',
+            json_payload={'action': 'spine_enabled', 'by': current_user.get('email', '')},
+            confidence_score=1.0,
+        )
+        return {'status': 'enabled', 'intelligence_spine_enabled': True, 'note': 'Logging and snapshot collection activated. Modelling NOT activated.'}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/spine/disable")
 async def disable_spine(current_user: dict = Depends(get_current_user)):
-    """Disable the Intelligence Spine (super admin only)."""
+    """Disable Intelligence Spine (super admin only)."""
     from tier_resolver import resolve_tier
     if resolve_tier(current_user) != 'super_admin':
         raise HTTPException(status_code=403, detail="Super admin only")
@@ -59,6 +79,16 @@ async def disable_spine(current_user: dict = Depends(get_current_user)):
         from supabase_client import get_supabase_client
         sb = get_supabase_client()
         sb.table('ic_feature_flags').update({'enabled': False}).eq('flag_name', 'intelligence_spine_enabled').execute()
+        try:
+            sb.rpc('emit_governance_event', {
+                'p_workspace_id': current_user['id'],
+                'p_event_type': 'spine_disabled',
+                'p_source_system': 'manual',
+                'p_signal_reference': 'intelligence_spine',
+                'p_confidence_score': 1.0,
+            }).execute()
+        except Exception:
+            pass
         return {'status': 'disabled', 'intelligence_spine_enabled': False}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
