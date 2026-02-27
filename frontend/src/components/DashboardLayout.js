@@ -14,8 +14,9 @@ import {
   Settings, LogOut, Menu, X, ChevronDown, Shield, User,
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
-  ClipboardList, Inbox, MessageSquare
+  ClipboardList, Inbox, MessageSquare, Lock
 } from 'lucide-react';
+import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
