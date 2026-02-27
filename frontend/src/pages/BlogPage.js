@@ -44,7 +44,7 @@ const BlogPage = () => {
           </div>
 
           {/* Category filters */}
-          <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2 scrollbar-hide justify-center sm:flex-wrap" style={{ WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+          <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2 scrollbar-hide sm:flex-wrap sm:justify-center" style={{ WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
             {CATEGORIES.map(cat => (
               <button key={cat} onClick={() => setActiveCategory(cat)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0"
