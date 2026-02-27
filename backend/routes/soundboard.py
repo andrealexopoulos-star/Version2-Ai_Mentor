@@ -1,6 +1,7 @@
 """
 MySoundBoard Routes — Thinking Partner
 Extracted from server.py. Prompts loaded from Supabase system_prompts table.
+Instrumented with Intelligence Spine LLM logging.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
