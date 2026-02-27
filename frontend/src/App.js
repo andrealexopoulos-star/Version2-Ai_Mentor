@@ -257,9 +257,11 @@ function AppRoutes() {
       <Route path="/market-analysis" element={<ProtectedRoute><TierGate><MarketAnalysis /></TierGate></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
 
-      {/* Admin Routes */}
+      {/* Admin/Test Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><PromptLab /></ProtectedRoute>} />
+      <Route path="/outlook-test" element={<ProtectedRoute adminOnly><OutlookTest /></ProtectedRoute>} />
+      <Route path="/gmail-test" element={<ProtectedRoute adminOnly><GmailTest /></ProtectedRoute>} />
 
       {/* Catch all - redirect to dashboard or landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
