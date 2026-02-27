@@ -244,8 +244,21 @@ async def get_validation_report(current_user: dict = Depends(get_current_user)):
             'models_observed': list(model_stats.keys()),
         }
 
-        # Pass/fail — based ONLY on volume, consistency, presence
-        # NOT on model quality metrics (those come after modelling activation)
+        # Event-to-snapshot correlation check
+        correlation = None
+        try:
+            corr_result = sb.rpc('ic_validate_snapshot_correlation', {'p_tenant_id': tenant_id}).execute()
+            correlation = corr_result.data if corr_result.data else None
+        except Exception:
+            correlation = {'error': 'Correlation function not deployed. Run 032_spine_hardening.sql'}
+
+        correlation_pass = True
+        if correlation and isinstance(correlation, dict):
+            corr_rate = correlation.get('correlation_rate', 0)
+            if isinstance(corr_rate, (int, float)) and corr_rate < 0.5 and snapshot_days >= 3:
+                correlation_pass = False
+
+        # Pass/fail — volume, consistency, correlation
         validation_pass = (
             checks['spine_enabled']
             and checks['events_flowing']
@@ -253,6 +266,7 @@ async def get_validation_report(current_user: dict = Depends(get_current_user)):
             and snapshot_days >= 3
             and not has_duplicate_snapshots
             and not has_null_metrics
+            and correlation_pass
         )
 
         return {
@@ -260,7 +274,7 @@ async def get_validation_report(current_user: dict = Depends(get_current_user)):
             'period': '7 days',
             'period_start': seven_days_ago,
             'period_end': now.isoformat(),
-            'checks': checks,
+            'checks': {**checks, 'event_snapshot_correlation': correlation_pass},
             'event_summary': {
                 'total_events': len(event_list),
                 'by_type': event_by_type,
@@ -272,13 +286,14 @@ async def get_validation_report(current_user: dict = Depends(get_current_user)):
                 'has_duplicates': has_duplicate_snapshots,
                 'has_null_metrics': has_null_metrics,
                 'total_anomalies': total_anomalies,
+                'correlation': correlation,
             },
             'model_summary': {
                 'total_executions': len(exec_list),
                 'by_model': model_stats,
             },
-            'recommendation': 'Spine data collection sufficient. Volume stable, snapshots consistent, no null metrics. Ready for risk baseline activation.' if validation_pass
-                else f'Need more data. {max(0, 3 - snapshot_days)} more days of snapshots required. Ensure spine is enabled and engines are running.',
+            'recommendation': 'Spine validation PASS. Volume stable, snapshots correlated with events, no null metrics. Ready for Deterministic Risk Baseline.' if validation_pass
+                else f'Need more data. {max(0, 3 - snapshot_days)} more days of snapshots. Correlation rate: {correlation.get("correlation_rate", "?") if isinstance(correlation, dict) else "unknown"}.',
         }
     except Exception as e:
         return {'validation_status': 'ERROR', 'error': str(e)}
