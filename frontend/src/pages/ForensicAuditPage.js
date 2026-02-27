@@ -96,14 +96,14 @@ const ForensicAuditPage = () => {
     setError(null);
     setResult(null);
     try {
-      // Use new multi-page ingestion engine
-      const res = await apiClient.post('/ingestion/run', { url: url.trim() });
+      // Use hybrid ingestion engine (headless + static)
+      const res = await apiClient.post('/ingestion/hybrid', { url: url.trim() });
       setResult(res.data);
       apiClient.get('/ingestion/history').then(r => setHistory(r.data?.sessions || [])).catch(() => {});
     } catch (err) {
-      // Fallback to old single-page audit
+      // Fallback to standard ingestion
       try {
-        const res2 = await apiClient.post('/forensic/ingestion-audit', { url: url.trim() });
+        const res2 = await apiClient.post('/ingestion/run', { url: url.trim() });
         setResult(res2.data);
       } catch (err2) {
         setError(err2.response?.data?.detail || err.response?.data?.detail || 'Audit failed');
