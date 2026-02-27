@@ -635,6 +635,15 @@ async def run_dsee_scan(req: DSEERequest, current_user: dict = Depends(get_curre
             'dominance': 'present' if search_position and search_position <= 3 else 'visible' if search_position else 'absent',
         },
         'authority': subject_authority,
+        'search_dominance_density': {
+            'sdd_score': sdd_result['sdd_score'],
+            'service_keyword': sdd_result['service_keyword'],
+            'city': sdd_result['city'],
+            'subject_densities': sdd_result['subject'],
+            'competitor_averages': sdd_result['competitor_averages'],
+            'competitors_analyzed': sdd_result['competitors_analyzed'],
+            'structural_adjustments': sdd_result.get('structural_adjustments', {}),
+        },
         'confidence': confidence,
     }
 
