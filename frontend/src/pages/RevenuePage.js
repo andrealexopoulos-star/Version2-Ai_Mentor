@@ -20,19 +20,24 @@ const RevenuePage = () => {
   const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pipeline');
+  const [sqlScenarios, setSqlScenarios] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dealsRes, finRes] = await Promise.allSettled([
+        const [dealsRes, finRes, scenRes] = await Promise.allSettled([
           apiClient.get('/integrations/crm/deals'),
           apiClient.get('/integrations/accounting/summary'),
+          apiClient.get('/intelligence/scenarios'),
         ]);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
           setDeals(dealsRes.value.data.results);
         }
         if (finRes.status === 'fulfilled' && finRes.value.data?.connected) {
           setFinancials(finRes.value.data);
+        }
+        if (scenRes.status === 'fulfilled' && scenRes.value.data?.has_data) {
+          setSqlScenarios(scenRes.value.data);
         }
       } catch {} finally { setLoading(false); }
     };
