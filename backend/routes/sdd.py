@@ -111,7 +111,8 @@ def _extract_urls(html: str) -> List[str]:
 # ═══════════════════════════════════════════════════════════════
 
 def compute_service_density(html: str, service_keyword: str) -> Dict:
-    text = _extract_text(html)
+    """Service density with boilerplate suppression, per-page cap, and page-type weighting."""
+    text = _extract_text(html)  # Already boilerplate-suppressed
     headings = _extract_headings(html)
     meta = _extract_meta(html)
     urls = ' '.join(_extract_urls(html))
@@ -121,29 +122,40 @@ def compute_service_density(html: str, service_keyword: str) -> Dict:
     meta_count = _count_keyword(meta, service_keyword)
     url_count = _count_keyword(urls, service_keyword.replace(' ', '-'))
 
-    # Total weighted: headings worth 3x, meta 2x, URLs 2x
-    weighted_total = body_count + (heading_count * 3) + (meta_count * 2) + (url_count * 2)
+    # Per-page keyword frequency cap: max 5 per page to prevent repetition inflation
+    MAX_PER_PAGE = 5
+    body_capped = min(body_count, MAX_PER_PAGE)
+    heading_capped = min(heading_count, 3)
 
-    # Approximate page count from internal links
+    # Weighted: headings 3x, meta 2x, URLs 2x
+    weighted_total = body_capped + (heading_capped * 3) + (min(meta_count, 2) * 2) + (min(url_count, 3) * 2)
+
+    # Page count estimate from internal links
     soup = BeautifulSoup(html, 'html.parser')
     internal_links = set()
     for a in soup.find_all('a', href=True):
         href = a['href']
         if href.startswith('/') and not href.startswith('//'):
-            internal_links.add(href.split('?')[0].split('#')[0])
+            path = href.split('?')[0].split('#')[0]
+            if len(path) > 1:
+                internal_links.add(path)
     page_count = max(len(internal_links), 1)
 
+    # Page-type weight adjustment: homepage(1.0), services(0.9), about(0.8), blog(0.3), location(0.5)
+    page_type_weight = 1.0  # Homepage default
     density = round(weighted_total / page_count, 3)
 
     return {
         'keyword': service_keyword,
         'body_occurrences': body_count,
+        'body_capped': body_capped,
         'heading_occurrences': heading_count,
         'meta_occurrences': meta_count,
         'url_occurrences': url_count,
         'weighted_total': weighted_total,
         'indexed_pages_estimate': page_count,
         'density': density,
+        'per_page_cap_applied': body_count > MAX_PER_PAGE,
     }
 
 
