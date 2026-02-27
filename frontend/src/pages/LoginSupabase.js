@@ -73,7 +73,7 @@ const LoginSupabase = () => {
             </div>
           </div>
 
-          <h1 className="text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY }}>Welcome back</h1>
+          <h1 className="text-2xl sm:text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY, textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #F4F7FA' }}>Welcome back</h1>
           <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>Sign in to your sovereign intelligence platform.</p>
 
           {/* OAuth */}
