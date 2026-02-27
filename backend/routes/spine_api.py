@@ -139,6 +139,23 @@ async def calculate_risk_baseline(current_user: dict = Depends(get_current_user)
         return {'status': 'error', 'message': str(e)}
 
 
+@router.post("/spine/risk-baseline/backtest/{config_id}")
+async def backtest_risk_baseline(config_id: str, current_user: dict = Depends(get_current_user)):
+    """Run risk baseline with a specific weight config (backtest mode)."""
+    if not _get_spine_enabled():
+        return {'status': 'spine_disabled'}
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.rpc('ic_calculate_risk_baseline', {
+            'p_tenant_id': current_user['id'],
+            'p_config_id': config_id,
+        }).execute()
+        return result.data if result.data else {'status': 'no_data'}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+
+
 @router.get("/spine/risk-baseline/history")
 async def get_risk_baseline_history(current_user: dict = Depends(get_current_user)):
     """Get historical risk baseline executions."""
