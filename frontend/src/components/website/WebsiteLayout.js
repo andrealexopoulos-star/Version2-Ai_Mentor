@@ -153,7 +153,7 @@ const WebsiteFooter = () => (
             ))}
           </div>
           <div className="mt-6 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
             <span className="text-[10px] text-[#9FB0C3]/50" style={{ fontFamily: MONO }}>Australian Sovereign Data</span>
           </div>
         </div>
