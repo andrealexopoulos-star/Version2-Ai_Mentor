@@ -13,7 +13,7 @@ const PricingPage = () => (
     <section className="relative overflow-hidden" data-testid="pricing-hero">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.03]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
       <div className="max-w-4xl mx-auto px-6 pt-16 sm:pt-28 pb-10 relative z-10 text-center">
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-[1.12] mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: HEAD, color: '#FFFFFF', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-[1.12] mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: HEAD, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #FFFFFF' }}>
           Multiply the Capability<br />of Your Entire Team.
         </h1>
         <p className="text-base text-[#C8D4E0] max-w-lg mx-auto mb-4" style={{ fontFamily: BODY, lineHeight: 1.7 }}>
