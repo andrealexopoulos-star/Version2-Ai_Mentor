@@ -576,6 +576,17 @@ async def run_dsee_scan(req: DSEERequest, current_user: dict = Depends(get_curre
     # Agent 4: Asymmetry Engine
     asymmetries = await build_asymmetries(business_name, domain_result['domain'], location, structure, competitors)
 
+    # Agent 4b: Search Dominance Density
+    from routes.sdd import run_sdd_analysis
+    sdd_result = await run_sdd_analysis(
+        domain_result['html'], business_name, domain_result['domain'],
+        primary_service, location, structure['structure'], competitors,
+    )
+    # Merge SDD asymmetries into main asymmetry list
+    for sdd_asym in sdd_result.get('asymmetries', []):
+        sdd_asym['metric_source'] = 'Search Dominance Density Model'
+        asymmetries.append(sdd_asym)
+
     # Agent 5: Confidence Governance
     subject_reviews = await _get_review_data(business_name, location)
     subject_authority = await _check_authority(business_name)
