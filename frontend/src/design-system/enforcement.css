@@ -1,0 +1,53 @@
+/**
+ * BIQc Design System — CSS Enforcement
+ * Imported globally. Prevents visual drift.
+ */
+
+/* ═══ HEADING VISIBILITY (Serif on Dark) ═══ */
+h1, h2, h3 {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-stroke: 0.2px currentColor;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ═══ MOBILE: Reduce visual noise ═══ */
+@media (max-width: 768px) {
+  /* Increase heading stroke for readability */
+  h1, h2 {
+    -webkit-text-stroke: 0.3px currentColor;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Remove heavy glow on mobile */
+  [class*="glow"], [style*="radial-gradient"] {
+    opacity: 0.04 !important;
+  }
+
+  /* Reduce grid overlay on mobile */
+  [style*="backgroundSize: '64px"] {
+    opacity: 0.01 !important;
+  }
+
+  /* Enforce line-height on body text */
+  p, span, li {
+    line-height: 1.5;
+  }
+
+  /* Vertical rhythm: consistent spacing */
+  .space-y-8 > * + * { margin-top: 24px !important; }
+  .space-y-6 > * + * { margin-top: 16px !important; }
+}
+
+/* ═══ SCROLLBAR HIDE ═══ */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ═══ PASSWORD VISIBILITY ═══ */
+input[type="password"] {
+  color: #F4F7FA !important;
+  -webkit-text-fill-color: #F4F7FA !important;
+}
+input[type="password"]::placeholder {
+  -webkit-text-fill-color: #64748B !important;
+}
