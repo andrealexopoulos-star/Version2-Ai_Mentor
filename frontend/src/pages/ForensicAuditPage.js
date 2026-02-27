@@ -83,10 +83,11 @@ const ForensicAuditPage = () => {
   useEffect(() => {
     apiClient.get('/ingestion/history').then(res => {
       setHistory(res.data?.sessions || []);
-    }).catch(() => {});
-    apiClient.get('/forensic/ingestion-history').then(res => {
-      if (!history.length) setHistory(res.data?.audits || []);
-    }).catch(() => {});
+    }).catch(() => {
+      apiClient.get('/forensic/ingestion-history').then(res => {
+        setHistory(res.data?.audits || []);
+      }).catch(() => {});
+    });
   }, []);
 
   const runAudit = async () => {
