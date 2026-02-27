@@ -124,6 +124,38 @@ async def get_spine_snapshots(current_user: dict = Depends(get_current_user)):
         return {'snapshots': []}
 
 
+@router.post("/spine/risk-baseline")
+async def calculate_risk_baseline(current_user: dict = Depends(get_current_user)):
+    """Calculate Deterministic Risk Baseline for current tenant.
+    Pure SQL. Zero LLM. Fully reproducible."""
+    if not _get_spine_enabled():
+        return {'status': 'spine_disabled', 'message': 'Enable spine first'}
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.rpc('ic_calculate_risk_baseline', {'p_tenant_id': current_user['id']}).execute()
+        return result.data if result.data else {'status': 'no_data'}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+
+
+@router.get("/spine/risk-baseline/history")
+async def get_risk_baseline_history(current_user: dict = Depends(get_current_user)):
+    """Get historical risk baseline executions."""
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.table('ic_model_executions') \
+            .select('id, model_version, execution_time_ms, confidence_score, output_summary, created_at') \
+            .eq('tenant_id', current_user['id']) \
+            .eq('model_name', 'deterministic_risk_baseline') \
+            .order('created_at', desc=True) \
+            .limit(30).execute()
+        return {'executions': result.data or []}
+    except Exception:
+        return {'executions': []}
+
+
 @router.get("/spine/events")
 async def get_spine_events(current_user: dict = Depends(get_current_user)):
     """Get Intelligence Spine event log for tenant."""
