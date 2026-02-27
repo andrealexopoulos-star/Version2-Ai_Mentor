@@ -88,7 +88,7 @@ const RegisterSupabase = () => {
             </div>
           </div>
 
-          <h1 className="text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY }}>Get started</h1>
+          <h1 className="text-2xl sm:text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY, textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #F4F7FA' }}>Get started</h1>
           <p className="text-sm text-[#9FB0C3] mb-6" style={{ fontFamily: BODY }}>Create your account to access sovereign intelligence.</p>
 
           {/* OAuth */}
