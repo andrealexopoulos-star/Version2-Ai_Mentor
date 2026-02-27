@@ -178,6 +178,9 @@ api_router.include_router(strategic_console_router)
 from routes.reports import router as reports_router
 api_router.include_router(reports_router)
 
+from routes.intelligence_modules import router as intelligence_modules_router
+api_router.include_router(intelligence_modules_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
