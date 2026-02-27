@@ -332,7 +332,7 @@ async def _check_authority(name: str) -> Dict:
     return {'awards': awards, 'media': media, 'total': awards + media}
 
 
-BLOCKED_PATTERNS = [r'\$\d', r'revenue', r'profit', r'turnover', r'income', r'\d+%\s*growth', r'ROI', r'return on', r'margin\s*\d', r'forecast', r'project(?:ed|ion)', r'financial', r'earning', r'valuation', r'market cap']
+BLOCKED_PATTERNS = [r'\$\d', r'\brevenue\b', r'\bprofit\b', r'\bturnover\b', r'\bincome\b', r'\d+%\s*growth', r'\bROI\b', r'\breturn on\b', r'\bmargin\s*\d', r'\bforecast\b', r'\bproject(?:ed|ion)\b', r'\bfinancial\b', r'\bearning[s]?\b', r'\bvaluation\b', r'\bmarket cap\b']
 
 def validate_no_projections(output):
     violations = []
