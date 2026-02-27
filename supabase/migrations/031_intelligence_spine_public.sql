@@ -7,16 +7,17 @@
 -- Additive only. No existing tables modified.
 -- ═══════════════════════════════════════════════════════════════
 
--- Feature flag
+-- Feature flag (supports global + tenant-scoped)
 CREATE TABLE IF NOT EXISTS ic_feature_flags (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     flag_name TEXT UNIQUE NOT NULL,
     enabled BOOLEAN DEFAULT false,
+    tenant_id UUID,
     description TEXT,
     created_at TIMESTAMP DEFAULT now()
 );
 INSERT INTO ic_feature_flags (flag_name, enabled, description)
-VALUES ('intelligence_spine_enabled', false, 'Master switch for Intelligence Spine')
+VALUES ('intelligence_spine_enabled', false, 'Global master switch. Tenant-scoped flags use spine_enabled_{tenant_id}')
 ON CONFLICT (flag_name) DO NOTHING;
 
 -- Canonical event log
