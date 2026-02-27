@@ -190,6 +190,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Link2, label: 'Integrations', path: '/integrations' },
       { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
+      { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
     ]},
     { id: 'governance', label: 'Governance', items: [
       { icon: FileText, label: 'Reports', path: '/reports' },
