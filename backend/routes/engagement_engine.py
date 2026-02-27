@@ -117,6 +117,7 @@ def classify_structure(cleaned_text: str, html: str, search_results: Dict) -> Di
     # Classify
     structure = 'single_location_service'
     confidence = 0.5
+    industry_detected = None
 
     if signals['franchise_signals']:
         structure = 'franchise'
@@ -136,6 +137,24 @@ def classify_structure(cleaned_text: str, html: str, search_results: Dict) -> Di
     elif signals['service_signals']:
         structure = 'single_location_service'
         confidence = 0.6
+
+    # Detect industry from content
+    industry_patterns_detect = [
+        (r'(?:financial|wealth)\s+(?:advisory|planning|management)', 'Financial Advisory'),
+        (r'(?:accounting|bookkeeping|tax)', 'Accounting'),
+        (r'(?:law\s+firm|legal|solicitor)', 'Legal'),
+        (r'(?:construction|building)', 'Construction'),
+        (r'(?:real\s+estate|property)', 'Real Estate'),
+        (r'(?:IT|software|technology|SaaS)', 'Technology'),
+        (r'(?:marketing|advertising|digital)', 'Marketing'),
+        (r'(?:medical|healthcare|dental)', 'Healthcare'),
+        (r'(?:business\s+(?:management|consulting|strategy))', 'Business Consulting'),
+        (r'(?:education|training|coaching|mentoring)', 'Education & Training'),
+    ]
+    for pattern, ind in industry_patterns_detect:
+        if re.search(pattern, lower):
+            industry_detected = ind
+            break
 
     # Extract services list — from bullet points and service sections, not page labels
     services = []
