@@ -1,24 +1,20 @@
-# --- STAGE 1: Build the Frontend ---
+# 1. Build the Website "Face"
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
-# Copy only the files needed to install libraries first
 COPY frontend/package.json frontend/yarn.lock ./
 RUN yarn install --frozen-lockfile
-# Copy the rest of the frontend and build it
 COPY frontend/ .
 RUN yarn build
 
-# --- STAGE 2: Setup the Backend & Serve Frontend ---
+# 2. Setup the "Brain"
 FROM python:3.11-slim
 WORKDIR /app
-# Install Python libraries
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-# Copy everything from your project into the container
 COPY . .
-# Copy the "Face" we built in Stage 1 into the "Brain" folder
+# This moves the Face into the Brain folder
 COPY --from=frontend-builder /app/frontend/build ./frontend/build
 
-# Start the Python server 
-# FIXED: Changed backend.main:app to backend.server:app to match your file
+# 3. Start the Brain
+# We use server:app because your file is named server.py
 CMD ["uvicorn", "backend.server:app", "--host", "0.0.0.0", "--port", "80"]

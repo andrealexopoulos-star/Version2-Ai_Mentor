@@ -206,3 +206,9 @@ api_router.include_router(dsee_router)
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
+# This part tells the brain to show the website files
+if os.path.exists("frontend/build"):
+    app.mount("/", StaticFiles(directory="frontend/build", html=True), name="frontend")
+    @app.get("/{catchall:path}")
+    async def serve_frontend(catchall: str):
+        return FileResponse("frontend/build/index.html")
