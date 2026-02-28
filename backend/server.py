@@ -30,7 +30,7 @@ from core.models import (
     BusinessIdentityDomain, MarketDomain, OfferDomain, TeamDomain, StrategyDomain,
     ProfileDomains, ChangeLogEntry, VersionedBusinessProfile,
 )
-
+app = FastAPI()
 # ═══ LOGGING ═══
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
