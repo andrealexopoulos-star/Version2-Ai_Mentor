@@ -49,11 +49,12 @@ const HomePage = () => (
             Your Chief Agent that deploys AI agents to monitor, plan, execute, and optimise across your entire business.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
             <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="hero-cta">
               Try It For Free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+          <Link to="/login-supabase" className="block text-center text-xs text-[#9FB0C3] hover:text-white transition-colors mb-6" style={{ fontFamily: MONO }} data-testid="hero-login">Already have an account? Log in</Link>
 
           <div className="flex items-center justify-center gap-8 text-xs text-[#9FB0C3]/50" style={{ fontFamily: MONO }}>
             <span>Not a chatbot.</span>
