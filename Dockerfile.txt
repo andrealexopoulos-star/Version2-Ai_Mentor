@@ -12,20 +12,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Python deps
-COPY backend/requirements.txt .
+# FIX 1: Copy from the local backend folder to the container's current directory
+COPY requirements.txt . 
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
 RUN pip install playwright && python -m playwright install chromium --with-deps
 
 # Copy app
-COPY backend/ .
+# FIX 2: Copy everything from your local backend folder into the container /app
+COPY . .
 
 # Port
-EXPOSE 8001
+# FIX 3: Azure Web Apps listen on port 80 by default
+EXPOSE 80
 
 # Health check
+# FIX 4: Match the health check to the actual port the app is running on
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -f http://localhost:8001/api/health || exit 1
+    CMD curl -f http://localhost:80/api/health || exit 1
 
 # Start
+# FIX 5: Since files were copied into /app, use "server:app" not "backend.server:app"
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "80"]
