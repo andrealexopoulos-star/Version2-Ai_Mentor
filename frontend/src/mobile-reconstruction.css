@@ -8,46 +8,45 @@
 
   /* ═══ VISUAL NOISE REMOVAL ═══ */
   
-  /* Kill background grid on mobile */
-  [style*="backgroundImage"][style*="linear-gradient"] {
-    opacity: 0 !important;
+  /* Kill ALL background grid/mesh on mobile */
+  .absolute[style*="backgroundImage"],
+  .absolute[style*="backgroundSize"],
+  div[style*="backgroundImage"][style*="linear-gradient(rgba"] {
+    display: none !important;
   }
   
   /* Kill mesh/glow overlays */
-  [style*="radial-gradient"][style*="FF6A00"],
-  [style*="radial-gradient"][style*="255,106,0"] {
-    opacity: 0.02 !important;
+  .absolute[style*="radial-gradient"] {
+    display: none !important;
   }
 
   /* ═══ HERO SECTION ═══ */
   
-  /* Tighten hero padding */
-  section:first-of-type > div:first-child {
-    padding-top: 16px !important;
-    padding-bottom: 32px !important;
+  /* Tighten hero: reduce to 16px top, content starts immediately */
+  section:first-of-type > div.max-w-5xl {
+    padding-top: 8px !important;
+    padding-bottom: 24px !important;
   }
 
-  /* Hero max height */
-  section:first-of-type {
-    max-height: 85vh;
-    overflow: hidden;
+  /* Badge smaller */
+  section:first-of-type .inline-flex {
+    margin-bottom: 16px !important;
   }
 
   /* ═══ TYPOGRAPHY ═══ */
   
-  /* Hero headline */
   h1 {
-    font-size: 28px !important;
+    font-size: 26px !important;
     line-height: 1.2 !important;
-    letter-spacing: -0.02em !important;
     -webkit-text-stroke: 0.4px currentColor;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
   }
 
-  /* Section headings */
   h2 {
-    font-size: 22px !important;
+    font-size: 20px !important;
     line-height: 1.25 !important;
     -webkit-text-stroke: 0.3px currentColor;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.5);
   }
 
   h3 {
@@ -55,121 +54,46 @@
     line-height: 1.3 !important;
   }
 
-  /* Body text */
-  p, span, li {
+  p, li {
     font-size: 15px !important;
     line-height: 1.55 !important;
   }
 
-  /* Micro text (badges, labels) */
-  [style*="JetBrains"],
-  [style*="monospace"] {
-    font-size: 11px !important;
-  }
-
-  /* Increase text contrast */
-  [style*="color: rgb(159, 176, 195)"],
-  [style*="color: #9FB0C3"] {
+  /* Increase muted text contrast */
+  .text-\[9FB0C3\], [style*="color: #9FB0C3"], [style*="color: rgb(159, 176, 195)"] {
     color: #B8C8D8 !important;
   }
 
   /* ═══ STATS SECTION ═══ */
   
-  /* Force 2-col with better spacing */
-  .grid-cols-2 {
-    gap: 24px 16px !important;
+  .grid.grid-cols-2 {
+    gap: 20px 12px !important;
   }
 
-  /* Hide 5th stat (orphan) */
-  .grid-cols-2 > *:nth-child(n+5) {
-    display: none;
-  }
-
-  /* Stat number sizing */
-  .grid-cols-2 [style*="fontFamily"][style*="Cormorant"] {
-    font-size: 32px !important;
-  }
-
-  /* Stat label contrast */
-  .grid-cols-2 [style*="monospace"] {
-    font-size: 9px !important;
-    letter-spacing: 0.15em !important;
-    opacity: 0.7;
-  }
-
-  /* ═══ FEATURE CARDS ═══ */
+  /* ═══ FEATURE CARDS — Fix icon containers ═══ */
   
-  /* Reduce card padding, increase breathing room */
-  .rounded-2xl {
-    padding: 16px !important;
-    margin-bottom: 12px !important;
-  }
-
-  /* Reduce icon container size on cards */
-  .rounded-2xl .rounded-lg[style*="background"] {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
+  /* Prevent rounded elements from stretching */
+  .rounded-lg[style*="background"][class*="flex"][class*="items-center"][class*="justify-center"] {
+    width: auto !important;
+    max-width: fit-content !important;
   }
 
   /* ═══ CTA BUTTONS ═══ */
   
-  /* Primary CTA */
-  a[style*="FF6A00"][style*="background"],
-  button[style*="FF6A00"][style*="background"] {
+  a[data-testid="hero-cta"],
+  button[data-testid="hero-cta"] {
     min-height: 48px !important;
     font-size: 15px !important;
     border-radius: 14px !important;
-    width: 100%;
   }
 
-  /* ═══ FOOTER ═══ */
+  /* ═══ SECTION SPACING ═══ */
   
-  /* Single column footer */
-  footer .grid {
-    grid-template-columns: 1fr !important;
-    gap: 24px !important;
-  }
-
-  /* Reduce footer text size */
-  footer {
-    padding-top: 32px !important;
+  section {
+    padding-top: 24px !important;
     padding-bottom: 24px !important;
   }
 
-  footer p, footer a, footer span {
-    font-size: 13px !important;
-  }
-
-  /* ═══ CONTAINER DISCIPLINE ═══ */
-  
-  /* Consistent padding */
-  .max-w-5xl, .max-w-4xl, .max-w-3xl {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-
-  /* No horizontal scroll */
-  body {
-    overflow-x: hidden;
-  }
-
-  /* ═══ ARCHITECTURE DIAGRAM ═══ */
-  
-  /* Hide decorative grid diagram on mobile */
-  [style*="grid-template"][style*="1fr 1fr 1fr"] {
-    display: none !important;
-  }
-
-  /* ═══ WHITESPACE RHYTHM ═══ */
-  
-  /* Reduce excessive section spacing */
-  section {
-    padding-top: 32px !important;
-    padding-bottom: 32px !important;
-  }
-
-  /* Reduce space-y-8 to space-y-4 */
   .space-y-8 > * + * {
     margin-top: 16px !important;
   }
@@ -178,10 +102,27 @@
     margin-top: 12px !important;
   }
 
-  /* ═══ HEADING VISIBILITY (Serif on Dark) ═══ */
+  /* ═══ FOOTER ═══ */
+
+  footer .grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  footer p, footer a, footer span {
+    font-size: 13px !important;
+  }
+
+  /* ═══ CONTAINERS ═══ */
+
+  body {
+    overflow-x: hidden;
+  }
+
+  /* ═══ HEADING VISIBILITY ═══ */
   
   h1, h2, h3 {
-    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
