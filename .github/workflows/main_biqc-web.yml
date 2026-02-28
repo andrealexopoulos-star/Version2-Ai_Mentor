@@ -6,6 +6,7 @@ on:
       - main
   workflow_dispatch:
 
+# THIS BLOCK FIXES THE LOGIN ERROR
 permissions:
   id-token: write
   contents: read
@@ -50,5 +51,3 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'biqc-web'
-          slot-name: 'Production'
-          images: 'biqcregistry.azurecr.io/biqc-frontend:${{ github.sha }}'
