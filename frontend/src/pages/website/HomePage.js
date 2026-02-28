@@ -25,9 +25,9 @@ const HomePage = () => (
   <WebsiteLayout>
     {/* ══ HERO ══ */}
     <section className="relative overflow-hidden" data-testid="hero-section">
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
-      {/* Orange glow */}
+      {/* Subtle grid pattern — hidden on mobile */}
+      <div className="absolute inset-0 opacity-[0.03] hidden sm:block" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
+      {/* Orange glow — hidden on mobile */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
 
       <div className="max-w-5xl mx-auto px-6 pt-12 sm:pt-24 pb-16 sm:pb-20 relative z-10">
