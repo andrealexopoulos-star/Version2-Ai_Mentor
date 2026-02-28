@@ -89,6 +89,8 @@ const WebsiteNav = () => {
           <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: NAV_FONT, boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }} data-testid="nav-get-started">
             Try It Free
           </Link>
+          {/* Mobile: Log In text + hamburger */}
+          <Link to="/login-supabase" className="md:hidden text-xs text-[#9FB0C3] hover:text-white" style={{ fontFamily: NAV_FONT }} data-testid="nav-mobile-login">Log in</Link>
           <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-[#9FB0C3]" data-testid="nav-mobile-toggle">
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
