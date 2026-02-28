@@ -42,12 +42,13 @@ const HomePage = () => (
             <span style={{ color: '#FF6A00' }}>Big Players</span> Without The Cost
           </h1>
 
-          <p className="text-lg max-w-2xl mx-auto mb-4 leading-relaxed" style={{ fontFamily: BODY, color: '#9FB0C3' }}>
+          <p className="text-sm sm:text-lg max-w-2xl mx-auto mb-3 sm:mb-4 leading-relaxed" style={{ fontFamily: BODY, color: '#9FB0C3' }}>
             Your Digital Leadership team surfacing risk & preventing problems weeks in advance.
           </p>
-          <p className="text-base max-w-xl mx-auto mb-10" style={{ fontFamily: BODY, color: '#9FB0C3'/*, opacity: 0.7*/ }}>
+          <p className="hidden sm:block text-base max-w-xl mx-auto mb-10" style={{ fontFamily: BODY, color: '#9FB0C3' }}>
             Your Chief Agent that deploys AI agents to monitor, plan, execute, and optimise across your entire business.
           </p>
+          <div className="block sm:hidden mb-4" />
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
             <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="hero-cta">
