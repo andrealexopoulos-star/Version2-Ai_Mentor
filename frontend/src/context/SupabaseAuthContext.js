@@ -282,7 +282,6 @@ export const SupabaseAuthProvider = ({ children }) => {
           if (calRes.ok && contentType.includes('application/json')) {
             const cal = await calRes.json();
             calibrationComplete = cal.status === 'COMPLETE';
-            console.log(`[CALIBRATION ROUTING] Backend status: ${cal.status} → calibrationComplete=${calibrationComplete}`);
           } else if (calRes.ok && !contentType.includes('application/json')) {
             console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType})`);
             // HTML response = likely nginx/proxy error, not a calibration state. Fail-closed.
