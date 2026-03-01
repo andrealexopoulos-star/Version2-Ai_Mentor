@@ -268,7 +268,6 @@ export const SupabaseAuthProvider = ({ children }) => {
         // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
         try {
           const calUrl = `${getBackendUrl()}/api/calibration/status?_t=${Date.now()}`;
-          console.log(`[CALIBRATION ROUTING] Fetching: ${calUrl}`);
           const calRes = await fetch(calUrl, {
             method: 'GET',
             headers: {
