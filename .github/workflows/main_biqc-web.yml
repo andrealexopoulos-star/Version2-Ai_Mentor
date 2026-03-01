@@ -29,10 +29,10 @@ jobs:
       - name: Build and push frontend container image
         uses: docker/build-push-action@v3
         with:
-          context: ./frontend
+          context: .
           file: ./Dockerfile.frontend
           push: true
-          tags: biqcregistry.azurecr.io/biqc-frontend:latest
+          tags: biqcregistry.azurecr.io/biqc-frontend:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,4 +49,4 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'biqc-web'
-          images: 'biqcregistry.azurecr.io/biqc-frontend:latest'
+          images: 'biqcregistry.azurecr.io/biqc-frontend:${{ github.sha }}'
