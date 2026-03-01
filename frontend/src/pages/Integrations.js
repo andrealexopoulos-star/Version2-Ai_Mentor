@@ -254,7 +254,8 @@ const Integrations = () => {
       console.log('📊 Connected Merge integrations:', integrations);
       setMergeIntegrations(integrations);
     } catch (error) {
-      console.warn('⚠️ Could not fetch Merge integrations - failing open:', error);
+      console.warn('Could not fetch Merge integrations:', error.message);
+      // Fail-open: show UI without integration data rather than blocking
     } finally {
       setMergeLoading(false);
     }
