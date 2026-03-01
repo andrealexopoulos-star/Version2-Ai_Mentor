@@ -1016,9 +1016,12 @@ html, body {
         min-width: 44px;
     }
     /* Login/Register submit — full-width orange */
-    button[type="submit"] {
+    form button[type="submit"],
+    form [data-testid="login-submit-btn"],
+    form [data-testid="register-submit-btn"] {
         width: 100% !important;
         min-width: 100% !important;
+        max-width: 100% !important;
         min-height: 48px !important;
         background-color: #FF6A00 !important;
         color: white !important;
@@ -1028,6 +1031,7 @@ html, body {
         align-items: center !important;
         justify-content: center !important;
         border: none !important;
+        -webkit-appearance: none !important;
     }
 }
 
