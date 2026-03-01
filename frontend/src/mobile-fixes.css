@@ -94,9 +94,7 @@ aside [class*="overflow-y"] {
     overflow-y: visible !important;
   }
 
-  h1 { font-size: 1.75rem; line-height: 1.2; }
-  h2 { font-size: 1.5rem; line-height: 1.25; }
-  h3 { font-size: 1.25rem; line-height: 1.3; }
+  /* Typography handled by mobile-reconstruction.css */
   p  { line-height: 1.5; }
 
   /* ========================================
