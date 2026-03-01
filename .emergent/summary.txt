@@ -11,7 +11,6 @@ PRODUCT REQUIREMENTS:
 - Migration of legacy Python business logic to faster, deterministic Supabase SQL functions.
 
 **User's preferred language**: English
-
 **what currently exists?**
 The application is a full-stack platform using React, FastAPI (as a thin Supabase client), and a Supabase backend (Postgres, Auth, Edge Functions, Realtime).
 -   **Theme & UI:** The Liquid Steel dark theme is consistently applied. All fabricated/demo data has been purged from the UI, replaced with insufficient data messages.
