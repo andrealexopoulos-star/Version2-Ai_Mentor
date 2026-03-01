@@ -127,4 +127,20 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Login/Register submit buttons — protect from all CSS overrides */
+  [data-testid="login-submit-btn"],
+  [data-testid="register-submit-btn"] {
+    width: 100% !important;
+    min-height: 48px !important;
+    background: #FF6A00 !important;
+    color: white !important;
+    border-radius: 12px !important;
+    font-size: 15px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(255,106,0,0.3) !important;
+  }
 }
