@@ -1,9 +1,10 @@
 # BIQc Backend — Production Dockerfile
 FROM python:3.11-slim
 
+# Set working directory
 WORKDIR /app
 
-# System deps for Playwright + general
+# System dependencies (Playwright + general runtime)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl wget gnupg ca-certificates \
     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
@@ -11,26 +12,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 libcairo2 libasound2 libxshmfence1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Python deps
-# FIX 1: Copy from the local backend folder to the container's current directory
-COPY requirements.txt . 
+# Copy requirements first (better Docker caching)
+COPY backend/requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
 RUN pip install playwright && python -m playwright install chromium --with-deps
 
-# Copy app
-# FIX 2: Copy everything from your local backend folder into the container /app
-COPY . .
+# Copy backend application code into /app
+COPY backend/ .
 
-# Port
-# FIX 3: Azure Web Apps listen on port 80 by default
+# Expose correct port
 EXPOSE 80
 
 # Health check
-# FIX 4: Match the health check to the actual port the app is running on
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -f http://localhost:80/api/health || exit 1
+    CMD curl -f http://localhost/api/health || exit 1
 
-# Start
-# FIX 5: Since files were copied into /app, use "server:app" not "backend.server:app"
+# Start FastAPI
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "80"]
