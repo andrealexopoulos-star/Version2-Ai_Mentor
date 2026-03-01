@@ -267,7 +267,7 @@ const Integrations = () => {
       console.log('📊 Outlook status:', response.data);
       
       if (response.data.degraded) {
-        console.log('⚠️ Outlook status check degraded - maintaining current state');
+        console.warn('Outlook status check degraded');
         setOutlookStatus(prev => ({
           ...prev,
           health_check_failed: true
@@ -281,7 +281,7 @@ const Integrations = () => {
         health_check_failed: false
       });
     } catch (error) {
-      console.warn('⚠️ Outlook status check failed - failing open, maintaining current state:', error);
+      console.warn('Outlook status check failed:', error.message);
       // FAIL OPEN: Preserve current connection state on error
       setOutlookStatus(prev => ({
         ...prev,
@@ -312,7 +312,7 @@ const Integrations = () => {
       });
 
       if (!response.ok) {
-        console.warn('⚠️ Gmail Edge Function check failed - failing open, maintaining current state');
+        console.warn('Gmail Edge Function check failed');
         // FAIL OPEN: Preserve current state on error
         return;
       }
@@ -339,7 +339,7 @@ const Integrations = () => {
         });
       }
     } catch (error) {
-      console.error('⚠️ Could not fetch Gmail status - failing open:', error);
+      console.warn('Gmail status check failed:', error.message);
       // FAIL OPEN: Preserve current state on exception
     }
   };
