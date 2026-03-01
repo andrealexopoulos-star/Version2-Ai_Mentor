@@ -6,7 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-# THIS BLOCK FIXES THE LOGIN ERROR
 permissions:
   id-token: write
   contents: read
@@ -27,13 +26,13 @@ jobs:
           username: ${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_4CB986AB71414AD8BAE99B213E28D54D }}
           password: ${{ secrets.AZUREAPPSERVICE_CONTAINERPASSWORD_44FDAFCBE67146C68680C04F67A9FB3C }}
 
-      - name: Build and push container image to registry
+      - name: Build and push frontend container image
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: ./frontend
+          file: ./Dockerfile.frontend
           push: true
-          tags: biqcregistry.azurecr.io/biqc-frontend:${{ github.sha }}
-          file: ./Dockerfile
+          tags: biqcregistry.azurecr.io/biqc-frontend:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,7 +46,7 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E974023533224B319AD1D619A403A917 }}
 
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'biqc-web'
+          images: 'biqcregistry.azurecr.io/biqc-frontend:latest'
