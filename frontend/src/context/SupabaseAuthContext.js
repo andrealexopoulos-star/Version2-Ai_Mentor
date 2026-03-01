@@ -285,10 +285,16 @@ export const SupabaseAuthProvider = ({ children }) => {
             calibrationComplete = cal.status === 'COMPLETE';
             console.log(`[CALIBRATION ROUTING] Backend status: ${cal.status} → calibrationComplete=${calibrationComplete}`);
           } else if (calRes.ok && !contentType.includes('application/json')) {
-            console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType}) → fail-open to READY`);
-            calibrationComplete = true;
+            console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType})`);
+            // HTML response = likely nginx/proxy error, not a calibration state. Fail-closed.
+            calibrationComplete = false;
+          } else if (calRes.status === 401 || calRes.status === 403) {
+            // Auth failed — do NOT bypass calibration. Session may be expired.
+            console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — session may be expired`);
+            calibrationComplete = false;
           } else {
-            console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status} → fail-open to READY`);
+            console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
+            // Non-auth server error — fail-open to prevent blocking user
             calibrationComplete = true;
           }
         } catch (e) {
