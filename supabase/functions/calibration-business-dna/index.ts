@@ -136,7 +136,7 @@ function extractIdentitySignals(allContent: string, websiteUrl: string) {
 
 const EXTRACTION_PROMPT = `You are a Business Intelligence Analyst performing a forensic identity extraction. Extract EVERY possible business data point from the provided content.
 
-You must fill ALL fields. If information is not explicitly available, make intelligent inferences based on context. If truly impossible to determine, write "Not available from current data".
+You must extract ONLY facts explicitly present in the provided content. If a field's information is not explicitly stated, return null for that field. Do NOT infer, guess, or fabricate any values. Accuracy over completeness.
 
 OUTPUT MUST BE THIS EXACT JSON:
 {
