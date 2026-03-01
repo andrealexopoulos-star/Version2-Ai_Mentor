@@ -78,10 +78,12 @@
     max-width: fit-content !important;
   }
 
-  /* ═══ CTA BUTTONS ═══ */
+  /* ═══ CTA BUTTONS — scoped to marketing pages only ═══ */
   
   a[data-testid="hero-cta"],
-  button[data-testid="hero-cta"] {
+  a[data-testid="blog-cta"],
+  a[data-testid="article-cta"],
+  a[data-testid="kb-cta"] {
     min-height: 48px !important;
     font-size: 15px !important;
     border-radius: 14px !important;
