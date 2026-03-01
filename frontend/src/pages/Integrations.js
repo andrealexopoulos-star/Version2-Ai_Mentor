@@ -662,9 +662,11 @@ const Integrations = () => {
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
         let detail = `Server error (${response.status})`;
-        try { detail = JSON.parse(errorText).detail || detail; } catch {}
+        try {
+          const errData = await response.clone().text();
+          try { detail = JSON.parse(errData).detail || detail; } catch {}
+        } catch {}
         toast.error(`Failed: ${detail}`);
         setOpeningMergeLink(false);
         return;
