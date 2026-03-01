@@ -177,10 +177,6 @@ aside [class*="overflow-y"] {
 
   .max-w-4xl { max-width: 100% !important; }
 
-  .p-8 { padding: 1rem !important; }
-  .p-6 { padding: 0.75rem !important; }
-  .mb-8 { margin-bottom: 1.5rem !important; }
-
   img {
     max-width: 100%;
     height: auto;
