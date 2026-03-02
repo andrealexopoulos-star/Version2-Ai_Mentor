@@ -1317,9 +1317,9 @@ const Integrations = () => {
                   if (isConnected) {
                     return (
                       <div className="space-y-4">
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50">
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          <span className="text-sm font-medium text-green-700">Connected</span>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
+                          <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
+                          <span className="text-sm font-medium text-[#10B981]">Connected</span>
                         </div>
                         
                         {connectionSource === 'edge' && (selectedIntegration.id === 'outlook' || selectedIntegration.id === 'gmail') && (
