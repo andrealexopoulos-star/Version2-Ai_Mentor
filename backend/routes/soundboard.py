@@ -137,55 +137,47 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
     integration_context = ""
     try:
-        # Check what's connected
-        int_res = await asyncio.to_thread(lambda: sb.table('integration_accounts').select('provider, category, status').eq('user_id', user_id).execute())
-        connected = [r for r in (int_res.data or []) if r.get('status') == 'COMPLETE']
+        from routes.unified_intelligence import _fetch_all_integration_data, _compute_revenue_signals, _compute_risk_signals, _compute_people_signals
+        all_data = await _fetch_all_integration_data(sb, user_id)
         
-        if connected:
-            integration_context += f"\n\nCONNECTED INTEGRATIONS: {', '.join(r['provider'] for r in connected)}\n"
-            
-            # Fetch CRM deals if CRM connected
-            crm_connected = any(r.get('category') in ('crm', 'hris') for r in connected)
-            if crm_connected:
-                try:
-                    from routes.integrations import get_merge_client
-                    account = next((r for r in connected if r['category'] in ('crm', 'hris')), None)
-                    if account:
-                        deals_res = sb.table('integration_accounts').select('account_token').eq('user_id', user_id).eq('category', 'crm').execute()
-                        if deals_res.data and deals_res.data[0].get('account_token'):
-                            token = deals_res.data[0]['account_token']
-                            merge_client = get_merge_client()
-                            deals = await merge_client.get_deals(account_token=token, page_size=5)
-                            if deals.get('results'):
-                                deal_lines = []
-                                for d in deals['results'][:5]:
-                                    deal_lines.append(f"- {d.get('name','Unnamed')}: ${d.get('amount',0)} ({d.get('status','open')}), stage: {d.get('stage',{}).get('name','unknown')}")
-                                integration_context += f"\nRECENT CRM DEALS:\n" + "\n".join(deal_lines) + "\n"
-                except Exception as e:
-                    logger.debug(f"CRM data fetch for SoundBoard: {e}")
-
-            # Fetch accounting summary if connected
-            acct_connected = any(r.get('category') == 'accounting' for r in connected)
-            if acct_connected:
-                try:
-                    acct_res = sb.table('integration_accounts').select('account_token').eq('user_id', user_id).eq('category', 'accounting').execute()
-                    if acct_res.data and acct_res.data[0].get('account_token'):
-                        token = acct_res.data[0]['account_token']
-                        merge_client = get_merge_client()
-                        invoices = await merge_client.get_invoices(account_token=token, page_size=5)
-                        if invoices.get('results'):
-                            inv_lines = [f"- Invoice {i.get('number','?')}: ${i.get('total_amount',0)} ({i.get('status','unknown')}) due {i.get('due_date','?')}" for i in invoices['results'][:5]]
-                            integration_context += f"\nRECENT INVOICES:\n" + "\n".join(inv_lines) + "\n"
-                        payments = await merge_client.get_payments(account_token=token, page_size=3)
-                        if payments.get('results'):
-                            pay_lines = [f"- Payment ${p.get('total_amount',0)} on {p.get('transaction_date','?')}" for p in payments['results'][:3]]
-                            integration_context += f"\nRECENT PAYMENTS:\n" + "\n".join(pay_lines) + "\n"
-                except Exception as e:
-                    logger.debug(f"Accounting data fetch for SoundBoard: {e}")
+        # Integration status
+        connected_list = [k for k, v in {'CRM': all_data['crm']['connected'], 'Accounting': all_data['accounting']['connected'], 'Email': all_data['email']['connected'], 'Marketing': all_data['marketing']['connected']}.items() if v]
+        if connected_list:
+            integration_context += f"\nCONNECTED INTEGRATIONS: {', '.join(connected_list)}\n"
         else:
-            integration_context = "\n\nNO INTEGRATIONS CONNECTED. User has not connected CRM, accounting, or email yet.\n"
+            integration_context += "\nNO INTEGRATIONS CONNECTED.\n"
+        
+        # Revenue signals
+        rev = _compute_revenue_signals(all_data)
+        if rev['deals']:
+            integration_context += f"\nREVENUE: Pipeline ${rev['pipeline_total']:,.0f} | {rev['stalled_deals']} stalled deals | {rev['won_count']} won | {rev['lost_count']} lost | Concentration: {rev['concentration_risk']}\n"
+            for d in rev['deals'][:5]:
+                integration_context += f"  - {d['name']}: ${d['amount']:,.0f} ({d['status']}) stage: {d['stage']}\n"
+        if rev['overdue_invoices']:
+            integration_context += f"\nOVERDUE INVOICES ({len(rev['overdue_invoices'])}):\n"
+            for inv in rev['overdue_invoices'][:3]:
+                integration_context += f"  - Invoice {inv['number']}: ${inv['amount']:,.0f} ({inv['days_overdue']}d overdue)\n"
+        if rev['at_risk']:
+            integration_context += f"\nAT-RISK DEALS:\n"
+            for r in rev['at_risk'][:3]:
+                integration_context += f"  - {r['name']}: ${r['amount']:,.0f} — {r['risk']} ({r['days_stalled']}d stalled)\n"
+        
+        # Risk signals
+        risk = _compute_risk_signals(all_data)
+        if risk['overall_risk'] != 'low':
+            integration_context += f"\nRISK LEVEL: {risk['overall_risk'].upper()}\n"
+            for cat in ['financial_risks', 'operational_risks', 'people_risks', 'market_risks']:
+                for item in risk.get(cat, []):
+                    if isinstance(item, dict):
+                        integration_context += f"  [{item.get('severity','?').upper()}] {item['detail']}\n"
+        
+        # People signals
+        people = _compute_people_signals(all_data)
+        if people.get('capacity') or people.get('fatigue'):
+            integration_context += f"\nWORKFORCE: Capacity {people['capacity'] or '?'}% | Fatigue: {people['fatigue'] or '?'}\n"
     except Exception as e:
-        logger.debug(f"Integration context fetch: {e}")
+        logger.debug(f"Unified intelligence fetch for SoundBoard: {e}")
+        integration_context = "\nIntegration data unavailable.\n"
 
     # ═══ MARKETING BENCHMARK DATA ═══
     marketing_context = ""
