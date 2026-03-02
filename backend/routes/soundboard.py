@@ -117,6 +117,41 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # Fetch prompt from DB, fall back to hardcoded
     soundboard_prompt = await get_prompt("mysoundboard_v1", _SOUNDBOARD_FALLBACK)
     fact_block = f"\n\nGLOBAL FACT AUTHORITY:\n{facts_prompt}\nDo NOT re-ask any fact listed above.\n" if facts_prompt else ""
+
+    # ═══ RAG RETRIEVAL (if enabled) ═══
+    rag_context = ""
+    try:
+        from intelligence_spine import _get_cached_flag
+        if _get_cached_flag('rag_chat_enabled'):
+            from routes.rag_service import generate_embedding
+            query_emb = await generate_embedding(req.message[:500])
+            from supabase_client import get_supabase_client
+            sb_rag = get_supabase_client()
+            rag_results = sb_rag.rpc('rag_search', {
+                'p_tenant_id': user_id,
+                'p_query_embedding': query_emb,
+                'p_limit': 3,
+                'p_similarity_threshold': 0.65,
+            }).execute()
+            if rag_results.data:
+                rag_snippets = [f"[{r['source_type']}] {r['content'][:300]}" for r in rag_results.data[:3]]
+                rag_context = "\n\nRETRIEVED CONTEXT (cite these sources):\n" + "\n---\n".join(rag_snippets) + "\n"
+    except Exception as e:
+        logger.debug(f"RAG retrieval skipped: {e}")
+
+    # ═══ MEMORY RETRIEVAL (if enabled) ═══
+    memory_context = ""
+    try:
+        if _get_cached_flag('memory_layer_enabled'):
+            sb_mem = get_supabase_client()
+            summaries = sb_mem.table('context_summaries') \
+                .select('summary_text').eq('tenant_id', user_id) \
+                .order('created_at', desc=True).limit(2).execute()
+            if summaries.data:
+                memory_context = "\n\nPRIOR SESSION CONTEXT:\n" + "\n".join(s['summary_text'][:200] for s in summaries.data) + "\n"
+    except Exception:
+        pass
+
     # ═══ GUARDRAILS: Sanitise input ═══
     from guardrails import sanitise_input, sanitise_output, log_llm_call_to_db
     sanitised = sanitise_input(req.message)
@@ -124,7 +159,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
 
-    system_message = soundboard_prompt + fact_block + f"\n\nCONTEXT:\n{user_context}"
+    system_message = soundboard_prompt + fact_block + rag_context + memory_context + f"\n\nCONTEXT:\n{user_context}"
 
     try:
         chat = LlmChat(
