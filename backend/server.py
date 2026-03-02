@@ -223,6 +223,9 @@ api_router.include_router(super_admin_router)
 from routes.file_service import router as file_service_router
 api_router.include_router(file_service_router)
 
+from routes.advanced_intelligence import router as advanced_intel_router
+api_router.include_router(advanced_intel_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
