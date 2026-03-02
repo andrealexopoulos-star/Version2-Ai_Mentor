@@ -767,10 +767,7 @@ const Integrations = () => {
                 setSelectedIntegration(null);
               }}
               data-testid="integrations-tab-connected-apps"
-              className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
-                activeTab === 'connected-apps'
-                  : ''
-              }`}
+              className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap`}
               style={{ 
                 color: activeTab === 'connected-apps' ? '#FF6A00' : '#9FB0C3',
                 background: activeTab === 'connected-apps' ? 'rgba(255, 106, 0, 0.08)' : 'transparent',
@@ -790,15 +787,11 @@ const Integrations = () => {
                 setSelectedIntegration(null);
               }}
               data-testid="integrations-tab-data-connections"
-              className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
-                activeTab === 'intelligence-sources'
-                  ? ''
-                  : ''
-              }`}
+              className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap`}
               style={{ 
-                color: activeTab === 'intelligence-sources' ? '#FF6A00' : '#9FB0C3',
-                background: activeTab === 'intelligence-sources' ? 'rgba(255, 106, 0, 0.08)' : 'transparent',
-                fontWeight: activeTab === 'intelligence-sources' ? '600' : '500'
+                color: activeTab === 'data-connections' ? '#FF6A00' : '#9FB0C3',
+                background: activeTab === 'data-connections' ? 'rgba(255, 106, 0, 0.08)' : 'transparent',
+                fontWeight: activeTab === 'data-connections' ? '600' : '500'
               }}
             >
               Data Connections
