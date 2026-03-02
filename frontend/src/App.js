@@ -78,6 +78,8 @@ import ObservabilityPage from './pages/ObservabilityPage';
 import SupportConsolePage from './pages/SupportConsolePage';
 import SubscribePage from './pages/SubscribePage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import MarketingAutomationPage from './pages/MarketingAutomationPage';
+import ABTestingPage from './pages/ABTestingPage';
 import ResetPassword from './pages/ResetPassword';
 import UpdatePassword from './pages/UpdatePassword';
 
