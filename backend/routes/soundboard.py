@@ -161,6 +161,66 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     system_message = soundboard_prompt + fact_block + rag_context + memory_context + f"\n\nCONTEXT:\n{user_context}"
 
+    # ═══ FILE GENERATION DETECTION ═══
+    file_keywords = {
+        'logo': ['create a logo', 'design a logo', 'make a logo', 'generate a logo', 'logo for'],
+        'document': ['create a document', 'write a document', 'draft a document', 'generate a document'],
+        'report': ['create a report', 'generate a report', 'write a report', 'produce a report'],
+        'social_image': ['create a social', 'design a post', 'social media image', 'create an image', 'generate an image'],
+    }
+    detected_file_type = None
+    msg_lower = clean_message.lower()
+    for ftype, keywords in file_keywords.items():
+        if any(kw in msg_lower for kw in keywords):
+            detected_file_type = ftype
+            break
+
+    if detected_file_type:
+        try:
+            from routes.file_service import _generate_image, _generate_document, _upload_to_storage, _get_storage
+            sb_files = _get_storage()
+            timestamp = __import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y%m%d_%H%M%S')
+
+            if detected_file_type in ('logo', 'social_image'):
+                image_bytes = await _generate_image(clean_message)
+                fname = f"{detected_file_type}_{timestamp}.png"
+                path = _upload_to_storage(sb_files, user_id, 'user-files', fname, image_bytes, 'image/png')
+                signed = sb_files.storage.from_('user-files').create_signed_url(path, 3600)
+                download_url = signed.get('signedURL', signed.get('signedUrl', ''))
+                sb_files.table('generated_files').insert({
+                    'tenant_id': user_id, 'file_name': fname, 'file_type': detected_file_type,
+                    'storage_path': path, 'bucket': 'user-files', 'size_bytes': len(image_bytes),
+                    'generated_by': 'soundboard', 'source_conversation_id': req.conversation_id or '',
+                    'metadata': {'prompt': clean_message[:200]},
+                }).execute()
+                return {
+                    "reply": f"I've created your {detected_file_type}. You can download it below or find it in your Reports tab.",
+                    "file": {"name": fname, "type": detected_file_type, "download_url": download_url, "size": len(image_bytes)},
+                    "conversation_id": req.conversation_id,
+                }
+            else:
+                content = await _generate_document(clean_message, detected_file_type)
+                fname = f"{detected_file_type}_{timestamp}.md"
+                bucket = 'reports' if detected_file_type == 'report' else 'user-files'
+                file_bytes = content.encode('utf-8')
+                path = _upload_to_storage(sb_files, user_id, bucket, fname, file_bytes, 'text/plain')
+                signed = sb_files.storage.from_(bucket).create_signed_url(path, 3600)
+                download_url = signed.get('signedURL', signed.get('signedUrl', ''))
+                sb_files.table('generated_files').insert({
+                    'tenant_id': user_id, 'file_name': fname, 'file_type': detected_file_type,
+                    'storage_path': path, 'bucket': bucket, 'size_bytes': len(file_bytes),
+                    'generated_by': 'soundboard', 'source_conversation_id': req.conversation_id or '',
+                    'metadata': {'prompt': clean_message[:200]},
+                }).execute()
+                return {
+                    "reply": f"I've generated your {detected_file_type}. You can download it below or find it in your Reports tab.\n\n{content[:500]}{'...' if len(content) > 500 else ''}",
+                    "file": {"name": fname, "type": detected_file_type, "download_url": download_url, "size": len(file_bytes)},
+                    "conversation_id": req.conversation_id,
+                }
+        except Exception as e:
+            logger.warning(f"File generation in SoundBoard failed: {e}")
+            # Fall through to normal chat response
+
     try:
         chat = LlmChat(
             api_key=OPENAI_KEY,
