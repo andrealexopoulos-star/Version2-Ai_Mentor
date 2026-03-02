@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight, FileWarning, Receipt } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
 
@@ -21,14 +21,16 @@ const RevenuePage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pipeline');
   const [sqlScenarios, setSqlScenarios] = useState(null);
+  const [unified, setUnified] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dealsRes, finRes, scenRes] = await Promise.allSettled([
+        const [dealsRes, finRes, scenRes, unifiedRes] = await Promise.allSettled([
           apiClient.get('/integrations/crm/deals'),
           apiClient.get('/integrations/accounting/summary'),
           apiClient.get('/intelligence/scenarios'),
+          apiClient.get('/unified/revenue'),
         ]);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
           setDeals(dealsRes.value.data.results);
@@ -38,6 +40,9 @@ const RevenuePage = () => {
         }
         if (scenRes.status === 'fulfilled' && scenRes.value.data?.has_data) {
           setSqlScenarios(scenRes.value.data);
+        }
+        if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
+          setUnified(unifiedRes.value.data);
         }
       } catch {} finally { setLoading(false); }
     };
