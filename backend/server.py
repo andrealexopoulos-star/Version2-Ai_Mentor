@@ -229,6 +229,9 @@ api_router.include_router(advanced_intel_router)
 from routes.unified_intelligence import router as unified_intel_router
 api_router.include_router(unified_intel_router)
 
+from routes.cognition_contract import router as cognition_router
+api_router.include_router(cognition_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
