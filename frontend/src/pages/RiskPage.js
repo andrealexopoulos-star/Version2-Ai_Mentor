@@ -89,6 +89,7 @@ const RiskPage = () => {
   const TABS = [
     { id: 'governance', label: 'Risk & Governance', icon: Shield },
     { id: 'workforce', label: 'Workforce Intelligence', icon: Users },
+    { id: 'unified', label: 'Cross-Domain Risk', icon: Activity },
   ];
 
   return (
