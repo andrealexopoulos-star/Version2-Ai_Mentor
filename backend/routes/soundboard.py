@@ -4,6 +4,7 @@ Extracted from server.py. Prompts loaded from Supabase system_prompts table.
 Instrumented with Intelligence Spine LLM logging.
 """
 from fastapi import APIRouter, Depends, HTTPException
+import asyncio
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
