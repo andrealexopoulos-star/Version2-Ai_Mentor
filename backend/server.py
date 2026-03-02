@@ -220,6 +220,9 @@ api_router.include_router(platform_services_router)
 from routes.super_admin import router as super_admin_router
 api_router.include_router(super_admin_router)
 
+from routes.file_service import router as file_service_router
+api_router.include_router(file_service_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
