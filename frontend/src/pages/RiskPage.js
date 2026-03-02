@@ -338,6 +338,73 @@ const RiskPage = () => {
             )}
           </>
         )}
+
+        {/* ═══ CROSS-DOMAIN RISK TAB ═══ */}
+        {!loading && activeTab === 'unified' && (
+          <>
+            {!unifiedRisk?.signals ? (
+              <Panel className="text-center py-10">
+                <Activity className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Cross-Domain Risk Intelligence</p>
+                <p className="text-xs text-[#64748B] mb-4">Connect CRM, accounting, and email integrations to unlock holistic risk analysis across all data sources.</p>
+                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="unified-risk-connect-cta">
+                  <Plug className="w-4 h-4" /> Connect Integrations
+                </a>
+              </Panel>
+            ) : (
+              <>
+                {/* Overall Risk Level */}
+                <Panel>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Overall Risk Assessment</h3>
+                      <p className="text-xs text-[#64748B] mt-1">Aggregated from all connected integrations</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-3xl font-bold" style={{ 
+                        fontFamily: MONO, 
+                        color: unifiedRisk.signals.overall_risk === 'high' ? '#EF4444' : unifiedRisk.signals.overall_risk === 'medium' ? '#F59E0B' : '#10B981' 
+                      }}>
+                        {(unifiedRisk.signals.overall_risk || 'LOW').toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </Panel>
+
+                {/* Risk Categories */}
+                {['financial_risks', 'operational_risks', 'people_risks', 'market_risks'].map(category => {
+                  const items = unifiedRisk.signals[category] || [];
+                  if (items.length === 0) return null;
+                  const label = category.replace('_risks', '').replace('_', ' ');
+                  const icon = category === 'financial_risks' ? DollarSign : category === 'operational_risks' ? AlertTriangle : category === 'people_risks' ? Users : Shield;
+                  const Icon = icon;
+                  return (
+                    <Panel key={category}>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Icon className="w-4 h-4 text-[#FF6A00]" />
+                        <h3 className="text-sm font-semibold text-[#F4F7FA] capitalize" style={{ fontFamily: HEAD }}>{label} Risk</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {items.map((item, i) => (
+                          <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ 
+                            background: item.severity === 'high' ? '#EF444408' : '#F59E0B08', 
+                            border: `1px solid ${item.severity === 'high' ? '#EF444425' : '#F59E0B25'}` 
+                          }}>
+                            <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: item.severity === 'high' ? '#EF4444' : '#F59E0B' }} />
+                            <div className="flex-1">
+                              <p className="text-xs text-[#9FB0C3]">{item.detail}</p>
+                              <span className="text-[10px] text-[#64748B] mt-1 block" style={{ fontFamily: MONO }}>Source: {item.source}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Panel>
+                  );
+                })}
+              </>
+            )}
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
