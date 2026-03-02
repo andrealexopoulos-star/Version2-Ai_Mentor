@@ -1066,7 +1066,7 @@ const Integrations = () => {
                     );
                     
                     return (
-                      <div key={key} className="p-4 rounded-xl border-2 border-green-500" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                      <div key={key} className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                         <div className="flex items-center gap-3">
                           {integrationConfig && (
                             <div 
