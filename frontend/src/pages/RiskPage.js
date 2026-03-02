@@ -44,6 +44,7 @@ const RiskPage = () => {
   const [activeTab, setActiveTab] = useState('governance');
   const [sqlWorkforce, setSqlWorkforce] = useState(null);
   const [sqlScores, setSqlScores] = useState(null);
+  const [unifiedRisk, setUnifiedRisk] = useState(null);
 
   useEffect(() => {
     // Fetch integration status from both Merge and workspace_integrations
@@ -62,6 +63,11 @@ const RiskPage = () => {
     // Fetch weighted insight scores
     apiClient.get('/intelligence/scores').then(res => {
       if (res.data?.scores) setSqlScores(res.data.scores);
+    }).catch(() => {});
+
+    // Fetch unified risk intelligence
+    apiClient.get('/unified/risk').then(res => {
+      if (res.data) setUnifiedRisk(res.data);
     }).catch(() => {});
   }, []);
 
