@@ -764,12 +764,11 @@ const Integrations = () => {
               data-testid="integrations-tab-connected-apps"
               className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
                 activeTab === 'connected-apps'
-                  ? 'text-blue-700'
-                  : 'hover:bg-gray-50'
+                  : ''
               }`}
               style={{ 
-                color: activeTab === 'connected-apps' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                background: activeTab === 'connected-apps' ? 'rgba(29, 78, 216, 0.08)' : 'transparent',
+                color: activeTab === 'connected-apps' ? '#FF6A00' : '#9FB0C3',
+                background: activeTab === 'connected-apps' ? 'rgba(255, 106, 0, 0.08)' : 'transparent',
                 fontWeight: activeTab === 'connected-apps' ? '600' : '500'
               }}
             >
@@ -788,12 +787,12 @@ const Integrations = () => {
               data-testid="integrations-tab-data-connections"
               className={`px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium transition-all duration-150 rounded-t-lg relative whitespace-nowrap ${
                 activeTab === 'intelligence-sources'
-                  ? 'text-blue-700'
-                  : 'hover:bg-gray-50'
+                  ? ''
+                  : ''
               }`}
               style={{ 
-                color: activeTab === 'intelligence-sources' ? 'var(--accent-primary)' : 'var(--text-muted)',
-                background: activeTab === 'intelligence-sources' ? 'rgba(29, 78, 216, 0.08)' : 'transparent',
+                color: activeTab === 'intelligence-sources' ? '#FF6A00' : '#9FB0C3',
+                background: activeTab === 'intelligence-sources' ? 'rgba(255, 106, 0, 0.08)' : 'transparent',
                 fontWeight: activeTab === 'intelligence-sources' ? '600' : '500'
               }}
             >
