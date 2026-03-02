@@ -3,7 +3,7 @@
 **Test Date:** January 26, 2026  
 **Endpoint:** POST /api/integrations/merge/link-token  
 **User:** andre.alexopoulos@gmail.com  
-**Backend URL:** https://biqc-ai-insights.preview.emergentagent.com/api
+**Backend URL:** https://beta.thestrategysquad.com/api
 
 ---
 
@@ -146,14 +146,14 @@ Since automated testing cannot complete without user authentication, please foll
 ### Option 1: Browser Console Test (Recommended)
 
 1. **Log in to the application:**
-   - Navigate to: https://biqc-ai-insights.preview.emergentagent.com/login-supabase
+   - Navigate to: https://beta.thestrategysquad.com/login-supabase
    - Log in with your credentials (andre.alexopoulos@gmail.com)
 
 2. **Open browser console** (F12 or Right-click → Inspect → Console)
 
 3. **Run this command:**
    ```javascript
-   fetch('https://biqc-ai-insights.preview.emergentagent.com/api/integrations/merge/link-token', {
+   fetch('https://beta.thestrategysquad.com/api/integrations/merge/link-token', {
      method: 'POST',
      headers: {
        'Authorization': 'Bearer ' + JSON.parse(localStorage.getItem('sb-uxyqpdfftxpkzeppqtvk-auth-token')).access_token,
@@ -197,7 +197,7 @@ Since automated testing cannot complete without user authentication, please foll
    ```
 3. Copy the token and run:
    ```bash
-   curl -X POST https://biqc-ai-insights.preview.emergentagent.com/api/integrations/merge/link-token \
+   curl -X POST https://beta.thestrategysquad.com/api/integrations/merge/link-token \
      -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE" \
      -H "Content-Type: application/json"
    ```
@@ -293,7 +293,7 @@ The endpoint is configured to request link tokens for the following Merge.dev ca
 ## Recommendations
 
 ### For Immediate Testing:
-1. **User should log in** at https://biqc-ai-insights.preview.emergentagent.com/login-supabase
+1. **User should log in** at https://beta.thestrategysquad.com/login-supabase
 2. **Run browser console test** (see Option 1 above)
 3. **Verify response** contains valid `link_token`
 
@@ -342,6 +342,6 @@ The Merge.dev integration endpoint is correctly implemented and configured. All 
 ---
 
 **Tested by:** Testing Agent (E2)  
-**Test Environment:** Production (https://biqc-ai-insights.preview.emergentagent.com)  
+**Test Environment:** Production (https://beta.thestrategysquad.com)  
 **Backend Version:** 1.0.0  
 **Report Generated:** 2026-01-26

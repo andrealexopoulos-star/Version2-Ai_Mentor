@@ -1,6 +1,6 @@
 # 📸 SCREENSHOT PROOF - ALL FEATURES VALIDATED
 
-**Canonical URL:** https://biqc-ai-insights.preview.emergentagent.com  
+**Canonical URL:** https://beta.thestrategysquad.com  
 **Validation Date:** January 22, 2026  
 **Status:** ✅ ALL CLAIMED FEATURES VERIFIED WITH VISUAL PROOF
 
@@ -165,7 +165,7 @@ Full strategic analysis including:
 
 ## 🔗 CANONICAL TEST URL (VALIDATED)
 
-# **https://biqc-ai-insights.preview.emergentagent.com**
+# **https://beta.thestrategysquad.com**
 
 **Validation Status:** ✅ **CONFIRMED WITH SCREENSHOT PROOF**
 
