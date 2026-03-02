@@ -133,6 +133,86 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         f"{cognitive_context or 'Limited data - ask questions to learn more about this user.'}\n"
     )
 
+    # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
+    integration_context = ""
+    try:
+        # Check what's connected
+        int_res = await asyncio.to_thread(lambda: sb.table('integration_accounts').select('provider, category, status').eq('user_id', user_id).execute())
+        connected = [r for r in (int_res.data or []) if r.get('status') == 'COMPLETE']
+        
+        if connected:
+            integration_context += f"\n\nCONNECTED INTEGRATIONS: {', '.join(r['provider'] for r in connected)}\n"
+            
+            # Fetch CRM deals if CRM connected
+            crm_connected = any(r.get('category') in ('crm', 'hris') for r in connected)
+            if crm_connected:
+                try:
+                    from routes.integrations import get_merge_client
+                    account = next((r for r in connected if r['category'] in ('crm', 'hris')), None)
+                    if account:
+                        deals_res = sb.table('integration_accounts').select('account_token').eq('user_id', user_id).eq('category', 'crm').execute()
+                        if deals_res.data and deals_res.data[0].get('account_token'):
+                            token = deals_res.data[0]['account_token']
+                            merge_client = get_merge_client()
+                            deals = await merge_client.get_deals(account_token=token, page_size=5)
+                            if deals.get('results'):
+                                deal_lines = []
+                                for d in deals['results'][:5]:
+                                    deal_lines.append(f"- {d.get('name','Unnamed')}: ${d.get('amount',0)} ({d.get('status','open')}), stage: {d.get('stage',{}).get('name','unknown')}")
+                                integration_context += f"\nRECENT CRM DEALS:\n" + "\n".join(deal_lines) + "\n"
+                except Exception as e:
+                    logger.debug(f"CRM data fetch for SoundBoard: {e}")
+
+            # Fetch accounting summary if connected
+            acct_connected = any(r.get('category') == 'accounting' for r in connected)
+            if acct_connected:
+                try:
+                    acct_res = sb.table('integration_accounts').select('account_token').eq('user_id', user_id).eq('category', 'accounting').execute()
+                    if acct_res.data and acct_res.data[0].get('account_token'):
+                        token = acct_res.data[0]['account_token']
+                        merge_client = get_merge_client()
+                        invoices = await merge_client.get_invoices(account_token=token, page_size=5)
+                        if invoices.get('results'):
+                            inv_lines = [f"- Invoice {i.get('number','?')}: ${i.get('total_amount',0)} ({i.get('status','unknown')}) due {i.get('due_date','?')}" for i in invoices['results'][:5]]
+                            integration_context += f"\nRECENT INVOICES:\n" + "\n".join(inv_lines) + "\n"
+                        payments = await merge_client.get_payments(account_token=token, page_size=3)
+                        if payments.get('results'):
+                            pay_lines = [f"- Payment ${p.get('total_amount',0)} on {p.get('transaction_date','?')}" for p in payments['results'][:3]]
+                            integration_context += f"\nRECENT PAYMENTS:\n" + "\n".join(pay_lines) + "\n"
+                except Exception as e:
+                    logger.debug(f"Accounting data fetch for SoundBoard: {e}")
+        else:
+            integration_context = "\n\nNO INTEGRATIONS CONNECTED. User has not connected CRM, accounting, or email yet.\n"
+    except Exception as e:
+        logger.debug(f"Integration context fetch: {e}")
+
+    # ═══ MARKETING BENCHMARK DATA ═══
+    marketing_context = ""
+    try:
+        bench = sb.table('marketing_benchmarks').select('scores, competitors, summary').eq('tenant_id', user_id).eq('is_current', True).execute()
+        if bench.data and bench.data[0].get('scores'):
+            b = bench.data[0]
+            scores = b['scores']
+            marketing_context = f"\n\nMARKETING BENCHMARK SCORES:\n"
+            for pillar, score in scores.items():
+                if pillar != 'overall' and isinstance(score, (int, float)):
+                    marketing_context += f"- {pillar.replace('_', ' ').title()}: {round(score * 100)}%\n"
+            marketing_context += f"Overall: {round(scores.get('overall', 0) * 100)}%\n"
+            if b.get('competitors'):
+                marketing_context += f"Benchmarked against: {', '.join(c.get('name','?') for c in b['competitors'][:3])}\n"
+    except Exception:
+        pass
+
+    # ═══ AVAILABLE ACTIONS ═══
+    actions_context = "\n\nAVAILABLE ACTIONS (tell user about these when relevant):\n"
+    actions_context += "- 'Create a logo' → generates AI logo\n"
+    actions_context += "- 'Write a blog post about [topic]' → generates SEO blog\n"
+    actions_context += "- 'Create a Google Ad for [product]' → generates ad copy\n"
+    actions_context += "- 'Write a social media post' → generates LinkedIn/Twitter/Facebook\n"
+    actions_context += "- 'Create a job description for [role]' → generates job posting\n"
+    actions_context += "- 'Run a benchmark' → compares against competitors\n"
+    actions_context += "- 'Generate a report' → creates downloadable PDF report\n"
+
     # Fetch prompt from DB, fall back to hardcoded
     soundboard_prompt = await get_prompt("mysoundboard_v1", _SOUNDBOARD_FALLBACK)
     fact_block = f"\n\nGLOBAL FACT AUTHORITY:\n{facts_prompt}\nDo NOT re-ask any fact listed above.\n" if facts_prompt else ""
