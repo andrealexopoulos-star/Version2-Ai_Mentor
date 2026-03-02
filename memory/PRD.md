@@ -2,73 +2,53 @@
 ## 2 March 2026
 
 ## Platform Overview
-BIQc is an AI-driven "Cognition-as-a-Platform" for SMBs. The architecture follows a strict backend-first approach: all intelligence computation happens in SQL functions, the frontend is a pure renderer.
+BIQc: AI-driven Cognition-as-a-Platform for SMBs. Architecture: backend-first — ALL computation in SQL functions, Python is thin pass-through, frontend renders only.
 
-## Architecture: Cognition Core (Backend-First)
+## Cognition Core v2 — Enterprise Grade (BUILT)
 
-### Completed Engines (SQL + FastAPI)
+### Master SQL Function
+`ic_generate_cognition_contract(tenant_id, tab)` — single function that orchestrates:
+1. Evidence Engine (freshness-weighted integrity scoring)
+2. Integration Health (SLA breach + degradation history)
+3. Instability Engine (RVI/EDS/CDR/ADS via ic_calculate_risk_baseline)
+4. Delta computation (vs yesterday's snapshot)
+5. Propagation Engine (compound chains A→B→C with amplification)
+6. Decision Consequence Evaluation (variance normalization + false positive detection)
+7. Bayesian Confidence Recalibration (decay + min 3 checkpoint gating)
+8. Drift Detection (Z-score >2 std deviations)
+9. Automation action attachment
+10. Evidence gating (blocks when integrity < 0.25)
 
-| Engine | Status | Location |
-|--------|--------|----------|
-| Evidence Engine | BUILT | fn_assemble_evidence_pack (SQL) |
-| Instability Engine | BUILT | ic_calculate_risk_baseline (SQL, migration 033/034) |
-| Propagation Engine | BUILT | fn_compute_propagation_map (SQL) |
-| Decision Consequence Engine | BUILT | cognition_decisions + outcome_checkpoints + fn_evaluate_pending_checkpoints (SQL) |
-| Confidence Recalibration | BUILT | fn_recalibrate_confidence (SQL) |
-| Automation Execution Engine | BUILT | automation_actions + automation_executions (SQL + FastAPI) |
-| Integration Health Monitor | BUILT | integration_health + fn_check_integration_health (SQL) |
-| Unified Cognition Contract | BUILT | /api/cognition/{tab} (FastAPI) |
+### Tables (Migration 044)
+integration_health, integration_health_history, evidence_packs, cognition_decisions, outcome_checkpoints, propagation_rules, automation_actions, automation_executions, instability_snapshots, confidence_recalibrations, cognition_telemetry, drift_detection_log
+
+### SQL Functions (Migration 045)
+fn_log_telemetry, fn_assemble_evidence_pack, fn_check_integration_health, fn_compute_propagation_map, fn_evaluate_pending_checkpoints, fn_recalibrate_confidence, fn_detect_drift, fn_snapshot_daily_instability, ic_generate_cognition_contract
 
 ### Deployment Status
-- SQL Migrations 044 + 045: **READY, NOT YET DEPLOYED TO SUPABASE**
-- Backend routes: **DEPLOYED** (cognition_contract.py registered in server.py)
-- See `/app/memory/COGNITION_DEPLOYMENT_GUIDE.md` for deployment steps
+- SQL Migrations 044 + 045: **READY, AWAITING SUPABASE DEPLOYMENT**
+- Backend routes: **DEPLOYED** (17 endpoints, all auth-gated)
+- See `/app/memory/COGNITION_DEPLOYMENT_GUIDE.md`
 
-### Cognition Contract Response Structure
-```json
-{
-  "evidence_pack": { "integrity_score", "missing_sources", "source_count" },
-  "instability": { "rvi", "eds", "cdr", "ads", "composite", "risk_band", "deltas", "trajectory" },
-  "propagation_map": [{ "source_domain", "target_domain", "mechanism", "probability", "severity" }],
-  "decision_effectiveness": { "checkpoints_processed", "results" },
-  "confidence": { "score", "reason", "trend", "accuracy_rate" },
-  "automation_actions": [{ "action_type", "label", "requires_confirmation", "integration_required" }],
-  "tab_insights": [{ "type", "title", "detail", "severity", "evidence_refs" }],
-  "evidence_refs": { ... }
-}
-```
+## API Endpoints — Cognition
+| Endpoint | Method | SQL Function Called |
+|----------|--------|-------------------|
+| /api/cognition/{tab} | GET | ic_generate_cognition_contract |
+| /api/cognition/decisions | GET/POST | Direct table access |
+| /api/cognition/automation/execute | POST | Direct table + health check |
+| /api/cognition/automation/history | GET | Direct table |
+| /api/cognition/integration-health | GET | fn_check_integration_health |
+| /api/cognition/integration-health/history | GET | Direct table |
+| /api/cognition/snapshot-instability | POST | fn_snapshot_daily_instability |
+| /api/cognition/drift | GET | fn_detect_drift |
+| /api/cognition/telemetry | GET | Direct table |
 
-## Previous Work (Earlier Sessions)
-- Integrations page dark theme overhaul + Shopify/WooCommerce
-- Unified Intelligence Frontend (Revenue/Risk/Operations pages)
-- Marketing Automation UI + A/B Testing UI
-- SoundBoard RAG upgrade
-- Super Admin Console
-- DSEE v2.1
-
-## Remaining — Phase B (Frontend, After SQL Deployed)
-
-### P0 (After Migrations Deployed)
-- Fix blank post-login screen (skeleton loaders)
-- Restructure BIQc Insights tabs to render cognition contract
-- Add integration health banners + reconnect CTAs
-- SoundBoard integration-awareness (call evidence pack before answering)
-- Score transparency modals (formula, weights, thresholds)
-
-### P1
-- Admin nav restructure (LEGAL section + Knowledge Base)
-- Weekly check-in calendar panel
-- Website scan industry confirmation
-- Revenue page refresh toggle fix
-- Concentration insight with named clients + % + actions
-
-### P2
-- SMB terminology enforcement across all pages
-- Marketing tools detection
-- Mobile App Build-out
-- CSS Consolidation
-
-## Known Issues
-- Production auth (biqc.thestrategysquad.com) blocked on Azure env vars
-- Supabase auth credentials may not work in Emergent preview
-- SQL migrations 044/045 pending deployment
+## Phase B — Frontend (After SQL Deployed)
+- Fix blank post-login screen
+- Restructure tabs to render cognition contract
+- Score transparency modals
+- Integration health banners
+- SoundBoard evidence injection
+- Admin nav restructure
+- Weekly check-in calendar
+- SMB terminology enforcement
