@@ -1078,7 +1078,7 @@ const Integrations = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{key}</span>
-                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
                             </div>
                             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                               {integration.category} • Connected via Merge.dev
