@@ -934,6 +934,12 @@ const Integrations = () => {
                               {isConnected && (
                                 <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
                               )}
+                              {integration.comingSoon && !isConnected && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono uppercase tracking-wider" 
+                                      style={{ background: '#FF6A00/10', color: '#FF6A00', border: '1px solid rgba(255, 106, 0, 0.2)' }}>
+                                  Soon
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                               {integration.description}
