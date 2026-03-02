@@ -46,7 +46,7 @@ const ABTestingPage = () => {
 
   const fetchExperiments = async () => {
     try {
-      const res = await apiClient.get('/ab-testing/experiments');
+      const res = await apiClient.get('/experiments/list');
       setExperiments(res.data?.experiments || []);
     } catch {
       // Fallback: show empty state
@@ -59,7 +59,10 @@ const ABTestingPage = () => {
     if (!form.name.trim()) { toast.error('Name is required'); return; }
     setCreating(true);
     try {
-      const res = await apiClient.post('/ab-testing/experiments', form);
+      const res = await apiClient.post('/experiments/create', {
+        name: form.name,
+        description: form.description,
+      });
       toast.success('Experiment created');
       setExperiments(prev => [res.data, ...prev]);
       setShowCreate(false);
@@ -73,7 +76,7 @@ const ABTestingPage = () => {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await apiClient.patch(`/ab-testing/experiments/${id}`, { status: newStatus });
+      await apiClient.post(`/experiments/${id}/${newStatus === 'active' ? 'start' : 'stop'}`);
       setExperiments(prev => prev.map(e => e.id === id ? { ...e, status: newStatus } : e));
       toast.success(`Experiment ${newStatus}`);
     } catch (err) {

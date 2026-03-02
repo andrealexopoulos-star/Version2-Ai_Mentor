@@ -42,7 +42,7 @@ const MarketingAutomationPage = () => {
     setGenerating(true);
     setResult(null);
     try {
-      const res = await apiClient.post('/marketing-automation/generate', {
+      const res = await apiClient.post('/automation/generate', {
         content_type: selectedType,
         topic: topic.trim(),
         tone,
