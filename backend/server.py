@@ -214,6 +214,9 @@ api_router.include_router(rag_router)
 from routes.marketing_automation import router as marketing_auto_router
 api_router.include_router(marketing_auto_router)
 
+from routes.platform_services import router as platform_services_router
+api_router.include_router(platform_services_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
