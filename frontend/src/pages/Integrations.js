@@ -529,6 +529,11 @@ const Integrations = () => {
       return;
     }
     
+    if (integration.comingSoon) {
+      toast.info(`${integration.name} integration coming soon! We'll notify you when it's available.`);
+      return;
+    }
+
     if (integration.viaMerge) {
       // KNOWLEDGE BASE (File Storage) uses separate category
       if (integration.category === 'knowledge') {
