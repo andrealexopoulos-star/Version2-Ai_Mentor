@@ -312,57 +312,64 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
 
 @router.get("/integrations/merge/connected")
 async def get_connected_merge_integrations(current_user: dict = Depends(get_current_user)):
-    """Get all connected Merge.dev integrations for the workspace (P0: workspace-scoped)"""
-    from workspace_helpers import get_user_account, get_account_integrations
-    
+    """Get all connected Merge.dev integrations — checks BOTH workspace and direct user_id."""
     try:
         user_id = current_user["id"]
-        
-        # P0 FIX: Get workspace for user
-        account = await get_user_account(get_sb(), user_id)
-        if not account:
-            logger.warning(f"⚠️  User {user_id} has no workspace - returning empty integrations")
-            return {"integrations": {}}
-        
-        account_id = account["id"]
-        account_name = account["name"]
-        
-        # P0 FIX: Fetch integrations by workspace (not user)
-        integration_records = await get_account_integrations(get_sb(), account_id)
-        
         integrations = {}
-        for record in integration_records:
+        
+        # PATH 1: Check integration_accounts directly by user_id (most reliable)
+        direct_result = get_sb().table("integration_accounts").select("*").eq("user_id", user_id).execute()
+        for record in (direct_result.data or []):
             provider = record.get("provider", "unknown")
             category = record.get("category", "unknown")
-            merge_account_id = record.get("merge_account_id")
-            
-            # FILTER: Exclude email category from Merge integrations
-            # Email handled by Supabase Edge Functions (Outlook/Gmail), not Merge
             if category == "email":
-                logger.info(f"   Skipping {provider} (email category - not a Merge integration)")
                 continue
-            
-            # Only include integrations with merge_account_id (true Merge integrations)
-            if not merge_account_id:
-                logger.info(f"   Skipping {provider} (no merge_account_id - not a Merge integration)")
-                continue
-            
             integrations[provider] = {
                 "provider": provider,
                 "category": category,
                 "connected": True,
                 "connected_at": record.get("connected_at") or record.get("created_at"),
-                "merge_account_id": merge_account_id,
-                "workspace_id": account_id,
-                "workspace_name": account_name
+                "merge_account_id": record.get("merge_account_id"),
+                "account_token": record.get("account_token"),
             }
         
-        logger.info(f"✅ Found {len(integrations)} workspace integrations for {account_name} ({account_id})")
+        # PATH 2: Also check via workspace if available
+        if not integrations:
+            from workspace_helpers import get_user_account, get_account_integrations
+            account = await get_user_account(get_sb(), user_id)
+            if account:
+                account_id = account["id"]
+                integration_records = await get_account_integrations(get_sb(), account_id)
+                for record in integration_records:
+                    provider = record.get("provider", "unknown")
+                    category = record.get("category", "unknown")
+                    if category == "email" or not record.get("merge_account_id"):
+                        continue
+                    integrations[provider] = {
+                        "provider": provider,
+                        "category": category,
+                        "connected": True,
+                        "connected_at": record.get("connected_at") or record.get("created_at"),
+                        "merge_account_id": record.get("merge_account_id"),
+                    }
+        
+        # PATH 3: Check email connections separately
+        email_result = get_sb().table("email_connections").select("provider, status").eq("user_id", user_id).execute()
+        for record in (email_result.data or []):
+            if record.get("status") in ("connected", "active", "COMPLETE"):
+                provider = record.get("provider", "email")
+                integrations[f"email_{provider}"] = {
+                    "provider": provider,
+                    "category": "email",
+                    "connected": True,
+                }
+        
+        logger.info(f"Found {len(integrations)} integrations for user {user_id}")
         return {"integrations": integrations}
         
     except Exception as e:
-        logger.error(f"❌ Error fetching connected integrations: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error fetching integrations: {str(e)}")
+        return {"integrations": {}}
 
 
 # ==================== MERGE.DEV CRM DATA ACCESS ====================
