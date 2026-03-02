@@ -58,7 +58,6 @@ ALTER FUNCTION prevent_governance_update() SET search_path = '';
 ALTER FUNCTION ic_prevent_weight_update() SET search_path = '';
 ALTER FUNCTION ic_validate_snapshot_correlation(UUID) SET search_path = '';
 ALTER FUNCTION rag_search(UUID, vector, INT, TEXT[], FLOAT) SET search_path = '';
-ALTER FUNCTION is_spine_enabled_for(UUID) SET search_path = '';
 ALTER FUNCTION reset_monthly_counters() SET search_path = '';
 
 -- Handle functions that may have different signatures
