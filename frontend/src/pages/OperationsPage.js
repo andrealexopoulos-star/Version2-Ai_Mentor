@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug } from 'lucide-react';
+import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 
 const SORA = "'Cormorant Garamond', Georgia, serif";
@@ -16,19 +16,24 @@ const OperationsPage = () => {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [integrations, setIntegrations] = useState(null);
+  const [unifiedOps, setUnifiedOps] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [snapRes, intRes] = await Promise.allSettled([
+        const [snapRes, intRes, unifiedRes] = await Promise.allSettled([
           apiClient.get('/snapshot/latest'),
           apiClient.get('/integrations/merge/connected'),
+          apiClient.get('/unified/operations'),
         ]);
         if (snapRes.status === 'fulfilled' && snapRes.value.data?.cognitive) {
           setSnapshot(snapRes.value.data.cognitive);
         }
         if (intRes.status === 'fulfilled' && intRes.value.data) {
           setIntegrations(intRes.value.data);
+        }
+        if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
+          setUnifiedOps(unifiedRes.value.data);
         }
       } catch {} finally { setLoading(false); }
     };
