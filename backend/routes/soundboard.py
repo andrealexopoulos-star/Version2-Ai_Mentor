@@ -258,7 +258,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
 
-    system_message = soundboard_prompt + fact_block + rag_context + memory_context + f"\n\nCONTEXT:\n{user_context}"
+    system_message = soundboard_prompt + fact_block + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {
