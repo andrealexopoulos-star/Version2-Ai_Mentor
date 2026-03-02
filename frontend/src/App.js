@@ -75,6 +75,7 @@ import ForensicAuditPage from './pages/ForensicAuditPage';
 import DSEEPage from './pages/DSEEPage';
 import MarketingIntelPage from './pages/MarketingIntelPage';
 import ObservabilityPage from './pages/ObservabilityPage';
+import SupportConsolePage from './pages/SupportConsolePage';
 import SubscribePage from './pages/SubscribePage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import ResetPassword from './pages/ResetPassword';
