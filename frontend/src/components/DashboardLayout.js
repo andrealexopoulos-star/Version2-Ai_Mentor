@@ -192,6 +192,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
       { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
       { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
+      { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
+      { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
     ]},
     { id: 'governance', label: 'Governance', items: [
       { icon: FileText, label: 'Reports', path: '/reports' },
