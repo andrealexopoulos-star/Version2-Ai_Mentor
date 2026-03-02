@@ -928,7 +928,7 @@ const Integrations = () => {
                                 {integration.name}
                               </h3>
                               {isConnected && (
-                                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
                               )}
                             </div>
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
@@ -1171,9 +1171,9 @@ const Integrations = () => {
                   if (isConnected) {
                     return (
                       <div className="space-y-4">
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50">
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          <span className="text-sm font-medium text-green-700">Connected</span>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
+                          <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
+                          <span className="text-sm font-medium text-[#10B981]">Connected</span>
                         </div>
                         
                         {selectedIntegration.id === 'outlook' && connectionSource === 'edge' && (
@@ -1200,7 +1200,7 @@ const Integrations = () => {
                                 onClick={handleOutlookDisconnect}
                                 disabled={disconnecting}
                                 data-testid="integrations-outlook-disconnect-button"
-                                className="w-full btn-secondary text-red-600"
+                                className="w-full btn-secondary text-[#EF4444]"
                               >
                                 <LogOut className="w-4 h-4 mr-2" />
                                 Disconnect
