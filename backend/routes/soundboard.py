@@ -301,7 +301,43 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 "messages": new_messages, "created_at": now, "updated_at": now
             })
 
-        return {"reply": response, "conversation_id": conversation_id, "conversation_title": conversation_title}
+        # ═══ AUTO SESSION SUMMARISATION ═══
+        try:
+            from intelligence_spine import _get_cached_flag
+            if _get_cached_flag('memory_layer_enabled'):
+                summary_text = f"User discussed: {req.message[:100]}. BIQc responded with observations about their business context."
+                sb.table('context_summaries').insert({
+                    'tenant_id': user_id,
+                    'summary_type': 'conversation',
+                    'summary_text': summary_text,
+                    'source_count': 1,
+                    'key_outcomes': [{'topic': req.message[:50], 'response_length': len(response) if isinstance(response, str) else 0}],
+                }).execute()
+        except Exception:
+            pass
+
+        # ═══ MARKETING ACTION DELEGATION ═══
+        action_keywords = {
+            'run_benchmark': ['benchmark my', 'compare me to', 'how do i compare', 'competitor analysis'],
+            'generate_ad': ['create an ad', 'write an ad', 'google ad'],
+            'generate_blog': ['write a blog', 'create a blog', 'blog post about'],
+            'generate_social': ['create a social post', 'write a social', 'post on linkedin'],
+        }
+        delegated_action = None
+        for action, keywords in action_keywords.items():
+            if any(kw in msg_lower for kw in keywords):
+                delegated_action = action
+                break
+
+        execution_id = str(uuid.uuid4())[:8] if delegated_action else None
+
+        return {
+            "reply": response,
+            "conversation_id": conversation_id,
+            "conversation_title": conversation_title,
+            "delegated_action": delegated_action,
+            "execution_id": execution_id,
+        }
 
     except Exception as e:
         logger.error(f"Soundboard chat error: {e}")
