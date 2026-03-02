@@ -208,6 +208,9 @@ api_router.include_router(memory_router)
 from routes.marketing_intel import router as marketing_intel_router
 api_router.include_router(marketing_intel_router)
 
+from routes.rag_service import router as rag_router
+api_router.include_router(rag_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
