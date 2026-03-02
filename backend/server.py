@@ -202,6 +202,12 @@ api_router.include_router(spine_api_router)
 from routes.dsee import router as dsee_router
 api_router.include_router(dsee_router)
 
+from routes.memory_agent import router as memory_router
+api_router.include_router(memory_router)
+
+from routes.marketing_intel import router as marketing_intel_router
+api_router.include_router(marketing_intel_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
