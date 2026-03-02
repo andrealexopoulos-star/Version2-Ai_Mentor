@@ -8,7 +8,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biqc-ai-insights.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://beta.thestrategysquad.com')
 
 # Test credentials - andre@thestrategysquad.com.au
 TEST_EMAIL = "andre@thestrategysquad.com.au"
