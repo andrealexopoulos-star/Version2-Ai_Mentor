@@ -217,6 +217,9 @@ api_router.include_router(marketing_auto_router)
 from routes.platform_services import router as platform_services_router
 api_router.include_router(platform_services_router)
 
+from routes.super_admin import router as super_admin_router
+api_router.include_router(super_admin_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
