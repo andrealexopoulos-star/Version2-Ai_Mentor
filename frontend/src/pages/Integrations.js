@@ -350,6 +350,7 @@ const Integrations = () => {
     { id: 'financial', label: 'Financial', icon: '💰' },
     { id: 'hris', label: 'HRIS', icon: '👔' },
     { id: 'ats', label: 'ATS', icon: '📋' },
+    { id: 'ecommerce', label: 'E-Commerce', icon: '🛒' },
     { id: 'knowledge', label: 'Knowledge Base', icon: '📚' }
   ];
 
@@ -443,6 +444,28 @@ const Integrations = () => {
       tier: 'free',
       popular: true,
       viaMerge: true
+    },
+    // E-Commerce
+    {
+      id: 'shopify',
+      name: 'Shopify',
+      description: 'Sync orders, products, and customer data from your Shopify store',
+      category: 'ecommerce',
+      logo: 'SH',
+      color: '#96BF48',
+      tier: 'free',
+      popular: true,
+      comingSoon: true
+    },
+    {
+      id: 'woocommerce',
+      name: 'WooCommerce',
+      description: 'WordPress e-commerce data and analytics',
+      category: 'ecommerce',
+      logo: 'WC',
+      color: '#96588A',
+      tier: 'free',
+      comingSoon: true
     },
     // Knowledge Base (File Storage)
     {
