@@ -1,7 +1,7 @@
 ## BIQc Backend Performance Test Report
 
 Date: 2026-02-17  
-Platform: https://biqc-ai-insights.preview.emergentagent.com  
+Platform: https://beta.thestrategysquad.com  
 Test Type: Backend API Performance Testing  
 
 ### 🎯 OBJECTIVE
