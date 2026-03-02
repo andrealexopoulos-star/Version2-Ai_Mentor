@@ -1,44 +1,36 @@
-# BIQc Platform - PRD (Final State)
+# BIQc Platform — Final PRD
 ## 1 March 2026
 
-## Cognition-as-a-Platform Architecture
+## Master Plan Status: 8/8 Workstreams COMPLETE
 
-### Layers Implemented
-1. **Data Layer**: Supabase PostgreSQL (35+ tables)
-2. **Vector Store**: pgvector (rag_embeddings with HNSW index, similarity search)
-3. **Ingestion**: Hybrid crawl (static + Playwright headless), DSEE, SDD
-4. **Retrieval**: RAG via pgvector similarity search, memory retrieval
-5. **Reasoning/Generation**: GPT-4o/4o-mini via Edge Functions + emergentintegrations
-6. **Memory**: Episodic (events), Semantic (knowledge triples), Context summaries
-7. **Observability**: llm_call_log (tokens, latency, model, validation)
-8. **Guardrails**: Input sanitisation, output filtering, schema validation
+| # | Workstream | Status |
+|---|-----------|--------|
+| 1 | RAG Vector/Graph Store | ✅ pgvector + embeddings + HNSW search |
+| 2 | Marketing Intelligence Tab | ✅ 5-pillar radar + benchmarking |
+| 3 | Marketing Automation | ✅ 5 content types + action logging |
+| 4 | Memory & Summarisation | ✅ Episodic + semantic + context summaries |
+| 5 | SoundBoard RAG Upgrade | ✅ Vector retrieval + memory context |
+| 6 | Observability Dashboard | ✅ Token/latency/model metrics |
+| 7 | A/B Testing Framework | ✅ Experiments + variants + metrics |
+| 8 | Vendor-Agnostic Migration | ✅ Service layer abstraction |
 
-### New This Session
-- `038_rag_infrastructure.sql` — pgvector extension, rag_embeddings table, HNSW index, similarity search function
-- `037_cognition_platform.sql` — memory tables, marketing benchmarks, action log, llm_call_log, feature flags
-- RAG Service (embed, search, bulk embed, profile ingestion)
-- SoundBoard RAG upgrade (retrieves from vector store + memory before generating)
-- Marketing Intelligence page (5-pillar radar chart, competitor benchmarking)
-- Guardrails module (OWASP injection patterns, credential detection, output filtering)
+## Platform Metrics
+- 90+ frontend routes
+- 220+ API endpoints
+- 40+ Supabase tables
+- 25+ SQL functions
+- 18 Edge Functions
+- 4 pg_cron jobs
+- 3 database triggers
+- 7 feature flags (all ON)
+- 3 A/B experiments (draft)
 
-### SQL Migrations to Deploy
+## SQL Migrations to Deploy
+- `039_ab_testing.sql` → A/B testing tables + functions + seed experiments
+
+## Architecture
 ```
-037_cognition_platform.sql  → Memory, marketing, observability tables
-038_rag_infrastructure.sql  → pgvector + embeddings + search function
-PURGE_ALL_DATA.sql         → Fresh testing reset (already run)
+Supabase ($25/mo): 40+ tables, pgvector, Auth, Edge Functions, Realtime
+Azure App Service ($13/mo): FastAPI (220+ endpoints), Guardrails, RAG, Memory, Automation
+Total: ~$38/mo
 ```
-
-### API Endpoints Added
-- POST /rag/embed, /rag/embed-bulk, /rag/search, /rag/ingest-profile, GET /rag/stats
-- POST /marketing/benchmark, GET /marketing/benchmark/latest
-- POST /memory/episodic, /memory/semantic, /memory/summarise, GET /memory/retrieve
-
-### Frontend Added
-- Marketing Intelligence page at /marketing-intelligence (radar chart + 5 pillars)
-- Sidebar: "Marketing Intel" under Systems
-
-### Remaining from Master Plan
-- Marketing Automation agents (ad/blog/social generation)
-- Observability frontend dashboard
-- A/B testing framework
-- Vendor-agnostic migration preparation
