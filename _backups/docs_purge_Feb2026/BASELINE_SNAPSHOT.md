@@ -9,8 +9,8 @@
 ## CURRENT ENVIRONMENT
 
 ### **URLs (LOCKED - NO CHANGES)**
-- **Frontend:** `https://biqc-ai-insights.preview.emergentagent.com`
-- **Backend:** `https://biqc-ai-insights.preview.emergentagent.com/api`
+- **Frontend:** `https://beta.thestrategysquad.com`
+- **Backend:** `https://beta.thestrategysquad.com/api`
 - **Supabase:** `https://uxyqpdfftxpkzeppqtvk.supabase.co`
 
 ### **Supabase Project**

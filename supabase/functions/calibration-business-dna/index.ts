@@ -134,66 +134,53 @@ function extractIdentitySignals(allContent: string, websiteUrl: string) {
   return signals;
 }
 
-const EXTRACTION_PROMPT = `You are a Business Intelligence Analyst performing a forensic identity extraction. Extract EVERY possible business data point from the provided content.
+const EXTRACTION_PROMPT = `You are a data extraction agent tasked with profiling a business domain. You will be given retrieved passages, scraped pages or API responses related to a domain. Each passage includes its source URL.
 
-You must fill ALL fields. If information is not explicitly available, make intelligent inferences based on context. If truly impossible to determine, write "Not available from current data".
+Your goal is to extract structured information about the business. Do not invent or infer any values. Populate a field only when there is direct evidence in the provided context; otherwise set the field to null. When data appears ambiguous, prefer the most authoritative source (e.g. official website over secondary blogs). For each populated field, include the URL of the source used.
 
 OUTPUT MUST BE THIS EXACT JSON:
 {
-  "business_name": "Company name as it appears on the website",
-  "trading_name": "Alternative/trading name if different from legal name",
-  "brand_name": "Brand name if different from business name",
-  "industry": "Primary industry/sector",
-  "business_stage": "startup|early_revenue|growth|established",
-  "business_type": "LLC|Sole Trader|Partnership|Pty Ltd|etc",
-  "location": "Full address if found, otherwise City, State, Country",
-  "address": "Physical street address if found",
-  "city": "City name",
-  "state": "State/Province",
-  "country": "Country",
-  "website": "URL",
-  "abn": "Australian Business Number if found (11 digits)",
-  "acn": "Australian Company Number if found (9 digits)",
-  "target_market": "Detailed description of who they sell to",
-  "ideal_customer_profile": "Specific profile of their perfect customer",
-  "business_model": "SaaS|eCommerce|Services|Marketplace|Subscription|Hybrid|etc",
-  "geographic_focus": "Local|Regional|National|Global with specifics",
-  "customer_count": "Estimate based on available data",
-  "revenue_range": "Estimate based on team size, pricing, market position",
-  "main_products_services": "Detailed description of ALL products and services",
-  "unique_value_proposition": "What makes them different",
-  "competitive_advantages": "Specific competitive moats",
-  "pricing_model": "Subscription|One-time|Hourly|Project|Retainer|Freemium|etc",
-  "sales_cycle_length": "Estimate based on business type and market",
-  "team_size": "1-2|2-5|5-10|10-25|25-50|50+",
-  "hiring_status": "Actively hiring|Planning|Not now",
-  "founder_background": "Founder background and expertise",
-  "key_team_members": "Key people and their roles",
-  "team_strengths": "What the team is good at",
-  "team_gaps": "Missing skills or roles",
-  "mission_statement": "Why does this business exist?",
-  "vision_statement": "What does success look like in 5-10 years?",
-  "short_term_goals": "Goals for the next 6-12 months",
-  "long_term_goals": "Goals for the next 2-5 years",
-  "main_challenges": "Primary obstacles or constraints",
-  "growth_strategy": "How they plan to grow",
-  "growth_goals": "revenue_growth|market_expansion|product_diversification|operational_efficiency|team_scaling|profitability",
-  "risk_profile": "conservative|moderate|aggressive",
-  "competitive_moat": "What protects them from competition",
-  "social_media_links": { "linkedin": "", "facebook": "", "instagram": "", "twitter": "", "youtube": "" },
-  "contact_email": "Primary contact email",
-  "contact_phone": "Primary phone number",
-  "services_count": 0,
-  "testimonials": "Summary of testimonials/case studies if found",
-  "certifications": "Professional certifications or accreditations"
+  "business_name": null,
+  "trading_name": null,
+  "industry": null,
+  "services_offered": [],
+  "market_position": null,
+  "team_members": [],
+  "competitors": [],
+  "revenue_range": null,
+  "customer_count": null,
+  "team_size": null,
+  "location": null,
+  "address": null,
+  "city": null,
+  "state": null,
+  "country": null,
+  "website": null,
+  "abn": null,
+  "acn": null,
+  "target_market": null,
+  "business_model": null,
+  "main_products_services": null,
+  "unique_value_proposition": null,
+  "pricing_model": null,
+  "mission_statement": null,
+  "vision_statement": null,
+  "contact_email": null,
+  "contact_phone": null,
+  "social_media_links": { "linkedin": null, "facebook": null, "instagram": null, "twitter": null },
+  "certifications": null,
+  "sources": {}
 }
 
 RULES:
-- Be thorough. Every field must have meaningful content.
-- Infer intelligently from context. Australian English.
+- No Intelligent Inference: Never infer missing data. If you cannot find explicit evidence, return null.
+- Multiple Sources: If multiple sources provide conflicting information, choose the source with the highest authority (official site > government registry > news article).
+- Cite Sources: For each non-null field, add an entry in "sources" mapping the field name to an array of source URLs used.
+- team_members format: [{"name": "...", "role": "...", "source": "..."}]
+- No Extra Fields: Do not add any keys beyond the defined schema.
 - Extract EXACT ABN/ACN if visible on any page.
 - Extract EXACT address, phone, email as they appear.
-- Do NOT leave fields empty. "Not available from current data" only if truly impossible.`;
+- Australian English.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

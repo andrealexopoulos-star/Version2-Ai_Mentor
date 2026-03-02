@@ -129,6 +129,12 @@ button, a, input, select, textarea {
     font-size: 17px !important;
     font-weight: 700 !important;
     width: 100% !important;
+    background-color: #FF6A00 !important;
+    background: #FF6A00 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    -webkit-appearance: none !important;
   }
   
   /* Form spacing */

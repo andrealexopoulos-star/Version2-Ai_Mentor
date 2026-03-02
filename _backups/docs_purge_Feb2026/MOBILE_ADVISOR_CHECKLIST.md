@@ -1,5 +1,5 @@
 # Mobile-First Advisor Page Checklist
-## For: https://biqc-ai-insights.preview.emergentagent.com/advisor
+## For: https://beta.thestrategysquad.com/advisor
 
 ---
 

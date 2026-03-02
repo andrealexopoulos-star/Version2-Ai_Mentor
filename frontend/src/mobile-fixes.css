@@ -94,9 +94,7 @@ aside [class*="overflow-y"] {
     overflow-y: visible !important;
   }
 
-  h1 { font-size: 1.75rem; line-height: 1.2; }
-  h2 { font-size: 1.5rem; line-height: 1.25; }
-  h3 { font-size: 1.25rem; line-height: 1.3; }
+  /* Typography handled by mobile-reconstruction.css */
   p  { line-height: 1.5; }
 
   /* ========================================
@@ -176,10 +174,6 @@ aside [class*="overflow-y"] {
   }
 
   .max-w-4xl { max-width: 100% !important; }
-
-  .p-8 { padding: 1rem !important; }
-  .p-6 { padding: 0.75rem !important; }
-  .mb-8 { margin-bottom: 1.5rem !important; }
 
   img {
     max-width: 100%;

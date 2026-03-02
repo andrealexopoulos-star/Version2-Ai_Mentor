@@ -78,10 +78,12 @@
     max-width: fit-content !important;
   }
 
-  /* ═══ CTA BUTTONS ═══ */
+  /* ═══ CTA BUTTONS — scoped to marketing pages only ═══ */
   
   a[data-testid="hero-cta"],
-  button[data-testid="hero-cta"] {
+  a[data-testid="blog-cta"],
+  a[data-testid="article-cta"],
+  a[data-testid="kb-cta"] {
     min-height: 48px !important;
     font-size: 15px !important;
     border-radius: 14px !important;
@@ -124,5 +126,26 @@
   h1, h2, h3 {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Login/Register submit buttons — protect from all CSS overrides */
+  [data-testid="login-submit-btn"],
+  [data-testid="register-submit-btn"],
+  button[type="submit"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    min-height: 48px !important;
+    background: #FF6A00 !important;
+    background-color: #FF6A00 !important;
+    color: white !important;
+    border-radius: 12px !important;
+    font-size: 15px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(255,106,0,0.3) !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
   }
 }

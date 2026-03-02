@@ -227,7 +227,7 @@ ${JSON.stringify(ctx, null, 2)}`;
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.6,
+        temperature: 0.35,
         max_tokens: 1500,
       }),
     });

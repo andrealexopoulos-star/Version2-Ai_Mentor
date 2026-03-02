@@ -46,7 +46,7 @@
 
 **DO THIS FIRST - Fix Your Session:**
 
-1. **Go to:** `https://biqc-ai-insights.preview.emergentagent.com`
+1. **Go to:** `https://beta.thestrategysquad.com`
 
 2. **Sign out completely:**
    - Click profile → Sign Out
@@ -61,7 +61,7 @@
 
 5. **Open NEW tab and go to:**
    ```
-   https://biqc-ai-insights.preview.emergentagent.com/login-supabase
+   https://beta.thestrategysquad.com/login-supabase
    ```
 
 6. **Click "Continue with Google"**
@@ -76,7 +76,7 @@
 
 1. **After logging in, go to:**
    ```
-   https://biqc-ai-insights.preview.emergentagent.com/integrations
+   https://beta.thestrategysquad.com/integrations
    ```
 
 2. **Find the Gmail card** (it should be next to Outlook)

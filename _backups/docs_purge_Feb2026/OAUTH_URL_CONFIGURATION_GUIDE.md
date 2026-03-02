@@ -16,7 +16,7 @@ Backend restarted successfully.
 
 ## YOUR PRODUCTION URL
 ```
-https://biqc-ai-insights.preview.emergentagent.com
+https://beta.thestrategysquad.com
 ```
 
 ---
@@ -28,16 +28,16 @@ https://biqc-ai-insights.preview.emergentagent.com
 
 ### Site URL:
 ```
-https://biqc-ai-insights.preview.emergentagent.com
+https://beta.thestrategysquad.com
 ```
 
 ### Redirect URLs (add ALL of these):
 ```
-https://biqc-ai-insights.preview.emergentagent.com/**
-https://biqc-ai-insights.preview.emergentagent.com/auth/callback
-https://biqc-ai-insights.preview.emergentagent.com/auth-callback-supabase
-https://biqc-ai-insights.preview.emergentagent.com/connect-email
-https://biqc-ai-insights.preview.emergentagent.com/integrations
+https://beta.thestrategysquad.com/**
+https://beta.thestrategysquad.com/auth/callback
+https://beta.thestrategysquad.com/auth-callback-supabase
+https://beta.thestrategysquad.com/connect-email
+https://beta.thestrategysquad.com/integrations
 ```
 
 ---
@@ -49,7 +49,7 @@ https://biqc-ai-insights.preview.emergentagent.com/integrations
 
 ### Authentication → Redirect URIs:
 ```
-https://biqc-ai-insights.preview.emergentagent.com/api/auth/outlook/callback
+https://beta.thestrategysquad.com/api/auth/outlook/callback
 ```
 
 ### Supported account types:
@@ -72,12 +72,12 @@ Click "Grant admin consent" after adding permissions.
 
 ### Authorized JavaScript origins:
 ```
-https://biqc-ai-insights.preview.emergentagent.com
+https://beta.thestrategysquad.com
 ```
 
 ### Authorized redirect URIs:
 ```
-https://biqc-ai-insights.preview.emergentagent.com/api/auth/gmail/callback
+https://beta.thestrategysquad.com/api/auth/gmail/callback
 ```
 
 ---

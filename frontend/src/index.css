@@ -1015,5 +1015,23 @@ html, body {
         min-height: 44px;
         min-width: 44px;
     }
+    /* Login/Register submit — full-width orange */
+    form button[type="submit"],
+    form [data-testid="login-submit-btn"],
+    form [data-testid="register-submit-btn"] {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        min-height: 48px !important;
+        background-color: #FF6A00 !important;
+        color: white !important;
+        border-radius: 12px !important;
+        font-size: 15px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: none !important;
+        -webkit-appearance: none !important;
+    }
 }
 

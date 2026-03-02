@@ -1,7 +1,7 @@
 # Mobile Device Testing Checklist
 ## Strategy Squad - Supabase OAuth Authentication
 
-**Test URL:** https://biqc-ai-insights.preview.emergentagent.com
+**Test URL:** https://beta.thestrategysquad.com
 
 **Date:** _____________
 **Device:** _____________
@@ -413,7 +413,7 @@ _______________________________________________________________
 - [ ] Log in with OAuth
 - [ ] Close browser completely
 - [ ] Reopen browser
-- [ ] Navigate to https://biqc-ai-insights.preview.emergentagent.com/advisor
+- [ ] Navigate to https://beta.thestrategysquad.com/advisor
 - [ ] Should still be logged in (session persisted)
 
 ### Multiple Tab Behavior
@@ -608,17 +608,17 @@ _______________________________________________________________
 
 # Quick Reference URLs
 
-**Landing:** https://biqc-ai-insights.preview.emergentagent.com/
+**Landing:** https://beta.thestrategysquad.com/
 
-**Login:** https://biqc-ai-insights.preview.emergentagent.com/login-supabase
+**Login:** https://beta.thestrategysquad.com/login-supabase
 
-**Register:** https://biqc-ai-insights.preview.emergentagent.com/register-supabase
+**Register:** https://beta.thestrategysquad.com/register-supabase
 
-**Pricing:** https://biqc-ai-insights.preview.emergentagent.com/pricing
+**Pricing:** https://beta.thestrategysquad.com/pricing
 
-**Terms:** https://biqc-ai-insights.preview.emergentagent.com/terms
+**Terms:** https://beta.thestrategysquad.com/terms
 
-**Advisor:** https://biqc-ai-insights.preview.emergentagent.com/advisor
+**Advisor:** https://beta.thestrategysquad.com/advisor
 
 ---
 

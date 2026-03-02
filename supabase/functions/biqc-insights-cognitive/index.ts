@@ -62,6 +62,33 @@ async function searchMarket(query: string): Promise<string> {
 }
 
 // ─── FULL CONTEXT GATHERING ───
+
+// Priority-based context assembly — prevents blind truncation
+function buildPrioritizedContext(ctx: any): string {
+  const MAX_CHARS = 12000;
+  const sections: {key: string, priority: number, data: any}[] = [
+    { key: 'business_profile', priority: 1, data: ctx.business_profile || ctx.profile },
+    { key: 'calibration', priority: 2, data: ctx.calibration },
+    { key: 'deals', priority: 3, data: ctx.deals },
+    { key: 'financial', priority: 4, data: ctx.financial || ctx.accounting },
+    { key: 'observations', priority: 5, data: ctx.observations },
+    { key: 'escalations', priority: 6, data: ctx.escalations },
+    { key: 'emails', priority: 7, data: ctx.emails },
+    { key: 'positions', priority: 8, data: ctx.positions || ctx.strategic_positions },
+    { key: 'pressure', priority: 9, data: ctx.pressure },
+  ];
+  let result = '';
+  let remaining = MAX_CHARS;
+  for (const section of sections.sort((a, b) => a.priority - b.priority)) {
+    if (!section.data || remaining <= 0) continue;
+    const serialized = JSON.stringify(section.data);
+    const chunk = serialized.substring(0, remaining);
+    result += `\n--- ${section.key} ---\n${chunk}`;
+    remaining -= chunk.length;
+  }
+  return result;
+}
+
 async function gatherFullContext(supabase: any, userId: string, integrations: any[]) {
   const ctx: Record<string, any> = {};
   const sources: string[] = [];
@@ -482,7 +509,7 @@ serve(async (req) => {
             headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
             body: JSON.stringify({
               model: "gpt-4o-mini",
-              messages: [{ role: "system", content: COGNITIVE_SYSTEM_PROMPT }, { role: "user", content: `Precompute snapshot.\n${JSON.stringify(ctx).substring(0, 8000)}` }],
+              messages: [{ role: "system", content: COGNITIVE_SYSTEM_PROMPT }, { role: "user", content: `Precompute snapshot.\n${buildPrioritizedContext(ctx)}` }],
               temperature: 0.5, max_tokens: 3000, response_format: { type: "json_object" },
             }),
           });

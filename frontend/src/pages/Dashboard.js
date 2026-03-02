@@ -43,7 +43,7 @@ const Dashboard = () => {
       checkOutlookStatus();
     } catch (error) {
       // FAIL OPEN: If onboarding status unknown, allow access
-      console.log('⚠️ Onboarding status unknown - failing open');
+      console.log('Onboarding status unavailable');
       setCheckingOnboarding(false);
       fetchStats();
       fetchFocus();

@@ -73,6 +73,9 @@ import AuditLogPage from './pages/AuditLogPage';
 import ForensicCalibration from './pages/ForensicCalibration';
 import ForensicAuditPage from './pages/ForensicAuditPage';
 import DSEEPage from './pages/DSEEPage';
+import MarketingIntelPage from './pages/MarketingIntelPage';
+import ObservabilityPage from './pages/ObservabilityPage';
+import SupportConsolePage from './pages/SupportConsolePage';
 import SubscribePage from './pages/SubscribePage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import ResetPassword from './pages/ResetPassword';
@@ -230,6 +233,8 @@ function AppRoutes() {
       <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
       <Route path="/forensic-audit" element={<ProtectedRoute><ForensicAuditPage /></ProtectedRoute>} />
       <Route path="/exposure-scan" element={<ProtectedRoute><DSEEPage /></ProtectedRoute>} />
+      <Route path="/marketing-intelligence" element={<ProtectedRoute><MarketingIntelPage /></ProtectedRoute>} />
+      <Route path="/observability" element={<ProtectedRoute><ObservabilityPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
       {/* Paid Tier Routes (starter+) — TierGate enforced */}
@@ -263,6 +268,8 @@ function AppRoutes() {
       {/* Admin/Test Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><PromptLab /></ProtectedRoute>} />
+      <Route path="/support-admin" element={<ProtectedRoute adminOnly><SupportConsolePage /></ProtectedRoute>} />
+      <Route path="/observability" element={<ProtectedRoute adminOnly><ObservabilityPage /></ProtectedRoute>} />
       <Route path="/outlook-test" element={<ProtectedRoute adminOnly><OutlookTest /></ProtectedRoute>} />
       <Route path="/gmail-test" element={<ProtectedRoute adminOnly><GmailTest /></ProtectedRoute>} />
 

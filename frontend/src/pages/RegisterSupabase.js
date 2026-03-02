@@ -156,7 +156,7 @@ const RegisterSupabase = () => {
 
             <button type="submit" disabled={loading || oauthLoading || !isFormValid}
               className="w-full h-12 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 disabled:opacity-50"
-              style={{ background: '#FF6A00', fontFamily: BODY, boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }}
+              style={{ background: '#FF6A00', fontFamily: BODY, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               data-testid="register-submit-btn">
               {loading ? "Creating account..." : "Create account"}
             </button>

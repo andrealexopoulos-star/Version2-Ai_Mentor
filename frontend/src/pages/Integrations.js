@@ -254,7 +254,8 @@ const Integrations = () => {
       console.log('📊 Connected Merge integrations:', integrations);
       setMergeIntegrations(integrations);
     } catch (error) {
-      console.warn('⚠️ Could not fetch Merge integrations - failing open:', error);
+      console.warn('Could not fetch Merge integrations:', error.message);
+      // Fail-open: show UI without integration data rather than blocking
     } finally {
       setMergeLoading(false);
     }
@@ -266,7 +267,7 @@ const Integrations = () => {
       console.log('📊 Outlook status:', response.data);
       
       if (response.data.degraded) {
-        console.log('⚠️ Outlook status check degraded - maintaining current state');
+        console.warn('Outlook status check degraded');
         setOutlookStatus(prev => ({
           ...prev,
           health_check_failed: true
@@ -280,7 +281,7 @@ const Integrations = () => {
         health_check_failed: false
       });
     } catch (error) {
-      console.warn('⚠️ Outlook status check failed - failing open, maintaining current state:', error);
+      console.warn('Outlook status check failed:', error.message);
       // FAIL OPEN: Preserve current connection state on error
       setOutlookStatus(prev => ({
         ...prev,
@@ -311,7 +312,7 @@ const Integrations = () => {
       });
 
       if (!response.ok) {
-        console.warn('⚠️ Gmail Edge Function check failed - failing open, maintaining current state');
+        console.warn('Gmail Edge Function check failed');
         // FAIL OPEN: Preserve current state on error
         return;
       }
@@ -338,7 +339,7 @@ const Integrations = () => {
         });
       }
     } catch (error) {
-      console.error('⚠️ Could not fetch Gmail status - failing open:', error);
+      console.warn('Gmail status check failed:', error.message);
       // FAIL OPEN: Preserve current state on exception
     }
   };
@@ -662,9 +663,11 @@ const Integrations = () => {
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
         let detail = `Server error (${response.status})`;
-        try { detail = JSON.parse(errorText).detail || detail; } catch {}
+        try {
+          const errData = await response.clone().text();
+          try { detail = JSON.parse(errData).detail || detail; } catch {}
+        } catch {}
         toast.error(`Failed: ${detail}`);
         setOpeningMergeLink(false);
         return;

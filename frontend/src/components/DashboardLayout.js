@@ -191,6 +191,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
       { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
+      { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
     ]},
     { id: 'governance', label: 'Governance', items: [
       { icon: FileText, label: 'Reports', path: '/reports' },
@@ -199,6 +200,18 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Settings, label: 'Settings', path: '/settings' },
     ]},
   ];
+
+  // Super Admin section (visible only for super_admin role)
+  const isSA = user?.role === 'superadmin' || user?.role === 'super_admin' || user?.email === 'andre@thestrategysquad.com.au';
+  if (isSA) {
+    navSections.push({
+      id: 'admin', label: 'Admin', items: [
+        { icon: Shield, label: 'Support Console', path: '/support-admin' },
+        { icon: Activity, label: 'Observability', path: '/observability' },
+        { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
+      ],
+    });
+  }
 
   useEffect(() => {
     if (!expandedSection) {

@@ -96,13 +96,13 @@ d) Callbacks ✅
 
 ### Step 1: Login
 ```
-https://biqc-ai-insights.preview.emergentagent.com/login-supabase
+https://beta.thestrategysquad.com/login-supabase
 ```
 - Log in with: andre.alexopoulos@gmail.com
 
 ### Step 2: Navigate to Integrations
 ```
-https://biqc-ai-insights.preview.emergentagent.com/integrations
+https://beta.thestrategysquad.com/integrations
 ```
 - You should see "Merge Unified Integrations" card at the top
 

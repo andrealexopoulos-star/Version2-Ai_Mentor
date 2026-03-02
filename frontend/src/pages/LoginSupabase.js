@@ -144,12 +144,13 @@ const LoginSupabase = () => {
               </Link>
             </div>
 
-            <button type="submit" disabled={loading || oauthLoading}
-              className="w-full h-12 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 disabled:opacity-50"
-              style={{ background: '#FF6A00', fontFamily: BODY, boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }}
-              data-testid="login-submit-btn">
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
+            <div style={{ width: '100%' }}>
+              <button type="submit" disabled={loading || oauthLoading}
+                style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: BODY, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                data-testid="login-submit-btn">
+                {loading ? "Signing in..." : "Sign in"}
+              </button>
+            </div>
           </form>
 
           <div className="mt-8 text-center">
