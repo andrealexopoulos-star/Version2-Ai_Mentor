@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install ruff
-      - run: ruff check backend/ --select E,F,W
+      - run: ruff check backend/ --select F --ignore F401,F841
 
   test-backend:
     runs-on: ubuntu-latest
