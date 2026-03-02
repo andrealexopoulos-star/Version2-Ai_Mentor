@@ -201,6 +201,18 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     ]},
   ];
 
+  // Super Admin section (visible only for super_admin role)
+  const isSA = user?.role === 'superadmin' || user?.role === 'super_admin' || user?.email === 'andre@thestrategysquad.com.au';
+  if (isSA) {
+    navSections.push({
+      id: 'admin', label: 'Admin', items: [
+        { icon: Shield, label: 'Support Console', path: '/support-admin' },
+        { icon: Activity, label: 'Observability', path: '/observability' },
+        { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
+      ],
+    });
+  }
+
   useEffect(() => {
     if (!expandedSection) {
       const active = navSections.find(s => s.items.some(i => isActive(i.path)));
