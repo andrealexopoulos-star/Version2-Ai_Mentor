@@ -152,11 +152,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             total_tokens=(len(clean_message) + len(response if isinstance(response, str) else '')) // 4,
             latency_ms=_elapsed, feature_flag='rag_chat_enabled' if False else 'soundboard',
         )
-                token_count=(len(req.message) + len(response if isinstance(response, str) else '')) // 4,
-                input_hash=hashlib.md5(req.message[:200].encode()).hexdigest()[:12],
-            )
-        except Exception:
-            pass
 
         # Generate title for new conversations
         conversation_title = None
