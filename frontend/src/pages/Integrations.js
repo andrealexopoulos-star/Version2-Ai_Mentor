@@ -820,14 +820,11 @@ const Integrations = () => {
                       setSelectedIntegration(null);
                     }}
                     data-testid={`integrations-category-${cat.id}`}
-                    className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-120 flex items-center gap-3 ${
-                      selectedCategory === cat.id
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'hover:bg-gray-50'
-                    }`}
+                    className="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-120 flex items-center gap-3"
                     style={{
-                      background: selectedCategory === cat.id ? 'rgba(29, 78, 216, 0.08)' : 'transparent',
-                      color: selectedCategory === cat.id ? 'var(--accent-primary)' : 'var(--text-secondary)'
+                      background: selectedCategory === cat.id ? 'rgba(255, 106, 0, 0.1)' : 'transparent',
+                      color: selectedCategory === cat.id ? '#FF6A00' : '#9FB0C3',
+                      border: selectedCategory === cat.id ? '1px solid rgba(255, 106, 0, 0.2)' : '1px solid transparent'
                     }}
                   >
                     <span className="text-lg">{cat.icon}</span>
@@ -1000,17 +997,17 @@ const Integrations = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {outlookStatus.connected && (
-                    <div className="p-4 rounded-xl border-2 border-green-500" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                    <div className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-lg bg-[#0078D4] flex items-center justify-center text-white font-bold">
                           OL
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Microsoft Outlook</span>
-                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            <span className="font-semibold text-sm text-[#F4F7FA]">Microsoft Outlook</span>
+                            <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
                           </div>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{outlookStatus.connected_email || 'Connected'}</p>
+                          <p className="text-xs text-[#64748B]">{outlookStatus.connected_email || 'Connected'}</p>
                         </div>
                         <Button
                           onClick={handleOutlookDisconnect}
@@ -1018,7 +1015,7 @@ const Integrations = () => {
                           size="sm"
                           disabled={disconnecting}
                           data-testid="integrations-outlook-disconnect-inline-button"
-                          className="text-red-600 hover:bg-red-50 border-red-200"
+                          className="text-[#EF4444] hover:bg-[#EF4444]/10 border-[#EF4444]/30"
                         >
                           {disconnecting ? <InlineLoading text="disconnecting" /> : 'Disconnect'}
                         </Button>
@@ -1026,17 +1023,17 @@ const Integrations = () => {
                     </div>
                   )}
                   {gmailStatus.connected && (
-                    <div className="p-4 rounded-xl border-2 border-green-500" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                    <div className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-lg bg-[#EA4335] flex items-center justify-center text-white font-bold">
                           GM
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Gmail</span>
-                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            <span className="font-semibold text-sm text-[#F4F7FA]">Gmail</span>
+                            <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
                           </div>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{gmailStatus.connected_email || 'Connected'}</p>
+                          <p className="text-xs text-[#64748B]">{gmailStatus.connected_email || 'Connected'}</p>
                         </div>
                         <Button
                           onClick={handleGmailDisconnect}
@@ -1044,7 +1041,7 @@ const Integrations = () => {
                           size="sm"
                           disabled={disconnecting}
                           data-testid="integrations-gmail-disconnect-inline-button"
-                          className="text-red-600 hover:bg-red-50 border-red-200"
+                          className="text-[#EF4444] hover:bg-[#EF4444]/10 border-[#EF4444]/30"
                         >
                           {disconnecting ? <InlineLoading text="disconnecting" /> : 'Disconnect'}
                         </Button>
