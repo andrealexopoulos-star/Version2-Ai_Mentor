@@ -117,6 +117,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # Fetch prompt from DB, fall back to hardcoded
     soundboard_prompt = await get_prompt("mysoundboard_v1", _SOUNDBOARD_FALLBACK)
     fact_block = f"\n\nGLOBAL FACT AUTHORITY:\n{facts_prompt}\nDo NOT re-ask any fact listed above.\n" if facts_prompt else ""
+    # ═══ GUARDRAILS: Sanitise input ═══
+    from guardrails import sanitise_input, sanitise_output, log_llm_call_to_db
+    sanitised = sanitise_input(req.message)
+    if sanitised['blocked']:
+        return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
+    clean_message = sanitised['text']
+
     system_message = soundboard_prompt + fact_block + f"\n\nCONTEXT:\n{user_context}"
 
     try:
@@ -130,19 +137,21 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             if msg["role"] == "user":
                 chat.add_message(UserMessage(text=msg["content"]))
 
-        response = await chat.send_message(UserMessage(text=req.message))
+        import time as _time
+        _start = _time.time()
+        response = await chat.send_message(UserMessage(text=clean_message))
+        _elapsed = int((_time.time() - _start) * 1000)
 
-        # Spine: log LLM call
-        try:
-            from llm_instrumentation import instrumented_llm_call
-            from intelligence_spine import log_llm_call
-            import hashlib
-            log_llm_call(
-                tenant_id=user_id,
-                model_name=AI_MODEL,
-                prompt_length=len(req.message),
-                response_length=len(response) if isinstance(response, str) else 0,
-                execution_time_ms=0,
+        # Sanitise output
+        if isinstance(response, str):
+            response = sanitise_output(response)
+
+        # Log to observability
+        log_llm_call_to_db(
+            tenant_id=user_id, model_name=AI_MODEL, endpoint='soundboard/chat',
+            total_tokens=(len(clean_message) + len(response if isinstance(response, str) else '')) // 4,
+            latency_ms=_elapsed, feature_flag='rag_chat_enabled' if False else 'soundboard',
+        )
                 token_count=(len(req.message) + len(response if isinstance(response, str) else '')) // 4,
                 input_hash=hashlib.md5(req.message[:200].encode()).hexdigest()[:12],
             )
