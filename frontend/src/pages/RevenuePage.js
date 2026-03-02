@@ -94,6 +94,7 @@ const RevenuePage = () => {
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'scenarios', label: 'Scenarios' },
     { id: 'concentration', label: 'Concentration' },
+    { id: 'intelligence', label: 'Cross-Domain' },
   ];
 
   return (
