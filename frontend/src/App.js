@@ -231,6 +231,7 @@ function AppRoutes() {
       <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
       <Route path="/forensic-audit" element={<ProtectedRoute><ForensicAuditPage /></ProtectedRoute>} />
       <Route path="/exposure-scan" element={<ProtectedRoute><DSEEPage /></ProtectedRoute>} />
+      <Route path="/marketing-intelligence" element={<ProtectedRoute><MarketingIntelPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
       {/* Paid Tier Routes (starter+) — TierGate enforced */}
