@@ -157,10 +157,10 @@ export default function ProtectedRoute({ children, adminOnly }) {
     return children;
   }
 
-  // NEEDS_CALIBRATION → redirect to /calibration
+  // NEEDS_CALIBRATION → redirect to /calibration (but allow admin paths)
   if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
-    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import'];
-    if (allowedPaths.includes(location.pathname)) {
+    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
+    if (allowedPaths.some(p => location.pathname.startsWith(p))) {
       return children;
     }
     return <Navigate to="/calibration" replace />;
