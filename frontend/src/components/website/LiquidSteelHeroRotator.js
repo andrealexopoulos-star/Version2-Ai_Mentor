@@ -4,46 +4,42 @@ const BODY = "'Inter', sans-serif";
 
 // Premium sheen reserved. Not approved.
 
+const HEADING = "'Cormorant Garamond', Georgia, serif";
+
 const VARIANTS = [
   {
-    headline: 'BIQc is the stability layer that unifies your business systems and converts fragmented data into structured, decision-ready intelligence.',
+    h1: 'The stability layer for your business.',
+    h2: 'Unifies systems. Converts fragmented data into decision-ready intelligence.',
     lines: [
-      'One platform across your tools.',
-      'One continuous view of risk, pressure, and opportunity.',
-      'Built to protect performance and drive disciplined growth.',
+      'One platform. One view of risk, pressure, and opportunity.',
     ],
   },
   {
-    headline: 'BIQc is a unified intelligence layer that sits above your systems — detecting instability, modelling consequence, and strengthening leadership decisions.',
+    h1: 'Intelligence above your systems.',
+    h2: 'Detects instability. Models consequence. Strengthens decisions.',
     lines: [
-      'A single platform for sustained operational stability and strategic control.',
+      'Sustained operational stability and strategic control.',
     ],
   },
   {
-    headline: 'BIQc integrates your financial, revenue, operational, and market systems into one continuous intelligence framework.',
+    h1: 'One continuous intelligence framework.',
+    h2: 'Financial, revenue, operational, and market systems — integrated.',
     lines: [
-      'It reveals where pressure is building, how it will spread, and whether your decisions are strengthening the business.',
-      '',
-      'Designed to protect, stabilise, and strengthen growing organisations.',
+      'Reveals pressure. Forecasts spread. Measures decision impact.',
     ],
   },
   {
-    headline: 'BIQc is the stability engine for modern businesses.',
+    h1: 'The stability engine for modern business.',
+    h2: 'Connects systems. Detects risk. Measures leadership impact.',
     lines: [
-      'It connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
-      '',
-      'One integrated platform.',
-      'Continuous stability intelligence.',
-      'Compounding growth.',
+      'One platform. Continuous intelligence. Compounding growth.',
     ],
   },
 ];
 
-// Fixed heights measured to contain tallest variant (Variant 3/4 with 5 lines)
-// Desktop: headline ~48px + gap 12px + 5 lines * 24px + padding = ~190px
-// Mobile: headline ~64px + gap 12px + 5 lines * 22px + padding = ~200px
-const VIEWPORT_HEIGHT_DESKTOP = 190;
-const VIEWPORT_HEIGHT_MOBILE = 200;
+// Fixed heights: H1 (~50px) + H2 (~28px) + 1 line (~24px) + margins
+const VIEWPORT_HEIGHT_DESKTOP = 160;
+const VIEWPORT_HEIGHT_MOBILE = 180;
 
 const EASING = 'cubic-bezier(0.42, 0, 0.2, 1)';
 
@@ -97,26 +93,28 @@ const HeroLayer = ({ variant, phase, isMobile, zIndex }) => {
         ...style,
       }}
     >
-      <p
-        className="text-sm sm:text-lg max-w-2xl mx-auto mb-3 leading-relaxed"
+      <h1
+        className="text-[24px] sm:text-3xl lg:text-4xl font-bold leading-[1.2] mb-3 sm:mb-4 tracking-tight max-w-3xl mx-auto"
+        style={{ fontFamily: HEADING, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
+      >
+        {variant.h1}
+      </h1>
+      <h2
+        className="text-sm sm:text-lg max-w-2xl mx-auto mb-2 sm:mb-3 leading-relaxed"
         style={{ fontFamily: BODY, color: '#9FB0C3', lineHeight: '1.6' }}
       >
-        {variant.headline}
-      </p>
+        {variant.h2}
+      </h2>
       <div className="max-w-xl mx-auto">
-        {variant.lines.map((line, i) =>
-          line === '' ? (
-            <div key={i} style={{ height: 8 }} />
-          ) : (
-            <p
-              key={i}
-              className="text-sm sm:text-base"
-              style={{ fontFamily: BODY, color: '#9FB0C3', lineHeight: '1.6' }}
-            >
-              {line}
-            </p>
-          )
-        )}
+        {variant.lines.map((line, i) => (
+          <p
+            key={i}
+            className="text-sm sm:text-base"
+            style={{ fontFamily: BODY, color: '#9FB0C3/70', lineHeight: '1.6', opacity: 0.7 }}
+          >
+            {line}
+          </p>
+        ))}
       </div>
     </div>
   );

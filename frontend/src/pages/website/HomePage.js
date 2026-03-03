@@ -38,10 +38,6 @@ const HomePage = () => (
             <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Australian Owned &amp; Operated</span>
           </div>
 
-          <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-bold leading-[1.15] mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }} data-testid="hero-h1">
-            Autonomous Business Intelligence
-          </h1>
-
           {/* hero-viewport: rotating content ONLY — CTA is OUTSIDE this container */}
           <LiquidSteelHeroRotator />
 
