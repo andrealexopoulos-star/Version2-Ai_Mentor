@@ -46,15 +46,22 @@ DECLARE
     v_tmp JSONB;
     v_tmp_ts TIMESTAMPTZ;
     v_age_hours FLOAT;
-    -- Freshness thresholds (hours): fresh < 24, stale > 72
-    c_fresh_hours CONSTANT FLOAT := 24;
-    c_stale_hours CONSTANT FLOAT := 72;
+    -- Dynamic config (loaded from cognition_config table)
+    c_fresh_hours FLOAT;
+    c_stale_hours FLOAT;
     v_crm BOOLEAN := false;
     v_acct BOOLEAN := false;
     v_email BOOLEAN := false;
     v_mktg BOOLEAN := false;
     v_elapsed INT;
 BEGIN
+    -- Load config dynamically (with fallbacks)
+    SELECT COALESCE((config_value#>>'{}')::FLOAT, 8) INTO v_total_possible FROM cognition_config WHERE config_key = 'evidence_total_possible';
+    v_total_possible := COALESCE(v_total_possible, 8);
+    SELECT COALESCE((config_value#>>'{}')::FLOAT, 24) INTO c_fresh_hours FROM cognition_config WHERE config_key = 'evidence_fresh_hours';
+    c_fresh_hours := COALESCE(c_fresh_hours, 24);
+    SELECT COALESCE((config_value#>>'{}')::FLOAT, 72) INTO c_stale_hours FROM cognition_config WHERE config_key = 'evidence_stale_hours';
+    c_stale_hours := COALESCE(c_stale_hours, 72);
     -- 1. Business profile (freshness = updated_at)
     SELECT jsonb_build_object('business_name', business_name, 'industry', industry, 'website', website,
         'team_size', team_size, 'years_operating', years_operating, 'target_market', target_market,
@@ -424,11 +431,20 @@ DECLARE
     v_accuracy FLOAT; v_fp_rate FLOAT;
     v_prev FLOAT; v_new FLOAT;
     v_reason TEXT; v_decay BOOLEAN := false;
-    v_min_decisions CONSTANT INT := 3;
+    v_min_decisions INT;
     v_last_eval TIMESTAMPTZ;
     v_days_since_eval INT;
+    v_decay_days INT;
+    v_decay_rate FLOAT;
     v_elapsed INT;
 BEGIN
+    -- Load config
+    SELECT COALESCE((config_value#>>'{}')::INT, 3) INTO v_min_decisions FROM cognition_config WHERE config_key = 'confidence_min_checkpoints';
+    v_min_decisions := COALESCE(v_min_decisions, 3);
+    SELECT COALESCE((config_value#>>'{}')::INT, 30) INTO v_decay_days FROM cognition_config WHERE config_key = 'confidence_decay_days';
+    v_decay_days := COALESCE(v_decay_days, 30);
+    SELECT COALESCE((config_value#>>'{}')::FLOAT, 0.05) INTO v_decay_rate FROM cognition_config WHERE config_key = 'confidence_decay_rate';
+    v_decay_rate := COALESCE(v_decay_rate, 0.05);
     SELECT COUNT(*), COUNT(*) FILTER (WHERE decision_effective = true), COUNT(*) FILTER (WHERE false_positive = true)
     INTO v_total, v_effective, v_fp
     FROM outcome_checkpoints WHERE tenant_id = p_tenant_id AND status = 'evaluated';
@@ -449,9 +465,9 @@ BEGIN
     -- Confidence decay: if no evaluation in 30+ days, decay by 0.05 per 30 days
     SELECT MAX(evaluated_at) INTO v_last_eval FROM outcome_checkpoints WHERE tenant_id = p_tenant_id AND status = 'evaluated';
     v_days_since_eval := COALESCE(EXTRACT(DAY FROM (now() - v_last_eval))::INT, 999);
-    IF v_days_since_eval > 30 THEN
+    IF v_days_since_eval > v_decay_days THEN
         v_decay := true;
-        v_prev := GREATEST(v_prev - (v_days_since_eval / 30) * 0.05, 0.1);
+        v_prev := GREATEST(v_prev - (v_days_since_eval / v_decay_days) * v_decay_rate, 0.1);
     END IF;
 
     -- Bayesian-inspired update: prior * likelihood / evidence
@@ -656,20 +672,25 @@ BEGIN
         'risk_level', risk_level, 'integration_required', integration_required, 'rollback_guidance', rollback_guidance
     )), '[]'::JSONB) INTO v_automation FROM automation_actions WHERE is_active = true;
 
-    -- 10. EVIDENCE GATING: if integrity < 0.25, block intelligence generation
-    IF v_integrity < 0.25 THEN
-        v_elapsed := EXTRACT(MILLISECOND FROM clock_timestamp() - v_start)::INT;
-        PERFORM fn_log_telemetry(p_tenant_id, 'ic_generate_cognition_contract', v_elapsed, 'insufficient_evidence', NULL, 0);
-        RETURN jsonb_build_object(
-            'status', 'INSUFFICIENT_EVIDENCE',
-            'tab', p_tab,
-            'evidence_pack', jsonb_build_object('integrity_score', v_integrity,
-                'missing_sources', v_evidence->'missing_sources', 'stale_sources', v_evidence->'stale_sources'),
-            'message', 'Evidence integrity too low (' || ROUND(v_integrity * 100)::INT || '%). Connect more data sources to enable intelligence.',
-            'required_actions', v_evidence->'missing_sources',
-            'integration_health', v_health->'health',
-            'computation_ms', v_elapsed);
-    END IF;
+    -- 10. EVIDENCE GATING: configurable threshold
+    DECLARE v_threshold FLOAT;
+    BEGIN
+        SELECT COALESCE((config_value#>>'{}')::FLOAT, 0.25) INTO v_threshold FROM cognition_config WHERE config_key = 'evidence_integrity_threshold';
+        v_threshold := COALESCE(v_threshold, 0.25);
+        IF v_integrity < v_threshold THEN
+            v_elapsed := EXTRACT(MILLISECOND FROM clock_timestamp() - v_start)::INT;
+            PERFORM fn_log_telemetry(p_tenant_id, 'ic_generate_cognition_contract', v_elapsed, 'insufficient_evidence', NULL, 0);
+            RETURN jsonb_build_object(
+                'status', 'INSUFFICIENT_EVIDENCE',
+                'tab', p_tab,
+                'evidence_pack', jsonb_build_object('integrity_score', v_integrity,
+                    'missing_sources', v_evidence->'missing_sources', 'stale_sources', v_evidence->'stale_sources'),
+                'message', 'Evidence integrity too low (' || ROUND(v_integrity * 100)::INT || '%). Connect more data sources to enable intelligence.',
+                'required_actions', v_evidence->'missing_sources',
+                'integration_health', v_health->'health',
+                'computation_ms', v_elapsed);
+        END IF;
+    END;
 
     -- ASSEMBLE FINAL CONTRACT
     v_elapsed := EXTRACT(MILLISECOND FROM clock_timestamp() - v_start)::INT;

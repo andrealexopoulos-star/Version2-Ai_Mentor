@@ -271,6 +271,8 @@ CREATE TABLE IF NOT EXISTS instability_snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_is_tenant ON instability_snapshots(tenant_id, snapshot_date DESC);
 CREATE INDEX IF NOT EXISTS idx_is_composite ON instability_snapshots(tenant_id, composite);
+CREATE INDEX IF NOT EXISTS idx_is_date ON instability_snapshots(snapshot_date DESC);
+CREATE INDEX IF NOT EXISTS idx_is_tenant_date_composite ON instability_snapshots(tenant_id, snapshot_date, composite);
 
 ALTER TABLE instability_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "is_tenant_read" ON instability_snapshots FOR SELECT TO authenticated USING (tenant_id = auth.uid());
@@ -341,3 +343,91 @@ CREATE INDEX IF NOT EXISTS idx_dd_anomalous ON drift_detection_log(is_anomalous)
 ALTER TABLE drift_detection_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "dd_tenant_read" ON drift_detection_log FOR SELECT TO authenticated USING (tenant_id = auth.uid());
 CREATE POLICY "dd_service_all" ON drift_detection_log FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+
+
+-- ═══ 11. COGNITION CONFIG (Dynamic, not hardcoded) ═══
+
+CREATE TABLE IF NOT EXISTS cognition_config (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    config_key TEXT NOT NULL UNIQUE,
+    config_value JSONB NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Seed dynamic config (replaces hardcoded values in functions)
+INSERT INTO cognition_config (config_key, config_value, description) VALUES
+('evidence_total_possible', '8', 'Total possible evidence sources for integrity scoring'),
+('evidence_integrity_threshold', '0.25', 'Minimum integrity score to generate intelligence'),
+('evidence_fresh_hours', '24', 'Hours before a source is considered no longer fresh'),
+('evidence_stale_hours', '72', 'Hours before a source is considered stale'),
+('integration_sla_minutes', '240', 'Minutes of data staleness before SLA breach'),
+('confidence_min_checkpoints', '3', 'Minimum evaluated checkpoints before confidence recalibration'),
+('confidence_decay_days', '30', 'Days without evaluation before confidence decays'),
+('confidence_decay_rate', '0.05', 'Confidence decay per decay period'),
+('confidence_bounds_low', '0.1', 'Minimum allowed confidence score'),
+('confidence_bounds_high', '0.95', 'Maximum allowed confidence score'),
+('drift_anomaly_threshold', '2.0', 'Standard deviations for anomaly detection'),
+('propagation_min_chain_prob', '0.1', 'Minimum compound probability to report a chain')
+ON CONFLICT (config_key) DO NOTHING;
+
+-- No RLS — config is global
+ALTER TABLE cognition_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "cc_read" ON cognition_config FOR SELECT TO authenticated USING (true);
+CREATE POLICY "cc_service_all" ON cognition_config FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+
+-- ═══ 12. EVIDENCE SOURCE REGISTRY ═══
+
+CREATE TABLE IF NOT EXISTS evidence_source_registry (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_key TEXT NOT NULL UNIQUE,
+    source_label TEXT NOT NULL,
+    source_type TEXT NOT NULL CHECK (source_type IN ('integration','internal','user_input','computed')),
+    freshness_weight FLOAT DEFAULT 1.0,
+    is_required BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true
+);
+
+INSERT INTO evidence_source_registry (source_key, source_label, source_type, freshness_weight, is_required) VALUES
+('business_profile', 'Business Profile', 'user_input', 0.6, true),
+('cognitive_snapshot', 'Cognitive Snapshot', 'computed', 1.0, true),
+('crm', 'CRM (HubSpot/Salesforce)', 'integration', 0.9, false),
+('accounting', 'Accounting (Xero/QuickBooks)', 'integration', 0.9, false),
+('email', 'Email (Gmail/Outlook)', 'integration', 0.7, false),
+('marketing', 'Marketing Benchmarks', 'computed', 0.6, false),
+('decisions', 'Decision Registry', 'internal', 0.8, false),
+('daily_metrics', 'Daily Metric Snapshots', 'computed', 1.0, false)
+ON CONFLICT (source_key) DO NOTHING;
+
+ALTER TABLE evidence_source_registry ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "esr_read" ON evidence_source_registry FOR SELECT TO authenticated USING (true);
+CREATE POLICY "esr_service_all" ON evidence_source_registry FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+
+-- ═══ 13. DATA RETENTION POLICY ═══
+
+CREATE TABLE IF NOT EXISTS data_retention_policies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    table_name TEXT NOT NULL UNIQUE,
+    retention_days INT NOT NULL,
+    cleanup_column TEXT NOT NULL DEFAULT 'created_at',
+    is_active BOOLEAN DEFAULT true
+);
+
+INSERT INTO data_retention_policies (table_name, retention_days, cleanup_column) VALUES
+('cognition_telemetry', 90, 'executed_at'),
+('drift_detection_log', 180, 'detected_at'),
+('integration_health_history', 365, 'changed_at'),
+('automation_executions', 365, 'created_at'),
+('confidence_recalibrations', 365, 'recalibrated_at'),
+('instability_snapshots', 730, 'created_at')
+ON CONFLICT (table_name) DO NOTHING;
+
+-- pg_cron: Weekly data cleanup (run once in SQL Editor)
+-- SELECT cron.schedule('cognition-retention-cleanup', '0 3 * * 0', $$
+-- DELETE FROM cognition_telemetry WHERE executed_at < now() - INTERVAL '90 days';
+-- DELETE FROM drift_detection_log WHERE detected_at < now() - INTERVAL '180 days';
+-- DELETE FROM integration_health_history WHERE changed_at < now() - INTERVAL '365 days';
+-- $$);

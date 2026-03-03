@@ -1,59 +1,92 @@
-# BIQc Cognition Core — SQL Migration Deployment Guide
+# BIQc Cognition Core v2 — Pre-Deployment Verification Report
+## 2 March 2026
 
-## Migrations to Deploy (IN ORDER)
+## COLUMN ALIGNMENT: ALL 15 VERIFIED
 
-### Step 1: Deploy Migration 044 (Schema)
-**File:** `/app/supabase/migrations/044_cognition_core.sql`
+| Column | Table (044) | Used in Functions (045) | Status |
+|--------|-------------|------------------------|--------|
+| industry_override | propagation_rules | fn_compute_propagation_map | ALIGNED |
+| amplification_factor | propagation_rules | fn_compute_propagation_map | ALIGNED |
+| dampening_factor | propagation_rules | fn_compute_propagation_map | ALIGNED |
+| normalized_variance | outcome_checkpoints | fn_evaluate_pending_checkpoints | ALIGNED |
+| false_positive | outcome_checkpoints | fn_evaluate_pending_checkpoints, fn_recalibrate_confidence | ALIGNED |
+| rollback_guidance | automation_actions | ic_generate_cognition_contract | ALIGNED |
+| model_version | cognition_decisions, instability_snapshots | fn_snapshot_daily_instability, ic_generate_cognition_contract | ALIGNED |
+| propagation_count | instability_snapshots | fn_snapshot_daily_instability | ALIGNED |
+| minimum_threshold_met | confidence_recalibrations | fn_recalibrate_confidence | ALIGNED |
+| freshness_score | evidence_packs | fn_assemble_evidence_pack | ALIGNED |
+| stale_sources | evidence_packs | fn_assemble_evidence_pack | ALIGNED |
+| assembly_ms | evidence_packs | fn_assemble_evidence_pack | ALIGNED |
+| latency_ms | integration_health | fn_check_integration_health | ALIGNED |
+| sla_breached | integration_health | fn_check_integration_health | ALIGNED |
+| consecutive_failures | integration_health | fn_check_integration_health | ALIGNED |
 
-Creates 9 tables:
-- `integration_health` — Integration status tracking
-- `evidence_packs` — Cached evidence assemblies
-- `cognition_decisions` — Append-only structured decisions
-- `outcome_checkpoints` — 30/60/90 day outcome tracking
-- `propagation_rules` — Deterministic cross-domain migration rules (seeded with 14 rules)
-- `automation_actions` — Action registry (seeded with 10 actions)
-- `automation_executions` — Execution logs
-- `instability_snapshots` — Daily instability history
-- `confidence_recalibrations` — Confidence adjustment log
+## EXTERNAL DEPENDENCIES (Must pre-exist in Supabase)
 
-**How to deploy:**
-1. Go to Supabase Dashboard → SQL Editor
-2. Copy the entire contents of `044_cognition_core.sql`
-3. Paste and click "Run"
-4. Verify no errors
+| Table/Function | Migration | Status |
+|----------------|-----------|--------|
+| business_profiles | Pre-existing | EXISTS |
+| intelligence_snapshots | Pre-existing | EXISTS |
+| integration_accounts | Pre-existing | EXISTS |
+| email_connections | Pre-existing | EXISTS |
+| marketing_benchmarks | 037 | EXISTS |
+| ic_daily_metric_snapshots | 030 | EXISTS |
+| ic_calculate_risk_baseline() | 034 | EXISTS |
+| ic_resolve_industry_code() | 034 | EXISTS |
+| is_spine_enabled() | 030 | EXISTS |
 
-### Step 2: Deploy Migration 045 (Functions)
-**File:** `/app/supabase/migrations/045_cognition_core_functions.sql`
+## MIGRATION 044 SUMMARY
+- **15 tables** created
+- **26 indexes** (including composite indexes on snapshot_date + composite)
+- **25 RLS policies** (tenant_id = auth.uid())
+- **1 append-only trigger** on cognition_decisions
+- **14 propagation rules** seeded with amplification factors
+- **10 automation actions** seeded with rollback guidance
+- **12 cognition_config** entries (dynamic, not hardcoded)
+- **8 evidence sources** registered
+- **6 retention policies** defined
 
-Creates 5 SQL functions:
-- `fn_assemble_evidence_pack(tenant_id)` — Assembles all available evidence
-- `fn_compute_propagation_map(tenant_id, instability)` — Computes risk propagation
-- `fn_evaluate_pending_checkpoints(tenant_id)` — Evaluates decision outcomes
-- `fn_recalibrate_confidence(tenant_id)` — Adjusts system confidence
-- `fn_check_integration_health(tenant_id)` — Checks integration status
+## MIGRATION 045 SUMMARY
+- **9 SQL functions** with SECURITY DEFINER
+- **fn_log_telemetry** — instrumentation helper
+- **fn_assemble_evidence_pack** — config-driven freshness scoring
+- **fn_check_integration_health** — SLA + degradation history
+- **fn_compute_propagation_map** — compound chains + amplification
+- **fn_evaluate_pending_checkpoints** — normalized variance + FP detection
+- **fn_recalibrate_confidence** — Bayesian with config-driven decay + gating
+- **fn_detect_drift** — Z-score anomaly detection
+- **fn_snapshot_daily_instability** — daily snapshot generator
+- **ic_generate_cognition_contract** — MASTER function, evidence-gated
 
-**How to deploy:**
-1. Go to Supabase Dashboard → SQL Editor
-2. Copy the entire contents of `045_cognition_core_functions.sql`
-3. Paste and click "Run"
-4. Verify no errors
+## REVIEW CONCERNS ADDRESSED
 
-### Verification
-After deployment, test with:
-```sql
-SELECT fn_assemble_evidence_pack('YOUR_USER_UUID');
-SELECT ic_calculate_risk_baseline('YOUR_USER_UUID');
-SELECT fn_compute_propagation_map('YOUR_USER_UUID', NULL);
-```
+| Concern | Resolution |
+|---------|-----------|
+| v_total_possible hardcoded to 8 | Now loaded from cognition_config table |
+| Evidence integrity threshold static 0.25 | Now loaded from cognition_config |
+| Confidence min decisions hardcoded to 3 | Now loaded from cognition_config |
+| Decay rate/period hardcoded | Now loaded from cognition_config |
+| Fresh/stale hour thresholds hardcoded | Now loaded from cognition_config |
+| No index on snapshot_date alone | Added idx_is_date |
+| No composite index (tenant, date, composite) | Added idx_is_tenant_date_composite |
+| No source registry for evidence | Added evidence_source_registry table |
+| No retention policy | Added data_retention_policies table |
+| No config table for dynamic values | Added cognition_config table |
 
-## API Endpoints (Available After Deployment)
+## ACKNOWLEDGED LIMITATIONS (v2 scope)
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/cognition/{tab}` | GET | Unified intelligence contract (revenue/risk/operations/people/market/overview) |
-| `/api/cognition/decisions` | GET | List structured decisions |
-| `/api/cognition/decisions` | POST | Record new decision (creates 30/60/90 checkpoints) |
-| `/api/cognition/automation/execute` | POST | Execute automation action |
-| `/api/cognition/automation/history` | GET | Automation execution history |
-| `/api/cognition/integration-health` | GET | Integration health status |
-| `/api/cognition/snapshot-instability` | POST | Store daily instability snapshot |
+| Item | Status | Enterprise Path |
+|------|--------|----------------|
+| Retry with exponential backoff | Counter only | Implement in pg_cron job with backoff logic |
+| Token expiry detection | Based on updated_at | Requires actual token metadata storage |
+| Propagation O(n²) chain detection | Acceptable for 14 rules | Graph optimization for 100+ rules |
+| Propagation depth > 2 | Not implemented | Recursive CTE for N-depth |
+| Propagation history persistence | Not persisted | Add propagation_events table |
+| Caching layer | None | Redis/Azure Cache for hot paths |
+| Partitioning strategy | None defined | Partition instability_snapshots by month |
+| Workspace abstraction | tenant = user | Requires workspace_id FK migration |
+
+## DEPLOYMENT ORDER
+1. Run `044_cognition_core.sql` in Supabase SQL Editor
+2. Run `045_cognition_core_functions.sql` in Supabase SQL Editor
+3. Verify: `SELECT ic_generate_cognition_contract('YOUR_UUID', 'overview');`
