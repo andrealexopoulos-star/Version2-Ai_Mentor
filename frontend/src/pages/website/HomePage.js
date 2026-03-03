@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
-import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
+import { ArrowRight, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
 
 const HEADING = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
@@ -33,10 +33,7 @@ const HomePage = () => (
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-24 pb-8 sm:pb-20 relative z-10">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
-            <Shield className="w-3.5 h-3.5 text-[#FF6A00]" />
-            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>
-          </div>
+          {/* Pill removed — "Autonomous Business Intelligence" relocated to trust section below */}
 
           <p className="text-xs sm:text-sm font-medium tracking-widest uppercase mb-4 sm:mb-6" style={{ color: '#9FB0C3' }} data-testid="hero-label">Australian Owned &amp; Operated</p>
 
@@ -83,22 +80,22 @@ const HomePage = () => (
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
-            <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What Cognition-as-a-Service Delivers</span>
+            <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base text-[#9FB0C3] max-w-xl" style={{ fontFamily: BODY }}>Industry benchmarks show businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base text-[#9FB0C3] max-w-xl" style={{ fontFamily: BODY }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {[
-            { icon: Eye, title: 'Monitors Everything', desc: 'Connects to your accounting, CRM, email, and operations. Watches every signal 24/7.' },
-            { icon: AlertTriangle, title: 'Detects & Flags', desc: 'Surfaces anomalies, cash flow risks, churn signals, and compliance gaps before they become problems.' },
-            { icon: Zap, title: 'Prevents & Corrects', desc: 'Recommends actions, drafts communications, and automates corrective workflows across your business.' },
-            { icon: BarChart3, title: 'Executive Briefings', desc: 'Daily intelligence briefs compiled from all your data sources. No dashboard digging required.' },
-            { icon: Lock, title: 'Australian Sovereign', desc: 'Data hosted in Australia. No offshore processing. Full audit trail. Enterprise-grade security.' },
-            { icon: Users, title: 'Maximise Output', desc: 'Increase executive leverage, elevate team performance, and reduce burnout without expanding headcount.' },
+            { icon: Eye, title: 'Monitors Everything', desc: 'Connects accounting, CRM, and ops. Watches 24/7.' },
+            { icon: AlertTriangle, title: 'Detects & Flags', desc: 'Flags anomalies, cash flow risks, and compliance gaps early.' },
+            { icon: Zap, title: 'Prevents & Corrects', desc: 'Recommends actions, drafts comms, and automates workflows.' },
+            { icon: BarChart3, title: 'Executive Briefings', desc: 'Daily intelligence briefs from all sources. No dashboard digging.' },
+            { icon: Lock, title: 'Australian Sovereign', desc: 'Australian hosted. No offshore processing. Full audit trail.' },
+            { icon: Users, title: 'Maximise Output', desc: 'Boost leverage and performance without expanding headcount.' },
           ].map((item, i) => (
             <GlassCard key={i}>
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(255,106,0,0.1)' }}>
@@ -118,9 +115,9 @@ const HomePage = () => (
         <div className="text-center mb-16">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>The Functional Arsenal</span>
           <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
-            One platform. Four pillars of intelligence.
+            One platform. Four pillars.
           </h2>
-          <p className="text-base text-[#9FB0C3]" style={{ fontFamily: BODY }}>Every screen built for decisions, not analysis.</p>
+          <p className="text-base text-[#9FB0C3]" style={{ fontFamily: BODY }}>Built for decisions, not analysis.</p>
         </div>
 
         {/* Architecture: Inputs → BIQc Core → Outputs */}
