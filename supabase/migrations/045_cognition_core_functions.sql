@@ -263,7 +263,7 @@ BEGIN
     ELSE
         DECLARE v_baseline JSONB;
         BEGIN
-            v_baseline := ic_calculate_risk_baseline(p_tenant_id, NULL::UUID);
+            v_baseline := fn_safe_risk_baseline(p_tenant_id);
             IF v_baseline->>'status' != 'computed' THEN
                 RETURN jsonb_build_object('status', 'insufficient_data', 'propagation_map', '[]'::JSONB, 'chains', '[]'::JSONB);
             END IF;
@@ -353,7 +353,7 @@ DECLARE
     v_evaluated INT := 0; v_results JSONB := '[]'::JSONB;
     v_elapsed INT;
 BEGIN
-    v_baseline := ic_calculate_risk_baseline(p_tenant_id, NULL::UUID);
+    v_baseline := fn_safe_risk_baseline(p_tenant_id);
     IF v_baseline->>'status' = 'computed' THEN
         v_indices := v_baseline->'indices';
     ELSE
@@ -559,7 +559,7 @@ DECLARE
     v_evidence JSONB; v_prop JSONB;
     v_active_decisions INT;
 BEGIN
-    v_baseline := ic_calculate_risk_baseline(p_tenant_id, NULL::UUID);
+    v_baseline := fn_safe_risk_baseline(p_tenant_id);
     IF v_baseline->>'status' != 'computed' THEN
         RETURN jsonb_build_object('status', 'skipped', 'reason', v_baseline->>'status');
     END IF;
@@ -620,7 +620,7 @@ BEGIN
     v_health := fn_check_integration_health(p_tenant_id);
 
     -- 3. INSTABILITY ENGINE (existing ic_calculate_risk_baseline)
-    v_baseline := ic_calculate_risk_baseline(p_tenant_id, NULL::UUID);
+    v_baseline := fn_safe_risk_baseline(p_tenant_id);
     IF v_baseline->>'status' = 'computed' THEN
         v_indices := v_baseline->'indices';
         v_composite := v_baseline->'composite';
