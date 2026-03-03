@@ -1,45 +1,47 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const BODY = "'Inter', sans-serif";
-const HEADING = "'Cormorant Garamond', Georgia, serif";
+const INTER = "'Inter', sans-serif";
 
 // Premium sheen reserved. Not approved.
 
-// Parse **word** markers into orange-highlighted spans
-const RichText = ({ text, className, style }) => {
-  const parts = text.split(/(\*\*.*?\*\*)/g);
+// Parse **word** for orange and //word// for italic
+const RichText = ({ text, style }) => {
+  // Split on **...** and //...// markers
+  const parts = text.split(/(\*\*.*?\*\*|\/\/.*?\/\/)/g);
   return (
-    <span className={className} style={style}>
-      {parts.map((part, i) =>
-        part.startsWith('**') && part.endsWith('**') ? (
-          <span key={i} style={{ color: '#FF6A00' }}>{part.slice(2, -2)}</span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
+    <span style={style}>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <span key={i} style={{ color: '#FF6A00' }}>{part.slice(2, -2)}</span>;
+        }
+        if (part.startsWith('//') && part.endsWith('//')) {
+          return <em key={i} style={{ fontStyle: 'italic' }}>{part.slice(2, -2)}</em>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
     </span>
   );
 };
 
 const VARIANTS = [
   {
-    h1: 'BIQc — A Single **Stability Engine** Across All Departments & Tools',
+    h1: '//BIQc// — A Single **Stability Engine** Across All Departments & Tools',
     h2: 'Unify fragmented business tools, data and departments into structured decision ready intelligence',
   },
   {
-    h1: '**Integrates** your Financials, Operational, Sales & Marketing Systems Into **One Intelligence Layer**',
-    h2: 'BIQc connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
+    h1: '**Integrate** your Financial, Operational, Sales & Marketing Systems Into **One Intelligence Layer**',
+    h2: '//BIQc// connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
   },
   {
-    h1: 'BIQc — **Intelligence** Above Your Systems',
+    h1: '//BIQc// — **Intelligence** Above Your Systems',
     h2: 'Detect instability, constantly learning from every past and present to strengthen your business decisions',
   },
 ];
 
-// Fixed viewport: H1 + gap + H2 only (prefix/bullets moved to CTA block)
-const VIEWPORT_HEIGHT_DESKTOP = 260;
-const VIEWPORT_HEIGHT_MOBILE = 300;
+// Viewport: H1 (Inter 500, ~100px) + gap + H2 (Inter 300, ~50px)
+const VIEWPORT_HEIGHT_DESKTOP = 290;
+const VIEWPORT_HEIGHT_MOBILE = 330;
 
 const EASING = 'cubic-bezier(0.42, 0, 0.2, 1)';
 const INTERVAL = 12000;
@@ -69,21 +71,21 @@ const HeroLayer = ({ variant, phase, isMobile, zIndex }) => {
         ...layerStyle,
       }}
     >
-      {/* H1 */}
+      {/* H1 — Inter Medium 500 */}
       <h1
-        className="text-[26px] sm:text-[40px] lg:text-[52px] font-bold leading-[1.12] mb-6 sm:mb-10 tracking-tight max-w-[900px] mx-auto px-4"
-        style={{ fontFamily: HEADING, color: '#FFFFFF', textShadow: '0 2px 20px rgba(255,255,255,0.15), 0 1px 8px rgba(0,0,0,0.5)' }}
+        className="text-[26px] sm:text-[40px] lg:text-[52px] leading-[1.12] mb-6 sm:mb-10 tracking-tight max-w-[900px] mx-auto px-4"
+        style={{ fontFamily: INTER, fontWeight: 500, color: '#FFFFFF', textShadow: '0 2px 20px rgba(255,255,255,0.12), 0 1px 6px rgba(0,0,0,0.4)' }}
       >
         <RichText text={variant.h1} />
       </h1>
 
-      {/* H2 — plain text, no orange highlights */}
+      {/* H2 — Inter Light 300 */}
       {variant.h2 && (
         <h2
           className="text-[14px] sm:text-[19px] lg:text-[22px] max-w-2xl mx-auto leading-[1.5] px-4"
-          style={{ fontFamily: BODY, color: '#9FB0C3' }}
+          style={{ fontFamily: INTER, fontWeight: 300, color: '#9FB0C3' }}
         >
-          {variant.h2}
+          <RichText text={variant.h2} />
         </h2>
       )}
     </div>
@@ -119,7 +121,6 @@ export const LiquidSteelHeroRotator = () => {
     return () => { document.removeEventListener('visibilitychange', onVis); if (obs) obs.disconnect(); };
   }, []);
 
-  // Reset and start auto timer
   const startAutoTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
@@ -136,20 +137,15 @@ export const LiquidSteelHeroRotator = () => {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [activeIndex, transitioning, startAutoTimer]);
 
-  // Transition to a specific index
   const goTo = useCallback((targetIdx) => {
     if (transitioning || targetIdx === activeIndex) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-
     setNextIndex(targetIdx);
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setTransitioning(true);
-      });
+      requestAnimationFrame(() => { setTransitioning(true); });
     });
   }, [transitioning, activeIndex]);
 
-  // Transition completion
   useEffect(() => {
     if (!transitioning || nextIndex === null) return;
     const dur = isMobile ? 900 : 1000;
@@ -182,60 +178,24 @@ export const LiquidSteelHeroRotator = () => {
       onMouseLeave={() => { hoverRef.current = false; }}
       data-testid="hero-viewport"
     >
-      {/* Current layer */}
-      <HeroLayer
-        variant={VARIANTS[activeIndex]}
-        phase={transitioning ? 'current-exiting' : 'current-static'}
-        isMobile={isMobile}
-        zIndex={1}
-      />
-
-      {/* Next layer — only in DOM during transition */}
+      <HeroLayer variant={VARIANTS[activeIndex]} phase={transitioning ? 'current-exiting' : 'current-static'} isMobile={isMobile} zIndex={1} />
       {nextIndex !== null && (
-        <HeroLayer
-          variant={VARIANTS[nextIndex]}
-          phase={transitioning ? 'next-entering' : 'next-staged'}
-          isMobile={isMobile}
-          zIndex={2}
-        />
+        <HeroLayer variant={VARIANTS[nextIndex]} phase={transitioning ? 'next-entering' : 'next-staged'} isMobile={isMobile} zIndex={2} />
       )}
 
-      {/* Manual navigation arrows */}
-      <button
-        onClick={goPrev}
-        data-testid="hero-prev"
+      {/* Navigation arrows */}
+      <button onClick={goPrev} data-testid="hero-prev" aria-label="Previous"
         className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-200"
-        style={{
-          zIndex: 5,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          color: '#9FB0C3',
-          opacity: transitioning ? 0.3 : 0.6,
-          pointerEvents: transitioning ? 'none' : 'auto',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,106,0,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.3)'; e.currentTarget.style.color = '#FF6A00'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#9FB0C3'; }}
-        aria-label="Previous hero"
-      >
+        style={{ zIndex: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9FB0C3', opacity: transitioning ? 0.3 : 0.6, pointerEvents: transitioning ? 'none' : 'auto' }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.3)'; e.currentTarget.style.color = '#FF6A00'; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#9FB0C3'; }}>
         <ChevronLeft className="w-5 h-5" />
       </button>
-
-      <button
-        onClick={goNext}
-        data-testid="hero-next"
+      <button onClick={goNext} data-testid="hero-next" aria-label="Next"
         className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-200"
-        style={{
-          zIndex: 5,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          color: '#9FB0C3',
-          opacity: transitioning ? 0.3 : 0.6,
-          pointerEvents: transitioning ? 'none' : 'auto',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,106,0,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.3)'; e.currentTarget.style.color = '#FF6A00'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#9FB0C3'; }}
-        aria-label="Next hero"
-      >
+        style={{ zIndex: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9FB0C3', opacity: transitioning ? 0.3 : 0.6, pointerEvents: transitioning ? 'none' : 'auto' }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.3)'; e.currentTarget.style.color = '#FF6A00'; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#9FB0C3'; }}>
         <ChevronRight className="w-5 h-5" />
       </button>
     </div>

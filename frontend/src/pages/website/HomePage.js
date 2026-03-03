@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
+import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
 import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
 
 const HEADING = "'Cormorant Garamond', Georgia, serif";
@@ -31,7 +32,7 @@ const HomePage = () => (
       {/* Orange glow — hidden on mobile */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10 hidden sm:block" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-24 pb-8 sm:pb-20 relative z-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-24 pb-2 sm:pb-4 relative z-10">
         <div className="text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
             <Shield className="w-3.5 h-3.5 text-[#FF6A00]" />
@@ -67,19 +68,22 @@ const HomePage = () => (
             <p className="text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>No credit card required &middot; Australian owned & operated</p>
           </div>
         </div>
+
+        {/* Stats — inside hero section for above-fold */}
+        <div className="max-w-5xl mx-auto px-6 pt-6 sm:pt-10 pb-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8">
+            <StatBlock value="40%" label="Operational Improvement" />
+            <StatBlock value="50%" label="Reduced Manual Work" />
+            <StatBlock value="80%" label="Lower Processing Costs" />
+            <StatBlock value="3x" label="Faster Anomaly Detection" />
+            <StatBlock value="-25%" label="Fewer Preventable Errors" />
+          </div>
+        </div>
       </div>
     </section>
 
-    {/* ══ STATS BAR ══ */}
-    <section className="border-y" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }} data-testid="stats-section">
-      <div className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
-        <StatBlock value="40%" label="Operational Improvement" />
-        <StatBlock value="50%" label="Reduced Manual Work" />
-        <StatBlock value="80%" label="Lower Processing Costs" />
-        <StatBlock value="3x" label="Faster Anomaly Detection" />
-        <StatBlock value="-25%" label="Fewer Preventable Errors" />
-      </div>
-    </section>
+    {/* ══ INTEGRATION CAROUSEL ══ */}
+    <IntegrationCarousel />
 
     {/* ══ WHAT COGNITION DELIVERS ══ */}
     <section className="py-24" data-testid="cognition-section">
