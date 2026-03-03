@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
+import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
 
 const HEADING = "'Cormorant Garamond', Georgia, serif";
@@ -38,16 +39,11 @@ const HomePage = () => (
           </div>
 
           <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-bold leading-[1.15] mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #FFFFFF' }}>
-            Run Your Business Like The<br />
-            <span style={{ color: '#FF6A00' }}>Big Players</span> Without The Cost
+            <span style={{ color: '#9FB0C3' }} className="block text-xs sm:text-sm font-medium tracking-widest uppercase mb-3 sm:mb-4" data-testid="hero-label">Australian Owned &amp; Operated</span>
           </h1>
 
-          <p className="text-sm sm:text-lg max-w-2xl mx-auto mb-3 sm:mb-4 leading-relaxed" style={{ fontFamily: BODY, color: '#9FB0C3' }}>
-            Your Digital Leadership team surfacing risk & preventing problems weeks in advance.
-          </p>
-          <p className="hidden sm:block text-base max-w-xl mx-auto mb-10" style={{ fontFamily: BODY, color: '#9FB0C3' }}>
-            Your Chief Agent that deploys AI agents to monitor, plan, execute, and optimise across your entire business.
-          </p>
+          <LiquidSteelHeroRotator />
+
           <div className="block sm:hidden mb-4" />
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
