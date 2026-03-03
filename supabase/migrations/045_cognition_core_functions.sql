@@ -65,8 +65,8 @@ BEGIN
     -- 1. Business profile (freshness = updated_at)
     SELECT jsonb_build_object('business_name', business_name, 'industry', industry, 'website', website,
         'team_size', team_size, 'years_operating', years_operating, 'target_market', target_market,
-        'products_services', products_services, 'competitive_advantages', competitive_advantages,
-        'calibration_status', calibration_status), updated_at
+        'unique_value_proposition', unique_value_proposition, 'competitive_advantages', competitive_advantages,
+        'business_stage', business_stage, 'location', location, 'business_model', business_model), updated_at
     INTO v_tmp, v_tmp_ts FROM business_profiles WHERE user_id = p_tenant_id LIMIT 1;
 
     IF v_tmp IS NOT NULL THEN
