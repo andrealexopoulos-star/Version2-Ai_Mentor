@@ -1,33 +1,37 @@
+import { BrandLogo, getBrandColor } from './BrandLogos';
+
 const MONO = "'JetBrains Mono', monospace";
 const INTER = "'Inter', sans-serif";
 
-// Actual brand logos via logo.clearbit.com — displayed as images only, no text blocks
-const BRANDS_ROW1 = [
-  'hubspot.com','salesforce.com','xero.com','stripe.com','slack.com','google.com',
-  'shopify.com','notion.so','microsoft.com','quickbooks.intuit.com','monday.com',
-  'asana.com','trello.com','zoom.us','dropbox.com','atlassian.com','zendesk.com',
-  'freshworks.com','mailchimp.com','twilio.com','intercom.com','calendly.com',
-  'airtable.com','clickup.com','pipedrive.com','canva.com','figma.com','miro.com',
-  'github.com','zapier.com',
+const ROW1_BRANDS = [
+  'HubSpot','Salesforce','Xero','Stripe','Slack','Google','Shopify',
+  'QuickBooks','Notion','Microsoft','AWS','DocuSign','Snowflake','Tableau',
 ];
 
-const BRANDS_ROW2 = [
-  'snowflake.com','tableau.com','aws.amazon.com','docusign.com','okta.com',
-  'netsuite.com','sage.com','sap.com','servicenow.com','azure.microsoft.com',
-  'wrike.com','squareup.com','paypal.com','gusto.com','bamboohr.com','workday.com',
-  'adp.com','hootsuite.com','semrush.com','hotjar.com','mixpanel.com','segment.com',
-  'datadog.com','pagerduty.com','sentry.io','braze.com','klaviyo.com','rippling.com',
-  'deel.com','loom.com',
+const ROW2_BRANDS = [
+  'Monday','Asana','Zoom','Dropbox','Zendesk','Mailchimp','Pipedrive',
+  'HubSpot','Salesforce','Xero','Stripe','Slack','Google','Shopify',
 ];
 
-const LogoImg = ({ domain }) => (
-  <img
-    src={`https://logo.clearbit.com/${domain}?size=80`}
-    alt={domain.split('.')[0]}
-    className="h-8 sm:h-10 w-auto object-contain shrink-0 opacity-70 hover:opacity-100 transition-opacity duration-300"
-    loading="lazy"
-    onError={e => { e.target.style.display = 'none'; }}
-  />
+const LogoCard = ({ name }) => (
+  <div
+    className="logo-card flex flex-col items-center justify-center gap-2 shrink-0"
+    style={{
+      width: 100,
+      height: 90,
+      background: 'rgba(255,255,255,0.02)',
+      border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: 10,
+      transition: 'all 0.3s ease',
+      cursor: 'default',
+    }}
+    data-testid={`integration-card-${name.toLowerCase()}`}
+  >
+    <BrandLogo name={name} size={36} />
+    <span className="text-[10px] font-medium" style={{ fontFamily: MONO, color: getBrandColor(name), opacity: 0.8 }}>
+      {name}
+    </span>
+  </div>
 );
 
 export const IntegrationCarousel = () => (
@@ -42,24 +46,46 @@ export const IntegrationCarousel = () => (
     </div>
 
     <style>{`
-      @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-      @keyframes scrollRight { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
-      .logo-scroll-left { animation: scrollLeft 120s linear infinite; }
-      .logo-scroll-right { animation: scrollRight 120s linear infinite; }
-      .logo-scroll-left:hover, .logo-scroll-right:hover { animation-play-state: paused; }
+      @keyframes carouselLeft {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      @keyframes carouselRight {
+        0% { transform: translateX(-50%); }
+        100% { transform: translateX(0); }
+      }
+      .carousel-row-left {
+        animation: carouselLeft 25s linear infinite;
+      }
+      .carousel-row-right {
+        animation: carouselRight 25s linear infinite;
+      }
+      .carousel-row-left:hover,
+      .carousel-row-right:hover {
+        animation-play-state: paused;
+      }
+      .logo-card:hover {
+        background: rgba(255,140,40,0.35) !important;
+        border-color: rgba(255,140,40,0.5) !important;
+        transform: translateY(-2px);
+      }
     `}</style>
 
     {/* Row 1 — slow left scroll */}
-    <div className="overflow-hidden mb-8 sm:mb-12">
-      <div className="logo-scroll-left flex items-center gap-12 sm:gap-16" style={{ width: 'max-content' }}>
-        {[...BRANDS_ROW1, ...BRANDS_ROW1].map((d, i) => <LogoImg key={`a-${i}`} domain={d} />)}
+    <div className="overflow-hidden mb-6 sm:mb-10">
+      <div className="carousel-row-left flex items-center gap-4 sm:gap-6" style={{ width: 'max-content' }}>
+        {[...ROW1_BRANDS, ...ROW1_BRANDS].map((name, i) => (
+          <LogoCard key={`r1-${i}`} name={name} />
+        ))}
       </div>
     </div>
 
     {/* Row 2 — slow right scroll */}
     <div className="overflow-hidden">
-      <div className="logo-scroll-right flex items-center gap-12 sm:gap-16" style={{ width: 'max-content' }}>
-        {[...BRANDS_ROW2, ...BRANDS_ROW2].map((d, i) => <LogoImg key={`b-${i}`} domain={d} />)}
+      <div className="carousel-row-right flex items-center gap-4 sm:gap-6" style={{ width: 'max-content' }}>
+        {[...ROW2_BRANDS, ...ROW2_BRANDS].map((name, i) => (
+          <LogoCard key={`r2-${i}`} name={name} />
+        ))}
       </div>
     </div>
   </section>

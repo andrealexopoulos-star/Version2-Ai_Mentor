@@ -4,6 +4,7 @@ import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
+import EnergyGalaxyBackground from '../../components/website/EnergyGalaxyBackground';
 import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
 
 const HEADING = "'Cormorant Garamond', Georgia, serif";
@@ -27,29 +28,13 @@ const StatBlock = ({ value, label }) => (
 
 const HomePage = () => (
   <WebsiteLayout>
-    {/* ══ HERO ══ */}
+    {/* HERO with full animated galaxy background */}
     <section className="relative overflow-hidden" style={{ minHeight: '88vh' }} data-testid="hero-section">
-      {/* Orange energy galaxy background */}
-      <style>{`
-        @keyframes energyWave1{0%{transform:translateX(-5%) rotate(0deg)}50%{transform:translateX(5%) rotate(1deg)}100%{transform:translateX(-5%) rotate(0deg)}}
-        @keyframes energyWave2{0%{transform:translateX(3%)}50%{transform:translateX(-3%)}100%{transform:translateX(3%)}}
-        @keyframes shimmer{0%,100%{opacity:0.3}50%{opacity:0.7}}
-      `}</style>
+      {/* Base dark background */}
       <div className="absolute inset-0" style={{ background: '#07121E' }} />
-      {/* Central orange nebula */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[800px]" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(255,106,0,0.14) 0%, rgba(255,80,0,0.07) 25%, rgba(200,60,0,0.03) 45%, transparent 70%)', pointerEvents: 'none' }} />
-      {/* Top energy wave */}
-      <div className="absolute hidden sm:block" style={{ top: '18%', left: '-5%', right: '-5%', height: 2, background: 'linear-gradient(90deg, transparent 5%, rgba(255,120,20,0.4) 20%, rgba(255,160,60,0.6) 35%, rgba(255,100,0,0.3) 50%, rgba(255,140,40,0.5) 65%, rgba(255,120,20,0.4) 80%, transparent 95%)', animation: 'energyWave1 8s ease-in-out infinite', filter: 'blur(1px)', boxShadow: '0 0 20px rgba(255,120,20,0.3), 0 0 60px rgba(255,100,0,0.15)' }} />
-      {/* Bottom energy wave */}
-      <div className="absolute hidden sm:block" style={{ bottom: '10%', left: '-5%', right: '-5%', height: 2, background: 'linear-gradient(90deg, transparent 5%, rgba(255,100,0,0.3) 25%, rgba(255,140,40,0.5) 40%, rgba(255,160,60,0.6) 55%, rgba(255,100,0,0.4) 70%, rgba(255,120,20,0.3) 85%, transparent 95%)', animation: 'energyWave2 10s ease-in-out infinite', filter: 'blur(1px)', boxShadow: '0 0 20px rgba(255,120,20,0.3), 0 0 60px rgba(255,100,0,0.15)' }} />
-      {/* Mid wave */}
-      <div className="absolute hidden sm:block" style={{ top: '48%', left: '-3%', right: '-3%', height: 1, background: 'linear-gradient(90deg, transparent 10%, rgba(255,120,20,0.12) 30%, rgba(255,140,40,0.2) 50%, rgba(255,120,20,0.12) 70%, transparent 90%)', animation: 'energyWave1 12s ease-in-out infinite 2s', filter: 'blur(2px)' }} />
-      {/* Particles */}
-      {[15,25,8,45,62,78,35,55,88,12,70,40,92,5,50,30,85,18,68,42].map((pos, i) => (
-        <div key={i} className="absolute rounded-full hidden sm:block" style={{ width: 1 + (i % 3), height: 1 + (i % 3), left: `${pos}%`, top: `${(pos * 7 + i * 13) % 100}%`, background: `rgba(255,${140 + (i % 4) * 15},${20 + (i % 3) * 10},${0.4 + (i % 3) * 0.15})`, boxShadow: `0 0 ${4 + (i % 5) * 2}px rgba(255,120,20,0.4)`, animation: `shimmer ${3 + (i % 4)}s ease-in-out infinite ${(i % 5) * 0.7}s`, pointerEvents: 'none' }} />
-      ))}
-      {/* Subtle grid */}
-      <div className="absolute inset-0 opacity-[0.015] hidden sm:block" style={{ backgroundImage: 'linear-gradient(rgba(255,140,40,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,140,40,0.4) 1px, transparent 1px)', backgroundSize: '72px 72px' }} />
+
+      {/* Canvas-based animated energy galaxy */}
+      <EnergyGalaxyBackground />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-28 relative z-10">
         <div className="text-center">
@@ -62,7 +47,7 @@ const HomePage = () => (
           {/* Rotating headline + subheadline */}
           <LiquidSteelHeroRotator />
 
-          {/* CTA — 40px gap from subheadline */}
+          {/* CTA */}
           <div className="hero-cta-block pt-10" style={{ position: 'relative', zIndex: 10 }}>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
               <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="hero-cta">
@@ -71,7 +56,7 @@ const HomePage = () => (
             </div>
             <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors mb-10" style={{ fontFamily: MONO, color: '#A6B2C1' }} data-testid="hero-login">Already have an account? Log in</Link>
 
-            {/* Continuously Learning — 40px gap from CTA */}
+            {/* Continuously Learning */}
             <div className="flex flex-col items-center gap-3">
               <span className="text-[12px] sm:text-[14px]" style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.45 }}>Continuously Learning &amp; Designed to</span>
               <div className="flex items-center gap-5 sm:gap-8">
@@ -90,12 +75,12 @@ const HomePage = () => (
       </div>
     </section>
 
-    {/* ══ INTELLIGENCE ARCHITECTURE DIAGRAM — 80px gap ══ */}
+    {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
     <div style={{ background: '#07121E' }}>
       <IntelligenceDiagram />
     </div>
 
-    {/* ══ STATS — 80px gap ══ */}
+    {/* STATS */}
     <section className="py-16 sm:py-20" style={{ background: '#07121E', borderTop: '1px solid rgba(255,140,40,0.06)' }} data-testid="stats-section">
       <div className="max-w-5xl mx-auto px-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 sm:gap-10">
@@ -108,12 +93,12 @@ const HomePage = () => (
       </div>
     </section>
 
-    {/* ══ INTEGRATION CAROUSEL — 80px gap ══ */}
+    {/* INTEGRATION CAROUSEL */}
     <div style={{ background: '#07121E' }}>
       <IntegrationCarousel />
     </div>
 
-    {/* ══ WHAT COGNITION DELIVERS ══ */}
+    {/* WHAT COGNITION DELIVERS */}
     <section className="py-20 sm:py-28" style={{ background: '#07121E' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
         <div className="mb-14 sm:mb-16">
@@ -148,7 +133,7 @@ const HomePage = () => (
       </div>
     </section>
 
-    {/* ══ CTA ══ */}
+    {/* CTA */}
     <section className="py-20 sm:py-28" style={{ background: '#0A1520' }} data-testid="cta-section">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
