@@ -25,27 +25,21 @@ const RichText = ({ text, className, style }) => {
 const VARIANTS = [
   {
     h1: 'BIQc — A Single **Stability Engine** Across All Departments & Tools',
-    h2: 'Unify fragmented business tools, data and departments into **structured decision ready intelligence**',
-    prefix: 'Continuously Learning & Designed to;',
-    inlineBullets: ['Protect', 'Stabilise', 'Strengthen'],
+    h2: 'Unify fragmented business tools, data and departments into structured decision ready intelligence',
   },
   {
     h1: '**Integrates** your Financials, Operational, Sales & Marketing Systems Into **One Intelligence Layer**',
-    h2: 'BIQc connects your systems, **detects emerging risk**, and measures the real impact of **leadership decisions**.',
-    prefix: 'Continuously Learning & Designed to;',
-    inlineBullets: ['Protect', 'Stabilise', 'Strengthen'],
+    h2: 'BIQc connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
   },
   {
     h1: 'BIQc — **Intelligence** Above Your Systems',
-    h2: '**Detect instability**, constantly learning from every past and present to **strengthen** your business decisions',
-    prefix: 'Continuously Learning & Designed to;',
-    inlineBullets: ['Protect', 'Stabilise', 'Strengthen'],
+    h2: 'Detect instability, constantly learning from every past and present to strengthen your business decisions',
   },
 ];
 
-// Fixed viewport height: H1 (~100px) + H2 (~56px) + prefix + bullets + gaps
-const VIEWPORT_HEIGHT_DESKTOP = 380;
-const VIEWPORT_HEIGHT_MOBILE = 420;
+// Fixed viewport: H1 + gap + H2 only (prefix/bullets moved to CTA block)
+const VIEWPORT_HEIGHT_DESKTOP = 260;
+const VIEWPORT_HEIGHT_MOBILE = 300;
 
 const EASING = 'cubic-bezier(0.42, 0, 0.2, 1)';
 const INTERVAL = 12000;
@@ -83,33 +77,14 @@ const HeroLayer = ({ variant, phase, isMobile, zIndex }) => {
         <RichText text={variant.h1} />
       </h1>
 
-      {/* H2 */}
+      {/* H2 — plain text, no orange highlights */}
       {variant.h2 && (
         <h2
-          className="text-[14px] sm:text-[19px] lg:text-[22px] max-w-2xl mx-auto mb-6 sm:mb-8 leading-[1.5] px-4"
+          className="text-[14px] sm:text-[19px] lg:text-[22px] max-w-2xl mx-auto leading-[1.5] px-4"
           style={{ fontFamily: BODY, color: '#9FB0C3' }}
         >
-          <RichText text={variant.h2} />
+          {variant.h2}
         </h2>
-      )}
-
-      {/* Prefix + inline orange tick words */}
-      {variant.prefix && variant.inlineBullets && (
-        <div className="flex flex-col items-center gap-3 sm:gap-4 pb-2">
-          <span className="text-[13px] sm:text-[15px]" style={{ fontFamily: BODY, color: '#9FB0C3', opacity: 0.6 }}>
-            {variant.prefix}
-          </span>
-          <div className="flex items-center gap-5 sm:gap-8">
-            {variant.inlineBullets.map((word, i) => (
-              <div key={i} className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 16 16" fill="none">
-                  <path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span className="text-[15px] sm:text-[20px] font-bold" style={{ fontFamily: BODY, color: '#FF6A00' }}>{word}</span>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );

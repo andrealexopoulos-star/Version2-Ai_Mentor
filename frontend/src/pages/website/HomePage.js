@@ -52,13 +52,19 @@ const HomePage = () => (
             </div>
             <Link to="/login-supabase" className="block text-center text-xs text-[#9FB0C3] hover:text-white transition-colors mb-6" style={{ fontFamily: MONO }} data-testid="hero-login">Already have an account? Log in</Link>
 
-            <div className="flex items-center justify-center gap-8 text-xs text-[#9FB0C3]/50" style={{ fontFamily: MONO }}>
-              <span>Not a chatbot.</span>
-              <span>Not a dashboard.</span>
-              <span>Not another tool.</span>
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <span className="text-[12px] sm:text-[14px]" style={{ fontFamily: BODY, color: '#9FB0C3', opacity: 0.5 }}>Continuously Learning &amp; Designed to;</span>
+              <div className="flex items-center gap-5 sm:gap-8">
+                {['Protect', 'Stabilise', 'Strengthen'].map((word) => (
+                  <div key={word} className="flex items-center gap-1.5 sm:gap-2">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <span className="text-[14px] sm:text-[18px] font-bold" style={{ fontFamily: BODY, color: '#FF6A00' }}>{word}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <p className="mt-4 text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>No credit card required &middot; Australian owned & operated</p>
+            <p className="text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>No credit card required &middot; Australian owned & operated</p>
           </div>
         </div>
       </div>
