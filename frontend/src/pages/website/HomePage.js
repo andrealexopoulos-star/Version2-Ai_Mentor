@@ -38,28 +38,30 @@ const HomePage = () => (
             <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>
           </div>
 
-          <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-bold leading-[1.15] mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #FFFFFF' }}>
-            <span style={{ color: '#9FB0C3' }} className="block text-xs sm:text-sm font-medium tracking-widest uppercase mb-3 sm:mb-4" data-testid="hero-label">Australian Owned &amp; Operated</span>
-          </h1>
+          <p className="text-xs sm:text-sm font-medium tracking-widest uppercase mb-4 sm:mb-6" style={{ color: '#9FB0C3' }} data-testid="hero-label">Australian Owned &amp; Operated</p>
 
+          {/* hero-viewport: rotating content ONLY — CTA is OUTSIDE this container */}
           <LiquidSteelHeroRotator />
 
-          <div className="block sm:hidden mb-4" />
+          {/* hero-cta-block: completely isolated from viewport — no inherited transform/opacity */}
+          <div className="hero-cta-block" style={{ position: 'relative', zIndex: 10 }}>
+            <div className="block sm:hidden mb-4" />
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-            <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="hero-cta">
-              Try It For Free <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+              <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="hero-cta">
+                Try It For Free <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <Link to="/login-supabase" className="block text-center text-xs text-[#9FB0C3] hover:text-white transition-colors mb-6" style={{ fontFamily: MONO }} data-testid="hero-login">Already have an account? Log in</Link>
+
+            <div className="flex items-center justify-center gap-8 text-xs text-[#9FB0C3]/50" style={{ fontFamily: MONO }}>
+              <span>Not a chatbot.</span>
+              <span>Not a dashboard.</span>
+              <span>Not another tool.</span>
+            </div>
+
+            <p className="mt-4 text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>No credit card required &middot; Australian owned & operated</p>
           </div>
-          <Link to="/login-supabase" className="block text-center text-xs text-[#9FB0C3] hover:text-white transition-colors mb-6" style={{ fontFamily: MONO }} data-testid="hero-login">Already have an account? Log in</Link>
-
-          <div className="flex items-center justify-center gap-8 text-xs text-[#9FB0C3]/50" style={{ fontFamily: MONO }}>
-            <span>Not a chatbot.</span>
-            <span>Not a dashboard.</span>
-            <span>Not another tool.</span>
-          </div>
-
-          <p className="mt-4 text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>No credit card required &middot; Australian owned & operated</p>
         </div>
       </div>
     </section>
