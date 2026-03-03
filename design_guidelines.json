@@ -1,142 +1,86 @@
 {
-  "identity": {
-    "name": "E1",
-    "persona": "The Anti-AI Designer",
-    "mission": "Create a 'Liquid Steel' executive operating system that feels controlled, decisive, and infrastructure-grade. No gamification, no excessive brightness.",
-    "principles": [
-      "Fusion over Imitation: Liquid Steel = FinTech Precision + Industrial Strength",
-      "Emotion First: The user 'Andre' feels calm, powerful, and in control.",
-      "Content is King: Data is the hero. Typography and spacing frame the data.",
-      "Contrast: Deep dark backgrounds (#0F1720) vs. Sharp Orange Accents (#FF6A00)."
-    ]
-  },
-  "theme": {
-    "name": "Liquid Steel",
-    "mode": "dark",
+  "project_name": "BIQc Homepage Refinement",
+  "theme": "Liquid Steel (Dark Mode)",
+  "guidelines": {
     "colors": {
-      "background": "#0F1720",
-      "panel": "#141C26",
-      "border": "#243140",
-      "text": {
-        "primary": "#F4F7FA",
-        "secondary": "#9FB0C3",
-        "muted": "#64748B"
-      },
-      "accent": {
-        "primary": "#FF6A00",
-        "hover": "#E65E00",
-        "active": "#CC5200"
-      },
-      "status": {
-        "critical": "#FF6A00",
-        "warning": "#F59E0B",
-        "success": "#10B981",
-        "info": "#3B82F6"
-      }
+      "bg_primary": "#0F1720",
+      "bg_secondary": "#141C26",
+      "accent_primary": "#FF6A00",
+      "text_secondary": "#9FB0C3"
     },
     "typography": {
-      "headings": {
-        "family": "Sora, sans-serif",
-        "weights": [600, 700],
-        "usage": "Page titles, card headers, section titles"
-      },
-      "body": {
-        "family": "Inter, sans-serif",
-        "weights": [400, 500],
-        "usage": "General text, labels, descriptions"
-      },
-      "metrics": {
-        "family": "JetBrains Mono, monospace",
-        "weights": [400, 500],
-        "usage": "KPIs, financial data, code snippets, IDs"
-      }
-    },
-    "spacing": {
-      "base": 4,
-      "scale": [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128],
-      "grid": "12-column",
-      "section_gap": "64px"
-    },
-    "visual_enhancers": {
-      "borders": "1px solid #243140",
-      "radius": "sm: 4px, md: 6px, lg: 8px",
-      "shadows": "none (flat, precision look) or very subtle ambient for float",
-      "glass": "backdrop-blur-md bg-[#141C26]/80 (Use sparingly for overlays)"
+      "heading": "Cormorant Garamond",
+      "body": "Inter",
+      "mono": "JetBrains Mono"
     }
   },
-  "layout_strategy": {
-    "container": "max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8",
-    "dashboard_grid": "grid grid-cols-12 gap-6",
-    "navigation": {
-      "sidebar": "Fixed left, width 280px, grouped by Intelligence, Execution, Systems, Governance",
-      "topbar": "Height 64px, Logo left, Status center, User right"
+  "instructions_to_main_agent": [
+    {
+      "file": "/app/frontend/src/pages/website/HomePage.js",
+      "action": "remove_element",
+      "description": "Remove the 'AUTONOMOUS BUSINESS INTELLIGENCE' orange pill/chip from the hero section.",
+      "target_code_block": "          <div className=\"inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8\" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>\n            <Shield className=\"w-3.5 h-3.5 text-[#FF6A00]\" />\n            <span className=\"text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[#FF6A00]\" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>\n          </div>",
+      "replacement": "{/* Pill Removed */}"
+    },
+    {
+      "file": "/app/frontend/src/pages/website/HomePage.js",
+      "action": "replace_text",
+      "description": "Place 'Autonomous Business Intelligence' text in the orange trust section (What Cognition Delivers header).",
+      "search_text": "What Cognition-as-a-Service Delivers",
+      "replacement_text": "Autonomous Business Intelligence"
+    },
+    {
+      "file": "/app/frontend/src/pages/website/HomePage.js",
+      "action": "replace_text_batch",
+      "description": "Reduce word density in Feature Cards and Architecture Section.",
+      "replacements": [
+        {
+          "original": "Connects to your accounting, CRM, email, and operations. Watches every signal 24/7.",
+          "new": "Connects accounting, CRM, and ops. Watches 24/7."
+        },
+        {
+          "original": "Surfaces anomalies, cash flow risks, churn signals, and compliance gaps before they become problems.",
+          "new": "Flags anomalies, cash flow risks, and compliance gaps early."
+        },
+        {
+          "original": "Recommends actions, drafts communications, and automates corrective workflows across your business.",
+          "new": "Recommends actions, drafts comms, and automates workflows."
+        },
+        {
+          "original": "Daily intelligence briefs compiled from all your data sources. No dashboard digging required.",
+          "new": "Daily intelligence briefs from all sources. No dashboard digging."
+        },
+        {
+          "original": "Data hosted in Australia. No offshore processing. Full audit trail. Enterprise-grade security.",
+          "new": "Australian hosted. No offshore processing. Full audit trail."
+        },
+        {
+          "original": "Increase executive leverage, elevate team performance, and reduce burnout without expanding headcount.",
+          "new": "Boost leverage and performance without expanding headcount."
+        },
+        {
+          "original": "One platform. Four pillars of intelligence.",
+          "new": "One platform. Four pillars."
+        },
+        {
+          "original": "Every screen built for decisions, not analysis.",
+          "new": "Built for decisions, not analysis."
+        }
+      ]
+    },
+    {
+      "file": "/app/frontend/src/components/website/LiquidSteelHeroRotator.js",
+      "action": "replace_code_block",
+      "description": "Tighten Hero Rotator Copy for reduced word density.",
+      "target_variable": "VARIANTS",
+      "new_code": "const VARIANTS = [\n  {\n    headline: 'The stability layer for your business.',\n    lines: [\n      'Unifies systems.',\n      'Predicts risk.',\n      'Drives disciplined growth.',\n    ],\n  },\n  {\n    headline: 'Unified intelligence above your systems.',\n    lines: [\n      'Detects instability.',\n      'Models consequence.',\n      'Strengthens decisions.',\n    ],\n  },\n  {\n    headline: 'Continuous intelligence framework.',\n    lines: [\n      'Reveals pressure.',\n      'Forecasts impact.',\n      'Protects growth.',\n    ],\n  },\n  {\n    headline: 'The stability engine for modern business.',\n    lines: [\n      'Connects systems.',\n      'Detects risk.',\n      'Measures impact.',\n    ],\n  },\n];"
     }
-  },
-  "components": {
-    "buttons": {
-      "primary": "bg-[#FF6A00] hover:bg-[#E65E00] text-white font-semibold rounded-md px-4 py-2 transition-colors duration-200",
-      "secondary": "bg-[#141C26] border border-[#243140] text-[#F4F7FA] hover:bg-[#1E293B] rounded-md px-4 py-2 transition-colors duration-200",
-      "ghost": "text-[#9FB0C3] hover:text-[#F4F7FA] hover:bg-[#1E293B] rounded-md px-3 py-1.5 transition-colors duration-200"
-    },
-    "cards": {
-      "default": "bg-[#141C26] border border-[#243140] rounded-lg p-6 flex flex-col gap-4",
-      "metric": "bg-[#141C26] border border-[#243140] rounded-lg p-5 flex flex-col justify-between h-full"
-    },
-    "inputs": {
-      "default": "bg-[#0F1720] border border-[#243140] text-[#F4F7FA] placeholder-[#64748B] rounded-md px-3 py-2 focus:border-[#FF6A00] focus:ring-1 focus:ring-[#FF6A00] focus:outline-none transition-all duration-200"
-    },
-    "badges": {
-      "default": "bg-[#1E293B] text-[#9FB0C3] px-2 py-0.5 rounded text-xs font-mono uppercase tracking-wider",
-      "alert": "bg-[#FF6A00]/10 text-[#FF6A00] border border-[#FF6A00]/20 px-2 py-0.5 rounded text-xs font-mono uppercase tracking-wider"
-    }
-  },
-  "assets": {
-    "user_avatar": "https://images.unsplash.com/photo-1584940120505-117038d90b05?crop=entropy&cs=srgb&fm=jpg&w=150&q=80",
-    "logos": {
-      "salesforce": "https://logo.clearbit.com/salesforce.com",
-      "hubspot": "https://logo.clearbit.com/hubspot.com",
-      "stripe": "https://logo.clearbit.com/stripe.com",
-      "xero": "https://logo.clearbit.com/xero.com",
-      "slack": "https://logo.clearbit.com/slack.com",
-      "quickbooks": "https://logo.clearbit.com/quickbooks.intuit.com"
-    }
-  },
-  "pages": {
-    "login": {
-      "path": "/site/platform/login",
-      "description": "Minimalist, secure login. Liquid Steel theme. Logo + Credential fields + 'Secure Environment' badge."
-    },
-    "executive_overview": {
-      "path": "/site/platform/overview",
-      "description": "The command center. Health Strip (top), 'What Needs Attention' (cards), Financial Snapshot (charts), Intelligence Pulse."
-    },
-    "revenue_module": {
-      "path": "/site/platform/revenue",
-      "description": "Deep dive into pipeline, concentration, and churn. Dense data tables and trend lines."
-    },
-    "integrations": {
-      "path": "/site/platform/integrations",
-      "description": "Grid of connected tools. Slide-out panel for details. Status indicators are critical."
-    },
-    "alerts": {
-      "path": "/site/platform/alerts",
-      "description": "Prioritized list of actions. Critical (Orange), Moderate, Info. Clear CTAs."
-    },
-    "automations": {
-      "path": "/site/platform/automations",
-      "description": "IF/THEN builder interface. Visual logic flow. Controlled complexity."
-    }
-  },
-  "universal_guidelines": [
-    "DO NOT use generic gradients. Use solid colors and subtle borders.",
-    "DO NOT use 'Inter' for Headings. Use 'Sora'.",
-    "Orange (#FF6A00) is for ACTIONS and ALERTS only. Do not use it for decoration.",
-    "Always use 'JetBrains Mono' for numbers, currency, and percentages.",
-    "Ensure all interactive elements have `data-testid` attributes.",
-    "Use `sonner` for toasts.",
-    "Use `lucide-react` for icons.",
-    "Mobile: Bottom tab nav, swipeable cards.",
-    "Desktop: Fixed sidebar, high-density grids."
   ],
-  "instructions_to_main_agent": "You are building a high-fidelity mockup. Focus on the 'Liquid Steel' aesthetic. It should look like a tool for a CFO or COO—serious, precise, and expensive. Avoid whitespace overload; prefer dense, structured information hierarchy."
+  "universal_guidelines": [
+    "Do not converge toward generic outputs.",
+    "Maintain Liquid Steel theme (Dark Mode) strictly.",
+    "Do not apply 'transition: all'.",
+    "Use 'sonner' for toasts.",
+    "Ensure all interactive elements have data-testid."
+  ]
 }
