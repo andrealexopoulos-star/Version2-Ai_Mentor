@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
-import { ArrowRight, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
 
 const HEADING = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
@@ -33,9 +33,14 @@ const HomePage = () => (
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-24 pb-8 sm:pb-20 relative z-10">
         <div className="text-center">
-          {/* Pill removed — "Autonomous Business Intelligence" relocated to trust section below */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
+            <Shield className="w-3.5 h-3.5 text-[#FF6A00]" />
+            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Australian Owned &amp; Operated</span>
+          </div>
 
-          <p className="text-xs sm:text-sm font-medium tracking-widest uppercase mb-4 sm:mb-6" style={{ color: '#9FB0C3' }} data-testid="hero-label">Australian Owned &amp; Operated</p>
+          <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-bold leading-[1.15] mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }} data-testid="hero-h1">
+            Autonomous Business Intelligence
+          </h1>
 
           {/* hero-viewport: rotating content ONLY — CTA is OUTSIDE this container */}
           <LiquidSteelHeroRotator />
@@ -80,7 +85,7 @@ const HomePage = () => (
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
-            <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Autonomous Business Intelligence</span>
+            <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What Cognition-as-a-Service Delivers</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
