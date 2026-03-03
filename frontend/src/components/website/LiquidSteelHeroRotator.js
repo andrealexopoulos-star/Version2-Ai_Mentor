@@ -3,21 +3,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const INTER = "'Inter', sans-serif";
 
-// Premium sheen reserved. Not approved.
-
 // Parse **word** for orange and //word// for italic
 const RichText = ({ text, style }) => {
-  // Split on **...** and //...// markers
   const parts = text.split(/(\*\*.*?\*\*|\/\/.*?\/\/)/g);
   return (
     <span style={style}>
       {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <span key={i} style={{ color: '#FF6A00' }}>{part.slice(2, -2)}</span>;
-        }
-        if (part.startsWith('//') && part.endsWith('//')) {
-          return <em key={i} style={{ fontStyle: 'italic' }}>{part.slice(2, -2)}</em>;
-        }
+        if (part.startsWith('**') && part.endsWith('**')) return <span key={i} style={{ color: '#FF7A18' }}>{part.slice(2, -2)}</span>;
+        if (part.startsWith('//') && part.endsWith('//')) return <em key={i} style={{ fontStyle: 'italic' }}>{part.slice(2, -2)}</em>;
         return <span key={i}>{part}</span>;
       })}
     </span>
@@ -39,52 +32,35 @@ const VARIANTS = [
   },
 ];
 
-// Viewport: H1 (Inter 500, ~100px) + gap + H2 (Inter 300, ~50px)
-const VIEWPORT_HEIGHT_DESKTOP = 290;
-const VIEWPORT_HEIGHT_MOBILE = 330;
+const VIEWPORT_HEIGHT_DESKTOP = 260;
+const VIEWPORT_HEIGHT_MOBILE = 300;
+const INTERVAL = 8000;
 
-const EASING = 'cubic-bezier(0.42, 0, 0.2, 1)';
-const INTERVAL = 12000;
-
-const HeroLayer = ({ variant, phase, isMobile, zIndex }) => {
-  const tx = isMobile ? 30 : 60;
-  const dur = isMobile ? 900 : 1000;
-
+const HeroLayer = ({ variant, phase, zIndex }) => {
   let layerStyle;
   if (phase === 'current-static') {
-    layerStyle = { transform: 'translateX(0px)', opacity: 1, transition: 'none', zIndex };
+    layerStyle = { opacity: 1, transition: 'none', zIndex };
   } else if (phase === 'current-exiting') {
-    layerStyle = { transform: `translateX(${tx}px)`, opacity: 0, transition: `transform ${dur}ms ${EASING}, opacity 600ms ease-out 200ms`, zIndex };
+    layerStyle = { opacity: 0, transition: 'opacity 1200ms ease-in-out', zIndex };
   } else if (phase === 'next-staged') {
-    layerStyle = { transform: `translateX(-${tx}px)`, opacity: 0, transition: 'none', zIndex };
+    layerStyle = { opacity: 0, transition: 'none', zIndex };
   } else if (phase === 'next-entering') {
-    layerStyle = { transform: 'translateX(0px)', opacity: 1, transition: `transform ${dur}ms ${EASING}, opacity 600ms ease-in 200ms`, zIndex };
+    layerStyle = { opacity: 1, transition: 'opacity 1200ms ease-in-out', zIndex };
   }
 
   return (
-    <div
-      className="hero-layer"
-      style={{
-        position: 'absolute', top: 0, left: 0, width: '100%',
-        willChange: 'transform, opacity',
-        pointerEvents: phase === 'current-static' ? 'auto' : 'none',
-        ...layerStyle,
-      }}
-    >
-      {/* H1 — Inter Medium 500 */}
-      <h1
-        className="text-[26px] sm:text-[40px] lg:text-[52px] leading-[1.12] mb-6 sm:mb-10 tracking-tight max-w-[900px] mx-auto px-4"
-        style={{ fontFamily: INTER, fontWeight: 500, color: '#FFFFFF', textShadow: '0 2px 20px rgba(255,255,255,0.12), 0 1px 6px rgba(0,0,0,0.4)' }}
-      >
+    <div className="hero-layer" style={{
+      position: 'absolute', top: 0, left: 0, width: '100%',
+      willChange: 'opacity', pointerEvents: phase === 'current-static' ? 'auto' : 'none',
+      ...layerStyle,
+    }}>
+      <h1 className="text-[26px] sm:text-[40px] lg:text-[52px] leading-[1.12] mb-6 tracking-tight max-w-[900px] mx-auto px-4"
+        style={{ fontFamily: INTER, fontWeight: 500, color: '#E6EEF7', textShadow: '0 2px 20px rgba(255,255,255,0.08)' }}>
         <RichText text={variant.h1} />
       </h1>
-
-      {/* H2 — Inter Light 300 */}
       {variant.h2 && (
-        <h2
-          className="text-[14px] sm:text-[19px] lg:text-[22px] max-w-2xl mx-auto leading-[1.5] px-4"
-          style={{ fontFamily: INTER, fontWeight: 300, color: '#9FB0C3' }}
-        >
+        <h2 className="text-[14px] sm:text-[18px] lg:text-[21px] max-w-2xl mx-auto leading-[1.55] px-4"
+          style={{ fontFamily: INTER, fontWeight: 300, color: '#A6B2C1' }}>
           <RichText text={variant.h2} />
         </h2>
       )}
@@ -124,10 +100,7 @@ export const LiquidSteelHeroRotator = () => {
   const startAutoTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      if (pausedRef.current || hoverRef.current) {
-        timerRef.current = setTimeout(() => startAutoTimer(), 1000);
-        return;
-      }
+      if (pausedRef.current || hoverRef.current) { timerRef.current = setTimeout(() => startAutoTimer(), 1000); return; }
       goTo((activeIndex + 1) % VARIANTS.length);
     }, INTERVAL);
   }, [activeIndex]);
@@ -141,61 +114,44 @@ export const LiquidSteelHeroRotator = () => {
     if (transitioning || targetIdx === activeIndex) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     setNextIndex(targetIdx);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => { setTransitioning(true); });
-    });
+    requestAnimationFrame(() => { requestAnimationFrame(() => { setTransitioning(true); }); });
   }, [transitioning, activeIndex]);
 
   useEffect(() => {
     if (!transitioning || nextIndex === null) return;
-    const dur = isMobile ? 900 : 1000;
     transTimerRef.current = setTimeout(() => {
       setActiveIndex(nextIndex);
       setNextIndex(null);
       setTransitioning(false);
-    }, dur + 600);
+    }, 1400);
     return () => { if (transTimerRef.current) clearTimeout(transTimerRef.current); };
-  }, [transitioning, nextIndex, isMobile]);
+  }, [transitioning, nextIndex]);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (transTimerRef.current) clearTimeout(transTimerRef.current);
-    };
-  }, []);
+  useEffect(() => { return () => { if (timerRef.current) clearTimeout(timerRef.current); if (transTimerRef.current) clearTimeout(transTimerRef.current); }; }, []);
 
   const goNext = () => goTo((activeIndex + 1) % VARIANTS.length);
   const goPrev = () => goTo((activeIndex - 1 + VARIANTS.length) % VARIANTS.length);
-
   const vpHeight = isMobile ? VIEWPORT_HEIGHT_MOBILE : VIEWPORT_HEIGHT_DESKTOP;
 
   return (
-    <div
-      ref={viewportRef}
-      className="hero-viewport relative"
+    <div ref={viewportRef} className="hero-viewport relative"
       style={{ overflow: 'hidden', width: '100%', maxWidth: 960, margin: '0 auto', minHeight: vpHeight, height: vpHeight }}
-      onMouseEnter={() => { hoverRef.current = true; }}
-      onMouseLeave={() => { hoverRef.current = false; }}
-      data-testid="hero-viewport"
-    >
-      <HeroLayer variant={VARIANTS[activeIndex]} phase={transitioning ? 'current-exiting' : 'current-static'} isMobile={isMobile} zIndex={1} />
-      {nextIndex !== null && (
-        <HeroLayer variant={VARIANTS[nextIndex]} phase={transitioning ? 'next-entering' : 'next-staged'} isMobile={isMobile} zIndex={2} />
-      )}
-
-      {/* Navigation arrows */}
+      onMouseEnter={() => { hoverRef.current = true; }} onMouseLeave={() => { hoverRef.current = false; }}
+      data-testid="hero-viewport">
+      <HeroLayer variant={VARIANTS[activeIndex]} phase={transitioning ? 'current-exiting' : 'current-static'} zIndex={1} />
+      {nextIndex !== null && <HeroLayer variant={VARIANTS[nextIndex]} phase={transitioning ? 'next-entering' : 'next-staged'} zIndex={2} />}
       <button onClick={goPrev} data-testid="hero-prev" aria-label="Previous"
-        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-200"
-        style={{ zIndex: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9FB0C3', opacity: transitioning ? 0.3 : 0.6, pointerEvents: transitioning ? 'none' : 'auto' }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.3)'; e.currentTarget.style.color = '#FF6A00'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#9FB0C3'; }}>
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200"
+        style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#A6B2C1', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(255,122,24,0.3)'; e.currentTarget.style.color = '#FF7A18'; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#A6B2C1'; }}>
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button onClick={goNext} data-testid="hero-next" aria-label="Next"
-        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-200"
-        style={{ zIndex: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#9FB0C3', opacity: transitioning ? 0.3 : 0.6, pointerEvents: transitioning ? 'none' : 'auto' }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.3)'; e.currentTarget.style.color = '#FF6A00'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#9FB0C3'; }}>
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200"
+        style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#A6B2C1', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(255,122,24,0.3)'; e.currentTarget.style.color = '#FF7A18'; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#A6B2C1'; }}>
         <ChevronRight className="w-5 h-5" />
       </button>
     </div>

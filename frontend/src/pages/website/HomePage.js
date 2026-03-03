@@ -4,103 +4,111 @@ import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
 
 const HEADING = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
 const BODY = "'Inter', sans-serif";
+const INTER = BODY;
 
-const GlassCard = ({ children, className = '', hover = true }) => (
-  <div className={`rounded-2xl p-6 transition-all duration-300 ${hover ? 'hover:border-[#FF6A00]/30 hover:translate-y-[-2px]' : ''} ${className}`}
-    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)' }}>
+const GlassCard = ({ children, className = '' }) => (
+  <div className={`rounded-xl p-6 transition-all duration-300 hover:border-[#FF7A18]/30 hover:translate-y-[-2px] ${className}`}
+    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,140,40,0.15)', borderRadius: 12 }}>
     {children}
   </div>
 );
 
 const StatBlock = ({ value, label }) => (
   <div className="text-center">
-    <div className="text-4xl md:text-5xl font-bold mb-2" style={{ fontFamily: MONO, color: '#FF6A00' }}>{value}</div>
-    <div className="text-xs tracking-widest uppercase text-[#9FB0C3]/60" style={{ fontFamily: MONO }}>{label}</div>
+    <div className="text-[36px] sm:text-[42px] font-bold mb-2" style={{ fontFamily: MONO, color: '#FF7A18' }}>{value}</div>
+    <div className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.6 }}>{label}</div>
   </div>
 );
 
 const HomePage = () => (
   <WebsiteLayout>
     {/* ══ HERO ══ */}
-    <section className="relative overflow-hidden" data-testid="hero-section">
-      {/* Subtle grid pattern — hidden on mobile */}
-      <div className="absolute inset-0 opacity-[0.03] hidden sm:block" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
-      {/* Orange glow — hidden on mobile */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10 hidden sm:block" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
+    <section className="relative overflow-hidden" style={{ minHeight: '88vh' }} data-testid="hero-section">
+      {/* Intelligence field background */}
+      <div className="absolute inset-0" style={{ background: '#07121E' }} />
+      <div className="absolute inset-0 opacity-[0.02] hidden sm:block" style={{ backgroundImage: 'linear-gradient(rgba(255,140,40,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,140,40,0.3) 1px, transparent 1px)', backgroundSize: '72px 72px' }} />
+      {/* Soft orange energy wave */}
+      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full hidden sm:block" style={{ background: 'radial-gradient(ellipse, rgba(255,122,24,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-24 pb-2 sm:pb-4 relative z-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-28 relative z-10">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
-            <Shield className="w-3.5 h-3.5 text-[#FF6A00]" />
-            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>Australian Owned &amp; Operated</span>
+          {/* Trust badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 sm:mb-10" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
+            <Shield className="w-3.5 h-3.5" style={{ color: '#FF7A18' }} />
+            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18' }}>Australian Owned &amp; Operated</span>
           </div>
 
-          {/* hero-viewport: rotating content ONLY — CTA is OUTSIDE this container */}
+          {/* Rotating headline + subheadline */}
           <LiquidSteelHeroRotator />
 
-          {/* hero-cta-block: completely isolated from viewport — no inherited transform/opacity */}
-          <div className="hero-cta-block" style={{ position: 'relative', zIndex: 10 }}>
-            <div className="block sm:hidden mb-4" />
-
+          {/* CTA — 40px gap from subheadline */}
+          <div className="hero-cta-block pt-10" style={{ position: 'relative', zIndex: 10 }}>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-              <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="hero-cta">
+              <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="hero-cta">
                 Try It For Free <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <Link to="/login-supabase" className="block text-center text-xs text-[#9FB0C3] hover:text-white transition-colors mb-6" style={{ fontFamily: MONO }} data-testid="hero-login">Already have an account? Log in</Link>
+            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors mb-10" style={{ fontFamily: MONO, color: '#A6B2C1' }} data-testid="hero-login">Already have an account? Log in</Link>
 
-            <div className="flex flex-col items-center gap-3 mb-6">
-              <span className="text-[12px] sm:text-[14px]" style={{ fontFamily: BODY, color: '#9FB0C3', opacity: 0.5 }}>Continuously Learning &amp; Designed to;</span>
+            {/* Continuously Learning — 40px gap from CTA */}
+            <div className="flex flex-col items-center gap-3">
+              <span className="text-[12px] sm:text-[14px]" style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.45 }}>Continuously Learning &amp; Designed to</span>
               <div className="flex items-center gap-5 sm:gap-8">
                 {['Protect', 'Stabilise', 'Strengthen'].map((word) => (
                   <div key={word} className="flex items-center gap-1.5 sm:gap-2">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-[14px] sm:text-[18px] font-bold" style={{ fontFamily: BODY, color: '#FF6A00' }}>{word}</span>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF7A18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <span className="text-[14px] sm:text-[18px] font-bold" style={{ fontFamily: BODY, color: '#FF7A18' }}>{word}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <p className="text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>No credit card required &middot; Australian owned & operated</p>
-          </div>
-        </div>
-
-        {/* Stats — inside hero section for above-fold */}
-        <div className="max-w-5xl mx-auto px-6 pt-6 sm:pt-10 pb-2">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8">
-            <StatBlock value="40%" label="Operational Improvement" />
-            <StatBlock value="50%" label="Reduced Manual Work" />
-            <StatBlock value="80%" label="Lower Processing Costs" />
-            <StatBlock value="3x" label="Faster Anomaly Detection" />
-            <StatBlock value="-25%" label="Fewer Preventable Errors" />
+            <p className="mt-6 text-[11px]" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3 }}>No credit card required &middot; Australian owned & operated</p>
           </div>
         </div>
       </div>
     </section>
 
-    {/* ══ INTELLIGENCE ARCHITECTURE DIAGRAM ══ */}
-    <IntelligenceDiagram />
+    {/* ══ INTELLIGENCE ARCHITECTURE DIAGRAM — 80px gap ══ */}
+    <div style={{ background: '#07121E' }}>
+      <IntelligenceDiagram />
+    </div>
 
-    {/* ══ INTEGRATION CAROUSEL ══ */}
-    <IntegrationCarousel />
+    {/* ══ STATS — 80px gap ══ */}
+    <section className="py-16 sm:py-20" style={{ background: '#07121E', borderTop: '1px solid rgba(255,140,40,0.06)' }} data-testid="stats-section">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 sm:gap-10">
+          <StatBlock value="40%" label="Operational Improvement" />
+          <StatBlock value="50%" label="Reduced Manual Work" />
+          <StatBlock value="80%" label="Lower Processing Costs" />
+          <StatBlock value="3x" label="Faster Anomaly Detection" />
+          <StatBlock value="-25%" label="Fewer Preventable Errors" />
+        </div>
+      </div>
+    </section>
+
+    {/* ══ INTEGRATION CAROUSEL — 80px gap ══ */}
+    <div style={{ background: '#07121E' }}>
+      <IntegrationCarousel />
+    </div>
 
     {/* ══ WHAT COGNITION DELIVERS ══ */}
-    <section className="py-24" data-testid="cognition-section">
+    <section className="py-20 sm:py-28" style={{ background: '#07121E' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="mb-16">
+        <div className="mb-14 sm:mb-16">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
-            <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What Cognition-as-a-Service Delivers</span>
+            <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
+            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18' }}>What Cognition-as-a-Service Delivers</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base text-[#9FB0C3] max-w-xl" style={{ fontFamily: BODY }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl" style={{ fontFamily: BODY, color: '#A6B2C1' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -113,107 +121,30 @@ const HomePage = () => (
             { icon: Users, title: 'Maximise Output', desc: 'Boost leverage and performance without expanding headcount.' },
           ].map((item, i) => (
             <GlassCard key={i}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(255,106,0,0.1)' }}>
-                <item.icon className="w-5 h-5 text-[#FF6A00]" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(255,122,24,0.08)' }}>
+                <item.icon className="w-5 h-5" style={{ color: '#FF7A18' }} />
               </div>
-              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{item.title}</h3>
-              <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{item.desc}</p>
+              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>{item.title}</h3>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: BODY, color: '#A6B2C1' }}>{item.desc}</p>
             </GlassCard>
           ))}
         </div>
       </div>
     </section>
 
-    {/* ══ ARCHITECTURE DIAGRAM ══ */}
-    <section className="py-24" style={{ background: '#141C26' }} data-testid="architecture-section">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>The Functional Arsenal</span>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
-            One platform. Four pillars.
-          </h2>
-          <p className="text-base text-[#9FB0C3]" style={{ fontFamily: BODY }}>Built for decisions, not analysis.</p>
-        </div>
-
-        {/* Architecture: Inputs → BIQc Core → Outputs */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-          {/* LEFT: Inputs */}
-          <GlassCard hover={false}>
-            <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/50 mb-5" style={{ fontFamily: MONO }}>Connected Systems</h4>
-            <div className="grid grid-cols-2 gap-3">
-              {['Xero', 'MYOB', 'HubSpot', 'Salesforce', 'Stripe', 'Shopify', 'Google Workspace', 'Microsoft 365', 'Slack', 'Payroll'].map((name) => (
-                <div key={name} className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all hover:bg-white/5 group" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="w-2 h-2 rounded-full bg-[#9FB0C3]/30 group-hover:bg-[#FF6A00] transition-colors" />
-                  <span className="text-xs text-[#9FB0C3] group-hover:text-white transition-colors" style={{ fontFamily: MONO }}>{name}</span>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-
-          {/* CENTER: Core */}
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full flex items-center justify-center" style={{ background: 'radial-gradient(circle at 30% 30%, #2A3444, #141C26)', border: '2px solid rgba(255,106,0,0.3)', boxShadow: '0 0 60px rgba(255,106,0,0.15), inset 0 0 30px rgba(255,106,0,0.05)' }}>
-                <div className="text-center">
-                  <span className="text-xl font-bold text-[#FF6A00]" style={{ fontFamily: MONO }}>BIQc</span>
-                  <span className="block text-[10px] text-[#9FB0C3]/60" style={{ fontFamily: MONO }}>Intelligence</span>
-                </div>
-              </div>
-              {/* Pulse ring */}
-              <div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ border: '1px solid #FF6A00', animationDuration: '3s' }} />
-            </div>
-            <div className="mt-4 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] text-[#9FB0C3]/50" style={{ fontFamily: MONO }}>Always on. Always watching.</span>
-            </div>
-          </div>
-
-          {/* RIGHT: Outputs */}
-          <GlassCard hover={false}>
-            <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/50 mb-5" style={{ fontFamily: MONO }}>Intelligence Outputs</h4>
-            <div className="space-y-3">
-              {[
-                { label: 'Executive Alerts', color: '#EF4444' },
-                { label: 'Revenue Warnings', color: '#F59E0B' },
-                { label: 'Compliance Flags', color: '#8B5CF6' },
-                { label: 'Cash Flow Risks', color: '#FF6A00' },
-                { label: 'Auto-Generated Briefings', color: '#22C55E' },
-                { label: 'Corrective Actions', color: '#3B82F6' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:bg-white/5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-                  <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: MONO }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-        </div>
-      </div>
-    </section>
-
-    {/* ══ PERFORMANCE STATS ══ */}
-    <section className="py-20 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }} data-testid="performance-section">
-      <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-4 gap-10">
-        <StatBlock value="94%" label="Faster Loads" />
-        <StatBlock value="15+" label="Hrs/Week Reclaimed" />
-        <StatBlock value="500+" label="Integrations" />
-        <StatBlock value="24/7" label="Sentinel Active" />
-      </div>
-    </section>
-
     {/* ══ CTA ══ */}
-    <section className="py-24" style={{ background: '#141C26' }} data-testid="cta-section">
+    <section className="py-20 sm:py-28" style={{ background: '#0A1520' }} data-testid="cta-section">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
-          Stop reacting. Start <span style={{ color: '#FF6A00' }}>preventing.</span>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
+          Stop reacting. Start <span style={{ color: '#FF7A18' }}>preventing.</span>
         </h2>
-        <p className="text-base text-[#9FB0C3] mb-8 max-w-lg mx-auto" style={{ fontFamily: BODY }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: BODY, color: '#A6B2C1' }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="bottom-cta">
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4 text-[11px] text-[#9FB0C3]/40" style={{ fontFamily: MONO }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4 text-[11px]" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3 }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
   </WebsiteLayout>

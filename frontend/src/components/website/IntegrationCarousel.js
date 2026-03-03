@@ -93,8 +93,8 @@ export const IntegrationCarousel = () => {
           0% { transform: translateX(-50%); }
           100% { transform: translateX(0); }
         }
-        .carousel-row-left { animation: scrollLeft 60s linear infinite; }
-        .carousel-row-right { animation: scrollRight 60s linear infinite; }
+        .carousel-row-left { animation: scrollLeft 50s linear infinite; }
+        .carousel-row-right { animation: scrollRight 50s linear infinite; }
         .carousel-row-left:hover, .carousel-row-right:hover { animation-play-state: paused; }
       `}</style>
 
