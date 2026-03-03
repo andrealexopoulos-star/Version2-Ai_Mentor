@@ -1,54 +1,66 @@
-# BIQc Platform — PRD
-## 2 March 2026
+# BIQc Platform — Product Requirements Document
 
-## Platform Overview
-BIQc: AI-driven Cognition-as-a-Platform for SMBs. Architecture: backend-first — ALL computation in SQL functions, Python is thin pass-through, frontend renders only.
+## Original Problem Statement
+Transform the BIQc platform into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs. This involves a complete visual and architectural overhaul to a "Liquid Steel" dark theme, migrating backend logic to be vendor-agnostic, and building out numerous features. The core focus is on trust, data integrity (no fake data), and a seamless, intelligent user experience with high-ticket, executive-grade positioning.
 
-## Cognition Core v2 — Enterprise Grade (BUILT)
+## Core Architecture
+- **Frontend:** React (CRA) with Tailwind CSS + Shadcn/UI
+- **Backend:** FastAPI (Python) — thin pass-through to SQL engine
+- **Database:** Supabase (PostgreSQL) with SQL-first intelligence engine
+- **Deployment:** Azure (production), Emergent preview (development)
 
-### Master SQL Function
-`ic_generate_cognition_contract(tenant_id, tab)` — single function that orchestrates:
-1. Evidence Engine (freshness-weighted integrity scoring)
-2. Integration Health (SLA breach + degradation history)
-3. Instability Engine (RVI/EDS/CDR/ADS via ic_calculate_risk_baseline)
-4. Delta computation (vs yesterday's snapshot)
-5. Propagation Engine (compound chains A→B→C with amplification)
-6. Decision Consequence Evaluation (variance normalization + false positive detection)
-7. Bayesian Confidence Recalibration (decay + min 3 checkpoint gating)
-8. Drift Detection (Z-score >2 std deviations)
-9. Automation action attachment
-10. Evidence gating (blocks when integrity < 0.25)
+## What's Been Implemented
 
-### Tables (Migration 044)
-integration_health, integration_health_history, evidence_packs, cognition_decisions, outcome_checkpoints, propagation_rules, automation_actions, automation_executions, instability_snapshots, confidence_recalibrations, cognition_telemetry, drift_detection_log
+### Backend Cognition Core (Complete)
+- Enterprise-grade intelligence engine built entirely in SQL
+- 8 interconnected engines (Evidence, Instability, Propagation, etc.)
+- Master function `ic_generate_cognition_contract` (~25ms execution)
+- API endpoint: `/api/cognition/{tab}`
 
-### SQL Functions (Migration 045)
-fn_log_telemetry, fn_assemble_evidence_pack, fn_check_integration_health, fn_compute_propagation_map, fn_evaluate_pending_checkpoints, fn_recalibrate_confidence, fn_detect_drift, fn_snapshot_daily_instability, ic_generate_cognition_contract
+### Homepage Visual System (Complete — Mar 2026)
+- **EnergyGalaxyBackground**: Canvas-based animated orange intelligence field with neural energy threads, floating particles with glow, signal pulses, particle connections, energy wave bands, and central glow convergence
+- **LiquidSteelHeroRotator**: 3 rotating hero variants with 8s auto-rotate, 1.2s fade transitions, manual arrow navigation, pause on hover
+- **IntegrationCarousel**: 21 real SVG brand logos (HubSpot, Salesforce, Xero, Stripe, Slack, Google, Shopify, QuickBooks, Notion, Microsoft, AWS, DocuSign, Snowflake, Tableau, Monday, Asana, Zoom, Dropbox, Zendesk, Mailchimp, Pipedrive) in styled cards, 25s loop, pause on hover, two rows scrolling opposite directions
+- **IntelligenceDiagram**: 4-tier intelligence flow (Business Signals → Watchtower → BIQc → Decision Support) with animated signal pulses, glowing BIQc core with halo, radar sweep in Watchtower, animated connection lines
+- **Stats section**: 5 metrics with orange monospace values
+- **Cognition section**: 6 glass cards (Monitors, Detects, Prevents, Briefings, Sovereign, Output)
+- **CTA section**: Bottom call-to-action with registration links
+- **WebsiteLayout**: Dark nav with Trust dropdown, full footer
 
-### Deployment Status
-- SQL Migrations 044 + 045: **READY, AWAITING SUPABASE DEPLOYMENT**
-- Backend routes: **DEPLOYED** (17 endpoints, all auth-gated)
-- See `/app/memory/COGNITION_DEPLOYMENT_GUIDE.md`
+### Website Pages (Exist)
+- PricingPage, IntegrationsPage, IntelligencePage, PlatformPage, TrustLandingPage, TrustSubPages
 
-## API Endpoints — Cognition
-| Endpoint | Method | SQL Function Called |
-|----------|--------|-------------------|
-| /api/cognition/{tab} | GET | ic_generate_cognition_contract |
-| /api/cognition/decisions | GET/POST | Direct table access |
-| /api/cognition/automation/execute | POST | Direct table + health check |
-| /api/cognition/automation/history | GET | Direct table |
-| /api/cognition/integration-health | GET | fn_check_integration_health |
-| /api/cognition/integration-health/history | GET | Direct table |
-| /api/cognition/snapshot-instability | POST | fn_snapshot_daily_instability |
-| /api/cognition/drift | GET | fn_detect_drift |
-| /api/cognition/telemetry | GET | Direct table |
+### Internal Platform (Legacy — Needs Update)
+- RevenuePage, RiskPage, OperationsPage, Advisor, SoundBoard — NOT connected to new Cognition Core
 
-## Phase B — Frontend (After SQL Deployed)
-- Fix blank post-login screen
-- Restructure tabs to render cognition contract
-- Score transparency modals
-- Integration health banners
-- SoundBoard evidence injection
-- Admin nav restructure
-- Weekly check-in calendar
-- SMB terminology enforcement
+## Prioritized Backlog
+
+### P0 — Critical
+1. **Fix Broken User Onboarding Journey** — New users land on empty Advisor Dashboard after setup. Integration connection not in flow.
+2. **Phase B: Frontend Cognition Integration** — Connect internal pages to `/api/cognition/{tab}` endpoint
+
+### P1 — Important  
+3. **Daily Habit Loop** — "What changed in 24h?" summary, daily priority
+4. **Admin/Legal Nav Restructure** — Reorganize admin menu
+5. **Weekly Check-in Calendar** — Sidebar calendar with sync
+
+### P2 — Future
+6. **Mobile App Build-out** — Connect Expo skeleton to API
+7. **A/B Testing & Marketing Automation UIs**
+
+## Blocked Items
+- **Production Auth Errors** — `biqc.thestrategysquad.com` stuck in login loop due to misconfigured `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Azure. Blocked on user action.
+
+## Key Files
+- `frontend/src/pages/website/HomePage.js` — Main homepage
+- `frontend/src/components/website/EnergyGalaxyBackground.js` — Canvas background
+- `frontend/src/components/website/IntegrationCarousel.js` — Logo carousel
+- `frontend/src/components/website/BrandLogos.js` — SVG brand definitions
+- `frontend/src/components/website/IntelligenceDiagram.js` — Flow diagram
+- `frontend/src/components/website/LiquidSteelHeroRotator.js` — Hero rotator
+- `frontend/src/components/website/WebsiteLayout.js` — Layout wrapper
+- `backend/routes/cognition_contract.py` — Cognition API endpoint
+
+## Test Credentials
+- Email: `andre@thestrategysquad.com.au`
+- Password: `BIQc_Test_2026!`
