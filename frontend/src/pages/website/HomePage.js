@@ -29,11 +29,27 @@ const HomePage = () => (
   <WebsiteLayout>
     {/* ══ HERO ══ */}
     <section className="relative overflow-hidden" style={{ minHeight: '88vh' }} data-testid="hero-section">
-      {/* Intelligence field background */}
+      {/* Orange energy galaxy background */}
+      <style>{`
+        @keyframes energyWave1{0%{transform:translateX(-5%) rotate(0deg)}50%{transform:translateX(5%) rotate(1deg)}100%{transform:translateX(-5%) rotate(0deg)}}
+        @keyframes energyWave2{0%{transform:translateX(3%)}50%{transform:translateX(-3%)}100%{transform:translateX(3%)}}
+        @keyframes shimmer{0%,100%{opacity:0.3}50%{opacity:0.7}}
+      `}</style>
       <div className="absolute inset-0" style={{ background: '#07121E' }} />
-      <div className="absolute inset-0 opacity-[0.02] hidden sm:block" style={{ backgroundImage: 'linear-gradient(rgba(255,140,40,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,140,40,0.3) 1px, transparent 1px)', backgroundSize: '72px 72px' }} />
-      {/* Soft orange energy wave */}
-      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full hidden sm:block" style={{ background: 'radial-gradient(ellipse, rgba(255,122,24,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      {/* Central orange nebula */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[800px]" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(255,106,0,0.14) 0%, rgba(255,80,0,0.07) 25%, rgba(200,60,0,0.03) 45%, transparent 70%)', pointerEvents: 'none' }} />
+      {/* Top energy wave */}
+      <div className="absolute hidden sm:block" style={{ top: '18%', left: '-5%', right: '-5%', height: 2, background: 'linear-gradient(90deg, transparent 5%, rgba(255,120,20,0.4) 20%, rgba(255,160,60,0.6) 35%, rgba(255,100,0,0.3) 50%, rgba(255,140,40,0.5) 65%, rgba(255,120,20,0.4) 80%, transparent 95%)', animation: 'energyWave1 8s ease-in-out infinite', filter: 'blur(1px)', boxShadow: '0 0 20px rgba(255,120,20,0.3), 0 0 60px rgba(255,100,0,0.15)' }} />
+      {/* Bottom energy wave */}
+      <div className="absolute hidden sm:block" style={{ bottom: '10%', left: '-5%', right: '-5%', height: 2, background: 'linear-gradient(90deg, transparent 5%, rgba(255,100,0,0.3) 25%, rgba(255,140,40,0.5) 40%, rgba(255,160,60,0.6) 55%, rgba(255,100,0,0.4) 70%, rgba(255,120,20,0.3) 85%, transparent 95%)', animation: 'energyWave2 10s ease-in-out infinite', filter: 'blur(1px)', boxShadow: '0 0 20px rgba(255,120,20,0.3), 0 0 60px rgba(255,100,0,0.15)' }} />
+      {/* Mid wave */}
+      <div className="absolute hidden sm:block" style={{ top: '48%', left: '-3%', right: '-3%', height: 1, background: 'linear-gradient(90deg, transparent 10%, rgba(255,120,20,0.12) 30%, rgba(255,140,40,0.2) 50%, rgba(255,120,20,0.12) 70%, transparent 90%)', animation: 'energyWave1 12s ease-in-out infinite 2s', filter: 'blur(2px)' }} />
+      {/* Particles */}
+      {[15,25,8,45,62,78,35,55,88,12,70,40,92,5,50,30,85,18,68,42].map((pos, i) => (
+        <div key={i} className="absolute rounded-full hidden sm:block" style={{ width: 1 + (i % 3), height: 1 + (i % 3), left: `${pos}%`, top: `${(pos * 7 + i * 13) % 100}%`, background: `rgba(255,${140 + (i % 4) * 15},${20 + (i % 3) * 10},${0.4 + (i % 3) * 0.15})`, boxShadow: `0 0 ${4 + (i % 5) * 2}px rgba(255,120,20,0.4)`, animation: `shimmer ${3 + (i % 4)}s ease-in-out infinite ${(i % 5) * 0.7}s`, pointerEvents: 'none' }} />
+      ))}
+      {/* Subtle grid */}
+      <div className="absolute inset-0 opacity-[0.015] hidden sm:block" style={{ backgroundImage: 'linear-gradient(rgba(255,140,40,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,140,40,0.4) 1px, transparent 1px)', backgroundSize: '72px 72px' }} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-28 relative z-10">
         <div className="text-center">
