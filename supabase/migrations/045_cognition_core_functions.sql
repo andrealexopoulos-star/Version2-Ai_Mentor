@@ -81,7 +81,7 @@ BEGIN
     v_pack := v_pack || jsonb_build_object('profile', COALESCE(v_tmp, '{}'::JSONB));
 
     -- 2. Latest cognitive snapshot (freshness = generated_at)
-    SELECT cognitive_snapshot, generated_at INTO v_tmp, v_tmp_ts
+    SELECT summary, generated_at INTO v_tmp, v_tmp_ts
     FROM intelligence_snapshots WHERE user_id = p_tenant_id ORDER BY generated_at DESC LIMIT 1;
 
     IF v_tmp IS NOT NULL THEN
@@ -104,9 +104,9 @@ BEGIN
     v_pack := v_pack || jsonb_build_object('integration_health', v_tmp);
 
     -- 4. Integration connections (with freshness per source)
-    SELECT EXISTS(SELECT 1 FROM integration_accounts WHERE user_id = p_tenant_id AND category = 'crm' AND account_token IS NOT NULL AND status != 'disconnected') INTO v_crm;
-    SELECT EXISTS(SELECT 1 FROM integration_accounts WHERE user_id = p_tenant_id AND category IN ('accounting','financial') AND account_token IS NOT NULL AND status != 'disconnected') INTO v_acct;
-    SELECT EXISTS(SELECT 1 FROM email_connections WHERE user_id = p_tenant_id AND status IN ('connected','active','COMPLETE')) INTO v_email;
+    SELECT EXISTS(SELECT 1 FROM integration_accounts WHERE user_id = p_tenant_id AND category = 'crm' AND account_token IS NOT NULL) INTO v_crm;
+    SELECT EXISTS(SELECT 1 FROM integration_accounts WHERE user_id = p_tenant_id AND category IN ('accounting','financial') AND account_token IS NOT NULL) INTO v_acct;
+    SELECT EXISTS(SELECT 1 FROM email_connections WHERE user_id = p_tenant_id AND connected = true) INTO v_email;
     SELECT EXISTS(SELECT 1 FROM marketing_benchmarks WHERE tenant_id = p_tenant_id AND is_current = true) INTO v_mktg;
 
     IF v_crm THEN v_sources := v_sources + 1; v_freshness_total := v_freshness_total + 0.8; v_freshness_count := v_freshness_count + 1;
@@ -186,21 +186,17 @@ DECLARE
     v_elapsed INT;
 BEGIN
     FOR v_account IN
-        SELECT provider, category, account_token, status, updated_at FROM integration_accounts WHERE user_id = p_tenant_id
+        SELECT provider, category, account_token, created_at FROM integration_accounts WHERE user_id = p_tenant_id
     LOOP
-        IF v_account.account_token IS NULL OR v_account.status = 'disconnected' THEN
+        IF v_account.account_token IS NULL THEN
             v_status := 'NOT_CONNECTED'; v_action := 'Connect integration';
-        ELSIF v_account.status IN ('error','failed') THEN
-            v_status := 'SYNC_FAILED'; v_action := 'Reconnect';
-        ELSIF v_account.updated_at < now() - INTERVAL '24 hours' THEN
-            v_status := 'TOKEN_EXPIRED'; v_action := 'Re-authorise';
-        ELSIF v_account.updated_at < now() - INTERVAL '4 hours' THEN
+        ELSIF v_account.created_at < now() - INTERVAL '24 hours' THEN
             v_status := 'DEGRADED'; v_action := 'Check sync status';
         ELSE
             v_status := 'CONNECTED'; v_action := NULL;
         END IF;
 
-        v_freshness := EXTRACT(EPOCH FROM (now() - COALESCE(v_account.updated_at, now() - INTERVAL '999 days')))::INT / 60;
+        v_freshness := EXTRACT(EPOCH FROM (now() - COALESCE(v_account.created_at, now() - INTERVAL '999 days')))::INT / 60;
         v_sla := v_freshness > 240; -- SLA breach: >4 hours stale
 
         -- Get old status for history
@@ -220,8 +216,8 @@ BEGIN
 
         -- Log status change to history
         IF v_old_status IS DISTINCT FROM v_status THEN
-            INSERT INTO integration_health_history (tenant_id, provider, old_status, new_status, error_message)
-            VALUES (p_tenant_id, v_account.provider, v_old_status, v_status, v_account.status);
+            INSERT INTO integration_health_history (tenant_id, provider, old_status, new_status)
+            VALUES (p_tenant_id, v_account.provider, v_old_status, v_status);
         END IF;
 
         v_result := v_result || jsonb_build_array(jsonb_build_object(
@@ -231,8 +227,8 @@ BEGIN
 
     -- Email connections
     DECLARE v_email RECORD; BEGIN
-        FOR v_email IN SELECT provider, status, updated_at FROM email_connections WHERE user_id = p_tenant_id LOOP
-            v_status := CASE WHEN v_email.status IN ('connected','active','COMPLETE') THEN 'CONNECTED' ELSE 'NOT_CONNECTED' END;
+        FOR v_email IN SELECT provider, connected, updated_at FROM email_connections WHERE user_id = p_tenant_id LOOP
+            v_status := CASE WHEN v_email.connected = true THEN 'CONNECTED' ELSE 'NOT_CONNECTED' END;
             v_freshness := EXTRACT(EPOCH FROM (now() - COALESCE(v_email.updated_at, now() - INTERVAL '999 days')))::INT / 60;
             v_sla := v_freshness > 240;
             INSERT INTO integration_health (tenant_id, provider, category, status, data_freshness_minutes, sla_breached, checked_at)
