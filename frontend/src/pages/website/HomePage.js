@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
+import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
 import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, TrendingUp, AlertTriangle, FileCheck, Clock } from 'lucide-react';
 
 const HEADING = "'Cormorant Garamond', Georgia, serif";
@@ -81,6 +82,9 @@ const HomePage = () => (
         </div>
       </div>
     </section>
+
+    {/* ══ INTELLIGENCE ARCHITECTURE DIAGRAM ══ */}
+    <IntelligenceDiagram />
 
     {/* ══ INTEGRATION CAROUSEL ══ */}
     <IntegrationCarousel />
