@@ -8,38 +8,40 @@ const HEADING = "'Cormorant Garamond', Georgia, serif";
 
 const VARIANTS = [
   {
-    h1: 'The stability layer for your business.',
-    h2: 'Unifies systems. Converts fragmented data into decision-ready intelligence.',
-    lines: [
-      'One platform. One view of risk, pressure, and opportunity.',
+    h1: 'A Single Stability Engine Across All Departments & Tools',
+    h2: 'BIQc unifies your business systems and converts fragmented data into structured decision ready intelligence.',
+    bullets: [
+      'One platform across all your tools.',
+      'One continuous view of risk, pressure, and opportunity.',
+      'Built to protect performance and drive disciplined growth.',
     ],
+    prefix: null,
+    inlineBullets: null,
   },
   {
-    h1: 'Intelligence above your systems.',
-    h2: 'Detects instability. Models consequence. Strengthens decisions.',
-    lines: [
-      'Sustained operational stability and strategic control.',
-    ],
+    h1: 'BIQc integrates your financial, revenue, operational, and marketing systems into one continuous intelligence framework.',
+    h2: 'It reveals where pressure is building, how it will spread, and whether your decisions are strengthening the business.',
+    bullets: null,
+    prefix: 'Continuously Learning & Designed to;',
+    inlineBullets: ['Protect', 'Stabilise', 'Strengthen'],
   },
   {
-    h1: 'One continuous intelligence framework.',
-    h2: 'Financial, revenue, operational, and market systems — integrated.',
-    lines: [
-      'Reveals pressure. Forecasts spread. Measures decision impact.',
-    ],
-  },
-  {
-    h1: 'The stability engine for modern business.',
-    h2: 'Connects systems. Detects risk. Measures leadership impact.',
-    lines: [
-      'One platform. Continuous intelligence. Compounding growth.',
+    h1: 'BIQc is the stability engine for modern businesses.',
+    h2: 'It connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
+    bullets: null,
+    prefix: null,
+    inlineBullets: null,
+    taglines: [
+      'One integrated platform.',
+      'Continuous stability intelligence.',
+      'Compounding growth.',
     ],
   },
 ];
 
-// Fixed heights: H1 (~50px) + H2 (~28px) + 1 line (~24px) + margins
-const VIEWPORT_HEIGHT_DESKTOP = 160;
-const VIEWPORT_HEIGHT_MOBILE = 180;
+// Fixed heights: tallest variant is Hero 2 (long H1 + H2 + prefix + inline bullets)
+const VIEWPORT_HEIGHT_DESKTOP = 270;
+const VIEWPORT_HEIGHT_MOBILE = 340;
 
 const EASING = 'cubic-bezier(0.42, 0, 0.2, 1)';
 
@@ -94,28 +96,53 @@ const HeroLayer = ({ variant, phase, isMobile, zIndex }) => {
       }}
     >
       <h1
-        className="text-[24px] sm:text-3xl lg:text-4xl font-bold leading-[1.2] mb-3 sm:mb-4 tracking-tight max-w-3xl mx-auto"
+        className="text-[22px] sm:text-3xl lg:text-[34px] font-bold leading-[1.2] mb-3 sm:mb-4 tracking-tight max-w-3xl mx-auto"
         style={{ fontFamily: HEADING, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
       >
         {variant.h1}
       </h1>
       <h2
-        className="text-sm sm:text-lg max-w-2xl mx-auto mb-2 sm:mb-3 leading-relaxed"
+        className="text-sm sm:text-base lg:text-lg max-w-2xl mx-auto mb-4 leading-relaxed"
         style={{ fontFamily: BODY, color: '#9FB0C3', lineHeight: '1.6' }}
       >
         {variant.h2}
       </h2>
-      <div className="max-w-xl mx-auto">
-        {variant.lines.map((line, i) => (
-          <p
-            key={i}
-            className="text-sm sm:text-base"
-            style={{ fontFamily: BODY, color: '#9FB0C3/70', lineHeight: '1.6', opacity: 0.7 }}
-          >
-            {line}
-          </p>
-        ))}
-      </div>
+
+      {/* Bullet points with orange ticks */}
+      {variant.bullets && (
+        <div className="flex flex-col items-center gap-1.5 sm:gap-2">
+          {variant.bullets.map((b, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="text-xs sm:text-sm" style={{ fontFamily: BODY, color: '#9FB0C3' }}>{b}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Prefix + inline orange tick words */}
+      {variant.prefix && variant.inlineBullets && (
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-xs sm:text-sm" style={{ fontFamily: BODY, color: '#9FB0C3' }}>{variant.prefix}</span>
+          <div className="flex items-center gap-4 sm:gap-6">
+            {variant.inlineBullets.map((word, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span className="text-sm sm:text-base font-semibold" style={{ fontFamily: BODY, color: '#FF6A00' }}>{word}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Taglines */}
+      {variant.taglines && (
+        <div className="flex flex-col items-center gap-0.5">
+          {variant.taglines.map((line, i) => (
+            <span key={i} className="text-xs sm:text-sm font-medium" style={{ fontFamily: BODY, color: '#9FB0C3', opacity: 0.8 }}>{line}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
