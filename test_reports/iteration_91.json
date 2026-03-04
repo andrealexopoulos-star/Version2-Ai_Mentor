@@ -1,0 +1,125 @@
+{
+  "summary": "Iteration 91: Tested SoundBoard file attachment features, onboarding bug fix, and SQL migration files. Fixed critical bug in MySoundBoard.js (missing imports/state). Confirmed onboarding fix working. All 18 backend tests pass.",
+  "test_scope": {
+    "environment": "preview: https://platform-scan.preview.emergentagent.com",
+    "credentials": "test1234@outlook.com / test1234! (account is NOW calibrated - has persona_calibration_status=complete)",
+    "testing_type": "both backend and frontend",
+    "iteration": 91
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "MySoundBoard.js",
+        "issue": "CRITICAL BUG FIXED: Missing imports (Paperclip, FileText, Download from lucide-react), missing MONO constant, missing attachedFile useState, missing fileRef useRef. Without these, the page would crash at runtime.",
+        "selector": "data-testid=soundboard-attach",
+        "priority": "FIXED - was CRITICAL"
+      },
+      {
+        "component": "FloatingSoundboard.js",
+        "issue": "FloatingSoundboard component is ORPHANED - not mounted/imported on any page. The implemented Paperclip + FileReader functionality in FloatingSoundboard.js is dead code. The actual SoundBoard on all dashboard pages uses SoundboardPanel.js which has data-testid=sb-upload (not soundboard-attach).",
+        "selector": "data-testid=soundboard-attach",
+        "priority": "HIGH - component is unused"
+      },
+      {
+        "component": "SoundboardPanel.js (file upload stub)",
+        "issue": "SoundboardPanel.js handleFileSelect is a stub - it does NOT read file content. It only adds a message 'File analysis will be available when document processing is connected'. The full FileReader implementation exists in FloatingSoundboard.js but that component is not used.",
+        "selector": "data-testid=sb-upload",
+        "priority": "MEDIUM - functional limitation"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "MySoundBoard (/soundboard) TierGate",
+        "issue": "MySoundBoard page redirects to /subscribe with 'Soundboard Chat requires a paid plan'. Test account (Free plan) cannot access /soundboard page. MySoundBoard.js UI cannot be verified via E2E testing with this account.",
+        "affected_selectors": ["[data-testid='soundboard-attach']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "features_tested": {
+    "homepage_loads": {
+      "status": "PASS",
+      "details": "Homepage loads correctly, no regressions"
+    },
+    "onboarding_fix": {
+      "status": "PASS",
+      "details": "User redirected to /advisor (CALIBRATION ROUTING Decision: READY) instead of /calibration loop. persona_calibration_status=complete is set in onboarding.py lines 451-468."
+    },
+    "migration_044": {
+      "status": "PASS",
+      "details": "All 9+ required tables present: integration_health, integration_health_history, evidence_packs, cognition_decisions, outcome_checkpoints, propagation_rules, automation_actions, automation_executions, instability_snapshots, confidence_recalibrations"
+    },
+    "migration_045": {
+      "status": "PASS",
+      "details": "ic_generate_cognition_contract function found at line 159. All core functions present: fn_assemble_evidence_pack, fn_compute_propagation_map, fn_snapshot_daily_instability, ic_generate_cognition_contract"
+    },
+    "soundboard_chat_text": {
+      "status": "PASS",
+      "details": "SoundboardPanel.js chat works normally. Sent 'What is my biggest risk today?' - 2 message bubbles appeared. sb-input and sb-send work correctly."
+    },
+    "soundboard_paperclip_sb_upload": {
+      "status": "PASS",
+      "details": "SoundboardPanel.js (used on all dashboard pages) has Paperclip button with data-testid=sb-upload, visible=True. FILE UPLOAD IS A STUB though."
+    },
+    "floating_soundboard_paperclip": {
+      "status": "CODE PASS / USAGE FAIL",
+      "details": "FloatingSoundboard.js has Paperclip (soundboard-attach) and full FileReader logic in code. But the component is NOT imported or used on any page. The code exists but is dead code."
+    },
+    "mysoundboard_paperclip": {
+      "status": "CODE PASS (fixed)",
+      "details": "After my fix, MySoundBoard.js has Paperclip (soundboard-attach), FileText, Download imports, MONO constant, fileRef and attachedFile state. Page is gated by TierGate for paid plans so cannot test via E2E with free account."
+    },
+    "soundboard_file_download_card": {
+      "status": "CODE PASS",
+      "details": "Both FloatingSoundboard.js and MySoundBoard.js have file download card rendering when response.data.file exists. Cannot test E2E as this requires backend to generate a file response."
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration91_soundboard_onboarding.py",
+    "/app/test_reports/pytest/pytest_results_iteration91.xml"
+  ],
+  "action_items": [
+    "CRITICAL: FloatingSoundboard.js is an ORPHANED component - not imported/used anywhere. Either (1) import it in DashboardLayout or relevant pages OR (2) merge its FileReader file attachment logic into SoundboardPanel.js. The data-testid=soundboard-attach is only in FloatingSoundboard.js which is dead code.",
+    "MEDIUM: SoundboardPanel.js handleFileSelect is a stub - only shows a message, doesn't actually read file content. The full FileReader implementation needs to be ported from FloatingSoundboard.js to SoundboardPanel.js.",
+    "INFO: MySoundBoard (/soundboard) page requires paid plan (TierGate). Cannot E2E test with free test account. The code is now fixed but UI testing requires a paid plan account."
+  ],
+  "critical_code_review_comments": [
+    "CRITICAL: FloatingSoundboard.js implements full file attachment with FileReader but is imported NOWHERE. grep confirms: only file that references it is FloatingSoundboard.js itself. All dashboard pages use SoundboardPanel.js which has a stub file upload.",
+    "MySoundBoard.js was missing Paperclip, FileText, Download imports + MONO constant + fileRef + attachedFile state - would crash on render. FIXED.",
+    "SoundboardPanel.js handleFileSelect stub (lines 125-130) does not use FileReader - just adds a hardcoded message. The real implementation is in FloatingSoundboard.js but not used.",
+    "The onboarding.py fix (lines 451-468) correctly sets persona_calibration_status=complete with both UPDATE (existing profile) and INSERT (new profile) branches - well implemented."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/MySoundBoard.js (Added: Paperclip, FileText, Download imports + MONO constant + fileRef useRef + attachedFile useState)"
+  ],
+  "success_rate": {
+    "backend": "100% (18/18 tests pass)",
+    "frontend": "75% (SoundBoard chat works, Paperclip visible in SoundboardPanel; FloatingSoundboard orphaned; MySoundBoard behind TierGate)"
+  },
+  "test_credentials": "test1234@outlook.com / test1234! (Free plan, calibration complete, redirects to /advisor)",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 91 found: (1) MySoundBoard.js had critical missing imports/state - FIXED. (2) FloatingSoundboard.js is orphaned - not used on any page. The actual soundboard is SoundboardPanel.js with data-testid=sb-upload for Paperclip. (3) SoundboardPanel.js file upload is a stub. (4) test1234 account IS calibrated (READY) and goes to /advisor. (5) /soundboard page requires paid plan (TierGate).",
+  "rca_of_issues": {
+    "mysoundboard_bug": {
+      "root_cause": "MySoundBoard.js was enhanced with file attachment feature but the developer forgot to add required imports (Paperclip, FileText, Download from lucide-react), MONO font constant, and React state/ref hooks (attachedFile useState, fileRef useRef).",
+      "reproduction": "Navigate to /soundboard page (requires paid plan) - would crash with 'Paperclip is not defined' or 'attachedFile is not defined' errors",
+      "mitigation": "Fixed: Added missing imports at line 7-13 and state/ref declarations at line 30-31 in MySoundBoard.js"
+    },
+    "floating_soundboard_orphaned": {
+      "root_cause": "FloatingSoundboard.js was created as a new component but never imported into any page or layout. The dashboard layout uses SoundboardPanel.js instead.",
+      "reproduction": "grep -rn 'FloatingSoundboard' /app/frontend/src shows it's only referenced in its own file",
+      "mitigation": "E1 needs to either import FloatingSoundboard into DashboardLayout (replacing SoundboardPanel) or merge FileReader logic into SoundboardPanel.js"
+    }
+  },
+  "mocked_api_confirmation": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": ["/api/cognition/{tab} - still returns MIGRATION_REQUIRED until 044+045 run in Supabase SQL Editor"],
+    "impact": "Cognition panels gracefully fall back as confirmed in iteration 90"
+  }
+}
