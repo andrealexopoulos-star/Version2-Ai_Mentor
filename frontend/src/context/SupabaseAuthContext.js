@@ -337,6 +337,7 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         // Calibration complete — now fetch onboarding status ONCE
+        let obStatus = { completed: true }; // default fail-open
         try {
           const obRes = await fetch(`${getBackendUrl()}/api/onboarding/status`, {
             method: 'GET', headers: {
@@ -347,28 +348,26 @@ export const SupabaseAuthProvider = ({ children }) => {
           });
           if (obRes.ok) {
             const obData = await obRes.json();
-            if (!cancelled) {
-              setOnboardingStatus({
-                completed: obData.completed === true,
-                currentStep: obData.current_step || 0,
-                businessStage: obData.business_stage || null,
-              });
-            }
+            obStatus = {
+              completed: obData.completed === true,
+              currentStep: obData.current_step || 0,
+              businessStage: obData.business_stage || null,
+            };
+            if (!cancelled) setOnboardingStatus(obStatus);
           } else {
-            // Fail open: treat as complete to avoid blocking
-            if (!cancelled) setOnboardingStatus({ completed: true });
+            if (!cancelled) setOnboardingStatus(obStatus);
           }
         } catch {
-          if (!cancelled) setOnboardingStatus({ completed: true });
+          if (!cancelled) setOnboardingStatus(obStatus);
         }
 
         if (!cancelled) {
-          // Cache bootstrap result — avoids 3 API calls on next full page load
+          // Cache bootstrap result with actual onboarding status
           if (currentUserId) {
             try {
               sessionStorage.setItem(`biqc_auth_bootstrap_${currentUserId}`, JSON.stringify({
                 state: AUTH_STATE.READY,
-                onboarding: { completed: true },
+                onboarding: obStatus, // actual status, not hardcoded
                 ts: Date.now(),
               }));
             } catch {}
