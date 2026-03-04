@@ -158,7 +158,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             for inv in rev['overdue_invoices'][:3]:
                 integration_context += f"  - Invoice {inv['number']}: ${inv['amount']:,.0f} ({inv['days_overdue']}d overdue)\n"
         if rev['at_risk']:
-            integration_context += f"\nAT-RISK DEALS:\n"
+            integration_context += "\nAT-RISK DEALS:\n"
             for r in rev['at_risk'][:3]:
                 integration_context += f"  - {r['name']}: ${r['amount']:,.0f} — {r['risk']} ({r['days_stalled']}d stalled)\n"
         
@@ -186,7 +186,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         if bench.data and bench.data[0].get('scores'):
             b = bench.data[0]
             scores = b['scores']
-            marketing_context = f"\n\nMARKETING BENCHMARK SCORES:\n"
+            marketing_context = "\n\nMARKETING BENCHMARK SCORES:\n"
             for pillar, score in scores.items():
                 if pillar != 'overall' and isinstance(score, (int, float)):
                     marketing_context += f"- {pillar.replace('_', ' ').title()}: {round(score * 100)}%\n"
@@ -500,3 +500,113 @@ def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> 
         parts.append("\nUser appears to be in a stress period. Soften tone.")
 
     return "\n".join(parts)
+
+
+
+# ═══════════════════════════════════════════════════════════════
+# SCAN USAGE — Supabase-backed server-side enforcement
+# ═══════════════════════════════════════════════════════════════
+
+SCAN_COOLDOWN_DAYS = 30
+FEATURES = ['exposure_scan', 'forensic_calibration']
+
+
+class RecordScanRequest(BaseModel):
+    feature_name: str  # 'exposure_scan' or 'forensic_calibration'
+
+
+@router.get("/soundboard/scan-usage")
+async def get_scan_usage(current_user: dict = Depends(get_current_user)):
+    """
+    Returns scan eligibility for this user from Supabase.
+    - calibration_complete: bool
+    - is_free_tier: bool
+    - exposure_scan: { can_run, last_used_at, days_until_next }
+    - forensic_calibration: { can_run, last_used_at, days_until_next }
+    """
+    sb = get_sb()
+    user_id = current_user["id"]
+    now = datetime.now(timezone.utc)
+
+    # Check calibration status
+    calibration_complete = False
+    try:
+        op = sb.table("user_operator_profile").select("persona_calibration_status").eq("user_id", user_id).execute()
+        if op.data and op.data[0].get("persona_calibration_status") == "complete":
+            calibration_complete = True
+    except Exception:
+        pass
+
+    # Check subscription tier
+    subscription_tier = "free"
+    try:
+        u = sb.table("users").select("subscription_tier").eq("id", user_id).execute()
+        if u.data:
+            subscription_tier = u.data[0].get("subscription_tier") or "free"
+    except Exception:
+        pass
+
+    tier_rank = {"free": 0, "starter": 1, "professional": 2, "growth": 3, "enterprise": 3, "super_admin": 99}
+    is_paid = tier_rank.get(subscription_tier, 0) >= 1
+
+    # Fetch usage records from Supabase
+    usage_map = {}
+    try:
+        result = sb.table("user_feature_usage").select("feature_name, last_used_at, use_count").eq("user_id", user_id).execute()
+        for row in (result.data or []):
+            usage_map[row["feature_name"]] = row
+    except Exception:
+        pass
+
+    def feature_status(feature):
+        row = usage_map.get(feature)
+        if not row or is_paid:
+            # Paid users always can run; no prior record = can run
+            return {"can_run": True, "last_used_at": row["last_used_at"] if row else None, "days_until_next": 0}
+        last_used = datetime.fromisoformat(row["last_used_at"].replace("Z", "+00:00")) if row.get("last_used_at") else None
+        if not last_used:
+            return {"can_run": True, "last_used_at": None, "days_until_next": 0}
+        elapsed_days = (now - last_used).days
+        if elapsed_days >= SCAN_COOLDOWN_DAYS:
+            return {"can_run": True, "last_used_at": row["last_used_at"], "days_until_next": 0}
+        return {
+            "can_run": False,
+            "last_used_at": row["last_used_at"],
+            "days_until_next": SCAN_COOLDOWN_DAYS - elapsed_days,
+        }
+
+    return {
+        "calibration_complete": calibration_complete,
+        "subscription_tier": subscription_tier,
+        "is_paid": is_paid,
+        "exposure_scan": feature_status("exposure_scan"),
+        "forensic_calibration": feature_status("forensic_calibration"),
+    }
+
+
+@router.post("/soundboard/record-scan")
+async def record_scan(req: RecordScanRequest, current_user: dict = Depends(get_current_user)):
+    """Record a scan being initiated. Upsert into user_feature_usage."""
+    if req.feature_name not in FEATURES:
+        raise HTTPException(status_code=400, detail=f"Invalid feature. Must be one of: {FEATURES}")
+    sb = get_sb()
+    user_id = current_user["id"]
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        existing = sb.table("user_feature_usage").select("id, use_count").eq("user_id", user_id).eq("feature_name", req.feature_name).execute()
+        if existing.data:
+            sb.table("user_feature_usage").update({
+                "last_used_at": now_iso,
+                "use_count": (existing.data[0].get("use_count") or 0) + 1,
+            }).eq("user_id", user_id).eq("feature_name", req.feature_name).execute()
+        else:
+            sb.table("user_feature_usage").insert({
+                "user_id": user_id,
+                "feature_name": req.feature_name,
+                "last_used_at": now_iso,
+                "use_count": 1,
+            }).execute()
+    except Exception as e:
+        logger.warning(f"record_scan failed: {e}")
+        return {"status": "error", "detail": str(e)}
+    return {"status": "recorded", "feature": req.feature_name, "recorded_at": now_iso}

@@ -16,9 +16,7 @@ function isDataQuery(msg) {
   return DATA_KEYWORDS.some(kw => lower.includes(kw));
 }
 
-const SCAN_COOLDOWN_KEY = 'biqc_exposure_scan_last_run';
-const CALIB_DONE_KEY = 'biqc_calibration_complete';
-const SCAN_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+const SCAN_COOLDOWN_KEY = 'biqc_exposure_scan_cache'; // localStorage cache only — truth is in Supabase
 
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
@@ -27,35 +25,42 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
-  const [isFirstVisit] = useState(() => {
-    try { return !localStorage.getItem('biqc_soundboard_visited'); } catch { return true; }
-  });
-  const [scanLastRun, setScanLastRun] = useState(() => {
-    try { return parseInt(localStorage.getItem(SCAN_COOLDOWN_KEY) || '0', 10); } catch { return 0; }
-  });
-  const scanCooldownLeft = Math.max(0, SCAN_COOLDOWN_MS - (Date.now() - scanLastRun));
-  const scanDaysLeft = Math.ceil(scanCooldownLeft / (24 * 60 * 60 * 1000));
-  const canRunScan = scanCooldownLeft === 0;
+  const [attachedFile, setAttachedFile] = useState(null);
+
+  // ── Server-side scan usage (Supabase) ──
+  const [scanUsage, setScanUsage] = useState(null); // null = loading
+  const [recordingScans, setRecordingScans] = useState({});
+  const { session } = useSupabaseAuth();
+
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
-  const [attachedFile, setAttachedFile] = useState(null);
-  const { session } = useSupabaseAuth();
 
-  // Load conversation history + show welcome on first visit
+  // Fetch scan usage from Supabase backend on mount
+  const fetchScanUsage = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/soundboard/scan-usage');
+      setScanUsage(res.data);
+    } catch {
+      // Fallback: allow all actions if backend fails
+      setScanUsage({ calibration_complete: false, is_paid: false, exposure_scan: { can_run: true, days_until_next: 0 }, forensic_calibration: { can_run: true, days_until_next: 0 } });
+    }
+  }, []);
+
+  // Load conversations + welcome message based on server state
   useEffect(() => {
     apiClient.get('/soundboard/conversations').then(res => {
       const convs = res.data?.conversations || [];
       setConversations(convs);
-      // Show welcome message for first-time visitors
-      if (isFirstVisit && convs.length === 0) {
+      // Welcome message: show if user has NO prior conversations (server truth, no localStorage)
+      if (convs.length === 0) {
         setMessages([{
           role: 'assistant',
           text: "Welcome to SoundBoard — your AI thinking partner.\n\nI'm here to help you reflect on your business data, explore ideas, and work through strategic decisions. I don't give direct advice — I ask the right questions.\n\nStart by sharing what's on your mind, or use one of the quick-start prompts below.",
         }]);
-        try { localStorage.setItem('biqc_soundboard_visited', '1'); } catch {}
       }
     }).catch(() => {});
+    fetchScanUsage();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll on new messages
@@ -201,37 +206,63 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         </div>
       </div>
 
-      {/* Top Action Buttons — Calibration + Exposure Scan (1/month for free) */}
+      {/* Top Action Buttons — server-side enforced via Supabase */}
       <div className="px-3 pt-2 pb-1.5 shrink-0 space-y-1.5" style={{ borderBottom: '1px solid #1E293B' }}>
-        <a href="/calibration"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all hover:brightness-110"
-          style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: MONO }}>
-          <Zap className="w-3.5 h-3.5 shrink-0" />
-          <span className="flex-1">Complete Calibration</span>
-          <ChevronDown className="w-3 h-3 -rotate-90" />
-        </a>
-        <button
-          onClick={() => {
-            if (canRunScan) {
-              localStorage.setItem(SCAN_COOLDOWN_KEY, String(Date.now()));
-              setScanLastRun(Date.now());
-              window.location.href = '/exposure-scan';
-            }
-          }}
-          disabled={!canRunScan}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all"
-          style={{
-            background: canRunScan ? '#3B82F615' : '#243140',
-            border: `1px solid ${canRunScan ? '#3B82F630' : '#1E293B'}`,
-            color: canRunScan ? '#3B82F6' : '#4A5568',
-            fontFamily: MONO,
-            cursor: canRunScan ? 'pointer' : 'not-allowed',
-          }}
-          data-testid="sb-exposure-scan-btn">
-          <Eye className="w-3.5 h-3.5 shrink-0" />
-          <span className="flex-1">{canRunScan ? 'Run Exposure Scan' : `Exposure Scan (in ${scanDaysLeft}d)`}</span>
-          {!canRunScan && <Clock className="w-3 h-3 opacity-50" />}
-        </button>
+
+        {/* Complete Calibration — only shown if NOT yet complete */}
+        {scanUsage && !scanUsage.calibration_complete && (
+          <a href="/calibration"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all hover:brightness-110"
+            style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: MONO }}
+            data-testid="sb-calibration-btn">
+            <Zap className="w-3.5 h-3.5 shrink-0" />
+            <span className="flex-1">Complete Calibration</span>
+            <ChevronDown className="w-3 h-3 -rotate-90" />
+          </a>
+        )}
+
+        {/* Forensic Market Exposure — free tier: 1/month, paid: unlimited */}
+        {(() => {
+          const scan = scanUsage?.exposure_scan;
+          const canRun = !scanUsage || scan?.can_run;
+          const daysLeft = scan?.days_until_next || 0;
+          const isPaid = scanUsage?.is_paid;
+
+          return (
+            <button
+              disabled={!canRun && !isPaid}
+              onClick={async () => {
+                if (!canRun && !isPaid) return;
+                // Record in Supabase first
+                if (!isPaid) {
+                  setRecordingScans(prev => ({ ...prev, exposure_scan: true }));
+                  try {
+                    await apiClient.post('/soundboard/record-scan', { feature_name: 'exposure_scan' });
+                    await fetchScanUsage(); // Refresh usage from Supabase
+                  } catch {}
+                  setRecordingScans(prev => ({ ...prev, exposure_scan: false }));
+                }
+                window.location.href = '/exposure-scan';
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all"
+              style={{
+                background: canRun || isPaid ? '#3B82F615' : '#243140',
+                border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#1E293B'}`,
+                color: canRun || isPaid ? '#3B82F6' : '#4A5568',
+                fontFamily: MONO,
+                cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
+              }}
+              data-testid="sb-exposure-scan-btn">
+              <Eye className="w-3.5 h-3.5 shrink-0" />
+              <span className="flex-1">
+                {recordingScans.exposure_scan ? 'Recording...' :
+                  !canRun && !isPaid ? `Forensic Market Exposure (available in ${daysLeft}d)` :
+                  'Forensic Market Exposure'}
+              </span>
+              {!canRun && !isPaid && <Clock className="w-3 h-3 opacity-50" />}
+            </button>
+          );
+        })()}
       </div>
 
       {/* History dropdown */}

@@ -1,18 +1,19 @@
 import { CognitiveMesh } from '../components/LoadingSystems';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
+import DashboardLayout from '../components/DashboardLayout';
+import VoiceChat from '../components/VoiceChat';
 import { 
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
-  Paperclip, FileText, Download
+  Paperclip, FileText, Download, Zap, Eye, Clock
 } from 'lucide-react';
 
 const MONO = "'JetBrains Mono', monospace";
-import DashboardLayout from '../components/DashboardLayout';
-import VoiceChat from '../components/VoiceChat';
+const BODY = "'Inter', sans-serif";
 
 const MySoundBoard = () => {
   const { isChatOpen, openChat, closeAll, activeDrawer } = useMobileDrawer();
@@ -25,14 +26,26 @@ const MySoundBoard = () => {
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [showVoiceChat, setShowVoiceChat] = useState(false);
+  const [scanUsage, setScanUsage] = useState(null);
+  const [recordingScans, setRecordingScans] = useState({});
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
+  const fetchScanUsage = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/soundboard/scan-usage');
+      setScanUsage(res.data);
+    } catch {
+      setScanUsage({ calibration_complete: false, is_paid: false, exposure_scan: { can_run: true, days_until_next: 0 }, forensic_calibration: { can_run: true, days_until_next: 0 } });
+    }
+  }, []);
+
   useEffect(() => {
     fetchConversations();
-  }, []);
+    fetchScanUsage();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Only scroll if there are messages (not on initial load)
@@ -45,7 +58,12 @@ const MySoundBoard = () => {
     try {
       setLoadingConversations(true);
       const response = await apiClient.get('/soundboard/conversations');
-      setConversations(response.data.conversations || []);
+      const convs = response.data.conversations || [];
+      setConversations(convs);
+      // Welcome message: show if user has NO prior conversations (server-side truth)
+      if (convs.length === 0 && messages.length === 0) {
+        setMessages([{ role: 'assistant', content: "Welcome to SoundBoard — your AI thinking partner.\n\nI'm here to help you reflect on your business data, explore ideas, and work through strategic decisions. I don't give direct advice — I ask the right questions.\n\nStart by sharing what's on your mind, or use one of the quick-start prompts below." }]);
+      }
     } catch (error) {
       console.error('Failed to fetch conversations');
     } finally {
@@ -374,6 +392,55 @@ const MySoundBoard = () => {
                 Your thinking partner for clarity
               </p>
             </div>
+
+            {/* Top Action Buttons — Calibration + Forensic Market Exposure */}
+            <div className="hidden md:flex items-center gap-2 shrink-0">
+              {scanUsage && !scanUsage.calibration_complete && (
+                <a href="/calibration"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
+                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: MONO }}
+                  data-testid="mysb-calibration-btn">
+                  <Zap className="w-3.5 h-3.5" /> Complete Calibration
+                </a>
+              )}
+              {(() => {
+                const scan = scanUsage?.exposure_scan;
+                const canRun = !scanUsage || scan?.can_run;
+                const daysLeft = scan?.days_until_next || 0;
+                const isPaid = scanUsage?.is_paid;
+                return (
+                  <button
+                    disabled={!canRun && !isPaid}
+                    onClick={async () => {
+                      if (!canRun && !isPaid) return;
+                      if (!isPaid) {
+                        setRecordingScans(prev => ({ ...prev, exposure_scan: true }));
+                        try {
+                          await apiClient.post('/soundboard/record-scan', { feature_name: 'exposure_scan' });
+                          await fetchScanUsage();
+                        } catch {}
+                        setRecordingScans(prev => ({ ...prev, exposure_scan: false }));
+                      }
+                      window.location.href = '/exposure-scan';
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      background: canRun || isPaid ? '#3B82F615' : '#243140',
+                      border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#1E293B'}`,
+                      color: canRun || isPaid ? '#3B82F6' : '#4A5568',
+                      fontFamily: MONO,
+                      cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
+                    }}
+                    data-testid="mysb-exposure-scan-btn">
+                    <Eye className="w-3.5 h-3.5" />
+                    {recordingScans.exposure_scan ? 'Recording...' :
+                      !canRun && !isPaid ? `Forensic Market Exposure (${daysLeft}d)` :
+                      'Forensic Market Exposure'}
+                    {!canRun && !isPaid && <Clock className="w-3 h-3 opacity-50" />}
+                  </button>
+                );
+              })()}
+            </div>
             
             {/* Voice Call Button - Icon only on mobile */}
             <button 
@@ -397,9 +464,21 @@ const MySoundBoard = () => {
                   >
                     <MessageSquare className="w-7 h-7" style={{ color: 'var(--accent-primary)' }} />
                   </div>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Type a message below to start
+                  <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Ask anything about your business
                   </p>
+                  <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+                    or click a prompt to get started
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
+                    {['What should I focus on?', 'Summarise my risks', 'Show me my pipeline', 'How can I grow revenue?'].map(q => (
+                      <button key={q} onClick={() => setInput(q)}
+                        className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-6">
