@@ -7,7 +7,6 @@ A major recent directive was to evolve the platform into a Unified Intelligence 
 Most recently, the user has demanded a complete, end-to-end forensic audit of every single component on the live production website to verify what has and has not been completed, expressing concern that claimed work is not actually done.
 
 **User's preferred language**: English
-**User Rrequest all forked sessions to be created to beta.thestrategysquad.com
 **what currently exists?**
 The application is a full-stack platform with a React frontend and a FastAPI backend using a Supabase (PostgreSQL) database.
 - **Backend**: A performant, SQL-first Cognition Core is complete. Python serves as a thin API gateway. A sophisticated scraping and intelligence gathering architecture exists using Supabase Edge Functions that leverage Perplexity, Firecrawl, and OpenAI to build a business profile during calibration.
