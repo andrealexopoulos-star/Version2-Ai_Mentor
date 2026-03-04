@@ -16,8 +16,6 @@ function isDataQuery(msg) {
   return DATA_KEYWORDS.some(kw => lower.includes(kw));
 }
 
-const SCAN_COOLDOWN_KEY = 'biqc_exposure_scan_cache'; // localStorage cache only — truth is in Supabase
-
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
