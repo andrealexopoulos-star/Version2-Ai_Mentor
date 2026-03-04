@@ -67,14 +67,13 @@ const EnergyGalaxyBackground = () => {
     const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
       x: Math.random() * (W || 1920),
       y: Math.random() * (H || 900),
-      r: 1 + Math.random() * 1,                   // 1-2px
+      r: 0.5 + Math.random() * 0.5,                // 0.5-1px — tiny pinpoints
       noiseOffsetX: Math.random() * 1000,
       noiseOffsetY: Math.random() * 1000,
-      noiseSpeed: 0.0003 + Math.random() * 0.0004, // 20-30 second cycle
-      alpha: 0.15 + Math.random() * 0.25,          // 0.15-0.4
+      noiseSpeed: 0.0003 + Math.random() * 0.0004,
+      alpha: 0.1 + Math.random() * 0.2,             // 0.1-0.3 — very subtle
       fadePhase: Math.random() * Math.PI * 2,
-      fadeSpeed: 0.008 + Math.random() * 0.012,     // gradual fade in/out
-      blur: 2 + Math.random() * 4,                  // gaussian 2-6px
+      fadeSpeed: 0.008 + Math.random() * 0.012,
     }));
 
     // ═══ LAYER 2: NEURAL SIGNAL NETWORK ═══
@@ -92,9 +91,9 @@ const EnergyGalaxyBackground = () => {
     // Signal pulses: 6-10 second travel time, rgba(255,180,80) colour
     const pulses = threads.map(() => ({
       t: Math.random(),
-      speed: 1 / (360 + Math.random() * 240), // 6-10 second cycle at 60fps
-      size: 4 + Math.random() * 3,
-      alpha: 0.6 + Math.random() * 0.4,
+      speed: 1 / (360 + Math.random() * 240),
+      size: 1.5,
+      alpha: 0.3 + Math.random() * 0.2,
     }));
 
     // ═══ LAYER 3: PLATFORM CONVERGENCE FIELD ═══
@@ -192,50 +191,31 @@ const EnergyGalaxyBackground = () => {
           const distFromCenter = Math.abs(px - centerX);
           const pulseFade = Math.min(1, distFromCenter / deadZoneHalf);
           if (pulseFade > 0.1) {
-            const pg = ctx.createRadialGradient(px, py, 0, px, py, pulse.size * 4);
-            pg.addColorStop(0, `rgba(255,180,80,${pulse.alpha * pulseFade})`);
-            pg.addColorStop(0.4, `rgba(255,140,40,${pulse.alpha * 0.4 * pulseFade})`);
-            pg.addColorStop(1, 'transparent');
-            ctx.fillStyle = pg;
-            ctx.fillRect(px - pulse.size * 4, py - pulse.size * 4, pulse.size * 8, pulse.size * 8);
+            // Small dot only — no large glow halo
             ctx.beginPath();
-            ctx.arc(px, py, pulse.size * 0.6, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,200,120,${pulse.alpha * pulseFade})`;
+            ctx.arc(px, py, pulse.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,180,80,${pulse.alpha * pulseFade})`;
             ctx.fill();
           }
         }
       });
 
-      // ── LAYER 1: AMBIENT PARTICLES ──
+      // ── LAYER 1: AMBIENT PARTICLES — tiny pinpoints, no glow ──
       particles.forEach(p => {
-        // Noise-based drift: extremely slow, 20-30 second cycle
         const noiseX = noise2D(p.noiseOffsetX + t * p.noiseSpeed * 60, 0);
         const noiseY = noise2D(0, p.noiseOffsetY + t * p.noiseSpeed * 60);
         p.x += noiseX * 0.3;
         p.y += noiseY * 0.25;
-
-        // Wrap around
         if (p.x < -20) p.x = W + 20;
         if (p.x > W + 20) p.x = -20;
         if (p.y < -20) p.y = H + 20;
         if (p.y > H + 20) p.y = -20;
 
-        // Gradual fade in/out
         p.fadePhase += p.fadeSpeed;
         const fadeAlpha = p.alpha * (0.3 + 0.7 * Math.max(0, Math.sin(p.fadePhase)));
+        if (fadeAlpha < 0.02) return;
 
-        if (fadeAlpha < 0.02) return; // skip invisible particles
-
-        // Gaussian blur glow (simulated with radial gradient)
-        const blurSize = p.r + p.blur;
-        const pg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, blurSize);
-        pg.addColorStop(0, `rgba(255,140,40,${fadeAlpha * 0.7})`);
-        pg.addColorStop(0.3, `rgba(255,140,40,${fadeAlpha * 0.3})`);
-        pg.addColorStop(1, 'transparent');
-        ctx.fillStyle = pg;
-        ctx.fillRect(p.x - blurSize, p.y - blurSize, blurSize * 2, blurSize * 2);
-
-        // Core particle dot
+        // Tiny dot only — no glow halo
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,140,40,${fadeAlpha})`;
