@@ -98,8 +98,8 @@ export const IntelligenceDiagram = () => (
   <section className="relative py-20 sm:py-28 overflow-hidden" data-testid="intelligence-diagram">
     <style>{`
       @keyframes coreGlow {
-        0%,100% { box-shadow: 0 0 40px rgba(255,140,40,0.4), 0 0 80px rgba(255,140,40,0.15), 0 0 120px rgba(255,140,40,0.05); }
-        50% { box-shadow: 0 0 55px rgba(255,140,40,0.55), 0 0 100px rgba(255,140,40,0.25), 0 0 160px rgba(255,140,40,0.08); }
+        0%,100% { box-shadow: 0 0 40px rgba(255,140,40,0.35), 0 0 80px rgba(255,140,40,0.15); }
+        50% { box-shadow: 0 0 50px rgba(255,140,40,0.5), 0 0 100px rgba(255,140,40,0.22); }
       }
       @keyframes corePulse {
         0%,100% { opacity: 0.3; transform: scale(1); }
@@ -136,7 +136,7 @@ export const IntelligenceDiagram = () => (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
 
       {/* TIER 1: BUSINESS SIGNALS */}
-      <FlowLabel label="Business Signals" sublabel="What is happening in your business" />
+      <FlowLabel label="Business Signals" sublabel="What is happening across your systems" />
       <AnimatedConnector height={32} />
 
       {/* Three system blocks with animated connecting lines */}
@@ -159,7 +159,7 @@ export const IntelligenceDiagram = () => (
 
       {/* TIER 2: WATCHTOWER */}
       <GlowCard className="max-w-md mx-auto text-center" glow>
-        <FlowLabel label="Watchtower" sublabel="Constant monitoring across all your systems" />
+        <FlowLabel label="Watchtower" sublabel="Continuous monitoring across your tools" />
         {/* Animated radar sweep */}
         <div className="flex justify-center mt-3">
           <div className="relative w-8 h-8">
@@ -202,20 +202,20 @@ export const IntelligenceDiagram = () => (
           {/* Outer halo */}
           <div className="absolute -inset-10 rounded-full" style={{
             background: 'radial-gradient(circle, rgba(255,140,40,0.15) 0%, rgba(255,100,0,0.05) 50%, transparent 70%)',
-            animation: 'corePulse 4s ease-in-out infinite',
+            animation: 'corePulse 6s ease-in-out infinite',
             pointerEvents: 'none',
           }} />
           {/* Second halo ring */}
           <div className="absolute -inset-6 rounded-full" style={{
             border: '1px solid rgba(255,140,40,0.08)',
-            animation: 'corePulse 4s ease-in-out infinite 1s',
+            animation: 'corePulse 6s ease-in-out infinite 1.5s',
             pointerEvents: 'none',
           }} />
           {/* Core */}
           <div className="relative px-8 sm:px-12 py-5 sm:py-6 rounded-full text-center" style={{
             background: 'linear-gradient(135deg, rgba(42,52,68,0.95), rgba(15,23,32,0.95))',
             border: '2px solid rgba(255,140,40,0.5)',
-            animation: 'coreGlow 4s ease-in-out infinite',
+            animation: 'coreGlow 6s ease-in-out infinite',
           }}>
             <span className="text-xl sm:text-2xl font-bold block" style={{ fontFamily: MONO, color: '#FF7A18', textShadow: '0 0 20px rgba(255,122,24,0.5)' }}>BIQc</span>
             <span className="text-[8px] sm:text-[9px] tracking-[0.15em] uppercase block mt-1" style={{ fontFamily: MONO, color: '#A6B2C1' }}>Business Intelligence</span>
@@ -246,7 +246,7 @@ export const IntelligenceDiagram = () => (
 
       {/* TIER 4: DECISION SUPPORT */}
       <GlowCard className="max-w-md mx-auto text-center" glow>
-        <FlowLabel label="Decision Support" sublabel="Clear signals to guide leadership decisions" />
+        <FlowLabel label="Decision Support" sublabel="Clear signals that guide leadership decisions" />
       </GlowCard>
 
       {/* Partner logos with brand colors */}

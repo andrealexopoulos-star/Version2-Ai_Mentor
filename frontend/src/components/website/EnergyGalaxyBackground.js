@@ -1,5 +1,49 @@
 import { useEffect, useRef } from 'react';
 
+/*
+ * Compact 2D Simplex Noise — adapted from Stefan Gustavson's implementation.
+ * Used for noise-based particle drift and neural thread distortion.
+ */
+const GRAD = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+const PERM = new Uint8Array(512);
+const PERM_MOD = new Uint8Array(512);
+(() => {
+  const p = [];
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [p[i], p[j]] = [p[j], p[i]];
+  }
+  for (let i = 0; i < 512; i++) {
+    PERM[i] = p[i & 255];
+    PERM_MOD[i] = PERM[i] % 8;
+  }
+})();
+
+function noise2D(x, y) {
+  const F2 = 0.5 * (Math.sqrt(3) - 1);
+  const G2 = (3 - Math.sqrt(3)) / 6;
+  const s = (x + y) * F2;
+  const i = Math.floor(x + s);
+  const j = Math.floor(y + s);
+  const t = (i + j) * G2;
+  const X0 = i - t, Y0 = j - t;
+  const x0 = x - X0, y0 = y - Y0;
+  const i1 = x0 > y0 ? 1 : 0;
+  const j1 = x0 > y0 ? 0 : 1;
+  const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2;
+  const x2 = x0 - 1 + 2 * G2, y2 = y0 - 1 + 2 * G2;
+  const ii = i & 255, jj = j & 255;
+  let n0 = 0, n1 = 0, n2 = 0;
+  let t0 = 0.5 - x0 * x0 - y0 * y0;
+  if (t0 >= 0) { t0 *= t0; const g = GRAD[PERM_MOD[ii + PERM[jj]]]; n0 = t0 * t0 * (g[0] * x0 + g[1] * y0); }
+  let t1 = 0.5 - x1 * x1 - y1 * y1;
+  if (t1 >= 0) { t1 *= t1; const g = GRAD[PERM_MOD[ii + i1 + PERM[jj + j1]]]; n1 = t1 * t1 * (g[0] * x1 + g[1] * y1); }
+  let t2 = 0.5 - x2 * x2 - y2 * y2;
+  if (t2 >= 0) { t2 *= t2; const g = GRAD[PERM_MOD[ii + 1 + PERM[jj + 1]]]; n2 = t2 * t2 * (g[0] * x2 + g[1] * y2); }
+  return 70 * (n0 + n1 + n2);
+}
+
 const EnergyGalaxyBackground = () => {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
@@ -17,190 +61,182 @@ const EnergyGalaxyBackground = () => {
     resize();
     window.addEventListener('resize', resize);
 
-    // Particles
-    const PARTICLE_COUNT = 120;
+    // ═══ LAYER 1: AMBIENT INTELLIGENCE FIELD ═══
+    // Noise-based drift particles, 80-120 count, 1-3px, fade in/out
+    const PARTICLE_COUNT = 100;
     const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
       x: Math.random() * (W || 1920),
       y: Math.random() * (H || 900),
-      r: 0.5 + Math.random() * 2,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.2,
-      alpha: 0.2 + Math.random() * 0.5,
-      pulse: Math.random() * Math.PI * 2,
-      pulseSpeed: 0.01 + Math.random() * 0.02,
+      r: 1 + Math.random() * 2,                   // 1-3px
+      noiseOffsetX: Math.random() * 1000,
+      noiseOffsetY: Math.random() * 1000,
+      noiseSpeed: 0.0003 + Math.random() * 0.0004, // 20-30 second cycle
+      alpha: 0.2 + Math.random() * 0.4,            // 0.2-0.6
+      fadePhase: Math.random() * Math.PI * 2,
+      fadeSpeed: 0.008 + Math.random() * 0.012,     // gradual fade in/out
+      blur: 2 + Math.random() * 4,                  // gaussian 2-6px
     }));
 
-    // Neural threads — flowing curves
-    const THREAD_COUNT = 9;
-    const threads = Array.from({ length: THREAD_COUNT }, (_, i) => ({
-      points: Array.from({ length: 5 }, (_, j) => ({
-        x: (j / 4) * (W || 1920),
-        y: (0.2 + Math.random() * 0.6) * (H || 900),
-        baseY: (0.2 + Math.random() * 0.6) * (H || 900),
-        phase: Math.random() * Math.PI * 2,
-        amp: 20 + Math.random() * 60,
-        freq: 0.003 + Math.random() * 0.005,
+    // ═══ LAYER 2: NEURAL SIGNAL NETWORK ═══
+    // Perlin noise distorted threads with travelling light pulses
+    const THREAD_COUNT = 7;
+    const threads = Array.from({ length: THREAD_COUNT }, (_, ti) => ({
+      // Each thread: 8 control points across the width
+      points: Array.from({ length: 8 }, (_, j) => ({
+        baseX: (j / 7) * (W || 1920),
+        baseY: (0.15 + (ti / (THREAD_COUNT - 1)) * 0.7) * (H || 900),
+        noiseOffset: Math.random() * 500 + ti * 100,
       })),
-      alpha: 0.08 + Math.random() * 0.15,
-      width: 0.5 + Math.random() * 1.5,
-      hue: 25 + Math.random() * 15, // orange range
+      alpha: 0.08 + Math.random() * 0.12,
     }));
 
-    // Signal pulses traveling along threads
+    // Signal pulses: 6-10 second travel time, rgba(255,180,80) colour
     const pulses = threads.map(() => ({
       t: Math.random(),
-      speed: 0.001 + Math.random() * 0.002,
-      size: 3 + Math.random() * 4,
+      speed: 1 / (360 + Math.random() * 240), // 6-10 second cycle at 60fps
+      size: 4 + Math.random() * 3,
       alpha: 0.6 + Math.random() * 0.4,
     }));
 
-    let frame = 0;
+    // ═══ LAYER 3: PLATFORM CONVERGENCE FIELD ═══
+    // Radial glow behind BIQc node, 500px radius, 8 second pulse
+    const CONVERGENCE_RADIUS = 500;
+
+    let time = 0;
 
     const draw = () => {
-      frame++;
+      time++;
+      const t = time / 60; // seconds
       ctx.clearRect(0, 0, W, H);
 
-      // Layer 1: Subtle grid
-      ctx.strokeStyle = 'rgba(255,140,40,0.018)';
-      ctx.lineWidth = 0.5;
-      const gridSize = 72;
-      for (let x = 0; x < W; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
-      }
-      for (let y = 0; y < H; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-        ctx.stroke();
-      }
-
-      // Layer 2: Central glow convergence
+      // ── LAYER 3: CONVERGENCE GLOW (drawn first, behind everything) ──
       const gx = W * 0.5;
       const gy = H * 0.42;
-      const breathe = 1 + Math.sin(frame * 0.008) * 0.08;
-      const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, 500 * breathe);
-      grad.addColorStop(0, 'rgba(255,106,0,0.22)');
-      grad.addColorStop(0.2, 'rgba(255,80,0,0.14)');
-      grad.addColorStop(0.4, 'rgba(200,60,0,0.06)');
+      // 8-second pulse cycle: scale 1.0 → 1.05
+      const pulsePhase = Math.sin((t / 8) * Math.PI * 2);
+      const scale = 1 + pulsePhase * 0.05;
+      const glowAlpha = 0.15 + pulsePhase * 0.03;
+
+      const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, CONVERGENCE_RADIUS * scale);
+      grad.addColorStop(0, `rgba(255,140,40,${glowAlpha})`);
+      grad.addColorStop(0.3, `rgba(255,106,0,${glowAlpha * 0.6})`);
+      grad.addColorStop(0.6, `rgba(200,70,0,${glowAlpha * 0.2})`);
       grad.addColorStop(1, 'transparent');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
-      // Secondary glow
-      const grad2 = ctx.createRadialGradient(gx, gy, 0, gx, gy, 300 * breathe);
-      grad2.addColorStop(0, 'rgba(255,140,40,0.08)');
-      grad2.addColorStop(0.5, 'rgba(255,100,0,0.03)');
-      grad2.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad2;
-      ctx.fillRect(0, 0, W, H);
-
-      // Layer 3: Neural energy threads
+      // ── LAYER 2: NEURAL SIGNAL THREADS ──
       threads.forEach((thread, ti) => {
-        // Update points
-        thread.points.forEach(p => {
-          p.y = p.baseY + Math.sin(frame * p.freq + p.phase) * p.amp;
-          p.x = Math.max(0, Math.min(W, p.x));
+        // Compute distorted points using Perlin noise
+        const distortedPoints = thread.points.map((p, pi) => {
+          const nx = noise2D(
+            p.noiseOffset + t * 0.15,
+            pi * 0.5 + ti * 3
+          );
+          const ny = noise2D(
+            p.noiseOffset + 100 + t * 0.12,
+            pi * 0.5 + ti * 3 + 50
+          );
+          return {
+            x: p.baseX + nx * 40,
+            y: p.baseY + ny * 50,
+          };
         });
 
-        // Draw smooth curve
+        // Draw smooth bezier curve through distorted points
         ctx.beginPath();
-        ctx.moveTo(thread.points[0].x, thread.points[0].y);
-        for (let i = 0; i < thread.points.length - 1; i++) {
-          const cp1x = thread.points[i].x + (thread.points[i + 1].x - thread.points[i].x) * 0.5;
-          const cp1y = thread.points[i].y;
-          const cp2x = thread.points[i].x + (thread.points[i + 1].x - thread.points[i].x) * 0.5;
-          const cp2y = thread.points[i + 1].y;
-          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, thread.points[i + 1].x, thread.points[i + 1].y);
+        ctx.moveTo(distortedPoints[0].x, distortedPoints[0].y);
+        for (let i = 0; i < distortedPoints.length - 1; i++) {
+          const curr = distortedPoints[i];
+          const next = distortedPoints[i + 1];
+          const cpx = (curr.x + next.x) / 2;
+          const cpy = (curr.y + next.y) / 2;
+          ctx.quadraticCurveTo(curr.x, curr.y, cpx, cpy);
         }
-        ctx.strokeStyle = `hsla(${thread.hue},100%,55%,${thread.alpha})`;
-        ctx.lineWidth = thread.width;
-        ctx.shadowColor = `hsla(${thread.hue},100%,50%,0.4)`;
+        const last = distortedPoints[distortedPoints.length - 1];
+        ctx.lineTo(last.x, last.y);
+
+        // Stroke: gradient #FF7A18 → #FF9C45 with outer glow
+        ctx.strokeStyle = `rgba(255,122,24,${thread.alpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = 'rgba(255,140,40,0.25)';
         ctx.shadowBlur = 12;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Signal pulse along thread
+        // Draw gradient overlay for colour variation
+        const gradLine = ctx.createLinearGradient(0, 0, W, 0);
+        gradLine.addColorStop(0, `rgba(255,122,24,${thread.alpha * 0.8})`);
+        gradLine.addColorStop(0.5, `rgba(255,156,69,${thread.alpha})`);
+        gradLine.addColorStop(1, `rgba(255,122,24,${thread.alpha * 0.8})`);
+        ctx.strokeStyle = gradLine;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = 'rgba(255,140,40,0.25)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Travelling light pulse along the thread (6-10 second cycle)
         const pulse = pulses[ti];
         pulse.t = (pulse.t + pulse.speed) % 1;
-        const segIdx = Math.floor(pulse.t * (thread.points.length - 1));
-        const segT = (pulse.t * (thread.points.length - 1)) - segIdx;
-        if (segIdx < thread.points.length - 1) {
-          const px = thread.points[segIdx].x + (thread.points[segIdx + 1].x - thread.points[segIdx].x) * segT;
-          const py = thread.points[segIdx].y + (thread.points[segIdx + 1].y - thread.points[segIdx].y) * segT;
-          const pglow = ctx.createRadialGradient(px, py, 0, px, py, pulse.size * 3);
-          pglow.addColorStop(0, `rgba(255,140,40,${pulse.alpha})`);
-          pglow.addColorStop(0.5, 'rgba(255,100,0,0.2)');
-          pglow.addColorStop(1, 'transparent');
-          ctx.fillStyle = pglow;
-          ctx.fillRect(px - pulse.size * 3, py - pulse.size * 3, pulse.size * 6, pulse.size * 6);
+        // Interpolate position along the distorted path
+        const totalPoints = distortedPoints.length - 1;
+        const segFloat = pulse.t * totalPoints;
+        const segIdx = Math.floor(segFloat);
+        const segT = segFloat - segIdx;
+        if (segIdx < totalPoints) {
+          const px = distortedPoints[segIdx].x + (distortedPoints[segIdx + 1].x - distortedPoints[segIdx].x) * segT;
+          const py = distortedPoints[segIdx].y + (distortedPoints[segIdx + 1].y - distortedPoints[segIdx].y) * segT;
+          // Pulse glow
+          const pg = ctx.createRadialGradient(px, py, 0, px, py, pulse.size * 4);
+          pg.addColorStop(0, `rgba(255,180,80,${pulse.alpha})`);
+          pg.addColorStop(0.4, `rgba(255,140,40,${pulse.alpha * 0.4})`);
+          pg.addColorStop(1, 'transparent');
+          ctx.fillStyle = pg;
+          ctx.fillRect(px - pulse.size * 4, py - pulse.size * 4, pulse.size * 8, pulse.size * 8);
+          // Bright core dot
           ctx.beginPath();
-          ctx.arc(px, py, pulse.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255,180,80,${pulse.alpha})`;
+          ctx.arc(px, py, pulse.size * 0.6, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,200,120,${pulse.alpha})`;
           ctx.fill();
         }
       });
 
-      // Layer 4: Floating particles with glow
+      // ── LAYER 1: AMBIENT PARTICLES ──
       particles.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.pulse += p.pulseSpeed;
-        if (p.x < 0) p.x = W;
-        if (p.x > W) p.x = 0;
-        if (p.y < 0) p.y = H;
-        if (p.y > H) p.y = 0;
-        const a = p.alpha * (0.5 + 0.5 * Math.sin(p.pulse));
-        // Particle glow
-        const pgr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5);
-        pgr.addColorStop(0, `rgba(255,140,40,${a * 0.6})`);
-        pgr.addColorStop(1, 'transparent');
-        ctx.fillStyle = pgr;
-        ctx.fillRect(p.x - p.r * 5, p.y - p.r * 5, p.r * 10, p.r * 10);
-        // Core
+        // Noise-based drift: extremely slow, 20-30 second cycle
+        const noiseX = noise2D(p.noiseOffsetX + t * p.noiseSpeed * 60, 0);
+        const noiseY = noise2D(0, p.noiseOffsetY + t * p.noiseSpeed * 60);
+        p.x += noiseX * 0.3;
+        p.y += noiseY * 0.25;
+
+        // Wrap around
+        if (p.x < -20) p.x = W + 20;
+        if (p.x > W + 20) p.x = -20;
+        if (p.y < -20) p.y = H + 20;
+        if (p.y > H + 20) p.y = -20;
+
+        // Gradual fade in/out
+        p.fadePhase += p.fadeSpeed;
+        const fadeAlpha = p.alpha * (0.3 + 0.7 * Math.max(0, Math.sin(p.fadePhase)));
+
+        if (fadeAlpha < 0.02) return; // skip invisible particles
+
+        // Gaussian blur glow (simulated with radial gradient)
+        const blurSize = p.r + p.blur;
+        const pg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, blurSize);
+        pg.addColorStop(0, `rgba(255,140,40,${fadeAlpha * 0.7})`);
+        pg.addColorStop(0.3, `rgba(255,140,40,${fadeAlpha * 0.3})`);
+        pg.addColorStop(1, 'transparent');
+        ctx.fillStyle = pg;
+        ctx.fillRect(p.x - blurSize, p.y - blurSize, blurSize * 2, blurSize * 2);
+
+        // Core particle dot
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,${140 + Math.floor(Math.sin(p.pulse) * 40)},40,${a})`;
+        ctx.fillStyle = `rgba(255,140,40,${fadeAlpha})`;
         ctx.fill();
       });
-
-      // Draw connections between nearby particles
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 150) {
-            const a = (1 - dist / 150) * 0.08;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(255,120,20,${a})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Horizontal energy wave bands
-      const waveTime = frame * 0.003;
-      for (let w = 0; w < 3; w++) {
-        const waveY = H * (0.22 + w * 0.28);
-        ctx.beginPath();
-        for (let x = 0; x < W; x += 3) {
-          const y = waveY + Math.sin(x * 0.003 + waveTime + w * 2) * 30 + Math.sin(x * 0.008 + waveTime * 1.5) * 10;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(255,${100 + w * 20},${10 + w * 5},${0.06 + w * 0.02})`;
-        ctx.lineWidth = 1 + w * 0.5;
-        ctx.shadowColor = `rgba(255,120,20,0.3)`;
-        ctx.shadowBlur = 10 + w * 5;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-      }
 
       animRef.current = requestAnimationFrame(draw);
     };

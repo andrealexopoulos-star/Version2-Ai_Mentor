@@ -75,6 +75,9 @@ const HomePage = () => (
       </div>
     </section>
 
+    {/* 80px gap: learning statement → platform diagram */}
+    <div style={{ background: '#07121E', height: 80 }} />
+
     {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
     <div style={{ background: '#07121E' }}>
       <IntelligenceDiagram />
