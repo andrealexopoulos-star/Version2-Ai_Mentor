@@ -40,6 +40,20 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - **Dashboard route restored** — `/dashboard` now shows setup checklist (was redirected to `/advisor`)
 - **Cognition Integration** — Advisor page fetches from `/cognition/overview` with fallback
 
+### Phase B Cognition Integration (Complete — Mar 2026)
+- **AdvisorWatchtower**: Added `StabilityScoreCard` with SVG circular gauge — shows composite stability score (the "ONE NUMBER" per audit recommendation). Score computed from cognition core when SQL deployed, or derived from snapshot state as fallback. Also shows instability indices (RVI, EDS, CDR, ADS) and confidence badge.
+- **AdvisorWatchtower**: Added `PropagationMap` rendering — visualizes risk propagation chains when cognition SQL is deployed
+- **RevenuePage**: Added Cognition Intelligence panel with 4 instability indices + Propagation Chains in Cross-Domain tab. Properly falls back to existing signals display when cognition not available.
+- **RiskPage**: Added Instability Intelligence panel with circular gauges (r=18) + Propagation Analysis with probability display in Cross-Domain Risk tab
+- **OperationsPage**: Added Operations Intelligence panel with cognition indices (ADS, EGI, SDS, BNS)
+- All pages gracefully handle `MIGRATION_REQUIRED` state (SQL migrations 044+045 not yet deployed)
+
+### Live Forensic Audit (Complete — Mar 2026)
+- Comprehensive live testing of production site biqc.thestrategysquad.com documented
+- Report at `/app/reports/LIVE_FORENSIC_AUDIT_20260304.md`
+- Key finding: calibration gate works correctly; test1234 account redirects to calibration (not completed)
+- Key finding: andre@thestrategysquad.com.au credentials not working on production
+
 ### Phase B Cognition Integration (Completed — Mar 2026)
 - **AdvisorWatchtower**: Added `StabilityScoreCard` with circular score gauge (computed from snapshot state + cognition override). Shows composite stability score prominently as the "ONE NUMBER" per audit recommendation
 - **AdvisorWatchtower**: Added `PropagationMap` rendering when cognition SQL is deployed
