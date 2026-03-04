@@ -230,9 +230,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     actions_context += "- 'Run a benchmark' → compares against competitors\n"
     actions_context += "- 'Generate a report' → creates downloadable PDF report\n"
 
-    # Fetch prompt from DB, fall back to hardcoded — inject user's first name
-    raw_prompt = await get_prompt("mysoundboard_v1", _SOUNDBOARD_FALLBACK)
-    soundboard_prompt = raw_prompt.replace("{user_first_name}", user_first_name)
+    # Always use the new Strategic Advisor prompt — do NOT use cached DB prompt
+    # (DB has old 'thinking partner' prompt that conflicts with new advisor persona)
+    soundboard_prompt = _SOUNDBOARD_FALLBACK.replace("{user_first_name}", user_first_name)
     fact_block = f"\n\nKNOWN FACTS (do not re-ask these):\n{facts_prompt}\n" if facts_prompt else ""
 
     # ═══ RAG RETRIEVAL — always attempt (no flag dependency) ═══

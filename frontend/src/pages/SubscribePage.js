@@ -19,10 +19,12 @@ const FEATURE_LABELS = {
 const PLANS = [
   { id: 'free', name: 'Free', price: '$0', period: '/month', color: '#64748B',
     features: ['Market Intelligence (basic)', 'Business DNA', '1 Forensic Audit/month', '3 Snapshots/month', 'Email Integration'] },
-  { id: 'starter', name: 'Starter', price: '$197', period: '/month', color: '#FF6A00', recommended: true,
-    features: ['Everything in Free', 'Revenue Engine', 'Risk & Workforce', 'Operations Intelligence', 'Compliance', 'Reports & Audit Log', 'Soundboard Chat', 'SOP Generator', 'Priority Inbox', 'Unlimited Snapshots'] },
-  { id: 'professional', name: 'Professional', price: '$497', period: '/month', color: '#7C3AED',
-    features: ['Everything in Starter', 'War Room', 'Board Room', 'Deep Market Analysis', 'Outcome Tracking', 'Priority Support'] },
+  { id: 'starter', name: 'Foundation', price: '$750', period: '/month', color: '#10B981', recommended: false,
+    features: ['Live market metrics', 'Revenue intelligence', 'Workforce baseline monitoring', 'Cash discipline visibility', '60-day forecasting'] },
+  { id: 'professional', name: 'Performance', price: '$1,950', period: '/month', color: '#3B82F6', recommended: true,
+    features: ['Everything in Foundation', 'Service-line profitability insight', 'Hiring trigger detection', 'Capacity strain modelling', 'Soundboard Chat', 'Margin compression alerts', '90-day projections'] },
+  { id: 'enterprise', name: 'Growth', price: '$3,900', period: '/month', color: '#7C3AED', recommended: false,
+    features: ['Everything in Performance', 'Hiring vs outsource modelling', 'Revenue expansion simulation', 'Market saturation scoring', 'Scenario planning capability', 'Board-ready reports'] },
 ];
 
 const SubscribePage = () => {

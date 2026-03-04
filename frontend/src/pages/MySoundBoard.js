@@ -72,7 +72,7 @@ const MySoundBoard = () => {
       setConversations(convs);
       // Welcome message: show if user has NO prior conversations (server-side truth)
       if (convs.length === 0 && messages.length === 0) {
-        setMessages([{ role: 'assistant', content: "Welcome to SoundBoard — your AI thinking partner.\n\nI'm here to help you reflect on your business data, explore ideas, and work through strategic decisions. I don't give direct advice — I ask the right questions.\n\nStart by sharing what's on your mind, or use one of the quick-start prompts below." }]);
+        setMessages([{ role: 'assistant', content: "Good to meet you. I'm your Strategic Intelligence Advisor — I have access to your business data and I'm here to help you make better decisions, faster.\n\nWhen the data tells me something clearly, I'll tell you directly. When I need more context, I'll ask you one specific question. No waffle, no hedging.\n\nWhat's on your mind right now?" }]);
       }
     } catch (error) {
       console.error('Failed to fetch conversations');
