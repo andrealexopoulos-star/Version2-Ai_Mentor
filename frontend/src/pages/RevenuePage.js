@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight, FileWarning, Receipt } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
 
@@ -21,14 +21,17 @@ const RevenuePage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pipeline');
   const [sqlScenarios, setSqlScenarios] = useState(null);
+  const [unified, setUnified] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dealsRes, finRes, scenRes] = await Promise.allSettled([
+        const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/integrations/crm/deals'),
           apiClient.get('/integrations/accounting/summary'),
           apiClient.get('/intelligence/scenarios'),
+          apiClient.get('/unified/revenue'),
+          apiClient.get('/cognition/revenue'),
         ]);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
           setDeals(dealsRes.value.data.results);
@@ -38,6 +41,13 @@ const RevenuePage = () => {
         }
         if (scenRes.status === 'fulfilled' && scenRes.value.data?.has_data) {
           setSqlScenarios(scenRes.value.data);
+        }
+        if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
+          setUnified(unifiedRes.value.data);
+        }
+        // Cognition core data (Phase B) — merge if available
+        if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
+          setUnified(prev => ({ ...prev, ...cognitionRes.value.data }));
         }
       } catch {} finally { setLoading(false); }
     };
@@ -89,6 +99,7 @@ const RevenuePage = () => {
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'scenarios', label: 'Scenarios' },
     { id: 'concentration', label: 'Concentration' },
+    { id: 'intelligence', label: 'Cross-Domain' },
   ];
 
   return (
@@ -351,6 +362,91 @@ const RevenuePage = () => {
               </div>
             </>
           )}
+          {/* ═══ CROSS-DOMAIN INTELLIGENCE TAB ═══ */}
+          {activeTab === 'intelligence' && (
+            <>
+              {!unified?.signals ? (
+                <Panel className="text-center py-8">
+                  <Zap className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                  <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Cross-Domain Intelligence</p>
+                  <p className="text-xs text-[#64748B]">Connect multiple integrations (CRM + Accounting) to unlock cross-domain revenue insights.</p>
+                </Panel>
+              ) : (
+                <>
+                  {/* Overdue Invoices from Accounting */}
+                  {unified.signals.overdue_invoices?.length > 0 && (
+                    <Panel>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Receipt className="w-4 h-4 text-[#EF4444]" />
+                        <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Overdue Invoices</h3>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: MONO }}>
+                          ACCOUNTING
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {unified.signals.overdue_invoices.map((inv, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                            <div>
+                              <span className="text-xs text-[#F4F7FA]">Invoice #{inv.number}</span>
+                              <span className="text-[10px] text-[#EF4444] block" style={{ fontFamily: MONO }}>{inv.days_overdue}d overdue</span>
+                            </div>
+                            <span className="text-sm font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>${(inv.amount || 0).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Panel>
+                  )}
+
+                  {/* At-Risk Deals from CRM */}
+                  {unified.signals.at_risk?.length > 0 && (
+                    <Panel>
+                      <div className="flex items-center gap-2 mb-4">
+                        <FileWarning className="w-4 h-4 text-[#F59E0B]" />
+                        <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>At-Risk Revenue</h3>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#F59E0B15', color: '#F59E0B', fontFamily: MONO }}>
+                          CRM
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {unified.signals.at_risk.map((deal, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                            <div>
+                              <span className="text-xs text-[#F4F7FA]">{deal.name}</span>
+                              <span className="text-[10px] text-[#F59E0B] block" style={{ fontFamily: MONO }}>{deal.risk}</span>
+                            </div>
+                            <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>${(deal.amount || 0).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Panel>
+                  )}
+
+                  {/* Concentration & Cash Signals Summary */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Panel>
+                      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Pipeline Total</span>
+                      <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>
+                        ${unified.signals.pipeline_total ? Math.round(unified.signals.pipeline_total / 1000) + 'K' : '—'}
+                      </span>
+                    </Panel>
+                    <Panel>
+                      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Concentration Risk</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: MONO, color: unified.signals.concentration_risk === 'high' ? '#EF4444' : unified.signals.concentration_risk === 'medium' ? '#F59E0B' : '#10B981' }}>
+                        {(unified.signals.concentration_risk || 'low').toUpperCase()}
+                      </span>
+                    </Panel>
+                    <Panel>
+                      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Stalled Deals</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: MONO, color: unified.signals.stalled_deals > 0 ? '#FF6A00' : '#10B981' }}>
+                        {unified.signals.stalled_deals ?? 0}
+                      </span>
+                    </Panel>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
         </>}
 
         {!hasDeals && !loading && (

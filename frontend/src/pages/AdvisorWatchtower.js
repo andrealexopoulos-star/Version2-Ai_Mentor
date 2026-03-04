@@ -4,7 +4,7 @@ import { apiClient } from '../lib/api';
 import DashboardLayout from '../components/DashboardLayout';
 import { CheckInAlerts } from '../components/CheckInAlerts';
 import { CognitiveLoadingScreen } from '../components/CognitiveLoadingScreen';
-import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2, Plug } from 'lucide-react';
+import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2, Plug, ArrowRight, Zap } from 'lucide-react';
 
 import DataConfidence from '../components/DataConfidence';
 
@@ -63,6 +63,62 @@ const IntegrationRequired = ({ groupId, color }) => {
       <a href="/integrations" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: color }} data-testid={`connect-${groupId}`}>
         <Plug className="w-3.5 h-3.5" /> {l.cta}
       </a>
+    </Card>
+  );
+};
+
+/* First-time user welcome — shown when zero integrations connected */
+const WelcomeBanner = ({ owner }) => (
+  <Card className="p-6 mb-6" data-testid="welcome-banner">
+    <div className="flex items-start gap-4">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
+        <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
+      </div>
+      <div className="flex-1">
+        <h3 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: HEAD }}>Welcome{owner ? `, ${owner}` : ''}. Let's activate your intelligence.</h3>
+        <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+          BIQc needs to connect to your business tools to surface real intelligence. Connect at least one tool to get started.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: 'Connect CRM', desc: 'HubSpot, Salesforce', color: '#2563EB' },
+            { label: 'Connect Accounting', desc: 'Xero, QuickBooks', color: '#F97316' },
+            { label: 'Connect Email', desc: 'Gmail, Outlook', color: '#059669' },
+          ].map(tool => (
+            <a key={tool.label} href="/integrations" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:brightness-110" style={{ background: tool.color }} data-testid={`welcome-${tool.label.toLowerCase().replace(/\s/g, '-')}`}>
+              <Plug className="w-3 h-3" /> {tool.label}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </Card>
+);
+
+/* Daily summary — "What changed in 24h" */
+const DailySummary = ({ cognitive }) => {
+  const c = cognitive || {};
+  const rq = c.resolution_queue || [];
+  const newAlerts = rq.filter(r => {
+    if (!r.created_at) return false;
+    const created = new Date(r.created_at);
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return created > dayAgo;
+  });
+  const memo = c.executive_memo || c.memo || '';
+  if (!memo && newAlerts.length === 0) return null;
+  return (
+    <Card className="p-5 mb-6" data-testid="daily-summary">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6A00' }} />
+        <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: MONO }}>What changed in 24h</span>
+      </div>
+      {newAlerts.length > 0 && (
+        <p className="text-xs mb-2" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+          <span className="font-semibold" style={{ color: '#F4F7FA' }}>{newAlerts.length} new signal{newAlerts.length > 1 ? 's' : ''}</span> detected across your systems.
+        </p>
+      )}
+      {memo && <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{memo.substring(0, 200)}{memo.length > 200 ? '...' : ''}</p>}
     </Card>
   );
 };
@@ -216,6 +272,7 @@ const AdvisorWatchtower = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
   const c = useMemo(() => cognitive || {}, [cognitive]);
   const [connectedIntegrations, setConnectedIntegrations] = useState([]);
+  const [cognitionData, setCognitionData] = useState(null);
 
   // Fetch integration status to determine what data is real
   useEffect(() => {
@@ -233,6 +290,12 @@ const AdvisorWatchtower = () => {
       }
     };
     checkIntegrations();
+    // Also try fetching from cognition core (Phase B)
+    apiClient.get('/cognition/overview').then(res => {
+      if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
+        setCognitionData(res.data);
+      }
+    }).catch(() => {});
   }, []);
 
   // Parse system state (handle both string and object formats)
@@ -313,6 +376,12 @@ const AdvisorWatchtower = () => {
 
               {/* CHECK-IN ALERTS */}
               <CheckInAlerts />
+
+              {/* WELCOME BANNER — shown when no integrations connected */}
+              {connectedIntegrations.length === 0 && <WelcomeBanner owner={owner} />}
+
+              {/* DAILY SUMMARY — "What changed in 24h" */}
+              {connectedIntegrations.length > 0 && <DailySummary cognitive={cognitive} />}
 
               {/* 5 COGNITION TABS */}
               <div className="relative mb-6">

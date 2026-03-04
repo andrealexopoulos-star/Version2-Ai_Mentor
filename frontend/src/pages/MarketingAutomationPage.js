@@ -1,0 +1,251 @@
+import React, { useState } from 'react';
+import DashboardLayout from '../components/DashboardLayout';
+import { apiClient } from '../lib/api';
+import { toast } from 'sonner';
+import { 
+  Megaphone, FileText, Share2, Globe, Briefcase, 
+  Loader2, Copy, Check, ChevronDown, Sparkles
+} from 'lucide-react';
+import { Button } from '../components/ui/button';
+
+const SORA = "'Cormorant Garamond', Georgia, serif";
+const INTER = "'Inter', sans-serif";
+const MONO = "'JetBrains Mono', monospace";
+
+const Panel = ({ children, className = '' }) => (
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+);
+
+const CONTENT_TYPES = [
+  { id: 'google_ad', label: 'Google Ads', icon: Megaphone, description: 'Generate high-converting ad copy with headlines and descriptions' },
+  { id: 'blog', label: 'Blog Post', icon: FileText, description: 'SEO-optimised blog posts with structured sections' },
+  { id: 'social_post', label: 'Social Media', icon: Share2, description: 'Platform-specific posts for LinkedIn, Twitter, Instagram' },
+  { id: 'landing_page', label: 'Landing Page', icon: Globe, description: 'Conversion-focused landing page copy' },
+  { id: 'job_description', label: 'Job Description', icon: Briefcase, description: 'Compelling job listings for your open roles' },
+];
+
+const MarketingAutomationPage = () => {
+  const [selectedType, setSelectedType] = useState(null);
+  const [topic, setTopic] = useState('');
+  const [tone, setTone] = useState('professional');
+  const [audience, setAudience] = useState('');
+  const [context, setContext] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [result, setResult] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!selectedType || !topic.trim()) {
+      toast.error('Please select a content type and enter a topic');
+      return;
+    }
+    setGenerating(true);
+    setResult(null);
+    try {
+      const res = await apiClient.post('/automation/generate', {
+        content_type: selectedType,
+        topic: topic.trim(),
+        tone,
+        target_audience: audience.trim(),
+        additional_context: context.trim(),
+      });
+      setResult(res.data);
+      toast.success('Content generated successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (!result?.content) return;
+    const text = typeof result.content === 'string' ? result.content : JSON.stringify(result.content, null, 2);
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renderContent = (content) => {
+    if (!content) return null;
+    if (typeof content === 'string') {
+      try { content = JSON.parse(content); } catch { return <p className="text-sm text-[#9FB0C3] whitespace-pre-wrap">{content}</p>; }
+    }
+    return (
+      <div className="space-y-4">
+        {Object.entries(content).map(([key, value]) => (
+          <div key={key} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+            <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1.5" style={{ fontFamily: MONO }}>{key.replace(/_/g, ' ')}</span>
+            {Array.isArray(value) ? (
+              <div className="space-y-2">
+                {value.map((item, i) => (
+                  <div key={i} className="text-sm text-[#9FB0C3]">
+                    {typeof item === 'object' ? (
+                      <div className="pl-3 border-l-2 border-[#243140]">
+                        {Object.entries(item).map(([k, v]) => (
+                          <p key={k}><span className="text-[#64748B]">{k}:</span> {String(v)}</p>
+                        ))}
+                      </div>
+                    ) : String(item)}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[#F4F7FA]">{String(value)}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="marketing-automation-page">
+        <div>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Marketing Automation</h1>
+          <p className="text-sm text-[#9FB0C3]">Generate marketing content grounded in your business data and intelligence.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
+          {/* Left: Config */}
+          <div className="space-y-5">
+            <Panel>
+              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Content Type</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {CONTENT_TYPES.map(ct => (
+                  <button
+                    key={ct.id}
+                    onClick={() => setSelectedType(ct.id)}
+                    data-testid={`content-type-${ct.id}`}
+                    className="p-3 rounded-lg text-left transition-all"
+                    style={{
+                      background: selectedType === ct.id ? 'rgba(255, 106, 0, 0.1)' : '#0F1720',
+                      border: selectedType === ct.id ? '1px solid rgba(255, 106, 0, 0.3)' : '1px solid #243140',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <ct.icon className="w-4 h-4" style={{ color: selectedType === ct.id ? '#FF6A00' : '#64748B' }} />
+                      <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? '#FF6A00' : '#F4F7FA' }}>{ct.label}</span>
+                    </div>
+                    <p className="text-[11px] text-[#64748B]">{ct.description}</p>
+                  </button>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel>
+              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Parameters</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Topic *</label>
+                  <input
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    placeholder="e.g., Q1 product launch for SMB market"
+                    data-testid="marketing-topic-input"
+                    className="w-full px-3 py-2.5 rounded-md text-sm"
+                    style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Tone</label>
+                    <div className="relative">
+                      <select
+                        value={tone}
+                        onChange={e => setTone(e.target.value)}
+                        data-testid="marketing-tone-select"
+                        className="w-full px-3 py-2.5 rounded-md text-sm appearance-none"
+                        style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                      >
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="bold">Bold & Direct</option>
+                        <option value="empathetic">Empathetic</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Audience</label>
+                    <input
+                      value={audience}
+                      onChange={e => setAudience(e.target.value)}
+                      placeholder="e.g., CFOs at mid-market SaaS"
+                      data-testid="marketing-audience-input"
+                      className="w-full px-3 py-2.5 rounded-md text-sm"
+                      style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Additional Context</label>
+                  <textarea
+                    value={context}
+                    onChange={e => setContext(e.target.value)}
+                    placeholder="Any specific messaging, USPs, or constraints..."
+                    rows={3}
+                    data-testid="marketing-context-input"
+                    className="w-full px-3 py-2.5 rounded-md text-sm resize-none"
+                    style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handleGenerate}
+                disabled={generating || !selectedType || !topic.trim()}
+                data-testid="marketing-generate-btn"
+                className="w-full mt-4"
+                style={{ background: '#FF6A00', color: 'white' }}
+              >
+                {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="w-4 h-4 mr-2" />Generate Content</>}
+              </Button>
+            </Panel>
+          </div>
+
+          {/* Right: Output */}
+          <div>
+            <Panel className="min-h-[400px]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Generated Content</h3>
+                {result?.content && (
+                  <button onClick={handleCopy} data-testid="marketing-copy-btn"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors"
+                    style={{ background: '#0F1720', border: '1px solid #243140', color: '#9FB0C3' }}>
+                    {copied ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                )}
+              </div>
+
+              {!result && !generating && (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="text-center">
+                    <Sparkles className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
+                    <p className="text-sm text-[#64748B]">Select a content type and generate to see results.</p>
+                  </div>
+                </div>
+              )}
+
+              {generating && (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="text-center">
+                    <Loader2 className="w-8 h-8 text-[#FF6A00] mx-auto mb-3 animate-spin" />
+                    <p className="text-sm text-[#9FB0C3]">Generating content from your business intelligence...</p>
+                  </div>
+                </div>
+              )}
+
+              {result?.content && renderContent(result.content)}
+            </Panel>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default MarketingAutomationPage;

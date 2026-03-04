@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug } from 'lucide-react';
+import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 
 const SORA = "'Cormorant Garamond', Georgia, serif";
@@ -16,19 +16,29 @@ const OperationsPage = () => {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [integrations, setIntegrations] = useState(null);
+  const [unifiedOps, setUnifiedOps] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [snapRes, intRes] = await Promise.allSettled([
+        const [snapRes, intRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/snapshot/latest'),
           apiClient.get('/integrations/merge/connected'),
+          apiClient.get('/unified/operations'),
+          apiClient.get('/cognition/operations'),
         ]);
         if (snapRes.status === 'fulfilled' && snapRes.value.data?.cognitive) {
           setSnapshot(snapRes.value.data.cognitive);
         }
         if (intRes.status === 'fulfilled' && intRes.value.data) {
           setIntegrations(intRes.value.data);
+        }
+        if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
+          setUnifiedOps(unifiedRes.value.data);
+        }
+        // Cognition core data (Phase B)
+        if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
+          setUnifiedOps(prev => ({ ...prev, ...cognitionRes.value.data }));
         }
       } catch {} finally { setLoading(false); }
     };
@@ -123,6 +133,51 @@ const OperationsPage = () => {
                   ))}
                 </div>
               </Panel>
+            )}
+
+            {/* ═══ CROSS-DOMAIN OPERATIONS INTELLIGENCE ═══ */}
+            {unifiedOps?.signals && (
+              <>
+                {unifiedOps.signals.bottlenecks?.length > 0 && (
+                  <Panel>
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertTriangle className="w-4 h-4 text-[#FF6A00]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Cross-Domain Bottlenecks</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {unifiedOps.signals.bottlenecks.map((b, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
+                          <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#FF6A00' }} />
+                          <div>
+                            <p className="text-xs text-[#9FB0C3]">{b.detail}</p>
+                            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Source: {b.source}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+
+                {unifiedOps.signals.capacity_alerts?.length > 0 && (
+                  <Panel>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Zap className="w-4 h-4 text-[#F59E0B]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Capacity Alerts</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {unifiedOps.signals.capacity_alerts.map((a, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
+                          <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#F59E0B' }} />
+                          <div>
+                            <p className="text-xs text-[#9FB0C3]">{a.detail}</p>
+                            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Source: {a.source}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+              </>
             )}
           </>
         )}

@@ -1,7 +1,5 @@
 import "@/App.css";
-import "@/mobile-fixes.css";
-import "@/mobile-reconstruction.css";
-import "@/scroll-fix-critical.css";
+import "@/mobile.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SupabaseAuthProvider, useSupabaseAuth, AUTH_STATE } from "./context/SupabaseAuthContext";
 import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
@@ -78,6 +76,8 @@ import ObservabilityPage from './pages/ObservabilityPage';
 import SupportConsolePage from './pages/SupportConsolePage';
 import SubscribePage from './pages/SubscribePage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import MarketingAutomationPage from './pages/MarketingAutomationPage';
+import ABTestingPage from './pages/ABTestingPage';
 import ResetPassword from './pages/ResetPassword';
 import UpdatePassword from './pages/UpdatePassword';
 
@@ -224,7 +224,7 @@ function AppRoutes() {
 
       {/* Free Tier Routes */}
       <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/market" element={<ProtectedRoute><MarketPage /></ProtectedRoute>} />
       <Route path="/market/calibration" element={<ProtectedRoute><ForensicCalibration /></ProtectedRoute>} />
       <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
@@ -264,6 +264,8 @@ function AppRoutes() {
       <Route path="/operator" element={<ProtectedRoute><TierGate><OperatorDashboard /></TierGate></ProtectedRoute>} />
       <Route path="/market-analysis" element={<ProtectedRoute><TierGate><MarketAnalysis /></TierGate></ProtectedRoute>} />
       <Route path="/oac" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
+      <Route path="/marketing-automation" element={<ProtectedRoute><TierGate><MarketingAutomationPage /></TierGate></ProtectedRoute>} />
+      <Route path="/ab-testing" element={<ProtectedRoute><TierGate><ABTestingPage /></TierGate></ProtectedRoute>} />
 
       {/* Admin/Test Routes */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />

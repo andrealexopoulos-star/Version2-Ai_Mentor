@@ -1,36 +1,64 @@
-# BIQc Platform — Final PRD
-## 1 March 2026
+# BIQc Platform — Product Requirements Document
 
-## Master Plan Status: 8/8 Workstreams COMPLETE
+## Original Problem Statement
+Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with executive-grade positioning and AI-driven intelligence surfaces.
 
-| # | Workstream | Status |
-|---|-----------|--------|
-| 1 | RAG Vector/Graph Store | ✅ pgvector + embeddings + HNSW search |
-| 2 | Marketing Intelligence Tab | ✅ 5-pillar radar + benchmarking |
-| 3 | Marketing Automation | ✅ 5 content types + action logging |
-| 4 | Memory & Summarisation | ✅ Episodic + semantic + context summaries |
-| 5 | SoundBoard RAG Upgrade | ✅ Vector retrieval + memory context |
-| 6 | Observability Dashboard | ✅ Token/latency/model metrics |
-| 7 | A/B Testing Framework | ✅ Experiments + variants + metrics |
-| 8 | Vendor-Agnostic Migration | ✅ Service layer abstraction |
+## Core Architecture
+- **Frontend:** React (CRA) + Tailwind + Shadcn/UI
+- **Backend:** FastAPI → thin pass-through to SQL engine
+- **Database:** Supabase (PostgreSQL) with SQL-first intelligence engine
+- **Mobile:** React Native (Expo) — 5-tab native app
+- **Deployment:** Azure (production), Emergent preview (development)
 
-## Platform Metrics
-- 90+ frontend routes
-- 220+ API endpoints
-- 40+ Supabase tables
-- 25+ SQL functions
-- 18 Edge Functions
-- 4 pg_cron jobs
-- 3 database triggers
-- 7 feature flags (all ON)
-- 3 A/B experiments (draft)
+## What's Been Implemented
 
-## SQL Migrations to Deploy
-- `039_ab_testing.sql` → A/B testing tables + functions + seed experiments
+### Backend Cognition Core (Complete)
+- SQL intelligence engine: `ic_generate_cognition_contract` (~25ms)
+- API: `/api/cognition/{tab}`, `/api/cognition/decisions`, `/api/cognition/integration-health`
 
-## Architecture
-```
-Supabase ($25/mo): 40+ tables, pgvector, Auth, Edge Functions, Realtime
-Azure App Service ($13/mo): FastAPI (220+ endpoints), Guardrails, RAG, Memory, Automation
-Total: ~$38/mo
-```
+### Scrape & Edge Function Architecture (Complete — Confirmed)
+1. **calibration-business-dna** — Perplexity 5-query deep search + Firecrawl scrape + regex identity extraction + GPT-4o-mini structured extraction → writes to `business_profiles`
+2. **business-identity-lookup** — ABR registry direct ABN lookup + name search
+3. **fetch_website_text** — httpx scraper for profile autofill/build
+4. **business-profile/build** — Serper.dev search + multi-URL scrape + AI profile extraction
+
+### Homepage Visual System (Complete)
+- Canvas energy galaxy (4 threads, 50 particles, 8s glow, center dead zone)
+- Hero rotator (3 variants, 8s, 1.2s fade), integration carousel (21 SVG logos, 25s), intelligence diagram (4-tier, 6s core glow)
+
+### Mobile CSS (Complete)
+- Single `mobile.css` (~300 lines) covering homepage, login/register, advisor, calibration, platform, footer
+
+### Expo React Native App (Complete)
+- Auth-gated 5-tab app: Overview, Chat, Market, Alerts, Settings
+- Connected to production API with SecureStore auth
+
+### User Onboarding Journey (Fixed — Mar 2026)
+- **Onboarding completion** → redirects to `/integrations` (was empty `/advisor`)
+- **Welcome Banner** on Advisor page when zero integrations connected — guides to CRM, Accounting, Email
+- **Daily Summary** component — "What changed in 24h" with signal count + executive memo
+- **Dashboard route restored** — `/dashboard` now shows setup checklist (was redirected to `/advisor`)
+- **Cognition Integration** — Advisor page fetches from `/cognition/overview` with fallback
+
+## Prioritized Backlog
+
+### P1 — Important
+1. **Full Phase B Cognition Integration** — Connect RevenuePage, RiskPage, OperationsPage to cognition endpoint (Advisor started)
+2. **Admin/Legal Nav Restructure**
+3. **Weekly Check-in Calendar**
+
+### P2 — Future
+4. **Expo App Store Deployment**
+5. **A/B Testing & Marketing Automation UIs**
+
+## Key Files
+- `frontend/src/mobile.css`, `frontend/src/pages/website/HomePage.js`
+- `frontend/src/pages/AdvisorWatchtower.js` — Welcome banner + daily summary + cognition fetch
+- `frontend/src/pages/OnboardingWizard.js` — Redirects to integrations after completion
+- `mobile/App.tsx` — Expo entry with auth flow
+- `supabase/functions/calibration-business-dna/index.ts` — Primary scrape edge function
+- `supabase/functions/business-identity-lookup/index.ts` — ABN registry lookup
+
+## Test Credentials
+- Email: `andre@thestrategysquad.com.au`
+- Password: `BIQc_Test_2026!`

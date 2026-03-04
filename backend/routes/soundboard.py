@@ -4,6 +4,7 @@ Extracted from server.py. Prompts loaded from Supabase system_prompts table.
 Instrumented with Intelligence Spine LLM logging.
 """
 from fastapi import APIRouter, Depends, HTTPException
+import asyncio
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
@@ -133,6 +134,78 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         f"{cognitive_context or 'Limited data - ask questions to learn more about this user.'}\n"
     )
 
+    # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
+    integration_context = ""
+    try:
+        from routes.unified_intelligence import _fetch_all_integration_data, _compute_revenue_signals, _compute_risk_signals, _compute_people_signals
+        all_data = await _fetch_all_integration_data(sb, user_id)
+        
+        # Integration status
+        connected_list = [k for k, v in {'CRM': all_data['crm']['connected'], 'Accounting': all_data['accounting']['connected'], 'Email': all_data['email']['connected'], 'Marketing': all_data['marketing']['connected']}.items() if v]
+        if connected_list:
+            integration_context += f"\nCONNECTED INTEGRATIONS: {', '.join(connected_list)}\n"
+        else:
+            integration_context += "\nNO INTEGRATIONS CONNECTED.\n"
+        
+        # Revenue signals
+        rev = _compute_revenue_signals(all_data)
+        if rev['deals']:
+            integration_context += f"\nREVENUE: Pipeline ${rev['pipeline_total']:,.0f} | {rev['stalled_deals']} stalled deals | {rev['won_count']} won | {rev['lost_count']} lost | Concentration: {rev['concentration_risk']}\n"
+            for d in rev['deals'][:5]:
+                integration_context += f"  - {d['name']}: ${d['amount']:,.0f} ({d['status']}) stage: {d['stage']}\n"
+        if rev['overdue_invoices']:
+            integration_context += f"\nOVERDUE INVOICES ({len(rev['overdue_invoices'])}):\n"
+            for inv in rev['overdue_invoices'][:3]:
+                integration_context += f"  - Invoice {inv['number']}: ${inv['amount']:,.0f} ({inv['days_overdue']}d overdue)\n"
+        if rev['at_risk']:
+            integration_context += f"\nAT-RISK DEALS:\n"
+            for r in rev['at_risk'][:3]:
+                integration_context += f"  - {r['name']}: ${r['amount']:,.0f} — {r['risk']} ({r['days_stalled']}d stalled)\n"
+        
+        # Risk signals
+        risk = _compute_risk_signals(all_data)
+        if risk['overall_risk'] != 'low':
+            integration_context += f"\nRISK LEVEL: {risk['overall_risk'].upper()}\n"
+            for cat in ['financial_risks', 'operational_risks', 'people_risks', 'market_risks']:
+                for item in risk.get(cat, []):
+                    if isinstance(item, dict):
+                        integration_context += f"  [{item.get('severity','?').upper()}] {item['detail']}\n"
+        
+        # People signals
+        people = _compute_people_signals(all_data)
+        if people.get('capacity') or people.get('fatigue'):
+            integration_context += f"\nWORKFORCE: Capacity {people['capacity'] or '?'}% | Fatigue: {people['fatigue'] or '?'}\n"
+    except Exception as e:
+        logger.debug(f"Unified intelligence fetch for SoundBoard: {e}")
+        integration_context = "\nIntegration data unavailable.\n"
+
+    # ═══ MARKETING BENCHMARK DATA ═══
+    marketing_context = ""
+    try:
+        bench = sb.table('marketing_benchmarks').select('scores, competitors, summary').eq('tenant_id', user_id).eq('is_current', True).execute()
+        if bench.data and bench.data[0].get('scores'):
+            b = bench.data[0]
+            scores = b['scores']
+            marketing_context = f"\n\nMARKETING BENCHMARK SCORES:\n"
+            for pillar, score in scores.items():
+                if pillar != 'overall' and isinstance(score, (int, float)):
+                    marketing_context += f"- {pillar.replace('_', ' ').title()}: {round(score * 100)}%\n"
+            marketing_context += f"Overall: {round(scores.get('overall', 0) * 100)}%\n"
+            if b.get('competitors'):
+                marketing_context += f"Benchmarked against: {', '.join(c.get('name','?') for c in b['competitors'][:3])}\n"
+    except Exception:
+        pass
+
+    # ═══ AVAILABLE ACTIONS ═══
+    actions_context = "\n\nAVAILABLE ACTIONS (tell user about these when relevant):\n"
+    actions_context += "- 'Create a logo' → generates AI logo\n"
+    actions_context += "- 'Write a blog post about [topic]' → generates SEO blog\n"
+    actions_context += "- 'Create a Google Ad for [product]' → generates ad copy\n"
+    actions_context += "- 'Write a social media post' → generates LinkedIn/Twitter/Facebook\n"
+    actions_context += "- 'Create a job description for [role]' → generates job posting\n"
+    actions_context += "- 'Run a benchmark' → compares against competitors\n"
+    actions_context += "- 'Generate a report' → creates downloadable PDF report\n"
+
     # Fetch prompt from DB, fall back to hardcoded
     soundboard_prompt = await get_prompt("mysoundboard_v1", _SOUNDBOARD_FALLBACK)
     fact_block = f"\n\nGLOBAL FACT AUTHORITY:\n{facts_prompt}\nDo NOT re-ask any fact listed above.\n" if facts_prompt else ""
@@ -178,7 +251,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
 
-    system_message = soundboard_prompt + fact_block + rag_context + memory_context + f"\n\nCONTEXT:\n{user_context}"
+    system_message = soundboard_prompt + fact_block + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {

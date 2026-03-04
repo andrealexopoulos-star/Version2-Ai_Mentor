@@ -14,7 +14,7 @@ import {
   Settings, LogOut, Menu, X, ChevronDown, Shield, User,
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
-  ClipboardList, Inbox, MessageSquare, Lock, Eye
+  ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 
@@ -177,7 +177,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
       { icon: Settings, label: 'Operations', path: '/operations' },
       { icon: AlertTriangle, label: 'Risk', path: '/risk' },
-      { icon: Shield, label: 'Compliance', path: '/compliance' },
       { icon: Radar, label: 'Market & Positioning', path: '/market' },
     ]},
     { id: 'execution', label: 'Execution', items: [
@@ -191,9 +190,14 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
       { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
-      { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
     ]},
-    { id: 'governance', label: 'Governance', items: [
+    { id: 'marketing', label: 'Marketing', items: [
+      { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
+      { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
+      { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
+    ]},
+    { id: 'governance', label: 'Governance & Legal', items: [
+      { icon: Shield, label: 'Compliance', path: '/compliance' },
       { icon: FileText, label: 'Reports', path: '/reports' },
       { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
       { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },

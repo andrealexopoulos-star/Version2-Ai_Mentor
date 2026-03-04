@@ -1,12 +1,7 @@
 /**
- * BIQc Mobile Theme — Derived from Design System Tokens
- * Ensures mobile app matches web exactly.
+ * BIQc Mobile Theme
+ * Mirrors web design system tokens exactly.
  */
-
-// Import web tokens for consistency
-// Note: In React Native, we can't import web modules directly
-// but we mirror the exact values from design-system/tokens.js
-
 export const theme = {
   colors: {
     bg: '#0F1720',
@@ -31,75 +26,21 @@ export const theme = {
     dangerDim: 'rgba(239,68,68,0.08)',
     infoDim: 'rgba(59,130,246,0.08)',
   },
-
   fonts: {
-    display: 'Cormorant-SemiBold',
-    body: 'Inter-Regular',
-    bodyMedium: 'Inter-Medium',
-    bodySemiBold: 'Inter-SemiBold',
-    mono: 'JetBrainsMono-Regular',
+    head: 'System',
+    display: 'System',
+    body: 'System',
+    bodyMedium: 'System',
+    bodySemiBold: 'System',
+    mono: 'System',
   },
-
-  // 8px spacing system — matches web tokens exactly
-  spacing: {
-    xs: 8,
-    sm: 16,
-    md: 24,
-    lg: 32,
-    xl: 48,
-    xxl: 64,
-  },
-
-  // Font sizes — mobile column from web tokens
-  fontSize: {
-    h1: 28,
-    h2: 22,
-    h3: 18,
-    bodyLarge: 16,
-    body: 14,
-    caption: 12,
-    micro: 10,
-  },
-
-  fontWeight: {
-    display: '700',
-    headline: '600',
-    body: '400',
-    meta: '300',
-  },
-
-  lineHeight: {
-    tight: 1.15,
-    heading: 1.2,
-    body: 1.5,
-    relaxed: 1.7,
-  },
-
-  // Border radius — matches web tokens
-  radius: {
-    card: 16,
-    cardSm: 12,
-    button: 14,
-    input: 12,
-    badge: 8,
-    full: 999,
-  },
-
+  spacing: { xs: 8, sm: 16, md: 24, lg: 32, xl: 48, xxl: 64 },
+  fontSize: { h1: 28, h2: 22, h3: 18, bodyLarge: 16, body: 14, caption: 12, micro: 10 },
+  radius: { sm: 8, md: 12, lg: 16, button: 14, full: 999 },
   shadow: {
-    card: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.35,
-      shadowRadius: 24,
-      elevation: 8,
-    },
+    card: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 24, elevation: 8 },
   },
-
-  // Touch targets
-  touch: {
-    minHeight: 44,
-    minWidth: 44,
-  },
+  touch: { minHeight: 44, minWidth: 44 },
 };
 
 export type Theme = typeof theme;
