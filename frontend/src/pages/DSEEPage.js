@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import UpgradeCardsGate from '../components/UpgradeCardsGate';
 import { apiClient } from '../lib/api';
 import { Search, Shield, AlertTriangle, CheckCircle2, Loader2, Target, Eye, MapPin, Star, TrendingUp, BarChart3, Lock, ChevronDown, ChevronUp, ExternalLink, Zap } from 'lucide-react';
 
@@ -37,6 +38,7 @@ const DSEEPage = () => {
 
   return (
     <DashboardLayout>
+      <UpgradeCardsGate requiredTier="starter" featureName="Exposure Scan">
       <div className="space-y-4 max-w-[900px]" style={{ fontFamily: BODY }} data-testid="dsee-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD, WebkitTextStroke: '0.2px #F4F7FA' }}>Structural Exposure Analysis</h1>
@@ -244,6 +246,7 @@ const DSEEPage = () => {
           <span className="text-[10px] text-[#64748B] block text-center" style={{ fontFamily: MONO }}>{r.execution_time_ms}ms | scan:{r.scan_id}</span>
         </>}
       </div>
+      </UpgradeCardsGate>
     </DashboardLayout>
   );
 };

@@ -54,7 +54,37 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - Key finding: calibration gate works correctly; test1234 account redirects to calibration (not completed)
 - Key finding: andre@thestrategysquad.com.au credentials not working on production
 
-### Phase B Cognition Integration (Completed — Mar 2026)
+### Navigation & Access Control System (Complete — Mar 2026)
+- **BIQc Legal collapsible menu**: At bottom of sidebar, collapses/expands like other sections. Items: BIQc AI Learning Guarantee, Security & Infrastructure, Trust Centre, Data Processing Agreement, Privacy Policy, Terms & Conditions
+- **Knowledge Base → moved under Admin menu** (SA-only visible)
+- **Tier Resolver updated**: `/revenue` and `/operations` now require `enterprise` tier. `/reports` changed to `free`. `growth` tier added as alias for enterprise (rank 3).
+- **EnterpriseContactGate**: Wraps Revenue and Operations pages. Non-enterprise users see contact form (auto-filled name/email/business, calendar callback picker, problem description textarea). Submits to `/enterprise/contact-request` backend.
+- **UpgradeCardsGate**: Wraps Automations, Forensic Ingestion Audit, Exposure Scan. Shows 4 pricing plan cards (Foundation $750, Performance $1,950, Growth $3,900, Enterprise Contact Sales) → clicking navigates to /subscribe.
+- **SupportConsolePage enhanced**: Added "Enterprise Leads" tab showing all contact form submissions. Tier dropdown now shows friendly plan names (Foundation/Performance/Growth). Added `loadContacts()` function.
+- **Backend**: `/enterprise/contact-request` + `/enterprise/contact-requests` endpoints in super_admin.py.
+
+### Feature Tier Gates (Complete — Mar 2026)
+- **Marketing Benchmark 30-day timer**: Free tier gets 1 scan/30 days. Timer stored in localStorage. Shows countdown "Next free scan in X days" + upgrade prompt when throttled.
+- **SoundBoard welcome message**: First-time visit shows contextual welcome message. "Complete Calibration" and "Run Exposure Scan" buttons pinned at top of SoundBoard. Exposure scan button shows 30-day cooldown timer.
+- **Market page**: Executive Brief moved to top of Intelligence tab. ForensicCalibration + EngagementScan blocks removed → replaced with "Governance Reports" panel linking to /reports.
+- **Reports page**: `ForensicReportCard` added — shows Forensic Calibration Report and Market Exposure Scan Report with download buttons, "next available on X date" per 30-day cycle for free tier.
+- **SoundboardPanel.js** (the actual SoundBoard widget used on all dashboard pages): Fixed `handleFileSelect` stub to use FileReader — reads text files (.txt, .csv, .md, .json, .py, etc.) and includes content in chat message. Attachment preview strip shows before sending. File download card renders when backend generates a file.
+- **MySoundBoard.js** (full-page `/soundboard`): Same fix — Paperclip button, FileReader, attachment preview, file download display.
+- **FloatingSoundboard.js**: Same implementation added (component exists, currently not mounted on any page).
+
+### Critical Onboarding Bug Fixed — Mar 2026
+- **Root cause**: `complete_onboarding` endpoint wrote to `strategic_console_state.is_complete` but NOT to `user_operator_profile.persona_calibration_status`. The `auth/check-profile` endpoint checks ONLY `persona_calibration_status` → user was stuck in calibration redirect loop forever after completing the 7-step wizard.
+- **Fix**: `complete_onboarding` now also updates `user_operator_profile.persona_calibration_status = 'complete'`.
+
+### SQL Migrations Generated — Mar 2026
+- `/app/supabase/migrations/044_cognition_core.sql` — 9 tables: integration_health, evidence_packs, cognition_decisions, outcome_checkpoints, propagation_rules (14 rules seeded), automation_actions (10 actions seeded), automation_executions, instability_snapshots, confidence_recalibrations. Full RLS policies.
+- `/app/supabase/migrations/045_cognition_core_functions.sql` — 9 functions: fn_assemble_evidence_pack, fn_compute_propagation_map, fn_evaluate_pending_checkpoints, fn_recalibrate_confidence, fn_check_integration_health, fn_snapshot_daily_instability, fn_detect_drift, ic_generate_cognition_contract (master function), ic_calculate_risk_baseline. SECURITY DEFINER + GRANT EXECUTE.
+
+### Forensic Audit — Live Tested Mar 2026
+- Documented full calibration flow live: scanning animations, identity verification (ABN: 26 665 322 127 detected), Digital Footprint scores, Executive Intelligence Snapshot
+- Documented full onboarding wizard: all 7 steps (Business Identity, Website, Market, Products, Team, Goals, BIQc Preferences)
+- Discovered and fixed critical onboarding redirect loop bug
+- Report: `/app/reports/LIVE_FORENSIC_AUDIT_20260304.md`
 - **AdvisorWatchtower**: Added `StabilityScoreCard` with circular score gauge (computed from snapshot state + cognition override). Shows composite stability score prominently as the "ONE NUMBER" per audit recommendation
 - **AdvisorWatchtower**: Added `PropagationMap` rendering when cognition SQL is deployed
 - **RevenuePage**: Added Cognition Intelligence panel (instability indices: RVI, CDR, EDS, ADS) + Propagation Chains in Cross-Domain tab
@@ -64,13 +94,14 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 
 ## Prioritized Backlog
 
-### P0 — Blocking
-1. **SQL Migrations 044+045** — Must be deployed in Supabase for cognition core to activate. Run in Supabase SQL Editor.
+### P0 — Must Do Before Next Session
+1. **Run SQL Migrations in Supabase**: Paste 044 then 045 into Supabase SQL Editor → Cognition Core activates immediately
+2. **Verify Onboarding Fix on Production**: Complete the onboarding wizard with test1234 account all 7 steps → should land on /integrations now (critical fix deployed)
 
 ### P1 — Important
-2. **Admin/Legal Nav Restructure** — Verify matches user specification
-3. **Weekly Check-in Calendar** — Wire CalendarView into sidebar
-4. **Andre Account Fix** — Production credentials `andre@thestrategysquad.com.au` not working
+3. **Admin/Legal Nav Restructure** — Verify matches user specification
+4. **Weekly Check-in Calendar** — Wire CalendarView into sidebar
+5. **Fix andre@thestrategysquad.com.au** — Production credentials not working
 
 ### P2 — Future
 5. **Expo App Store Deployment**

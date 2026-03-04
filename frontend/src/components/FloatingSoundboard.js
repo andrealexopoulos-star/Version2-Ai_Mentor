@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Lightbulb, Database, CheckCircle2, XCircle } from 'lucide-react';
+import { MessageSquare, X, Send, Lightbulb, Database, CheckCircle2, XCircle, Paperclip, Download, FileText } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 
@@ -66,6 +66,38 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
   const onboardingSent = useRef(false);
 
   const { session } = useSupabaseAuth();
+
+  const fileRef = useRef(null);
+  const [attachedFile, setAttachedFile] = useState(null); // { name, content, size }
+
+  // Read file as text
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ''; // reset for re-select
+
+    const MAX_SIZE = 500 * 1024; // 500KB text limit
+    const textTypes = ['text/plain', 'text/csv', 'text/markdown', 'application/json', 'text/html'];
+    const isText = textTypes.includes(file.type) || file.name.match(/\.(txt|csv|md|json|log|xml|html|py|js|ts|sql)$/i);
+
+    if (isText && file.size < MAX_SIZE) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text' });
+      };
+      reader.readAsText(file);
+    } else if (file.type.startsWith('image/') && file.size < 5 * 1024 * 1024) {
+      // Image files — attach as a note for now (full vision support requires API)
+      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'image', hint: 'Image attached — describe what you want analysed.' });
+    } else if (file.size > MAX_SIZE) {
+      setMessages(prev => [...prev, { role: 'assistant', text: `File too large (max 500KB for text). Try pasting the content directly instead.` }]);
+    } else {
+      // PDF/docx etc — instruct user
+      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Binary file attached — paste key sections as text for best analysis.' });
+    }
+  };
+
+  const removeAttachment = () => setAttachedFile(null);
 
   useEffect(() => {
     if (!open) return;
@@ -165,15 +197,33 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !attachedFile) || loading) return;
     const userMsg = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+
+    // Build message with optional file context
+    let fullMessage = userMsg;
+    let displayText = userMsg;
+    if (attachedFile) {
+      if (attachedFile.type === 'text' && attachedFile.content) {
+        const preview = attachedFile.content.slice(0, 3000);
+        const truncated = attachedFile.content.length > 3000;
+        fullMessage = `${userMsg ? userMsg + '\n\n' : ''}Attached file: ${attachedFile.name}\n\nContent:\n${preview}${truncated ? '\n\n[...truncated to 3000 chars]' : ''}`;
+        displayText = userMsg || `Analysing: ${attachedFile.name}`;
+      } else {
+        fullMessage = `${userMsg ? userMsg + '\n\n' : ''}File attached: ${attachedFile.name} (${attachedFile.hint || 'describe what you need'})`;
+        displayText = userMsg || `Attached: ${attachedFile.name}`;
+      }
+      setAttachedFile(null);
+    }
+
+    if (!fullMessage.trim()) return;
+    setMessages(prev => [...prev, { role: 'user', text: displayText }]);
     setLoading(true);
 
     try {
       // Check for BNA update intent
-      const bnaUpdate = detectBnaUpdate(userMsg);
+      const bnaUpdate = detectBnaUpdate(fullMessage);
       if (bnaUpdate) {
         const dbField = resolveField(bnaUpdate.field);
         if (dbField) {
@@ -189,8 +239,8 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       }
 
       // Check if it's a data query — route to Edge Function
-      if (isDataQuery(userMsg)) {
-        const result = await queryIntegrationData(userMsg);
+      if (isDataQuery(fullMessage)) {
+        const result = await queryIntegrationData(fullMessage);
         if (result) {
           if (result.status === 'not_connected') {
             setMessages(prev => [...prev, { role: 'assistant', text: result.message, type: 'integration_prompt' }]);
@@ -202,7 +252,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
             }]);
           } else {
             // Fallback to regular chat
-            await sendToChat(userMsg);
+            await sendToChat(fullMessage);
           }
           setLoading(false);
           return;
@@ -210,7 +260,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       }
 
       // Regular chat
-      await sendToChat(userMsg);
+      await sendToChat(fullMessage);
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', text: 'I\'m having trouble connecting. Try again in a moment.' }]);
     } finally {
@@ -224,7 +274,12 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       intelligence_context: { context },
     });
     if (res.data?.reply) {
-      setMessages(prev => [...prev, { role: 'assistant', text: res.data.reply }]);
+      const msg = { role: 'assistant', text: res.data.reply };
+      // If backend generated a file, attach download info
+      if (res.data?.file) {
+        msg.file = res.data.file;
+      }
+      setMessages(prev => [...prev, msg]);
     }
   };
 
@@ -299,6 +354,18 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
                   ))}
                 </div>
               )}
+              {/* File download card — when backend generates a file */}
+              {msg.file && (
+                <a href={msg.file.download_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg hover:brightness-110 transition-all"
+                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
+                  <Download className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold truncate" style={{ color: '#FF6A00', fontFamily: MONO }}>{msg.file.name}</p>
+                    <p className="text-[9px]" style={{ color: '#64748B', fontFamily: MONO }}>{msg.file.type} · {Math.round((msg.file.size || 0) / 1024)}KB</p>
+                  </div>
+                </a>
+              )}
             </div>
           </div>
         ))}
@@ -335,18 +402,40 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
 
       {/* Input */}
       <div className="px-4 pb-4 pt-2" style={{ borderTop: '1px solid #243140' }}>
+        {/* File attachment preview */}
+        {attachedFile && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: '#141C26', border: '1px solid #FF6A0030' }}>
+            <FileText className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+            <span className="flex-1 text-[11px] truncate" style={{ color: '#F4F7FA', fontFamily: MONO }}>{attachedFile.name}</span>
+            {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: MONO }}>ready</span>}
+            {attachedFile.hint && <span className="text-[9px] max-w-[100px] truncate" style={{ color: '#F59E0B', fontFamily: MONO }}>{attachedFile.hint}</span>}
+            <button onClick={removeAttachment} className="p-0.5 rounded hover:bg-white/10" style={{ color: '#64748B' }}>
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
         <div className="flex gap-2">
+          {/* Hidden file input */}
+          <input ref={fileRef} type="file" className="hidden" onChange={handleFileSelect}
+            accept=".txt,.csv,.md,.json,.log,.xml,.html,.py,.js,.ts,.sql,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif" />
+          {/* Paperclip button */}
+          <button onClick={() => fileRef.current?.click()}
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all hover:brightness-110"
+            style={{ background: attachedFile ? '#FF6A0020' : '#141C26', border: `1px solid ${attachedFile ? '#FF6A0040' : '#243140'}` }}
+            data-testid="soundboard-attach" title="Attach file">
+            <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
+          </button>
           <input
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && sendMessage()}
-            placeholder="Ask anything about your business..."
+            placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything about your business..."}
             className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none"
             style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA', fontFamily: INTER }}
             data-testid="soundboard-input"
           />
-          <button onClick={sendMessage} disabled={!input.trim() || loading}
+          <button onClick={sendMessage} disabled={(!input.trim() && !attachedFile) || loading}
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-30"
             style={{ background: '#FF6A00' }}
             data-testid="soundboard-send">

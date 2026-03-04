@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
+import EnterpriseContactGate from '../components/EnterpriseContactGate';
 import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 
@@ -51,6 +52,7 @@ const OperationsPage = () => {
 
   return (
     <DashboardLayout>
+      <EnterpriseContactGate featureName="Delivery & Operations">
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="operations-page">
         <div className="flex items-center justify-between">
           <div>
@@ -218,6 +220,7 @@ const OperationsPage = () => {
           </>
         )}
       </div>
+      </EnterpriseContactGate>
     </DashboardLayout>
   );
 };

@@ -7,7 +7,8 @@ const HEAD = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
 const BODY = "'Inter', sans-serif";
 
-const TIER_COLORS = { free: '#64748B', starter: '#FF6A00', professional: '#7C3AED', enterprise: '#10B981', super_admin: '#EF4444' };
+const TIER_COLORS = { free: '#64748B', starter: '#10B981', professional: '#3B82F6', growth: '#7C3AED', enterprise: '#7C3AED', super_admin: '#EF4444' };
+const TIER_LABELS = { free: 'Free', starter: 'Foundation $750', professional: 'Performance $1,950', growth: 'Growth $3,900', enterprise: 'Growth $3,900', super_admin: 'Super Admin' };
 
 const SupportConsolePage = () => {
   const [admin, setAdmin] = useState(null);
@@ -16,6 +17,7 @@ const SupportConsolePage = () => {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('users');
   const [actionLoading, setActionLoading] = useState(null);
+  const [contacts, setContacts] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -34,6 +36,13 @@ const SupportConsolePage = () => {
   const loadAudit = async () => {
     const res = await apiClient.get('/support/audit-log');
     setAuditLog(res.data?.actions || []);
+  };
+
+  const loadContacts = async () => {
+    try {
+      const res = await apiClient.get('/enterprise/contact-requests');
+      setContacts(res.data?.requests || []);
+    } catch {}
   };
 
   const toggleUser = async (userId, disable) => {
@@ -110,8 +119,8 @@ const SupportConsolePage = () => {
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
-          {[{ id: 'users', label: 'Users', icon: Users }, { id: 'audit', label: 'Audit Log', icon: Eye }].map(t => (
-            <button key={t.id} onClick={() => { setTab(t.id); if (t.id === 'audit') loadAudit(); }}
+        {[{ id: 'users', label: 'Users & Access', icon: Users }, { id: 'contacts', label: 'Enterprise Leads', icon: Eye }, { id: 'audit', label: 'Audit Log', icon: AlertTriangle }].map(t => (
+            <button key={t.id} onClick={() => { setTab(t.id); if (t.id === 'audit') loadAudit(); if (t.id === 'contacts') loadContacts(); }}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium ${tab === t.id ? 'text-[#F4F7FA]' : 'text-[#64748B]'}`}
               style={{ background: tab === t.id ? '#FF6A0015' : 'transparent', fontFamily: MONO }}>
               <t.icon className="w-3.5 h-3.5" />{t.label}
@@ -141,8 +150,14 @@ const SupportConsolePage = () => {
                         <td className="px-3 py-2 text-[#9FB0C3]">{u.business_name || '—'}</td>
                         <td className="px-3 py-2">
                           <select value={u.subscription_tier || 'free'} onChange={e => updateTier(u.id, e.target.value)}
-                            className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: tc + '15', color: tc, border: 'none', fontFamily: MONO }}>
-                            {['free', 'starter', 'professional', 'enterprise', 'super_admin'].map(t => <option key={t} value={t}>{t}</option>)}
+                            className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: (TIER_COLORS[u.subscription_tier] || '#64748B') + '15', color: TIER_COLORS[u.subscription_tier] || '#64748B', border: 'none', fontFamily: MONO }}>
+                            {[
+                              { val: 'free', label: 'Free' },
+                              { val: 'starter', label: 'Foundation ($750)' },
+                              { val: 'professional', label: 'Performance ($1,950)' },
+                              { val: 'enterprise', label: 'Growth ($3,900)' },
+                              { val: 'super_admin', label: 'Super Admin' },
+                            ].map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
                           </select>
                         </td>
                         <td className="px-3 py-2">
@@ -171,6 +186,42 @@ const SupportConsolePage = () => {
               </table>
             </div>
             <div className="px-3 py-2 text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{users.length} users total</div>
+          </div>
+        )}
+
+        {/* Enterprise Leads Tab */}
+        {tab === 'contacts' && (
+          <div className="rounded-xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }}>
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid #243140' }}>
+              <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: MONO }}>Enterprise Contact Requests ({contacts.length})</span>
+              <p className="text-[10px] text-[#64748B] mt-0.5">Users requesting access to Growth/Enterprise features. Route to HubSpot when configured.</p>
+            </div>
+            {contacts.length === 0 && <p className="text-xs text-[#64748B] p-4">No contact requests yet.</p>}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #243140' }}>
+                    {['Name', 'Business', 'Email', 'Phone', 'Feature', 'Callback', 'Description', 'Date'].map(h => (
+                      <th key={h} className="px-3 py-2 text-left text-[#64748B]" style={{ fontFamily: MONO }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                      <td className="px-3 py-2 text-[#F4F7FA]">{c.name}</td>
+                      <td className="px-3 py-2 text-[#9FB0C3]">{c.business_name || '—'}</td>
+                      <td className="px-3 py-2 text-[#9FB0C3]">{c.email}</td>
+                      <td className="px-3 py-2 text-[#9FB0C3]">{c.phone || '—'}</td>
+                      <td className="px-3 py-2"><span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: MONO }}>{c.feature_requested || '—'}</span></td>
+                      <td className="px-3 py-2 text-[#9FB0C3]" style={{ fontFamily: MONO, fontSize: '10px' }}>{c.callback_date} {c.callback_time}</td>
+                      <td className="px-3 py-2 text-[#64748B] max-w-[200px]"><span className="line-clamp-2">{c.description}</span></td>
+                      <td className="px-3 py-2 text-[#64748B]" style={{ fontFamily: MONO, fontSize: '10px' }}>{c.created_at ? new Date(c.created_at).toLocaleDateString('en-AU') : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

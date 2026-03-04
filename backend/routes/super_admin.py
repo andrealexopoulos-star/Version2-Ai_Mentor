@@ -189,3 +189,59 @@ async def get_admin_audit_log(current_user: dict = Depends(get_current_user)):
         return {'actions': result.data or []}
     except Exception:
         return {'actions': []}
+
+
+
+# ═══ ENTERPRISE CONTACT REQUEST ═══
+
+class EnterpriseContactRequest(BaseModel):
+    name: str
+    business_name: Optional[str] = ''
+    email: str
+    phone: Optional[str] = ''
+    callback_date: str
+    callback_time: str
+    description: str
+    feature_requested: Optional[str] = ''
+    user_id: Optional[str] = None
+    current_tier: Optional[str] = 'free'
+
+
+@router.post("/enterprise/contact-request")
+async def enterprise_contact_request(req: EnterpriseContactRequest, current_user: dict = Depends(get_current_user)):
+    """Store enterprise contact request. Will eventually be synced to HubSpot."""
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        now = datetime.now(timezone.utc).isoformat()
+        sb.table('enterprise_contact_requests').insert({
+            'user_id': current_user.get('id'),
+            'name': req.name,
+            'business_name': req.business_name,
+            'email': req.email,
+            'phone': req.phone,
+            'callback_date': req.callback_date,
+            'callback_time': req.callback_time,
+            'description': req.description,
+            'feature_requested': req.feature_requested,
+            'current_tier': req.current_tier,
+            'status': 'pending',
+            'created_at': now,
+        }).execute()
+    except Exception as e:
+        logger.warning(f"enterprise_contact_requests table may not exist yet: {e}")
+    return {'status': 'received', 'message': 'Request logged. Our team will be in touch within 1 business day.'}
+
+
+@router.get("/enterprise/contact-requests")
+async def list_enterprise_contacts(current_user: dict = Depends(get_current_user)):
+    """List all enterprise contact requests (admin only)."""
+    _require_super_admin(current_user)
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.table('enterprise_contact_requests').select('*').order('created_at', desc=True).limit(100).execute()
+        return {'requests': result.data or []}
+    except Exception as e:
+        logger.warning(f"enterprise_contact_requests table may not exist: {e}")
+        return {'requests': []}

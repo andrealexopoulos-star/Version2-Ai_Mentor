@@ -237,16 +237,19 @@ function AppRoutes() {
       <Route path="/observability" element={<ProtectedRoute><ObservabilityPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
+      {/* Revenue + Operations — EnterpriseContactGate handles access inside the pages */}
+      <Route path="/revenue" element={<ProtectedRoute><RevenuePage /></ProtectedRoute>} />
+      <Route path="/operations" element={<ProtectedRoute><OperationsPage /></ProtectedRoute>} />
+
       {/* Paid Tier Routes (starter+) — TierGate enforced */}
-      <Route path="/revenue" element={<ProtectedRoute><TierGate><RevenuePage /></TierGate></ProtectedRoute>} />
-      <Route path="/operations" element={<ProtectedRoute><TierGate><OperationsPage /></TierGate></ProtectedRoute>} />
       <Route path="/risk" element={<ProtectedRoute><TierGate><RiskPage /></TierGate></ProtectedRoute>} />
       <Route path="/compliance" element={<ProtectedRoute><TierGate><CompliancePage /></TierGate></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><TierGate><ReportsPage /></TierGate></ProtectedRoute>} />
       <Route path="/audit-log" element={<ProtectedRoute><TierGate><AuditLogPage /></TierGate></ProtectedRoute>} />
       <Route path="/alerts" element={<ProtectedRoute><TierGate><AlertsPageAuth /></TierGate></ProtectedRoute>} />
       <Route path="/actions" element={<ProtectedRoute><TierGate><ActionsPage /></TierGate></ProtectedRoute>} />
-      <Route path="/automations" element={<ProtectedRoute><TierGate><AutomationsPageAuth /></TierGate></ProtectedRoute>} />
+      {/* Automations — UpgradeCardsGate handles access inside AutomationsPageAuth */}
+      <Route path="/automations" element={<ProtectedRoute><AutomationsPageAuth /></ProtectedRoute>} />
       <Route path="/soundboard" element={<ProtectedRoute><TierGate><MySoundBoard /></TierGate></ProtectedRoute>} />
       <Route path="/war-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><WarRoomConsole /></div></TierGate></ProtectedRoute>} />
       <Route path="/board-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><BoardRoom /></div></TierGate></ProtectedRoute>} />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
+import EnterpriseContactGate from '../components/EnterpriseContactGate';
 import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight, FileWarning, Receipt } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
@@ -104,6 +105,7 @@ const RevenuePage = () => {
 
   return (
     <DashboardLayout>
+      <EnterpriseContactGate featureName="Revenue Engine">
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="revenue-page">
         <div className="flex items-center justify-between">
           <div>
@@ -523,6 +525,7 @@ const RevenuePage = () => {
           </Panel>
         )}
       </div>
+      </EnterpriseContactGate>
     </DashboardLayout>
   );
 };

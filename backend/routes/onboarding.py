@@ -447,6 +447,25 @@ async def complete_onboarding(current_user: dict = Depends(get_current_user)):
         logger.info(f"[onboarding/complete] strategic_console_state = COMPLETED for {user_id}")
     except Exception as scs_err:
         logger.warning(f"[onboarding/complete] strategic_console_state write failed: {scs_err}")
+
+    # FIX: Set persona_calibration_status = 'complete' on user_operator_profile
+    # This is what auth/check-profile reads to determine needs_onboarding
+    try:
+        existing_op = get_sb().table("user_operator_profile").select("user_id").eq("user_id", user_id).execute()
+        if existing_op.data:
+            get_sb().table("user_operator_profile").update({
+                "persona_calibration_status": "complete",
+                "updated_at": now_iso
+            }).eq("user_id", user_id).execute()
+        else:
+            get_sb().table("user_operator_profile").insert({
+                "user_id": user_id,
+                "persona_calibration_status": "complete",
+                "updated_at": now_iso
+            }).execute()
+        logger.info(f"[onboarding/complete] persona_calibration_status = complete for {user_id}")
+    except Exception as op_err:
+        logger.warning(f"[onboarding/complete] user_operator_profile update failed: {op_err}")
     
     # Get business profile created during onboarding
     profile = await get_business_profile_supabase(get_sb(), user_id)

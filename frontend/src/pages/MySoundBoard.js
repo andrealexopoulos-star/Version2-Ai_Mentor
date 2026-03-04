@@ -6,8 +6,11 @@ import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import { 
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
-  Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone
+  Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
+  Paperclip, FileText, Download
 } from 'lucide-react';
+
+const MONO = "'JetBrains Mono', monospace";
 import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
 
@@ -24,6 +27,8 @@ const MySoundBoard = () => {
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileRef = useRef(null);
+  const [attachedFile, setAttachedFile] = useState(null);
 
   useEffect(() => {
     fetchConversations();
@@ -69,35 +74,52 @@ const MySoundBoard = () => {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !attachedFile) || loading) return;
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+
+    // Build full message including file content
+    let fullMessage = userMessage;
+    let displayContent = userMessage;
+    if (attachedFile) {
+      if (attachedFile.type === 'text' && attachedFile.content) {
+        const preview = attachedFile.content.slice(0, 3000);
+        const truncated = attachedFile.content.length > 3000;
+        fullMessage = `${userMessage ? userMessage + '\n\n' : ''}Attached file: ${attachedFile.name}\n\nContent:\n${preview}${truncated ? '\n\n[...truncated]' : ''}`;
+        displayContent = userMessage || `Analysing: ${attachedFile.name}`;
+      } else {
+        fullMessage = `${userMessage ? userMessage + '\n\n' : ''}File attached: ${attachedFile.name} (${attachedFile.hint || 'describe what you need'})`;
+        displayContent = userMessage || `Attached: ${attachedFile.name}`;
+      }
+      setAttachedFile(null);
+    }
+
+    if (!fullMessage.trim()) return;
+    setMessages(prev => [...prev, { role: 'user', content: displayContent }]);
     setLoading(true);
 
     try {
       const response = await apiClient.post('/soundboard/chat', {
-        message: userMessage,
+        message: fullMessage,
         conversation_id: activeConversation,
         intelligence_context: {}
       });
 
-      const { reply, conversation_id, conversation_title } = response.data;
+      const { reply, conversation_id, conversation_title, file: generatedFile } = response.data;
+
+      const assistantMsg = { role: 'assistant', content: reply };
+      if (generatedFile) assistantMsg.file = generatedFile;
+      setMessages(prev => [...prev, assistantMsg]);
       
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-      
-      // If this was a new conversation, update the state
       if (!activeConversation && conversation_id) {
         setActiveConversation(conversation_id);
-        // Add to conversations list
         setConversations(prev => [{
           id: conversation_id,
           title: conversation_title || 'New Conversation',
           updated_at: new Date().toISOString()
         }, ...prev]);
       } else {
-        // Update conversation in list
         setConversations(prev => prev.map(c => 
           c.id === conversation_id 
             ? { ...c, updated_at: new Date().toISOString() }
@@ -106,9 +128,26 @@ const MySoundBoard = () => {
       }
     } catch (error) {
       toast.error('Failed to send message');
-      setMessages(prev => prev.slice(0, -1)); // Remove optimistic user message
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const MAX_SIZE = 500 * 1024;
+    const isText = /\.(txt|csv|md|json|log|xml|html|py|js|ts|sql)$/i.test(file.name) || file.type.startsWith('text/');
+    if (isText && file.size < MAX_SIZE) {
+      const reader = new FileReader();
+      reader.onload = ev => setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text' });
+      reader.readAsText(file);
+    } else if (file.size > MAX_SIZE) {
+      toast.error('File too large (max 500KB). Paste key sections instead.');
+    } else {
+      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Describe what you need from this file' });
     }
   };
 
@@ -388,6 +427,20 @@ const MySoundBoard = () => {
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">
                           {message.content}
                         </p>
+                        {/* File download card when backend generates a file */}
+                        {message.file && (
+                          <a href={message.file.download_url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg hover:brightness-110 transition-all"
+                            style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
+                            <Download className="w-3.5 h-3.5 shrink-0" style={{ color: '#FF6A00' }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold truncate" style={{ color: '#FF6A00', fontFamily: MONO }}>{message.file.name}</p>
+                              <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: MONO }}>
+                                {message.file.type} · {Math.round((message.file.size || 0) / 1024)}KB
+                              </p>
+                            </div>
+                          </a>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -422,6 +475,18 @@ const MySoundBoard = () => {
             style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}
           >
             <div className="max-w-3xl mx-auto">
+              {/* File attachment preview */}
+              {attachedFile && (
+                <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(255,106,0,0.3)' }}>
+                  <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: '#FF6A00' }} />
+                  <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-primary)', fontFamily: MONO }}>{attachedFile.name}</span>
+                  {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: MONO }}>ready</span>}
+                  {attachedFile.hint && <span className="text-[9px] truncate max-w-[100px]" style={{ color: '#F59E0B', fontFamily: MONO }}>{attachedFile.hint}</span>}
+                  <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: 'var(--text-muted)' }}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
               <div 
                 className="flex items-end gap-3 p-3 rounded-xl"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
@@ -431,14 +496,23 @@ const MySoundBoard = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Share what's on your mind..."
+                  placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Share what's on your mind..."}
                   className="flex-1 resize-none bg-transparent outline-none text-sm"
                   style={{ color: 'var(--text-primary)', minHeight: '24px', maxHeight: '120px' }}
                   rows={1}
                 />
+                {/* File attachment button */}
+                <input ref={fileRef} type="file" className="hidden" onChange={handleFileSelect}
+                  accept=".txt,.csv,.md,.json,.log,.xml,.html,.py,.js,.ts,.sql,.pdf,.doc,.docx,.png,.jpg" />
+                <button onClick={() => fileRef.current?.click()}
+                  className="p-2 rounded-lg transition-all hover:bg-white/5 shrink-0"
+                  style={{ color: attachedFile ? '#FF6A00' : 'var(--text-muted)' }}
+                  data-testid="soundboard-attach" title="Attach file">
+                  <Paperclip className="w-4 h-4" />
+                </button>
                 <Button
                   onClick={sendMessage}
-                  disabled={!input.trim() || loading}
+                  disabled={(!input.trim() && !attachedFile) || loading}
                   className="btn-primary p-2"
                 >
                   <Send className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2 } from 'lucide-react';
+import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText, Zap, Eye } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 
@@ -16,6 +16,10 @@ function isDataQuery(msg) {
   return DATA_KEYWORDS.some(kw => lower.includes(kw));
 }
 
+const SCAN_COOLDOWN_KEY = 'biqc_exposure_scan_last_run';
+const CALIB_DONE_KEY = 'biqc_calibration_complete';
+const SCAN_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -23,17 +27,36 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
+  const [isFirstVisit] = useState(() => {
+    try { return !localStorage.getItem('biqc_soundboard_visited'); } catch { return true; }
+  });
+  const [scanLastRun, setScanLastRun] = useState(() => {
+    try { return parseInt(localStorage.getItem(SCAN_COOLDOWN_KEY) || '0', 10); } catch { return 0; }
+  });
+  const scanCooldownLeft = Math.max(0, SCAN_COOLDOWN_MS - (Date.now() - scanLastRun));
+  const scanDaysLeft = Math.ceil(scanCooldownLeft / (24 * 60 * 60 * 1000));
+  const canRunScan = scanCooldownLeft === 0;
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
+  const [attachedFile, setAttachedFile] = useState(null);
   const { session } = useSupabaseAuth();
 
-  // Load conversation history
+  // Load conversation history + show welcome on first visit
   useEffect(() => {
     apiClient.get('/soundboard/conversations').then(res => {
-      setConversations(res.data?.conversations || []);
+      const convs = res.data?.conversations || [];
+      setConversations(convs);
+      // Show welcome message for first-time visitors
+      if (isFirstVisit && convs.length === 0) {
+        setMessages([{
+          role: 'assistant',
+          text: "Welcome to SoundBoard — your AI thinking partner.\n\nI'm here to help you reflect on your business data, explore ideas, and work through strategic decisions. I don't give direct advice — I ask the right questions.\n\nStart by sharing what's on your mind, or use one of the quick-start prompts below.",
+        }]);
+        try { localStorage.setItem('biqc_soundboard_visited', '1'); } catch {}
+      }
     }).catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -64,11 +87,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     return null;
   };
 
-  const executeMessage = async (userMsg) => {
+  const executeMessage = async (userMsg, fullMessage) => {
+    const msgToSend = fullMessage || userMsg;
     setLoading(true);
     try {
-      if (isDataQuery(userMsg)) {
-        const result = await queryIntegrationData(userMsg);
+      if (isDataQuery(msgToSend)) {
+        const result = await queryIntegrationData(msgToSend);
         if (result?.status === 'not_connected') {
           setMessages(prev => [...prev, { role: 'assistant', text: result.message, type: 'integration_prompt' }]);
           setLoading(false);
@@ -81,11 +105,13 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         }
       }
       const res = await apiClient.post('/soundboard/chat', {
-        message: userMsg,
+        message: msgToSend,
         conversation_id: activeConvId,
       });
       if (res.data?.reply) {
-        setMessages(prev => [...prev, { role: 'assistant', text: res.data.reply }]);
+        const assistantMsg = { role: 'assistant', text: res.data.reply };
+        if (res.data?.file) assistantMsg.file = res.data.file;
+        setMessages(prev => [...prev, assistantMsg]);
         if (res.data.conversation_id && !activeConvId) {
           setActiveConvId(res.data.conversation_id);
           setConversations(prev => [{ id: res.data.conversation_id, title: res.data.conversation_title || 'New chat', updated_at: new Date().toISOString() }, ...prev]);
@@ -98,11 +124,27 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !attachedFile) || loading) return;
     const userMsg = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-    await executeMessage(userMsg);
+
+    let fullMessage = userMsg;
+    let displayText = userMsg;
+    if (attachedFile) {
+      if (attachedFile.type === 'text' && attachedFile.content) {
+        const preview = attachedFile.content.slice(0, 3000);
+        fullMessage = `${userMsg ? userMsg + '\n\n' : ''}Attached file: ${attachedFile.name}\n\nContent:\n${preview}${attachedFile.content.length > 3000 ? '\n\n[...truncated]' : ''}`;
+        displayText = userMsg || `Analysing: ${attachedFile.name}`;
+      } else {
+        fullMessage = `${userMsg ? userMsg + '\n\n' : ''}File attached: ${attachedFile.name} (${attachedFile.hint || 'describe what you need'})`;
+        displayText = userMsg || `Attached: ${attachedFile.name}`;
+      }
+      setAttachedFile(null);
+    }
+
+    if (!fullMessage.trim()) return;
+    setMessages(prev => [...prev, { role: 'user', text: displayText }]);
+    await executeMessage(displayText, fullMessage);
   };
 
   const loadConversation = async (conv) => {
@@ -125,8 +167,18 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setMessages(prev => [...prev, { role: 'user', text: `[Attached: ${file.name}]`, type: 'file' }]);
-    setMessages(prev => [...prev, { role: 'assistant', text: 'File upload received. File analysis will be available when document processing is connected.' }]);
+    e.target.value = '';
+    const MAX_SIZE = 500 * 1024;
+    const isText = /\.(txt|csv|md|json|log|xml|html|py|js|ts|sql)$/i.test(file.name) || file.type.startsWith('text/');
+    if (isText && file.size < MAX_SIZE) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text' });
+      reader.readAsText(file);
+    } else if (file.size > MAX_SIZE) {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'File too large (max 500KB for text files). Try pasting key sections directly.' }]);
+    } else {
+      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Describe what you need from this file' });
+    }
   };
 
   return (
@@ -147,6 +199,39 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <Plus className="w-4 h-4 text-[#64748B]" />
           </button>
         </div>
+      </div>
+
+      {/* Top Action Buttons — Calibration + Exposure Scan (1/month for free) */}
+      <div className="px-3 pt-2 pb-1.5 shrink-0 space-y-1.5" style={{ borderBottom: '1px solid #1E293B' }}>
+        <a href="/calibration"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all hover:brightness-110"
+          style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: MONO }}>
+          <Zap className="w-3.5 h-3.5 shrink-0" />
+          <span className="flex-1">Complete Calibration</span>
+          <ChevronDown className="w-3 h-3 -rotate-90" />
+        </a>
+        <button
+          onClick={() => {
+            if (canRunScan) {
+              localStorage.setItem(SCAN_COOLDOWN_KEY, String(Date.now()));
+              setScanLastRun(Date.now());
+              window.location.href = '/exposure-scan';
+            }
+          }}
+          disabled={!canRunScan}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all"
+          style={{
+            background: canRunScan ? '#3B82F615' : '#243140',
+            border: `1px solid ${canRunScan ? '#3B82F630' : '#1E293B'}`,
+            color: canRunScan ? '#3B82F6' : '#4A5568',
+            fontFamily: MONO,
+            cursor: canRunScan ? 'pointer' : 'not-allowed',
+          }}
+          data-testid="sb-exposure-scan-btn">
+          <Eye className="w-3.5 h-3.5 shrink-0" />
+          <span className="flex-1">{canRunScan ? 'Run Exposure Scan' : `Exposure Scan (in ${scanDaysLeft}d)`}</span>
+          {!canRunScan && <Clock className="w-3 h-3 opacity-50" />}
+        </button>
       </div>
 
       {/* History dropdown */}
@@ -205,6 +290,18 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   ))}
                 </div>
               )}
+              {/* File download card */}
+              {msg.file && (
+                <a href={msg.file.download_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg"
+                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
+                  <Download className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold truncate" style={{ color: '#FF6A00', fontFamily: MONO }}>{msg.file.name}</p>
+                    <p className="text-[9px]" style={{ color: '#64748B', fontFamily: MONO }}>{msg.file.type} · {Math.round((msg.file.size || 0) / 1024)}KB</p>
+                  </div>
+                </a>
+              )}
             </div>
           </div>
         ))}
@@ -224,10 +321,21 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
       {/* Input area */}
       <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid #1E293B' }}>
-        <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: '#141C26', border: '1px solid #1E293B' }}>
-          <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg" />
+        {/* Attachment preview */}
+        {attachedFile && (
+          <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg" style={{ background: '#141C26', border: '1px solid rgba(255,106,0,0.3)' }}>
+            <FileText className="w-3 h-3 shrink-0" style={{ color: '#FF6A00' }} />
+            <span className="flex-1 text-[10px] truncate" style={{ color: '#F4F7FA', fontFamily: MONO }}>{attachedFile.name}</span>
+            {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: MONO }}>ready</span>}
+            <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: '#64748B' }}>
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+        <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: '#141C26', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#1E293B'}` }}>
+          <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
           <button onClick={() => fileRef.current?.click()} className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-upload">
-            <Paperclip className="w-4 h-4 text-[#64748B]" />
+            <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
           </button>
           <button className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-video"
             onClick={() => setMessages(prev => [...prev, { role: 'assistant', text: 'Video consultation will be available in the Pro plan. Stay tuned.' }])}>
@@ -238,15 +346,15 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             value={input}
             onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder="Ask anything..."
+            placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything..."}
             rows={1}
             className="flex-1 px-2 py-2 text-sm outline-none resize-none bg-transparent"
             style={{ color: '#F4F7FA', fontFamily: BODY, maxHeight: '120px' }}
             data-testid="sb-input"
           />
-          <button onClick={sendMessage} disabled={!input.trim() || loading}
+          <button onClick={sendMessage} disabled={(!input.trim() && !attachedFile) || loading}
             className="p-2 rounded-xl shrink-0 transition-all disabled:opacity-20"
-            style={{ background: input.trim() ? '#FF6A00' : 'transparent' }}
+            style={{ background: (input.trim() || attachedFile) ? '#FF6A00' : 'transparent' }}
             data-testid="sb-send">
             <Send className="w-4 h-4 text-white" />
           </button>

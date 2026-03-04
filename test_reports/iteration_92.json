@@ -1,0 +1,93 @@
+{
+  "summary": "Tested Phase 1+2 BIQc features: Navigation (BIQc Legal sidebar), tier gate components (EnterpriseContactGate, UpgradeCardsGate), SoundBoard enhancements, MarketPage reorganization, ForensicReportCard in Reports, and 30-day Marketing Intel timer. Found and fixed critical routing bugs where TierGate was blocking EnterpriseContactGate and UpgradeCardsGate from rendering.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/marketing/benchmark/latest",
+        "issue": "Slow response (30+ seconds before returning 403/200). Causes Marketing Intel page spinner to hang. Axios timeout 30s is too short for slow responses - page shows spinner until timeout. Not a blocker since .finally() correctly stops loading."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ReportsPage - ForensicReportCard",
+        "issue": "ForensicReportCard (with 'FREE TIER: 1/30 DAYS' badge) is inside /reports which requires 'starter' tier. Free users clicking 'Go to Governance Reports' from MarketPage get redirected to /subscribe instead of seeing ForensicReportCard. tierResolver '/reports': 'starter' should be changed to 'free' OR TierGate removed from /reports route with UpgradeCardsGate added inside for premium sections.",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "MarketPage - Intelligence tab",
+        "issues": ["Executive Brief (data-testid='brief-section') and Focus section not visible for test user due to no snapshot/calibration data - expected behavior, not a bug"]
+      }
+    ]
+  },
+  "bugs_fixed": [
+    {
+      "file": "frontend/src/App.js",
+      "fix": "Removed TierGate from /revenue and /operations routes - EnterpriseContactGate inside RevenuePage/OperationsPage handles access control internally. Without this fix, free users were redirected to /subscribe instead of seeing the contact form.",
+      "status": "FIXED AND VERIFIED"
+    },
+    {
+      "file": "frontend/src/App.js",
+      "fix": "Removed TierGate from /automations route - UpgradeCardsGate inside AutomationsPageAuth handles access control. Without this fix, free users were redirected to /subscribe instead of seeing the 4 pricing tier cards.",
+      "status": "FIXED AND VERIFIED"
+    }
+  ],
+  "test_results": {
+    "1_homepage_loads": "PASS - No JS errors",
+    "2_login_page_renders": "PASS - Email/password form renders correctly",
+    "3_biqc_legal_sidebar": "PASS - Collapsible 'BIQC LEGAL' section visible at bottom of sidebar",
+    "4_legal_6_items": "PASS - All 6 items visible when expanded: BIQc AI Learning Guarantee, Security & Infrastructure, Trust Centre, Data Processing Agreement, Privacy Policy, Terms & Conditions",
+    "5_enterprise_contact_gate_revenue": "PASS (after App.js fix) - Free user sees EnterpriseContactGate form on /revenue",
+    "6_form_fields": "PASS - Full Name, Business Name, Email Address, Mobile/Phone fields all present",
+    "7_calendar_widget": "PASS - 'Preferred Callback Time' dropdown with 'Select a date and time' present",
+    "8_description_textarea": "PASS - 'What Intelligence Are You Looking For?' textarea present (500 char limit)",
+    "9_upgrade_cards_automations": "PASS (after App.js fix) - 4 pricing tier cards: Foundation, Performance, Growth, Enterprise",
+    "10_plan_card_navigates": "PASS - Clicking 'Get Started' on Foundation plan navigates to /subscribe?plan=starter",
+    "11_soundboard_buttons": "PASS - 'Complete Calibration' (Zap, orange) and 'Run Exposure Scan' (Eye, blue) at top of SoundBoard",
+    "12_soundboard_welcome": "PASS - Welcome message 'Welcome to SoundBoard — your AI thinking partner.' shown on first visit (localStorage cleared)",
+    "13_market_executive_brief": "CONDITIONAL - Brief section code in correct position but doesn't render without snapshot data (user has no integrations)",
+    "14_market_no_forensic_cards": "PASS - No ForensicCalibrationCard/EngagementScanCard. Replaced with 'Forensic Reports' redirect panel pointing to /reports",
+    "15_reports_forensic_card": "FAIL - /reports redirects free users to /subscribe due to tierResolver '/reports':'starter'. ForensicReportCard with 'FREE TIER: 1/30 DAYS' never shown.",
+    "16_marketing_intel_30day": "PASS - 'Free tier: 1 scan per 30 days' badge visible in 'Run Your First Benchmark' section after 30s wait for API"
+  },
+  "test_report_links": [
+    "/app/frontend/src/App.js"
+  ],
+  "action_items": [
+    "HIGH: Fix /reports route access - change tierResolver '/reports': 'starter' to '/reports': 'free' (or remove TierGate from App.js /reports route and add UpgradeCardsGate inside ReportsPage for premium sections). Currently free users clicking 'Go to Governance Reports' from MarketPage get bounced to /subscribe, blocking ForensicReportCard.",
+    "LOW: Marketing Intel page loads slowly (30+ seconds) because /api/marketing/benchmark/latest is slow/returning 403. Consider adding a shorter timeout or error state for this specific endpoint.",
+    "INFO: SoundBoard welcome message correctly works for brand-new users (isFirstVisit=true AND no prior conversations). Test1234 user sees it in fresh browser session."
+  ],
+  "critical_code_review_comments": [
+    "App.js: After removing TierGate from /revenue, /operations, /automations - these routes now rely entirely on internal gate components (EnterpriseContactGate, UpgradeCardsGate). Ensure the gate components correctly handle all tier edge cases.",
+    "MarketingIntelPage: The /api/marketing/benchmark/latest endpoint returns 403 for some requests. The catch handler is empty which silently fails - consider adding error state UI.",
+    "ReportsPage: ForensicReportCard uses localStorage for tracking report dates (CALIB_REPORT_KEY, SCAN_REPORT_KEY). These dates reset on new browser/device which may not match actual server-side report generation state.",
+    "ROUTE_ACCESS: '/reports' still maps to 'starter' in tierResolver.js but ForensicReportCard is designed for free tier. Either change tier mapping or refactor report access architecture."
+  ],
+  "updated_files": [
+    "/app/frontend/src/App.js"
+  ],
+  "success_rate": {
+    "frontend": "87% (14/16 tests pass, 1 requires E1 fix for /reports access, 1 conditional on data)"
+  },
+  "test_credentials": {
+    "email": "test1234@outlook.com",
+    "password": "test1234!",
+    "tier": "free",
+    "note": "Account has no integrations/calibration data - some sections show empty states"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Phase 1+2 testing done. App.js was fixed to remove TierGate from /revenue, /operations, /automations routes (gate components handle internally). Main remaining issue: /reports still blocks free users via TierGate - ForensicReportCard never shown to free users. EnterpriseContactGate and UpgradeCardsGate work correctly after App.js fix. BIQc Legal sidebar section works. SoundBoard welcome message and Calibration/Scan buttons work. Marketing Intel 30-day badge works (takes ~30s for API). Market page Forensic Reports redirect works.",
+  "rca_of_issues": {
+    "enterprise_contact_gate_blocked": "Root Cause: App.js had TierGate wrapping /revenue and /operations routes. TierGate.js checks ROUTE_ACCESS which maps '/revenue' to 'enterprise'. Free users (rank=0) don't satisfy enterprise (rank=3), so TierGate redirects to /subscribe?from=%2Frevenue before RevenuePage (and EnterpriseContactGate inside it) ever renders. Fix: Remove TierGate from these routes since internal gate components handle the access.",
+    "upgrade_cards_gate_blocked": "Root Cause: Same pattern - App.js had TierGate wrapping /automations. TierGate checks ROUTE_ACCESS which maps '/automations' to 'starter'. Free users redirect to /subscribe before AutomationsPageAuth (with UpgradeCardsGate inside) renders. Fix: Remove TierGate from /automations route.",
+    "reports_free_tier_blocked": "Root Cause: tierResolver.js maps '/reports' to 'starter'. TierGate in App.js blocks free users from /reports. ForensicReportCard inside ReportsPage (with 'FREE TIER: 1/30 DAYS' badge) is never shown to free users. MarketPage 'Go to Governance Reports' button is a dead-end for free users. Mitigation: Change '/reports': 'starter' to '/reports': 'free' in tierResolver.js OR remove TierGate from /reports App.js route and gate premium sections internally."
+  }
+}

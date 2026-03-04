@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import UpgradeCardsGate from '../components/UpgradeCardsGate';
 import { apiClient } from '../lib/api';
 import { Search, Shield, AlertTriangle, CheckCircle2, XCircle, Loader2, Layers, Filter, Brain, Clock, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -123,6 +124,7 @@ const ForensicAuditPage = () => {
 
   return (
     <DashboardLayout>
+      <UpgradeCardsGate requiredTier="starter" featureName="Forensic Ingestion Audit">
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: BODY }} data-testid="forensic-audit-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Forensic Ingestion Audit</h1>
@@ -568,6 +570,7 @@ const ForensicAuditPage = () => {
           </Panel>
         )}
       </div>
+      </UpgradeCardsGate>
     </DashboardLayout>
   );
 };

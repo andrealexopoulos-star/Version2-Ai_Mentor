@@ -12,6 +12,90 @@ const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
 );
 
+const CALIB_REPORT_KEY = 'biqc_calibration_report_date';
+const SCAN_REPORT_KEY = 'biqc_scan_report_date';
+const REPORT_CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
+
+const ForensicReportCard = () => {
+  const calibDate = (() => { try { return parseInt(localStorage.getItem(CALIB_REPORT_KEY) || '0', 10); } catch { return 0; } })();
+  const scanDate = (() => { try { return parseInt(localStorage.getItem(SCAN_REPORT_KEY) || '0', 10); } catch { return 0; } })();
+
+  const calibNext = Math.max(0, REPORT_CYCLE_MS - (Date.now() - calibDate));
+  const scanNext = Math.max(0, REPORT_CYCLE_MS - (Date.now() - scanDate));
+  const calibDays = Math.ceil(calibNext / (24 * 60 * 60 * 1000));
+  const scanDays = Math.ceil(scanNext / (24 * 60 * 60 * 1000));
+  const calibNextDate = new Date(Date.now() + calibNext).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  const scanNextDate = new Date(Date.now() + scanNext).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  return (
+    <Panel>
+      <div className="flex items-center gap-2 mb-4">
+        <Shield className="w-4 h-4 text-[#FF6A00]" />
+        <h3 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Intelligence Reports</h3>
+        <span className="text-[9px] px-2 py-0.5 rounded-full ml-auto" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: MONO }}>FREE TIER: 1/30 DAYS</span>
+      </div>
+      <p className="text-xs text-[#64748B] mb-4" style={{ fontFamily: BODY }}>
+        Downloadable Board-ready Executive Summary reports. Free tier: one scan per 30 days. Upgrade for unlimited.
+      </p>
+      <div className="space-y-3">
+        {/* Forensic Calibration Report */}
+        <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <FileText className="w-3.5 h-3.5 text-[#7C3AED]" />
+                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Calibration Report</span>
+              </div>
+              <p className="text-xs text-[#64748B]">Digital footprint analysis, identity verification, and strategic positioning assessment.</p>
+              {calibDate > 0 && (
+                <p className="text-[10px] mt-1.5" style={{ color: '#64748B', fontFamily: MONO }}>
+                  Last generated: {new Date(calibDate).toLocaleDateString('en-AU')} · Next available: {calibDays > 0 ? calibNextDate : 'Now'}
+                </p>
+              )}
+            </div>
+            {calibDate > 0 ? (
+              <a href="/market/calibration" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#7C3AED', color: 'white' }}>
+                <Download className="w-3 h-3" /> Download PDF
+              </a>
+            ) : (
+              <a href="/calibration" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#7C3AED15', color: '#7C3AED', border: '1px solid #7C3AED30' }}>
+                Run Calibration
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Market Exposure Scan Report */}
+        <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <FileText className="w-3.5 h-3.5 text-[#3B82F6]" />
+                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Market Exposure Scan Report</span>
+              </div>
+              <p className="text-xs text-[#64748B]">Structural competitive exposure analysis — gaps, vulnerabilities, and market positioning risks.</p>
+              {scanDate > 0 && (
+                <p className="text-[10px] mt-1.5" style={{ color: '#64748B', fontFamily: MONO }}>
+                  Last generated: {new Date(scanDate).toLocaleDateString('en-AU')} · Next available: {scanDays > 0 ? scanNextDate : 'Now'}
+                </p>
+              )}
+            </div>
+            {scanDate > 0 ? (
+              <a href="/exposure-scan" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#3B82F6', color: 'white' }}>
+                <Download className="w-3 h-3" /> Download PDF
+              </a>
+            ) : (
+              <a href="/exposure-scan" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold shrink-0" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }}>
+                Run Scan
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+};
+
 const ReportsPage = () => {
   const [loading, setLoading] = useState(true);
   const [integrations, setIntegrations] = useState([]);
@@ -109,6 +193,9 @@ const ReportsPage = () => {
             </button>
           )}
         </div>
+
+        {/* ── FORENSIC REPORTS SECTION ── */}
+        <ForensicReportCard />
 
         {loading && (
           <Panel className="text-center py-8">
