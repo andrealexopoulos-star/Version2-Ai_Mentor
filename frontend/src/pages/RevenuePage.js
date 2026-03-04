@@ -365,7 +365,75 @@ const RevenuePage = () => {
           {/* ═══ CROSS-DOMAIN INTELLIGENCE TAB ═══ */}
           {activeTab === 'intelligence' && (
             <>
-              {!unified?.signals ? (
+              {/* Cognition Intelligence Panel — shows when SQL migrations deployed */}
+              {unified && unified.instability_indices && (
+                <Panel>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-[#FF6A00]" />
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Revenue Cognition Intelligence</h3>
+                    </div>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: MONO }}>LIVE</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    {[
+                      { label: 'RVI', title: 'Revenue Volatility', val: unified.instability_indices.revenue_volatility_index },
+                      { label: 'CDR', title: 'Cash Deviation', val: unified.instability_indices.cash_deviation_ratio },
+                      { label: 'EDS', title: 'Engagement Decay', val: unified.instability_indices.engagement_decay_score },
+                      { label: 'ADS', title: 'Anomaly Density', val: unified.instability_indices.anomaly_density_score },
+                    ].map(({ label, title, val }) => {
+                      if (val == null) return null;
+                      const pct = Math.round(val * 100);
+                      const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
+                      return (
+                        <div key={label} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: MONO }}>{label}</span>
+                          <div className="text-2xl font-bold" style={{ color: ic, fontFamily: MONO }}>{pct}%</div>
+                          <span className="text-[9px]" style={{ color: '#64748B', fontFamily: MONO }}>{title}</span>
+                          <div className="h-1 rounded-full mt-2" style={{ background: ic + '20' }}>
+                            <div className="h-1 rounded-full" style={{ background: ic, width: pct + '%' }} />
+                          </div>
+                        </div>
+                      );
+                    }).filter(Boolean)}
+                  </div>
+                  {unified.confidence_score != null && (
+                    <p className="text-[10px]" style={{ color: '#64748B', fontFamily: MONO }}>
+                      Intelligence confidence: {Math.round(unified.confidence_score * 100)}% — based on {unified.evidence_count || 0} evidence points
+                    </p>
+                  )}
+                </Panel>
+              )}
+
+              {/* Propagation Chains */}
+              {unified?.propagation_map?.length > 0 && (
+                <Panel>
+                  <div className="flex items-center gap-2 mb-4">
+                    <ArrowUpRight className="w-4 h-4 text-[#EF4444]" />
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Risk Propagation Chains</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {unified.propagation_map.slice(0, 4).map((chain, i) => (
+                      <div key={i} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          {(chain.chain || [chain.source, chain.target]).filter(Boolean).map((node, ni, arr) => (
+                            <React.Fragment key={ni}>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: MONO }}>{node}</span>
+                              {ni < arr.length - 1 && <span className="text-[10px] text-[#64748B]">→</span>}
+                            </React.Fragment>
+                          ))}
+                          {chain.probability != null && (
+                            <span className="text-[9px] ml-auto" style={{ color: '#F59E0B', fontFamily: MONO }}>{Math.round(chain.probability * 100)}%</span>
+                          )}
+                        </div>
+                        {chain.description && <p className="text-[11px]" style={{ color: '#9FB0C3', fontFamily: MONO }}>{chain.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </Panel>
+              )}
+
+              {!unified?.signals && !unified?.instability_indices ? (
                 <Panel className="text-center py-8">
                   <Zap className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
                   <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Cross-Domain Intelligence</p>
@@ -374,7 +442,7 @@ const RevenuePage = () => {
               ) : (
                 <>
                   {/* Overdue Invoices from Accounting */}
-                  {unified.signals.overdue_invoices?.length > 0 && (
+                  {unified.signals?.overdue_invoices?.length > 0 && (
                     <Panel>
                       <div className="flex items-center gap-2 mb-4">
                         <Receipt className="w-4 h-4 text-[#EF4444]" />
@@ -398,7 +466,7 @@ const RevenuePage = () => {
                   )}
 
                   {/* At-Risk Deals from CRM */}
-                  {unified.signals.at_risk?.length > 0 && (
+                  {unified?.signals?.at_risk?.length > 0 && (
                     <Panel>
                       <div className="flex items-center gap-2 mb-4">
                         <FileWarning className="w-4 h-4 text-[#F59E0B]" />
@@ -422,7 +490,7 @@ const RevenuePage = () => {
                   )}
 
                   {/* Concentration & Cash Signals Summary */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {unified?.signals && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Panel>
                       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Pipeline Total</span>
                       <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>
@@ -441,7 +509,7 @@ const RevenuePage = () => {
                         {unified.signals.stalled_deals ?? 0}
                       </span>
                     </Panel>
-                  </div>
+                  </div>}
                 </>
               )}
             </>

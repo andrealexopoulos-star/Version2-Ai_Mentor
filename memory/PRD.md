@@ -40,16 +40,27 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - **Dashboard route restored** — `/dashboard` now shows setup checklist (was redirected to `/advisor`)
 - **Cognition Integration** — Advisor page fetches from `/cognition/overview` with fallback
 
+### Phase B Cognition Integration (Completed — Mar 2026)
+- **AdvisorWatchtower**: Added `StabilityScoreCard` with circular score gauge (computed from snapshot state + cognition override). Shows composite stability score prominently as the "ONE NUMBER" per audit recommendation
+- **AdvisorWatchtower**: Added `PropagationMap` rendering when cognition SQL is deployed
+- **RevenuePage**: Added Cognition Intelligence panel (instability indices: RVI, CDR, EDS, ADS) + Propagation Chains in Cross-Domain tab
+- **RiskPage**: Added Instability Intelligence panel with circular gauges + Propagation Analysis in Cross-Domain Risk tab  
+- **OperationsPage**: Added Operations Intelligence panel with cognition indices (ADS, EGI, SDS, BNS)
+- All pages gracefully fall back to snapshot data when cognition SQL not yet deployed (MIGRATION_REQUIRED)
+
 ## Prioritized Backlog
 
+### P0 — Blocking
+1. **SQL Migrations 044+045** — Must be deployed in Supabase for cognition core to activate. Run in Supabase SQL Editor.
+
 ### P1 — Important
-1. **Full Phase B Cognition Integration** — Connect RevenuePage, RiskPage, OperationsPage to cognition endpoint (Advisor started)
-2. **Admin/Legal Nav Restructure**
-3. **Weekly Check-in Calendar**
+2. **Admin/Legal Nav Restructure** — Verify matches user specification
+3. **Weekly Check-in Calendar** — Wire CalendarView into sidebar
+4. **Andre Account Fix** — Production credentials `andre@thestrategysquad.com.au` not working
 
 ### P2 — Future
-4. **Expo App Store Deployment**
-5. **A/B Testing & Marketing Automation UIs**
+5. **Expo App Store Deployment**
+6. **A/B Testing & Marketing Automation UIs**
 
 ## Key Files
 - `frontend/src/mobile.css`, `frontend/src/pages/website/HomePage.js`

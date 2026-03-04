@@ -268,6 +268,86 @@ function parseToGroups(c, connectedIntegrations) {
   return groups;
 }
 
+/* ═══ STABILITY SCORE CARD ═══ */
+const StabilityScoreCard = ({ score, status, velocity, interpretation, cognitionConf, indices }) => {
+  const statusConfig = {
+    STABLE: { color: '#10B981', label: 'Stable', bg: '#10B98108' },
+    DRIFT: { color: '#F59E0B', label: 'Drifting', bg: '#F59E0B08' },
+    COMPRESSION: { color: '#FF6A00', label: 'Under Pressure', bg: '#FF6A0008' },
+    CRITICAL: { color: '#EF4444', label: 'Critical', bg: '#EF444408' },
+  };
+  const cfg = statusConfig[status] || statusConfig.STABLE;
+  const velIcon = velocity === 'worsening' ? '↘' : velocity === 'improving' ? '↗' : '→';
+  const scoreColor = score >= 75 ? '#10B981' : score >= 50 ? '#F59E0B' : score >= 30 ? '#FF6A00' : '#EF4444';
+  const circumference = 2 * Math.PI * 28;
+  const offset = circumference * (1 - score / 100);
+
+  return (
+    <Card className="p-5 mb-6" data-testid="stability-score-card">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-5">
+          {/* Circular Score */}
+          <div className="relative w-20 h-20 shrink-0">
+            <svg className="w-20 h-20 -rotate-90" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="28" fill="none" stroke="#243140" strokeWidth="5" />
+              <circle cx="32" cy="32" r="28" fill="none" stroke={scoreColor} strokeWidth="5"
+                strokeDasharray={circumference} strokeDashoffset={offset}
+                strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease' }} />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-xl font-bold leading-none" style={{ color: scoreColor, fontFamily: MONO }}>{score}</span>
+              <span className="text-[8px] tracking-widest uppercase mt-0.5" style={{ color: '#64748B', fontFamily: MONO }}>SCORE</span>
+            </div>
+          </div>
+          {/* Status Info */}
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full" style={{ background: cfg.color }} />
+              <span className="text-sm font-semibold" style={{ color: cfg.color, fontFamily: MONO }}>{cfg.label}</span>
+              {velocity && <span className="text-xs" style={{ color: cfg.color }}>{velIcon} {velocity}</span>}
+            </div>
+            <h2 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: HEAD }}>Business Stability</h2>
+            {interpretation && <p className="text-xs max-w-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{interpretation.substring(0, 120)}{interpretation.length > 120 ? '...' : ''}</p>}
+            {!interpretation && <p className="text-xs" style={{ color: '#64748B', fontFamily: BODY }}>Overall operational health across all connected systems.</p>}
+          </div>
+        </div>
+
+        {/* Instability Indices — from cognition core */}
+        {indices && (
+          <div className="hidden sm:grid grid-cols-2 gap-2 shrink-0">
+            {[
+              { key: 'revenue_volatility_index', label: 'RVI', title: 'Revenue Volatility' },
+              { key: 'engagement_decay_score', label: 'EDS', title: 'Engagement Decay' },
+              { key: 'cash_deviation_ratio', label: 'CDR', title: 'Cash Deviation' },
+              { key: 'anomaly_density_score', label: 'ADS', title: 'Anomaly Density' },
+            ].map(({ key, label, title }) => {
+              const val = indices[key];
+              if (val == null) return null;
+              const pct = Math.round(val * 100);
+              const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
+              return (
+                <div key={key} className="p-2 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140', minWidth: 80 }}>
+                  <span className="text-[9px] font-bold tracking-widest uppercase block" style={{ color: ic, fontFamily: MONO }}>{label}</span>
+                  <span className="text-base font-bold" style={{ color: ic, fontFamily: MONO }}>{pct}%</span>
+                  <span className="text-[9px] block" style={{ color: '#64748B', fontFamily: MONO }}>{title}</span>
+                </div>
+              );
+            }).filter(Boolean)}
+          </div>
+        )}
+
+        {/* Confidence badge */}
+        {cognitionConf != null && (
+          <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">
+            <span className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Confidence</span>
+            <span className="text-lg font-bold" style={{ color: cognitionConf > 0.6 ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{Math.round(cognitionConf * 100)}%</span>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
 const AdvisorWatchtower = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
   const c = useMemo(() => cognitive || {}, [cognitive]);
@@ -327,6 +407,22 @@ const AdvisorWatchtower = () => {
   const contradictions = c.alignment?.contradictions || [];
   const wb = c.weekly_brief || {};
 
+  // ═══ COMPOSITE STABILITY SCORE — Phase B ═══
+  // Uses cognition core score when available, derives from snapshot otherwise
+  const stabilityScore = useMemo(() => {
+    if (cognitionData?.composite_risk_score != null) {
+      return Math.round((1 - Math.min(cognitionData.composite_risk_score, 1)) * 100);
+    }
+    const baseScores = { STABLE: 87, DRIFT: 64, COMPRESSION: 42, CRITICAL: 22 };
+    const base = baseScores[stateStatus] || 75;
+    const totalAlerts = Object.values(groupData).reduce((s, g) => s + g.alerts, 0);
+    return Math.max(5, Math.min(99, base - totalAlerts * 3));
+  }, [cognitionData, stateStatus, groupData]);
+
+  const instabilityIndices = cognitionData?.instability_indices || null;
+  const propagationMap = cognitionData?.propagation_map || null;
+  const cognitionConfidence = cognitionData?.confidence_score ?? null;
+
   return (
     <DashboardLayout>
       <div className="min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: HEAD }} data-testid="biqc-insights-page">
@@ -376,6 +472,16 @@ const AdvisorWatchtower = () => {
 
               {/* CHECK-IN ALERTS */}
               <CheckInAlerts />
+
+              {/* STABILITY SCORE — Phase B: Key Intelligence Number */}
+              <StabilityScoreCard
+                score={stabilityScore}
+                status={stateStatus}
+                velocity={stateVelocity}
+                interpretation={stateInterp}
+                cognitionConf={cognitionConfidence}
+                indices={instabilityIndices}
+              />
 
               {/* WELCOME BANNER — shown when no integrations connected */}
               {connectedIntegrations.length === 0 && <WelcomeBanner owner={owner} />}
@@ -558,6 +664,29 @@ const AdvisorWatchtower = () => {
                   </div>
                 )}
               </div>
+
+              {/* PROPAGATION MAP — Phase B: shows risk chain when cognition deployed */}
+              {propagationMap && propagationMap.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Risk Propagation</h3>
+                  <div className="space-y-2">
+                    {propagationMap.slice(0, 3).map((chain, i) => (
+                      <Card key={i} className="p-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(chain.chain || [chain.source, chain.target]).filter(Boolean).map((node, ni, arr) => (
+                            <React.Fragment key={ni}>
+                              <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: '#EF444415', color: '#EF4444', fontFamily: MONO }}>{node}</span>
+                              {ni < arr.length - 1 && <span className="text-[10px]" style={{ color: '#64748B' }}>→</span>}
+                            </React.Fragment>
+                          ))}
+                          {chain.probability && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: MONO }}>{Math.round(chain.probability * 100)}% likelihood</span>}
+                        </div>
+                        {chain.description && <p className="text-xs mt-2" style={{ color: '#9FB0C3', fontFamily: BODY }}>{chain.description}</p>}
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* WEEKLY BRIEF — only show if integrations provide real data */}
               {connectedIntegrations.length > 0 && (wb.cashflow_recovered || wb.hours_saved || wb.actions_taken) && (

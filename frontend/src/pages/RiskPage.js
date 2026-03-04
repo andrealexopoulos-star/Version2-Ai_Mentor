@@ -349,7 +349,89 @@ const RiskPage = () => {
         {/* ═══ CROSS-DOMAIN RISK TAB ═══ */}
         {!loading && activeTab === 'unified' && (
           <>
-            {!unifiedRisk?.signals ? (
+            {/* Cognition Risk Intelligence — shows when SQL deployed */}
+            {unifiedRisk?.instability_indices && (
+              <Panel>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-[#EF4444]" />
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Instability Intelligence</h3>
+                  </div>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: MONO }}>COGNITION CORE</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                  {[
+                    { key: 'revenue_volatility_index', label: 'RVI', title: 'Revenue Volatility', help: 'Measures unpredictability in revenue streams' },
+                    { key: 'engagement_decay_score', label: 'EDS', title: 'Engagement Decay', help: 'Rate of customer/lead disengagement' },
+                    { key: 'cash_deviation_ratio', label: 'CDR', title: 'Cash Deviation', help: 'Divergence from expected cash position' },
+                    { key: 'anomaly_density_score', label: 'ADS', title: 'Anomaly Density', help: 'Frequency of anomalous signals' },
+                  ].map(({ key, label, title, help }) => {
+                    const val = unifiedRisk.instability_indices[key];
+                    if (val == null) return null;
+                    const pct = Math.round(val * 100);
+                    const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
+                    const circumference2 = 2 * Math.PI * 18;
+                    const off2 = circumference2 * (1 - pct / 100);
+                    return (
+                      <div key={key} className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="relative w-12 h-12 mx-auto mb-2">
+                          <svg className="w-12 h-12 -rotate-90" viewBox="0 0 40 40">
+                            <circle cx="20" cy="20" r="18" fill="none" stroke="#243140" strokeWidth="3.5" />
+                            <circle cx="20" cy="20" r="18" fill="none" stroke={ic} strokeWidth="3.5"
+                              strokeDasharray={circumference2} strokeDashoffset={off2} strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] font-bold" style={{ color: ic, fontFamily: MONO }}>{pct}%</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: MONO }}>{label}</span>
+                        <p className="text-[9px] mt-0.5" style={{ color: '#64748B', fontFamily: MONO }}>{title}</p>
+                      </div>
+                    );
+                  }).filter(Boolean)}
+                </div>
+                {unifiedRisk.composite_risk_score != null && (
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <span className="text-xs" style={{ color: '#9FB0C3', fontFamily: HEAD }}>Composite Risk Score</span>
+                    <span className="text-2xl font-bold" style={{ 
+                      color: unifiedRisk.composite_risk_score > 0.6 ? '#EF4444' : unifiedRisk.composite_risk_score > 0.3 ? '#F59E0B' : '#10B981', 
+                      fontFamily: MONO 
+                    }}>{Math.round(unifiedRisk.composite_risk_score * 100)}%</span>
+                  </div>
+                )}
+              </Panel>
+            )}
+
+            {/* Propagation Risk Chains */}
+            {unifiedRisk?.propagation_map?.length > 0 && (
+              <Panel>
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
+                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Risk Propagation Analysis</h3>
+                </div>
+                <div className="space-y-3">
+                  {unifiedRisk.propagation_map.slice(0, 5).map((chain, i) => (
+                    <div key={i} className="p-3 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
+                      <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                        {(chain.chain || [chain.source, chain.target]).filter(Boolean).map((node, ni, arr) => (
+                          <React.Fragment key={ni}>
+                            <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: MONO }}>{node}</span>
+                            {ni < arr.length - 1 && <span className="text-[10px] text-[#64748B]">→</span>}
+                          </React.Fragment>
+                        ))}
+                        {chain.probability != null && (
+                          <span className="text-[9px] ml-auto" style={{ color: '#F59E0B', fontFamily: MONO }}>{Math.round(chain.probability * 100)}% likelihood</span>
+                        )}
+                      </div>
+                      {chain.description && <p className="text-[11px]" style={{ color: '#9FB0C3' }}>{chain.description}</p>}
+                      {chain.window && <p className="text-[9px] mt-1" style={{ color: '#64748B', fontFamily: MONO }}>Time window: {chain.window}</p>}
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            )}
+
+            {!unifiedRisk?.signals && !unifiedRisk?.instability_indices ? (
               <Panel className="text-center py-10">
                 <Activity className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
                 <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Cross-Domain Risk Intelligence</p>
@@ -358,7 +440,7 @@ const RiskPage = () => {
                   <Plug className="w-4 h-4" /> Connect Integrations
                 </a>
               </Panel>
-            ) : (
+            ) : unifiedRisk?.signals ? (
               <>
                 {/* Overall Risk Level */}
                 <Panel>
@@ -409,7 +491,7 @@ const RiskPage = () => {
                   );
                 })}
               </>
-            )}
+            ) : null}
           </>
         )}
       </div>
