@@ -117,6 +117,8 @@ CREATE TABLE IF NOT EXISTS propagation_rules (
 ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS source_domain TEXT NOT NULL DEFAULT '';
 ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS target_domain TEXT NOT NULL DEFAULT '';
 ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS probability FLOAT NOT NULL DEFAULT 0.7;
+ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS lag_days INTEGER DEFAULT 14;
+ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS description TEXT;
 ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 
 DO $$ BEGIN
@@ -155,7 +157,10 @@ CREATE TABLE IF NOT EXISTS automation_actions (
 );
 ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS action_type TEXT NOT NULL DEFAULT '';
 ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS action_label TEXT NOT NULL DEFAULT '';
+ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS integration_required TEXT;
 ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS rollback_guidance TEXT;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'automation_actions_action_type_key') THEN
@@ -194,7 +199,15 @@ CREATE TABLE IF NOT EXISTS automation_executions (
   created_at        TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS action_type TEXT NOT NULL DEFAULT '';
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS insight_ref TEXT DEFAULT '';
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS evidence_refs TEXT[] DEFAULT '{}';
 ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ;
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS executed_at TIMESTAMPTZ;
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS failed_at TIMESTAMPTZ;
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS failure_reason TEXT;
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS result JSONB DEFAULT '{}';
+ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS rollback_executed BOOLEAN DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_automation_executions_tenant ON automation_executions(tenant_id);
 
