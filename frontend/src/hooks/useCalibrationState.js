@@ -213,24 +213,19 @@ export const useCalibrationState = () => {
     try {
       // Clear potentially contaminated intelligence fields before new calibration scan
       // This prevents cross-business data bleeding from previous calibrations
+      // Column list verified against actual business_profiles schema
       try {
         await apiClient.put('/business-profile', {
           website: url,
-          // Reset all AI-derived intelligence fields — will be repopulated by edge function
           market_position: null,
-          market_intelligence_data: null,
-          digital_footprint_data: null,
-          cmo_snapshot: null,
-          competitive_analysis: null,
-          brand_positioning: null,
-          industry_position: null,
-          growth_opportunity: null,
-          // Reset identity fields (will be re-extracted from new URL)
-          abn: null, phone: null, address: null,
           main_products_services: null,
           unique_value_proposition: null,
           competitive_advantages: null,
           target_market: null,
+          ideal_customer_profile: null,
+          geographic_focus: null,
+          abn: null,
+          competitor_scan_result: null,
         });
       } catch {
         // Non-fatal — continue with calibration even if reset fails
