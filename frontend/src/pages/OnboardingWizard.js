@@ -190,10 +190,9 @@ const OnboardingWizard = () => {
     try {
       await apiClient.put('/business-profile', formData);
       await apiClient.post('/onboarding/complete');
-      // Update cached state so ProtectedRoute stops redirecting
       markOnboardingComplete();
-      toast.success('Profile completed! Welcome to BIQC');
-      navigate('/advisor', { replace: true });
+      toast.success('Profile completed! Now connect your business tools.');
+      navigate('/integrations', { replace: true, state: { fromOnboarding: true } });
     } catch (error) {
       toast.error('Failed to complete setup');
       console.error('Onboarding completion error:', error);

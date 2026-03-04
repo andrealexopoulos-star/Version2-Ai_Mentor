@@ -1,77 +1,63 @@
 # BIQc Platform — Product Requirements Document
 
 ## Original Problem Statement
-Transform the BIQc platform into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with a "Liquid Steel" dark theme, executive-grade positioning, and AI-driven intelligence surfaces.
+Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with executive-grade positioning and AI-driven intelligence surfaces.
 
 ## Core Architecture
-- **Frontend:** React (CRA) with Tailwind CSS + Shadcn/UI
-- **Backend:** FastAPI (Python) — thin pass-through to SQL engine
+- **Frontend:** React (CRA) + Tailwind + Shadcn/UI
+- **Backend:** FastAPI → thin pass-through to SQL engine
 - **Database:** Supabase (PostgreSQL) with SQL-first intelligence engine
-- **Mobile:** React Native (Expo) — native iOS/Android app
+- **Mobile:** React Native (Expo) — 5-tab native app
 - **Deployment:** Azure (production), Emergent preview (development)
 
 ## What's Been Implemented
 
 ### Backend Cognition Core (Complete)
-- Enterprise-grade intelligence engine entirely in SQL
-- 8 interconnected engines, master function `ic_generate_cognition_contract` (~25ms)
-- API endpoint: `/api/cognition/{tab}`
+- SQL intelligence engine: `ic_generate_cognition_contract` (~25ms)
+- API: `/api/cognition/{tab}`, `/api/cognition/decisions`, `/api/cognition/integration-health`
 
-### Homepage Visual System (Complete — Mar 2026)
-- Canvas-based animated energy galaxy background (contained in hero only)
-- 4 Perlin noise neural threads, 50 ambient particles, 8s convergence glow
-- Hero rotator: 3 variants, 8s auto-rotate, 1.2s fade
-- Integration carousel: 21 SVG brand logos, 25s loop, pause on hover
-- Intelligence diagram: 4-tier flow with animated signals, 6s BIQc core glow
+### Scrape & Edge Function Architecture (Complete — Confirmed)
+1. **calibration-business-dna** — Perplexity 5-query deep search + Firecrawl scrape + regex identity extraction + GPT-4o-mini structured extraction → writes to `business_profiles`
+2. **business-identity-lookup** — ABR registry direct ABN lookup + name search
+3. **fetch_website_text** — httpx scraper for profile autofill/build
+4. **business-profile/build** — Serper.dev search + multi-URL scrape + AI profile extraction
 
-### Mobile CSS (Complete — Mar 2026)
-- Single `mobile.css` (~300 lines) — covers all pages
-- **Homepage mobile**: Canvas hidden, arrows hidden, h1=24px, CTA full-width, grids collapse
-- **Login/Register mobile**: Full-width buttons, 16px inputs (no iOS zoom), orange CTA
-- **Advisor mobile**: Horizontal scroll cognition tabs, single-column insight grids
-- **Calibration mobile**: Auto-height, proper identity bar wrapping
-- **Platform sidebar mobile**: Pointer-events gating, compact topbar
-- **Generic**: Tab lists horizontal scroll, form inputs 16px, sidebar off-screen
+### Homepage Visual System (Complete)
+- Canvas energy galaxy (4 threads, 50 particles, 8s glow, center dead zone)
+- Hero rotator (3 variants, 8s, 1.2s fade), integration carousel (21 SVG logos, 25s), intelligence diagram (4-tier, 6s core glow)
 
-### Expo React Native App (Built — Mar 2026)
-- **Auth flow**: Login screen gates tab navigator, SecureStore token persistence
-- **5 functional screens**: Overview (HomeScreen), Chat (SoundBoard), Market, Alerts, Settings
-- **API connected**: Points to production backend (`biqc.thestrategysquad.com/api`)
-- **Real data**: HomeScreen shows risk baseline, executive memo, system state
-- **ChatScreen**: Full conversational interface with SoundBoard API, prompt chips
-- **MarketScreen**: Market intelligence, positioning, competitor data, demand pressure
-- **AlertsScreen**: Spine events, silence detection
-- **SettingsScreen**: Profile, spine status, integrations menu, logout
-- **System fonts**: Uses platform defaults (SF Pro on iOS, Roboto on Android)
-- **Location**: `/app/mobile/`
+### Mobile CSS (Complete)
+- Single `mobile.css` (~300 lines) covering homepage, login/register, advisor, calibration, platform, footer
 
-### Key Files
-- `frontend/src/mobile.css` — Single mobile stylesheet
-- `frontend/src/pages/website/HomePage.js` — Homepage
-- `frontend/src/components/website/EnergyGalaxyBackground.js` — Canvas background
-- `mobile/App.tsx` — Expo app entry with auth flow
-- `mobile/src/screens/` — All 6 screens (Login + 5 tabs)
-- `mobile/src/lib/api.ts` — API client with SecureStore auth
-- `mobile/src/theme/index.ts` — Theme tokens mirroring web
-- `mobile/src/components/ui.tsx` — Reusable UI components
+### Expo React Native App (Complete)
+- Auth-gated 5-tab app: Overview, Chat, Market, Alerts, Settings
+- Connected to production API with SecureStore auth
+
+### User Onboarding Journey (Fixed — Mar 2026)
+- **Onboarding completion** → redirects to `/integrations` (was empty `/advisor`)
+- **Welcome Banner** on Advisor page when zero integrations connected — guides to CRM, Accounting, Email
+- **Daily Summary** component — "What changed in 24h" with signal count + executive memo
+- **Dashboard route restored** — `/dashboard` now shows setup checklist (was redirected to `/advisor`)
+- **Cognition Integration** — Advisor page fetches from `/cognition/overview` with fallback
 
 ## Prioritized Backlog
 
-### P0 — Critical
-1. **Fix Broken User Onboarding Journey** — New users land on empty Advisor Dashboard
-2. **Phase B: Frontend Cognition Integration** — Connect internal pages to `/api/cognition/{tab}`
-
 ### P1 — Important
-3. **Daily Habit Loop** — "What changed in 24h?" summary
-4. **Admin/Legal Nav Restructure**
-5. **Weekly Check-in Calendar**
+1. **Full Phase B Cognition Integration** — Connect RevenuePage, RiskPage, OperationsPage to cognition endpoint (Advisor started)
+2. **Admin/Legal Nav Restructure**
+3. **Weekly Check-in Calendar**
 
 ### P2 — Future
-6. **Expo App Store Deployment** — Build, sign, submit to App Store / Google Play
-7. **A/B Testing & Marketing Automation UIs**
+4. **Expo App Store Deployment**
+5. **A/B Testing & Marketing Automation UIs**
 
-## Blocked
-- **Production Auth** — `biqc.thestrategysquad.com` needs SUPABASE vars in Azure
+## Key Files
+- `frontend/src/mobile.css`, `frontend/src/pages/website/HomePage.js`
+- `frontend/src/pages/AdvisorWatchtower.js` — Welcome banner + daily summary + cognition fetch
+- `frontend/src/pages/OnboardingWizard.js` — Redirects to integrations after completion
+- `mobile/App.tsx` — Expo entry with auth flow
+- `supabase/functions/calibration-business-dna/index.ts` — Primary scrape edge function
+- `supabase/functions/business-identity-lookup/index.ts` — ABN registry lookup
 
 ## Test Credentials
 - Email: `andre@thestrategysquad.com.au`
