@@ -9,7 +9,7 @@ import { theme } from '../theme';
 import { Card, SectionHeader, StatusBadge } from '../components/ui';
 import api, { auth } from '../lib/api';
 
-export default function SettingsScreen({ navigation }: any) {
+export default function SettingsScreen({ onLogout }: { onLogout?: () => void; navigation?: any }) {
   const [user, setUser] = useState<any>(null);
   const [spine, setSpine] = useState<any>(null);
 
@@ -24,16 +24,16 @@ export default function SettingsScreen({ navigation }: any) {
       { text: 'Log Out', style: 'destructive', onPress: async () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         await auth.logout();
-        // Navigation will handle redirect
+        if (onLogout) onLogout();
       }},
     ]);
   };
 
   const menuItems = [
-    { icon: 'person-outline', label: 'Business Profile', route: 'BusinessProfile' },
-    { icon: 'link-outline', label: 'Integrations', route: 'Integrations' },
-    { icon: 'shield-checkmark-outline', label: 'Data Health', route: 'DataHealth' },
-    { icon: 'document-text-outline', label: 'Knowledge Base', route: 'KnowledgeBase' },
+    { icon: 'person-outline', label: 'Business Profile' },
+    { icon: 'link-outline', label: 'Integrations' },
+    { icon: 'shield-checkmark-outline', label: 'Data Health' },
+    { icon: 'document-text-outline', label: 'Knowledge Base' },
   ];
 
   return (
@@ -88,9 +88,7 @@ export default function SettingsScreen({ navigation }: any) {
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
 
-      {/* Version */}
       <Text style={styles.version}>BIQc Mobile v1.0.0</Text>
-
       <View style={{ height: 100 }} />
     </ScrollView>
   );
@@ -101,17 +99,17 @@ const styles = StyleSheet.create({
   content: { padding: theme.spacing.lg, paddingTop: 60 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.colors.brand + '20', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontFamily: theme.fonts.head, fontSize: 18, color: theme.colors.brand, fontWeight: '700' },
-  profileName: { fontFamily: theme.fonts.bodySemiBold, fontSize: 15, color: theme.colors.text },
-  profileEmail: { fontFamily: theme.fonts.mono, fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },
+  avatarText: { fontSize: 18, color: theme.colors.brand, fontWeight: '700' },
+  profileName: { fontSize: 15, color: theme.colors.text, fontWeight: '600' },
+  profileEmail: { fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },
   spineRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  spineLabel: { fontFamily: theme.fonts.bodySemiBold, fontSize: 13, color: theme.colors.text },
-  spineDetail: { fontFamily: theme.fonts.mono, fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
+  spineLabel: { fontSize: 13, color: theme.colors.text, fontWeight: '600' },
+  spineDetail: { fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
   spineDot: { width: 8, height: 8, borderRadius: 4 },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
   menuItemBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  menuLabel: { fontFamily: theme.fonts.body, fontSize: 14, color: theme.colors.text, flex: 1 },
+  menuLabel: { fontSize: 14, color: theme.colors.text, flex: 1 },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24, padding: 14, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.danger + '30' },
-  logoutText: { fontFamily: theme.fonts.bodySemiBold, fontSize: 14, color: theme.colors.danger },
-  version: { fontFamily: theme.fonts.mono, fontSize: 10, color: theme.colors.textMuted, textAlign: 'center', marginTop: 16 },
+  logoutText: { fontSize: 14, color: theme.colors.danger, fontWeight: '600' },
+  version: { fontSize: 10, color: theme.colors.textMuted, textAlign: 'center', marginTop: 16 },
 });

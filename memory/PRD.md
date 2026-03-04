@@ -7,6 +7,7 @@ Transform the BIQc platform into a high-performance, AI-driven "Cognition-as-a-P
 - **Frontend:** React (CRA) with Tailwind CSS + Shadcn/UI
 - **Backend:** FastAPI (Python) — thin pass-through to SQL engine
 - **Database:** Supabase (PostgreSQL) with SQL-first intelligence engine
+- **Mobile:** React Native (Expo) — native iOS/Android app
 - **Deployment:** Azure (production), Emergent preview (development)
 
 ## What's Been Implemented
@@ -22,23 +23,37 @@ Transform the BIQc platform into a high-performance, AI-driven "Cognition-as-a-P
 - Hero rotator: 3 variants, 8s auto-rotate, 1.2s fade
 - Integration carousel: 21 SVG brand logos, 25s loop, pause on hover
 - Intelligence diagram: 4-tier flow with animated signals, 6s BIQc core glow
-- Mandatory spacing: headline→sub 24px, sub→CTA 40px, CTA→learning 40px, learning→diagram 80px
 
-### Mobile CSS Migration (Complete — Mar 2026)
-- **Forensic removal**: 11 legacy CSS files (3,138 lines) deleted
-- **Single replacement**: `mobile.css` (~190 lines) — scoped, surgical, no !important wars
-- **Mobile behaviors**: Canvas hidden, arrows hidden, h1=24px, CTA full-width, grids collapse to 1-2 columns
-- **Desktop**: Completely unaffected
+### Mobile CSS (Complete — Mar 2026)
+- Single `mobile.css` (~300 lines) — covers all pages
+- **Homepage mobile**: Canvas hidden, arrows hidden, h1=24px, CTA full-width, grids collapse
+- **Login/Register mobile**: Full-width buttons, 16px inputs (no iOS zoom), orange CTA
+- **Advisor mobile**: Horizontal scroll cognition tabs, single-column insight grids
+- **Calibration mobile**: Auto-height, proper identity bar wrapping
+- **Platform sidebar mobile**: Pointer-events gating, compact topbar
+- **Generic**: Tab lists horizontal scroll, form inputs 16px, sidebar off-screen
+
+### Expo React Native App (Built — Mar 2026)
+- **Auth flow**: Login screen gates tab navigator, SecureStore token persistence
+- **5 functional screens**: Overview (HomeScreen), Chat (SoundBoard), Market, Alerts, Settings
+- **API connected**: Points to production backend (`biqc.thestrategysquad.com/api`)
+- **Real data**: HomeScreen shows risk baseline, executive memo, system state
+- **ChatScreen**: Full conversational interface with SoundBoard API, prompt chips
+- **MarketScreen**: Market intelligence, positioning, competitor data, demand pressure
+- **AlertsScreen**: Spine events, silence detection
+- **SettingsScreen**: Profile, spine status, integrations menu, logout
+- **System fonts**: Uses platform defaults (SF Pro on iOS, Roboto on Android)
+- **Location**: `/app/mobile/`
 
 ### Key Files
 - `frontend/src/mobile.css` — Single mobile stylesheet
 - `frontend/src/pages/website/HomePage.js` — Homepage
 - `frontend/src/components/website/EnergyGalaxyBackground.js` — Canvas background
-- `frontend/src/components/website/IntegrationCarousel.js` — Logo carousel
-- `frontend/src/components/website/BrandLogos.js` — SVG brand definitions
-- `frontend/src/components/website/IntelligenceDiagram.js` — Flow diagram
-- `frontend/src/components/website/LiquidSteelHeroRotator.js` — Hero rotator
-- `backend/routes/cognition_contract.py` — Cognition API
+- `mobile/App.tsx` — Expo app entry with auth flow
+- `mobile/src/screens/` — All 6 screens (Login + 5 tabs)
+- `mobile/src/lib/api.ts` — API client with SecureStore auth
+- `mobile/src/theme/index.ts` — Theme tokens mirroring web
+- `mobile/src/components/ui.tsx` — Reusable UI components
 
 ## Prioritized Backlog
 
@@ -52,7 +67,7 @@ Transform the BIQc platform into a high-performance, AI-driven "Cognition-as-a-P
 5. **Weekly Check-in Calendar**
 
 ### P2 — Future
-6. **Mobile App Build-out** (Expo skeleton exists at `/app/mobile/`)
+6. **Expo App Store Deployment** — Build, sign, submit to App Store / Google Play
 7. **A/B Testing & Marketing Automation UIs**
 
 ## Blocked

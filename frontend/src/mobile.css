@@ -198,3 +198,121 @@ body {
     height: 64px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   INTERNAL PAGES — Login, Register, Advisor, Calibration
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Login / Register ── */
+  [data-testid="login-submit-btn"],
+  [data-testid="register-submit-btn"] {
+    width: 100% !important;
+    min-height: 48px !important;
+    border-radius: 12px !important;
+    font-size: 15px !important;
+  }
+  [data-testid="login-google-btn"],
+  [data-testid="login-microsoft-btn"],
+  [data-testid="register-google-btn"],
+  [data-testid="register-microsoft-btn"] {
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+  /* Auth page: hide right panel on mobile, full-width form */
+  [data-testid="login-submit-btn"],
+  [data-testid="register-submit-btn"] {
+    background: #FF6A00 !important;
+    color: white !important;
+  }
+  /* Auth form inputs */
+  [data-testid*="login-"][data-testid*="-input"],
+  [data-testid*="register-"][data-testid*="-input"] {
+    font-size: 16px !important; /* prevent iOS zoom */
+  }
+
+  /* ── Advisor / BIQc Insights ── */
+  [data-testid="biqc-insights-page"] {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  /* Cognition tabs: horizontal scroll */
+  [data-testid="cognition-tabs"] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  [data-testid="cognition-tabs"]::-webkit-scrollbar { display: none; }
+  [data-testid^="tab-"] {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+  /* Advisor: force single column for insight grids */
+  [data-testid="biqc-insights-page"] .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Calibration ── */
+  [data-testid="calibration-page"] {
+    height: auto !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    overflow-y: auto !important;
+  }
+  [data-testid="identity-bar"] {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px !important;
+  }
+  [data-testid="identity-bar"] span {
+    font-size: 11px !important;
+  }
+  /* Calibration buttons: full width */
+  [data-testid="admin-skip-btn"],
+  [data-testid="admin-back-btn"],
+  [data-testid="sign-out-btn"] {
+    min-height: 36px !important;
+    font-size: 11px !important;
+  }
+
+  /* ── Platform sidebar (DashboardLayout) ── */
+  [data-testid="platform-topbar"] {
+    height: 56px !important;
+    padding: 0 12px !important;
+  }
+  [data-testid="platform-content"] {
+    padding: 16px !important;
+  }
+  /* Sidebar off-screen by default — controlled by JS translate */
+  aside {
+    pointer-events: none;
+  }
+  aside.translate-x-0 {
+    pointer-events: auto;
+  }
+
+  /* ── Generic internal page fixes ── */
+  /* Forms: prevent iOS zoom */
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="tel"], textarea, select {
+    font-size: 16px !important;
+  }
+  /* Scrollable tab lists */
+  [role="tablist"] {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  [role="tablist"]::-webkit-scrollbar { display: none; }
+  [role="tab"] {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
