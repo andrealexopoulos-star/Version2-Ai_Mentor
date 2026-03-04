@@ -73,38 +73,31 @@ const HomePage = () => (
             </div>
 
             <p className="mt-6 text-[11px]" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3 }}>No credit card required &middot; Australian owned & operated</p>
+
+            {/* Industry Benchmarks — inside hero, before diagram */}
+            <div className="mt-12 sm:mt-16" data-testid="stats-section">
+              <p className="text-[10px] sm:text-xs font-medium tracking-widest uppercase mb-6" style={{ fontFamily: MONO, color: '#FF7A18' }}>Industry Benchmarks</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 max-w-4xl mx-auto">
+                <StatBlock value="40%" label="Operational Improvement" />
+                <StatBlock value="50%" label="Reduced Manual Work" />
+                <StatBlock value="80%" label="Lower Processing Costs" />
+                <StatBlock value="3x" label="Faster Anomaly Detection" />
+                <StatBlock value="-25%" label="Fewer Preventable Errors" />
+              </div>
+              <p className="mt-4 text-xs" style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.35 }}>Businesses embedding AI-driven decision systems experience these improvements</p>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    {/* 80px gap: learning statement → platform diagram */}
+    {/* 80px gap: hero → platform diagram */}
     <div style={{ background: '#07121E', height: 80 }} />
 
     {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
     <div style={{ background: '#07121E' }}>
       <IntelligenceDiagram />
     </div>
-
-    {/* STATS — Industry Benchmarks */}
-    <section className="py-16 sm:py-20" style={{ background: '#07121E', borderTop: '1px solid rgba(255,140,40,0.06)' }} data-testid="stats-section">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="mb-10 sm:mb-12">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18' }}>Industry Benchmarks</span>
-          </div>
-          <p className="text-sm sm:text-base" style={{ fontFamily: BODY, color: '#A6B2C1' }}>Businesses embedding AI-driven decision systems experience:</p>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 sm:gap-10">
-          <StatBlock value="40%" label="Operational Improvement" />
-          <StatBlock value="50%" label="Reduced Manual Work" />
-          <StatBlock value="80%" label="Lower Processing Costs" />
-          <StatBlock value="3x" label="Faster Anomaly Detection" />
-          <StatBlock value="-25%" label="Fewer Preventable Errors" />
-        </div>
-      </div>
-    </section>
 
     {/* INTEGRATION CAROUSEL */}
     <div style={{ background: '#07121E' }}>
