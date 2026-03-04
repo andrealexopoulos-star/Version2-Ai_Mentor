@@ -114,7 +114,7 @@ const EnergyGalaxyBackground = () => {
       // 8-second pulse cycle: scale 1.0 → 1.05
       const pulsePhase = Math.sin((t / 8) * Math.PI * 2);
       const scale = 1 + pulsePhase * 0.05;
-      const glowAlpha = 0.15 + pulsePhase * 0.03;
+      const glowAlpha = 0.08 + pulsePhase * 0.02;
 
       const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, CONVERGENCE_RADIUS * scale);
       grad.addColorStop(0, `rgba(255,140,40,${glowAlpha})`);
@@ -125,6 +125,10 @@ const EnergyGalaxyBackground = () => {
       ctx.fillRect(0, 0, W, H);
 
       // ── LAYER 2: NEURAL SIGNAL THREADS ──
+      // Center dead zone: fade threads in the middle 40% of screen where content sits
+      const centerX = W * 0.5;
+      const deadZoneHalf = W * 0.2; // 20% each side of center
+
       threads.forEach((thread, ti) => {
         // Compute distorted points using Perlin noise
         const distortedPoints = thread.points.map((p, pi) => {
@@ -143,6 +147,7 @@ const EnergyGalaxyBackground = () => {
         });
 
         // Draw smooth bezier curve through distorted points
+        // Use a gradient that fades to transparent in the center column
         ctx.beginPath();
         ctx.moveTo(distortedPoints[0].x, distortedPoints[0].y);
         for (let i = 0; i < distortedPoints.length - 1; i++) {
@@ -155,30 +160,27 @@ const EnergyGalaxyBackground = () => {
         const last = distortedPoints[distortedPoints.length - 1];
         ctx.lineTo(last.x, last.y);
 
-        // Stroke: gradient #FF7A18 → #FF9C45 with outer glow
-        ctx.strokeStyle = `rgba(255,122,24,${thread.alpha})`;
+        // Stroke with center-fading gradient
+        const fadeGrad = ctx.createLinearGradient(0, 0, W, 0);
+        const a = thread.alpha;
+        fadeGrad.addColorStop(0, `rgba(255,122,24,${a * 0.8})`);
+        fadeGrad.addColorStop(0.25, `rgba(255,140,40,${a})`);
+        fadeGrad.addColorStop(0.38, `rgba(255,156,69,${a * 0.3})`);
+        fadeGrad.addColorStop(0.5, `rgba(255,156,69,0)`);         // transparent at center
+        fadeGrad.addColorStop(0.62, `rgba(255,156,69,${a * 0.3})`);
+        fadeGrad.addColorStop(0.75, `rgba(255,140,40,${a})`);
+        fadeGrad.addColorStop(1, `rgba(255,122,24,${a * 0.8})`);
+        ctx.strokeStyle = fadeGrad;
         ctx.lineWidth = 1.5;
-        ctx.shadowColor = 'rgba(255,140,40,0.25)';
-        ctx.shadowBlur = 12;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Draw gradient overlay for colour variation
-        const gradLine = ctx.createLinearGradient(0, 0, W, 0);
-        gradLine.addColorStop(0, `rgba(255,122,24,${thread.alpha * 0.8})`);
-        gradLine.addColorStop(0.5, `rgba(255,156,69,${thread.alpha})`);
-        gradLine.addColorStop(1, `rgba(255,122,24,${thread.alpha * 0.8})`);
-        ctx.strokeStyle = gradLine;
-        ctx.lineWidth = 1.5;
-        ctx.shadowColor = 'rgba(255,140,40,0.25)';
+        ctx.shadowColor = 'rgba(255,140,40,0.15)';
         ctx.shadowBlur = 8;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
         // Travelling light pulse along the thread (6-10 second cycle)
+        // Skip pulse rendering if it's in the center dead zone
         const pulse = pulses[ti];
         pulse.t = (pulse.t + pulse.speed) % 1;
-        // Interpolate position along the distorted path
         const totalPoints = distortedPoints.length - 1;
         const segFloat = pulse.t * totalPoints;
         const segIdx = Math.floor(segFloat);
@@ -186,18 +188,21 @@ const EnergyGalaxyBackground = () => {
         if (segIdx < totalPoints) {
           const px = distortedPoints[segIdx].x + (distortedPoints[segIdx + 1].x - distortedPoints[segIdx].x) * segT;
           const py = distortedPoints[segIdx].y + (distortedPoints[segIdx + 1].y - distortedPoints[segIdx].y) * segT;
-          // Pulse glow
-          const pg = ctx.createRadialGradient(px, py, 0, px, py, pulse.size * 4);
-          pg.addColorStop(0, `rgba(255,180,80,${pulse.alpha})`);
-          pg.addColorStop(0.4, `rgba(255,140,40,${pulse.alpha * 0.4})`);
-          pg.addColorStop(1, 'transparent');
-          ctx.fillStyle = pg;
-          ctx.fillRect(px - pulse.size * 4, py - pulse.size * 4, pulse.size * 8, pulse.size * 8);
-          // Bright core dot
-          ctx.beginPath();
-          ctx.arc(px, py, pulse.size * 0.6, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255,200,120,${pulse.alpha})`;
-          ctx.fill();
+          // Fade pulse in center zone
+          const distFromCenter = Math.abs(px - centerX);
+          const pulseFade = Math.min(1, distFromCenter / deadZoneHalf);
+          if (pulseFade > 0.1) {
+            const pg = ctx.createRadialGradient(px, py, 0, px, py, pulse.size * 4);
+            pg.addColorStop(0, `rgba(255,180,80,${pulse.alpha * pulseFade})`);
+            pg.addColorStop(0.4, `rgba(255,140,40,${pulse.alpha * 0.4 * pulseFade})`);
+            pg.addColorStop(1, 'transparent');
+            ctx.fillStyle = pg;
+            ctx.fillRect(px - pulse.size * 4, py - pulse.size * 4, pulse.size * 8, pulse.size * 8);
+            ctx.beginPath();
+            ctx.arc(px, py, pulse.size * 0.6, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,200,120,${pulse.alpha * pulseFade})`;
+            ctx.fill();
+          }
         }
       });
 
