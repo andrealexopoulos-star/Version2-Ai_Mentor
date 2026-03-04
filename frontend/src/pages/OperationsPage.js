@@ -136,6 +136,42 @@ const OperationsPage = () => {
             )}
 
             {/* ═══ CROSS-DOMAIN OPERATIONS INTELLIGENCE ═══ */}
+            {/* Cognition operations data — shows when SQL migrations deployed */}
+            {unifiedOps?.instability_indices && (
+              <Panel>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-[#059669]" />
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Operations Intelligence</h3>
+                  </div>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: MONO }}>COGNITION CORE</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { key: 'anomaly_density_score', label: 'ADS', title: 'Anomaly Density' },
+                    { key: 'execution_gap_index', label: 'EGI', title: 'Execution Gap' },
+                    { key: 'sop_deviation_score', label: 'SDS', title: 'SOP Deviation' },
+                    { key: 'bottleneck_severity', label: 'BNS', title: 'Bottleneck Severity' },
+                  ].map(({ key, label, title }) => {
+                    const val = unifiedOps.instability_indices[key];
+                    if (val == null) return null;
+                    const pct = Math.round(val * 100);
+                    const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
+                    return (
+                      <div key={key} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: MONO }}>{label}</span>
+                        <div className="text-2xl font-bold" style={{ color: ic, fontFamily: MONO }}>{pct}%</div>
+                        <span className="text-[9px]" style={{ color: '#64748B', fontFamily: MONO }}>{title}</span>
+                        <div className="h-1 rounded-full mt-2" style={{ background: ic + '20' }}>
+                          <div className="h-1 rounded-full" style={{ background: ic, width: pct + '%' }} />
+                        </div>
+                      </div>
+                    );
+                  }).filter(Boolean)}
+                </div>
+              </Panel>
+            )}
+
             {unifiedOps?.signals && (
               <>
                 {unifiedOps.signals.bottlenecks?.length > 0 && (

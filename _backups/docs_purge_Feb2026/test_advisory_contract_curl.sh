@@ -4,7 +4,7 @@
 # Requires: Valid user authentication
 
 # Configuration
-API_URL="https://unified-biq.preview.emergentagent.com/api"
+API_URL="https://platform-scan.preview.emergentagent.com/api"
 
 # Color codes for output
 GREEN='\033[0;32m'

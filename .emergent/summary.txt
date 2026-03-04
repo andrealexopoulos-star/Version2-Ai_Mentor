@@ -2,165 +2,182 @@
 **original_problem_statement:**
 The user's primary objective is to transform their BIQc platform into a high-performance, AI-driven Cognition-as-a-Platform for SMBs. This involves a complete visual and architectural overhaul to a Liquid Steel dark theme, migrating backend logic to be vendor-agnostic, and building out numerous features while squashing critical bugs. The core focus is on trust, data integrity (no fake data), and a seamless, intelligent user experience, with a recent pivot to high-ticket, executive-grade positioning.
 
-A major recent directive is to evolve the platform into a Unified Intelligence Surface, where every page (Revenue, Risk, etc.) intelligently pulls and synthesizes relevant data from all connected integrations (CRM, Accounting, Marketing) to surface critical insights for a CEO/founder persona. This was followed by a major redesign of the homepage to communicate the platform's value more effectively.
+A major recent directive was to evolve the platform into a Unified Intelligence Surface, where every page intelligently synthesizes data from all connected integrations. This was followed by a massive, user-directed visual overhaul of the homepage to achieve a premium AI infrastructure platform aesthetic.
 
-PRODUCT REQUIREMENTS:
-- A premium, modern Liquid Steel aesthetic with a new intelligent energy flow background.
-- A fast, intuitive, and agentic user experience that shows real, verifiable intelligence.
-- The entire backend logic for intelligence generation must be centralized, performant, and evidence-gated.
-- The frontend must be refactored to consume this new centralized intelligence source.
-- The homepage must visually explain the platform's architecture and value proposition in a simple, non-technical way.
+Most recently, the user has demanded a complete, end-to-end forensic audit of every single component on the live production website to verify what has and has not been completed, expressing concern that claimed work is not actually done.
 
 **User's preferred language**: English
 **what currently exists?**
-The application is a full-stack platform with a React frontend and a FastAPI backend using a Supabase (PostgreSQL) database. The core architecture has been significantly re-engineered.
-
-- **Backend Cognition Core:** A complete, enterprise-grade intelligence engine has been built entirely in SQL. It consists of 8 interconnected engines (Evidence, Instability, Propagation, etc.) orchestrated by a single master function, . This function executes in ~25ms and provides a unified intelligence contract for the entire platform. The Python backend is now a thin pass-through to this SQL engine.
-- **Homepage Overhaul:** The homepage () has been completely redesigned to align with a new premium, enterprise-grade aesthetic. It features:
-    - A rotating hero section with fade transitions and manual controls.
-    - A new intelligent energy/galaxy animated background.
-    - A detailed Platform Intelligence Diagram explaining the 4-stage workflow: Business Signals → Watchtower → BIQc → Decision Support.
-    - A redesigned stats section and a slow-scrolling integration logo carousel.
-- **Legacy Frontend:** All internal platform pages (, , etc.) still use the old data-fetching logic and UI. They have **not** been updated to use the new backend Cognition Core.
+The application is a full-stack platform with a React frontend and a FastAPI backend using a Supabase (PostgreSQL) database.
+- **Backend**: A performant, SQL-first Cognition Core is complete. Python serves as a thin API gateway. A sophisticated scraping and intelligence gathering architecture exists using Supabase Edge Functions that leverage Perplexity, Firecrawl, and OpenAI to build a business profile during calibration.
+- **Frontend (Web)**:
+    - The homepage has been completely rebuilt with a complex, multi-layered animated canvas background (intelligent energy field), a redesigned hero, an animated intelligence diagram, and an integration carousel with real SVG logos.
+    - All 11 legacy mobile CSS files have been deleted and consolidated into a single, surgical  file, providing a clean, commercially acceptable responsive experience for all pages.
+    - An initial fix for the broken onboarding journey has been implemented: users are now redirected to  after setup, and the Advisor page shows a  to guide them. The  route has been restored.
+    - Internal pages (, , etc.) have had  calls added for the new cognition endpoint, but the UI has not been updated to display this data.
+- **Frontend (Mobile App)**: A skeleton Expo (React Native) app exists at . Its basic auth flow, navigation, and configuration have been fixed, but it is not connected to any APIs and has no functional screens beyond placeholders.
 
 **Last working item**:
-- **Last item agent was working:** The agent completed a major visual overhaul of the homepage. The final steps involved implementing a new energy/galaxy animated background for the hero section and changing the integration logo carousel to use actual logo images fetched from the Clearbit API, instead of text placeholders.
-- **Status:** USER VERIFICATION PENDING
-- **Agent Testing Done:** Y
-- **Which testing method agent to use?** Frontend testing agent
+- **Last item agent was working:** The agent was executing a user-mandated, comprehensive forensic audit of the entire live production platform (). The goal is to test every single page, link, and feature to provide an intricate report on what each component is, what it does, how it does it, and its data sources, verifying all previously claimed work.
+- **Status:** IN PROGRESS
+- **Agent Testing Done:** N (The task itself is the test)
+- **Which testing method agent to use?** Manual testing using  and documenting findings in a markdown report. The complexity and specificity of the audit make it unsuitable for automated testing agents.
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Broken User Onboarding Journey (P0)**
-  - **Description:** The user journey analysis () revealed that a new user spends 12-32 minutes in setup (Calibration, Onboarding) only to land on an empty Advisor Dashboard. Integration connection is not part of the flow and must be discovered manually, leading to a critical failure in the first-time user experience. The  page which contains the setup checklist is inaccessible as it redirects to .
-  - **Why fix this issue and what will be achieved with the fix?** This is the highest priority usability issue. Fixing it will ensure users see value immediately after onboarding instead of being met with an empty state, drastically improving activation and retention.
-  - **Status:** NOT STARTED
+- **Issue 1: Complete the Forensic Audit (P0)**
+  - **Description:** The agent successfully logged into the production environment and began the calibration flow, documenting the initial screen. The audit must continue systematically through every step of calibration, onboarding, and every clickable element on every internal page (Advisor, Dashboard, Settings, etc.).
+  - **Next debug checklist:**
+    1. Continue from the Calibration welcome screen ().
+    2. Use a test website (e.g., ) to proceed through the Begin Strategic Audit flow.
+    3. Document every screen, modal, and user interaction with screenshots and detailed descriptions for the forensic report.
+    4. Test every link in the navigation, sidebars, and footers.
+    5. Specifically audit the SoundBoard feature and its components (file attachment, camera, replies).
+    6. Differentiate findings based on the user's Free Tier vs. Paid Subscription features.
+  - **Why fix this issue and what will be achieved with the fix?** This is a direct, critical command from the user to build trust and create a definitive source of truth on the platform's current state before any new development continues.
+  - **Status:** IN PROGRESS
+  - **Is recurring issue?** N
   - **Should Test frontend/backend/both after fix?** both
 
-- **Issue 2: Production Environment Auth Errors (P1)**
-  - **Description:** The user's production environment () has been reported as being stuck in a login/calibration loop due to  errors. This is caused by misconfigured  and  environment variables in their Azure deployment.
-  - **Why fix this issue and what will be achieved with the fix?** This blocks all functionality in the user's production environment. While blocked on user action, it's a recurring critical issue.
-  - **Status:** BLOCKED
+- **Issue 2: Broken User Onboarding Journey (P0)**
+  - **Description:** The original issue was a 12-32 minute setup leading to an empty dashboard. An attempted fix now redirects users to  and shows a welcome banner. The effectiveness of this fix is unverified.
+  - **Attempted fixes:** Redirected to  after wizard; added  to ; restored  route.
+  - **Next debug checklist:** The ongoing Forensic Audit (Issue 1) will serve as the verification for this fix. The agent must assess if the new flow effectively solves the empty state problem for a first-time user.
+  - **Status:** USER VERIFICATION PENDING
   - **Is recurring issue?** Y
-  - **Should Test frontend/backend/both after fix?** backend
+  - **Should Test frontend/backend/both after fix?** both
 
 **In progress Task List**:
-- None.
+- **Task 1: Forensic Audit Report Generation (P0)**
+  - **Where to resume:** Continue appending findings to .
+  - **What will be achieved with this?** A complete, user-verifiable document detailing the full functionality of the platform.
+  - **Status:** IN PROGRESS
+  - **Blocked on something:** The completion of the manual audit itself.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-  - **(P0) Phase B: Frontend Cognition Integration:** The highest priority is to connect the existing frontend pages to the new backend.
-    - Refactor all main dashboard pages (, , , ) to call the new  endpoint.
-    - Render the full intelligence contract on the UI: instability scores, propagation maps, decision impact, confidence scores, etc.
-    - Implement UI/UX fixes from the audit: skeleton loaders, score explanation modals (), and an Integration Health Monitor banner.
-    - Make the SoundBoard integration-aware by having it call the  endpoint.
-    - Implement a daily habit loop: What changed in 24h? summary, daily priority, and an optional email digest.
+  - **(P0) Phase B: Frontend Cognition Integration:** The highest priority development task. While  calls have been added to , , and , the UI has not been refactored to actually display the data from the  endpoint. This involves rendering instability scores, propagation maps, confidence scores, etc.
+  - **(P1) Complete Expo Mobile App Build-out:** The user wants this done in parallel. The skeleton is fixed. Next steps are to connect all screens to the backend API, implement real data display instead of placeholders, and ensure full functionality for Home, Chat, Market, Alerts, and Settings tabs.
 
 - **Future Tasks:**
-  - **(P1) Mobile App Build-out:** Flesh out the skeleton React Native (Expo) app with API connectivity, auth, and functional screens that consume the cognition contract.
-  - **(P1) Admin/Legal Nav Restructure:** Reorganize the admin menu as per the user's detailed specification.
-  - **(P1) Weekly Check-in Calendar:** Make the weekly check-in feature operational with a sidebar calendar panel and sync capabilities.
-  - **(P2) A/B Testing & Marketing Automation UIs:** Build the frontend for the A/B testing framework and the marketing automation agent.
+  - **(P1) Admin/Legal Nav Restructure Verification:** The agent implemented the nav changes in , but the audit needs to confirm it matches the user's specification.
+  - **(P1) Weekly Check-in Calendar:** Make the  feature operational by wiring it into the sidebar and connecting it to the backend.
+  - **(P2) A/B Testing & Marketing Automation UIs:** Build the frontend for these features.
 
 **Completed work in this session**
-- **Backend Cognition Core Architecture & Implementation:**
-  - Architected and built an enterprise-grade intelligence engine entirely in SQL (, ).
-  - The core consists of 8 interconnected engines (Evidence, Instability, Propagation, etc.) orchestrated by a single master SQL function .
-  - Refactored the backend API () to be a thin pass-through to the SQL engine.
-  - Interactively debugged and fixed numerous SQL errors with the user in real-time.
-- **Homepage Complete Visual Overhaul:**
-  - Rebuilt  to match a new premium, enterprise-grade aesthetic.
-  - Created a rotating hero component () with fade transitions, manual controls, and specific typography.
-  - Implemented a custom energy/galaxy animated background effect.
-  - Built a detailed Platform Intelligence Diagram () explaining the 4-stage platform workflow.
-  - Redesigned the integration logo carousel () to be slower and use real brand logos from Clearbit.
+- **Homepage Visual System Rebuild:**
+  - Implemented a complex, multi-layered, animated intelligent energy field background using the Canvas API with Simplex/Perlin noise for particles and neural threads ().
+  - Corrected the integration carousel to use real SVG brand logos within styled cards ().
+  - Iteratively refined all homepage visuals and animations based on strict, detailed user feedback, including fixing layout, component layering, and aesthetic details (e.g., removing lines through the CTA, shrinking particles).
+  - Moved the Industry Benchmarks section into the hero container as requested.
+- **Mobile CSS Overhaul:**
+  - Forensically removed 11 redundant and conflicting mobile CSS files.
+  - Created a single, surgical  file to provide a clean, commercially acceptable responsive experience for the entire application (Homepage, Login, Calibration, Advisor).
+  - Fixed multiple mobile-specific layout bugs reported by the user (oversized CTA, content alignment, footer formatting).
+- **Onboarding Flow & Core UX Initial Fixes:**
+  - Modified the onboarding wizard to redirect users to  after completion.
+  - Added a  and  component to the Advisor page to guide first-time users.
+  - Removed the hard redirect from  to , making the setup checklist accessible again.
+- **Expo (React Native) App Scaffolding:**
+  - Repaired the skeleton Expo app by fixing the auth flow, implementing correct navigation, setting the API URL, and resolving font loading issues to make it a viable base for future development.
+- **Admin & Configuration Updates:**
+  - Restructured the admin navigation menu in  per user requirements.
+  - Removed incorrect admin user emails and standardized on .
 
 **Earlier issues found/mentioned but not fixed**
-- **User Production Environment Broken:** The handoff mentioned the user's production Azure environment is down due to misconfigured  and  environment variables. This is a recurring issue blocked on user action.
+- The core issue of whether the **Broken User Onboarding Journey** is truly fixed remains. The implemented changes are logical but their effectiveness in solving the user's core complaint (long setup -> empty state) must be verified by the ongoing forensic audit.
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork**: Production authentication errors due to missing environment variables in the user's Azure deployment.
+- **Issue recurrence in previous fork**: Production authentication errors due to misconfigured environment variables.
 - **Recurrence count**: 2+
-- **Status**: BLOCKED
+- **Status**: RESOLVED (User confirmed that was fixed).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **SQL-First Backend:** The core application logic has been moved almost entirely into performant PostgreSQL functions. The FastAPI backend is now just a thin API gateway.
-- **Enterprise-Grade SQL:** The implementation uses advanced SQL (CTEs, window functions, JSONB operations) to build the entire 8-part cognition engine.
-- **Component-Based React:** The redesigned homepage is built with modular, reusable components.
-- **CSS-in-JS (Styled-Components):** Used for styling the new components, including complex animations and layouts.
-- **Clearbit Logo API:** Used for fetching real-time, full-color company logos for the integration carousel.
+- **Forensic Auditing:** Manually testing a live production application feature by feature to verify functionality against claimed work.
+- **Canvas API Animation:** Extensive use of HTML Canvas for performant, multi-layered background animations, driven by Simplex/Perlin noise for organic movement.
+- **Surgical CSS Refactoring:** Deleting a large number of conflicting, broadly-scoped CSS files and replacing them with a single, highly specific stylesheet that works with the existing utility-class framework (Tailwind) without conflicts.
+- **React Native (Expo):** Scaffolding and repairing a separate native mobile application codebase.
+- **SQL-First Backend:** Core logic resides in PostgreSQL, with Python/FastAPI as a thin API layer.
+- **Multi-Source Intelligence Gathering:** Using multiple APIs (Perplexity, Firecrawl, ABR) in parallel within a Supabase Edge Function to build a comprehensive business profile.
 
 **key DB schema**
-- **New Tables:** , , , , , , , , , , , , , , .
+- No new schema changes in this session. Key tables remain , , and the numerous  tables.
 
 **changes in tech stack**
-- No new technologies were added, but a significant architectural shift to a **SQL-first backend** was completed, moving almost all business logic from Python into PostgreSQL.
+- No new technologies were added. Heavy implementation of the **Canvas API** for animations.
 
 **All files of reference**
--  (Heavily modified)
--  (New)
--  (New)
--  (New)
--  (New)
--  (New)
--  (New)
+-  (Major overhaul)
+-  (New consolidated stylesheet)
+-  (New canvas animation)
+-  (Modified redirect logic)
+-  (Added new user components)
+-  (Modified routing)
+-  (Entire directory for the Expo app was restructured and fixed)
+-  (Core intelligence function, verified)
+-  (Report being generated)
 
 **key api endpoints**
-- : The new master endpoint that serves the entire intelligence contract for a given page (e.g., 'overview', 'revenue', 'risk'). This is the primary endpoint for all future frontend work.
+- : Remains the primary un-integrated endpoint for all internal dashboard pages.
+- Supabase Edge Functions: , .
 
 **Critical Info for New Agent**
-- **Backend is Done, Frontend is NOT:** A powerful, enterprise-grade backend Cognition Core is complete and tested. However, **no internal platform pages are using it yet**. The #1 priority is to connect the UI to this new backend ().
--** All emergent urls for forking must be bet.thestrategysquad.com
-- **User is Hands-On with SQL:** The user is capable of running SQL queries and migrations directly in their Supabase dashboard. They actively participated in debugging the SQL functions.
-- **Pod Limitations:** The Clearbit Logo API is blocked in the Emergent preview pod. Logos will appear broken during development but will work in a real browser environment. Do not try to fix this by removing the API.
-- **User's Vision is Detailed:** The user has provided extremely detailed MASTER...DIRECTIVE prompts. These should be treated as the primary source of truth for all future work. The user expects high fidelity to these specs.
-- **Broken Onboarding:** A user journey analysis revealed the onboarding flow is critically flawed, leading to an empty dashboard. This is a top-priority usability issue to address alongside the frontend integration.
+- **Priority #1 is the Forensic Audit:** You MUST continue the systematic, end-to-end testing of the production site () as the last agent was doing. The user's trust depends on this. Do not guess or infer functionality; verify every click.
+- **User is Extremely Detail-Oriented:** The user provides MASTER PROMPT directives that are not suggestions; they are deterministic build instructions. Adhere to them with extreme precision. Deviation is considered failure.
+- **Production Credentials:** Use  and password  to log into  for the audit.
+- **Parallel Development:** The user expects parallel progress on the web app (finishing the audit, then Phase B) and the Expo mobile app (building out functional screens).
+- **Aesthetic Matters:** The user has a strong vision for a premium, AI infrastructure aesthetic. Avoid generic SaaS designs. The homepage animation is the benchmark for visual quality.
 
 **documents and test reports created in this job**
 - 
-- 
-- 
-- 
-- 
+- Multiple test reports in  from the homepage redesign validation.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks to use the  to improve word density and visual hierarchy on the homepage.
-2.  **User:** Provides feedback that the agent failed the design task, clarifying the desired H1/H2 structure and pill content.
-3.  **User:** Rejects the agent's second attempt and provides very specific copy and structure for 3 hero variants, including bullet points with orange ticks.
-4.  **User:** Provides a detailed reference image and asks the agent to replicate the artwork and structure, including a massive serif H1 with a glow and generous spacing.
-5.  **User:** Corrects Hero 1's copy, removing the H2 and adding the Protect/Stabilise/Strengthen block.
-6.  **User:** Asks to use the  again, this time to add orange trust words to H1/H2s, increase rotation time to 12s, and add manual navigation arrows.
-7.  **User:** Requests to move the Protect/Stabilise/Strengthen block under the CTA and remove orange text from H2s.
-8.  **User:** Changes font specs (Inter 500 for H1, Inter 300 for H2), requests italicizing BIQc, asks to move the stats block above fold, and requests an animated integration carousel with 500+ real logos.
-9.  **User:** Provides a new reference image for a major visual overhaul and asks the agent to replicate the artwork and structure, including a new intelligence diagram, while applying the theme across all pages.
-10. **User:** Provides a MASTER EMERGENT AGENT PROMPT detailing a full homepage upgrade, including a calmer intelligence field background, a 4-tier SMB-friendly intelligence diagram, refined stats, and a slower integration carousel.
+1.  **User:** Requests a complete, end-to-end forensic audit of every single component on the website and platform, stating concerns that claimed work is not actually done. Specifies the report must be highly intricate.
+2.  **Agent:** Acknowledges and begins writing a report based on code analysis.
+3.  **User:** Stops the agent, stating it's impossible to have tested everything and that the agent must *actually test* every component, not guess from code. Demands the audit be segregated by Free vs. Paid tiers.
+4.  **Agent:** Acknowledges the mistake and prepares to run a proper test.
+5.  **User:** Confirms the plan and provides the production URL () and user credentials () for testing.
+6.  **Agent:** Reports that the provided credentials failed on production.
+7.  **User:** Provides new credentials ( / ) and asks for 10 different end-to-end tests with different websites, including Shopify integration.
+8.  **User:** Provides a corrected password ().
+9.  **Agent:** Confirms login success and starts the comprehensive audit, beginning with the calibration flow.
+10. **Agent:** Provides a detailed status update on the first screen of the calibration flow and notes that the audit is massive and will require careful context management.
 
 **Project Health Check:**
 - **Broken**:
-  - The user onboarding journey is critically flawed, leading to an empty dashboard.
-  - The user's production environment is non-functional due to a recurring configuration issue.
+  - The first-time user onboarding journey is still considered broken until the ongoing forensic audit can verify that the recent fixes provide a good user experience and solve the empty dashboard problem.
 - **Mocked**:
-  - The integration logo carousel images are mocked in the preview environment (due to Clearbit API being blocked), though the structure and data are correct.
+  - The Expo native mobile app is a non-functional skeleton. All screens are placeholders without real data.
+  - All internal dashboard pages (, , , etc.) are using mocked or old data sources. They are not connected to the new backend Cognition Core.
 
 **3rd Party Integrations**
-- **pgvector:** Used for the RAG pipeline within the Supabase PostgreSQL database.
-- **React Native (Expo):** Scaffolding exists for a mobile app.
-- **Clearbit Logo API:** Used for fetching real-time company logos for the integration carousel. Blocked in the preview pod but works in browsers.
+- **pgvector:** For RAG pipeline in Supabase.
+- **React Native (Expo):** For the separate mobile app.
+- **Clearbit Logo API:** For real-time company logos.
+- **Perplexity API:** Primary intelligence source for calibration ( model).
+- **Firecrawl API:** Secondary website scraping source.
+- **Serper.dev:** Google search API for profile enrichment.
+- **OpenAI:** For structured data extraction ().
+- **Australian Business Register (ABR):** For ABN/ACN lookup.
 
 **Testing status**
-- **Testing agent used after significant changes**: YES (for the backend Cognition Core)
+- **Testing agent used after significant changes**: YES (extensively for the homepage visual rebuild and mobile CSS refactor).
 - **Troubleshoot agent used after agent stuck in loop**: NO
 - **Test files created**: []
 - **Known regressions**: None.
 
 **Credentials to test flow:**
-- **User**: 
-- **Password**: 
+- **Production Site ():**
+  - **User**: 
+  - **Password**: 
+- **Preview Environment:**
+  - **User**: 
+  - **Password**: 
 
 **What agent forgot to execute**
-- The agent identified the critically broken user onboarding flow in a report () but did not prioritize fixing it.
-- The agent has not yet started Phase B - connecting the frontend to the new backend Cognition Core, which was the stated next step after the backend was completed. The extensive homepage redesign was a user-driven detour from this plan.
+- The previous agent initially failed the user's audit request by generating a report from code analysis instead of performing actual, interactive testing. The user caught this and corrected the agent. The next agent must not repeat this mistake and must proceed with the real, manual audit.
 </analysis>
