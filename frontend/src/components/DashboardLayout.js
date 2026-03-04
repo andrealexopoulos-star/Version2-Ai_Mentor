@@ -14,7 +14,8 @@ import {
   Settings, LogOut, Menu, X, ChevronDown, Shield, User,
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
-  ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical
+  ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
+  BookOpen, Scale, Gavel
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 
@@ -213,6 +214,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
         { icon: Shield, label: 'Support Console', path: '/support-admin' },
         { icon: Activity, label: 'Observability', path: '/observability' },
         { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
+        { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
       ],
     });
   }
@@ -394,20 +396,39 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
             );
           })}
 
-          {/* Legal footer */}
+          {/* BIQc Legal — collapsible section at bottom */}
           {!sidebarCollapsed && (
-            <div className="mt-auto pt-4 pb-2" style={{ borderTop: '1px solid #243140' }}>
-              {[
-                { label: 'BIQc AI Learning Guarantee', path: '/trust/ai-learning-guarantee', bold: true },
-                { label: 'Security & Infrastructure', path: '/trust/security' },
-                { label: 'Trust Centre', path: '/trust/centre' },
-                { label: 'Data Processing Agreement', path: '/trust/dpa' },
-                { label: 'Privacy Policy', path: '/trust/privacy' },
-                { label: 'Terms & Conditions', path: '/terms' },
-                { label: 'Knowledge Base', path: '/knowledge-base' },
-              ].map(({ label, path, bold }) => (
-                <button key={path} onClick={() => navigate(path)} className="text-left text-xs px-3 py-2 rounded-lg w-full transition-colors hover:bg-white/5" style={{ color: '#64748B', fontFamily: BODY, fontWeight: bold ? 600 : 400 }}>{label}</button>
-              ))}
+            <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid #243140' }}>
+              <button
+                onClick={() => setExpandedSection(expandedSection === 'legal' ? null : 'legal')}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-white/5 group"
+                style={{ color: '#64748B' }}
+              >
+                <div className="flex items-center gap-2">
+                  <Scale className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ fontFamily: MONO }}>BIQc Legal</span>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedSection === 'legal' ? 'rotate-180' : ''}`} />
+              </button>
+              {expandedSection === 'legal' && (
+                <div className="mt-1 space-y-0.5">
+                  {[
+                    { label: 'BIQc AI Learning Guarantee', path: '/trust/ai-learning-guarantee', icon: Zap },
+                    { label: 'Security & Infrastructure', path: '/trust/security', icon: Shield },
+                    { label: 'Trust Centre', path: '/trust/centre', icon: Gavel },
+                    { label: 'Data Processing Agreement', path: '/trust/dpa', icon: FileText },
+                    { label: 'Privacy Policy', path: '/trust/privacy', icon: FileText },
+                    { label: 'Terms & Conditions', path: '/terms', icon: Scale },
+                  ].map(({ label, path, icon: Icon }) => (
+                    <button key={path} onClick={() => navigate(path)}
+                      className="flex items-center gap-2 text-left text-[11px] px-3 py-1.5 rounded-lg w-full transition-colors hover:bg-white/5 hover:text-[#9FB0C3]"
+                      style={{ color: '#4A5568', fontFamily: BODY }}>
+                      <Icon className="w-3 h-3 shrink-0" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </nav>

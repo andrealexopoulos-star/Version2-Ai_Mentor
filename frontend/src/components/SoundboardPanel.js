@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText } from 'lucide-react';
+import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText, Zap, Eye } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 
@@ -16,6 +16,10 @@ function isDataQuery(msg) {
   return DATA_KEYWORDS.some(kw => lower.includes(kw));
 }
 
+const SCAN_COOLDOWN_KEY = 'biqc_exposure_scan_last_run';
+const CALIB_DONE_KEY = 'biqc_calibration_complete';
+const SCAN_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -23,18 +27,36 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
+  const [isFirstVisit] = useState(() => {
+    try { return !localStorage.getItem('biqc_soundboard_visited'); } catch { return true; }
+  });
+  const [scanLastRun, setScanLastRun] = useState(() => {
+    try { return parseInt(localStorage.getItem(SCAN_COOLDOWN_KEY) || '0', 10); } catch { return 0; }
+  });
+  const scanCooldownLeft = Math.max(0, SCAN_COOLDOWN_MS - (Date.now() - scanLastRun));
+  const scanDaysLeft = Math.ceil(scanCooldownLeft / (24 * 60 * 60 * 1000));
+  const canRunScan = scanCooldownLeft === 0;
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
   const { session } = useSupabaseAuth();
 
-  // Load conversation history
+  // Load conversation history + show welcome on first visit
   useEffect(() => {
     apiClient.get('/soundboard/conversations').then(res => {
-      setConversations(res.data?.conversations || []);
+      const convs = res.data?.conversations || [];
+      setConversations(convs);
+      // Show welcome message for first-time visitors
+      if (isFirstVisit && convs.length === 0) {
+        setMessages([{
+          role: 'assistant',
+          text: "Welcome to SoundBoard — your AI thinking partner.\n\nI'm here to help you reflect on your business data, explore ideas, and work through strategic decisions. I don't give direct advice — I ask the right questions.\n\nStart by sharing what's on your mind, or use one of the quick-start prompts below.",
+        }]);
+        try { localStorage.setItem('biqc_soundboard_visited', '1'); } catch {}
+      }
     }).catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -177,6 +199,39 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <Plus className="w-4 h-4 text-[#64748B]" />
           </button>
         </div>
+      </div>
+
+      {/* Top Action Buttons — Calibration + Exposure Scan (1/month for free) */}
+      <div className="px-3 pt-2 pb-1.5 shrink-0 space-y-1.5" style={{ borderBottom: '1px solid #1E293B' }}>
+        <a href="/calibration"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all hover:brightness-110"
+          style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: MONO }}>
+          <Zap className="w-3.5 h-3.5 shrink-0" />
+          <span className="flex-1">Complete Calibration</span>
+          <ChevronDown className="w-3 h-3 -rotate-90" />
+        </a>
+        <button
+          onClick={() => {
+            if (canRunScan) {
+              localStorage.setItem(SCAN_COOLDOWN_KEY, String(Date.now()));
+              setScanLastRun(Date.now());
+              window.location.href = '/exposure-scan';
+            }
+          }}
+          disabled={!canRunScan}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all"
+          style={{
+            background: canRunScan ? '#3B82F615' : '#243140',
+            border: `1px solid ${canRunScan ? '#3B82F630' : '#1E293B'}`,
+            color: canRunScan ? '#3B82F6' : '#4A5568',
+            fontFamily: MONO,
+            cursor: canRunScan ? 'pointer' : 'not-allowed',
+          }}
+          data-testid="sb-exposure-scan-btn">
+          <Eye className="w-3.5 h-3.5 shrink-0" />
+          <span className="flex-1">{canRunScan ? 'Run Exposure Scan' : `Exposure Scan (in ${scanDaysLeft}d)`}</span>
+          {!canRunScan && <Clock className="w-3 h-3 opacity-50" />}
+        </button>
       </div>
 
       {/* History dropdown */}

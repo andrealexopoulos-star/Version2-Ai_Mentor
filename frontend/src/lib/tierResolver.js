@@ -6,8 +6,8 @@
 
 const SUPER_ADMIN_EMAIL = 'andre@thestrategysquad.com.au';
 
-const TIERS = ['free', 'starter', 'professional', 'enterprise', 'super_admin'];
-const TIER_RANK = { free: 0, starter: 1, professional: 2, enterprise: 3, super_admin: 99 };
+const TIERS = ['free', 'starter', 'professional', 'growth', 'enterprise', 'super_admin'];
+const TIER_RANK = { free: 0, starter: 1, professional: 2, growth: 3, enterprise: 3, super_admin: 99 };
 
 // Route → minimum tier
 const ROUTE_ACCESS = {
@@ -24,9 +24,10 @@ const ROUTE_ACCESS = {
   '/onboarding': 'free',
   '/onboarding-decision': 'free',
   '/profile-import': 'free',
-  // PAID
-  '/revenue': 'starter',
-  '/operations': 'starter',
+  // PAID — Enterprise tier required (Growth & Enterprise plans)
+  '/revenue': 'enterprise',
+  '/operations': 'enterprise',
+  // PAID — Starter tier
   '/risk': 'starter',
   '/compliance': 'starter',
   '/reports': 'starter',

@@ -1,5 +1,6 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import UpgradeCardsGate from '../components/UpgradeCardsGate';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { Workflow, Zap, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
@@ -22,6 +23,7 @@ const AutomationsPageAuth = () => {
 
   return (
     <DashboardLayout>
+      <UpgradeCardsGate requiredTier="starter" featureName="Automations">
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="automations-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Automations</h1>
@@ -81,6 +83,7 @@ const AutomationsPageAuth = () => {
           </>
         )}
       </div>
+      </UpgradeCardsGate>
     </DashboardLayout>
   );
 };

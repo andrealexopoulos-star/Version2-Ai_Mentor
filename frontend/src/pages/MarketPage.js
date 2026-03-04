@@ -192,6 +192,22 @@ const MarketPage = () => {
         {/* ═══ INTELLIGENCE TAB (existing) ═══ */}
         {/* ═══════════════════════════════════════════════════ */}
         {activeTab === 'intelligence' && <>
+          {/* EXECUTIVE BRIEF — top of page per user request */}
+          {filteredMemo && (
+            <Panel data-testid="brief-section">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-[#FF6A00]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Executive Brief</h2></div>
+                <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: MONO }}>MARKET INTELLIGENCE</span>
+              </div>
+              <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
+              <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid #243140' }}>
+                <span className="text-[10px]" style={{ color: '#64748B', fontFamily: MONO }}>Full reports available under Governance → Reports</span>
+                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: '#FF6A00', fontFamily: MONO }}>
+                  View Reports <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            </Panel>
+          )}
           {filteredMoves.length > 0 && (
             <div style={{ animation: 'snapFade 0.6s ease-out' }} data-testid="focus-section">
               <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: HEAD }}>What To Focus On Next</h2>
@@ -270,17 +286,18 @@ const MarketPage = () => {
             </Panel>
           )}
           <GapsSection channelsData={channelsData} hasCRM={hasCRM} pipeline={pipeline} gapsOpen={gapsOpen} setGapsOpen={setGapsOpen} navigate={navigate} />
-          
-          {/* Engagement Scan */}
-          <EngagementScanCard url={c.website || ''} businessName={c.business_name || ''} location={c.location || ''} />
-          
-          <ForensicCalibrationCard isSuperAdmin={isSuperAdmin} navigate={navigate} />
-          {filteredMemo && (
-            <Panel data-testid="brief-section">
-              <div className="flex items-center gap-2 mb-2"><Zap className="w-3.5 h-3.5 text-[#FF6A00]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Executive Brief</h2></div>
-              <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
-            </Panel>
-          )}
+
+          {/* Forensic Calibration and Exposure Scan blocks moved to Governance → Reports */}
+          <Panel>
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-3.5 h-3.5 text-[#64748B]" />
+              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Reports</h3>
+            </div>
+            <p className="text-xs mb-3" style={{ color: '#64748B', fontFamily: BODY }}>Forensic Calibration and Market Exposure Scan reports have been moved to the Reports section for download as Board-ready PDFs.</p>
+            <button onClick={() => navigate('/reports')} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}>
+              <ArrowRight className="w-3 h-3" /> Go to Governance Reports
+            </button>
+          </Panel>
         </>}
 
         {/* ═══════════════════════════════════════════════════ */}

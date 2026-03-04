@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { BarChart3, Target, TrendingUp, Users, Eye, Loader2, RefreshCw, Plug } from 'lucide-react';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { resolveTier, hasAccess } from '../lib/tierResolver';
+import { BarChart3, Target, TrendingUp, Users, Eye, Loader2, RefreshCw, Plug, Clock, Lock, ArrowRight } from 'lucide-react';
+
+const BENCHMARK_COOLDOWN_KEY = 'biqc_benchmark_last_run';
+const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
@@ -45,10 +50,23 @@ const RadarChart = ({ data }) => {
 };
 
 const MarketingIntelPage = () => {
+  const { user } = useSupabaseAuth();
+  const tier = resolveTier(user);
+  const isPaid = hasAccess(tier, 'starter');
+
   const [benchmark, setBenchmark] = useState(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [competitors, setCompetitors] = useState('');
+
+  // 30-day throttle for free tier
+  const [lastRunAt, setLastRunAt] = useState(() => {
+    try { return parseInt(localStorage.getItem(BENCHMARK_COOLDOWN_KEY) || '0', 10); } catch { return 0; }
+  });
+  const timeUntilNext = Math.max(0, COOLDOWN_MS - (Date.now() - lastRunAt));
+  const daysLeft = Math.ceil(timeUntilNext / (24 * 60 * 60 * 1000));
+  const canRunFree = !isPaid && timeUntilNext === 0;
+  const canRun = isPaid || canRunFree;
 
   useEffect(() => {
     apiClient.get('/marketing/benchmark/latest').then(res => {
@@ -57,11 +75,20 @@ const MarketingIntelPage = () => {
   }, []);
 
   const runBenchmark = async () => {
+    if (!canRun) return;
     setRunning(true);
     try {
       const compList = competitors.split(',').map(c => c.trim()).filter(Boolean);
       const res = await apiClient.post('/marketing/benchmark', { competitors: compList }, { timeout: 120000 });
-      if (res.data?.scores) setBenchmark(res.data);
+      if (res.data?.scores) {
+        setBenchmark(res.data);
+        // Record run time for free tier throttle
+        if (!isPaid) {
+          const now = Date.now();
+          localStorage.setItem(BENCHMARK_COOLDOWN_KEY, String(now));
+          setLastRunAt(now);
+        }
+      }
     } catch {} finally { setRunning(false); }
   };
 
@@ -73,7 +100,13 @@ const MarketingIntelPage = () => {
             <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Marketing Intelligence</h1>
             <p className="text-sm text-[#9FB0C3]">5-pillar competitive benchmark. Evidence-based scoring.</p>
           </div>
-          {benchmark && <button onClick={runBenchmark} disabled={running} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[#64748B] hover:text-[#F4F7FA]" style={{ border: '1px solid #243140' }}><RefreshCw className="w-3 h-3" /> Recalibrate</button>}
+          {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#F4F7FA] disabled:opacity-50" style={{ border: '1px solid #243140', color: canRun ? '#9FB0C3' : '#64748B' }}>
+            {!isPaid && !canRun ? (
+              <><Clock className="w-3 h-3" /> Next scan in {daysLeft}d</>
+            ) : (
+              <><RefreshCw className="w-3 h-3" /> Recalibrate</>
+            )}
+          </button>}
         </div>
 
         {loading && <div className="text-center py-12"><Loader2 className="w-6 h-6 text-[#FF6A00] mx-auto animate-spin" /></div>}
@@ -83,10 +116,36 @@ const MarketingIntelPage = () => {
             <BarChart3 className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
             <h2 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Run Your First Benchmark</h2>
             <p className="text-sm text-[#64748B] mb-4 max-w-md mx-auto">Compare your marketing presence against up to 5 competitors across Brand Visibility, Digital Presence, Content Maturity, Social Engagement, and AI Citation Share.</p>
+            {!isPaid && (
+              <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}>
+                <Clock className="w-3 h-3" style={{ color: '#F59E0B' }} />
+                <span className="text-[11px]" style={{ color: '#F59E0B', fontFamily: MONO }}>Free tier: 1 scan per 30 days</span>
+              </div>
+            )}
             <input value={competitors} onChange={e => setCompetitors(e.target.value)} placeholder="competitor1.com, competitor2.com, competitor3.com" className="w-full h-11 px-4 rounded-xl text-sm mb-3 outline-none" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} />
-            <button onClick={runBenchmark} disabled={running} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50" style={{ background: '#FF6A00' }}>
+            <button onClick={runBenchmark} disabled={running || !canRun} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50" style={{ background: '#FF6A00' }}>
               {running ? 'Benchmarking...' : 'Run Benchmark'}
             </button>
+          </div>
+        )}
+
+        {/* Free tier blocked — 30 day cooldown */}
+        {!isPaid && !canRunFree && benchmark && (
+          <div className="rounded-2xl p-5" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 shrink-0" style={{ color: '#F59E0B' }} />
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>Next free scan available in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#64748B', fontFamily: BODY }}>Free tier includes 1 benchmark scan per 30 days. Upgrade for unlimited scans.</p>
+                </div>
+              </div>
+              <button onClick={() => window.location.href = '/subscribe?plan=starter&from=/marketing-intelligence'}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white shrink-0"
+                style={{ background: '#FF6A00' }}>
+                Upgrade <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
 
