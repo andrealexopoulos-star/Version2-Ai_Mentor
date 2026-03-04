@@ -83,7 +83,8 @@ const OnboardingWizard = () => {
         'products_services', 'unique_value_proposition', 'competitive_advantages',
         'pricing_model', 'team_size', 'hiring_status',
         'short_term_goals', 'long_term_goals',
-        'main_challenges', 'growth_strategy'
+        'main_challenges', 'growth_strategy',
+        'abn', 'acn', 'company_abn', 'phone', 'email', // ← Identity fields from calibration
       ];
       
       for (const field of profileFields) {

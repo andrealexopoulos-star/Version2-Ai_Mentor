@@ -2,84 +2,14 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier, hasAccess } from '../lib/tierResolver';
-import { Check, ArrowRight, Zap, TrendingUp, Rocket, Crown } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
+import { PRICING_TIERS } from '../config/pricingTiers';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
-const PLANS = [
-  {
-    id: 'starter',
-    name: 'Foundation',
-    subtitle: 'Leadership Visibility',
-    price: '$750',
-    color: '#10B981',
-    icon: Zap,
-    cta: 'Get Started',
-    features: [
-      'Live market metrics (with integrations)',
-      'Revenue intelligence',
-      'Workforce baseline monitoring',
-      'Cash discipline visibility',
-      '60-day forecasting',
-    ],
-  },
-  {
-    id: 'professional',
-    name: 'Performance',
-    subtitle: 'Margin & Capacity Discipline',
-    price: '$1,950',
-    color: '#3B82F6',
-    icon: TrendingUp,
-    cta: 'Upgrade to Performance',
-    popular: true,
-    features: [
-      'Everything in Foundation',
-      'Service-line profitability insight',
-      'Hiring trigger detection',
-      'Capacity strain modelling',
-      'Margin compression alerts',
-      'Competitive positioning refinement',
-      '90-day projections',
-    ],
-  },
-  {
-    id: 'enterprise',
-    name: 'Growth',
-    subtitle: 'Strategic Expansion Control',
-    price: '$3,900',
-    color: '#7C3AED',
-    icon: Rocket,
-    cta: 'Upgrade to Growth',
-    features: [
-      'Everything in Performance',
-      'Hiring vs outsource modelling',
-      'Payroll yield analysis',
-      'Revenue expansion simulation',
-      'Market saturation scoring',
-      'Scenario planning capability',
-    ],
-  },
-  {
-    id: 'super_admin',
-    name: 'Enterprise',
-    subtitle: 'Executive Command Layer',
-    price: null,
-    color: '#EF4444',
-    icon: Crown,
-    cta: 'Speak to Sales',
-    features: [
-      'Everything in Growth',
-      'Multi-division reporting',
-      'Custom KPI frameworks',
-      'Governance controls',
-      'Executive reporting automation',
-      'Custom integrations',
-      'Sovereign data options',
-    ],
-  },
-];
+const PLANS = PRICING_TIERS;
 
 export default function UpgradeCardsGate({ children, requiredTier = 'starter', featureName = 'This feature' }) {
   const { user } = useSupabaseAuth();
@@ -114,11 +44,12 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {PLANS.map((plan) => {
+        {PLANS.filter(p => p.id !== 'free').map((plan) => {
           const planRank = currentRankMap[plan.id] || 0;
           const isCurrent = plan.id === tier || (tier === 'growth' && plan.id === 'enterprise');
           const isRecommended = plan.popular;
           const isUpgrade = planRank > currentRank;
+          const ctaLabel = plan.cta || (plan.price ? `Upgrade to ${plan.name}` : 'Speak to Sales');
 
           return (
             <div key={plan.id}
@@ -141,7 +72,7 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
               <div className="w-7 h-1 rounded-full mb-4" style={{ background: plan.color }} />
               <div>
                 <p className="text-base font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: HEAD }}>{plan.name}</p>
-                <p className="text-[11px] mb-4" style={{ color: plan.color, fontFamily: MONO }}>{plan.subtitle}</p>
+                <p className="text-[11px] mb-4" style={{ color: plan.color, fontFamily: MONO }}>{plan.subtitle || ''}</p>
               </div>
               <div className="mb-4">
                 {plan.price ? (
@@ -158,7 +89,7 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
                   fontFamily: BODY,
                 }}
                 onClick={e => { e.stopPropagation(); isUpgrade && handlePlanClick(plan); }}>
-                {plan.cta} {isUpgrade && <ArrowRight className="w-3.5 h-3.5" />}
+                {ctaLabel} {isUpgrade && <ArrowRight className="w-3.5 h-3.5" />}
               </button>
               <div className="space-y-2 flex-1">
                 {plan.features.map((f, i) => (

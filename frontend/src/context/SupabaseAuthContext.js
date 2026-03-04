@@ -212,6 +212,9 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
+      // Clear bootstrap cache on sign-out
+      const userId = session?.user?.id;
+      if (userId) { try { sessionStorage.removeItem(`biqc_auth_bootstrap_${userId}`); } catch {} }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } finally {
@@ -245,6 +248,24 @@ export const SupabaseAuthProvider = ({ children }) => {
     // Token refreshes change the session object but keep the same user ID.
     if (lastBootstrapUserId.current === currentUserId && currentUserId !== null) {
       return;
+    }
+
+    // ── FAST PATH: sessionStorage cache (avoids 3 API calls on full page reload) ──
+    const CACHE_KEY = `biqc_auth_bootstrap_${currentUserId}`;
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    if (currentUserId) {
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { state, onboarding, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CACHE_TTL) {
+            lastBootstrapUserId.current = currentUserId;
+            if (onboarding) setOnboardingStatus(onboarding);
+            setAuthState(state || AUTH_STATE.READY);
+            return; // Instant — no API calls needed
+          }
+        }
+      } catch {}
     }
 
     let cancelled = false;
@@ -341,7 +362,19 @@ export const SupabaseAuthProvider = ({ children }) => {
           if (!cancelled) setOnboardingStatus({ completed: true });
         }
 
-        if (!cancelled) setAuthState(AUTH_STATE.READY);
+        if (!cancelled) {
+          // Cache bootstrap result — avoids 3 API calls on next full page load
+          if (currentUserId) {
+            try {
+              sessionStorage.setItem(`biqc_auth_bootstrap_${currentUserId}`, JSON.stringify({
+                state: AUTH_STATE.READY,
+                onboarding: { completed: true },
+                ts: Date.now(),
+              }));
+            } catch {}
+          }
+          setAuthState(AUTH_STATE.READY);
+        }
 
       } catch (err) {
         console.error('[AUTH BOOTSTRAP ERROR]', err.message);

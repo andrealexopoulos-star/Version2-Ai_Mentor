@@ -211,7 +211,30 @@ export const useCalibrationState = () => {
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
     setError(null); setIsSubmitting(true); setEntry("analyzing");
     try {
-      try { await apiClient.put('/business-profile', { website: url }); } catch {}
+      // Clear potentially contaminated intelligence fields before new calibration scan
+      // This prevents cross-business data bleeding from previous calibrations
+      try {
+        await apiClient.put('/business-profile', {
+          website: url,
+          // Reset all AI-derived intelligence fields — will be repopulated by edge function
+          market_position: null,
+          market_intelligence_data: null,
+          digital_footprint_data: null,
+          cmo_snapshot: null,
+          competitive_analysis: null,
+          brand_positioning: null,
+          industry_position: null,
+          growth_opportunity: null,
+          // Reset identity fields (will be re-extracted from new URL)
+          abn: null, phone: null, address: null,
+          main_products_services: null,
+          unique_value_proposition: null,
+          competitive_advantages: null,
+          target_market: null,
+        });
+      } catch {
+        // Non-fatal — continue with calibration even if reset fails
+      }
 
       const token = session?.access_token;
       let auditData = null;

@@ -4,6 +4,7 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
 import { apiClient } from '../lib/api';
 import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { PRICING_TIERS } from '../config/pricingTiers';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
@@ -16,16 +17,8 @@ const FEATURE_LABELS = {
   '/sop-generator': 'SOP Generator', '/market': 'Market Deep Analysis',
 };
 
-const PLANS = [
-  { id: 'free', name: 'Free', price: '$0', period: '/month', color: '#64748B',
-    features: ['Market Intelligence (basic)', 'Business DNA', '1 Forensic Audit/month', '3 Snapshots/month', 'Email Integration'] },
-  { id: 'starter', name: 'Foundation', price: '$750', period: '/month', color: '#10B981', recommended: false,
-    features: ['Live market metrics', 'Revenue intelligence', 'Workforce baseline monitoring', 'Cash discipline visibility', '60-day forecasting'] },
-  { id: 'professional', name: 'Performance', price: '$1,950', period: '/month', color: '#3B82F6', recommended: true,
-    features: ['Everything in Foundation', 'Service-line profitability insight', 'Hiring trigger detection', 'Capacity strain modelling', 'Soundboard Chat', 'Margin compression alerts', '90-day projections'] },
-  { id: 'enterprise', name: 'Growth', price: '$3,900', period: '/month', color: '#7C3AED', recommended: false,
-    features: ['Everything in Performance', 'Hiring vs outsource modelling', 'Revenue expansion simulation', 'Market saturation scoring', 'Scenario planning capability', 'Board-ready reports'] },
-];
+// Use canonical pricing — excludes 'free' and 'super_admin' from payment plans
+const PLANS = PRICING_TIERS.filter(t => t.id !== 'free' && t.id !== 'super_admin');
 
 const SubscribePage = () => {
   const { user } = useSupabaseAuth();
