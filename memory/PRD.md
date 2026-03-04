@@ -54,7 +54,20 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - Key finding: calibration gate works correctly; test1234 account redirects to calibration (not completed)
 - Key finding: andre@thestrategysquad.com.au credentials not working on production
 
-### SoundBoard File Attachment (Fixed — Mar 2026)
+### Navigation & Access Control System (Complete — Mar 2026)
+- **BIQc Legal collapsible menu**: At bottom of sidebar, collapses/expands like other sections. Items: BIQc AI Learning Guarantee, Security & Infrastructure, Trust Centre, Data Processing Agreement, Privacy Policy, Terms & Conditions
+- **Knowledge Base → moved under Admin menu** (SA-only visible)
+- **Tier Resolver updated**: `/revenue` and `/operations` now require `enterprise` tier. `/reports` changed to `free`. `growth` tier added as alias for enterprise (rank 3).
+- **EnterpriseContactGate**: Wraps Revenue and Operations pages. Non-enterprise users see contact form (auto-filled name/email/business, calendar callback picker, problem description textarea). Submits to `/enterprise/contact-request` backend.
+- **UpgradeCardsGate**: Wraps Automations, Forensic Ingestion Audit, Exposure Scan. Shows 4 pricing plan cards (Foundation $750, Performance $1,950, Growth $3,900, Enterprise Contact Sales) → clicking navigates to /subscribe.
+- **SupportConsolePage enhanced**: Added "Enterprise Leads" tab showing all contact form submissions. Tier dropdown now shows friendly plan names (Foundation/Performance/Growth). Added `loadContacts()` function.
+- **Backend**: `/enterprise/contact-request` + `/enterprise/contact-requests` endpoints in super_admin.py.
+
+### Feature Tier Gates (Complete — Mar 2026)
+- **Marketing Benchmark 30-day timer**: Free tier gets 1 scan/30 days. Timer stored in localStorage. Shows countdown "Next free scan in X days" + upgrade prompt when throttled.
+- **SoundBoard welcome message**: First-time visit shows contextual welcome message. "Complete Calibration" and "Run Exposure Scan" buttons pinned at top of SoundBoard. Exposure scan button shows 30-day cooldown timer.
+- **Market page**: Executive Brief moved to top of Intelligence tab. ForensicCalibration + EngagementScan blocks removed → replaced with "Governance Reports" panel linking to /reports.
+- **Reports page**: `ForensicReportCard` added — shows Forensic Calibration Report and Market Exposure Scan Report with download buttons, "next available on X date" per 30-day cycle for free tier.
 - **SoundboardPanel.js** (the actual SoundBoard widget used on all dashboard pages): Fixed `handleFileSelect` stub to use FileReader — reads text files (.txt, .csv, .md, .json, .py, etc.) and includes content in chat message. Attachment preview strip shows before sending. File download card renders when backend generates a file.
 - **MySoundBoard.js** (full-page `/soundboard`): Same fix — Paperclip button, FileReader, attachment preview, file download display.
 - **FloatingSoundboard.js**: Same implementation added (component exists, currently not mounted on any page).

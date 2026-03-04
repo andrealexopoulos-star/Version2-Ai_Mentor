@@ -30,7 +30,7 @@ const ROUTE_ACCESS = {
   // PAID — Starter tier
   '/risk': 'starter',
   '/compliance': 'starter',
-  '/reports': 'starter',
+  '/reports': 'free',
   '/audit-log': 'starter',
   '/soundboard': 'starter',
   '/war-room': 'starter',
