@@ -21,10 +21,11 @@ const OperationsPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [snapRes, intRes, unifiedRes] = await Promise.allSettled([
+        const [snapRes, intRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/snapshot/latest'),
           apiClient.get('/integrations/merge/connected'),
           apiClient.get('/unified/operations'),
+          apiClient.get('/cognition/operations'),
         ]);
         if (snapRes.status === 'fulfilled' && snapRes.value.data?.cognitive) {
           setSnapshot(snapRes.value.data.cognitive);
@@ -34,6 +35,10 @@ const OperationsPage = () => {
         }
         if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
           setUnifiedOps(unifiedRes.value.data);
+        }
+        // Cognition core data (Phase B)
+        if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
+          setUnifiedOps(prev => ({ ...prev, ...cognitionRes.value.data }));
         }
       } catch {} finally { setLoading(false); }
     };

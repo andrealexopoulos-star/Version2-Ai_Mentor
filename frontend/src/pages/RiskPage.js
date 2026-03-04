@@ -69,6 +69,13 @@ const RiskPage = () => {
     apiClient.get('/unified/risk').then(res => {
       if (res.data) setUnifiedRisk(res.data);
     }).catch(() => {});
+
+    // Cognition core data (Phase B)
+    apiClient.get('/cognition/risk').then(res => {
+      if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
+        setUnifiedRisk(prev => ({ ...prev, ...res.data }));
+      }
+    }).catch(() => {});
   }, []);
 
   const hasCRM = integrations.some(i => i.includes('crm') || i.includes('hubspot'));

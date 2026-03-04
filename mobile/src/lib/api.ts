@@ -5,7 +5,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = 'https://biqc.thestrategysquad.com/api';
+const API_URL = 'https://beta.thestrategysquad.com/api';
 
 const api = axios.create({
   baseURL: API_URL,

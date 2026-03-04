@@ -26,11 +26,12 @@ const RevenuePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dealsRes, finRes, scenRes, unifiedRes] = await Promise.allSettled([
+        const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/integrations/crm/deals'),
           apiClient.get('/integrations/accounting/summary'),
           apiClient.get('/intelligence/scenarios'),
           apiClient.get('/unified/revenue'),
+          apiClient.get('/cognition/revenue'),
         ]);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
           setDeals(dealsRes.value.data.results);
@@ -43,6 +44,10 @@ const RevenuePage = () => {
         }
         if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
           setUnified(unifiedRes.value.data);
+        }
+        // Cognition core data (Phase B) — merge if available
+        if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
+          setUnified(prev => ({ ...prev, ...cognitionRes.value.data }));
         }
       } catch {} finally { setLoading(false); }
     };
