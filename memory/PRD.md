@@ -17,52 +17,28 @@ Transform the BIQc platform into a high-performance, AI-driven "Cognition-as-a-P
 - API endpoint: `/api/cognition/{tab}`
 
 ### Homepage Visual System (Complete — Mar 2026)
+- Canvas-based animated energy galaxy background (contained in hero only)
+- 4 Perlin noise neural threads, 50 ambient particles, 8s convergence glow
+- Hero rotator: 3 variants, 8s auto-rotate, 1.2s fade
+- Integration carousel: 21 SVG brand logos, 25s loop, pause on hover
+- Intelligence diagram: 4-tier flow with animated signals, 6s BIQc core glow
+- Mandatory spacing: headline→sub 24px, sub→CTA 40px, CTA→learning 40px, learning→diagram 80px
 
-#### Motion Architecture (Contained Background Overlay)
-The motion system is a **pure decorative background** that does not affect layout flow.
+### Mobile CSS Migration (Complete — Mar 2026)
+- **Forensic removal**: 11 legacy CSS files (3,138 lines) deleted
+- **Single replacement**: `mobile.css` (~190 lines) — scoped, surgical, no !important wars
+- **Mobile behaviors**: Canvas hidden, arrows hidden, h1=24px, CTA full-width, grids collapse to 1-2 columns
+- **Desktop**: Completely unaffected
 
-**Hero Container:**
-- `min-height: 90vh`, `max-height: 110vh`
-- Canvas inside `.hero-background-canvas` wrapper: `position:absolute, top:0, left:0, width:100%, height:100%, z-index:0, pointer-events:none`
-- Hero content in `.hero-content` wrapper: `position:relative, z-index:2`
-- Content centered: `max-width:1100px, margin:auto, text-align:center`
-
-**Layer 1 — Ambient Intelligence Field:**
-- 50 particles, 1-2px, opacity 0.15-0.4, gaussian blur 2-6px
-- Simplex noise-based drift, 20-30 second cycle
-- Particles drift randomly and fade in/out gradually
-
-**Layer 2 — Neural Signal Network:**
-- 4 threads with Perlin noise distortion, 1.5px stroke
-- Gradient #FF7A18→#FF9C45, outer glow rgba(255,140,40,0.25)
-- Travelling light pulses, 6-10 second cycle, rgba(255,180,80)
-
-**Layer 3 — Platform Convergence Field:**
-- 500px radius radial glow, rgba(255,140,40) at 0.15 opacity
-- 8-second pulse cycle, scale 1.05
-
-#### Hero Spacing (Mandatory)
-- headline → subheadline: 24px
-- subheadline → CTA: 40px
-- CTA → learning statement: 40px
-- learning statement → diagram: 80px
-
-#### Platform Intelligence Diagram
-- 4-tier flow: Business Signals → Watchtower → BIQc → Decision Support
-- Exact text: "What is happening across your systems" / "Continuous monitoring across your tools" / "Business Intelligence Quotient Centre" / "Clear signals that guide leadership decisions"
-- BIQc core glow: `box-shadow: 0 0 40px rgba(255,140,40,0.35), 0 0 80px rgba(255,140,40,0.15)`, 6-second loop
-
-#### Integration Carousel
-- 21 SVG brand logos in cards
-- Card: `background:rgba(255,255,255,0.02), border:1px solid rgba(255,255,255,0.05), border-radius:10px`
-- Hover: `border-color:rgba(255,140,40,0.35)`
-- 25-second loop, pause on hover
-
-#### Page Section Order
-Hero → 80px gap → Diagram → Stats → Integrations → Cognition → CTA → Footer
-
-### Internal Platform (Legacy — Needs Update)
-- RevenuePage, RiskPage, OperationsPage, Advisor, SoundBoard — NOT connected to new Cognition Core
+### Key Files
+- `frontend/src/mobile.css` — Single mobile stylesheet
+- `frontend/src/pages/website/HomePage.js` — Homepage
+- `frontend/src/components/website/EnergyGalaxyBackground.js` — Canvas background
+- `frontend/src/components/website/IntegrationCarousel.js` — Logo carousel
+- `frontend/src/components/website/BrandLogos.js` — SVG brand definitions
+- `frontend/src/components/website/IntelligenceDiagram.js` — Flow diagram
+- `frontend/src/components/website/LiquidSteelHeroRotator.js` — Hero rotator
+- `backend/routes/cognition_contract.py` — Cognition API
 
 ## Prioritized Backlog
 
@@ -76,21 +52,11 @@ Hero → 80px gap → Diagram → Stats → Integrations → Cognition → CTA �
 5. **Weekly Check-in Calendar**
 
 ### P2 — Future
-6. **Mobile App Build-out**
+6. **Mobile App Build-out** (Expo skeleton exists at `/app/mobile/`)
 7. **A/B Testing & Marketing Automation UIs**
 
-## Blocked Items
-- **Production Auth** — `biqc.thestrategysquad.com` misconfigured SUPABASE vars in Azure
-
-## Key Files
-- `frontend/src/pages/website/HomePage.js`
-- `frontend/src/components/website/EnergyGalaxyBackground.js`
-- `frontend/src/components/website/IntegrationCarousel.js`
-- `frontend/src/components/website/BrandLogos.js`
-- `frontend/src/components/website/IntelligenceDiagram.js`
-- `frontend/src/components/website/LiquidSteelHeroRotator.js`
-- `frontend/src/components/website/WebsiteLayout.js`
-- `backend/routes/cognition_contract.py`
+## Blocked
+- **Production Auth** — `biqc.thestrategysquad.com` needs SUPABASE vars in Azure
 
 ## Test Credentials
 - Email: `andre@thestrategysquad.com.au`
