@@ -28,16 +28,19 @@ const StatBlock = ({ value, label }) => (
 
 const HomePage = () => (
   <WebsiteLayout>
-    {/* HERO with full animated galaxy background */}
-    <section className="relative overflow-hidden" style={{ minHeight: '88vh' }} data-testid="hero-section">
+    {/* HERO — constrained container with background motion overlay */}
+    <section className="relative overflow-hidden" style={{ minHeight: '90vh', maxHeight: '110vh', position: 'relative' }} data-testid="hero-section">
       {/* Base dark background */}
-      <div className="absolute inset-0" style={{ background: '#07121E' }} />
+      <div className="absolute inset-0" style={{ background: '#07121E', zIndex: 0 }} />
 
-      {/* Canvas-based animated energy galaxy */}
-      <EnergyGalaxyBackground />
+      {/* Canvas motion — pure background decoration layer */}
+      <div className="hero-background-canvas" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <EnergyGalaxyBackground />
+      </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-28 relative z-10">
-        <div className="text-center">
+      {/* Hero content — above canvas */}
+      <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center', padding: '0 16px' }} className="pt-8 sm:pt-28">
           {/* Trust badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 sm:mb-10" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#FF7A18' }} />
@@ -47,16 +50,16 @@ const HomePage = () => (
           {/* Rotating headline + subheadline */}
           <LiquidSteelHeroRotator />
 
-          {/* CTA */}
-          <div className="hero-cta-block pt-10" style={{ position: 'relative', zIndex: 10 }}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+          {/* CTA — 40px gap from subheadline */}
+          <div style={{ paddingTop: 40, position: 'relative', zIndex: 10 }}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4" style={{ marginBottom: 16 }}>
               <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="hero-cta">
                 Try It For Free <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors mb-10" style={{ fontFamily: MONO, color: '#A6B2C1' }} data-testid="hero-login">Already have an account? Log in</Link>
+            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: MONO, color: '#A6B2C1', marginBottom: 40 }} data-testid="hero-login">Already have an account? Log in</Link>
 
-            {/* Continuously Learning */}
+            {/* Continuously Learning — 40px gap from CTA */}
             <div className="flex flex-col items-center gap-3">
               <span className="text-[12px] sm:text-[14px]" style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.45 }}>Continuously Learning &amp; Designed to</span>
               <div className="flex items-center gap-5 sm:gap-8">

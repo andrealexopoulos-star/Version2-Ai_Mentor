@@ -1,0 +1,144 @@
+{
+  "summary": "Iteration 87: BIQc Homepage Layout Recovery - ALL 15 TESTS PASSED. Verified hero section height constraints (90vh-110vh), canvas containment with z-index:0/pointer-events:none, hero content at z-index:2, 80px gap between hero and diagram, all 7 sections visible in correct order, page scrolling works normally.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "tests_executed": {
+    "hero_section": {
+      "result": "PASS",
+      "tests": [
+        "Hero section (data-testid='hero-section') renders",
+        "Hero height 972px within constraints (90vh=972px, 110vh=1188px)",
+        "Hero height properly constrained with min-height:90vh, max-height:110vh"
+      ]
+    },
+    "canvas_background": {
+      "result": "PASS",
+      "tests": [
+        "Canvas (data-testid='energy-galaxy-bg') renders",
+        "Canvas position:absolute confirmed",
+        "Canvas z-index:0 confirmed",
+        "Canvas pointer-events:none confirmed",
+        "Canvas contained within hero section (972px height matches hero)"
+      ]
+    },
+    "hero_content_layer": {
+      "result": "PASS",
+      "tests": [
+        "Hero content wrapper (.hero-content) has position:relative",
+        "Hero content wrapper has z-index:2 (above canvas)",
+        "Protect/Stabilise/Strengthen block visible with all three words"
+      ]
+    },
+    "page_scrolling": {
+      "result": "PASS",
+      "tests": [
+        "Body overflow-y:auto (NOT hidden)",
+        "HTML overflow-y:scroll",
+        "Page body height: 4843px (scrollable)",
+        "No overflow:hidden blocking scroll"
+      ]
+    },
+    "section_order": {
+      "result": "PASS",
+      "tests": [
+        "Hero section at y=64px",
+        "Intelligence Diagram at y=1116px",
+        "Stats section at y=2183px",
+        "Integration Carousel at y=2451px",
+        "Cognition section at y=2939px",
+        "CTA section at y=3754px",
+        "Website Footer at y=4197px",
+        "All 7 sections present in DOM in correct order"
+      ]
+    },
+    "spacing": {
+      "result": "PASS",
+      "tests": [
+        "80px gap between hero (bottom: 1036px) and diagram (top: 1116px) = 80px"
+      ]
+    },
+    "intelligence_diagram": {
+      "result": "PASS",
+      "tests": [
+        "Intelligence diagram section (data-testid='intelligence-diagram') renders",
+        "Business Signals sublabel: 'What is happening across your systems'",
+        "BIQc core node (data-testid='biqc-core-node') renders",
+        "BIQc core shows 'Business Intelligence Quotient Centre'"
+      ]
+    },
+    "integration_carousel": {
+      "result": "PASS",
+      "tests": [
+        "Integration carousel (data-testid='integration-carousel') renders",
+        "56 SVG elements present (brand logos)"
+      ]
+    },
+    "cta_buttons": {
+      "result": "PASS",
+      "tests": [
+        "Hero CTA button (data-testid='hero-cta') visible and clickable",
+        "Hero CTA navigates to registration page"
+      ]
+    },
+    "navigation": {
+      "result": "PASS",
+      "tests": [
+        "Nav login link (data-testid='nav-login') visible",
+        "Nav get-started button (data-testid='nav-get-started') visible"
+      ]
+    },
+    "footer": {
+      "result": "PASS",
+      "tests": [
+        "Website footer (data-testid='website-footer') visible after scroll"
+      ]
+    },
+    "canvas_containment": {
+      "result": "PASS",
+      "tests": [
+        "Canvas height: 972px matches hero height: 972px",
+        "Canvas does not extend beyond hero section"
+      ]
+    }
+  },
+  "layout_verification": {
+    "hero_constraints": "min-height:90vh (972px), max-height:110vh (1188px) - VERIFIED",
+    "canvas_container": "position:absolute, z-index:0, pointer-events:none inside .hero-background-canvas div - VERIFIED",
+    "hero_content": "position:relative, z-index:2 on .hero-content wrapper - VERIFIED",
+    "body_scroll": "overflow-y:visible !important on body, overflow-y:scroll on html - NO overflow:hidden - VERIFIED",
+    "particle_count": "Reduced to 50 particles (spec: 40-60) - VERIFIED in code",
+    "thread_count": "Reduced to 4 threads (spec: 4) - VERIFIED in code",
+    "gap_measurement": "80px gap between hero and diagram - VERIFIED (1116px - 1036px = 80px)"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Hero section properly constrained with min-height:90vh max-height:110vh",
+    "Canvas in explicit container div with correct z-index and pointer-events",
+    "Hero content wrapper at z-index:2 ensures text is above canvas",
+    "Body has overflow-y:visible !important - page scrolls normally",
+    "All 7 sections render in correct order without layout breaks",
+    "Particle count reduced from 80-120 to 50, thread count from 7 to 4 - more subtle background"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "frontend": "100% (15/15 tests passed)"
+  },
+  "test_credentials": {},
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Layout recovery complete. Key changes verified: 1) Hero constrained to 90vh-110vh, 2) Canvas in explicit container with position:absolute, z-index:0, pointer-events:none, 3) Hero content at z-index:2, 4) Particles reduced to 50, threads to 4, 5) 80px gap between hero and diagram, 6) No body overflow:hidden - page scrolls normally. All sections visible in order: Hero → Diagram → Stats → Integrations → Cognition → CTA → Footer.",
+  "mocked_api_confirmation": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": [],
+    "note": "Homepage is static marketing page - no API calls required"
+  }
+}

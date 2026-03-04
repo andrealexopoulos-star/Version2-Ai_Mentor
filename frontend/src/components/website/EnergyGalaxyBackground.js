@@ -62,32 +62,31 @@ const EnergyGalaxyBackground = () => {
     window.addEventListener('resize', resize);
 
     // ═══ LAYER 1: AMBIENT INTELLIGENCE FIELD ═══
-    // Noise-based drift particles, 80-120 count, 1-3px, fade in/out
-    const PARTICLE_COUNT = 100;
+    // Reduced density — subtle background decoration only
+    const PARTICLE_COUNT = 50;
     const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
       x: Math.random() * (W || 1920),
       y: Math.random() * (H || 900),
-      r: 1 + Math.random() * 2,                   // 1-3px
+      r: 1 + Math.random() * 1,                   // 1-2px
       noiseOffsetX: Math.random() * 1000,
       noiseOffsetY: Math.random() * 1000,
       noiseSpeed: 0.0003 + Math.random() * 0.0004, // 20-30 second cycle
-      alpha: 0.2 + Math.random() * 0.4,            // 0.2-0.6
+      alpha: 0.15 + Math.random() * 0.25,          // 0.15-0.4
       fadePhase: Math.random() * Math.PI * 2,
       fadeSpeed: 0.008 + Math.random() * 0.012,     // gradual fade in/out
       blur: 2 + Math.random() * 4,                  // gaussian 2-6px
     }));
 
     // ═══ LAYER 2: NEURAL SIGNAL NETWORK ═══
-    // Perlin noise distorted threads with travelling light pulses
-    const THREAD_COUNT = 7;
+    // Reduced to 4 threads — must stay in background, not intersect headline
+    const THREAD_COUNT = 4;
     const threads = Array.from({ length: THREAD_COUNT }, (_, ti) => ({
-      // Each thread: 8 control points across the width
       points: Array.from({ length: 8 }, (_, j) => ({
         baseX: (j / 7) * (W || 1920),
-        baseY: (0.15 + (ti / (THREAD_COUNT - 1)) * 0.7) * (H || 900),
+        baseY: (0.12 + (ti / (THREAD_COUNT - 1)) * 0.76) * (H || 900),
         noiseOffset: Math.random() * 500 + ti * 100,
       })),
-      alpha: 0.08 + Math.random() * 0.12,
+      alpha: 0.06 + Math.random() * 0.08,
     }));
 
     // Signal pulses: 6-10 second travel time, rgba(255,180,80) colour
@@ -251,8 +250,15 @@ const EnergyGalaxyBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
-      style={{ pointerEvents: 'none', zIndex: 0 }}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 0,
+        pointerEvents: 'none',
+      }}
       data-testid="energy-galaxy-bg"
     />
   );
