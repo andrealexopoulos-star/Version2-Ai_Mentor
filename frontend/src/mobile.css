@@ -1,0 +1,200 @@
+/*
+ * BIQc Mobile — Single Source of Truth
+ * Scoped. Surgical. No !important wars.
+ * Desktop is UNTOUCHED — all rules inside @media (max-width: 768px)
+ * except scroll fundamentals which are global.
+ */
+
+/* ═══ SCROLL FUNDAMENTALS (global — prevents scroll lock) ═══ */
+html {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  overflow-x: hidden;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: none;
+}
+#root {
+  overflow-x: hidden;
+  overflow-y: visible;
+  height: auto;
+}
+
+/* ═══ MOBILE: 768px and below ═══ */
+@media (max-width: 768px) {
+
+  /* ── Foundation ── */
+  * { -webkit-tap-highlight-color: transparent; }
+  body {
+    -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  img, video, iframe { max-width: 100%; height: auto; }
+
+  /* ── Touch targets: 44px minimum on interactive elements ── */
+  button, [role="button"], a { min-height: 44px; touch-action: manipulation; }
+  input, textarea, select { min-height: 44px; font-size: 16px; /* prevents iOS zoom */ }
+
+  /* ── Website Nav ── */
+  [data-testid="website-nav"] { height: 56px; }
+  [data-testid="website-nav"] .hidden.md\:flex { display: none; }
+
+  /* ── Homepage Hero ── */
+  [data-testid="hero-section"] {
+    min-height: 80vh;
+    max-height: none; /* allow content to determine height */
+  }
+  [data-testid="hero-section"] .hero-content { padding-top: 16px; }
+  [data-testid="hero-section"] .hero-background-canvas { display: none; }
+  /* Hero text sizing */
+  [data-testid="hero-viewport"] {
+    height: auto !important;
+    min-height: 200px !important;
+  }
+  [data-testid="hero-viewport"] h1 {
+    font-size: 24px !important;
+    line-height: 1.18 !important;
+  }
+  [data-testid="hero-viewport"] h2 {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+  }
+  /* Hide hero arrows on mobile — swipe is native */
+  [data-testid="hero-prev"],
+  [data-testid="hero-next"] { display: none; }
+
+  /* ── Hero CTA ── */
+  [data-testid="hero-cta"] {
+    width: 100%;
+    min-height: 48px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  /* ── Industry Benchmarks (inside hero) ── */
+  [data-testid="stats-section"] .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px 8px !important;
+  }
+  [data-testid="stats-section"] .grid > :last-child {
+    grid-column: span 2;
+    text-align: center;
+  }
+
+  /* ── 80px spacer → 40px on mobile ── */
+  [data-testid="hero-section"] + div[style*="height: 80"] {
+    height: 40px !important;
+  }
+
+  /* ── Intelligence Diagram ── */
+  [data-testid="intelligence-diagram"] {
+    padding-top: 32px !important;
+    padding-bottom: 32px !important;
+  }
+  [data-testid="intelligence-diagram"] .sm\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  /* Hide side labels on mobile */
+  [data-testid="intelligence-diagram"] .hidden.sm\:block { display: none; }
+  [data-testid="intelligence-diagram"] .hidden.sm\:flex { display: none; }
+  /* BIQc core node — ensure centered */
+  [data-testid="biqc-core-node"] {
+    margin: 0 auto;
+  }
+
+  /* ── Integration Carousel ── */
+  [data-testid="integration-carousel"] {
+    padding-top: 32px !important;
+    padding-bottom: 32px !important;
+  }
+  [data-testid="integration-carousel"] .logo-card {
+    width: 80px !important;
+    height: 72px !important;
+  }
+  [data-testid="integration-carousel"] .logo-card span {
+    font-size: 8px !important;
+  }
+
+  /* ── Cognition Cards ── */
+  [data-testid="cognition-section"] .md\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── CTA Section ── */
+  [data-testid="cta-section"] { padding: 48px 20px !important; }
+  [data-testid="bottom-cta"] {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  /* ── Footer ── */
+  [data-testid="website-footer"] .grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  /* ── Platform Nav (sidebar) ── */
+  [data-testid="platform-topbar"] { height: 56px; }
+
+  /* ── Auth pages ── */
+  [data-testid="login-submit-btn"],
+  [data-testid="register-submit-btn"] {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 12px;
+  }
+
+  /* ── Advisor page ── */
+  .focus-areas-container {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 16px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .focus-areas-container::-webkit-scrollbar { display: none; }
+  .focus-area-card {
+    flex: 0 0 260px;
+    scroll-snap-align: center;
+  }
+
+  /* ── Calibration page ── */
+  [data-testid="calibration-page"] {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  /* ── Generic grids → single column ── */
+  .md\:grid-cols-3, .md\:grid-cols-4, .lg\:grid-cols-3, .lg\:grid-cols-5 {
+    grid-template-columns: 1fr !important;
+  }
+  .sm\:grid-cols-3 { grid-template-columns: 1fr !important; }
+  .md\:grid-cols-5 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* ── Containers ── */
+  .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl {
+    max-width: 100%;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* ═══ SMALL PHONES: 375px and below ═══ */
+@media (max-width: 375px) {
+  [data-testid="hero-viewport"] h1 {
+    font-size: 21px !important;
+  }
+  [data-testid="integration-carousel"] .logo-card {
+    width: 68px !important;
+    height: 64px !important;
+  }
+}
