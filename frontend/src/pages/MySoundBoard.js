@@ -33,10 +33,20 @@ const MySoundBoard = () => {
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
-  const fetchScanUsage = useCallback(async () => {
+  const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
+      const CACHE_KEY = 'biqc_scan_usage_cache';
+      const CACHE_TTL = 5 * 60 * 1000;
+      if (!forceRefresh) {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CACHE_TTL) { setScanUsage(data); return; }
+        }
+      }
       const res = await apiClient.get('/soundboard/scan-usage');
       setScanUsage(res.data);
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: res.data, ts: Date.now() }));
     } catch {
       setScanUsage({ calibration_complete: false, is_paid: false, exposure_scan: { can_run: true, days_until_next: 0 }, forensic_calibration: { can_run: true, days_until_next: 0 } });
     }
@@ -417,7 +427,8 @@ const MySoundBoard = () => {
                         setRecordingScans(prev => ({ ...prev, exposure_scan: true }));
                         try {
                           await apiClient.post('/soundboard/record-scan', { feature_name: 'exposure_scan' });
-                          await fetchScanUsage();
+                          sessionStorage.removeItem('biqc_scan_usage_cache'); // Invalidate cache
+                          await fetchScanUsage(true); // Force fresh fetch
                         } catch {}
                         setRecordingScans(prev => ({ ...prev, exposure_scan: false }));
                       }

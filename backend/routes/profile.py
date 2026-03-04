@@ -1872,13 +1872,31 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 })
     
-    # Deduplicate notifications by ID
+    # Deduplicate notifications by ID AND by title (catch same-content from different sources)
     seen_ids = set()
+    seen_titles = set()
     unique_notifications = []
+    
+    # Filter out dismissed notifications first
+    try:
+        dismissed = get_sb().table("dismissed_notifications").select("notification_id").eq("user_id", user_id).execute()
+        dismissed_ids = {d["notification_id"] for d in (dismissed.data or [])}
+    except Exception:
+        dismissed_ids = set()
+    
     for notif in notifications:
-        if notif["id"] not in seen_ids:
-            seen_ids.add(notif["id"])
-            unique_notifications.append(notif)
+        nid = notif["id"]
+        title = notif.get("title", "").lower().strip()
+        if nid in dismissed_ids:
+            continue
+        if nid in seen_ids:
+            continue
+        if title and title in seen_titles:
+            continue
+        seen_ids.add(nid)
+        if title:
+            seen_titles.add(title)
+        unique_notifications.append(notif)
     
     # Sort by severity (high first) then by timestamp
     severity_order = {"high": 0, "medium": 1, "low": 2}

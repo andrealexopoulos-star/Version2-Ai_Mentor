@@ -16,6 +16,9 @@ function isDataQuery(msg) {
   return DATA_KEYWORDS.some(kw => lower.includes(kw));
 }
 
+const SCAN_USAGE_CACHE_KEY = 'biqc_scan_usage_cache';
+const SCAN_USAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -34,13 +37,21 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
 
-  // Fetch scan usage from Supabase backend on mount
-  const fetchScanUsage = useCallback(async () => {
+  // Fetch scan usage from Supabase backend on mount — with 5-minute sessionStorage cache
+  const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
+      // Try sessionStorage cache first
+      if (!forceRefresh) {
+        const cached = sessionStorage.getItem(SCAN_USAGE_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < SCAN_USAGE_CACHE_TTL) { setScanUsage(data); return; }
+        }
+      }
       const res = await apiClient.get('/soundboard/scan-usage');
       setScanUsage(res.data);
+      sessionStorage.setItem(SCAN_USAGE_CACHE_KEY, JSON.stringify({ data: res.data, ts: Date.now() }));
     } catch {
-      // Fallback: allow all actions if backend fails
       setScanUsage({ calibration_complete: false, is_paid: false, exposure_scan: { can_run: true, days_until_next: 0 }, forensic_calibration: { can_run: true, days_until_next: 0 } });
     }
   }, []);
@@ -236,7 +247,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   setRecordingScans(prev => ({ ...prev, exposure_scan: true }));
                   try {
                     await apiClient.post('/soundboard/record-scan', { feature_name: 'exposure_scan' });
-                    await fetchScanUsage(); // Refresh usage from Supabase
+                    sessionStorage.removeItem(SCAN_USAGE_CACHE_KEY); // Invalidate cache
+                    await fetchScanUsage(true); // Force fresh fetch
                   } catch {}
                   setRecordingScans(prev => ({ ...prev, exposure_scan: false }));
                 }
