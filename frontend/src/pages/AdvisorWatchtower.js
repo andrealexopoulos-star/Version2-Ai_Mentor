@@ -492,11 +492,11 @@ const AdvisorWatchtower = () => {
               {/* DAILY BRIEF CARD — Proactive intelligence */}
               <DailyBriefCard />
 
-              {/* WELCOME BANNER — shown when no integrations connected */}
-              {connectedIntegrations.length === 0 && <WelcomeBanner owner={owner} />}
+              {/* WELCOME BANNER — shown when no integrations connected AND cognition says none */}
+              {connectedIntegrations.length === 0 && (!cognitionData || !cognitionData.integrations || (!cognitionData.integrations.crm && !cognitionData.integrations.email && !cognitionData.integrations.accounting)) && <WelcomeBanner owner={owner} />}
 
               {/* DAILY SUMMARY — "What changed in 24h" */}
-              {connectedIntegrations.length > 0 && <DailySummary cognitive={cognitive} />}
+              {(connectedIntegrations.length > 0 || (cognitionData?.integrations && (cognitionData.integrations.crm || cognitionData.integrations.email || cognitionData.integrations.accounting))) && <DailySummary cognitive={cognitive} />}
 
               {/* 5 COGNITION TABS */}
               <div className="relative mb-6">

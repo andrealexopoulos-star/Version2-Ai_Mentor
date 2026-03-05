@@ -2,7 +2,7 @@
 BIQc Strategic Advisor — Application Orchestrator.
 Pure routing hub: init → middleware → services → routers. No business logic.
 """
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Depends, Request
 from fastapi.security import HTTPBearer
 import os
 import logging
@@ -109,9 +109,85 @@ voice_router = APIRouter()
 if OPENAI_API_KEY:
     try:
         from emergentintegrations.llm.openai import OpenAIChatRealtime
+        import aiohttp
         voice_chat = OpenAIChatRealtime(api_key=OPENAI_API_KEY)
-        OpenAIChatRealtime.register_openai_realtime_router(voice_router, voice_chat)
-        logger.info("Voice chat initialized successfully")
+
+        @voice_router.post("/realtime/session")
+        async def create_voice_session(request: Request):
+            """Create realtime session WITH business context instructions."""
+            from routes.deps import get_current_user
+            from supabase_intelligence_helpers import get_business_profile_supabase
+            from routes.deps import get_sb as deps_get_sb
+
+            # Try to get user context for instructions
+            instructions = "You are a Strategic Intelligence Advisor for an Australian business. Be direct, specific, and reference the user's business data. Never give generic advice."
+            try:
+                auth_header = request.headers.get("Authorization", "")
+                if auth_header.startswith("Bearer "):
+                    token = auth_header[7:]
+                    from supabase_client import init_supabase
+                    import supabase_client
+                    init_supabase()
+                    admin = supabase_client.supabase_admin
+                    if admin:
+                        user_resp = admin.auth.get_user(token)
+                        if user_resp and user_resp.user:
+                            user_id = user_resp.user.id
+                            # Direct profile query (sync)
+                            profile_result = admin.table('business_profiles').select(
+                                'business_name,industry,revenue_range,team_size,main_challenges,short_term_goals,competitive_advantages,market_position'
+                            ).eq('user_id', user_id).execute()
+                            profile = profile_result.data[0] if profile_result.data else None
+                        if profile:
+                            biz_name = profile.get('business_name', 'their business')
+                            industry = profile.get('industry', '')
+                            revenue = profile.get('revenue_range', '')
+                            team = profile.get('team_size', '')
+                            challenges = profile.get('main_challenges', '')
+                            goals = profile.get('short_term_goals', '')
+                            instructions = f"""You are a Strategic Intelligence Advisor inside BIQc, speaking with the owner of {biz_name}.
+
+Business: {biz_name}
+Industry: {industry}
+Revenue: {revenue}
+Team: {team}
+Challenges: {challenges}
+Goals: {goals}
+
+Rules:
+- Be direct and specific. Reference their business name, numbers, and industry.
+- You have access to their business intelligence platform data. Use it.
+- Never say you can't access their data. You ARE their intelligence system.
+- Give concrete recommendations with timeframes.
+- Speak like a trusted senior advisor at a working dinner."""
+            except Exception as e:
+                logger.debug(f"Voice session context: {e}")
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    "https://api.openai.com/v1/realtime/sessions",
+                    headers={
+                        "Authorization": f"Bearer {OPENAI_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "gpt-4o-realtime-preview-2024-12-17",
+                        "voice": "verse",
+                        "instructions": instructions,
+                    }
+                ) as response:
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse(content=await response.json())
+
+        @voice_router.post("/realtime/negotiate")
+        async def negotiate_voice(request: Request):
+            """Handles WebRTC negotiation."""
+            sdp_offer = await request.body()
+            sdp_answer = await voice_chat.negotiate_connection(sdp_offer.decode())
+            from fastapi.responses import JSONResponse
+            return JSONResponse(content={"sdp": sdp_answer})
+
+        logger.info("Voice chat initialized with context-aware sessions")
     except Exception as e:
         logger.error(f"Failed to initialize voice chat: {e}")
 
