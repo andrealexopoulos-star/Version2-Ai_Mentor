@@ -576,29 +576,29 @@ class MergeEmissionLayer:
         }
 
     async def _persist_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Persist observation event. Uses INSERT (not upsert) for compatibility."""
         try:
-            # Try fingerprint-based upsert first (requires migration)
-            result = self.supabase.table("observation_events").upsert(
-                event, on_conflict="user_id,fingerprint", ignore_duplicates=True
-            ).execute()
+            # Remove fingerprint if table doesn't support it
+            event_clean = {k: v for k, v in event.items() if v is not None}
+            result = self.supabase.table("observation_events").insert(event_clean).execute()
             if result.data:
-                logger.info(f"[emission] {event['signal_name']} emitted for {event['domain']}")
+                logger.info(f"[emission] {event['signal_name']} emitted for {event.get('domain','?')}")
                 return result.data[0]
-            else:
-                logger.debug(f"[emission] {event['signal_name']} duplicate skipped")
-                return event
+            return event_clean
         except Exception as e:
-            # Fallback: if fingerprint column missing, insert without it
-            if "fingerprint" in str(e):
+            err = str(e)
+            # If fingerprint column doesn't exist, retry without it
+            if "fingerprint" in err or "column" in err:
                 try:
-                    event_copy = {k: v for k, v in event.items() if k != "fingerprint"}
-                    result = self.supabase.table("observation_events").insert(event_copy).execute()
-                    logger.info(f"[emission] {event['signal_name']} emitted (no fingerprint)")
-                    return result.data[0] if result.data else event_copy
+                    event_safe = {k: v for k, v in event.items() if k != "fingerprint" and v is not None}
+                    result = self.supabase.table("observation_events").insert(event_safe).execute()
+                    if result.data:
+                        logger.info(f"[emission] {event['signal_name']} emitted (no fingerprint)")
+                        return result.data[0]
                 except Exception as e2:
                     logger.error(f"[emission] Fallback persist failed: {e2}")
-                    return event
-            logger.error(f"[emission] Persist failed for {event['signal_name']}: {e}")
+            else:
+                logger.error(f"[emission] Persist failed for {event.get('signal_name','?')}: {err[:120]}")
             return event
 
     async def _get_account_tokens(self, account_id: str) -> Dict[str, str]:

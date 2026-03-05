@@ -28,6 +28,7 @@ supabase_admin = init_supabase()
 watchtower_store = init_watchtower_store(supabase_admin)
 
 DAILY_SCAN_INTERVAL = 86400
+EMISSION_INTERVAL = 900  # 15 minutes
 WEEKLY_SYNTHESIS_DAY = 0
 
 
@@ -120,27 +121,63 @@ async def weekly_synthesis():
 
 async def intelligence_loop():
     """Main automatic intelligence loop"""
-    logger.info("🚀 Automatic Intelligence Worker Started")
-    logger.info("📅 Daily Scan: Every 24 hours")
-    logger.info("📊 Weekly Synthesis: Aligned to progress_cadence")
+    logger.info("Automatic Intelligence Worker Started")
+    logger.info("Emission Cycle: Every 15 minutes")
+    logger.info("Daily Scan: Every 24 hours")
+    
+    last_daily = datetime.min.replace(tzinfo=timezone.utc)
     
     while True:
         try:
-            logger.info("=" * 60)
-            logger.info(f"Intelligence cycle at {datetime.now(timezone.utc).isoformat()}")
+            now = datetime.now(timezone.utc)
             
-            await daily_intelligence_scan()
+            # ═══ EMISSION CYCLE (every 15 min) ═══
+            logger.info(f"[EMISSION_SCHEDULER] Running emission cycle at {now.isoformat()}")
+            try:
+                from merge_client import MergeClient
+                from merge_emission_layer import MergeEmissionLayer
+                
+                merge_key = os.environ.get("MERGE_API_KEY")
+                if merge_key:
+                    merge = MergeClient(merge_api_key=merge_key)
+                    emission = MergeEmissionLayer(supabase_client=supabase_admin, merge_client=merge)
+                    
+                    # Get all users with integration accounts
+                    accounts = supabase_admin.table("integration_accounts").select(
+                        "user_id, account_id"
+                    ).execute()
+                    
+                    seen = set()
+                    emitted_total = 0
+                    for acc in (accounts.data or []):
+                        key = (acc["user_id"], acc["account_id"])
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        try:
+                            result = await emission.run_emission(acc["user_id"], acc["account_id"])
+                            emitted_total += result.get("signals_emitted", 0)
+                            logger.info(f"[EMISSION_SCHEDULER] user={acc['user_id'][:8]}... signals={result.get('signals_emitted',0)}")
+                        except Exception as e:
+                            logger.error(f"[EMISSION_SCHEDULER] user={acc['user_id'][:8]}... error={e}")
+                    
+                    logger.info(f"[EMISSION_SCHEDULER] Complete: {emitted_total} signals emitted for {len(seen)} workspaces")
+                else:
+                    logger.warning("[EMISSION_SCHEDULER] MERGE_API_KEY not set — skipping")
+            except Exception as e:
+                logger.error(f"[EMISSION_SCHEDULER] Error: {e}")
             
-            if datetime.now(timezone.utc).weekday() == WEEKLY_SYNTHESIS_DAY:
-                await weekly_synthesis()
-            
-            logger.info("✅ Intelligence cycle complete")
-            logger.info("=" * 60)
+            # ═══ DAILY SCAN (once per 24h) ═══
+            if (now - last_daily).total_seconds() >= DAILY_SCAN_INTERVAL:
+                await daily_intelligence_scan()
+                if now.weekday() == WEEKLY_SYNTHESIS_DAY:
+                    await weekly_synthesis()
+                last_daily = now
             
         except Exception as e:
             logger.error(f"Intelligence loop error: {e}")
         
-        await asyncio.sleep(DAILY_SCAN_INTERVAL)
+        await asyncio.sleep(EMISSION_INTERVAL)
 
 
 if __name__ == "__main__":
