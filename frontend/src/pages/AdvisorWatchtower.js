@@ -7,6 +7,9 @@ import { CognitiveLoadingScreen } from '../components/CognitiveLoadingScreen';
 import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2, Plug, ArrowRight, Zap } from 'lucide-react';
 
 import DataConfidence from '../components/DataConfidence';
+import { DailyBriefCard, DailyBriefBanner } from '../components/DailyBriefCard';
+import { trackEvent, EVENTS } from '../lib/analytics';
+import { trackPageRender } from '../lib/telemetry';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const MONO = "'JetBrains Mono', monospace";
@@ -376,6 +379,9 @@ const AdvisorWatchtower = () => {
         setCognitionData(res.data);
       }
     }).catch(() => {});
+    // Analytics: track dashboard view
+    trackEvent(EVENTS.DASHBOARD_VIEW, { page: 'advisor' });
+    trackPageRender('advisor');
   }, []);
 
   // Parse system state (handle both string and object formats)
@@ -482,6 +488,9 @@ const AdvisorWatchtower = () => {
                 cognitionConf={cognitionConfidence}
                 indices={instabilityIndices}
               />
+
+              {/* DAILY BRIEF CARD — Proactive intelligence */}
+              <DailyBriefCard />
 
               {/* WELCOME BANNER — shown when no integrations connected */}
               {connectedIntegrations.length === 0 && <WelcomeBanner owner={owner} />}

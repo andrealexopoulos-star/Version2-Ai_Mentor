@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { getBackendUrl } from '../config/urls';
+import { trackEvent, identifyUser, EVENTS } from '../lib/analytics';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -96,6 +97,8 @@ export const SupabaseAuthProvider = ({ children }) => {
           const isNewLogin = lastBootstrapUserId.current !== session.user.id;
           if (isNewLogin) {
             setAuthState(AUTH_STATE.LOADING);
+            trackEvent(EVENTS.USER_LOGIN, { method: 'supabase' });
+            identifyUser(session.user.id, { email: session.user.email });
           }
         }
         fetchUserProfile(session.user.id, session);

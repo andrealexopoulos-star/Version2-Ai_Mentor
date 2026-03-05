@@ -22,29 +22,24 @@ const GlassCard = ({ children, className = '' }) => (
 const StatBlock = ({ value, label }) => (
   <div className="text-center">
     <div className="text-[36px] sm:text-[42px] font-bold mb-2" style={{ fontFamily: MONO, color: '#FF7A18' }}>{value}</div>
-    <div className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.6 }}>{label}</div>
+    <div className="tracking-widest uppercase" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.6, fontSize: '12px' }}>{label}</div>
   </div>
 );
 
 const HomePage = () => (
   <WebsiteLayout>
     {/* HERO — constrained container with background motion overlay */}
-    <section className="relative overflow-hidden" style={{ minHeight: '90vh', maxHeight: '110vh', position: 'relative' }} data-testid="hero-section">
+    <section className="relative overflow-hidden" style={{ minHeight: '80vh', maxHeight: '100vh', position: 'relative' }} data-testid="hero-section">
       {/* Base dark background */}
       <div className="absolute inset-0" style={{ background: '#07121E', zIndex: 0 }} />
 
-      {/* Canvas motion — pure background decoration layer */}
-      <div className="hero-background-canvas" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <EnergyGalaxyBackground />
-      </div>
-
-      {/* Hero content — above canvas */}
+      {/* Hero content — above background */}
       <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center', padding: '0 16px' }} className="pt-8 sm:pt-28">
           {/* Trust badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 sm:mb-10" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#FF7A18' }} />
-            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18' }}>Australian Owned &amp; Operated</span>
+            <span className="font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>Australian Owned &amp; Operated</span>
           </div>
 
           {/* Rotating headline + subheadline */}
@@ -57,7 +52,7 @@ const HomePage = () => (
                 Try It For Free <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: MONO, color: '#A6B2C1', marginBottom: 40 }} data-testid="hero-login">Already have an account? Log in</Link>
+            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: MONO, color: '#A6B2C1', marginBottom: 24 }} data-testid="hero-login">Already have an account? Log in</Link>
 
             {/* Continuously Learning — 40px gap from CTA */}
             <div className="flex flex-col items-center gap-3">
@@ -66,17 +61,17 @@ const HomePage = () => (
                 {['Protect', 'Stabilise', 'Strengthen'].map((word) => (
                   <div key={word} className="flex items-center gap-1.5 sm:gap-2">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF7A18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-[14px] sm:text-[18px] font-bold" style={{ fontFamily: BODY, color: '#FF7A18' }}>{word}</span>
+                    <span className="text-[14px] sm:text-[18px] font-medium" style={{ fontFamily: BODY, color: '#FF7A18' }}>{word}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <p className="mt-6 text-[11px]" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3 }}>No credit card required &middot; Australian owned & operated</p>
+            <p className="mt-6" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3, fontSize: '12px' }}>No credit card required &middot; Australian owned & operated</p>
 
             {/* Industry Benchmarks — inside hero, before diagram */}
-            <div className="mt-12 sm:mt-16" data-testid="stats-section">
-              <p className="text-[10px] sm:text-xs font-medium tracking-widest uppercase mb-6" style={{ fontFamily: MONO, color: '#FF7A18' }}>Industry Benchmarks</p>
+            <div className="mt-8 sm:mt-12" data-testid="stats-section">
+              <p className="font-medium tracking-widest uppercase mb-6" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>Industry Benchmarks</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 max-w-4xl mx-auto">
                 <StatBlock value="40%" label="Operational Improvement" />
                 <StatBlock value="50%" label="Reduced Manual Work" />
@@ -91,8 +86,8 @@ const HomePage = () => (
       </div>
     </section>
 
-    {/* 80px gap: hero → platform diagram */}
-    <div style={{ background: '#07121E', height: 80 }} />
+    {/* gap: hero → platform diagram */}
+    <div style={{ background: '#07121E', height: 20 }} />
 
     {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
     <div style={{ background: '#07121E' }}>
@@ -105,14 +100,14 @@ const HomePage = () => (
     </div>
 
     {/* WHAT COGNITION DELIVERS */}
-    <section className="py-20 sm:py-28" style={{ background: '#07121E' }} data-testid="cognition-section">
+    <section className="py-14 sm:py-20" style={{ background: '#07121E' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="mb-14 sm:mb-16">
+        <div className="mb-10 sm:mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
             <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18' }}>What Cognition-as-a-Service Delivers</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
+          <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
           <p className="text-base max-w-xl" style={{ fontFamily: BODY, color: '#A6B2C1' }}>Businesses embedding AI-driven decision systems experience:</p>
@@ -140,9 +135,9 @@ const HomePage = () => (
     </section>
 
     {/* CTA */}
-    <section className="py-20 sm:py-28" style={{ background: '#0A1520' }} data-testid="cta-section">
+    <section className="py-14 sm:py-20" style={{ background: '#0A1520' }} data-testid="cta-section">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
+        <h2 className="text-2xl sm:text-3xl font-medium mb-4" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
           Stop reacting. Start <span style={{ color: '#FF7A18' }}>preventing.</span>
         </h2>
         <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: BODY, color: '#A6B2C1' }}>
@@ -151,7 +146,7 @@ const HomePage = () => (
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4 text-[11px]" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3 }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
   </WebsiteLayout>

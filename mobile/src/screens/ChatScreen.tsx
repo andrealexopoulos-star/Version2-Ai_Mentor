@@ -32,9 +32,10 @@ export default function ChatScreen() {
     try {
       const res = await api.post('/soundboard/chat', {
         message: text,
+        conversation_id: null,
         session_id: sessionId,
       });
-      const reply = res.data?.reply || res.data?.response || 'No response received.';
+      const reply = res.data?.reply || res.data?.response || res.data?.message || 'No response received.';
       const assistantMsg: Message = { id: `a-${Date.now()}`, role: 'assistant', text: reply, timestamp: Date.now() };
       setMessages(prev => [...prev, assistantMsg]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

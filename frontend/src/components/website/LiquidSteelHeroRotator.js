@@ -9,7 +9,7 @@ const RichText = ({ text, style }) => {
   return (
     <span style={style}>
       {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) return <span key={i} style={{ color: '#FF7A18' }}>{part.slice(2, -2)}</span>;
+        if (part.startsWith('**') && part.endsWith('**')) return <span key={i} style={{ color: '#FF7A18', fontWeight: 500 }}>{part.slice(2, -2)}</span>;
         if (part.startsWith('//') && part.endsWith('//')) return <em key={i} style={{ fontStyle: 'italic' }}>{part.slice(2, -2)}</em>;
         return <span key={i}>{part}</span>;
       })}
@@ -19,15 +19,15 @@ const RichText = ({ text, style }) => {
 
 const VARIANTS = [
   {
-    h1: '//BIQc// — A Single **Stability Engine** Across All Departments & Tools',
+    h1: 'A Single **Intelligence Layer** Across All Business Systems',
     h2: 'Unify fragmented business tools, data and departments into structured decision ready intelligence',
   },
   {
-    h1: '**Integrate** your Financial, Operational, Sales & Marketing Systems Into **One Intelligence Layer**',
+    h1: 'Turn Disconnected Systems Into **One Intelligence Platform**',
     h2: '//BIQc// connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
   },
   {
-    h1: '//BIQc// — **Intelligence** Above Your Systems',
+    h1: '//BIQc// - The **Intelligence Layer** Above Your Systems',
     h2: 'Detect instability, constantly learning from every past and present to strengthen your business decisions',
   },
 ];
@@ -54,8 +54,8 @@ const HeroLayer = ({ variant, phase, zIndex }) => {
       willChange: 'opacity', pointerEvents: phase === 'current-static' ? 'auto' : 'none',
       ...layerStyle,
     }}>
-      <h1 className="text-[26px] sm:text-[40px] lg:text-[52px] leading-[1.12] mb-6 tracking-tight max-w-[900px] mx-auto px-4"
-        style={{ fontFamily: INTER, fontWeight: 500, color: '#E6EEF7', textShadow: '0 2px 20px rgba(255,255,255,0.08)' }}>
+      <h1 className="text-[24px] sm:text-[36px] lg:text-[46px] leading-[1.15] mb-6 tracking-tight max-w-[900px] mx-auto px-4"
+        style={{ fontFamily: INTER, fontWeight: 400, color: '#E6EEF7' }}>
         <RichText text={variant.h1} />
       </h1>
       {variant.h2 && (

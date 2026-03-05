@@ -7,6 +7,7 @@ import { useTutorial, HelpButton, TutorialModal } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
 import MobileNav from './MobileNav';
 import SoundboardPanel from './SoundboardPanel';
+import { DailyBriefBanner } from './DailyBriefCard';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from './ui/dropdown-menu';
@@ -15,7 +16,7 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
   ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
-  BookOpen, Scale, Gavel
+  BookOpen, Scale, Gavel, Target
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 
@@ -175,10 +176,12 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const navSections = [
     { id: 'intelligence', label: 'Intelligence', items: [
       { icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true },
+      { icon: Target, label: 'Decisions', path: '/decisions' },
       { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
       { icon: Settings, label: 'Operations', path: '/operations' },
       { icon: AlertTriangle, label: 'Risk', path: '/risk' },
       { icon: Radar, label: 'Market & Positioning', path: '/market' },
+      { icon: BarChart3, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
     ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Bell, label: 'Alerts', path: '/alerts' },
@@ -400,7 +403,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                       const showBadge = item.showBadge && notifications.total > 0;
                       return (
                         <button key={item.path} onClick={() => { navigate(item.path); closeAll(); }}
-                          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all"
+                          className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
                           style={{
                             fontFamily: BODY,
                             color: active ? '#F4F7FA' : '#9FB0C3',
@@ -457,6 +460,9 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           )}
         </nav>
       </aside>
+
+      {/* Daily Brief Banner — shows once per day on login */}
+      <DailyBriefBanner onOpen={() => navigate('/soundboard')} />
 
       {/* Mobile Overlay */}
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}

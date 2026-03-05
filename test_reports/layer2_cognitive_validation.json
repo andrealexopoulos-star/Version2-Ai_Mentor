@@ -1,0 +1,44 @@
+{
+  "section_7_ai_quality": {
+    "overall_ai_score": 8.76,
+    "threshold": 8,
+    "pass": true,
+    "category_scores": {
+      "strategy": 8.94,
+      "risk_analysis": 8.75,
+      "competitive_intelligence": 8.53,
+      "pricing_analysis": 8.88,
+      "market_positioning": 8.84,
+      "operational_diagnostics": 8.12
+    },
+    "total_prompts": 42
+  },
+  "section_8_hallucination": {
+    "hallucination_rate_percent": 0.0,
+    "threshold_percent": 2,
+    "pass": true,
+    "total_prompts": 10,
+    "hallucinated": 0,
+    "correctly_refused": 10
+  },
+  "section_9_cognitive_drift": {
+    "drift_tests": [
+      {
+        "prompt": "What expansion risks exist for Campos Coffee?",
+        "similarity": 0.19,
+        "pass": false
+      },
+      {
+        "prompt": "What are the main competitive threats to Campos Coffee?",
+        "similarity": 0.152,
+        "pass": false
+      },
+      {
+        "prompt": "How should Campos Coffee approach customer retention?",
+        "similarity": 0.194,
+        "pass": false
+      }
+    ],
+    "all_pass": false
+  }
+}

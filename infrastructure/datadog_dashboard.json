@@ -1,0 +1,113 @@
+{
+  "title": "BIQc Platform Monitoring Dashboard",
+  "description": "Pre-launch monitoring dashboard definition for Datadog",
+  "widgets": [
+    {
+      "title": "API Request Rate",
+      "type": "timeseries",
+      "query": "sum:trace.fastapi.request.hits{service:biqc-backend}.as_rate()",
+      "position": {"x": 0, "y": 0, "width": 6, "height": 3}
+    },
+    {
+      "title": "API Latency P50/P95/P99",
+      "type": "timeseries",
+      "queries": [
+        "avg:trace.fastapi.request.duration{service:biqc-backend}.rollup(avg)",
+        "p95:trace.fastapi.request.duration{service:biqc-backend}",
+        "p99:trace.fastapi.request.duration{service:biqc-backend}"
+      ],
+      "thresholds": {
+        "p95_warning": 500,
+        "p99_critical": 800
+      },
+      "position": {"x": 6, "y": 0, "width": 6, "height": 3}
+    },
+    {
+      "title": "Error Rate",
+      "type": "timeseries",
+      "query": "sum:trace.fastapi.request.errors{service:biqc-backend}.as_rate() / sum:trace.fastapi.request.hits{service:biqc-backend}.as_rate() * 100",
+      "thresholds": {"warning": 1, "critical": 5},
+      "position": {"x": 0, "y": 3, "width": 4, "height": 3}
+    },
+    {
+      "title": "AI Inference Latency",
+      "type": "timeseries",
+      "query": "avg:biqc.ai.inference_latency_ms{endpoint:soundboard/chat}",
+      "thresholds": {"warning": 3000, "critical": 5000},
+      "position": {"x": 4, "y": 3, "width": 4, "height": 3}
+    },
+    {
+      "title": "Active Users (Real-time)",
+      "type": "query_value",
+      "query": "count_not_null:trace.fastapi.request.hits{service:biqc-backend}.rollup(count, 60)",
+      "position": {"x": 8, "y": 3, "width": 4, "height": 3}
+    },
+    {
+      "title": "Database Connection Pool",
+      "type": "timeseries",
+      "queries": [
+        "avg:postgresql.connections.active{host:supabase}",
+        "avg:postgresql.connections.idle{host:supabase}",
+        "avg:postgresql.connections.max{host:supabase}"
+      ],
+      "position": {"x": 0, "y": 6, "width": 6, "height": 3}
+    },
+    {
+      "title": "CPU & Memory Usage",
+      "type": "timeseries",
+      "queries": [
+        "avg:system.cpu.user{service:biqc-backend}",
+        "avg:system.mem.used{service:biqc-backend} / avg:system.mem.total{service:biqc-backend} * 100"
+      ],
+      "thresholds": {"warning": 70, "critical": 90},
+      "position": {"x": 6, "y": 6, "width": 6, "height": 3}
+    },
+    {
+      "title": "Hallucination Monitor",
+      "type": "query_value",
+      "query": "avg:biqc.ai.hallucination_rate{service:biqc-backend}",
+      "thresholds": {"critical": 2},
+      "position": {"x": 0, "y": 9, "width": 3, "height": 2}
+    },
+    {
+      "title": "Cross-Tenant Access Attempts",
+      "type": "query_value",
+      "query": "sum:biqc.security.cross_tenant_attempts{service:biqc-backend}.rollup(sum, 3600)",
+      "thresholds": {"critical": 1},
+      "position": {"x": 3, "y": 9, "width": 3, "height": 2}
+    },
+    {
+      "title": "Queue Depth (Background Jobs)",
+      "type": "timeseries",
+      "query": "avg:biqc.queue.depth{service:biqc-backend}",
+      "thresholds": {"warning": 100, "critical": 500},
+      "position": {"x": 6, "y": 9, "width": 6, "height": 2}
+    }
+  ],
+  "alerts": [
+    {
+      "name": "BIQc API Error Rate High",
+      "condition": "error_rate > 1% for 5 minutes",
+      "severity": "critical",
+      "notification": ["pagerduty", "slack:#biqc-alerts"]
+    },
+    {
+      "name": "BIQc AI Inference Slow",
+      "condition": "ai_inference_p95 > 5000ms for 5 minutes",
+      "severity": "warning",
+      "notification": ["slack:#biqc-alerts"]
+    },
+    {
+      "name": "BIQc Cross-Tenant Access",
+      "condition": "cross_tenant_attempts > 0",
+      "severity": "critical",
+      "notification": ["pagerduty", "slack:#biqc-security", "email:security@thestrategysquad.com"]
+    },
+    {
+      "name": "BIQc Hallucination Rate",
+      "condition": "hallucination_rate > 2%",
+      "severity": "critical",
+      "notification": ["pagerduty", "slack:#biqc-ai-quality"]
+    }
+  ]
+}

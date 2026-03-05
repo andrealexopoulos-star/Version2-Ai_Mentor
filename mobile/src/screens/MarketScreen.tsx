@@ -1,28 +1,31 @@
 /**
  * BIQc Mobile — Market Screen
+ * Thin client: Fetches from /api/cognition/market only.
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../theme';
-import { Card, MetricCard, SectionHeader, LoadingScreen, StatusBadge, EmptyState } from '../components/ui';
+import { Card, SectionHeader, LoadingScreen, EmptyState } from '../components/ui';
 import api from '../lib/api';
 
 export default function MarketScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [market, setMarket] = useState<any>(null);
   const [snapshot, setSnapshot] = useState<any>(null);
-  const [pressure, setPressure] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [snapRes, pressRes] = await Promise.allSettled([
+      const [marketRes, snapRes] = await Promise.allSettled([
+        api.get('/cognition/market'),
         api.get('/snapshot/latest'),
-        api.get('/intelligence/pressure'),
       ]);
+      if (marketRes.status === 'fulfilled' && marketRes.value.data?.status !== 'MIGRATION_REQUIRED') {
+        setMarket(marketRes.value.data);
+      }
       if (snapRes.status === 'fulfilled') setSnapshot(snapRes.value.data?.cognitive);
-      if (pressRes.status === 'fulfilled') setPressure(pressRes.value.data);
     } catch {} finally { setLoading(false); }
   }, []);
 
@@ -35,65 +38,78 @@ export default function MarketScreen() {
     setRefreshing(false);
   }, [fetchData]);
 
-  if (loading) return <LoadingScreen message="Loading market signals..." />;
+  if (loading) return <LoadingScreen message="Loading market intelligence..." />;
 
   const c = snapshot || {};
-  const mi = c.market_intelligence || {};
-  const ap = c.action_plan || {};
-  const moves = ap.top_3_marketing_moves || [];
+  const competitors = c.competitive_landscape?.competitors || [];
+  const positioning = c.market_intelligence?.market_position || c.market_intelligence?.positioning;
+  const digitalScore = c.digital_footprint?.score;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.brand} />}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={styles.title}>Market Intelligence</Text>
 
-      <SectionHeader title="Market Intelligence" subtitle="Positioning, pressure, and action priorities" />
+      {/* Digital Footprint Score */}
+      {digitalScore != null && (
+        <Card>
+          <View style={styles.scoreRow}>
+            <View>
+              <Text style={styles.scoreLabel}>Digital Footprint</Text>
+              <Text style={styles.scoreSubLabel}>visibility score</Text>
+            </View>
+            <Text style={[styles.scoreValue, { color: digitalScore > 60 ? theme.colors.success : theme.colors.warning }]}>{digitalScore}/100</Text>
+          </View>
+        </Card>
+      )}
 
-      {/* Key Metrics */}
-      <View style={styles.metricsRow}>
-        <MetricCard label="Position" value={mi.positioning_verdict || '—'} color={mi.positioning_verdict === 'STABLE' ? theme.colors.success : theme.colors.warning} />
-        <View style={{ width: 8 }} />
-        <MetricCard label="Goal Prob" value={mi.probability_of_goal_achievement ? `${mi.probability_of_goal_achievement}%` : '—'} color={theme.colors.info} />
-      </View>
+      {/* Market Position */}
+      {positioning && (
+        <Card>
+          <SectionHeader title="Market Position" />
+          <Text style={styles.bodyText}>{typeof positioning === 'string' ? positioning : JSON.stringify(positioning)}</Text>
+        </Card>
+      )}
 
-      {/* Action Priorities */}
-      {moves.length > 0 && (
-        <Card style={{ marginTop: 12 }}>
-          <SectionHeader title="Focus Actions" />
-          {moves.map((m: any, i: number) => (
-            <View key={i} style={styles.moveItem}>
-              <Text style={styles.moveNumber}>#{i + 1}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.moveTitle}>{m.move}</Text>
-                <Text style={styles.moveRationale}>{m.rationale}</Text>
-              </View>
+      {/* Cognition Market Data */}
+      {market && market.signals && (
+        <Card>
+          <SectionHeader title="Market Signals" subtitle="From cognition engine" />
+          {(Array.isArray(market.signals) ? market.signals : []).slice(0, 5).map((signal: any, i: number) => (
+            <View key={i} style={styles.signalItem}>
+              <View style={[styles.severityDot, { backgroundColor: signal.severity === 'high' ? theme.colors.danger : signal.severity === 'medium' ? theme.colors.warning : theme.colors.success }]} />
+              <Text style={styles.signalText}>{signal.title || signal.message || JSON.stringify(signal)}</Text>
             </View>
           ))}
         </Card>
       )}
 
-      {/* Pressure */}
-      {pressure?.pressures && (
+      {/* Competitors */}
+      {competitors.length > 0 && (
         <Card>
-          <SectionHeader title="Demand Pressure" />
-          {Object.entries(pressure.pressures as Record<string, any>).map(([domain, p]) => {
-            const color = p.level === 'critical' ? theme.colors.danger : p.level === 'elevated' ? theme.colors.brand : p.level === 'moderate' ? theme.colors.warning : theme.colors.success;
-            return (
-              <View key={domain} style={styles.pressureRow}>
-                <Text style={styles.pressureDomain}>{domain}</Text>
-                <StatusBadge status={p.level} color={color} />
-                <Text style={styles.pressureEvents}>{p.events_14d} signals</Text>
-              </View>
-            );
-          })}
+          <SectionHeader title="Competitive Landscape" />
+          {competitors.slice(0, 5).map((comp: any, i: number) => (
+            <View key={i} style={styles.competitorItem}>
+              <Text style={styles.competitorName}>{comp.name || comp}</Text>
+              {comp.threat_level && (
+                <Text style={[styles.threatBadge, { color: comp.threat_level === 'high' ? theme.colors.danger : theme.colors.warning }]}>
+                  {comp.threat_level}
+                </Text>
+              )}
+            </View>
+          ))}
         </Card>
       )}
 
-      {!snapshot && (
+      {!snapshot && !market && (
         <EmptyState
           icon={<Ionicons name="compass-outline" size={32} color={theme.colors.textMuted} />}
-          title="Complete calibration"
-          subtitle="Market intelligence requires business calibration and integrations."
+          title="No market data yet"
+          subtitle="Complete calibration to unlock market intelligence."
         />
       )}
 
@@ -105,12 +121,16 @@ export default function MarketScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.bg },
   content: { padding: theme.spacing.lg, paddingTop: 60 },
-  metricsRow: { flexDirection: 'row', marginBottom: 4 },
-  moveItem: { flexDirection: 'row', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  moveNumber: { fontFamily: theme.fonts.mono, fontSize: 13, color: theme.colors.brand, fontWeight: '700', marginTop: 2 },
-  moveTitle: { fontFamily: theme.fonts.head, fontSize: 14, color: theme.colors.text, fontWeight: '600' },
-  moveRationale: { fontFamily: theme.fonts.body, fontSize: 12, color: theme.colors.textSecondary, marginTop: 2, lineHeight: 18 },
-  pressureRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  pressureDomain: { fontFamily: theme.fonts.body, fontSize: 13, color: theme.colors.textSecondary, flex: 1, textTransform: 'capitalize' },
-  pressureEvents: { fontFamily: theme.fonts.mono, fontSize: 10, color: theme.colors.textMuted },
+  title: { fontFamily: theme.fonts.head, fontSize: 28, color: theme.colors.text, fontWeight: '600', marginBottom: 20 },
+  scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  scoreLabel: { fontSize: 16, color: theme.colors.text, fontWeight: '600' },
+  scoreSubLabel: { fontFamily: theme.fonts.mono, fontSize: 10, color: theme.colors.textMuted, marginTop: 2 },
+  scoreValue: { fontFamily: theme.fonts.mono, fontSize: 28, fontWeight: '700' },
+  bodyText: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 20 },
+  signalItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  severityDot: { width: 6, height: 6, borderRadius: 3, marginTop: 6 },
+  signalText: { flex: 1, fontSize: 13, color: theme.colors.textSecondary, lineHeight: 20 },
+  competitorItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  competitorName: { fontSize: 14, color: theme.colors.text },
+  threatBadge: { fontFamily: theme.fonts.mono, fontSize: 10, textTransform: 'uppercase' },
 });

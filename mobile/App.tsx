@@ -18,6 +18,13 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import { theme } from './src/theme';
 import { auth } from './src/lib/api';
+import {
+  registerForPushNotifications,
+  setupNotificationChannel,
+  addNotificationReceivedListener,
+  addNotificationResponseListener,
+  clearBadge,
+} from './src/lib/notifications';
 
 const Tab = createBottomTabNavigator();
 
@@ -68,13 +75,36 @@ export default function App() {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    auth.isAuthenticated().then((ok) => {
+    auth.isAuthenticated().then(async (ok) => {
       setAuthenticated(ok);
       setChecking(false);
+      if (ok) {
+        await setupNotificationChannel();
+        await registerForPushNotifications();
+      }
     });
+
+    // Set up notification listeners
+    const receivedSub = addNotificationReceivedListener((notification) => {
+      console.log('[Push] Received:', notification.request.content.title);
+    });
+    const responseSub = addNotificationResponseListener((response) => {
+      console.log('[Push] Tapped:', response.notification.request.content.data);
+    });
+
+    return () => {
+      receivedSub.remove();
+      responseSub.remove();
+    };
   }, []);
 
-  const handleLogin = useCallback(() => setAuthenticated(true), []);
+  const handleLogin = useCallback(async () => {
+    setAuthenticated(true);
+    // Register for push notifications after login
+    await setupNotificationChannel();
+    await registerForPushNotifications();
+    await clearBadge();
+  }, []);
   const handleLogout = useCallback(async () => {
     await auth.logout();
     setAuthenticated(false);

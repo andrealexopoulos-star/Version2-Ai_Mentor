@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText, Zap, Eye } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
+import { trackEvent, EVENTS } from '../lib/analytics';
 
 const MONO = "'JetBrains Mono', monospace";
 const BODY = "'Inter', sans-serif";
@@ -168,6 +169,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
     if (!fullMessage.trim()) return;
     setMessages(prev => [...prev, { role: 'user', text: displayText }]);
+    trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: fullMessage.length, has_attachment: !!attachedFile });
     await executeMessage(displayText, fullMessage);
   };
 

@@ -98,6 +98,13 @@ body {
     grid-column: span 2;
     text-align: center;
   }
+  /* Fix tiny benchmark labels on mobile */
+  [data-testid="stats-section"] div {
+    font-size: 12px !important;
+  }
+  [data-testid="stats-section"] p {
+    font-size: 12px !important;
+  }
 
   /* ── 80px spacer → 40px on mobile ── */
   [data-testid="hero-section"] + div[style*="height: 80"] {
@@ -130,7 +137,7 @@ body {
     height: 72px !important;
   }
   [data-testid="integration-carousel"] .logo-card span {
-    font-size: 8px !important;
+    font-size: 11px !important;
   }
 
   /* ── Cognition Cards ── */
@@ -164,11 +171,11 @@ body {
     align-items: center;
   }
   [data-testid="website-footer"] h4 {
-    font-size: 9px !important;
+    font-size: 11px !important;
     margin-bottom: 8px !important;
   }
   [data-testid="website-footer"] p {
-    font-size: 11px !important;
+    font-size: 13px !important;
   }
   /* Footer bottom bar */
   [data-testid="website-footer"] .mt-12 {
@@ -274,6 +281,32 @@ body {
     min-height: 100vh;
     min-height: 100dvh;
   }
+  /* Advisor greeting: stack vertically on mobile */
+  [data-testid="biqc-insights-page"] .flex.items-center.justify-between.mb-6 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  [data-testid="biqc-insights-page"] .flex.items-center.justify-between.mb-6 h1 {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+  }
+  /* Advisor sticky status bar: readable on mobile */
+  [data-testid="biqc-insights-page"] .sticky {
+    padding: 0 !important;
+  }
+  [data-testid="biqc-insights-page"] .sticky .text-\[11px\],
+  [data-testid="biqc-insights-page"] .sticky .text-\[10px\] {
+    font-size: 12px !important;
+  }
+  [data-testid="biqc-insights-page"] .sticky .text-\[12px\] {
+    font-size: 13px !important;
+  }
+  /* Advisor content: tighter padding on mobile */
+  [data-testid="biqc-insights-page"] .max-w-5xl {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
   /* Cognition tabs: horizontal scroll */
   [data-testid="cognition-tabs"] {
     display: flex !important;
@@ -292,6 +325,10 @@ body {
   /* Advisor: force single column for insight grids */
   [data-testid="biqc-insights-page"] .grid {
     grid-template-columns: 1fr !important;
+  }
+  /* Advisor: ensure all interactive buttons are touch-friendly */
+  [data-testid="biqc-insights-page"] button {
+    min-height: 44px !important;
   }
 
   /* ── Calibration ── */
@@ -339,6 +376,74 @@ body {
   input[type="tel"], textarea, select {
     font-size: 16px !important;
   }
+
+  /* ── GLOBAL MOBILE TYPOGRAPHY FLOOR ── */
+  /* Force minimum readable font size on mobile - targets specific tiny text */
+  [data-testid="hero-section"] .tracking-widest,
+  [data-testid="hero-section"] .tracking-\[0\.2em\],
+  [data-testid="hero-section"] .tracking-\[0\.15em\],
+  [data-testid="hero-section"] .tracking-\[0\.25em\] {
+    font-size: 12px !important;
+  }
+  [data-testid="stats-section"] .tracking-widest {
+    font-size: 12px !important;
+  }
+  /* Intelligence diagram system labels and tool names */
+  [data-testid="intelligence-diagram"] h4,
+  [data-testid="intelligence-diagram"] .tracking-\[0\.15em\],
+  [data-testid="intelligence-diagram"] .tracking-\[0\.2em\] {
+    font-size: 12px !important;
+  }
+  [data-testid="intelligence-diagram"] span {
+    font-size: 12px !important;
+  }
+  /* Integration carousel labels */
+  [data-testid="integration-carousel"] span {
+    font-size: 11px !important;
+  }
+  /* Hero subtext */
+  [data-testid="hero-section"] p {
+    font-size: 13px !important;
+  }
+
+  /* ── INTERNAL PAGE LOADING SCREENS ── */
+  /* Make loading screens more compact on mobile */
+  [data-testid="auth-loading-screen"] {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* ── BOTTOM NAV BAR ── */
+  /* Ensure bottom nav has safe area spacing */
+  [data-testid="mobile-bottom-nav"],
+  .fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom, 8px) !important;
+  }
+
+  /* ── MARKET PAGE ── */
+  [data-testid="market-page"] .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── SETTINGS PAGE ── */
+  [data-testid="settings-page"] .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── SOUNDBOARD / CHAT ── */
+  [data-testid="soundboard-page"] {
+    height: calc(100vh - 56px) !important;
+    height: calc(100dvh - 56px) !important;
+  }
+  [data-testid="soundboard-input"] {
+    font-size: 16px !important;
+  }
+
+  /* ── SUBSCRIBE PAGE ── */
+  [data-testid="subscribe-page"] .grid {
+    grid-template-columns: 1fr !important;
+  }
+
   /* Scrollable tab lists */
   [role="tablist"] {
     display: flex;

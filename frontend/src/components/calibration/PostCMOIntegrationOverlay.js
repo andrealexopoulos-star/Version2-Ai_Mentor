@@ -96,8 +96,8 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
   const handleConnect = (integration) => {
     // Mark as connected (visual feedback)
     setConnected(prev => prev.includes(integration.id) ? prev : [...prev, integration.id]);
-    // Open connection flow
-    navigate(integration.href);
+    // Open connection flow in new window — don't navigate away from calibration
+    window.open(integration.href, '_blank', 'noopener,noreferrer');
   };
 
   const handleContinue = () => {

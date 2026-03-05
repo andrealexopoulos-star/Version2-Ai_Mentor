@@ -40,27 +40,27 @@ const IntelligencePage = () => (
     {/* HERO */}
     <section className="relative overflow-hidden" data-testid="intelligence-hero">
       <div className="absolute top-20 left-0 w-[400px] h-[400px] rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
-      <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10">
+      <div className="max-w-5xl mx-auto px-6 pt-16 pb-14 relative z-10">
         <div className="max-w-3xl">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>Intelligence Engine</span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             Stop Checking Reports.<br /><span style={{ color: '#FF6A00' }}>Start Preventing Problems.</span>
           </h1>
           <p className="text-lg text-[#9FB0C3] mb-8 leading-relaxed max-w-xl" style={{ fontFamily: BODY }}>
-            BIQc doesn&rsquo;t wait for you to ask. It monitors every data signal across your business and surfaces what matters &mdash; before it becomes a problem.
+            BIQc doesn't wait for you to ask. It monitors every data signal across your business and surfaces what matters — before it becomes a problem.
           </p>
         </div>
       </div>
     </section>
 
     {/* WHAT BIQC ANALYSES */}
-    <section className="py-24" style={{ background: '#141C26' }} data-testid="analysis-grid">
+    <section className="py-16" style={{ background: '#141C26' }} data-testid="analysis-grid">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What BIQc Analyses</span>
         </div>
-        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six categories of business intelligence.</h2>
+        <h2 className="text-3xl font-medium mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six categories of business intelligence.</h2>
         <p className="text-base text-[#9FB0C3] mb-12 max-w-xl" style={{ fontFamily: BODY }}>Every data point mapped, monitored, and cross-referenced autonomously.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -90,11 +90,11 @@ const IntelligencePage = () => (
     </section>
 
     {/* HOW IT WORKS */}
-    <section className="py-24" data-testid="how-it-works">
+    <section className="py-16" data-testid="how-it-works">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>Intelligence Pipeline</span>
-          <h2 className="text-3xl font-bold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>From Raw Data to Executive Briefing</h2>
+          <h2 className="text-3xl font-medium" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>From Raw Data to Executive Briefing</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -118,7 +118,7 @@ const IntelligencePage = () => (
     {/* CTA */}
     <section className="py-20" style={{ background: '#141C26' }}>
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>See what your business is <span style={{ color: '#FF6A00' }}>really doing.</span></h2>
+        <h2 className="text-3xl font-medium mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>See what your business is <span style={{ color: '#FF6A00' }}>really doing.</span></h2>
         <p className="text-base text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>Start your 14-day trial. No credit card. Full intelligence from day one.</p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
           Try It For Free <ArrowRight className="w-4 h-4" />

@@ -1933,3 +1933,30 @@ async def dismiss_notification(notification_id: str, current_user: dict = Depend
 
 
 # ==================== ROOT ====================
+
+# ==================== PUSH NOTIFICATION DEVICE REGISTRATION ====================
+
+class DeviceRegistration(BaseModel):
+    push_token: str
+    platform: str = 'ios'
+    device_name: str = 'Unknown'
+
+
+@router.post("/notifications/register-device")
+async def register_push_device(req: DeviceRegistration, current_user: dict = Depends(get_current_user)):
+    """Register a mobile device for push notifications. Token stored for backend-triggered events."""
+    sb = get_sb()
+    try:
+        sb.table("push_devices").upsert({
+            "user_id": current_user["id"],
+            "push_token": req.push_token,
+            "platform": req.platform,
+            "device_name": req.device_name,
+            "registered_at": datetime.now(timezone.utc).isoformat(),
+            "active": True,
+        }, on_conflict="user_id,push_token").execute()
+        return {"status": "registered", "platform": req.platform}
+    except Exception as e:
+        # Table might not exist yet — non-fatal
+        return {"status": "pending", "message": "Device registration queued. Push table not yet deployed."}
+

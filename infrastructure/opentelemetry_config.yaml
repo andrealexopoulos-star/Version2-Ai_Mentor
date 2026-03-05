@@ -1,0 +1,94 @@
+# BIQc Pre-Launch — OpenTelemetry Tracing Configuration
+# Deploy alongside the FastAPI backend for distributed tracing
+
+# opentelemetry-collector-config.yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+  attributes:
+    actions:
+      - key: service.name
+        value: biqc-backend
+        action: upsert
+      - key: deployment.environment
+        value: production
+        action: upsert
+
+exporters:
+  # Jaeger exporter
+  jaeger:
+    endpoint: "jaeger:14250"
+    tls:
+      insecure: true
+  
+  # Datadog exporter (if using Datadog)
+  datadog:
+    api:
+      key: "${DD_API_KEY}"
+      site: "datadoghq.com"
+    traces:
+      span_name_as_resource_name: true
+  
+  # Console exporter for debugging
+  logging:
+    loglevel: info
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, attributes]
+      exporters: [jaeger, logging]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [logging]
+
+---
+# FastAPI instrumentation setup (add to server.py)
+# pip install opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation-fastapi opentelemetry-exporter-otlp
+
+# from opentelemetry import trace
+# from opentelemetry.sdk.trace import TracerProvider
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor
+# from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+# from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+# from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+#
+# # Initialize tracing
+# provider = TracerProvider()
+# processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://otel-collector:4317"))
+# provider.add_span_processor(processor)
+# trace.set_tracer_provider(provider)
+#
+# # Instrument FastAPI
+# FastAPIInstrumentor.instrument_app(app)
+# HTTPXClientInstrumentor().instrument()
+
+# Trace structure per request:
+# client_request
+#   → api_gateway (nginx/ingress)
+#   → auth_service (JWT validation + Supabase)
+#   → integration_engine (Merge API / external data)
+#   → cognition_engine (SQL functions + instability calculation)
+#   → ai_inference (OpenAI GPT-4o)
+#   → response_generation (format + serialize)
+#   → client_response
