@@ -33,12 +33,7 @@ const HomePage = () => (
       {/* Base dark background */}
       <div className="absolute inset-0" style={{ background: '#07121E', zIndex: 0 }} />
 
-      {/* Canvas motion — pure background decoration layer */}
-      <div className="hero-background-canvas" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <EnergyGalaxyBackground />
-      </div>
-
-      {/* Hero content — above canvas */}
+      {/* Hero content — above background */}
       <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center', padding: '0 16px' }} className="pt-8 sm:pt-28">
           {/* Trust badge */}
