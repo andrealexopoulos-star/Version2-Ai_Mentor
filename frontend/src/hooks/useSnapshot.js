@@ -85,10 +85,10 @@ export function useSnapshot() {
     }
     setRefreshing(true);
 
-    // Hard timeout: if no data after 5s, stop loading (show empty state)
+    // Hard timeout: if no data after 3s, stop loading (show empty state)
     const loadingTimeout = setTimeout(() => {
       if (mountedRef.current && loading) setLoading(false);
-    }, 5000);
+    }, 3000);
 
     try {
       const fresh = await fetchFresh();

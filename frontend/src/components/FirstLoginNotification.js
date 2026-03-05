@@ -18,18 +18,32 @@ const FirstLoginNotification = () => {
   useEffect(() => {
     const key = 'biqc_first_login_shown';
     const shown = localStorage.getItem(key);
-    if (!shown) {
+    if (shown) return;
+
+    // Check if user already has integrations — don't show if connected
+    const checkIntegrations = async () => {
+      try {
+        const { apiClient } = await import('../lib/api');
+        const res = await apiClient.get('/integrations/merge/connected');
+        const connected = res.data?.integrations || {};
+        const hasAny = Object.values(connected).some(v => v);
+        if (hasAny) {
+          localStorage.setItem(key, Date.now().toString());
+          return; // Already connected — don't show
+        }
+      } catch {}
       setVisible(true);
       localStorage.setItem(key, Date.now().toString());
-      const timer = setTimeout(() => setVisible(false), 30000);
+      const timer = setTimeout(() => setVisible(false), 15000);
       return () => clearTimeout(timer);
-    }
+    };
+    checkIntegrations();
   }, []);
 
   if (!visible || dismissed) return null;
 
   return (
-    <div className="fixed top-16 right-4 z-50 w-[360px] max-w-[calc(100vw-32px)] rounded-xl overflow-hidden shadow-2xl"
+    <div className="fixed top-16 right-[400px] lg:right-[400px] z-50 w-[320px] max-w-[calc(100vw-32px)] rounded-xl overflow-hidden shadow-2xl"
       style={{ background: '#141C26', border: '1px solid #FF6A0030', animation: 'fadeIn 0.5s ease' }}
       data-testid="first-login-notification">
       <div className="p-4">
