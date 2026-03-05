@@ -7,7 +7,7 @@ import {
   MessageSquare, Volume2, VolumeX, Maximize2, Users
 } from 'lucide-react';
 
-const AI_ADVISOR_IMAGE = "https://static.prod-images.emergentagent.com/jobs/5219767c-4311-47f6-b565-a6e726053b1e/images/fcc3dc83d3d0889615ef75f160ec065f7afa5dc888a66578583456fa4bbe979a.png";
+const AI_ADVISOR_IMAGE = "/advisor-avatar.png";
 
 const VoiceChat = ({ onClose, onSwitchToText }) => {
   const [isConnected, setIsConnected] = useState(false);

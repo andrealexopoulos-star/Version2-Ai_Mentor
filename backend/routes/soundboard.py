@@ -243,6 +243,26 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     user_first_name = full_name.split()[0] if full_name and full_name != "there" else "there"
     user_email = (user_profile.get("email") if user_profile else None) or ""
 
+    # ═══ PERSONALIZATION GUARDRAIL ═══
+    # Determine context richness before generating advice
+    context_fields = 0
+    if profile:
+        for field in ['business_name', 'industry', 'revenue_range', 'team_size', 'main_challenges', 'short_term_goals']:
+            if profile.get(field) and str(profile.get(field)) != 'None':
+                context_fields += 1
+
+    if context_fields < 2:
+        # GUARDRAIL_BLOCKED: Insufficient personalization data
+        logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id} context_fields={context_fields} — insufficient business context for personalized advice")
+        guardrail_status = "BLOCKED"
+    elif context_fields < 4:
+        # GUARDRAIL_DEGRADED: Partial context — advice will be less specific
+        logger.info(f"[GUARDRAIL_DEGRADED] user={user_id} context_fields={context_fields} — partial business context")
+        guardrail_status = "DEGRADED"
+    else:
+        guardrail_status = "FULL"
+        logger.info(f"[GUARDRAIL_FULL] user={user_id} context_fields={context_fields}")
+
     # ═══ FULL BUSINESS DNA ═══
     biz_context = ""
     if profile:
@@ -469,7 +489,20 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
 
-    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
+    # ═══ PERSONALIZATION GUARDRAIL: Block generic advice ═══
+    if guardrail_status == "BLOCKED":
+        return {
+            "reply": "I need to know more about your business before I can give you specific advice. Please complete your business calibration first — it takes about 3 minutes and unlocks personalised intelligence across the entire platform.",
+            "guardrail": "BLOCKED",
+            "conversation_id": req.conversation_id,
+        }
+
+    # Inject guardrail status into system message
+    guardrail_injection = ""
+    if guardrail_status == "DEGRADED":
+        guardrail_injection = "\n\n[SYSTEM: GUARDRAIL_DEGRADED — Limited business context available. Be transparent about what you can and cannot assess. Recommend completing calibration for deeper insight.]\n"
+
+    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + guardrail_injection + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {
@@ -532,20 +565,20 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             # Fall through to normal chat response
 
     try:
-        chat = LlmChat(
-            api_key=OPENAI_KEY,
-            session_id=f"soundboard_{user_id}_{req.conversation_id or 'new'}",
-            system_message=system_message
-        )
-        chat.with_model("openai", AI_MODEL)
-        chat.with_params(temperature=0.7, max_tokens=1500)
-        for msg in messages_history:
-            if msg["role"] == "user":
-                chat.add_message(UserMessage(text=msg["content"]))
-
+        from core.llm_adapter import chat_completion
         import time as _time
         _start = _time.time()
-        response = await chat.send_message(UserMessage(text=clean_message))
+
+        response = await chat_completion(
+            api_key=OPENAI_KEY,
+            system_message=system_message,
+            messages=messages_history,
+            user_message=clean_message,
+            model=AI_MODEL,
+            temperature=0.7,
+            max_tokens=1500,
+            session_id=f"soundboard_{user_id}_{req.conversation_id or 'new'}",
+        )
         _elapsed = int((_time.time() - _start) * 1000)
 
         # Post-process: enforce quality and remove AI crutches
