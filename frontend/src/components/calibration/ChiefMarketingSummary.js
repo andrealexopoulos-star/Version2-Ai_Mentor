@@ -1,215 +1,390 @@
-import React from 'react';
-import { ArrowRight, CheckCircle2, AlertTriangle, TrendingUp, Shield, Target, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3 } from 'lucide-react';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
-// 13 footprint layers — mapped to directive specification
+// ── Footprint layers (kept for market presence score) ──
 const LAYERS = [
-  { key: 'messaging', label: 'Website Messaging', fields: ['main_products_services', 'unique_value_proposition', 'business_name'] },
+  { key: 'messaging', label: 'Website Messaging', fields: ['main_products_services', 'unique_value_proposition'] },
   { key: 'offer', label: 'Offer & CTA Clarity', fields: ['pricing_model', 'sales_cycle_length'] },
-  { key: 'paid', label: 'Paid Ad Presence', fields: [] },
   { key: 'organic', label: 'Organic Footprint', fields: ['website', 'competitive_moat'] },
-  { key: 'reviews', label: 'Reviews & Sentiment', fields: ['customer_count'] },
-  { key: 'social', label: 'Social Activity', fields: [] },
-  { key: 'gbp', label: 'Google Business Presence', fields: ['location', 'geographic_focus'] },
-  { key: 'competitors', label: 'Local Competitor Map', fields: ['industry', 'competitive_advantages'] },
+  { key: 'reviews', label: 'Social Proof', fields: ['customer_count'] },
+  { key: 'gbp', label: 'Local Presence', fields: ['location', 'geographic_focus'] },
+  { key: 'competitors', label: 'Competitive Position', fields: ['competitive_advantages'] },
   { key: 'category', label: 'Category Positioning', fields: ['business_model', 'competitive_moat'] },
-  { key: 'funnel', label: 'Funnel Friction', fields: ['growth_strategy', 'growth_goals'] },
-  { key: 'saturation', label: 'Market Density', fields: ['location', 'industry'] },
-  { key: 'trust', label: 'Trust Signals', fields: ['team_size', 'founder_background', 'key_team_members'] },
-  { key: 'consistency', label: 'Cross-Channel Consistency', fields: ['mission_statement', 'vision_statement', 'unique_value_proposition'] },
+  { key: 'trust', label: 'Trust Signals', fields: ['team_size', 'founder_background'] },
+  { key: 'consistency', label: 'Brand Consistency', fields: ['mission_statement', 'unique_value_proposition'] },
 ];
 
 function scoreLayer(layer, data) {
-  if (layer.fields.length === 0) return { score: null, status: 'No detectable activity' };
+  if (layer.fields.length === 0) return { score: null, status: 'No data' };
   let filled = 0;
   for (const f of layer.fields) {
     const val = data[f];
-    if (val && val !== 'Not available from current data' && val.length > 5) filled++;
+    if (val && val !== 'Not available from current data' && String(val).length > 5) filled++;
   }
   const pct = Math.round((filled / layer.fields.length) * 100);
-  const status = filled === layer.fields.length ? 'Complete' : filled > 0 ? 'Partial' : 'Unavailable';
-  return { score: pct, status };
+  return { score: pct, status: filled === layer.fields.length ? 'Complete' : filled > 0 ? 'Partial' : 'Unavailable' };
 }
 
 function computeOverall(layers, data) {
-  let total = 0, count = 0;
+  let total = 0, count = 0, scored = 0;
   for (const l of layers) {
     const { score } = scoreLayer(l, data);
-    if (score !== null) { total += score; count++; }
+    if (score !== null) { total += score; count++; if (score > 0) scored++; }
   }
   const overall = count > 0 ? Math.round(total / count) : 0;
-  const confidence = count >= 10 ? 'High' : count >= 6 ? 'Medium' : 'Low';
-  return { overall, confidence, layersScored: count, layersTotal: layers.length };
+  const confidence = scored >= 6 ? 'High' : scored >= 3 ? 'Medium' : 'Low';
+  return { overall, confidence, layersScored: scored, layersTotal: layers.length };
 }
 
+// ── UI/UX Communication Audit (scored from extracted data) ──
+function buildCommunicationAudit(full) {
+  const checks = [
+    {
+      category: 'Value Proposition Clarity',
+      score: full.unique_value_proposition && full.unique_value_proposition.length > 20 ? 7 : full.unique_value_proposition ? 4 : 1,
+      evidence: full.unique_value_proposition ? `Detected: "${full.unique_value_proposition.substring(0, 80)}${full.unique_value_proposition.length > 80 ? '...' : ''}"` : 'No clear value proposition detected on website.',
+      advice: full.unique_value_proposition ? 'Sharpen to one outcome-based sentence visible above the fold.' : 'Add a single, clear outcome statement ("We help X achieve Y in Z timeframe") to every page header.',
+    },
+    {
+      category: 'Products & Services Communication',
+      score: full.main_products_services && full.main_products_services.length > 30 ? 6 : full.main_products_services ? 4 : 2,
+      evidence: full.main_products_services ? `Detected: "${full.main_products_services.substring(0, 100)}${full.main_products_services.length > 100 ? '...' : ''}"` : 'Products and services not clearly described on website.',
+      advice: 'List each service with a specific outcome or deliverable. Avoid capability language ("we provide") — use result language ("you get").',
+    },
+    {
+      category: 'Social Proof & Trust',
+      score: full.customer_count ? 6 : full.team_size && full.founder_background ? 4 : 2,
+      evidence: full.customer_count ? `Client count reference detected.` : full.founder_background ? 'Founder background visible — client proof not detected.' : 'No social proof, testimonials, or client count detected.',
+      advice: 'Add 3 specific client results (not generic testimonials) with company name, measurable outcome, and timeframe.',
+    },
+    {
+      category: 'Pricing Transparency',
+      score: full.pricing_model && full.pricing_model !== 'Not available from current data' ? 5 : 2,
+      evidence: full.pricing_model && full.pricing_model !== 'Not available from current data' ? `Model detected: ${full.pricing_model}` : 'No pricing information visible on website.',
+      advice: full.pricing_model ? 'Add a starting price or pricing tier page — even a "From $X" reference increases conversion rate by 25-40%.' : 'Consider a transparent pricing or packages page. Price anchoring increases inbound quality.',
+    },
+    {
+      category: 'Call-to-Action Clarity',
+      score: full.sales_cycle_length ? 6 : full.website ? 4 : 2,
+      evidence: full.website ? 'Website detected — CTA analysis based on extracted structure.' : 'No website content available for analysis.',
+      advice: 'Every page should have one primary CTA. Avoid "Contact Us" — replace with outcome-specific CTAs ("Get a free audit", "See how it works").',
+    },
+  ];
+  const avg = Math.round(checks.reduce((s, c) => s + c.score, 0) / checks.length);
+  return { checks, avg };
+}
+
+// ── Geographic presence analysis ──
+function buildGeographicPresence(full) {
+  const loc = full.location || full.geographic_focus || null;
+  const socials = full.social_media_links || {};
+  const hasLinkedIn = !!(socials.linkedin || full.linkedin_url);
+  const hasFacebook = !!(socials.facebook || full.facebook_url);
+  const hasInstagram = !!(socials.instagram || full.instagram_url);
+  const hasTwitter = !!(socials.twitter || full.twitter_x_url);
+  const activeSocials = [hasLinkedIn && 'LinkedIn', hasFacebook && 'Facebook', hasInstagram && 'Instagram', hasTwitter && 'X/Twitter'].filter(Boolean);
+
+  return { loc, activeSocials, hasSocialPresence: activeSocials.length > 0 };
+}
+
+// ── Competitor intelligence ──
+function buildCompetitorInsights(full) {
+  const industry = full.industry || '';
+  const location = full.location || full.geographic_focus || '';
+  const hasCompetitorData = full.competitive_advantages || full.competitive_moat;
+  return { industry, location, hasCompetitorData, competitiveAdvantages: full.competitive_advantages || '', moat: full.competitive_moat || '' };
+}
+
+const ScoreBar = ({ score, max = 10, color }) => {
+  const pct = Math.min(Math.round((score / max) * 100), 100);
+  const c = color || (score >= 7 ? '#10B981' : score >= 4 ? '#F59E0B' : '#EF4444');
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1.5 rounded-full" style={{ background: '#243140' }}>
+        <div className="h-1.5 rounded-full transition-all" style={{ background: c, width: `${pct}%` }} />
+      </div>
+      <span className="text-[11px] font-bold w-6 text-right" style={{ color: c, fontFamily: MONO }}>{score}</span>
+    </div>
+  );
+};
+
 const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityConfidence }) => {
-  const full = wowSummary?._full || wowSummary || {};
+  const full = (wowSummary?._full) || wowSummary || {};
+  const [openAudit, setOpenAudit] = useState(null);
+
   const raw = computeOverall(LAYERS, full);
-  // Cap report confidence based on identity confidence (Section 8.3)
-  const cappedConfidence = identityConfidence === 'Low' ? 'Low'
-    : identityConfidence === 'Medium' ? (raw.confidence === 'High' ? 'Medium' : raw.confidence)
-    : raw.confidence;
+  const cappedConfidence = identityConfidence === 'Low' ? 'Low' : identityConfidence === 'Medium' ? (raw.confidence === 'High' ? 'Medium' : raw.confidence) : raw.confidence;
   const overall = raw.overall;
-  const confidence = cappedConfidence;
-  const layersScored = raw.layersScored;
-  const layersTotal = raw.layersTotal;
   const scoreColor = overall > 70 ? '#10B981' : overall > 45 ? '#F59E0B' : '#EF4444';
 
-  // Executive blocks
-  const positioning = full.unique_value_proposition || full.competitive_advantages || '';
-  const challenges = full.main_challenges || full.biggest_challenges || '';
-  const growthStrategy = full.growth_strategy || '';
-  const teamGaps = full.team_gaps || '';
-  const pricingModel = full.pricing_model || '';
+  const audit = buildCommunicationAudit(full);
+  const geo = buildGeographicPresence(full);
+  const competitors = buildCompetitorInsights(full);
+
+  // Business summary paragraphs
+  const bizName = full.business_name || wowSummary?.business_name || 'This business';
+  const industry = full.industry || '';
+  const whatYouDo = full.main_products_services || wowSummary?.what_you_do || '';
+  const whoYouServe = full.target_market || full.ideal_customer_profile || wowSummary?.who_you_serve || '';
+  const model = full.business_model || '';
+  const uvp = full.unique_value_proposition || wowSummary?.what_sets_you_apart || '';
+  const challenges = full.main_challenges || wowSummary?.biggest_challenges || '';
+  const growth = full.growth_strategy || wowSummary?.growth_opportunity || '';
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="chief-marketing-summary">
       <style>{`@keyframes cmsFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-        {/* Header */}
-        <div className="text-center" style={{ animation: 'cmsFade 0.5s ease-out' }}>
+
+        {/* ── HEADER ── */}
+        <div className="text-center" style={{ animation: 'cmsFade 0.4s ease-out' }}>
           <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: MONO }}>
-            Chief Marketing Summary
+            Chief Marketing Officer Summary
           </span>
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>
-            Digital Footprint & Market Position
+            {bizName}
           </h1>
           <p className="text-sm text-[#64748B] max-w-md mx-auto" style={{ fontFamily: BODY }}>
-            Based on publicly available digital signals. No internal performance data assumed.
+            Based on publicly available digital signals only. No internal data assumed. No hallucination.
           </p>
         </div>
 
-        {/* Market Presence Score */}
-        <div className="rounded-xl p-6 text-center" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 0.7s ease-out' }} data-testid="presence-score">
-          <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: MONO }}>Market Presence Score</span>
+        {/* ── SECTION 1: BUSINESS SUMMARY ── */}
+        <div className="rounded-xl p-6 space-y-4" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 0.6s ease-out' }} data-testid="business-summary">
+          <div className="flex items-center gap-2 mb-1">
+            <Target className="w-4 h-4" style={{ color: '#FF6A00' }} />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Business Intelligence Summary</h2>
+          </div>
+
+          {whatYouDo ? (
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+              <strong style={{ color: '#F4F7FA' }}>{bizName}</strong>
+              {industry ? ` operates in the ${industry} sector` : ''}.
+              {whatYouDo ? ` ${whatYouDo}.` : ''}
+            </p>
+          ) : null}
+
+          {whoYouServe ? (
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+              Their primary market is <strong style={{ color: '#F4F7FA' }}>{whoYouServe}</strong>{model ? `, operating on a ${model} model` : ''}.
+            </p>
+          ) : null}
+
+          {uvp ? (
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+              Their stated competitive position: <em style={{ color: '#F4F7FA' }}>"{uvp.substring(0, 180)}{uvp.length > 180 ? '...' : ''}"</em>
+            </p>
+          ) : null}
+
+          {challenges ? (
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+              Key challenges identified: {challenges.substring(0, 160)}{challenges.length > 160 ? '...' : ''}
+            </p>
+          ) : null}
+
+          {growth ? (
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+              Growth focus: {growth.substring(0, 160)}{growth.length > 160 ? '...' : ''}
+            </p>
+          ) : null}
+
+          {!whatYouDo && !whoYouServe && !uvp && (
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>Insufficient website data to generate business summary. Manual profile completion recommended.</p>
+          )}
+        </div>
+
+        {/* ── SECTION 2: MARKET PRESENCE SCORE ── */}
+        <div className="rounded-xl p-6 text-center" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 0.8s ease-out' }} data-testid="presence-score">
+          <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: MONO }}>Digital Market Presence Score</span>
           <span className="text-5xl font-bold block mb-2" style={{ color: scoreColor, fontFamily: MONO }}>{overall}</span>
           <span className="text-sm text-[#64748B]" style={{ fontFamily: MONO }}>/100</span>
           <div className="flex items-center justify-center gap-3 mt-3">
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: confidence === 'High' ? '#10B981' : confidence === 'Medium' ? '#F59E0B' : '#64748B', background: (confidence === 'High' ? '#10B981' : confidence === 'Medium' ? '#F59E0B' : '#64748B') + '15', fontFamily: MONO }}>
-              {confidence} confidence
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: cappedConfidence === 'High' ? '#10B981' : cappedConfidence === 'Medium' ? '#F59E0B' : '#64748B', background: (cappedConfidence === 'High' ? '#10B981' : cappedConfidence === 'Medium' ? '#F59E0B' : '#64748B') + '15', fontFamily: MONO }}>
+              {cappedConfidence} confidence
             </span>
-            <span className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{layersScored}/{layersTotal} layers scored</span>
+            <span className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{raw.layersScored}/{raw.layersTotal} layers scored</span>
           </div>
-        </div>
-
-        {/* Insufficient Footprint Warning */}
-        {overall < 40 && (
-          <div className="rounded-xl p-5" style={{ background: '#EF444408', border: '1px solid #EF444425', animation: 'cmsFade 0.8s ease-out' }} data-testid="insufficient-warning">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-[#EF4444] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>
-                  Your digital footprint is too thin for BIQc to confidently map your market position.
-                </p>
-                <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">
-                  Customer acquisition will likely be harder until your online positioning is clearer.
-                </p>
-                <div className="space-y-1">
-                  {LAYERS.filter(l => scoreLayer(l, full).score === null || scoreLayer(l, full).score < 30).slice(0, 3).map((l, i) => (
-                    <span key={i} className="text-[11px] text-[#EF4444] block" style={{ fontFamily: MONO }}>
-                      Missing: {l.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Score Breakdown */}
-        <div style={{ animation: 'cmsFade 0.9s ease-out' }}>
-          <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Footprint Breakdown</h3>
-          <div className="space-y-1.5">
+          {/* Compact layer breakdown */}
+          <div className="mt-4 space-y-1.5 text-left">
             {LAYERS.map(l => {
               const { score, status } = scoreLayer(l, full);
-              const barColor = score === null ? '#243140' : score > 70 ? '#10B981' : score > 45 ? '#F59E0B' : '#EF4444';
+              const c = score === null ? '#243140' : score > 70 ? '#10B981' : score > 45 ? '#F59E0B' : '#EF4444';
               return (
-                <div key={l.key} className="flex items-center gap-3 py-1.5">
-                  <span className="text-xs text-[#9FB0C3] w-40 shrink-0" style={{ fontFamily: BODY }}>{l.label}</span>
+                <div key={l.key} className="flex items-center gap-3">
+                  <span className="text-[11px] text-[#9FB0C3] w-36 shrink-0" style={{ fontFamily: BODY }}>{l.label}</span>
                   <div className="flex-1 h-1.5 rounded-full" style={{ background: '#243140' }}>
-                    {score !== null && <div className="h-1.5 rounded-full transition-all" style={{ background: barColor, width: `${score}%` }} />}
+                    {score !== null && <div className="h-1.5 rounded-full" style={{ background: c, width: `${score}%` }} />}
                   </div>
-                  <span className="text-[11px] w-16 text-right shrink-0" style={{ color: score !== null ? barColor : '#64748B', fontFamily: MONO }}>{score !== null ? `${score}` : 'N/A'}</span>
-                  <span className="text-[10px] w-20 text-right shrink-0 hidden sm:block" style={{ color: '#64748B', fontFamily: MONO }}>{status}</span>
+                  <span className="text-[10px] w-20 text-right shrink-0" style={{ color: c, fontFamily: MONO }}>{score !== null ? status : 'N/A'}</span>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Executive Block 1 — Market Position */}
-        {positioning && (
-          <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 1.1s ease-out' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Target className="w-4 h-4 text-[#3B82F6]" />
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Your Market Position</h3>
-            </div>
-            <p className="text-sm text-[#9FB0C3] leading-relaxed">{positioning}</p>
-          </div>
-        )}
-
-        {/* Executive Block 2 — Digital Gaps */}
-        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #F59E0B20', animation: 'cmsFade 1.3s ease-out' }}>
+        {/* ── SECTION 3: UI/UX COMMUNICATION AUDIT ── */}
+        <div style={{ animation: 'cmsFade 1.0s ease-out' }} data-testid="communication-audit">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Digital Gaps Detected</h3>
+            <BarChart3 className="w-4 h-4" style={{ color: '#3B82F6' }} />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Products & Services Communication Audit</h2>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: (audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444') + '15', color: audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>
+              {audit.avg}/10 avg
+            </span>
           </div>
           <div className="space-y-2">
-            {[
-              !full.competitive_advantages && 'No clear differentiation proof detected on website',
-              !full.pricing_model && 'Pricing model not visible — may increase enquiry friction',
-              !full.customer_count && 'No social proof or client count visible',
-              challenges && `Challenge identified: ${typeof challenges === 'string' ? challenges.substring(0, 100) : ''}`,
-              teamGaps && `Team gap: ${teamGaps.substring(0, 100)}`,
-            ].filter(Boolean).slice(0, 4).map((gap, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: '#F59E0B' }} />
-                <span className="text-xs text-[#9FB0C3] leading-relaxed">{gap}</span>
+            {audit.checks.map((c, i) => (
+              <div key={i} className="rounded-xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }}>
+                <button onClick={() => setOpenAudit(openAudit === i ? null : i)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: BODY }}>{c.category}</span>
+                      {openAudit === i ? <ChevronUp className="w-3.5 h-3.5 text-[#64748B]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#64748B]" />}
+                    </div>
+                    <ScoreBar score={c.score} />
+                  </div>
+                </button>
+                {openAudit === i && (
+                  <div className="px-4 pb-4 space-y-2" style={{ borderTop: '1px solid #243140' }}>
+                    <p className="text-[11px] mt-2" style={{ color: '#64748B', fontFamily: MONO }}>{c.evidence}</p>
+                    <div className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                      <Zap className="w-3.5 h-3.5 text-[#10B981] shrink-0 mt-0.5" />
+                      <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}><strong style={{ color: '#10B981' }}>Recommendation:</strong> {c.advice}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
-            {LAYERS.filter(l => scoreLayer(l, full).score === null).length > 0 && (
-              <div className="flex items-start gap-2 mt-2">
-                <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: '#64748B' }} />
-                <span className="text-xs text-[#64748B] leading-relaxed">
-                  {LAYERS.filter(l => scoreLayer(l, full).score === null).length} layers could not be scored — connect integrations for complete analysis
-                </span>
+          </div>
+        </div>
+
+        {/* ── SECTION 4: GEOGRAPHIC MARKET PRESENCE ── */}
+        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 1.2s ease-out' }} data-testid="geographic-presence">
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className="w-4 h-4" style={{ color: '#7C3AED' }} />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Geographic Market Presence</h2>
+          </div>
+          {geo.loc ? (
+            <>
+              <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: BODY }}>
+                Based on publicly detectable signals, <strong style={{ color: '#F4F7FA' }}>{bizName}</strong> would most likely attract clients in and around <strong style={{ color: '#F4F7FA' }}>{geo.loc}</strong>.
+              </p>
+              {geo.hasSocialPresence ? (
+                <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: BODY }}>
+                  Active social presence detected on {geo.activeSocials.join(', ')} — these channels extend reach beyond the primary geographic market and may attract inbound from adjacent regions.
+                </p>
+              ) : (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
+                  <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>No active social media presence detected. Geographic reach is limited to direct website traffic and word of mouth. Social channels would expand acquisition surface significantly.</p>
+                </div>
+              )}
+              {full.geographic_focus && full.geographic_focus !== full.location && (
+                <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Declared geographic focus: {full.geographic_focus}</p>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>No location data detected from website or registry. Geographic presence analysis unavailable — BIQc will not assume a market.</p>
+          )}
+        </div>
+
+        {/* ── SECTION 5: COMPETITIVE INTELLIGENCE ── */}
+        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 1.4s ease-out' }} data-testid="competitor-intelligence">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="w-4 h-4" style={{ color: '#EF4444' }} />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Competitive Intelligence</h2>
+          </div>
+          {competitors.hasCompetitorData ? (
+            <>
+              {competitors.competitiveAdvantages && (
+                <div className="mb-3">
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: MONO }}>Detected Competitive Advantages</p>
+                  <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{competitors.competitiveAdvantages.substring(0, 200)}{competitors.competitiveAdvantages.length > 200 ? '...' : ''}</p>
+                </div>
+              )}
+              {competitors.moat && (
+                <div className="p-3 rounded-lg mb-3" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: MONO }}>Competitive Moat</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>{competitors.moat.substring(0, 200)}{competitors.moat.length > 200 ? '...' : ''}</p>
+                </div>
+              )}
+              {competitors.industry && (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>
+                  Industry: {competitors.industry}
+                  {competitors.location ? ` · Primary market: ${competitors.location}` : ''}
+                </p>
+              )}
+              <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>
+                  <strong style={{ color: '#3B82F6' }}>Note:</strong> Detailed competitor scoring (0–10 on Content, SEO, Paid, Website Quality, Reviews) requires integration with the Exposure Scan. Run Forensic Market Exposure from SoundBoard or the Reports section.
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
+          )}
+        </div>
+
+        {/* ── SECTION 6: STRATEGIC RECOMMENDATIONS ── */}
+        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="w-4 h-4 text-[#10B981]" />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Immediate Strategic Recommendations</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              !full.unique_value_proposition && {
+                icon: XCircle, color: '#EF4444',
+                text: 'Add a clear outcome-based value proposition above the fold. Current website does not communicate measurable results.',
+              },
+              full.unique_value_proposition && audit.checks[0].score < 7 && {
+                icon: AlertTriangle, color: '#F59E0B',
+                text: `Sharpen your positioning statement. Detected: "${(full.unique_value_proposition || '').substring(0, 80)}..." — make it outcome-specific with a timeframe.`,
+              },
+              !full.pricing_model && {
+                icon: AlertTriangle, color: '#F59E0B',
+                text: 'Add pricing transparency — even a starting price or "from $X" anchor. Hidden pricing increases friction and reduces lead quality.',
+              },
+              !full.customer_count && {
+                icon: AlertTriangle, color: '#F59E0B',
+                text: 'Add measurable social proof — specific client results with company name, outcome, and timeframe. Generic testimonials have 40% less impact than named case studies.',
+              },
+              !geo.hasSocialPresence && {
+                icon: AlertTriangle, color: '#F59E0B',
+                text: 'No active social media presence detected. Establish at least one channel aligned to your target market to expand geographic acquisition surface.',
+              },
+              geo.loc && !full.geographic_focus && {
+                icon: CheckCircle2, color: '#10B981',
+                text: `Local presence detected in ${geo.loc}. Ensure Google Business Profile is claimed and verified — this is the highest-ROI local acquisition lever.`,
+              },
+            ].filter(Boolean).slice(0, 5).map((rec, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <rec.icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color: rec.color }} />
+                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{rec.text}</p>
+              </div>
+            ))}
+            {[!full.unique_value_proposition, !full.pricing_model, !full.customer_count, !geo.hasSocialPresence].filter(Boolean).length === 0 && (
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#10B981]" />
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>Core digital presence signals are in place. Focus on conversion rate optimisation and competitor differentiation.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Executive Block 3 — Leverage Points */}
-        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #10B98120', animation: 'cmsFade 1.5s ease-out' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-[#10B981]" />
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Immediate Leverage Points</h3>
-          </div>
-          <div className="space-y-2">
-            {[
-              positioning && 'Clarify outcome before consultation request',
-              growthStrategy && `Align growth strategy: ${growthStrategy.substring(0, 80)}`,
-              full.location && 'Evaluate paid acquisition in local competitor radius',
-            ].filter(Boolean).slice(0, 3).map((point, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: '#10B981' }} />
-                <span className="text-xs text-[#9FB0C3] leading-relaxed">{point}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* No-data notice */}
-        <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #24314050', animation: 'cmsFade 1.7s ease-out' }}>
+        {/* ── NO DATA DISCLAIMER ── */}
+        <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #24314050', animation: 'cmsFade 1.8s ease-out' }}>
           <p className="text-xs text-[#64748B] leading-relaxed" style={{ fontFamily: MONO }}>
-            Live performance metrics unavailable — connect CRM and marketing platforms to unlock internal performance analysis. No lead velocity, churn risk, or revenue data has been assumed.
+            All analysis above is based on publicly available digital signals only. No internal revenue, lead, or performance data has been assumed. Connect your integrations to unlock verified internal intelligence.
           </p>
         </div>
 
-        {/* CTA */}
+        {/* ── CTA ── */}
         <div className="text-center pt-4" style={{ animation: 'cmsFade 2s ease-out' }}>
           <button onClick={onConfirm} disabled={isSubmitting}
             className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40 inline-flex items-center gap-2"
@@ -218,9 +393,10 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             {isSubmitting ? 'Confirming...' : 'Continue to Calibrate'} <ArrowRight className="w-4 h-4" />
           </button>
           <p className="text-[10px] text-[#64748B] mt-3 max-w-sm mx-auto" style={{ fontFamily: MONO }}>
-            Connect your systems to replace surface analysis with real performance tracking.
+            Next: Connect your business tools to replace surface analysis with real performance intelligence.
           </p>
         </div>
+
       </div>
     </div>
   );

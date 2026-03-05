@@ -459,9 +459,9 @@ export const useCalibrationState = () => {
       autoSave(3);
       setTransitioning(false);
 
-      // Identity is already confirmed (Phase 3). Go straight to snapshot.
+      // Show integration overlay after CMO summary (new phase)
       fetchIntelligence();
-      setEntry("intelligence-first");
+      setEntry("integration_connect");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
   };

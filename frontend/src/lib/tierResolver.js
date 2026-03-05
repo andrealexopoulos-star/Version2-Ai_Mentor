@@ -40,7 +40,7 @@ const ROUTE_ACCESS = {
   '/actions': 'starter',
   '/automations': 'starter',
   '/email-inbox': 'starter',
-  '/calendar': 'starter',
+  '/calendar': 'free',
   '/analysis': 'starter',
   '/diagnosis': 'starter',
   '/documents': 'starter',

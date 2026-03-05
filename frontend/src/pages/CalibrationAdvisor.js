@@ -8,6 +8,7 @@ import {
 } from "../components/calibration/CalibrationComponents";
 import { WowSummary, DissolveTransition } from "../components/calibration/WowSummary";
 import ChiefMarketingSummary from "../components/calibration/ChiefMarketingSummary";
+import PostCMOIntegrationOverlay from "../components/calibration/PostCMOIntegrationOverlay";
 import ForensicIdentityCard from "../components/calibration/ForensicIdentityCard";
 import { ExecutiveReveal } from "../components/calibration/ExecutiveReveal";
 import { ContinuitySuite } from "../components/calibration/ContinuitySuite";
@@ -122,6 +123,15 @@ const CalibrationAdvisor = () => {
           onConfirm={cal.handleConfirmWow}
           isSubmitting={cal.isSubmitting}
           identityConfidence={cal.identityConfidence}
+        />
+      )}
+
+      {/* ═══ PHASE 4b: Post-CMO Integration Overlay ═══ */}
+      {cal.entry === "integration_connect" && (
+        <PostCMOIntegrationOverlay
+          firstName={cal.firstName}
+          onSkip={() => cal.setEntry("intelligence-first")}
+          onComplete={() => cal.setEntry("intelligence-first")}
         />
       )}
 

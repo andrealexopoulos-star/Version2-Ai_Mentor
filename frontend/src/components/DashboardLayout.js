@@ -203,6 +203,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
       { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
       { icon: Settings, label: 'Settings', path: '/settings' },
+      { icon: Bell, label: 'Weekly Check-In', path: '/calendar' },
     ]},
   ];
 

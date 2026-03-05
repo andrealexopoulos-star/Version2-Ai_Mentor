@@ -11,10 +11,16 @@ const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 // Detect if a message is a data query (needs integration data)
-const DATA_KEYWORDS = ['how much', 'how many', 'what was', 'what is', 'show me', 'total', 'pipeline', 'deals', 'contacts', 'invoices', 'revenue', 'spend', 'google ads', 'leads', 'clients', 'outstanding', 'overdue'];
+const DATA_QUERY_PATTERNS = [
+  /^show me (my )?(pipeline|deals|invoices|revenue|leads|contacts|spend)/i,
+  /^what (is|was|are) (my |our )?(total |current )?(pipeline|revenue|spend|overdue|outstanding)/i,
+  /^how much (did|have|has|do)/i,
+  /^how many (deals|leads|contacts|invoices|clients)/i,
+  /^(list|give me|pull up) (my |our )?(deals|invoices|pipeline|leads|contacts)/i,
+];
 function isDataQuery(msg) {
-  const lower = msg.toLowerCase();
-  return DATA_KEYWORDS.some(kw => lower.includes(kw));
+  const lower = msg.trim().toLowerCase();
+  return DATA_QUERY_PATTERNS.some(pattern => pattern.test(lower));
 }
 
 // Detect if a message is a BNA update request
