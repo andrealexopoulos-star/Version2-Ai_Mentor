@@ -4,6 +4,7 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
 import { apiClient } from '../lib/api';
 import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { PRICING_TIERS } from '../config/pricingTiers';
 
 const HEAD = "'Cormorant Garamond', Georgia, serif";
 const BODY = "'Inter', sans-serif";
@@ -16,14 +17,8 @@ const FEATURE_LABELS = {
   '/sop-generator': 'SOP Generator', '/market': 'Market Deep Analysis',
 };
 
-const PLANS = [
-  { id: 'free', name: 'Free', price: '$0', period: '/month', color: '#64748B',
-    features: ['Market Intelligence (basic)', 'Business DNA', '1 Forensic Audit/month', '3 Snapshots/month', 'Email Integration'] },
-  { id: 'starter', name: 'Starter', price: '$197', period: '/month', color: '#FF6A00', recommended: true,
-    features: ['Everything in Free', 'Revenue Engine', 'Risk & Workforce', 'Operations Intelligence', 'Compliance', 'Reports & Audit Log', 'Soundboard Chat', 'SOP Generator', 'Priority Inbox', 'Unlimited Snapshots'] },
-  { id: 'professional', name: 'Professional', price: '$497', period: '/month', color: '#7C3AED',
-    features: ['Everything in Starter', 'War Room', 'Board Room', 'Deep Market Analysis', 'Outcome Tracking', 'Priority Support'] },
-];
+// Use canonical pricing — excludes 'free' and 'super_admin' from payment plans
+const PLANS = PRICING_TIERS.filter(t => t.id !== 'free' && t.id !== 'super_admin');
 
 const SubscribePage = () => {
   const { user } = useSupabaseAuth();

@@ -48,7 +48,16 @@ Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for 
 - **OperationsPage**: Added Operations Intelligence panel with cognition indices (ADS, EGI, SDS, BNS)
 - All pages gracefully handle `MIGRATION_REQUIRED` state (SQL migrations 044+045 not yet deployed)
 
-### Live Forensic Audit (Complete — Mar 2026)
+### Forensic Pre-Launch Test (Complete — Mar 2026)
+- Created 3 test accounts: trent-test1/2/3@biqc-test.com (Campos Coffee, Koala Eco, Thankyou Group)
+- Completed live calibration for Campos Coffee: ABN 57 100 123 699 verified, digital footprint 55/100
+- Full forensic report: `/app/reports/forensic_test_2026/MASTER_FORENSIC_REPORT_20260304.md`
+- **P0 issues found and fixed:**
+  - SoundBoard was using OLD DB prompt — bypassed `get_prompt()` to always use new Strategic Advisor
+  - SoundBoard welcome text updated to match new advisor persona
+  - Pricing mismatch: SubscribePage now shows Foundation $750 / Performance $1,950 / Growth $3,900
+- **SQL to run:** `047_grant_test_super_admin.sql` — grants super_admin to test accounts
+- **Supabase action needed:** Delete `mysoundboard_v1` row from `system_prompts` table
 - Comprehensive live testing of production site biqc.thestrategysquad.com documented
 - Report at `/app/reports/LIVE_FORENSIC_AUDIT_20260304.md`
 - Key finding: calibration gate works correctly; test1234 account redirects to calibration (not completed)

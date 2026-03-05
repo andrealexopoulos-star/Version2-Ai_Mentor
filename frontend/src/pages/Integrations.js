@@ -77,7 +77,7 @@ const Integrations = () => {
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [mergeIntegrations, setMergeIntegrations] = useState({});
-  const [mergeLoading, setMergeLoading] = useState(true);
+  const [mergeLoading, setMergeLoading] = useState(false); // Start false — show content immediately, load state async
   
   // Merge Link integration
   const [mergeLinkToken, setMergeLinkToken] = useState(null);

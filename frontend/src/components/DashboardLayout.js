@@ -203,6 +203,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
       { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
       { icon: Settings, label: 'Settings', path: '/settings' },
+      { icon: Bell, label: 'Weekly Check-In', path: '/calendar' },
     ]},
   ];
 
@@ -270,32 +271,55 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
               )}
             </button>
             {showNotifications && (
-              <div className="absolute right-0 top-12 w-80 max-h-96 overflow-y-auto rounded-xl shadow-xl z-50" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <div className="p-3" style={{ borderBottom: '1px solid #243140' }}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Notifications</h3>
+              <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl z-50" style={{ background: '#141C26', border: '1px solid #243140' }}>
+                <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid #243140', background: '#141C26' }}>
+                  <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
+                  <div className="flex items-center gap-2">
                     {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#EF444415', color: '#EF4444', fontFamily: MONO }}>{notifications.high} urgent</span>}
+                    <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>View all</button>
                   </div>
                 </div>
                 {notificationsList.length === 0 ? (
                   <div className="p-6 text-center">
                     <Bell className="w-8 h-8 mx-auto mb-2 text-[#64748B]" />
-                    <p className="text-sm text-[#64748B]" style={{ fontFamily: BODY }}>No notifications</p>
-                    <p className="text-xs mt-1 text-[#64748B]" style={{ fontFamily: BODY }}>We'll alert you when something needs attention</p>
+                    <p className="text-sm text-[#64748B]" style={{ fontFamily: BODY }}>No alerts</p>
+                    <p className="text-xs mt-1 text-[#64748B]">Connect integrations to activate real-time alerts</p>
                   </div>
                 ) : (
                   <div>
                     {notificationsList.map((notif, idx) => (
-                      <div key={idx} className="p-3 cursor-pointer hover:bg-white/5 transition-colors" style={{ borderBottom: '1px solid #243140', background: notif.severity === 'high' ? 'rgba(239,68,68,0.05)' : 'transparent' }}
-                        onClick={() => { setShowNotifications(false); navigate(notif.type === 'email' || notif.type === 'complaint' ? '/email-inbox' : notif.type === 'meeting' ? '/calendar' : '/intel-centre'); }}>
+                      <div key={notif.id || idx} className="p-3" style={{ borderBottom: '1px solid #1E293B', background: notif.severity === 'high' ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: notif.severity === 'high' ? '#EF444415' : '#F59E0B15' }}>
-                            <AlertCircle className="w-4 h-4" style={{ color: notif.severity === 'high' ? '#EF4444' : '#F59E0B' }} />
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: notif.severity === 'high' ? '#EF444415' : '#F59E0B15' }}>
+                            <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? '#EF4444' : '#F59E0B' }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#F4F7FA]" style={{ fontFamily: BODY }}>{notif.title}</p>
-                            <p className="text-xs mt-0.5 text-[#64748B] line-clamp-2" style={{ fontFamily: BODY }}>{notif.message}</p>
-                            <p className="text-xs mt-1 text-[#FF6A00]" style={{ fontFamily: BODY }}>{notif.action}</p>
+                            <p className="text-xs font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: BODY }}>{notif.title}</p>
+                            <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1" style={{ fontFamily: BODY }}>{notif.message}</p>
+                            {notif.action && <p className="text-[11px] text-[#FF6A00]">{notif.action}</p>}
+                            {/* Action buttons inline in bell */}
+                            <div className="flex gap-1.5 mt-2">
+                              <button
+                                onClick={async (e) => { e.stopPropagation(); try { await apiClient.post(`/notifications/dismiss/${notif.id}`); fetchNotifications(); } catch {} }}
+                                className="text-[10px] px-2 py-1 rounded-md flex items-center gap-1"
+                                style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: MONO }}
+                                data-testid={`notif-dismiss-${notif.id}`}>
+                                ✓ Done
+                              </button>
+                              <button
+                                onClick={async (e) => { e.stopPropagation(); try { await apiClient.post(`/notifications/dismiss/${notif.id}`); fetchNotifications(); } catch {} }}
+                                className="text-[10px] px-2 py-1 rounded-md flex items-center gap-1"
+                                style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30', fontFamily: MONO }}
+                                data-testid={`notif-ignore-${notif.id}`}>
+                                Ignore
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setShowNotifications(false); navigate(notif.type === 'email' || notif.type === 'complaint' ? '/email-inbox' : notif.type === 'meeting' ? '/calendar' : '/intel-centre'); }}
+                                className="text-[10px] px-2 py-1 rounded-md"
+                                style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: MONO }}>
+                                Review
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

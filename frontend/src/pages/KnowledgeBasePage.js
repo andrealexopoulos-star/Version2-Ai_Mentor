@@ -15,9 +15,39 @@ const Panel = ({ children, className = '' }) => (
 
 const GUIDES = [
   {
+    id: 'what-is-biqc',
+    icon: BookOpen,
+    color: '#FF6A00',
+    title: 'What is BIQc?',
+    why: 'BIQc stands for Business Intelligence Quotient Centre — a sovereign intelligence platform purpose-built for SMBs who want to run their business with the same analytical precision as enterprise operators, without the enterprise cost.',
+    steps: [
+      {
+        step: 'Business Intelligence Quotient Centre',
+        detail: 'The "Quotient" reflects the platform\'s core mission: measuring, tracking, and improving the intelligence score of your business over time. Just as an IQ measures cognitive capacity, BIQc measures your business\'s operational clarity — how well-informed, how signal-aware, and how decision-ready it is at any given moment.',
+      },
+      {
+        step: 'Cognition as a Platform (CaaP)',
+        detail: 'BIQc is not a dashboard. It is a cognitive intelligence engine. Where a dashboard shows you what happened, BIQc synthesises signals from every connected source, detects patterns across your revenue, operations, finance, people, and market data, and surfaces decisions — not just data. The platform\'s Cognition Core continuously computes instability indices, propagation chains, and confidence scores. It tells you what is about to happen, which domain will be affected first, and what to do about it before the damage is done. Cognition as a Platform means the intelligence is always on, always learning from your decisions, and always recalibrating its confidence based on outcomes.',
+      },
+      {
+        step: 'Unified Integrations Engine (UIE)',
+        detail: 'Every business tool you use — your CRM, accounting software, email, calendar, marketing platform — lives in a silo. BIQc\'s Unified Integrations Engine connects all of these systems through a single, normalised intelligence layer. When your CRM signals a stalled pipeline while your accounting tool shows cash compression, BIQc detects the compounding risk before either system individually would surface it. The UIE doesn\'t just aggregate data — it computes cross-domain propagation: if a pattern in one domain is left unaddressed, which other domains will it affect, and in what timeframe? This is the foundation of BIQc\'s Propagation Map and Cross-Domain Intelligence features.',
+      },
+      {
+        step: 'The Intelligence Hierarchy',
+        detail: 'BIQc operates across five intelligence domains — Revenue, Money, Operations, People, and Market — and synthesises them into a single Stability Score. The higher your Stability Score, the more decision-ready your business is. BIQc actively monitors your score daily and alerts you when it detects drift before it compounds.',
+      },
+      {
+        step: 'What BIQc is not',
+        detail: 'BIQc does not give financial advice, legal advice, or accounting advice. It does not modify your business systems. It does not fabricate or hallucinate data — if a data source is not connected, BIQc shows an empty state and tells you what to connect. BIQc is a signal amplifier: it makes the intelligence already inside your business visible, structured, and actionable.',
+      },
+    ],
+    time: '5 min read',
+  },
+  {
     id: 'getting-started',
     icon: Zap,
-    color: '#FF6A00',
+    color: '#10B981',
     title: 'Getting Started with BIQc',
     why: 'BIQc is your sovereign intelligence platform. It monitors, analyses, and surfaces actionable business signals from your connected systems. This guide walks you through the core setup.',
     steps: [
@@ -128,8 +158,16 @@ const GUIDES = [
 ];
 
 const FAQS = [
-  { q: 'What is BIQc?', a: 'BIQc (Business Intelligence Quality Control) is a sovereign intelligence platform that connects to your business tools and surfaces actionable signals across revenue, operations, finance, people, and market positioning.' },
-  { q: 'How does BIQc differ from a dashboard?', a: 'Unlike traditional dashboards that display static charts, BIQc uses cognitive AI to analyse patterns, detect drift, predict risks, and recommend specific actions based on your verified business data.' },
+  {
+    q: 'What does BIQc stand for?',
+    a: 'BIQc stands for Business Intelligence Quotient Centre. The "Quotient" reflects the platform\'s core mission: continuously measuring and improving the decision-readiness of your business — similar to how a quotient measures cognitive capacity, BIQc measures your business\'s operational intelligence score.',
+  },
+  {
+    q: 'What is BIQc?',
+    a: 'BIQc (Business Intelligence Quotient Centre) is a sovereign Cognition as a Platform (CaaP) and Unified Integrations Engine for SMBs. It connects to your business tools — CRM, accounting, email, calendar — and synthesises signals across revenue, operations, finance, people, and market positioning into a single, always-on intelligence layer. Unlike dashboards that show what happened, BIQc detects what is about to happen and recommends action.',
+  },
+  { q: 'How does BIQc differ from a dashboard?', a: 'Unlike traditional dashboards that display static charts, BIQc uses cognitive AI to analyse patterns across all connected systems simultaneously, detect propagation risks (how one problem compounds into another domain), and recommend specific actions based on your verified business data. It operates as a Cognition as a Platform — intelligence is continuous, not on-demand.' },
+  { q: 'What is the Unified Integrations Engine?', a: 'The Unified Integrations Engine (UIE) is BIQc\'s cross-system intelligence layer. It connects your CRM, accounting software, email, calendar, and marketing platforms through a normalised intelligence pipeline. When signals across two or more systems correlate — for example, a stalled pipeline combined with cash compression — the UIE surfaces the compound risk through BIQc\'s Propagation Map before either system would flag it individually.' },
   { q: 'What integrations does BIQc support?', a: 'BIQc integrates with HubSpot, Salesforce, Pipedrive (CRM), Xero, QuickBooks, MYOB (Accounting), Gmail, Outlook (Email), and more via Merge.dev.' },
   { q: 'Is my data safe?', a: 'Yes. All data is hosted exclusively in Australian data centres (Sydney & Melbourne). We use AES-256 encryption, siloed AI instances per client, and read-only integrations. Your data is never used for model training.' },
   { q: 'What happens if I don\'t connect integrations?', a: 'BIQc will show "Connect integrations to view verified data" states. The platform never fabricates or assumes data. You\'ll see intelligence only from sources that are actually connected.' },
@@ -137,7 +175,7 @@ const FAQS = [
   { q: 'How accurate is the AI analysis?', a: 'BIQc surfaces signals from your verified, connected data. Market positioning analysis comes from real web intelligence. The platform clearly labels confidence levels and data sources for every insight.' },
   { q: 'Is there a free tier?', a: 'Yes. BIQc offers a complimentary market landscape assessment so you can experience the platform before committing. Visit the Pricing page for details.' },
   { q: 'How long does setup take?', a: 'Initial setup takes 5-10 minutes. Connect your business domain, verify your identity, and link your integrations. Intelligence starts populating within minutes of connecting tools.' },
-  { q: 'Who is BIQc designed for?', a: 'BIQc is purpose-built for SMB founders, managing directors, and executive teams who need enterprise-grade business intelligence without the enterprise cost or complexity.' },
+  { q: 'Who is BIQc designed for?', a: 'BIQc is purpose-built for SMB founders, managing directors, and executive teams who want enterprise-grade business intelligence without the enterprise cost or complexity.' },
 ];
 
 const FAQItem = ({ q, a }) => {
@@ -165,7 +203,7 @@ const KnowledgeBaseContent = () => {
     <div className="max-w-[900px] mx-auto space-y-8 px-6 py-8" style={{ fontFamily: BODY }} data-testid="knowledge-base-page">
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD, textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #F4F7FA' }}>Knowledge Base</h1>
-        <p className="text-sm text-[#9FB0C3]">Step-by-step guides to activate every intelligence layer in BIQc, plus frequently asked questions.</p>
+        <p className="text-sm text-[#9FB0C3]">Understanding BIQc — Business Intelligence Quotient Centre. Step-by-step guides to activate every intelligence layer, plus frequently asked questions.</p>
       </div>
 
       {/* Quick Nav */}

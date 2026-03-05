@@ -211,7 +211,25 @@ export const useCalibrationState = () => {
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
     setError(null); setIsSubmitting(true); setEntry("analyzing");
     try {
-      try { await apiClient.put('/business-profile', { website: url }); } catch {}
+      // Clear potentially contaminated intelligence fields before new calibration scan
+      // This prevents cross-business data bleeding from previous calibrations
+      // Column list verified against actual business_profiles schema
+      try {
+        await apiClient.put('/business-profile', {
+          website: url,
+          market_position: null,
+          main_products_services: null,
+          unique_value_proposition: null,
+          competitive_advantages: null,
+          target_market: null,
+          ideal_customer_profile: null,
+          geographic_focus: null,
+          abn: null,
+          competitor_scan_result: null,
+        });
+      } catch {
+        // Non-fatal — continue with calibration even if reset fails
+      }
 
       const token = session?.access_token;
       let auditData = null;
@@ -441,9 +459,9 @@ export const useCalibrationState = () => {
       autoSave(3);
       setTransitioning(false);
 
-      // Identity is already confirmed (Phase 3). Go straight to snapshot.
+      // Show integration overlay after CMO summary (new phase)
       fetchIntelligence();
-      setEntry("intelligence-first");
+      setEntry("integration_connect");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
   };

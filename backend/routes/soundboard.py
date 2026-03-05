@@ -25,32 +25,36 @@ from fact_resolution import resolve_facts, build_known_facts_prompt
 
 router = APIRouter()
 
-# ─── Hardcoded fallback (used only if DB prompt is missing) ───
-_SOUNDBOARD_FALLBACK = (
-    "You are MySoundBoard, an AI thinking partner for business owners using the BIQc platform.\n\n"
-    "Your role is to support the user's thought process by reflecting on their statements, "
-    "highlighting relevant facts from their data, and asking clarifying questions. "
-    "You are not an advisor or consultant. You do not provide direct recommendations or lists of options.\n\n"
-    "RESPONSIBILITIES:\n"
-    "1. Observe and reflect: Restate what the user has shared in your own words, focusing on key details. "
-    "Highlight any patterns or anomalies in their data based on the latest cognitive snapshot.\n"
-    "2. Retrieve and cite: When facts are needed, use the retrieved context provided. "
-    "Include brief citations in your response (e.g. [source 1]) and list the corresponding source URLs after your question.\n"
-    "3. Ask one question: End each turn with a single, open-ended question that encourages deeper thinking. "
-    "Do not provide advice or step-by-step instructions.\n"
-    "4. Acknowledge uncertainty: If the retrieved data does not provide enough evidence, be transparent: "
-    "say you cannot answer confidently and suggest a clarifying question or additional data needed.\n\n"
-    "RESPONSE STRUCTURE:\n"
-    "- Observation: Summarise or reflect on the user's statement and any relevant data retrieved.\n"
-    "- Question: Ask an open-ended question that helps the user explore their situation.\n"
-    "- Sources: List the URLs of sources used in square brackets at the end.\n\n"
-    "CONSTRAINTS:\n"
-    "- No lists or bullet points in the main answer. Use conversational sentences.\n"
-    "- No direct advice or recommendations. Remain a thinking partner.\n"
-    "- One question per turn. Do not ask multiple questions.\n"
-    "- No hallucination: Only reflect on facts that are present in the data you retrieved. Admit when information is missing.\n"
-    "- Respect privacy: Do not reveal private details about other users or businesses."
-)
+# ─── Strategic Advisor System Prompt ───
+_SOUNDBOARD_FALLBACK = """\
+You are {user_first_name}'s personal Strategic Intelligence Advisor, operating inside BIQc — their sovereign business intelligence platform.
+
+You have live access to {user_first_name}'s business data: CRM pipeline, accounting position, email signals, team capacity, market benchmarks, and their full Business DNA. This data is provided in the context below. You must use it.
+
+YOUR CHARACTER:
+You think like a senior commercial operator who has seen hundreds of businesses scale, stall, and fail. You are direct. You do not hedge unnecessarily. You do not start every response with a question. You earn trust by being specific — names, numbers, timeframes — not by being cautiously vague.
+
+WHEN TO BE DIRECT (most of the time):
+When you have data, lead with your observation and your view. {user_first_name} is a business owner, not a student. They don't need to be guided to their own conclusions — they need a trusted advisor who has already synthesised the data and can tell them what it means.
+
+WHEN TO ASK A CLARIFYING QUESTION (only when genuinely needed):
+When critical context is missing and your answer would be materially different depending on it, ask ONE specific question. Not several. Never ask "How does that make you feel?" — ask operational questions that change the advice.
+
+COMMUNICATION PRINCIPLES:
+- Use {user_first_name}'s first name naturally, the way a trusted colleague would — not at the start of every message, not never.
+- Be conversational. No bullet lists unless the user specifically asks for a structured breakdown.
+- Match energy: if they're urgent, be urgent. If they're reflective, go deep.
+- If a signal in their data is serious, say it plainly. Don't soften critical findings.
+- If you don't have data on something, say what you'd need — then give your best view with what you do have.
+- Never fabricate numbers. If data is absent from the context provided, say so specifically.
+
+RESPONSE PATTERN (adapt, don't follow rigidly):
+1. When you have enough data: State your direct observation, back it with their specific numbers, give your recommendation.
+2. When context is insufficient: State what the data shows so far, ask your ONE clarifying question.
+3. Always close with the highest-leverage next move available to {user_first_name} right now.
+
+You are not a chatbot. You are not a dashboard. You are the advisor {user_first_name} calls when the stakes are real.\
+"""
 
 
 class SoundboardChatRequest(BaseModel):
@@ -120,18 +124,38 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     cognitive_context = _build_cognitive_context(req, core_context)
 
-    # User info
+    # User info — extract first name
     user_profile = await get_user_by_id(user_id)
     profile = await get_business_profile_supabase(sb, user_id)
-    user_name = (user_profile.get("full_name") if user_profile else None) or "Business Owner"
+    full_name = (user_profile.get("full_name") if user_profile else None) or "there"
+    user_first_name = full_name.split()[0] if full_name and full_name != "there" else "there"
+    user_email = (user_profile.get("email") if user_profile else None) or ""
+
+    # ═══ FULL BUSINESS DNA ═══
+    biz_context = ""
+    if profile:
+        biz_context = "\n\n═══ BUSINESS DNA ═══\n"
+        biz_context += f"Business: {profile.get('business_name', 'Unknown')}\n"
+        for field, label in [
+            ('industry', 'Industry'), ('location', 'Location'), ('team_size', 'Team size'),
+            ('target_market', 'Target market'), ('main_products_services', 'Products/services'),
+            ('unique_value_proposition', 'UVP'), ('pricing_model', 'Pricing model'),
+            ('business_model', 'Business model'), ('short_term_goals', 'Short-term goals'),
+            ('long_term_goals', 'Long-term goals'), ('main_challenges', 'Current challenges'),
+            ('growth_strategy', 'Growth strategy'), ('vision_statement', 'Vision'),
+        ]:
+            val = profile.get(field)
+            if val:
+                biz_context += f"{label}: {val}\n"
 
     user_context = (
-        f"\nUSER: {user_name}\n"
-        f"BUSINESS: {profile.get('business_name', 'Their business') if profile else 'Unknown'}\n"
+        f"\nADVISOR IS SPEAKING WITH: {user_first_name} ({user_email})\n"
         f"PROFILE MATURITY: {core_context.get('profile_maturity', 'nascent')}\n"
-        f"\n────────────────────────────────────────\nCOGNITIVE CORE CONTEXT (USE THIS)\n"
-        f"────────────────────────────────────────\n"
-        f"{cognitive_context or 'Limited data - ask questions to learn more about this user.'}\n"
+        f"{biz_context}\n"
+        f"════════════════════════════════════════\n"
+        f"COGNITIVE INTELLIGENCE SNAPSHOT\n"
+        f"════════════════════════════════════════\n"
+        f"{cognitive_context or 'No cognitive snapshot available — ask about their data to gather context.'}\n"
     )
 
     # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
@@ -158,7 +182,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             for inv in rev['overdue_invoices'][:3]:
                 integration_context += f"  - Invoice {inv['number']}: ${inv['amount']:,.0f} ({inv['days_overdue']}d overdue)\n"
         if rev['at_risk']:
-            integration_context += f"\nAT-RISK DEALS:\n"
+            integration_context += "\nAT-RISK DEALS:\n"
             for r in rev['at_risk'][:3]:
                 integration_context += f"  - {r['name']}: ${r['amount']:,.0f} — {r['risk']} ({r['days_stalled']}d stalled)\n"
         
@@ -186,7 +210,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         if bench.data and bench.data[0].get('scores'):
             b = bench.data[0]
             scores = b['scores']
-            marketing_context = f"\n\nMARKETING BENCHMARK SCORES:\n"
+            marketing_context = "\n\nMARKETING BENCHMARK SCORES:\n"
             for pillar, score in scores.items():
                 if pillar != 'overall' and isinstance(score, (int, float)):
                     marketing_context += f"- {pillar.replace('_', ' ').title()}: {round(score * 100)}%\n"
@@ -206,43 +230,44 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     actions_context += "- 'Run a benchmark' → compares against competitors\n"
     actions_context += "- 'Generate a report' → creates downloadable PDF report\n"
 
-    # Fetch prompt from DB, fall back to hardcoded
-    soundboard_prompt = await get_prompt("mysoundboard_v1", _SOUNDBOARD_FALLBACK)
-    fact_block = f"\n\nGLOBAL FACT AUTHORITY:\n{facts_prompt}\nDo NOT re-ask any fact listed above.\n" if facts_prompt else ""
+    # Always use the new Strategic Advisor prompt — do NOT use cached DB prompt
+    # (DB has old 'thinking partner' prompt that conflicts with new advisor persona)
+    soundboard_prompt = _SOUNDBOARD_FALLBACK.replace("{user_first_name}", user_first_name)
+    fact_block = f"\n\nKNOWN FACTS (do not re-ask these):\n{facts_prompt}\n" if facts_prompt else ""
 
-    # ═══ RAG RETRIEVAL (if enabled) ═══
+    # ═══ RAG RETRIEVAL — always attempt (no flag dependency) ═══
     rag_context = ""
     try:
-        from intelligence_spine import _get_cached_flag
-        if _get_cached_flag('rag_chat_enabled'):
-            from routes.rag_service import generate_embedding
-            query_emb = await generate_embedding(req.message[:500])
-            from supabase_client import get_supabase_client
-            sb_rag = get_supabase_client()
-            rag_results = sb_rag.rpc('rag_search', {
-                'p_tenant_id': user_id,
-                'p_query_embedding': query_emb,
-                'p_limit': 3,
-                'p_similarity_threshold': 0.65,
-            }).execute()
-            if rag_results.data:
-                rag_snippets = [f"[{r['source_type']}] {r['content'][:300]}" for r in rag_results.data[:3]]
-                rag_context = "\n\nRETRIEVED CONTEXT (cite these sources):\n" + "\n---\n".join(rag_snippets) + "\n"
+        from routes.rag_service import generate_embedding
+        query_emb = await generate_embedding(req.message[:500])
+        from supabase_client import get_supabase_client
+        sb_rag = get_supabase_client()
+        rag_results = sb_rag.rpc('rag_search', {
+            'p_tenant_id': user_id,
+            'p_query_embedding': query_emb,
+            'p_limit': 4,
+            'p_similarity_threshold': 0.60,
+        }).execute()
+        if rag_results.data:
+            rag_snippets = [f"[{r['source_type']}] {r['content'][:400]}" for r in rag_results.data[:4]]
+            rag_context = "\n\n═══ RETRIEVED FROM DOCUMENT STORAGE ═══\n" + "\n---\n".join(rag_snippets) + "\n"
     except Exception as e:
-        logger.debug(f"RAG retrieval skipped: {e}")
+        logger.debug(f"RAG retrieval: {e}")
 
-    # ═══ MEMORY RETRIEVAL (if enabled) ═══
+    # ═══ MEMORY — always attempt (no flag dependency) ═══
     memory_context = ""
     try:
-        if _get_cached_flag('memory_layer_enabled'):
-            sb_mem = get_supabase_client()
-            summaries = sb_mem.table('context_summaries') \
-                .select('summary_text').eq('tenant_id', user_id) \
-                .order('created_at', desc=True).limit(2).execute()
-            if summaries.data:
-                memory_context = "\n\nPRIOR SESSION CONTEXT:\n" + "\n".join(s['summary_text'][:200] for s in summaries.data) + "\n"
-    except Exception:
-        pass
+        from supabase_client import get_supabase_client
+        sb_mem = get_supabase_client()
+        summaries = sb_mem.table('context_summaries') \
+            .select('summary_text, created_at').eq('tenant_id', user_id) \
+            .order('created_at', desc=True).limit(5).execute()
+        if summaries.data:
+            memory_context = "\n\n═══ PRIOR CONVERSATION CONTEXT ═══\n"
+            for s in summaries.data:
+                memory_context += f"- {s['summary_text'][:300]}\n"
+    except Exception as e:
+        logger.debug(f"Memory retrieval: {e}")
 
     # ═══ GUARDRAILS: Sanitise input ═══
     from guardrails import sanitise_input, sanitise_output, log_llm_call_to_db
@@ -251,7 +276,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
 
-    system_message = soundboard_prompt + fact_block + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
+    system_message = soundboard_prompt + fact_block + biz_context + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {
@@ -374,18 +399,18 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 "messages": new_messages, "created_at": now, "updated_at": now
             })
 
-        # ═══ AUTO SESSION SUMMARISATION ═══
+        # ═══ AUTO SESSION SUMMARISATION — always save ═══
         try:
-            from intelligence_spine import _get_cached_flag
-            if _get_cached_flag('memory_layer_enabled'):
-                summary_text = f"User discussed: {req.message[:100]}. BIQc responded with observations about their business context."
-                sb.table('context_summaries').insert({
-                    'tenant_id': user_id,
-                    'summary_type': 'conversation',
-                    'summary_text': summary_text,
-                    'source_count': 1,
-                    'key_outcomes': [{'topic': req.message[:50], 'response_length': len(response) if isinstance(response, str) else 0}],
-                }).execute()
+            from supabase_client import get_supabase_client
+            sb_sum = get_supabase_client()
+            summary_text = f"[{now_dt.strftime('%d %b %Y')}] {user_first_name} discussed: {req.message[:150]}. Key topic: {req.message[:60]}. Response context: business data accessed, {len(integration_context)} chars integration data."
+            sb_sum.table('context_summaries').insert({
+                'tenant_id': user_id,
+                'summary_type': 'soundboard_session',
+                'summary_text': summary_text,
+                'source_count': 1,
+                'key_outcomes': [{'topic': req.message[:80], 'response_length': len(response) if isinstance(response, str) else 0}],
+            }).execute()
         except Exception:
             pass
 
@@ -500,3 +525,113 @@ def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> 
         parts.append("\nUser appears to be in a stress period. Soften tone.")
 
     return "\n".join(parts)
+
+
+
+# ═══════════════════════════════════════════════════════════════
+# SCAN USAGE — Supabase-backed server-side enforcement
+# ═══════════════════════════════════════════════════════════════
+
+SCAN_COOLDOWN_DAYS = 30
+FEATURES = ['exposure_scan', 'forensic_calibration']
+
+
+class RecordScanRequest(BaseModel):
+    feature_name: str  # 'exposure_scan' or 'forensic_calibration'
+
+
+@router.get("/soundboard/scan-usage")
+async def get_scan_usage(current_user: dict = Depends(get_current_user)):
+    """
+    Returns scan eligibility for this user from Supabase.
+    - calibration_complete: bool
+    - is_free_tier: bool
+    - exposure_scan: { can_run, last_used_at, days_until_next }
+    - forensic_calibration: { can_run, last_used_at, days_until_next }
+    """
+    sb = get_sb()
+    user_id = current_user["id"]
+    now = datetime.now(timezone.utc)
+
+    # Check calibration status
+    calibration_complete = False
+    try:
+        op = sb.table("user_operator_profile").select("persona_calibration_status").eq("user_id", user_id).execute()
+        if op.data and op.data[0].get("persona_calibration_status") == "complete":
+            calibration_complete = True
+    except Exception:
+        pass
+
+    # Check subscription tier
+    subscription_tier = "free"
+    try:
+        u = sb.table("users").select("subscription_tier").eq("id", user_id).execute()
+        if u.data:
+            subscription_tier = u.data[0].get("subscription_tier") or "free"
+    except Exception:
+        pass
+
+    tier_rank = {"free": 0, "starter": 1, "professional": 2, "growth": 3, "enterprise": 3, "super_admin": 99}
+    is_paid = tier_rank.get(subscription_tier, 0) >= 1
+
+    # Fetch usage records from Supabase
+    usage_map = {}
+    try:
+        result = sb.table("user_feature_usage").select("feature_name, last_used_at, use_count").eq("user_id", user_id).execute()
+        for row in (result.data or []):
+            usage_map[row["feature_name"]] = row
+    except Exception:
+        pass
+
+    def feature_status(feature):
+        row = usage_map.get(feature)
+        if not row or is_paid:
+            # Paid users always can run; no prior record = can run
+            return {"can_run": True, "last_used_at": row["last_used_at"] if row else None, "days_until_next": 0}
+        last_used = datetime.fromisoformat(row["last_used_at"].replace("Z", "+00:00")) if row.get("last_used_at") else None
+        if not last_used:
+            return {"can_run": True, "last_used_at": None, "days_until_next": 0}
+        elapsed_days = (now - last_used).days
+        if elapsed_days >= SCAN_COOLDOWN_DAYS:
+            return {"can_run": True, "last_used_at": row["last_used_at"], "days_until_next": 0}
+        return {
+            "can_run": False,
+            "last_used_at": row["last_used_at"],
+            "days_until_next": SCAN_COOLDOWN_DAYS - elapsed_days,
+        }
+
+    return {
+        "calibration_complete": calibration_complete,
+        "subscription_tier": subscription_tier,
+        "is_paid": is_paid,
+        "exposure_scan": feature_status("exposure_scan"),
+        "forensic_calibration": feature_status("forensic_calibration"),
+    }
+
+
+@router.post("/soundboard/record-scan")
+async def record_scan(req: RecordScanRequest, current_user: dict = Depends(get_current_user)):
+    """Record a scan being initiated. Upsert into user_feature_usage."""
+    if req.feature_name not in FEATURES:
+        raise HTTPException(status_code=400, detail=f"Invalid feature. Must be one of: {FEATURES}")
+    sb = get_sb()
+    user_id = current_user["id"]
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        existing = sb.table("user_feature_usage").select("id, use_count").eq("user_id", user_id).eq("feature_name", req.feature_name).execute()
+        if existing.data:
+            sb.table("user_feature_usage").update({
+                "last_used_at": now_iso,
+                "use_count": (existing.data[0].get("use_count") or 0) + 1,
+            }).eq("user_id", user_id).eq("feature_name", req.feature_name).execute()
+        else:
+            sb.table("user_feature_usage").insert({
+                "user_id": user_id,
+                "feature_name": req.feature_name,
+                "last_used_at": now_iso,
+                "use_count": 1,
+            }).execute()
+    except Exception as e:
+        logger.warning(f"record_scan failed: {e}")
+        return {"status": "error", "detail": str(e)}
+    return {"status": "recorded", "feature": req.feature_name, "recorded_at": now_iso}

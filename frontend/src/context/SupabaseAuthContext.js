@@ -212,6 +212,9 @@ export const SupabaseAuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
+      // Clear bootstrap cache on sign-out
+      const userId = session?.user?.id;
+      if (userId) { try { sessionStorage.removeItem(`biqc_auth_bootstrap_${userId}`); } catch {} }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } finally {
@@ -245,6 +248,24 @@ export const SupabaseAuthProvider = ({ children }) => {
     // Token refreshes change the session object but keep the same user ID.
     if (lastBootstrapUserId.current === currentUserId && currentUserId !== null) {
       return;
+    }
+
+    // ── FAST PATH: sessionStorage cache (avoids 3 API calls on full page reload) ──
+    const CACHE_KEY = `biqc_auth_bootstrap_${currentUserId}`;
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    if (currentUserId) {
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { state, onboarding, ts } = JSON.parse(cached);
+          if (Date.now() - ts < CACHE_TTL) {
+            lastBootstrapUserId.current = currentUserId;
+            if (onboarding) setOnboardingStatus(onboarding);
+            setAuthState(state || AUTH_STATE.READY);
+            return; // Instant — no API calls needed
+          }
+        }
+      } catch {}
     }
 
     let cancelled = false;
@@ -316,6 +337,7 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         // Calibration complete — now fetch onboarding status ONCE
+        let obStatus = { completed: true }; // default fail-open
         try {
           const obRes = await fetch(`${getBackendUrl()}/api/onboarding/status`, {
             method: 'GET', headers: {
@@ -326,22 +348,32 @@ export const SupabaseAuthProvider = ({ children }) => {
           });
           if (obRes.ok) {
             const obData = await obRes.json();
-            if (!cancelled) {
-              setOnboardingStatus({
-                completed: obData.completed === true,
-                currentStep: obData.current_step || 0,
-                businessStage: obData.business_stage || null,
-              });
-            }
+            obStatus = {
+              completed: obData.completed === true,
+              currentStep: obData.current_step || 0,
+              businessStage: obData.business_stage || null,
+            };
+            if (!cancelled) setOnboardingStatus(obStatus);
           } else {
-            // Fail open: treat as complete to avoid blocking
-            if (!cancelled) setOnboardingStatus({ completed: true });
+            if (!cancelled) setOnboardingStatus(obStatus);
           }
         } catch {
-          if (!cancelled) setOnboardingStatus({ completed: true });
+          if (!cancelled) setOnboardingStatus(obStatus);
         }
 
-        if (!cancelled) setAuthState(AUTH_STATE.READY);
+        if (!cancelled) {
+          // Cache bootstrap result with actual onboarding status
+          if (currentUserId) {
+            try {
+              sessionStorage.setItem(`biqc_auth_bootstrap_${currentUserId}`, JSON.stringify({
+                state: AUTH_STATE.READY,
+                onboarding: obStatus, // actual status, not hardcoded
+                ts: Date.now(),
+              }));
+            } catch {}
+          }
+          setAuthState(AUTH_STATE.READY);
+        }
 
       } catch (err) {
         console.error('[AUTH BOOTSTRAP ERROR]', err.message);
