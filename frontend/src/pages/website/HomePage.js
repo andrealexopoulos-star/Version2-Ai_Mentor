@@ -29,7 +29,7 @@ const StatBlock = ({ value, label }) => (
 const HomePage = () => (
   <WebsiteLayout>
     {/* HERO — constrained container with background motion overlay */}
-    <section className="relative overflow-hidden" style={{ minHeight: '90vh', maxHeight: '110vh', position: 'relative' }} data-testid="hero-section">
+    <section className="relative overflow-hidden" style={{ minHeight: '80vh', maxHeight: '100vh', position: 'relative' }} data-testid="hero-section">
       {/* Base dark background */}
       <div className="absolute inset-0" style={{ background: '#07121E', zIndex: 0 }} />
 
@@ -52,7 +52,7 @@ const HomePage = () => (
                 Try It For Free <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: MONO, color: '#A6B2C1', marginBottom: 40 }} data-testid="hero-login">Already have an account? Log in</Link>
+            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: MONO, color: '#A6B2C1', marginBottom: 24 }} data-testid="hero-login">Already have an account? Log in</Link>
 
             {/* Continuously Learning — 40px gap from CTA */}
             <div className="flex flex-col items-center gap-3">
@@ -61,7 +61,7 @@ const HomePage = () => (
                 {['Protect', 'Stabilise', 'Strengthen'].map((word) => (
                   <div key={word} className="flex items-center gap-1.5 sm:gap-2">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF7A18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-[14px] sm:text-[18px] font-bold" style={{ fontFamily: BODY, color: '#FF7A18' }}>{word}</span>
+                    <span className="text-[14px] sm:text-[18px] font-medium" style={{ fontFamily: BODY, color: '#FF7A18' }}>{word}</span>
                   </div>
                 ))}
               </div>
@@ -70,7 +70,7 @@ const HomePage = () => (
             <p className="mt-6" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3, fontSize: '12px' }}>No credit card required &middot; Australian owned & operated</p>
 
             {/* Industry Benchmarks — inside hero, before diagram */}
-            <div className="mt-12 sm:mt-16" data-testid="stats-section">
+            <div className="mt-8 sm:mt-12" data-testid="stats-section">
               <p className="font-medium tracking-widest uppercase mb-6" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>Industry Benchmarks</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 max-w-4xl mx-auto">
                 <StatBlock value="40%" label="Operational Improvement" />
@@ -86,8 +86,8 @@ const HomePage = () => (
       </div>
     </section>
 
-    {/* 80px gap: hero → platform diagram */}
-    <div style={{ background: '#07121E', height: 80 }} />
+    {/* gap: hero → platform diagram */}
+    <div style={{ background: '#07121E', height: 20 }} />
 
     {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
     <div style={{ background: '#07121E' }}>
@@ -100,14 +100,14 @@ const HomePage = () => (
     </div>
 
     {/* WHAT COGNITION DELIVERS */}
-    <section className="py-20 sm:py-28" style={{ background: '#07121E' }} data-testid="cognition-section">
+    <section className="py-14 sm:py-20" style={{ background: '#07121E' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="mb-14 sm:mb-16">
+        <div className="mb-10 sm:mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
             <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18' }}>What Cognition-as-a-Service Delivers</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
+          <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
           <p className="text-base max-w-xl" style={{ fontFamily: BODY, color: '#A6B2C1' }}>Businesses embedding AI-driven decision systems experience:</p>
@@ -135,9 +135,9 @@ const HomePage = () => (
     </section>
 
     {/* CTA */}
-    <section className="py-20 sm:py-28" style={{ background: '#0A1520' }} data-testid="cta-section">
+    <section className="py-14 sm:py-20" style={{ background: '#0A1520' }} data-testid="cta-section">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
+        <h2 className="text-2xl sm:text-3xl font-medium mb-4" style={{ fontFamily: HEADING, color: '#E6EEF7' }}>
           Stop reacting. Start <span style={{ color: '#FF7A18' }}>preventing.</span>
         </h2>
         <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: BODY, color: '#A6B2C1' }}>

@@ -46,10 +46,10 @@ const IntegrationsPage = () => (
     {/* HERO */}
     <section className="relative overflow-hidden" data-testid="integrations-hero">
       <div className="absolute bottom-0 right-0 w-[500px] h-[400px] rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
-      <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10">
+      <div className="max-w-5xl mx-auto px-6 pt-16 pb-14 relative z-10">
         <div className="max-w-3xl">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>Integrations</span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
             Connect Any Platform.<br /><span style={{ color: '#FF6A00' }}>Gain Total Business Context.</span>
           </h1>
           <p className="text-lg text-[#9FB0C3] mb-8 leading-relaxed max-w-xl" style={{ fontFamily: BODY }}>
@@ -60,7 +60,7 @@ const IntegrationsPage = () => (
     </section>
 
     {/* SUPPORTED INTEGRATIONS */}
-    <section className="py-24" style={{ background: '#141C26' }} data-testid="integration-grid">
+    <section className="py-16" style={{ background: '#141C26' }} data-testid="integration-grid">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
@@ -104,7 +104,7 @@ const IntegrationsPage = () => (
     </section>
 
     {/* HOW INTEGRATION WORKS */}
-    <section className="py-24" data-testid="how-integration-works">
+    <section className="py-16" data-testid="how-integration-works">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />

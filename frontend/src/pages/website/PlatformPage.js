@@ -19,14 +19,14 @@ const PlatformPage = () => (
     {/* HERO */}
     <section className="relative overflow-hidden" data-testid="platform-hero">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-8" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)', opacity: 0.06 }} />
-      <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10">
+      <div className="max-w-5xl mx-auto px-6 pt-16 pb-14 relative z-10">
         <div className="max-w-3xl">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: MONO }}>The Platform</span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
-            Run Your Business With Enterprise-Level Intelligence <span className="block mt-2 text-lg sm:text-xl lg:text-2xl font-normal" style={{ color: '#9FB0C3' }}>&mdash; Without Hiring Enterprise Headcount.</span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>
+            Run Your Business With Enterprise-Level Intelligence <span className="block mt-2 text-lg sm:text-xl lg:text-2xl font-normal" style={{ color: '#9FB0C3' }}>— Without Hiring Enterprise Headcount.</span>
           </h1>
           <p className="text-lg text-[#9FB0C3] mb-8 leading-relaxed max-w-xl" style={{ fontFamily: BODY }}>
-            BIQc connects your systems, builds unified business context, and deploys autonomous agents that monitor, detect, and correct &mdash; before problems compound.
+            BIQc connects your systems, builds unified business context, and deploys autonomous agents that monitor, detect, and correct — before problems compound.
           </p>
           <Link to="/register-supabase" className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="platform-cta">
             Start free trial <ArrowRight className="w-4 h-4" />
@@ -36,20 +36,20 @@ const PlatformPage = () => (
     </section>
 
     {/* THE PROBLEM */}
-    <section className="py-24" style={{ background: '#141C26' }} data-testid="problem-section">
+    <section className="py-16" style={{ background: '#141C26' }} data-testid="problem-section">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>The Problem SMBs Face</span>
         </div>
-        <h2 className="text-2xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>You&rsquo;re running a business with enterprise-level complexity on startup-level infrastructure.</h2>
+        <h2 className="text-2xl font-medium mb-8" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>You're running a business with enterprise-level complexity on startup-level infrastructure.</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {[
             { icon: AlertTriangle, title: 'Too Many Disconnected Tools', desc: 'Your accounting, CRM, email, project management, and payroll all operate in silos. No single source of truth.' },
             { icon: Eye, title: 'No Central Oversight', desc: 'Critical information scattered across platforms. Decisions made on partial data. Blind spots everywhere.' },
-            { icon: RefreshCw, title: 'Reactive Decision-Making', desc: 'You discover problems after they happen. Cash flow gaps, churn signals, compliance issues &mdash; always too late.' },
-            { icon: BarChart3, title: 'Hidden Financial Leaks', desc: 'Margin compression, overdue invoices, cost blowouts &mdash; buried in spreadsheets nobody reviews weekly.' },
+            { icon: RefreshCw, title: 'Reactive Decision-Making', desc: 'You discover problems after they happen. Cash flow gaps, churn signals, compliance issues — always too late.' },
+            { icon: BarChart3, title: 'Hidden Financial Leaks', desc: 'Margin compression, overdue invoices, cost blowouts — buried in spreadsheets nobody reviews weekly.' },
           ].map((item, i) => (
             <GlassCard key={i}>
               <item.icon className="w-5 h-5 text-[#EF4444] mb-3" />
@@ -62,13 +62,13 @@ const PlatformPage = () => (
     </section>
 
     {/* WHAT BIQC DOES */}
-    <section className="py-24" data-testid="solution-section">
+    <section className="py-16" data-testid="solution-section">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: MONO }}>What BIQc Does</span>
         </div>
-        <h2 className="text-2xl font-bold mb-10" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six layers of autonomous intelligence.</h2>
+        <h2 className="text-2xl font-medium mb-8" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Six layers of autonomous intelligence.</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[
@@ -77,7 +77,7 @@ const PlatformPage = () => (
             { icon: Eye, title: 'Monitors In Real Time', desc: 'Always-on sentinel that watches cash flow, revenue signals, operational metrics, and market movements 24/7.', num: '03' },
             { icon: AlertTriangle, title: 'Flags Anomalies', desc: 'Detects overdue invoices, engagement decline, SOP breaches, margin compression, and compliance gaps automatically.', num: '04' },
             { icon: Zap, title: 'Recommends Actions', desc: 'Generates specific, actionable recommendations with drafted communications, prioritised by urgency and impact.', num: '05' },
-            { icon: Settings, title: 'Automates Correction', desc: 'Can execute corrective workflows &mdash; sending follow-ups, creating tasks, escalating alerts &mdash; without manual intervention.', num: '06' },
+            { icon: Settings, title: 'Automates Correction', desc: 'Can execute corrective workflows — sending follow-ups, creating tasks, escalating alerts — without manual intervention.', num: '06' },
           ].map((item, i) => (
             <GlassCard key={i}>
               <div className="flex items-center justify-between mb-4">
@@ -95,11 +95,11 @@ const PlatformPage = () => (
     </section>
 
     {/* ARCHITECTURE DIAGRAM */}
-    <section className="py-24" style={{ background: '#141C26' }} data-testid="architecture-section">
+    <section className="py-16" style={{ background: '#141C26' }} data-testid="architecture-section">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10">
           <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-4 block" style={{ fontFamily: MONO }}>Visual Architecture</span>
-          <h2 className="text-2xl font-bold" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>How It All Connects</h2>
+          <h2 className="text-2xl font-medium" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>How It All Connects</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
@@ -175,7 +175,7 @@ const PlatformPage = () => (
     {/* CTA */}
     <section className="py-20" data-testid="platform-bottom-cta">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Ready to see your business through a <span style={{ color: '#FF6A00' }}>single lens?</span></h2>
+        <h2 className="text-2xl font-medium mb-4" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>Ready to see your business through a <span style={{ color: '#FF6A00' }}>single lens?</span></h2>
         <p className="text-base text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>Connect your first platform in under 2 minutes.</p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEADING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
           Start free trial <ArrowRight className="w-4 h-4" />

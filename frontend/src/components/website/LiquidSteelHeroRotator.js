@@ -9,7 +9,7 @@ const RichText = ({ text, style }) => {
   return (
     <span style={style}>
       {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) return <span key={i} style={{ color: '#FF7A18' }}>{part.slice(2, -2)}</span>;
+        if (part.startsWith('**') && part.endsWith('**')) return <span key={i} style={{ color: '#FF7A18', fontWeight: 500 }}>{part.slice(2, -2)}</span>;
         if (part.startsWith('//') && part.endsWith('//')) return <em key={i} style={{ fontStyle: 'italic' }}>{part.slice(2, -2)}</em>;
         return <span key={i}>{part}</span>;
       })}
@@ -54,8 +54,8 @@ const HeroLayer = ({ variant, phase, zIndex }) => {
       willChange: 'opacity', pointerEvents: phase === 'current-static' ? 'auto' : 'none',
       ...layerStyle,
     }}>
-      <h1 className="text-[26px] sm:text-[40px] lg:text-[52px] leading-[1.12] mb-6 tracking-tight max-w-[900px] mx-auto px-4"
-        style={{ fontFamily: INTER, fontWeight: 500, color: '#E6EEF7', textShadow: '0 2px 20px rgba(255,255,255,0.08)' }}>
+      <h1 className="text-[24px] sm:text-[36px] lg:text-[46px] leading-[1.15] mb-6 tracking-tight max-w-[900px] mx-auto px-4"
+        style={{ fontFamily: INTER, fontWeight: 400, color: '#E6EEF7' }}>
         <RichText text={variant.h1} />
       </h1>
       {variant.h2 && (

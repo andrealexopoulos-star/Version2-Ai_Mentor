@@ -48,9 +48,9 @@ export const TermsPage = () => (
     <h2>5. Data Ownership</h2>
     <p>All business data you connect to BIQc remains your intellectual property. We do not claim ownership of any data you process through the Platform. You grant us a limited licence to process your data solely for the purpose of providing the Platform services.</p>
     <h2>6. Acceptable Use</h2>
-    <p>You agree not to use the Platform for any unlawful purpose, to transmit malicious code, to attempt to gain unauthorised access, or to interfere with the Platform&rsquo;s operations.</p>
+    <p>You agree not to use the Platform for any unlawful purpose, to transmit malicious code, to attempt to gain unauthorised access, or to interfere with the Platform's operations.</p>
     <h2>7. Limitation of Liability</h2>
-    <p>To the maximum extent permitted by Australian law, BIQc&rsquo;s liability is limited to the amount paid by you in the 12 months preceding the claim. We are not liable for indirect, consequential, or incidental damages.</p>
+    <p>To the maximum extent permitted by Australian law, BIQc's liability is limited to the amount paid by you in the 12 months preceding the claim. We are not liable for indirect, consequential, or incidental damages.</p>
     <h2>8. Governing Law</h2>
     <p>These terms are governed by the laws of New South Wales, Australia. Any disputes will be resolved in the courts of New South Wales.</p>
   </TrustPageShell>
@@ -105,7 +105,7 @@ export const DPAPage = () => (
     <h2>2. Roles</h2>
     <ul>
       <li><strong>Data Controller:</strong> The customer who determines the purpose and means of processing</li>
-      <li><strong>Data Processor:</strong> The Strategy Squad Pty Ltd, processing data on the Controller&rsquo;s behalf</li>
+      <li><strong>Data Processor:</strong> The Strategy Squad Pty Ltd, processing data on the Controller's behalf</li>
     </ul>
     <h2>3. Processing Purpose</h2>
     <p>Data is processed solely for the purpose of providing autonomous business intelligence services as described in the BIQc service agreement. Processing includes data ingestion, analysis, anomaly detection, and report generation.</p>
