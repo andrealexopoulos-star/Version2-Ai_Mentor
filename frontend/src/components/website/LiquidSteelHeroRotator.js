@@ -19,15 +19,15 @@ const RichText = ({ text, style }) => {
 
 const VARIANTS = [
   {
-    h1: '//BIQc// — A Single **Stability Engine** Across All Departments & Tools',
+    h1: 'A Single **Intelligence Layer** Across All Business Systems',
     h2: 'Unify fragmented business tools, data and departments into structured decision ready intelligence',
   },
   {
-    h1: '**Integrate** your Financial, Operational, Sales & Marketing Systems Into **One Intelligence Layer**',
+    h1: 'Turn Disconnected Systems Into **One Intelligence Platform**',
     h2: '//BIQc// connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
   },
   {
-    h1: '//BIQc// — **Intelligence** Above Your Systems',
+    h1: '//BIQc// - The **Intelligence Layer** Above Your Systems',
     h2: 'Detect instability, constantly learning from every past and present to strengthen your business decisions',
   },
 ];
