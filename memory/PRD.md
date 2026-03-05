@@ -1,5 +1,13 @@
 # BIQc Platform — Product Requirements Document
 
+## CRITICAL SESSION REQUIREMENT — READ FIRST
+**Every fork/session MUST update `frontend/.env` to point to `beta.thestrategysquad.com`:**
+```
+REACT_APP_BACKEND_URL=https://beta.thestrategysquad.com
+```
+Run after every fork: `sudo supervisorctl restart frontend` to apply.
+Do NOT use the default emergent preview URL for this project.
+
 ## Original Problem Statement
 Transform BIQc into a high-performance, AI-driven "Cognition-as-a-Platform" for SMBs with executive-grade positioning and AI-driven intelligence surfaces.
 
