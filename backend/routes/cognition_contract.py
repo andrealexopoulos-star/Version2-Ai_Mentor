@@ -43,8 +43,8 @@ def _call_rpc(sb, fn_name: str, params: dict) -> dict:
         result = sb.rpc(fn_name, params).execute()
         return result.data if result.data else {}
     except Exception as e:
-        logger.warning(f"RPC {fn_name} failed: {e}")
-        return {'status': 'error', 'error': str(e)}
+        error_msg = str(e)
+        return {'status': 'error', 'error': error_msg}
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -53,20 +53,31 @@ def _call_rpc(sb, fn_name: str, params: dict) -> dict:
 # ═══════════════════════════════════════════════════════════════
 
 @router.get("/cognition/{tab}")
-async def cognition_contract(tab: str, current_user: dict = Depends(get_current_user)):
+def cognition_contract(tab: str, current_user: dict = Depends(get_current_user)):
     """Single source of truth. Calls SQL master function."""
     sb = _get_sb()
-    result = _call_rpc(sb, 'ic_generate_cognition_contract', {
-        'p_tenant_id': current_user['id'],
-        'p_tab': tab
-    })
-
-    if isinstance(result, dict) and result.get('error'):
-        # SQL function doesn't exist yet — return structured error
-        if 'function' in str(result.get('error', '')).lower():
+    try:
+        result = _call_rpc(sb, 'ic_generate_cognition_contract', {
+            'p_tenant_id': current_user['id'],
+            'p_tab': tab
+        })
+    except Exception as outer_e:
+        error_str = str(outer_e).lower()
+        if 'column' in error_str or 'does not exist' in error_str or 'function' in error_str:
             return {
                 'status': 'MIGRATION_REQUIRED',
-                'message': 'Cognition core SQL functions not yet deployed. Run migrations 044 + 045.',
+                'message': 'Cognition SQL functions need updating. Please re-run migration 049.',
+                'tab': tab,
+                'error': str(outer_e),
+            }
+        raise HTTPException(status_code=500, detail=str(outer_e))
+
+    if isinstance(result, dict) and result.get('error'):
+        error_str = str(result.get('error', '')).lower()
+        if 'function' in error_str or 'column' in error_str:
+            return {
+                'status': 'MIGRATION_REQUIRED',
+                'message': 'Cognition SQL functions need updating. Please re-run migration 049.',
                 'tab': tab,
                 'error': result.get('error'),
             }

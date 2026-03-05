@@ -62,12 +62,12 @@ DECLARE
 BEGIN
   IF array_length(p_active_risks, 1) IS NULL THEN RETURN '[]'; END IF;
   FOR r IN
-    SELECT pr.source_domain, pr.target_domain, pr.probability, pr.lag_days, pr.description
+    SELECT pr.source_domain, pr.target_domain, pr.base_probability, pr.time_horizon, pr.mechanism
     FROM propagation_rules pr
     WHERE pr.source_domain = ANY(p_active_risks) AND pr.is_active = true
-    ORDER BY pr.probability DESC LIMIT 5
+    ORDER BY pr.base_probability DESC LIMIT 5
   LOOP
-    v_chains := v_chains || jsonb_build_object('source', r.source_domain, 'target', r.target_domain, 'probability', r.probability, 'window', r.lag_days || ' days', 'description', r.description, 'chain', jsonb_build_array(r.source_domain, r.target_domain));
+    v_chains := v_chains || jsonb_build_object('source', r.source_domain, 'target', r.target_domain, 'probability', r.base_probability, 'window', r.time_horizon || ' days', 'description', r.mechanism, 'chain', jsonb_build_array(r.source_domain, r.target_domain));
   END LOOP;
   RETURN v_chains;
 END;
