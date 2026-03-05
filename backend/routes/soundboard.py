@@ -25,35 +25,147 @@ from fact_resolution import resolve_facts, build_known_facts_prompt
 
 router = APIRouter()
 
+
+def _call_cognition_for_soundboard(sb, user_id):
+    """Fetch live cognition data for SoundBoard context."""
+    try:
+        result = sb.rpc('ic_generate_cognition_contract', {
+            'p_tenant_id': user_id, 'p_tab': 'overview'
+        }).execute()
+        return result.data if result.data else None
+    except Exception:
+        return None
+
+
+def _polish_response(text):
+    """Post-process AI response to enforce quality standards."""
+    import re
+
+    # Remove lines that start with numbered lists (1. 2. 3.)
+    lines = text.split('\n')
+    cleaned = []
+    for line in lines:
+        stripped = line.strip()
+        # Convert numbered list items to prose
+        match = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*:?\s*(.*)', stripped)
+        if match:
+            title = match.group(2)
+            rest = match.group(3)
+            cleaned.append(f"{title}: {rest}" if rest else f"{title}.")
+        elif re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*', stripped):
+            # Bold-only list item
+            match2 = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*\s*(.*)', stripped)
+            if match2:
+                cleaned.append(f"{match2.group(2)} {match2.group(3)}".strip())
+            else:
+                cleaned.append(stripped)
+        elif re.match(r'^\d+\.\s', stripped):
+            # Plain numbered item
+            cleaned.append(re.sub(r'^\d+\.\s+', '', stripped))
+        elif re.match(r'^[-•]\s', stripped):
+            # Bullet point
+            cleaned.append(re.sub(r'^[-•]\s+', '', stripped))
+        else:
+            cleaned.append(line)
+
+    text = '\n'.join(cleaned)
+
+    # Remove **bold** markdown
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+
+    # Remove weak/hedging phrases aggressively
+    weak_phrases = [
+        r'[Ww]ithout [^.]*(?:data|insight|integration|connection|access|metric|feed|source|detail|information|visibility)[^.]*\.',
+        r'[Gg]iven the (?:absence|lack|limited)[^.]*\.',
+        r'[Tt]o (?:give|provide|get|move|refine)[^.]*(?:precise|detailed|specific|comprehensive|actionable|deeper|better)[^.]*\.',
+        r'[Ww]e\'d ideally[^.]*\.',
+        r'[Ii]t\'s difficult to[^.]*(?:precise|accurate|exact|detailed|specific)[^.]*\.',
+        r'[Ll]et me know[^.]*\.',
+        r'[Ww]ould you like[^?]*\?',
+        r'[Nn]eed a deeper dive[^?]*\?',
+        r'[Ii]f you[\'d]? like to (?:dive|explore|discuss|know)[^.]*\.',
+        r'[Cc]onnecting (?:\w+ )*(?:data|financial|CRM|systems)[^.]*\.',
+        r'[Yy]ou should consider connecting[^.]*\.',
+        r'[Ff]or (?:a )?more (?:precise|detailed|comprehensive|accurate)[^.]*\.',
+        r'[Hh]ere\'s (?:a )?rough[^.]*\.',
+    ]
+    for pattern in weak_phrases:
+        text = re.sub(pattern, '', text)
+
+    # Clean up double newlines
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+
+    return text
+
+
 # ─── Strategic Advisor System Prompt ───
 _SOUNDBOARD_FALLBACK = """\
-You are {user_first_name}'s personal Strategic Intelligence Advisor, operating inside BIQc — their sovereign business intelligence platform.
+You are {user_first_name}'s Strategic Intelligence Advisor inside BIQc — their sovereign business intelligence platform.
 
-You have live access to {user_first_name}'s business data: CRM pipeline, accounting position, email signals, team capacity, market benchmarks, and their full Business DNA. This data is provided in the context below. You must use it.
+═══ YOUR IDENTITY ═══
+You are a former McKinsey engagement manager who left consulting to build intelligence systems. You think in frameworks but speak in plain language. You've advised 200+ SMBs through growth, contraction, and transformation. You never give advice you wouldn't stake your reputation on.
 
-YOUR CHARACTER:
-You think like a senior commercial operator who has seen hundreds of businesses scale, stall, and fail. You are direct. You do not hedge unnecessarily. You do not start every response with a question. You earn trust by being specific — names, numbers, timeframes — not by being cautiously vague.
+═══ ABSOLUTE RULES ═══
+NEVER give generic advice. Every sentence must reference {user_first_name}'s specific business, their industry, their numbers, or their competitive position. If you catch yourself writing something that could apply to any business, delete it and be more specific.
 
-WHEN TO BE DIRECT (most of the time):
-When you have data, lead with your observation and your view. {user_first_name} is a business owner, not a student. They don't need to be guided to their own conclusions — they need a trusted advisor who has already synthesised the data and can tell them what it means.
+LEAD WITH INSIGHT, NOT QUESTIONS. When you have data — and you do — state what you see, what it means, and what {user_first_name} should do about it. Then ask ONE targeted follow-up only if critical context is missing.
 
-WHEN TO ASK A CLARIFYING QUESTION (only when genuinely needed):
-When critical context is missing and your answer would be materially different depending on it, ask ONE specific question. Not several. Never ask "How does that make you feel?" — ask operational questions that change the advice.
+USE THEIR NUMBERS. Reference their revenue range, team size, customer count, industry benchmarks, and competitive position in every substantive response. Vague answers like "consider your market position" are BANNED — say "at $22M revenue with 112 staff in specialty coffee, your overhead ratio suggests..."
 
-COMMUNICATION PRINCIPLES:
-- Use {user_first_name}'s first name naturally, the way a trusted colleague would — not at the start of every message, not never.
-- Be conversational. No bullet lists unless the user specifically asks for a structured breakdown.
-- Match energy: if they're urgent, be urgent. If they're reflective, go deep.
-- If a signal in their data is serious, say it plainly. Don't soften critical findings.
-- If you don't have data on something, say what you'd need — then give your best view with what you do have.
-- Never fabricate numbers. If data is absent from the context provided, say so specifically.
+NAME THE RISK. Don't say "there may be some challenges." Say exactly what the challenge is, who it affects, by when, and what happens if they don't act.
 
-RESPONSE PATTERN (adapt, don't follow rigidly):
-1. When you have enough data: State your direct observation, back it with their specific numbers, give your recommendation.
-2. When context is insufficient: State what the data shows so far, ask your ONE clarifying question.
-3. Always close with the highest-leverage next move available to {user_first_name} right now.
+GIVE THE RECOMMENDATION. Don't say "you should think about this." Say "Here's what I'd do this week: [specific action with specific outcome]."
 
-You are not a chatbot. You are not a dashboard. You are the advisor {user_first_name} calls when the stakes are real.\
+NEVER FABRICATE DATA. If you don't have a specific number, give a calibrated estimate based on industry benchmarks for their revenue band and team size.
+
+FORMAT: Write in flowing prose paragraphs ONLY. NEVER use numbered lists, bullet points, bold headers, or structured breakdowns unless the user explicitly says "give me a list" or "break it down step by step". Your response should read like a sharp email from a senior advisor — paragraphs of connected thinking, not a consultant's slide deck.
+
+═══ INTELLIGENCE FRAMEWORK ═══
+When answering, ALWAYS run this analysis internally using the business data provided:
+
+REVENUE EFFICIENCY: Revenue range / team size = revenue per employee. Compare to industry benchmark (~$250K-400K/employee for F&B). If below, they're either overstaffed or underpricing. If above, they have margin to invest.
+
+CUSTOMER CONCENTRATION: Customer count vs revenue. Calculate implied revenue per customer. If a few customers represent >20% of revenue, flag concentration risk.
+
+GROWTH STAGE: Revenue range + team size + business model = growth lifecycle position. $22-50M with 112 staff in food manufacturing = mid-market scaling phase. Typical challenges: margin compression, operational complexity, talent retention.
+
+MARKET POSITION: Industry + location + UVP = competitive positioning. Specialty coffee in Australia with sustainability positioning = premium but competitive. Key risks: commoditization, supply chain ethics audits, café closures.
+
+CASH DYNAMICS: Revenue range + business model (B2B invoicing cycles + B2C direct) = cash flow pattern. B2B coffee supply typically has 30-60 day payment terms. At their revenue, 5% overdue = $1-2.5M trapped.
+
+Run these calculations EVERY TIME and weave the findings into your response naturally.
+
+═══ COMMUNICATION STYLE ═══
+- Write like a trusted colleague at a working dinner — direct, warm, no bullshit
+- Use {user_first_name}'s name naturally, like a colleague would
+- ABSOLUTELY NO NUMBERED LISTS OR BULLET POINTS unless the user specifically asks "give me a list" or "break it down". Write in flowing paragraphs that connect ideas narratively. If you catch yourself writing "1." or "•" — STOP and rewrite as prose.
+- If the news is bad, say it plainly. Respect {user_first_name} enough to be honest.
+- Short paragraphs. Punch lines. No filler words.
+- Close every response with the ONE thing {user_first_name} should do next — specific, actionable, time-bound.
+
+═══ BANNED PHRASES (never use these) ═══
+- "without direct data" / "absence of data" / "data is limited" — NEVER mention what you DON'T have. Work with what you DO have.
+- "consider looking into" — too vague. Say exactly what to do.
+- "it might be wise" / "you might want to" — weak. Be direct: "Do this."
+- "Let me know if you want to explore deeper" — assume they do. Go deep.
+- "To get more precise analysis" — don't advertise your limitations.
+- "Here's what I suggest" followed by a generic list — give ONE sharp recommendation backed by their numbers.
+
+═══ WHEN DATA IS LIMITED ═══
+Even without full integration data, you ALWAYS have their Business DNA (industry, revenue range, team size, location, business model, challenges, goals). USE IT AGGRESSIVELY:
+- Industry benchmarks: Compare their metrics against typical ranges for their industry and revenue band
+- Structural analysis: At their team size and revenue, what are the predictable bottlenecks?
+- Growth stage diagnosis: Based on revenue range and team size, where are they in the growth lifecycle?
+- Competitive positioning: Based on their industry and location, what are the market dynamics?
+
+A great advisor doesn't need perfect data to give sharp advice. They use what they have and are transparent about what's missing.
+
+═══ EXAMPLE OF A GREAT RESPONSE ═══
+User asks: "What should I focus on this week?"
+BAD response: "Consider reviewing your strategy and looking at market opportunities."
+GOOD response: "At $22M revenue with 112 people in specialty coffee, your biggest lever right now is cash collection efficiency. Businesses at your stage typically have 15-20% of revenue tied up in receivables. Without seeing your Xero data directly, I'd bet you have at least $200-400K aging past 30 days — that's working capital trapped. This week: pull your aged receivables report, flag anything over 45 days, and personally call your top 3 overdue accounts. The second priority is your B2B pipeline. With 600+ cafés as customers, your acquisition cost per new café relationship matters. What's your current close rate on new café partnerships, and how many are in active negotiation right now?"
+
+Notice: specific to THEIR business, uses THEIR numbers, gives a CONCRETE action, and asks ONE targeted question.\
 """
 
 
@@ -134,18 +246,56 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # ═══ FULL BUSINESS DNA ═══
     biz_context = ""
     if profile:
-        biz_context = "\n\n═══ BUSINESS DNA ═══\n"
+        biz_context = "\n\n═══ BUSINESS DNA (USE THIS DATA IN EVERY RESPONSE) ═══\n"
         biz_context += f"Business: {profile.get('business_name', 'Unknown')}\n"
+        
+        # Core identity
         for field, label in [
-            ('industry', 'Industry'), ('location', 'Location'), ('team_size', 'Team size'),
-            ('target_market', 'Target market'), ('main_products_services', 'Products/services'),
-            ('unique_value_proposition', 'UVP'), ('pricing_model', 'Pricing model'),
-            ('business_model', 'Business model'), ('short_term_goals', 'Short-term goals'),
-            ('long_term_goals', 'Long-term goals'), ('main_challenges', 'Current challenges'),
-            ('growth_strategy', 'Growth strategy'), ('vision_statement', 'Vision'),
+            ('industry', 'Industry'), ('location', 'Location'), ('website', 'Website'),
+            ('team_size', 'Team Size'), ('revenue_range', 'Revenue Range'),
+            ('customer_count', 'Customer Base'), ('target_market', 'Target Market'),
         ]:
             val = profile.get(field)
-            if val:
+            if val and val != 'None':
+                biz_context += f"{label}: {val}\n"
+        
+        biz_context += "\n--- Strategic Position ---\n"
+        for field, label in [
+            ('main_products_services', 'Products/Services'),
+            ('unique_value_proposition', 'Unique Value Proposition'),
+            ('pricing_model', 'Pricing Model'), ('business_model', 'Business Model'),
+            ('mission_statement', 'Mission'),
+        ]:
+            val = profile.get(field)
+            if val and val != 'None':
+                biz_context += f"{label}: {val}\n"
+        
+        biz_context += "\n--- Goals & Challenges (REFERENCE THESE) ---\n"
+        for field, label in [
+            ('short_term_goals', 'Short-term Goals (next 90 days)'),
+            ('long_term_goals', 'Long-term Goals (12+ months)'),
+            ('main_challenges', 'Current Challenges'),
+            ('growth_strategy', 'Growth Strategy'),
+            ('vision_statement', 'Vision'),
+        ]:
+            val = profile.get(field)
+            if val and val != 'None':
+                biz_context += f"{label}: {val}\n"
+        
+        # Additional profile fields
+        biz_context += "\n--- Operational Context ---\n"
+        for field, label in [
+            ('key_competitors', 'Known Competitors'),
+            ('tech_stack', 'Technology Stack'),
+            ('marketing_channels', 'Marketing Channels'),
+            ('sales_process', 'Sales Process'),
+            ('operational_model', 'Operations Model'),
+            ('funding_stage', 'Funding Stage'),
+            ('burn_rate', 'Monthly Burn Rate'),
+            ('advisory_mode', 'Advisor Mode Preference'),
+        ]:
+            val = profile.get(field)
+            if val and val != 'None' and val != 0:
                 biz_context += f"{label}: {val}\n"
 
     user_context = (
@@ -153,10 +303,41 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         f"PROFILE MATURITY: {core_context.get('profile_maturity', 'nascent')}\n"
         f"{biz_context}\n"
         f"════════════════════════════════════════\n"
-        f"COGNITIVE INTELLIGENCE SNAPSHOT\n"
+        f"INTELLIGENCE SNAPSHOT (reference these signals)\n"
         f"════════════════════════════════════════\n"
-        f"{cognitive_context or 'No cognitive snapshot available — ask about their data to gather context.'}\n"
+        f"{cognitive_context or 'No pre-computed intelligence snapshot available. Rely on Business DNA and integration data above to deliver sharp, specific insights.'}\n"
     )
+
+    # ═══ COGNITION CORE LIVE DATA ═══
+    cognition_context = ""
+    try:
+        cognition_result = _call_cognition_for_soundboard(sb, user_id)
+        if cognition_result and cognition_result.get('status') == 'computed':
+            cognition_context = "\n═══ COGNITION CORE (LIVE COMPUTED) ═══\n"
+            cognition_context += f"System State: {cognition_result.get('system_state', 'Unknown')}\n"
+            cognition_context += f"Evidence Count: {cognition_result.get('evidence_count', 0)}\n"
+            
+            # Instability indices
+            indices = cognition_result.get('instability_indices', {})
+            if indices:
+                cognition_context += "Instability Indices:\n"
+                for key, val in indices.items():
+                    if isinstance(val, (int, float)):
+                        cognition_context += f"  {key}: {val:.2f}\n"
+            
+            # Propagation map
+            prop_map = cognition_result.get('propagation_map', [])
+            if prop_map:
+                cognition_context += "Risk Propagation Chains:\n"
+                for chain in prop_map[:3]:
+                    cognition_context += f"  {chain.get('source')} → {chain.get('target')} (probability: {chain.get('probability', 0):.0%})\n"
+            
+            # Stability score
+            stability = cognition_result.get('stability_score')
+            if stability:
+                cognition_context += f"Composite Stability Score: {stability}\n"
+    except Exception:
+        pass
 
     # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
     integration_context = ""
@@ -166,42 +347,59 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         
         # Integration status
         connected_list = [k for k, v in {'CRM': all_data['crm']['connected'], 'Accounting': all_data['accounting']['connected'], 'Email': all_data['email']['connected'], 'Marketing': all_data['marketing']['connected']}.items() if v]
+        disconnected_list = [k for k, v in {'CRM': all_data['crm']['connected'], 'Accounting': all_data['accounting']['connected'], 'Email': all_data['email']['connected']}.items() if not v]
+        
         if connected_list:
-            integration_context += f"\nCONNECTED INTEGRATIONS: {', '.join(connected_list)}\n"
+            integration_context += "\n═══ LIVE INTEGRATION DATA (USE THESE NUMBERS) ═══\n"
+            integration_context += f"Connected: {', '.join(connected_list)}\n"
+            if disconnected_list:
+                integration_context += f"Not Connected: {', '.join(disconnected_list)} — mention these gaps when relevant\n"
         else:
-            integration_context += "\nNO INTEGRATIONS CONNECTED.\n"
+            integration_context = ""
         
         # Revenue signals
         rev = _compute_revenue_signals(all_data)
         if rev['deals']:
-            integration_context += f"\nREVENUE: Pipeline ${rev['pipeline_total']:,.0f} | {rev['stalled_deals']} stalled deals | {rev['won_count']} won | {rev['lost_count']} lost | Concentration: {rev['concentration_risk']}\n"
-            for d in rev['deals'][:5]:
-                integration_context += f"  - {d['name']}: ${d['amount']:,.0f} ({d['status']}) stage: {d['stage']}\n"
-        if rev['overdue_invoices']:
-            integration_context += f"\nOVERDUE INVOICES ({len(rev['overdue_invoices'])}):\n"
-            for inv in rev['overdue_invoices'][:3]:
-                integration_context += f"  - Invoice {inv['number']}: ${inv['amount']:,.0f} ({inv['days_overdue']}d overdue)\n"
-        if rev['at_risk']:
-            integration_context += "\nAT-RISK DEALS:\n"
-            for r in rev['at_risk'][:3]:
-                integration_context += f"  - {r['name']}: ${r['amount']:,.0f} — {r['risk']} ({r['days_stalled']}d stalled)\n"
+            integration_context += "\n--- Revenue Intelligence ---\n"
+            integration_context += f"Pipeline Total: ${rev['pipeline_total']:,.0f}\n"
+            integration_context += f"Stalled Deals: {rev['stalled_deals']} | Won: {rev['won_count']} | Lost: {rev['lost_count']}\n"
+            integration_context += f"Concentration Risk: {rev['concentration_risk']}\n"
+            if rev['deals']:
+                integration_context += "Top Pipeline:\n"
+                for d in rev['deals'][:5]:
+                    integration_context += f"  {d['name']}: ${d['amount']:,.0f} ({d['status']}) stage: {d['stage']}\n"
+        if rev.get('overdue_invoices'):
+            integration_context += f"\n--- Cash Alert: {len(rev['overdue_invoices'])} Overdue Invoices ---\n"
+            total_overdue = sum(inv.get('amount', 0) for inv in rev['overdue_invoices'])
+            integration_context += f"Total Overdue: ${total_overdue:,.0f}\n"
+            for inv in rev['overdue_invoices'][:5]:
+                integration_context += f"  Invoice {inv['number']}: ${inv['amount']:,.0f} ({inv['days_overdue']} days overdue)\n"
+        if rev.get('at_risk'):
+            integration_context += f"\n--- At-Risk Deals ({len(rev['at_risk'])}) ---\n"
+            for r in rev['at_risk'][:5]:
+                integration_context += f"  {r['name']}: ${r['amount']:,.0f} — {r['risk']} ({r['days_stalled']}d stalled)\n"
         
         # Risk signals
         risk = _compute_risk_signals(all_data)
         if risk['overall_risk'] != 'low':
-            integration_context += f"\nRISK LEVEL: {risk['overall_risk'].upper()}\n"
+            integration_context += f"\n--- Risk Assessment: {risk['overall_risk'].upper()} ---\n"
             for cat in ['financial_risks', 'operational_risks', 'people_risks', 'market_risks']:
-                for item in risk.get(cat, []):
-                    if isinstance(item, dict):
-                        integration_context += f"  [{item.get('severity','?').upper()}] {item['detail']}\n"
+                items = risk.get(cat, [])
+                if items:
+                    integration_context += f"{cat.replace('_', ' ').title()}:\n"
+                    for item in items:
+                        if isinstance(item, dict):
+                            integration_context += f"  [{item.get('severity','?').upper()}] {item['detail']}\n"
         
         # People signals
         people = _compute_people_signals(all_data)
         if people.get('capacity') or people.get('fatigue'):
-            integration_context += f"\nWORKFORCE: Capacity {people['capacity'] or '?'}% | Fatigue: {people['fatigue'] or '?'}\n"
+            integration_context += "\n--- Workforce Signals ---\n"
+            integration_context += f"Capacity Utilisation: {people['capacity'] or 'Unknown'}%\n"
+            integration_context += f"Fatigue Index: {people['fatigue'] or 'Unknown'}\n"
     except Exception as e:
         logger.debug(f"Unified intelligence fetch for SoundBoard: {e}")
-        integration_context = "\nIntegration data unavailable.\n"
+        integration_context = ""
 
     # ═══ MARKETING BENCHMARK DATA ═══
     marketing_context = ""
@@ -221,14 +419,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         pass
 
     # ═══ AVAILABLE ACTIONS ═══
-    actions_context = "\n\nAVAILABLE ACTIONS (tell user about these when relevant):\n"
-    actions_context += "- 'Create a logo' → generates AI logo\n"
-    actions_context += "- 'Write a blog post about [topic]' → generates SEO blog\n"
-    actions_context += "- 'Create a Google Ad for [product]' → generates ad copy\n"
-    actions_context += "- 'Write a social media post' → generates LinkedIn/Twitter/Facebook\n"
-    actions_context += "- 'Create a job description for [role]' → generates job posting\n"
-    actions_context += "- 'Run a benchmark' → compares against competitors\n"
-    actions_context += "- 'Generate a report' → creates downloadable PDF report\n"
+    actions_context = "\n\nCONTENT GENERATION (only mention if user asks for content):\n"
+    actions_context += "You can create: logos, blog posts, Google Ads, social media posts, job descriptions, benchmark reports, PDF reports.\n"
+    actions_context += "Only offer these when the user specifically asks for content creation. Do NOT suggest these as business strategy.\n"
 
     # Always use the new Strategic Advisor prompt — do NOT use cached DB prompt
     # (DB has old 'thinking partner' prompt that conflicts with new advisor persona)
@@ -276,7 +469,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
 
-    system_message = soundboard_prompt + fact_block + biz_context + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
+    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {
@@ -345,6 +538,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             system_message=system_message
         )
         chat.with_model("openai", AI_MODEL)
+        chat.with_params(temperature=0.7, max_tokens=1500)
         for msg in messages_history:
             if msg["role"] == "user":
                 chat.add_message(UserMessage(text=msg["content"]))
@@ -354,8 +548,19 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         response = await chat.send_message(UserMessage(text=clean_message))
         _elapsed = int((_time.time() - _start) * 1000)
 
-        # Sanitise output
+        # Post-process: enforce quality and remove AI crutches
+        logger.info(f"[POLISH_DEBUG] response type={type(response).__name__}, is_str={isinstance(response, str)}")
         if isinstance(response, str):
+            pre_len = len(response)
+            response = _polish_response(response)
+            post_len = len(response)
+            logger.info(f"[POLISH] Before: {pre_len} chars, After: {post_len} chars")
+            response = sanitise_output(response)
+        else:
+            # Force convert to string if not already
+            logger.info(f"[POLISH_DEBUG] Converting response to str: {str(response)[:100]}")
+            response_str = str(response) if response else ""
+            response = _polish_response(response_str)
             response = sanitise_output(response)
 
         # Log to observability
@@ -491,11 +696,11 @@ def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> 
             parts.append("- Behavioural: user focus has recurred")
         parts.append("\nYou may reason, challenge assumptions, and explore implications.")
     else:
-        parts.append("Thresholds NOT met. Signal is forming but not stabilised.")
-        parts.append("\nYou must ask clarifying questions to understand context.")
+        parts.append("Signal still forming. Lead with analysis using Business DNA data.")
 
     connected = [k for k, v in integrations.items() if v]
-    parts.append(f"\nConnected sources: {', '.join(connected)}" if connected else "\nNo data sources connected.")
+    if connected:
+        parts.append(f"\nConnected sources: {', '.join(connected)}")
 
     r = core_context.get("reality", {})
     for key, label in [("business_type", "Business type"), ("time_scarcity", "Time availability"), ("cashflow_sensitivity", "Cashflow sensitivity")]:
