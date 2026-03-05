@@ -181,6 +181,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Settings, label: 'Operations', path: '/operations' },
       { icon: AlertTriangle, label: 'Risk', path: '/risk' },
       { icon: Radar, label: 'Market & Positioning', path: '/market' },
+      { icon: BarChart3, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
     ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Bell, label: 'Alerts', path: '/alerts' },

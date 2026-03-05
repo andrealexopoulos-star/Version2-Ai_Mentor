@@ -108,6 +108,7 @@ import ConsultingView from './pages/website/platform/industries/ConsultingView';
 import AgencyView from './pages/website/platform/industries/AgencyView';
 import SaaSView from './pages/website/platform/industries/SaaSView';
 import DecisionsPage from './pages/DecisionsPage';
+import CompetitiveBenchmarkPage from './pages/CompetitiveBenchmarkPage';
 
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
@@ -258,6 +259,7 @@ function AppRoutes() {
       <Route path="/email-inbox" element={<ProtectedRoute><TierGate><EmailInbox /></TierGate></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
       <Route path="/decisions" element={<ProtectedRoute><DecisionsPage /></ProtectedRoute>} />
+      <Route path="/competitive-benchmark" element={<ProtectedRoute><CompetitiveBenchmarkPage /></ProtectedRoute>} />
       <Route path="/diagnosis" element={<ProtectedRoute><TierGate><Diagnosis /></TierGate></ProtectedRoute>} />
       <Route path="/analysis" element={<ProtectedRoute><TierGate><Analysis /></TierGate></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><TierGate><Documents /></TierGate></ProtectedRoute>} />

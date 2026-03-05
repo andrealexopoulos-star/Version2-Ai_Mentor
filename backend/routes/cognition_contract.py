@@ -197,6 +197,44 @@ async def list_decisions(current_user: dict = Depends(get_current_user)):
     return {'decisions': result, 'total': len(result)}
 
 
+class CheckpointOutcome(BaseModel):
+    decision_id: str
+    checkpoint_day: int
+    decision_effective: bool
+    variance_delta: float = 0
+    notes: str = ''
+
+
+@router.post("/cognition/decisions/checkpoint-outcome")
+async def record_checkpoint_outcome(req: CheckpointOutcome, current_user: dict = Depends(get_current_user)):
+    """Record outcome at a decision checkpoint (30/60/90 day)."""
+    sb = _get_sb()
+    tenant_id = current_user['id']
+
+    try:
+        result = sb.table('outcome_checkpoints').update({
+            'status': 'positive' if req.decision_effective else 'negative',
+            'decision_effective': req.decision_effective,
+            'variance_delta': req.variance_delta,
+            'evaluated_at': datetime.now(timezone.utc).isoformat(),
+        }).eq('decision_id', req.decision_id).eq(
+            'checkpoint_day', req.checkpoint_day
+        ).eq('tenant_id', tenant_id).execute()
+
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Checkpoint not found")
+
+        return {'status': 'recorded', 'checkpoint_day': req.checkpoint_day, 'decision_effective': req.decision_effective}
+    except HTTPException:
+        raise
+    except Exception as e:
+        if 'relation' in str(e).lower():
+            return {'status': 'MIGRATION_REQUIRED'}
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
 # ═══════════════════════════════════════════════════════════════
 # AUTOMATION EXECUTION
 # ═══════════════════════════════════════════════════════════════

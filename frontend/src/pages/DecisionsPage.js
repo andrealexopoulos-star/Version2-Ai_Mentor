@@ -240,7 +240,7 @@ export default function DecisionsPage() {
             </div>
           ) : (
             decisions.map(d => (
-              <DecisionCard key={d.id} decision={d} />
+              <DecisionCard key={d.id} decision={d} onOutcomeRecorded={fetchDecisions} />
             ))
           )}
         </div>
@@ -249,11 +249,32 @@ export default function DecisionsPage() {
   );
 }
 
-function DecisionCard({ decision }) {
+function DecisionCard({ decision, onOutcomeRecorded }) {
   const [expanded, setExpanded] = useState(false);
+  const [recordingCheckpoint, setRecordingCheckpoint] = useState(null);
   const typeInfo = DECISION_TYPES.find(t => t.value === decision.decision_category) || { label: decision.decision_category, icon: Target };
   const Icon = typeInfo.icon;
   const checkpoints = decision.checkpoints || [];
+
+  const handleRecordOutcome = async (checkpointDay, effective) => {
+    setRecordingCheckpoint(checkpointDay);
+    try {
+      await apiClient.post('/cognition/decisions/checkpoint-outcome', {
+        decision_id: decision.id,
+        checkpoint_day: checkpointDay,
+        decision_effective: effective,
+        variance_delta: 0,
+        notes: '',
+      });
+      trackEvent(EVENTS.DECISION_RECORDED, { action: 'checkpoint_outcome', checkpoint_day: checkpointDay, effective });
+      toast.success(`Day ${checkpointDay} outcome recorded.`);
+      onOutcomeRecorded?.();
+    } catch (err) {
+      toast.error('Failed to record outcome.');
+    } finally {
+      setRecordingCheckpoint(null);
+    }
+  };
 
   return (
     <div
@@ -309,7 +330,30 @@ function DecisionCard({ decision }) {
                     <span className="text-xs flex-1" style={{ color: '#9FB0C3', fontFamily: BODY }}>
                       {cp.scheduled_at ? new Date(cp.scheduled_at).toLocaleDateString() : 'Scheduled'}
                     </span>
-                    <span className="text-xs" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+                    {(cp.status === 'pending' && new Date(cp.scheduled_at) <= new Date()) ? (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRecordOutcome(cp.checkpoint_day, true); }}
+                          disabled={recordingCheckpoint === cp.checkpoint_day}
+                          className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-80"
+                          style={{ background: '#10B98120', color: '#10B981', fontFamily: MONO }}
+                          data-testid={`outcome-positive-${cp.checkpoint_day}`}
+                        >
+                          {recordingCheckpoint === cp.checkpoint_day ? '...' : 'Effective'}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRecordOutcome(cp.checkpoint_day, false); }}
+                          disabled={recordingCheckpoint === cp.checkpoint_day}
+                          className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-80"
+                          style={{ background: '#EF444420', color: '#EF4444', fontFamily: MONO }}
+                          data-testid={`outcome-negative-${cp.checkpoint_day}`}
+                        >
+                          {recordingCheckpoint === cp.checkpoint_day ? '...' : 'Ineffective'}
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+                    )}
                   </div>
                 );
               })}
