@@ -1,0 +1,101 @@
+# BIQc Pre-Launch — Chaos Engineering Scenarios
+# Based on Netflix reliability testing methodology
+# These scenarios must be run in staging with production-parity infrastructure
+
+scenarios:
+  # ═══ DATABASE FAILURES ═══
+  - name: "Database Primary Failure"
+    description: "Terminate the primary PostgreSQL database node"
+    method: "Kill Supabase primary"
+    expected_behavior:
+      - "Application shows degraded mode banner"
+      - "Read-only operations continue via replica"
+      - "Write operations queue with retry"
+      - "Error rate stays below 5%"
+    recovery_time_target: "< 30 seconds"
+    
+  - name: "Database Connection Pool Exhaustion"
+    description: "Exhaust all available database connections"
+    method: "Open 100 persistent connections without releasing"
+    expected_behavior:
+      - "New requests receive 503 with retry-after header"
+      - "Connection pool recovers within 60 seconds"
+      - "No data corruption"
+    
+  - name: "Database Query Timeout"
+    description: "Inject 10-second latency on all database queries"
+    method: "pg_sleep injection via proxy"
+    expected_behavior:
+      - "API responses timeout gracefully"
+      - "Client receives appropriate error message"
+      - "No hanging connections"
+
+  # ═══ API FAILURES ═══
+  - name: "API Gateway Timeout"
+    description: "Inject 30-second network latency at ingress"
+    method: "tc netem delay 30000ms"
+    expected_behavior:
+      - "Client timeout triggers"
+      - "Retry logic activates"
+      - "Error notifications sent"
+      
+  - name: "Backend Service Crash"
+    description: "Kill all FastAPI worker processes"
+    method: "kill -9 $(pgrep uvicorn)"
+    expected_behavior:
+      - "Supervisor restarts within 5 seconds"
+      - "Load balancer detects unhealthy and routes elsewhere"
+      - "Client experiences < 10 second interruption"
+
+  # ═══ AI INFERENCE FAILURES ═══
+  - name: "OpenAI API Rate Limit"
+    description: "Simulate 429 rate limit from OpenAI"
+    method: "Mock OpenAI endpoint returning 429"
+    expected_behavior:
+      - "Exponential backoff activates"
+      - "User sees 'AI is processing, please wait'"
+      - "Request succeeds within 3 retries"
+      
+  - name: "OpenAI API Timeout"
+    description: "OpenAI response takes > 30 seconds"
+    method: "Inject delay in AI proxy"
+    expected_behavior:
+      - "Streaming partial response if available"
+      - "Timeout error with user-friendly message"
+      - "No orphaned connections"
+
+  # ═══ MESSAGE QUEUE FAILURES ═══
+  - name: "Worker Queue Failure"
+    description: "Pause all background workers"
+    method: "supervisorctl stop email_sync_worker intelligence_worker"
+    expected_behavior:
+      - "Sync tasks queue without loss"
+      - "UI shows 'sync pending' status"
+      - "Tasks resume when workers restart"
+
+  # ═══ MULTI-TENANT ISOLATION ═══
+  - name: "Cross-Tenant Data Access Attempt"
+    description: "Attempt SQL injection to bypass RLS"
+    method: "Inject malicious tenant_id in API calls"
+    expected_behavior:
+      - "RLS policies block access"
+      - "403 response returned"
+      - "Security alert triggered"
+
+  # ═══ NETWORK FAILURES ═══
+  - name: "DNS Resolution Failure"
+    description: "Block DNS for external services"
+    method: "iptables -A OUTPUT -p udp --dport 53 -j DROP"
+    expected_behavior:
+      - "Cached responses served"
+      - "Graceful degradation for external APIs"
+      - "Core functionality remains available"
+
+verification_checklist:
+  - "All scenarios produce measurable metrics"
+  - "Recovery times are within targets"
+  - "No data loss during any scenario"
+  - "Error rates stay below 5% during degradation"
+  - "User-facing error messages are helpful"
+  - "Monitoring alerts fire correctly"
+  - "Rollback procedures work"

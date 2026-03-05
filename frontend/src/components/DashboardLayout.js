@@ -400,7 +400,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                       const showBadge = item.showBadge && notifications.total > 0;
                       return (
                         <button key={item.path} onClick={() => { navigate(item.path); closeAll(); }}
-                          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all"
+                          className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
                           style={{
                             fontFamily: BODY,
                             color: active ? '#F4F7FA' : '#9FB0C3',
