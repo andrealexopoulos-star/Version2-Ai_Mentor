@@ -108,9 +108,14 @@ export default function ProtectedRoute({ children, adminOnly }) {
     return () => { cancelled = true; };
   }, [adminOnly, authState, user]);
 
-  // Still loading
+  // Still loading — but if we have a user/session, show content (don't block navigation)
   if (authState === AUTH_STATE.LOADING) {
-    return <LoadingScreen />;
+    if (user || session) {
+      // We have a session — render children while bootstrap completes in background
+      // This prevents the loading screen from flashing on every page navigation
+    } else {
+      return <LoadingScreen />;
+    }
   }
 
   // No session → login
@@ -123,8 +128,8 @@ export default function ProtectedRoute({ children, adminOnly }) {
     return <AuthError />;
   }
 
-  // READY → enforce gates
-  if (authState === AUTH_STATE.READY) {
+  // READY or has session → enforce gates
+  if (authState === AUTH_STATE.READY || user || session) {
     // Admin pages bypass onboarding/calibration checks entirely
     const ADMIN_PATHS = ['/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
     const isAdminPath = ADMIN_PATHS.some(p => location.pathname.startsWith(p));
@@ -138,16 +143,15 @@ export default function ProtectedRoute({ children, adminOnly }) {
     if (adminOnly) {
       if (!adminChecked) return <LoadingScreen />;
       if (!isAdmin) return <AccessDenied />;
-      // Admin pages skip onboarding check
       return children;
     }
 
-    // Admin paths always pass through (even without onboarding)
+    // Admin paths always pass through
     if (isAdminPath) return children;
 
-    // Onboarding check — uses cached state from context (no API call here)
+    // Onboarding check — if null, default to showing content (don't block with loading screen)
     if (onboardingStatus === null) {
-      return <LoadingScreen />;
+      return children; // Show content while onboarding status loads
     }
     
     if (!onboardingStatus.completed && !ONBOARDING_EXEMPT_PATHS.includes(location.pathname)) {
