@@ -28,58 +28,55 @@ const StatBlock = ({ value, label }) => (
 
 const HomePage = () => (
   <WebsiteLayout>
-    {/* HERO — constrained container with background motion overlay */}
-    <section className="relative overflow-hidden" style={{ minHeight: '80vh', maxHeight: '100vh', position: 'relative' }} data-testid="hero-section">
-      {/* Base dark background */}
+    {/* HERO */}
+    <section className="relative overflow-hidden" style={{ minHeight: '70vh', maxHeight: '95vh', position: 'relative' }} data-testid="hero-section">
       <div className="absolute inset-0" style={{ background: '#07121E', zIndex: 0 }} />
 
-      {/* Hero content — above background */}
       <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center', padding: '0 16px' }} className="pt-8 sm:pt-28">
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', padding: '0 20px' }} className="pt-6 sm:pt-20">
           {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 sm:mb-10" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#FF7A18' }} />
             <span className="font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>Australian Owned &amp; Operated</span>
           </div>
 
-          {/* Rotating headline + subheadline */}
+          {/* Rotating headline */}
           <LiquidSteelHeroRotator />
 
-          {/* CTA — 40px gap from subheadline */}
-          <div style={{ paddingTop: 40, position: 'relative', zIndex: 10 }}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4" style={{ marginBottom: 16 }}>
-              <Link to="/register-supabase" className="px-8 py-3.5 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="hero-cta">
+          {/* CTA block — compact */}
+          <div style={{ paddingTop: 28, position: 'relative', zIndex: 10 }}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3" style={{ marginBottom: 12 }}>
+              <Link to="/register-supabase" className="px-10 py-4 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110 hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)' }} data-testid="hero-cta">
                 Try It For Free <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: MONO, color: '#A6B2C1', marginBottom: 24 }} data-testid="hero-login">Already have an account? Log in</Link>
+            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: MONO, color: '#A6B2C1', marginBottom: 20 }} data-testid="hero-login">Already have an account? Log in</Link>
 
-            {/* Continuously Learning — 40px gap from CTA */}
-            <div className="flex flex-col items-center gap-3">
-              <span className="text-[12px] sm:text-[14px]" style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.45 }}>Continuously Learning &amp; Designed to</span>
+            {/* Protect / Stabilise / Strengthen */}
+            <div className="flex flex-col items-center gap-2">
+              <span style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.4, fontSize: '13px' }}>Continuously Learning &amp; Designed to</span>
               <div className="flex items-center gap-5 sm:gap-8">
                 {['Protect', 'Stabilise', 'Strengthen'].map((word) => (
-                  <div key={word} className="flex items-center gap-1.5 sm:gap-2">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF7A18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-[14px] sm:text-[18px] font-medium" style={{ fontFamily: BODY, color: '#FF7A18' }}>{word}</span>
+                  <div key={word} className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF7A18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <span className="text-[14px] sm:text-[16px] font-medium" style={{ fontFamily: BODY, color: '#FF7A18' }}>{word}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <p className="mt-6" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3, fontSize: '12px' }}>No credit card required &middot; Australian owned & operated</p>
+            <p className="mt-4" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.25, fontSize: '11px' }}>No credit card required &middot; Australian owned & operated</p>
 
-            {/* Industry Benchmarks — inside hero, before diagram */}
-            <div className="mt-8 sm:mt-12" data-testid="stats-section">
-              <p className="font-medium tracking-widest uppercase mb-6" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>Industry Benchmarks</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 max-w-4xl mx-auto">
-                <StatBlock value="40%" label="Operational Improvement" />
-                <StatBlock value="50%" label="Reduced Manual Work" />
-                <StatBlock value="80%" label="Lower Processing Costs" />
-                <StatBlock value="3x" label="Faster Anomaly Detection" />
-                <StatBlock value="-25%" label="Fewer Preventable Errors" />
+            {/* SMB Impact Stats */}
+            <div className="mt-8 sm:mt-10" data-testid="stats-section">
+              <p className="font-medium tracking-widest uppercase mb-5" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '11px' }}>What SMBs Gain With BIQc</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 sm:gap-6 max-w-3xl mx-auto">
+                <StatBlock value="6hrs" label="Saved Per Week on Reporting" />
+                <StatBlock value="83%" label="Faster Risk Detection" />
+                <StatBlock value="$47K" label="Avg. Cash Recovered Annually" />
+                <StatBlock value="1" label="Single Source of Truth" />
               </div>
-              <p className="mt-4 text-xs" style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.35 }}>Businesses embedding AI-driven decision systems experience these improvements</p>
+              <p className="mt-3" style={{ fontFamily: BODY, color: '#A6B2C1', opacity: 0.3, fontSize: '11px' }}>Based on pilot data from Australian SMBs using BIQc intelligence systems</p>
             </div>
           </div>
         </div>

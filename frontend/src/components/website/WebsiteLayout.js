@@ -56,10 +56,8 @@ const WebsiteNav = () => {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF8C33)' }}>
-            <span className="text-white font-bold text-sm" style={{ fontFamily: MONO }}>B</span>
-          </div>
-          <span className="text-lg font-bold text-[#F4F7FA] tracking-tight" style={{ fontFamily: NAV_FONT }}>BIQc</span>
+          <img src="https://static.prod-images.emergentagent.com/jobs/762eefd1-c89a-47e5-a535-e73afea697dd/images/886ac6eceb110e9cec93b282be72392b83c06933c0d99391f9b10fdf8415e779.png" alt="BIQc" className="w-9 h-9 rounded-lg object-contain" style={{ background: 'rgba(255,106,0,0.08)' }} />
+          <span className="text-lg font-semibold text-[#F4F7FA] tracking-tight" style={{ fontFamily: NAV_FONT }}>BIQc</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -124,10 +122,8 @@ const WebsiteFooter = () => (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         <div>
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-              <span className="text-white font-bold text-xs" style={{ fontFamily: MONO }}>B</span>
-            </div>
-            <span className="text-base font-bold text-[#F4F7FA]" style={{ fontFamily: NAV_FONT }}>BIQc</span>
+            <img src="https://static.prod-images.emergentagent.com/jobs/762eefd1-c89a-47e5-a535-e73afea697dd/images/886ac6eceb110e9cec93b282be72392b83c06933c0d99391f9b10fdf8415e779.png" alt="BIQc" className="w-7 h-7 rounded-md object-contain" />
+            <span className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: NAV_FONT }}>BIQc</span>
           </div>
           <p className="text-xs text-[#9FB0C3]/60 leading-relaxed" style={{ fontFamily: NAV_FONT }}>Autonomous Business Intelligence for SMBs. Australian owned & operated.</p>
         </div>
