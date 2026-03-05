@@ -144,6 +144,9 @@ ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS description TEXT;
 ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS integration_required TEXT;
 ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS rollback_guidance TEXT;
+-- Add insight_category if missing (real schema requires it NOT NULL)
+ALTER TABLE automation_actions ADD COLUMN IF NOT EXISTS insight_category TEXT;
+UPDATE automation_actions SET insight_category = 'general' WHERE insight_category IS NULL;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'automation_actions_action_type_key') THEN
@@ -151,17 +154,17 @@ DO $$ BEGIN
   END IF;
 END $$;
 
-INSERT INTO automation_actions (action_type, action_label, description, integration_required) VALUES
-  ('send_invoice_reminder', 'Send Invoice Reminder', 'Automated follow-up for overdue invoices', 'accounting'),
-  ('trigger_re_engagement', 'Trigger Re-engagement', 'Automated outreach for at-risk deals', 'crm'),
-  ('generate_diversification_playbook', 'Generate Diversification Playbook', 'AI-generated playbook to reduce revenue concentration', NULL),
-  ('generate_cash_preservation', 'Generate Cash Preservation Plan', 'AI plan to extend runway during compression', NULL),
-  ('propose_load_reallocation', 'Propose Load Reallocation', 'Redistribute workload to reduce burnout risk', NULL),
-  ('create_collection_sequence', 'Create Collection Sequence', 'Multi-step collection workflow for overdue payments', 'accounting'),
-  ('flag_deal_for_review', 'Flag Deal for Review', 'Mark stalled or at-risk deals for immediate attention', 'crm'),
-  ('generate_retention_plan', 'Generate Retention Plan', 'AI-generated client retention strategy', NULL),
-  ('escalate_sla_breach', 'Escalate SLA Breach', 'Alert owner and schedule recovery call for SLA violations', 'crm'),
-  ('generate_competitive_response', 'Generate Competitive Response', 'AI brief on competitive positioning adjustment', NULL)
+INSERT INTO automation_actions (action_type, insight_category, action_label, description, integration_required) VALUES
+  ('send_invoice_reminder',            'finance',    'Send Invoice Reminder',              'Automated follow-up for overdue invoices',                      'accounting'),
+  ('trigger_re_engagement',            'revenue',    'Trigger Re-engagement',              'Automated outreach for at-risk deals',                          'crm'),
+  ('generate_diversification_playbook','revenue',    'Generate Diversification Playbook',  'AI-generated playbook to reduce revenue concentration',         NULL),
+  ('generate_cash_preservation',       'finance',    'Generate Cash Preservation Plan',    'AI plan to extend runway during compression',                   NULL),
+  ('propose_load_reallocation',        'operations', 'Propose Load Reallocation',          'Redistribute workload to reduce burnout risk',                  NULL),
+  ('create_collection_sequence',       'finance',    'Create Collection Sequence',         'Multi-step collection workflow for overdue payments',            'accounting'),
+  ('flag_deal_for_review',             'revenue',    'Flag Deal for Review',               'Mark stalled or at-risk deals for immediate attention',         'crm'),
+  ('generate_retention_plan',          'revenue',    'Generate Retention Plan',            'AI-generated client retention strategy',                        NULL),
+  ('escalate_sla_breach',              'operations', 'Escalate SLA Breach',                'Alert owner and schedule recovery call for SLA violations',     'crm'),
+  ('generate_competitive_response',    'market',     'Generate Competitive Response',      'AI brief on competitive positioning adjustment',                NULL)
 ON CONFLICT (action_type) DO NOTHING;
 
 -- ── 7. AUTOMATION EXECUTIONS ───────────────────────────────
