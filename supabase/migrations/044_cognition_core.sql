@@ -104,45 +104,28 @@ ALTER TABLE outcome_checkpoints ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pe
 CREATE INDEX IF NOT EXISTS idx_outcome_checkpoints_decision ON outcome_checkpoints(decision_id);
 CREATE INDEX IF NOT EXISTS idx_outcome_checkpoints_tenant ON outcome_checkpoints(tenant_id);
 
--- ── 5. PROPAGATION RULES (14 deterministic rules) ──────────
-CREATE TABLE IF NOT EXISTS propagation_rules (
-  id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  source_domain   TEXT NOT NULL DEFAULT '',
-  target_domain   TEXT NOT NULL DEFAULT '',
-  probability     FLOAT NOT NULL DEFAULT 0.7,
-  lag_days        INTEGER DEFAULT 14,
-  description     TEXT,
-  is_active       BOOLEAN DEFAULT true
-);
-ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS source_domain TEXT NOT NULL DEFAULT '';
-ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS target_domain TEXT NOT NULL DEFAULT '';
-ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS probability FLOAT NOT NULL DEFAULT 0.7;
-ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS lag_days INTEGER DEFAULT 14;
-ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS description TEXT;
-ALTER TABLE propagation_rules ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+-- ── 5. PROPAGATION RULES — table already exists in production schema ──────────
+-- Skip CREATE TABLE. Just ensure seed data is present using correct column names.
+-- Real schema: source_domain, target_domain, mechanism, base_probability, severity, time_horizon
 
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'propagation_rules_source_domain_target_domain_key') THEN
-    ALTER TABLE propagation_rules ADD CONSTRAINT propagation_rules_source_domain_target_domain_key UNIQUE(source_domain, target_domain);
-  END IF;
-END $$;
+-- Clear existing rows and re-seed with correct values
+DELETE FROM propagation_rules;
 
-INSERT INTO propagation_rules (source_domain, target_domain, probability, lag_days, description) VALUES
-  ('finance', 'operations', 0.82, 14, 'Cash constraint reduces operational capacity'),
-  ('finance', 'people', 0.75, 21, 'Financial stress leads to talent attrition'),
-  ('operations', 'people', 0.68, 7, 'Bottlenecks increase team burnout risk'),
-  ('operations', 'revenue', 0.79, 14, 'Delivery failures erode client retention'),
-  ('market', 'revenue', 0.71, 30, 'Competitive shift reduces win rate'),
-  ('market', 'people', 0.55, 45, 'Market pressure increases workload'),
-  ('revenue', 'cash', 0.88, 7, 'Pipeline shrink triggers cash shortfall'),
-  ('revenue', 'operations', 0.65, 14, 'Revenue loss forces operational cuts'),
-  ('cash', 'delivery', 0.77, 14, 'Cash constraint delays project delivery'),
-  ('cash', 'people', 0.72, 21, 'Cash pressure leads to headcount freeze'),
-  ('delivery', 'revenue', 0.80, 14, 'Late delivery triggers churn and lost upsell'),
-  ('delivery', 'people', 0.60, 7, 'Delivery pressure increases team fatigue'),
-  ('people', 'operations', 0.73, 14, 'Key person loss creates operational gap'),
-  ('people', 'revenue', 0.69, 21, 'Team fatigue reduces sales output')
-ON CONFLICT (source_domain, target_domain) DO NOTHING;
+INSERT INTO propagation_rules (source_domain, target_domain, mechanism, base_probability, severity, time_horizon, trigger_threshold, amplification_factor, dampening_factor) VALUES
+  ('finance',    'operations', 'direct',   0.82, 'high',   '14 days', 0.4, 1.2, 0.0),
+  ('finance',    'people',     'direct',   0.75, 'high',   '21 days', 0.4, 1.1, 0.0),
+  ('operations', 'people',     'direct',   0.68, 'medium', '7 days',  0.4, 1.0, 0.1),
+  ('operations', 'revenue',    'direct',   0.79, 'high',   '14 days', 0.4, 1.2, 0.0),
+  ('market',     'revenue',    'indirect', 0.71, 'medium', '30 days', 0.3, 1.0, 0.1),
+  ('market',     'people',     'indirect', 0.55, 'low',    '45 days', 0.3, 0.9, 0.2),
+  ('revenue',    'cash',       'direct',   0.88, 'high',   '7 days',  0.5, 1.3, 0.0),
+  ('revenue',    'operations', 'direct',   0.65, 'medium', '14 days', 0.4, 1.0, 0.1),
+  ('cash',       'delivery',   'direct',   0.77, 'high',   '14 days', 0.4, 1.1, 0.0),
+  ('cash',       'people',     'direct',   0.72, 'medium', '21 days', 0.4, 1.0, 0.1),
+  ('delivery',   'revenue',    'direct',   0.80, 'high',   '14 days', 0.4, 1.2, 0.0),
+  ('delivery',   'people',     'indirect', 0.60, 'medium', '7 days',  0.3, 1.0, 0.1),
+  ('people',     'operations', 'direct',   0.73, 'medium', '14 days', 0.4, 1.0, 0.0),
+  ('people',     'revenue',    'indirect', 0.69, 'medium', '21 days', 0.3, 0.9, 0.1);
 
 -- ── 6. AUTOMATION ACTIONS (10 actions) ─────────────────────
 CREATE TABLE IF NOT EXISTS automation_actions (
