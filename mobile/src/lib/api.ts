@@ -1,6 +1,6 @@
 /**
- * BIQc API Client — React Native
- * Connects to the same backend as the web app.
+ * BIQc Mobile — API Client
+ * Thin client — consumes existing backend APIs only.
  */
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
@@ -9,7 +9,7 @@ const API_URL = 'https://beta.thestrategysquad.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -35,8 +35,10 @@ export default api;
 export const auth = {
   async login(email: string, password: string) {
     const res = await api.post('/auth/supabase/login', { email, password });
-    if (res.data?.access_token) {
-      await SecureStore.setItemAsync('access_token', res.data.access_token);
+    // Backend returns session.access_token
+    const token = res.data?.session?.access_token || res.data?.access_token;
+    if (token) {
+      await SecureStore.setItemAsync('access_token', token);
       await SecureStore.setItemAsync('user', JSON.stringify(res.data.user || {}));
     }
     return res.data;

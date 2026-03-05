@@ -7,6 +7,7 @@ import { useTutorial, HelpButton, TutorialModal } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
 import MobileNav from './MobileNav';
 import SoundboardPanel from './SoundboardPanel';
+import { DailyBriefBanner } from './DailyBriefCard';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from './ui/dropdown-menu';
@@ -15,7 +16,7 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
   ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
-  BookOpen, Scale, Gavel
+  BookOpen, Scale, Gavel, Target
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 
@@ -175,6 +176,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const navSections = [
     { id: 'intelligence', label: 'Intelligence', items: [
       { icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true },
+      { icon: Target, label: 'Decisions', path: '/decisions' },
       { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
       { icon: Settings, label: 'Operations', path: '/operations' },
       { icon: AlertTriangle, label: 'Risk', path: '/risk' },
@@ -457,6 +459,9 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           )}
         </nav>
       </aside>
+
+      {/* Daily Brief Banner — shows once per day on login */}
+      <DailyBriefBanner onOpen={() => navigate('/soundboard')} />
 
       {/* Mobile Overlay */}
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}

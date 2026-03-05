@@ -1,0 +1,115 @@
+/**
+ * BIQc Analytics — Provider-agnostic event dispatch
+ * Supports: Mixpanel, Amplitude, PostHog
+ * Keys will be provided later — this is the instrumentation layer only.
+ */
+
+const PROVIDERS = {
+  mixpanel: null,
+  amplitude: null,
+  posthog: null,
+};
+
+let initialized = false;
+let userId = null;
+let sessionMetadata = {};
+
+/**
+ * Initialize analytics with provider keys.
+ * Call once on app load.
+ */
+export function initAnalytics(config = {}) {
+  if (config.mixpanelToken) {
+    PROVIDERS.mixpanel = { token: config.mixpanelToken };
+  }
+  if (config.amplitudeKey) {
+    PROVIDERS.amplitude = { key: config.amplitudeKey };
+  }
+  if (config.posthogKey) {
+    PROVIDERS.posthog = { key: config.posthogKey, host: config.posthogHost || 'https://app.posthog.com' };
+  }
+  initialized = true;
+}
+
+/**
+ * Identify the current user.
+ */
+export function identifyUser(id, properties = {}) {
+  userId = id;
+  sessionMetadata = { ...sessionMetadata, ...properties };
+}
+
+/**
+ * Track an event — dispatches to all configured providers.
+ * @param {string} eventName - Event name (e.g., 'soundboard_query')
+ * @param {object} metadata - Event metadata
+ */
+export function trackEvent(eventName, metadata = {}) {
+  const event = {
+    event: eventName,
+    userId,
+    timestamp: new Date().toISOString(),
+    properties: {
+      ...sessionMetadata,
+      ...metadata,
+      page: typeof window !== 'undefined' ? window.location.pathname : null,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    },
+  };
+
+  // Queue events if not initialized — they'll be sent when provider is configured
+  if (!initialized) {
+    eventQueue.push(event);
+    return;
+  }
+
+  dispatch(event);
+}
+
+const eventQueue = [];
+
+function dispatch(event) {
+  // Mixpanel dispatch
+  if (PROVIDERS.mixpanel && typeof window !== 'undefined' && window.mixpanel) {
+    try { window.mixpanel.track(event.event, event.properties); } catch {}
+  }
+
+  // Amplitude dispatch
+  if (PROVIDERS.amplitude && typeof window !== 'undefined' && window.amplitude) {
+    try { window.amplitude.track(event.event, event.properties); } catch {}
+  }
+
+  // PostHog dispatch
+  if (PROVIDERS.posthog && typeof window !== 'undefined' && window.posthog) {
+    try { window.posthog.capture(event.event, event.properties); } catch {}
+  }
+
+  // Console log in development
+  if (process.env.NODE_ENV === 'development') {
+    console.debug(`[analytics] ${event.event}`, event.properties);
+  }
+}
+
+/**
+ * Flush queued events after initialization.
+ */
+export function flushQueue() {
+  while (eventQueue.length > 0) {
+    dispatch(eventQueue.shift());
+  }
+}
+
+// ═══ PREDEFINED EVENTS ═══
+
+export const EVENTS = {
+  USER_LOGIN: 'user_login',
+  DASHBOARD_VIEW: 'dashboard_view',
+  TAB_SWITCH: 'tab_switch',
+  INTEGRATION_CONNECT_CLICK: 'integration_connect_click',
+  SOUNDBOARD_OPEN: 'soundboard_open',
+  SOUNDBOARD_QUERY: 'soundboard_query',
+  DECISION_RECORDED: 'decision_recorded',
+  AUTOMATION_TRIGGER_CLICK: 'automation_trigger_click',
+  DAILY_BRIEF_OPEN: 'daily_brief_open',
+  ALERT_OPEN: 'alert_open',
+};
