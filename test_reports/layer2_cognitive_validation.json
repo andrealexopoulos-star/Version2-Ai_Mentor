@@ -1,15 +1,15 @@
 {
   "section_7_ai_quality": {
-    "overall_ai_score": 8.85,
+    "overall_ai_score": 8.76,
     "threshold": 8,
     "pass": true,
     "category_scores": {
-      "strategy": 8.88,
-      "risk_analysis": 8.94,
-      "competitive_intelligence": 8.5,
-      "pricing_analysis": 9.0,
-      "market_positioning": 8.91,
-      "operational_diagnostics": 9.0
+      "strategy": 8.94,
+      "risk_analysis": 8.75,
+      "competitive_intelligence": 8.53,
+      "pricing_analysis": 8.88,
+      "market_positioning": 8.84,
+      "operational_diagnostics": 8.12
     },
     "total_prompts": 42
   },
@@ -30,12 +30,12 @@
       },
       {
         "prompt": "What are the main competitive threats to Campos Coffee?",
-        "similarity": 0.181,
+        "similarity": 0.152,
         "pass": false
       },
       {
         "prompt": "How should Campos Coffee approach customer retention?",
-        "similarity": 0.177,
+        "similarity": 0.194,
         "pass": false
       }
     ],

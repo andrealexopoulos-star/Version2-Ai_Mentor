@@ -104,7 +104,7 @@ const MarketPage = () => {
 
   useEffect(() => {
     const init = async () => {
-      await Promise.race([fetchSnapshot(), new Promise(r => setTimeout(r, 8000))]);
+      await Promise.race([fetchSnapshot(), new Promise(r => setTimeout(r, 4000))]);
       setLoading(false);
     };
     init();

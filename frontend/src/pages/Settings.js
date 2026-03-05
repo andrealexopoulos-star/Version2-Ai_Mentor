@@ -59,6 +59,9 @@ const Settings = () => {
   useEffect(() => {
     fetchProfile();
     fetchCalibrationStatus();
+    // Safety timeout: don't show loading forever
+    const timeout = setTimeout(() => setLoading(false), 5000);
+    return () => clearTimeout(timeout);
   }, []);
 
   const fetchCalibrationStatus = async () => {

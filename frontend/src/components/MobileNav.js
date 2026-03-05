@@ -57,7 +57,7 @@ const MobileNav = () => {
                     style={{ background: active ? '#FF6A0010' : 'transparent', color: active ? '#FF6A00' : '#9FB0C3' }}
                     data-testid={`more-${item.label.toLowerCase().replace(/\s/g, '-')}`}>
                     <item.icon className="w-5 h-5" />
-                    <span className="text-[11px]" style={{ fontFamily: MONO }}>{item.label}</span>
+                    <span className="text-[12px]" style={{ fontFamily: MONO }}>{item.label}</span>
                   </button>
                 );
               })}
@@ -78,7 +78,7 @@ const MobileNav = () => {
                 style={{ color: active ? '#FF6A00' : isMore && moreOpen ? '#FF6A00' : '#64748B' }}
                 data-testid={`mobile-nav-${item.id}`}>
                 <item.icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium" style={{ fontFamily: MONO }}>{item.label}</span>
+                <span className="text-[11px] font-medium" style={{ fontFamily: MONO }}>{item.label}</span>
                 {active && <div className="w-4 h-0.5 rounded-full mt-0.5" style={{ background: '#FF6A00' }} />}
               </button>
             );

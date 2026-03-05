@@ -50,8 +50,8 @@ const GlowCard = ({ children, className = '', glow = false }) => (
 
 const FlowLabel = ({ label, sublabel }) => (
   <div className="text-center">
-    <span className="text-[10px] sm:text-[11px] font-semibold tracking-[0.2em] uppercase block" style={{ fontFamily: MONO, color: '#FF9C45' }}>{label}</span>
-    {sublabel && <span className="text-[11px] sm:text-[13px] block mt-1" style={{ fontFamily: INTER, color: '#A6B2C1', fontWeight: 300 }}>{sublabel}</span>}
+    <span className="font-semibold tracking-[0.2em] uppercase block" style={{ fontFamily: MONO, color: '#FF9C45', fontSize: '12px' }}>{label}</span>
+    {sublabel && <span className="block mt-1" style={{ fontFamily: INTER, color: '#A6B2C1', fontWeight: 300, fontSize: '13px' }}>{sublabel}</span>}
   </div>
 );
 
@@ -144,10 +144,10 @@ export const IntelligenceDiagram = () => (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 relative z-10">
           {SYSTEMS.map(sys => (
             <GlowCard key={sys.label}>
-              <h4 className="text-[10px] sm:text-[11px] font-bold tracking-[0.15em] uppercase mb-3 text-center" style={{ fontFamily: MONO, color: '#FF9C45' }}>{sys.label}</h4>
+              <h4 className="font-bold tracking-[0.15em] uppercase mb-3 text-center" style={{ fontFamily: MONO, color: '#FF9C45', fontSize: '12px' }}>{sys.label}</h4>
               <div className="flex flex-wrap justify-center gap-2">
                 {sys.tools.map(t => (
-                  <span key={t} className="text-[10px] sm:text-[11px] px-2.5 py-1 rounded-md transition-colors hover:bg-orange-500/10" style={{ fontFamily: MONO, color: '#A6B2C1', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>{t}</span>
+                  <span key={t} className="px-2.5 py-1 rounded-md transition-colors hover:bg-orange-500/10" style={{ fontFamily: MONO, color: '#A6B2C1', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '12px' }}>{t}</span>
                 ))}
               </div>
             </GlowCard>
@@ -218,8 +218,8 @@ export const IntelligenceDiagram = () => (
             animation: 'coreGlow 6s ease-in-out infinite',
           }}>
             <span className="text-xl sm:text-2xl font-bold block" style={{ fontFamily: MONO, color: '#FF7A18', textShadow: '0 0 20px rgba(255,122,24,0.5)' }}>BIQc</span>
-            <span className="text-[8px] sm:text-[9px] tracking-[0.15em] uppercase block mt-1" style={{ fontFamily: MONO, color: '#A6B2C1' }}>Business Intelligence</span>
-            <span className="text-[8px] sm:text-[9px] tracking-[0.15em] uppercase block" style={{ fontFamily: MONO, color: '#A6B2C1' }}>Quotient Centre</span>
+            <span className="tracking-[0.15em] uppercase block mt-1" style={{ fontFamily: MONO, color: '#A6B2C1', fontSize: '10px' }}>Business Intelligence</span>
+            <span className="tracking-[0.15em] uppercase block" style={{ fontFamily: MONO, color: '#A6B2C1', fontSize: '10px' }}>Quotient Centre</span>
           </div>
         </div>
 

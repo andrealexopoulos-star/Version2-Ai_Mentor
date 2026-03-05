@@ -22,7 +22,7 @@ const GlassCard = ({ children, className = '' }) => (
 const StatBlock = ({ value, label }) => (
   <div className="text-center">
     <div className="text-[36px] sm:text-[42px] font-bold mb-2" style={{ fontFamily: MONO, color: '#FF7A18' }}>{value}</div>
-    <div className="text-[10px] sm:text-xs tracking-widest uppercase" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.6 }}>{label}</div>
+    <div className="tracking-widest uppercase" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.6, fontSize: '12px' }}>{label}</div>
   </div>
 );
 
@@ -44,7 +44,7 @@ const HomePage = () => (
           {/* Trust badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 sm:mb-10" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#FF7A18' }} />
-            <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18' }}>Australian Owned &amp; Operated</span>
+            <span className="font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>Australian Owned &amp; Operated</span>
           </div>
 
           {/* Rotating headline + subheadline */}
@@ -72,11 +72,11 @@ const HomePage = () => (
               </div>
             </div>
 
-            <p className="mt-6 text-[11px]" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3 }}>No credit card required &middot; Australian owned & operated</p>
+            <p className="mt-6" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3, fontSize: '12px' }}>No credit card required &middot; Australian owned & operated</p>
 
             {/* Industry Benchmarks — inside hero, before diagram */}
             <div className="mt-12 sm:mt-16" data-testid="stats-section">
-              <p className="text-[10px] sm:text-xs font-medium tracking-widest uppercase mb-6" style={{ fontFamily: MONO, color: '#FF7A18' }}>Industry Benchmarks</p>
+              <p className="font-medium tracking-widest uppercase mb-6" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>Industry Benchmarks</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 max-w-4xl mx-auto">
                 <StatBlock value="40%" label="Operational Improvement" />
                 <StatBlock value="50%" label="Reduced Manual Work" />
@@ -151,7 +151,7 @@ const HomePage = () => (
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: INTER, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4 text-[11px]" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3 }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: MONO, color: '#A6B2C1', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
   </WebsiteLayout>
