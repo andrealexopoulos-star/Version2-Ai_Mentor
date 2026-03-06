@@ -146,7 +146,7 @@ class ServiceRegistry:
         """LLM chat completion via BIQc router."""
         import os
         from core.llm_router import llm_chat
-        key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY", "")
+        key = os.environ.get("OPENAI_API_KEY", "")
         return await llm_chat(system_message=system_message, user_message=user_message, model=model, api_key=key)
 
     @staticmethod

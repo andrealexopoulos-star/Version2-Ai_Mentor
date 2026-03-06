@@ -19,7 +19,7 @@ from routes.auth import get_current_user
 from intelligence_spine import _get_cached_flag
 from guardrails import sanitise_output, log_llm_call_to_db
 
-OPENAI_KEY = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY", "")
+OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
 class GenerateRequest(BaseModel):

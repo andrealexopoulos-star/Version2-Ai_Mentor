@@ -1,365 +1,223 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { trackEvent, EVENTS } from '../lib/analytics';
-import { Plus, Clock, CheckCircle2, AlertTriangle, ArrowRight, Loader2, Target, TrendingUp, DollarSign, Users, BarChart3 } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
+import { fontFamily, colors } from '../design-system/tokens';
+import { AlertTriangle, TrendingDown, Clock, CheckCircle2, XCircle, ArrowRight, Loader2, Zap, DollarSign, Users, BarChart3 } from 'lucide-react';
 
-
-const DECISION_TYPES = [
-  { value: 'hiring', label: 'Hiring', icon: Users },
-  { value: 'pricing', label: 'Pricing', icon: DollarSign },
-  { value: 'client_strategy', label: 'Client Strategy', icon: Target },
-  { value: 'operational_change', label: 'Operational Change', icon: TrendingUp },
-  { value: 'market_expansion', label: 'Market Expansion', icon: BarChart3 },
-  { value: 'cost_reduction', label: 'Cost Reduction', icon: DollarSign },
-  { value: 'product_launch', label: 'Product Launch', icon: Plus },
-  { value: 'partnership', label: 'Partnership', icon: Users },
-];
-
-const DOMAINS = [
-  { id: 'revenue', label: 'Revenue', color: '#10B981' },
-  { id: 'cash', label: 'Cash', color: '#3B82F6' },
-  { id: 'operations', label: 'Operations', color: '#F59E0B' },
-  { id: 'people', label: 'People', color: '#8B5CF6' },
-  { id: 'market', label: 'Market', color: '#EF4444' },
-];
-
-const CHECKPOINT_STATUS = {
-  pending: { label: 'Pending', color: '#64748B', icon: Clock },
-  positive: { label: 'Positive Impact', color: '#10B981', icon: CheckCircle2 },
-  negative: { label: 'Negative Impact', color: '#EF4444', icon: AlertTriangle },
-  neutral: { label: 'Neutral', color: '#F59E0B', icon: Clock },
+const SIGNAL_TO_DECISION = {
+  deal_stall: { title: 'Pipeline Stagnation Detected', icon: Clock, domain: 'Revenue', action: 'Kill or reactivate stalled deals', color: colors.warning },
+  invoices_overdue_cluster: { title: 'Cash Collection Risk', icon: DollarSign, domain: 'Cash', action: 'Collect overdue invoices or escalate', color: colors.danger },
+  cash_burn_acceleration: { title: 'Burn Rate Increasing', icon: TrendingDown, domain: 'Cash', action: 'Review and reduce discretionary spending', color: colors.danger },
+  margin_compression: { title: 'Margin Under Pressure', icon: BarChart3, domain: 'Revenue', action: 'Review pricing or reduce cost of delivery', color: colors.warning },
+  pipeline_decay: { title: 'Pipeline Value Declining', icon: TrendingDown, domain: 'Revenue', action: 'Accelerate prospecting or re-engage cold leads', color: colors.warning },
+  response_delay: { title: 'Client Response Time Slowing', icon: Clock, domain: 'Operations', action: 'Triage response backlog and reassign', color: colors.info },
+  meeting_overload: { title: 'Team Meeting Overload', icon: Users, domain: 'People', action: 'Audit meeting necessity, cancel non-essential', color: colors.info },
 };
 
 export default function DecisionsPage() {
-  const [decisions, setDecisions] = useState([]);
+  const [prompts, setPrompts] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    decision_category: '',
-    decision_statement: '',
-    expected_instability_change: {},
-    affected_domains: [],
-    expected_time_horizon: 30,
-    evidence_refs: [],
-  });
 
   useEffect(() => {
-    fetchDecisions();
+    fetchDecisionPrompts();
+    fetchDecisionHistory();
   }, []);
 
-  const fetchDecisions = async () => {
+  const fetchDecisionPrompts = async () => {
+    try {
+      // Build decision prompts from observation_events
+      const res = await apiClient.get('/integrations/merge/connected');
+      const signalCount = res.data?.canonical_truth?.live_signal_count || 0;
+
+      if (signalCount > 0) {
+        // Ask the backend for signal summary
+        const snapRes = await apiClient.get('/snapshot/latest');
+        const rq = snapRes.data?.cognitive?.resolution_queue || [];
+
+        // Also get observation event summary from cognition
+        const cogRes = await apiClient.get('/cognition/overview');
+        const cogData = cogRes.data || {};
+
+        // Build decision prompts from real signals
+        const newPrompts = [];
+
+        // From resolution queue
+        rq.forEach(item => {
+          if (item.severity === 'high' || item.severity === 'critical') {
+            newPrompts.push({
+              id: `rq-${item.domain}-${item.title?.substring(0, 20)}`,
+              signal: item.title,
+              domain: item.domain,
+              severity: item.severity,
+              recommendation: item.recommendation,
+              type: 'resolution_queue',
+            });
+          }
+        });
+
+        // From cognition propagation map
+        if (cogData.propagation_map) {
+          cogData.propagation_map.forEach(chain => {
+            if (chain.probability > 0.7) {
+              newPrompts.push({
+                id: `prop-${chain.source}-${chain.target}`,
+                signal: `${chain.source} instability propagating to ${chain.target}`,
+                domain: chain.source,
+                severity: 'high',
+                recommendation: `Address ${chain.source} issues within ${chain.window} to prevent ${chain.target} impact`,
+                type: 'propagation',
+                probability: chain.probability,
+              });
+            }
+          });
+        }
+
+        setPrompts(newPrompts);
+      }
+    } catch {} finally { setLoading(false); }
+  };
+
+  const fetchDecisionHistory = async () => {
     try {
       const res = await apiClient.get('/cognition/decisions');
-      setDecisions(res.data?.decisions || []);
-    } catch {
-      // Migration may not be run yet
-    } finally {
-      setLoading(false);
-    }
+      setHistory(res.data?.decisions || []);
+    } catch {}
   };
 
-  const handleSubmit = async () => {
-    if (!form.decision_category || !form.decision_statement) {
-      toast.error('Please fill in the decision type and description.');
-      return;
-    }
-    setSubmitting(true);
+  const handleRespond = async (prompt, action) => {
     try {
-      await apiClient.post('/cognition/decisions', form);
-      trackEvent(EVENTS.DECISION_RECORDED, { category: form.decision_category, domains: form.affected_domains });
-      toast.success('Decision recorded. Checkpoints scheduled at 30, 60, and 90 days.');
-      setForm({ decision_category: '', decision_statement: '', expected_instability_change: {}, affected_domains: [], expected_time_horizon: 30, evidence_refs: [] });
-      setShowForm(false);
-      fetchDecisions();
-    } catch (err) {
-      const msg = err?.response?.data?.message || err?.response?.data?.detail || 'Failed to record decision.';
-      if (msg.includes('MIGRATION')) {
-        toast.error('Cognition Core not yet deployed. Please run SQL migrations 044 + 045.');
-      } else {
-        toast.error(msg);
-      }
-    } finally {
-      setSubmitting(false);
+      await apiClient.post('/cognition/decisions', {
+        decision_category: prompt.domain || 'operational_change',
+        decision_statement: `${action === 'act' ? 'Acting on' : 'Deferring'}: ${prompt.signal}. ${prompt.recommendation || ''}`,
+        affected_domains: [prompt.domain?.toLowerCase()].filter(Boolean),
+        expected_time_horizon: 30,
+      });
+      trackEvent(EVENTS.DECISION_RECORDED, { action, domain: prompt.domain, signal: prompt.signal?.substring(0, 50) });
+      toast.success(action === 'act' ? 'Decision recorded. Tracking outcome at 30/60/90 days.' : 'Deferred. We\'ll resurface this if it escalates.');
+      setPrompts(prev => prev.filter(p => p.id !== prompt.id));
+      fetchDecisionHistory();
+    } catch {
+      toast.error('Failed to record decision.');
     }
-  };
-
-  const toggleDomain = (domainId) => {
-    setForm(prev => ({
-      ...prev,
-      affected_domains: prev.affected_domains.includes(domainId)
-        ? prev.affected_domains.filter(d => d !== domainId)
-        : [...prev.affected_domains, domainId],
-    }));
   };
 
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto" data-testid="decisions-page">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }} data-testid="decisions-title">
-              Decision Tracker
-            </h1>
-            <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-              Record strategic decisions. Track outcomes at 30, 60, and 90 days.
-            </p>
-          </div>
-          <Button
-            onClick={() => setShowForm(!showForm)}
-            className="gap-2"
-            style={{ background: '#FF6A00', color: 'white' }}
-            data-testid="new-decision-btn"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Decision</span>
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }} data-testid="decisions-title">
+            Decision Centre
+          </h1>
+          <p className="text-sm mt-1" style={{ color: colors.textSecondary, fontFamily: fontFamily.body }}>
+            BIQc detects when your business signals require a leadership decision. Respond here. Outcomes tracked at 30, 60, and 90 days.
+          </p>
         </div>
 
-        {/* Decision Form */}
-        {showForm && (
-          <Card className="mb-8" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="decision-form">
-            <CardHeader>
-              <CardTitle style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Record a Decision</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Decision Type */}
-              <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Decision Type</Label>
-                <Select value={form.decision_category} onValueChange={v => setForm(p => ({ ...p, decision_category: v }))}>
-                  <SelectTrigger className="mt-1.5" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} data-testid="decision-type-select">
-                    <SelectValue placeholder="Select type..." />
-                  </SelectTrigger>
-                  <SelectContent style={{ background: '#141C26', border: '1px solid #243140' }}>
-                    {DECISION_TYPES.map(t => (
-                      <SelectItem key={t.value} value={t.value} style={{ color: '#F4F7FA' }}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Description */}
-              <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Decision Description</Label>
-                <Textarea
-                  className="mt-1.5"
-                  value={form.decision_statement}
-                  onChange={e => setForm(p => ({ ...p, decision_statement: e.target.value }))}
-                  placeholder="Describe the decision and its strategic rationale..."
-                  rows={3}
-                  style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
-                  data-testid="decision-description"
-                />
-              </div>
-
-              {/* Affected Domains */}
-              <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Domains Affected</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {DOMAINS.map(d => (
-                    <button
-                      key={d.id}
-                      onClick={() => toggleDomain(d.id)}
-                      className="px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                      style={{
-                        background: form.affected_domains.includes(d.id) ? d.color + '20' : '#0A1018',
-                        color: form.affected_domains.includes(d.id) ? d.color : '#64748B',
-                        border: `1px solid ${form.affected_domains.includes(d.id) ? d.color + '50' : '#243140'}`,
-                        fontFamily: fontFamily.body,
-                      }}
-                      data-testid={`domain-${d.id}`}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time Horizon */}
-              <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Expected Time Horizon (days)</Label>
-                <Input
-                  type="number"
-                  value={form.expected_time_horizon}
-                  onChange={e => setForm(p => ({ ...p, expected_time_horizon: parseInt(e.target.value) || 30 }))}
-                  className="mt-1.5 w-32"
-                  style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
-                  data-testid="decision-horizon"
-                />
-              </div>
-
-              {/* Submit */}
-              <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="gap-2"
-                  style={{ background: '#FF6A00', color: 'white' }}
-                  data-testid="submit-decision-btn"
-                >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Record Decision
-                </Button>
-                <Button variant="outline" onClick={() => setShowForm(false)} style={{ borderColor: '#243140', color: '#9FB0C3' }}>
-                  Cancel
-                </Button>
-              </div>
+        {/* Active Decision Prompts — from signals */}
+        {loading ? (
+          <div className="text-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: colors.brand }} />
+            <p className="text-sm" style={{ color: colors.textMuted }}>Scanning for decision triggers...</p>
+          </div>
+        ) : prompts.length > 0 ? (
+          <div className="space-y-4 mb-8">
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: colors.brand, fontFamily: fontFamily.mono }}>
+              {prompts.length} Decision{prompts.length !== 1 ? 's' : ''} Requiring Attention
+            </p>
+            {prompts.map(prompt => {
+              const config = SIGNAL_TO_DECISION[prompt.type] || { icon: AlertTriangle, color: colors.warning };
+              const Icon = config.icon || AlertTriangle;
+              return (
+                <Card key={prompt.id} style={{ background: colors.bgCard, border: `1px solid ${colors.border}`, borderLeftWidth: 3, borderLeftColor: config.color || colors.warning }} data-testid={`decision-prompt-${prompt.id}`}>
+                  <CardContent className="py-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: (config.color || colors.warning) + '15' }}>
+                        <Icon className="w-5 h-5" style={{ color: config.color || colors.warning }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: config.color || colors.warning, fontFamily: fontFamily.mono }}>
+                            {prompt.domain || 'Business'}
+                          </span>
+                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: colors.bgInput, color: colors.textMuted, fontFamily: fontFamily.mono }}>
+                            {prompt.severity}
+                          </span>
+                          {prompt.probability && (
+                            <span className="text-xs" style={{ color: colors.textMuted, fontFamily: fontFamily.mono }}>
+                              {Math.round(prompt.probability * 100)}% probability
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm leading-relaxed mb-2" style={{ color: colors.text, fontFamily: fontFamily.body }}>
+                          {prompt.signal}
+                        </p>
+                        {prompt.recommendation && (
+                          <p className="text-xs mb-3" style={{ color: colors.textSecondary, fontFamily: fontFamily.body }}>
+                            Suggested: {prompt.recommendation}
+                          </p>
+                        )}
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleRespond(prompt, 'act')} size="sm" className="gap-1.5 text-xs" style={{ background: colors.success, color: 'white' }} data-testid="decision-act">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Acting on this
+                          </Button>
+                          <Button onClick={() => handleRespond(prompt, 'defer')} size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: colors.border, color: colors.textSecondary }} data-testid="decision-defer">
+                            <Clock className="w-3.5 h-3.5" /> Defer
+                          </Button>
+                          <a href="/soundboard" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs" style={{ color: colors.brand, fontFamily: fontFamily.mono }}>
+                            Ask advisor <ArrowRight className="w-3 h-3" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="mb-8" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }} data-testid="no-decisions">
+            <CardContent className="text-center py-10">
+              <CheckCircle2 className="w-10 h-10 mx-auto mb-3" style={{ color: colors.success }} />
+              <p className="text-lg font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }}>No decisions pending</p>
+              <p className="text-sm mt-1" style={{ color: colors.textMuted, fontFamily: fontFamily.body }}>
+                BIQc is monitoring your systems. When a signal requires a leadership decision, it will appear here.
+              </p>
             </CardContent>
           </Card>
         )}
 
         {/* Decision History */}
-        <div className="space-y-4" data-testid="decisions-list">
-          {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: '#FF6A00' }} />
-              <p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Loading decisions...</p>
+        {history.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: colors.textMuted, fontFamily: fontFamily.mono }}>
+              Decision History ({history.length})
+            </p>
+            <div className="space-y-3">
+              {history.map(d => (
+                <div key={d.id} className="rounded-lg p-4" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-semibold uppercase" style={{ color: colors.brand, fontFamily: fontFamily.mono }}>{d.decision_category}</span>
+                    <span className="text-xs" style={{ color: colors.textMuted, fontFamily: fontFamily.mono }}>{d.created_at ? new Date(d.created_at).toLocaleDateString() : ''}</span>
+                  </div>
+                  <p className="text-sm" style={{ color: colors.text }}>{d.decision_statement}</p>
+                  {d.affected_domains?.length > 0 && (
+                    <div className="flex gap-1.5 mt-2">
+                      {d.affected_domains.map(dom => (
+                        <span key={dom} className="text-xs px-2 py-0.5 rounded" style={{ background: colors.brandDim, color: colors.brand, fontFamily: fontFamily.mono }}>{dom}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          ) : decisions.length === 0 ? (
-            <div className="text-center py-16 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="no-decisions">
-              <Target className="w-10 h-10 mx-auto mb-3" style={{ color: '#243140' }} />
-              <p className="text-lg font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>No decisions recorded yet</p>
-              <p className="text-sm mt-1" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-                Record your first strategic decision to start tracking outcomes.
-              </p>
-              <Button onClick={() => setShowForm(true)} className="mt-4 gap-2" style={{ background: '#FF6A00', color: 'white' }} data-testid="first-decision-btn">
-                <Plus className="w-4 h-4" /> Record First Decision
-              </Button>
-            </div>
-          ) : (
-            decisions.map(d => (
-              <DecisionCard key={d.id} decision={d} onOutcomeRecorded={fetchDecisions} />
-            ))
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
-  );
-}
-
-function DecisionCard({ decision, onOutcomeRecorded }) {
-  const [expanded, setExpanded] = useState(false);
-  const [recordingCheckpoint, setRecordingCheckpoint] = useState(null);
-  const typeInfo = DECISION_TYPES.find(t => t.value === decision.decision_category) || { label: decision.decision_category, icon: Target };
-  const Icon = typeInfo.icon;
-  const checkpoints = decision.checkpoints || [];
-
-  const handleRecordOutcome = async (checkpointDay, effective) => {
-    setRecordingCheckpoint(checkpointDay);
-    try {
-      await apiClient.post('/cognition/decisions/checkpoint-outcome', {
-        decision_id: decision.id,
-        checkpoint_day: checkpointDay,
-        decision_effective: effective,
-        variance_delta: 0,
-        notes: '',
-      });
-      trackEvent(EVENTS.DECISION_RECORDED, { action: 'checkpoint_outcome', checkpoint_day: checkpointDay, effective });
-      toast.success(`Day ${checkpointDay} outcome recorded.`);
-      onOutcomeRecorded?.();
-    } catch (err) {
-      toast.error('Failed to record outcome.');
-    } finally {
-      setRecordingCheckpoint(null);
-    }
-  };
-
-  return (
-    <div
-      className="rounded-xl p-5 transition-all cursor-pointer hover:border-[#FF6A00]/20"
-      style={{ background: '#141C26', border: '1px solid #243140' }}
-      onClick={() => setExpanded(!expanded)}
-      data-testid={`decision-card-${decision.id}`}
-    >
-      <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FF6A00' + '15' }}>
-          <Icon className="w-5 h-5" style={{ color: '#FF6A00' }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
-              {typeInfo.label}
-            </span>
-            <span className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
-              {decision.created_at ? new Date(decision.created_at).toLocaleDateString() : ''}
-            </span>
-          </div>
-          <p className="text-sm leading-relaxed" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
-            {decision.decision_statement}
-          </p>
-
-          {/* Affected Domains */}
-          {decision.affected_domains?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {decision.affected_domains.map(d => {
-                const domain = DOMAINS.find(dm => dm.id === d);
-                return (
-                  <span key={d} className="px-2 py-0.5 rounded text-xs" style={{ background: (domain?.color || '#64748B') + '15', color: domain?.color || '#64748B', fontFamily: fontFamily.mono }}>
-                    {domain?.label || d}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Checkpoints */}
-          {expanded && checkpoints.length > 0 && (
-            <div className="mt-4 pt-4 space-y-2" style={{ borderTop: '1px solid #243140' }}>
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
-                Outcome Checkpoints
-              </p>
-              {checkpoints.map(cp => {
-                const st = CHECKPOINT_STATUS[cp.status || 'pending'];
-                const StIcon = st.icon;
-                return (
-                  <div key={cp.id || cp.checkpoint_day} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{ background: '#0A1018' }}>
-                    <StIcon className="w-4 h-4 shrink-0" style={{ color: st.color }} />
-                    <span className="text-xs font-medium" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>Day {cp.checkpoint_day}</span>
-                    <span className="text-xs flex-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-                      {cp.scheduled_at ? new Date(cp.scheduled_at).toLocaleDateString() : 'Scheduled'}
-                    </span>
-                    {(cp.status === 'pending' && new Date(cp.scheduled_at) <= new Date()) ? (
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleRecordOutcome(cp.checkpoint_day, true); }}
-                          disabled={recordingCheckpoint === cp.checkpoint_day}
-                          className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-80"
-                          style={{ background: '#10B98120', color: '#10B981', fontFamily: fontFamily.mono }}
-                          data-testid={`outcome-positive-${cp.checkpoint_day}`}
-                        >
-                          {recordingCheckpoint === cp.checkpoint_day ? '...' : 'Effective'}
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleRecordOutcome(cp.checkpoint_day, false); }}
-                          disabled={recordingCheckpoint === cp.checkpoint_day}
-                          className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-80"
-                          style={{ background: '#EF444420', color: '#EF4444', fontFamily: fontFamily.mono }}
-                          data-testid={`outcome-negative-${cp.checkpoint_day}`}
-                        >
-                          {recordingCheckpoint === cp.checkpoint_day ? '...' : 'Ineffective'}
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        <ArrowRight className={`w-4 h-4 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} style={{ color: '#64748B' }} />
-      </div>
-    </div>
   );
 }
