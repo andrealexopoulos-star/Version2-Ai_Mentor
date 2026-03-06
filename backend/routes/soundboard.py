@@ -370,6 +370,54 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
     integration_context = ""
+
+    # FIRST: Inject observation_events (cached signals from emission layer)
+    try:
+        obs_result = sb.table('observation_events').select(
+            'signal_name,domain,severity,entity,metric,observed_at'
+        ).eq('user_id', user_id).order('observed_at', desc=True).limit(30).execute()
+
+        obs_events = obs_result.data or []
+        if obs_events:
+            integration_context += f"\n═══ YOUR LIVE BUSINESS SIGNALS ({len(obs_events)} detected) ═══\n"
+            integration_context += "IMPORTANT: These are REAL signals from the user's connected CRM and accounting systems. You MUST reference these specific signals in your response. Do NOT say you don't have access to their data.\n\n"
+
+            for evt in obs_events[:15]:
+                entity = evt.get('entity', {})
+                if isinstance(entity, str):
+                    try:
+                        import json as _json
+                        entity = _json.loads(entity)
+                    except Exception:
+                        entity = {}
+                metric = evt.get('metric', {})
+                if isinstance(metric, str):
+                    try:
+                        metric = _json.loads(metric)
+                    except Exception:
+                        metric = {}
+
+                sig = evt.get('signal_name', '?')
+                severity = evt.get('severity', '?')
+                name = entity.get('name', entity.get('contact_name', ''))
+                amount = entity.get('amount', entity.get('value', 0))
+                stage = entity.get('stage', entity.get('status', ''))
+                days_stalled = metric.get('days_in_stage', entity.get('days_stalled', ''))
+
+                line = f"SIGNAL: {sig} | severity={severity}"
+                if name: line += f" | deal='{name}'"
+                if amount:
+                    try: line += f" | amount=${float(amount):,.0f}"
+                    except: line += f" | amount={amount}"
+                if stage: line += f" | stage={stage}"
+                if days_stalled: line += f" | stalled={days_stalled} days"
+                integration_context += line + "\n"
+
+            logger.info(f"[soundboard] Injected {len(obs_events)} observation_events for user {user_id[:8]}")
+    except Exception as e:
+        logger.warning(f"[soundboard] observation_events fetch: {e}")
+
+    # SECOND: Try live Merge API data (may fail — non-fatal)
     try:
         from routes.unified_intelligence import _fetch_all_integration_data, _compute_revenue_signals, _compute_risk_signals, _compute_people_signals
         all_data = await _fetch_all_integration_data(sb, user_id)
@@ -383,8 +431,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             integration_context += f"Connected: {', '.join(connected_list)}\n"
             if disconnected_list:
                 integration_context += f"Not Connected: {', '.join(disconnected_list)} — mention these gaps when relevant\n"
-        else:
-            integration_context = ""
+        # DO NOT clear integration_context here — observation_events data is already in it
         
         # Revenue signals
         rev = _compute_revenue_signals(all_data)
@@ -427,8 +474,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             integration_context += f"Capacity Utilisation: {people['capacity'] or 'Unknown'}%\n"
             integration_context += f"Fatigue Index: {people['fatigue'] or 'Unknown'}\n"
     except Exception as e:
-        logger.debug(f"Unified intelligence fetch for SoundBoard: {e}")
-        integration_context = ""
+        logger.warning(f"[soundboard] Merge API fetch failed (non-fatal, using cached signals): {e}")
+        # integration_context already has observation_events from above — don't clear it
 
     # ═══ MARKETING BENCHMARK DATA ═══
     marketing_context = ""
