@@ -436,8 +436,8 @@ const MySoundBoard = () => {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={{
                       background: canRun || isPaid ? '#3B82F615' : '#243140',
-                      border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#1E293B'}`,
-                      color: canRun || isPaid ? '#3B82F6' : '#4A5568',
+                      border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#243140'}`,
+                      color: canRun || isPaid ? '#3B82F6' : '#64748B',
                       fontFamily: fontFamily.mono,
                       cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
                     }}

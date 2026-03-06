@@ -85,7 +85,7 @@ const WebsiteNav = () => {
         {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
           <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[#9FB0C3] hover:text-white transition-colors" style={{ fontFamily: fontFamily.display }} data-testid="nav-login">Log in</Link>
-          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }} data-testid="nav-get-started">
+          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }} data-testid="nav-get-started">
             Try It Free
           </Link>
           {/* Mobile: Log In text + hamburger */}

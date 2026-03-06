@@ -373,7 +373,7 @@ const Integrations = () => {
       description: 'Read emails for AI context and client intelligence',
       category: 'communication',
       logo: 'GM',
-      color: '#EA4335',
+      color: '#EF4444',
       tier: 'free',
       popular: true,
       isGmail: true
@@ -385,7 +385,7 @@ const Integrations = () => {
       description: 'Sync contacts, deals, and customer data',
       category: 'crm',
       logo: 'HS',
-      color: '#FF7A59',
+      color: '#FF6A00',
       tier: 'free',
       popular: true,
       viaMerge: true
@@ -1028,7 +1028,7 @@ const Integrations = () => {
                   {gmailStatus.connected && (
                     <div className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-[#EA4335] flex items-center justify-center text-white font-bold">
+                        <div className="w-12 h-12 rounded-lg bg-[#EF4444] flex items-center justify-center text-white font-bold">
                           GM
                         </div>
                         <div className="flex-1">

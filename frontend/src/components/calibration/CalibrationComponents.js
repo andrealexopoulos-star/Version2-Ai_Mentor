@@ -178,10 +178,10 @@ export const ManualSummaryFallback = ({ firstName, onSubmit, isSubmitting }) => 
         </p>
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5"
           style={{ background: '#F0F4FF', border: '1px solid #BFDBFE' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
           </svg>
-          <span className="text-xs font-medium" style={{ color: '#2563EB' }}>
+          <span className="text-xs font-medium" style={{ color: '#3B82F6' }}>
             9 quick questions follow · Takes ~3 minutes
           </span>
         </div>

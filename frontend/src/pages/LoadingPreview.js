@@ -14,9 +14,9 @@ const LoadingPreview = () => {
     <div>
       {/* Controls */}
       <div className="fixed top-4 right-4 z-50 flex gap-2">
-        <button onClick={() => reload('first')} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#F97316' }}>First Visit</button>
+        <button onClick={() => reload('first')} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#FF6A00' }}>First Visit</button>
         <button onClick={() => reload('returning')} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#7C3AED' }}>Returning</button>
-        <button onClick={() => reload(mode)} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#2563EB' }}>Randomise</button>
+        <button onClick={() => reload(mode)} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#3B82F6' }}>Randomise</button>
       </div>
       <CognitiveLoadingScreen key={key} mode={mode} ownerName="Andre" />
     </div>

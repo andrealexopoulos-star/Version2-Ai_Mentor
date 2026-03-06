@@ -103,7 +103,7 @@ const ObservabilityPage = () => {
           <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Recent Calls</h3>
           <div className="space-y-1">
             {(d.recent || []).map((c, i) => (
-              <div key={i} className="flex items-center gap-2 py-1.5 text-xs" style={{ borderBottom: '1px solid #1E293B' }}>
+              <div key={i} className="flex items-center gap-2 py-1.5 text-xs" style={{ borderBottom: '1px solid #243140' }}>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.output_valid !== false ? '#10B981' : '#EF4444' }} />
                 <span className="text-[#9FB0C3] flex-1 truncate">{c.endpoint || c.model_name}</span>
                 <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{c.total_tokens || 0} tok</span>

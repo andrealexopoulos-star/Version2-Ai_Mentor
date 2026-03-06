@@ -340,15 +340,15 @@ const CalibrationPreview = () => {
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#F9731610', border: '1px solid #F9731625' }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#F9731615' }}>
-                  <span className="text-[#F97316]">&#8635;</span>
+              <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#FF6A0010', border: '1px solid #FF6A0025' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
+                  <span className="text-[#FF6A00]">&#8635;</span>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Recalibration Recommended</p>
                   <p className="text-xs mt-0.5 text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Your business context may have changed. A quick recalibration keeps BIQc accurate.</p>
                   <div className="flex gap-2 mt-3">
-                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#F97316', fontFamily: fontFamily.mono }}>Recalibrate Now</button>
+                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#FF6A00', fontFamily: fontFamily.mono }}>Recalibrate Now</button>
                     <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ color: '#9FB0C3', border: '1px solid #243140', fontFamily: fontFamily.mono }}>Pick a Date</button>
                     <button className="text-[11px] px-2 py-1.5 rounded-lg text-[#64748B]">&#10005;</button>
                   </div>

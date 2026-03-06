@@ -119,7 +119,7 @@ const SignalBlock = ({ icon: Icon, label, value, sub, warning, hint }) => (
       <Icon className="w-3.5 h-3.5 text-[#3B82F6]" />
       <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{label}</span>
     </div>
-    <span className={`text-sm block ${warning ? 'text-[#4A5568]' : 'text-[#F4F7FA]'}`}>{value}</span>
+    <span className={`text-sm block ${warning ? 'text-[#64748B]' : 'text-[#F4F7FA]'}`}>{value}</span>
     {sub && <span className="text-xs text-[#64748B] block mt-0.5">{sub}</span>}
     {hint && <span className="text-[11px] text-[#F59E0B] block mt-1" style={{ fontFamily: fontFamily.mono }}>{hint}</span>}
   </div>
@@ -218,7 +218,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             <div key={f.key}>
               <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={rejectFields[f.key]} onChange={e => setRejectFields(p => ({ ...p, [f.key]: e.target.value }))}
-                placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] placeholder:text-[#4A5568] outline-none focus:ring-1 focus:ring-[#FF6A00]"
+                placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] placeholder:text-[#64748B] outline-none focus:ring-1 focus:ring-[#FF6A00]"
                 style={{ background: '#141C26', border: '1px solid #243140' }} data-testid={`reject-${f.key}`} />
             </div>
           ))}
@@ -276,7 +276,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             <div className="space-y-1">
               {signals.emails?.length > 0 ? signals.emails.map((e, i) => (
                 <span key={i} className="text-sm text-[#9FB0C3] block">{e}</span>
-              )) : <span className="text-sm text-[#4A5568]">No email found</span>}
+              )) : <span className="text-sm text-[#64748B]">No email found</span>}
               {signals.phones?.length > 0 && signals.phones.map((p, i) => (
                 <span key={i} className="text-sm text-[#9FB0C3] block flex items-center gap-1.5">
                   <Phone className="w-3 h-3 text-[#64748B]" />{p}
@@ -298,7 +298,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
                   </span>
                 ))}
               </div>
-            ) : <span className="text-sm text-[#4A5568]">None found</span>}
+            ) : <span className="text-sm text-[#64748B]">None found</span>}
           </div>
 
           <div className="rounded-lg p-4" style={{ background: confColor + '08', border: `1px solid ${confColor}25` }}>

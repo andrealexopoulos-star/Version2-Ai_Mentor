@@ -23,9 +23,9 @@ const ActionBar = ({ actions }) => {
   if (!actions || actions.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2 mt-3">
-      {actions.includes("auto-email") && <ActionBtn icon={Mail} label="Auto-Email" color="#2563EB" />}
-      {actions.includes("quick-sms") && <ActionBtn icon={MessageSquare} label="Quick-SMS" color="#059669" />}
-      {actions.includes("hand-off") && <ActionBtn icon={Users} label="Hand Off" color="#F97316" />}
+      {actions.includes("auto-email") && <ActionBtn icon={Mail} label="Auto-Email" color="#3B82F6" />}
+      {actions.includes("quick-sms") && <ActionBtn icon={MessageSquare} label="Quick-SMS" color="#10B981" />}
+      {actions.includes("hand-off") && <ActionBtn icon={Users} label="Hand Off" color="#FF6A00" />}
       <ActionBtn icon={CheckCircle2} label="Complete" color="#10B981" />
       <ActionBtn icon={XCircle} label="Ignore" color="#64748B" />
     </div>
@@ -33,9 +33,9 @@ const ActionBar = ({ actions }) => {
 };
 
 const GROUPS = {
-  money: { id: 'money', label: 'Money', icon: DollarSign, color: '#F97316', description: 'Cash, invoices, margins, runway, spend', requires: 'accounting' },
-  revenue: { id: 'revenue', label: 'Revenue', icon: TrendingUp, color: '#2563EB', description: 'Pipeline, deals, leads, churn, pricing', requires: 'crm' },
-  operations: { id: 'operations', label: 'Operations', icon: SettingsIcon, color: '#059669', description: 'Tasks, SOPs, bottlenecks, delivery', requires: 'crm' },
+  money: { id: 'money', label: 'Money', icon: DollarSign, color: '#FF6A00', description: 'Cash, invoices, margins, runway, spend', requires: 'accounting' },
+  revenue: { id: 'revenue', label: 'Revenue', icon: TrendingUp, color: '#3B82F6', description: 'Pipeline, deals, leads, churn, pricing', requires: 'crm' },
+  operations: { id: 'operations', label: 'Operations', icon: SettingsIcon, color: '#10B981', description: 'Tasks, SOPs, bottlenecks, delivery', requires: 'crm' },
   people: { id: 'people', label: 'People', icon: User, color: '#EF4444', description: 'Capacity, calendar, decisions, burnout', requires: 'email' },
   market: { id: 'market', label: 'Market', icon: Radar, color: '#7C3AED', description: 'Competitors, positioning, trends, regulatory', requires: null },
 };
@@ -82,9 +82,9 @@ const WelcomeBanner = ({ owner }) => (
         </p>
         <div className="flex flex-wrap gap-2">
           {[
-            { label: 'Connect CRM', desc: 'HubSpot, Salesforce', color: '#2563EB' },
-            { label: 'Connect Accounting', desc: 'Xero, QuickBooks', color: '#F97316' },
-            { label: 'Connect Email', desc: 'Gmail, Outlook', color: '#059669' },
+            { label: 'Connect CRM', desc: 'HubSpot, Salesforce', color: '#3B82F6' },
+            { label: 'Connect Accounting', desc: 'Xero, QuickBooks', color: '#FF6A00' },
+            { label: 'Connect Email', desc: 'Gmail, Outlook', color: '#10B981' },
           ].map(tool => (
             <a key={tool.label} href="/integrations" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:brightness-110" style={{ background: tool.color }} data-testid={`welcome-${tool.label.toLowerCase().replace(/\s/g, '-')}`}>
               <Plug className="w-3 h-3" /> {tool.label}

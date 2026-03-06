@@ -45,7 +45,7 @@ const TrustLandingPage = () => (
             <div className="space-y-3">
               {['Sydney-based data centres', 'Australian-owned infrastructure', 'Compliant with the Privacy Act 1988', 'No data processed offshore', 'Full data sovereignty guarantee'].map((item) => (
                 <div key={item} className="flex items-center gap-2.5">
-                  <CheckCircle className="w-4 h-4 text-[#22C55E] shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0" />
                   <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{item}</span>
                 </div>
               ))}

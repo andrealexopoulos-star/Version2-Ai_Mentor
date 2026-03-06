@@ -126,7 +126,7 @@ const GUIDES = [
   {
     id: 'understanding-dashboard',
     icon: Radar,
-    color: '#059669',
+    color: '#10B981',
     title: 'Understanding Your Dashboard',
     why: 'The BIQc Overview is your central intelligence hub. It organises signals across five modules, each reflecting a different dimension of your business.',
     steps: [

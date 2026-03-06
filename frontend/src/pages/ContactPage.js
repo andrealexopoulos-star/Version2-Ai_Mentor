@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, ChevronDown, ChevronUp, Send } from 'lucide-react';
 
-const CHARCOAL = '#0F172A';
+const CHARCOAL = '#0F1720';
 const MUTED = '#64748B';
-const ORANGE = '#F97316';
+const ORANGE = '#FF6A00';
 const BORDER = 'rgba(180,195,215,0.35)';
 
 const ContactPage = () => {

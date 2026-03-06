@@ -292,7 +292,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-50 w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-        style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', boxShadow: '0 8px 32px rgba(255,106,0,0.4)' }}
+        style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', boxShadow: '0 8px 32px rgba(255,106,0,0.4)' }}
         data-testid="soundboard-fab"
       >
         <Lightbulb className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
