@@ -8,6 +8,7 @@ import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign
 
 import DataConfidence from '../components/DataConfidence';
 import { DailyBriefCard, DailyBriefBanner } from '../components/DailyBriefCard';
+import { RiskSuggestions } from '../components/RiskSuggestions';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
@@ -489,6 +490,9 @@ const AdvisorWatchtower = () => {
 
               {/* DAILY BRIEF CARD — Proactive intelligence */}
               <DailyBriefCard />
+
+              {/* RISK SUGGESTIONS — Signal-driven actionable risks */}
+              <RiskSuggestions />
 
               {/* WELCOME BANNER — shown when no integrations connected AND cognition says none */}
               {connectedIntegrations.length === 0 && (!cognitionData || !cognitionData.integrations || (!cognitionData.integrations.crm && !cognitionData.integrations.email && !cognitionData.integrations.accounting)) && <WelcomeBanner owner={owner} />}
