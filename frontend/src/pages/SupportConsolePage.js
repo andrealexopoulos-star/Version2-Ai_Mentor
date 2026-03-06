@@ -142,7 +142,7 @@ const SupportConsolePage = () => {
                   {users.map(u => {
                     const tc = TIER_COLORS[u.subscription_tier] || '#64748B';
                     return (
-                      <tr key={u.id} style={{ borderBottom: '1px solid #1E293B' }} className={u.is_disabled ? 'opacity-50' : ''}>
+                      <tr key={u.id} style={{ borderBottom: '1px solid #243140' }} className={u.is_disabled ? 'opacity-50' : ''}>
                         <td className="px-3 py-2 text-[#F4F7FA]">{u.email}</td>
                         <td className="px-3 py-2 text-[#9FB0C3]">{u.full_name || '—'}</td>
                         <td className="px-3 py-2 text-[#9FB0C3]">{u.business_name || '—'}</td>
@@ -206,7 +206,7 @@ const SupportConsolePage = () => {
                 </thead>
                 <tbody>
                   {contacts.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                    <tr key={c.id} style={{ borderBottom: '1px solid #243140' }}>
                       <td className="px-3 py-2 text-[#F4F7FA]">{c.name}</td>
                       <td className="px-3 py-2 text-[#9FB0C3]">{c.business_name || '—'}</td>
                       <td className="px-3 py-2 text-[#9FB0C3]">{c.email}</td>
@@ -228,7 +228,7 @@ const SupportConsolePage = () => {
           <div className="rounded-xl p-4 space-y-1" style={{ background: '#141C26', border: '1px solid #243140' }}>
             {auditLog.length === 0 && <p className="text-xs text-[#64748B]">No admin actions recorded yet.</p>}
             {auditLog.map(a => (
-              <div key={a.id} className="flex items-center gap-2 py-2 text-xs" style={{ borderBottom: '1px solid #1E293B' }}>
+              <div key={a.id} className="flex items-center gap-2 py-2 text-xs" style={{ borderBottom: '1px solid #243140' }}>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: a.action_type?.includes('disable') ? '#EF4444' : '#10B981' }} />
                 <span className="text-[#F4F7FA] flex-1">{a.action_type}</span>
                 <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{a.target_user_id?.substring(0, 8)}</span>

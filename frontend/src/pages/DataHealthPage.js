@@ -10,7 +10,7 @@ const Panel = ({ children, className = '' }) => (
 );
 
 const SYSTEM_COLORS = {
-  xero: '#13B5EA', hubspot: '#FF7A59', outlook: '#0078D4', gmail: '#EA4335',
+  xero: '#13B5EA', hubspot: '#FF6A00', outlook: '#0078D4', gmail: '#EF4444',
   'google calendar': '#4285F4', slack: '#4A154B', jira: '#0052CC', default: '#FF6A00'
 };
 
@@ -55,7 +55,7 @@ const DataHealthPage = () => {
       systems.push({ name: 'Outlook', type: 'Email', status: 'connected', color: '#0078D4', health: 100 });
     }
     if (readiness.email.gmail && !hasGmail) {
-      systems.push({ name: 'Gmail', type: 'Email', status: 'connected', color: '#EA4335', health: 100 });
+      systems.push({ name: 'Gmail', type: 'Email', status: 'connected', color: '#EF4444', health: 100 });
     }
   }
 

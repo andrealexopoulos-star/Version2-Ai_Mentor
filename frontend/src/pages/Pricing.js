@@ -111,7 +111,7 @@ const Pricing = () => {
   return (
     <div className="min-h-screen" style={{ background: '#0A0F18', color: '#F4F7FA' }}>
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: '#0A0F18E0', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1E293B' }}>
+      <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: '#0A0F18E0', backdropFilter: 'blur(12px)', borderBottom: '1px solid #243140' }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
@@ -145,7 +145,7 @@ const Pricing = () => {
             {plans.map((plan, index) => (
               <div key={plan.name}
                 className={`relative rounded-xl p-5 flex flex-col transition-all ${plan.highlight ? 'ring-2 ring-[#FF6A00] scale-[1.02]' : ''}`}
-                style={{ background: '#141C26', border: `1px solid ${plan.highlight ? '#FF6A0050' : '#1E293B'}` }}
+                style={{ background: '#141C26', border: `1px solid ${plan.highlight ? '#FF6A0050' : '#243140'}` }}
                 data-testid={`plan-${plan.name.toLowerCase().replace(/\s/g, '-')}`}>
 
                 {plan.badge && (
@@ -166,7 +166,7 @@ const Pricing = () => {
 
                 <button onClick={plan.ctaAction}
                   className={`w-full py-2.5 rounded-lg text-sm font-semibold mb-5 transition-all hover:brightness-110 ${plan.highlight ? 'text-white' : 'text-[#F4F7FA]'}`}
-                  style={{ background: plan.highlight ? '#FF6A00' : '#1E293B', border: plan.highlight ? 'none' : '1px solid #2D3B4E', fontFamily: fontFamily.body }}
+                  style={{ background: plan.highlight ? '#FF6A00' : '#243140', border: plan.highlight ? 'none' : '1px solid #2D3B4E', fontFamily: fontFamily.body }}
                   data-testid={`cta-${plan.name.toLowerCase().replace(/\s/g, '-')}`}>
                   {plan.cta} <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
                 </button>
@@ -186,7 +186,7 @@ const Pricing = () => {
       </section>
 
       {/* Trust Bar */}
-      <section className="py-12 px-6" style={{ borderTop: '1px solid #1E293B', borderBottom: '1px solid #1E293B' }}>
+      <section className="py-12 px-6" style={{ borderTop: '1px solid #243140', borderBottom: '1px solid #243140' }}>
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
             { icon: Shield, title: 'AES-256 Encryption', sub: 'Defence-grade protection' },
@@ -211,7 +211,7 @@ const Pricing = () => {
           <h2 className="text-2xl font-bold text-center text-[#F4F7FA] mb-10" style={{ fontFamily: fontFamily.display }}>Frequently Asked Questions</h2>
           <div className="space-y-4">
             {faqs.map((faq, i) => (
-              <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #1E293B' }}>
+              <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
                 <h3 className="text-sm font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>{faq.q}</h3>
                 <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{faq.a}</p>
               </div>
@@ -241,9 +241,9 @@ const Pricing = () => {
       </section>
 
       {/* Disclaimer */}
-      <section className="py-4 px-6" style={{ background: '#080C14', borderTop: '1px solid #1E293B' }}>
+      <section className="py-4 px-6" style={{ background: '#080C14', borderTop: '1px solid #243140' }}>
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-[#4A5568] text-[10px] leading-relaxed" style={{ fontFamily: fontFamily.mono }}>
+          <p className="text-[#64748B] text-[10px] leading-relaxed" style={{ fontFamily: fontFamily.mono }}>
             BIQc provides business intelligence based on connected data and public signals. It does not constitute financial, legal, or professional advice.
             Seek independent professional advice before making business decisions.
             <button onClick={() => navigate('/terms')} className="text-[#FF6A00] hover:underline ml-1">Terms & Conditions</button>
@@ -260,7 +260,7 @@ const Pricing = () => {
             </div>
             <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.display }}>BIQc by The Strategy Squad</span>
           </div>
-          <p className="text-[#4A5568] text-xs" style={{ fontFamily: fontFamily.mono }}>
+          <p className="text-[#64748B] text-xs" style={{ fontFamily: fontFamily.mono }}>
             &copy; {new Date().getFullYear()} The Strategy Squad Pty Ltd. Australian owned & operated.
           </p>
         </div>

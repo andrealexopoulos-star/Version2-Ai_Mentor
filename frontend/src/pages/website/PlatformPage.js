@@ -26,7 +26,7 @@ const PlatformPage = () => (
           <p className="text-lg text-[#9FB0C3] mb-8 leading-relaxed max-w-xl" style={{ fontFamily: fontFamily.body }}>
             BIQc connects your systems, builds unified business context, and deploys autonomous agents that monitor, detect, and correct — before problems compound.
           </p>
-          <Link to="/register-supabase" className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.displayING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="platform-cta">
+          <Link to="/register-supabase" className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.displayING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }} data-testid="platform-cta">
             Start free trial <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -154,7 +154,7 @@ const PlatformPage = () => (
                 { label: 'Revenue Warnings', desc: 'Pipeline risks, churn signals, deal stalls', color: '#F59E0B' },
                 { label: 'Compliance Flags', desc: 'Regulatory gaps, missing documentation', color: '#8B5CF6' },
                 { label: 'Cash Flow Risks', desc: 'Overdue invoices, margin compression', color: '#FF6A00' },
-                { label: 'Auto-Generated Briefings', desc: 'Daily executive intelligence summaries', color: '#22C55E' },
+                { label: 'Auto-Generated Briefings', desc: 'Daily executive intelligence summaries', color: '#10B981' },
               ].map((item) => (
                 <div key={item.label} className="px-3 py-2.5 rounded-lg" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="flex items-center gap-2 mb-0.5">
@@ -175,7 +175,7 @@ const PlatformPage = () => (
       <div className="max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-2xl font-medium mb-4" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>Ready to see your business through a <span style={{ color: '#FF6A00' }}>single lens?</span></h2>
         <p className="text-base text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>Connect your first platform in under 2 minutes.</p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.displayING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.displayING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
           Start free trial <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

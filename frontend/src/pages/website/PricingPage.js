@@ -226,7 +226,7 @@ const PricingPage = () => (
         <div className="mt-8">
           <Link to="/register-supabase"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 8px 32px rgba(255,106,0,0.2)' }}
+            style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.body, boxShadow: '0 8px 32px rgba(255,106,0,0.2)' }}
             data-testid="pricing-bottom-cta">
             Request Market Assessment <ArrowRight className="w-4 h-4" />
           </Link>

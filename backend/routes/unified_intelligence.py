@@ -29,7 +29,7 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     }
 
     # Get integration accounts
-    int_result = sb.table('integration_accounts').select('provider, category, account_token, status').eq('user_id', user_id).execute()
+    int_result = sb.table('integration_accounts').select('provider, category, account_token').eq('user_id', user_id).execute()
     accounts = {r['category']: r for r in (int_result.data or []) if r.get('account_token')}
 
     # Get business profile

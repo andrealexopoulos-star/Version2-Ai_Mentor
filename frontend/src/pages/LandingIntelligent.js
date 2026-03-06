@@ -36,7 +36,7 @@ const useTypewriter = (phrases, speed = 75, pause = 2200, deleteSpeed = 40) => {
 
 /* ═══ ANIMATED ORANGE DOT ═══ */
 const FlowDot = ({ path, dur, delay = 0 }) => (
-  <circle r="4.5" fill="#F97316" style={{ filter: 'drop-shadow(0 0 5px rgba(249,115,22,0.7))' }}>
+  <circle r="4.5" fill="#FF6A00" style={{ filter: 'drop-shadow(0 0 5px rgba(249,115,22,0.7))' }}>
     <animateMotion dur={`${dur}s`} repeatCount="indefinite" begin={`${delay}s`}>
       <mpath href={path} />
     </animateMotion>
@@ -52,11 +52,11 @@ const ConnectionDiagram = () => {
   }, []);
 
   const integrations = [
-    { label: 'CRM', color: '#FF7A59', items: ['H', 'S', 'P'], colors: ['#FF7A59','#00A1E0','#4B0082'] },
-    { label: 'Financial', color: '#F97316', items: ['X', 'Q', 'S'], colors: ['#13B5EA','#2CA01C','#635BFF'] },
-    { label: 'Email', color: '#2563EB', items: ['O', 'G'], colors: ['#D83B01','#4285F4'] },
+    { label: 'CRM', color: '#FF6A00', items: ['H', 'S', 'P'], colors: ['#FF6A00','#00A1E0','#4B0082'] },
+    { label: 'Financial', color: '#FF6A00', items: ['X', 'Q', 'S'], colors: ['#13B5EA','#2CA01C','#635BFF'] },
+    { label: 'Email', color: '#3B82F6', items: ['O', 'G'], colors: ['#D83B01','#4285F4'] },
     { label: 'Comms', color: '#7C3AED', items: ['Sl', 'T'], colors: ['#4A154B','#6264A7'] },
-    { label: 'HR + More', color: '#059669', items: ['B', 'W', '+'], colors: ['#73C41D','#FF4500','#94A3B8'] },
+    { label: 'HR + More', color: '#10B981', items: ['B', 'W', '+'], colors: ['#73C41D','#FF4500','#94A3B8'] },
   ];
 
   return (
@@ -109,8 +109,8 @@ const ConnectionDiagram = () => {
             {[25,45,70,55,90,65,85].map((h, i) => (
               <div key={i} className="flex-1 rounded-t" style={{
                 height: `${h}%`,
-                background: [2,4,6].includes(i) ? 'linear-gradient(to top, #EA6C0A, #F97316)' : '#EEF1F6',
-                border: [2,4,6].includes(i) ? '1px solid #F97316' : '1px solid #E4E8F0',
+                background: [2,4,6].includes(i) ? 'linear-gradient(to top, #EA6C0A, #FF6A00)' : '#EEF1F6',
+                border: [2,4,6].includes(i) ? '1px solid #FF6A00' : '1px solid #E4E8F0',
                 transition: 'height 0.8s ease'
               }} />
             ))}
@@ -134,7 +134,7 @@ const ConnectionDiagram = () => {
             animation: 'biqcPulse 3s ease-in-out infinite'
           }}>
           <div className="flex items-center justify-center rounded-2xl text-white font-black text-2xl mb-2"
-            style={{ width: 44, height: 44, background: 'linear-gradient(135deg,#F97316,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}>
+            style={{ width: 44, height: 44, background: 'linear-gradient(135deg,#FF6A00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}>
             B
           </div>
           <span className="text-xs font-bold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.01em' }}>BIQc</span>
@@ -154,7 +154,7 @@ const ConnectionDiagram = () => {
                 borderRadius: activeRow === i ? 8 : 0,
                 padding: '8px 6px',
               }}>
-              <span className="text-[10px] font-semibold w-14 shrink-0" style={{ fontFamily: 'var(--font-mono)', color: activeRow === i ? '#F97316' : '#64748B' }}>{row.label}</span>
+              <span className="text-[10px] font-semibold w-14 shrink-0" style={{ fontFamily: 'var(--font-mono)', color: activeRow === i ? '#FF6A00' : '#64748B' }}>{row.label}</span>
               <div className="flex gap-1.5">
                 {row.items.map((item, j) => (
                   <div key={j} className="flex items-center justify-center rounded-lg text-white text-[9px] font-bold"
@@ -195,7 +195,7 @@ const FeatureCards = () => {
           <div className="grid grid-cols-3 gap-2">
             {[['💰','Finance'],['⚡','BIQc'],['⚙️','Ops'],['📈','Sales'],['⚠️','Risk'],['🛡️','Compliance']].map(([e,l], i) => (
               <div key={i} className="flex flex-col items-center justify-center p-2 rounded-xl transition-all"
-                style={{ background: i === 1 ? '#0F172A' : 'white', border: `1px solid ${i === 1 ? '#0F172A' : 'rgba(99,102,241,0.15)'}` }}>
+                style={{ background: i === 1 ? '#0F1720' : 'white', border: `1px solid ${i === 1 ? '#0F1720' : 'rgba(99,102,241,0.15)'}` }}>
                 <span style={{ fontSize: 16 }}>{e}</span>
                 <span className="text-[8px] font-bold mt-1" style={{ fontFamily: 'var(--font-mono)', color: i === 1 ? 'rgba(255,255,255,0.6)' : '#64748B', textTransform: 'uppercase' }}>{l}</span>
               </div>
@@ -214,9 +214,9 @@ const FeatureCards = () => {
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style={{ boxShadow: '0 2px 12px rgba(100,120,160,0.08)' }}>
         <div className="p-4 bg-slate-900" style={{ minHeight: 140 }}>
           <div className="flex gap-1.5 mb-3">
-            {['#EF4444','#F59E0B','#22C55E'].map(c => <div key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}
+            {['#EF4444','#F59E0B','#10B981'].map(c => <div key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}
           </div>
-          {[['ATO Compliance Check','OK','#F97316'],['Sales Velocity Deviation','Corrected','#F97316'],['Cash Flow Forecast','Attention','#F59E0B'],['Client Retention Score','94%','#4ADE80']].map(([l,v,c],i) => (
+          {[['ATO Compliance Check','OK','#FF6A00'],['Sales Velocity Deviation','Corrected','#FF6A00'],['Cash Flow Forecast','Attention','#F59E0B'],['Client Retention Score','94%','#4ADE80']].map(([l,v,c],i) => (
             <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg mb-1.5" style={{ background: `rgba(255,255,255,0.05)`, border: '1px solid rgba(255,255,255,0.06)', animation: `rowPulse 4s ease-in-out ${i*0.5}s infinite` }}>
               <span className="text-[10px] text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>{l}</span>
               <span className="text-[10px] font-bold" style={{ color: c, fontFamily: 'var(--font-mono)' }}>{v}</span>
@@ -236,7 +236,7 @@ const FeatureCards = () => {
         <div className="flex flex-col items-center justify-center gap-4 p-6 sm:p-8" style={{ background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)', minHeight: 140 }}>
           <div className="flex items-end gap-1" style={{ height: 56 }}>
             {Array.from({ length: 14 }).map((_, i) => (
-              <div key={i} className="w-1 rounded-full" style={{ background: '#F97316', height: `${8 + Math.abs(Math.sin(i * 0.7)) * 40}px`, animation: `waveBar ${0.8 + i * 0.06}s ease-in-out ${i * 0.04}s infinite alternate`, opacity: 0.7 + Math.abs(Math.sin(i * 0.7)) * 0.3 }} />
+              <div key={i} className="w-1 rounded-full" style={{ background: '#FF6A00', height: `${8 + Math.abs(Math.sin(i * 0.7)) * 40}px`, animation: `waveBar ${0.8 + i * 0.06}s ease-in-out ${i * 0.04}s infinite alternate`, opacity: 0.7 + Math.abs(Math.sin(i * 0.7)) * 0.3 }} />
             ))}
           </div>
           <span className="text-sm font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>🎤 Voice-to-Strategy Calibration</span>
@@ -280,10 +280,10 @@ const ComparisonSection = () => {
   const [active, setActive] = useState(0);
   const passiveItems = ['Monthly Sales Report','Total Outstanding Invoices','Employee Hours & Overtime','Customer Complaints/Churn'];
   const activeItems = [
-    { text: 'LATE PAYMENT: Client #47 hasn\'t paid.', action: 'Send Auto-Reminder', color: '#F97316' },
-    { text: 'BUDGET ALERT: Overtime is 15% above target this week.', action: 'Adjust Schedule', color: '#2563EB' },
+    { text: 'LATE PAYMENT: Client #47 hasn\'t paid.', action: 'Send Auto-Reminder', color: '#FF6A00' },
+    { text: 'BUDGET ALERT: Overtime is 15% above target this week.', action: 'Adjust Schedule', color: '#3B82F6' },
     { text: 'SOP BREACH: 3 new leads haven\'t been called in 24 hours.', action: 'Notify Team', color: '#EF4444' },
-    { text: 'PROFIT WIN: Supplier price just dropped 10%.', action: 'Restock Now', color: '#059669' },
+    { text: 'PROFIT WIN: Supplier price just dropped 10%.', action: 'Restock Now', color: '#10B981' },
   ];
 
   return (
@@ -294,7 +294,7 @@ const ComparisonSection = () => {
           {['The Old Way','The BIQc Way'].map((label,i) => (
             <button key={i} onClick={() => setActive(i)}
               className="px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200"
-              style={{ fontFamily: 'var(--font-heading)', background: active === i ? '#0F172A' : 'transparent', color: active === i ? 'white' : '#64748B', boxShadow: active === i ? '0 2px 8px rgba(0,0,0,0.15)' : 'none' }}>
+              style={{ fontFamily: 'var(--font-heading)', background: active === i ? '#0F1720' : 'transparent', color: active === i ? 'white' : '#64748B', boxShadow: active === i ? '0 2px 8px rgba(0,0,0,0.15)' : 'none' }}>
               {label}
             </button>
           ))}
@@ -318,7 +318,7 @@ const ComparisonSection = () => {
         {/* Active */}
         <div className="bg-white rounded-2xl p-6 border transition-all duration-500"
           style={{ borderColor: active === 1 ? 'rgba(249,115,22,0.2)' : '#F1F5F9', opacity: active === 0 ? 0.4 : 1, background: active === 1 ? 'rgba(249,115,22,0.02)' : 'white', boxShadow: active === 1 ? '0 4px 24px rgba(249,115,22,0.08)' : '0 2px 12px rgba(100,120,160,0.06)' }}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ fontFamily: 'var(--font-mono)', color: active === 1 ? '#F97316' : '#94A3B8' }}>Instant Resolution</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ fontFamily: 'var(--font-mono)', color: active === 1 ? '#FF6A00' : '#94A3B8' }}>Instant Resolution</p>
           {activeItems.map((item,i) => (
             <div key={i} className="flex items-center gap-2 px-3 py-2.5 rounded-lg mb-2 border transition-all duration-200" style={{ background: active === 1 ? 'white' : '#F8FAFC', borderColor: active === 1 ? 'rgba(249,115,22,0.1)' : '#F1F5F9' }}>
               <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: active === 1 ? item.color : '#CBD5E1', boxShadow: active === 1 ? `0 0 5px ${item.color}` : 'none' }} />
@@ -326,7 +326,7 @@ const ComparisonSection = () => {
               <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ color: active === 1 ? item.color : '#94A3B8', background: active === 1 ? `${item.color}15` : '#F1F5F9', fontFamily: 'var(--font-mono)' }}>{item.action}</span>
             </div>
           ))}
-          <p className="text-xs font-semibold mt-3" style={{ color: active === 1 ? '#F97316' : '#94A3B8' }}>It monitors. It alerts. You just hit "Approve."</p>
+          <p className="text-xs font-semibold mt-3" style={{ color: active === 1 ? '#FF6A00' : '#94A3B8' }}>It monitors. It alerts. You just hit "Approve."</p>
         </div>
       </div>
     </div>
@@ -358,9 +358,9 @@ const LandingIntelligent = () => {
   }, []);
 
   const outcomes = [
-    { icon: Clock, metric: '15+', unit: 'hrs/week', title: 'No More Overworking', desc: 'For the same results. BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.', color: '#2563EB' },
-    { icon: DollarSign, metric: '8–12%', unit: 'profit', title: 'Keep More of Your Cash', desc: 'Real-time detection of high CAC, zombie subscriptions, and tax liability mismatches — before they hit your bank balance.', color: '#F97316' },
-    { icon: Users, metric: '97%', unit: 'SOP rate', title: 'Bring Simplicity into Your Business', desc: 'Standard Operating Processes that work. AI detects when steps are skipped or leads go cold, triggering intervention automatically.', color: '#059669' },
+    { icon: Clock, metric: '15+', unit: 'hrs/week', title: 'No More Overworking', desc: 'For the same results. BIQc watches sales calls, staff output, and operational drift while you focus on the $10K tasks.', color: '#3B82F6' },
+    { icon: DollarSign, metric: '8–12%', unit: 'profit', title: 'Keep More of Your Cash', desc: 'Real-time detection of high CAC, zombie subscriptions, and tax liability mismatches — before they hit your bank balance.', color: '#FF6A00' },
+    { icon: Users, metric: '97%', unit: 'SOP rate', title: 'Bring Simplicity into Your Business', desc: 'Standard Operating Processes that work. AI detects when steps are skipped or leads go cold, triggering intervention automatically.', color: '#10B981' },
   ];
 
   const pricingTiers = [
@@ -370,7 +370,7 @@ const LandingIntelligent = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-body)', color: '#0F172A' }}>
+    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-body)', color: '#0F1720' }}>
 
       {/* Subtle grid + radial glow */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
@@ -382,7 +382,7 @@ const LandingIntelligent = () => {
       {/* ── NAV ── */}
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 sm:px-12" style={{ height: 64, background: 'rgba(245,247,250,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(180,195,215,0.35)' }}>
         <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => nav('/')}>
-          <div className="flex items-center justify-center rounded-xl text-white font-black text-sm" style={{ width: 34, height: 34, background: 'linear-gradient(135deg,#F97316,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>B</div>
+          <div className="flex items-center justify-center rounded-xl text-white font-black text-sm" style={{ width: 34, height: 34, background: 'linear-gradient(135deg,#FF6A00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>B</div>
           <span className="font-bold text-base text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>BIQc</span>
         </div>
 
@@ -395,9 +395,9 @@ const LandingIntelligent = () => {
 
         <div className="flex items-center gap-2">
           <button onClick={() => nav('/login-supabase')} className="hidden sm:flex text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-heading)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
-          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
+          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: '#0F1720', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
           {/* Mobile hamburger */}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-0.5 transition-all" style={{ background: mobileMenuOpen ? '#0F172A' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-0.5 transition-all" style={{ background: mobileMenuOpen ? '#0F1720' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
             {mobileMenuOpen ? <X className="w-4 h-4 text-white" /> : <Menu className="w-4 h-4 text-slate-700" />}
           </button>
         </div>
@@ -412,7 +412,7 @@ const LandingIntelligent = () => {
             ))}
             <div className="h-px bg-slate-200 my-2" />
             <button onClick={() => { nav('/login-supabase'); setMobileMenuOpen(false); }} className="text-left text-sm font-medium text-slate-600 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-body)' }}>Log in</button>
-            <button onClick={() => { nav('/register-supabase'); setMobileMenuOpen(false); }} className="text-sm font-semibold text-white px-4 py-3 rounded-xl text-center" style={{ fontFamily: 'var(--font-heading)', background: '#F97316' }}>Get started →</button>
+            <button onClick={() => { nav('/register-supabase'); setMobileMenuOpen(false); }} className="text-sm font-semibold text-white px-4 py-3 rounded-xl text-center" style={{ fontFamily: 'var(--font-heading)', background: '#FF6A00' }}>Get started →</button>
           </div>
         </div>
       )}
@@ -421,15 +421,15 @@ const LandingIntelligent = () => {
       <section className="relative z-10 pt-32 sm:pt-44 pb-16 sm:pb-24 px-6 sm:px-8 text-center" data-testid="hero-section">
         {/* Kicker */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full mb-6" style={{ background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.2)' }}>
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#F97316', animation: 'blink 1.8s ease-in-out infinite' }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6A00', animation: 'blink 1.8s ease-in-out infinite' }} />
           <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: '#EA6C0A' }}>Secure Business Intelligence</span>
         </div>
 
         {/* Heading with typewriter */}
         <h1 className="mx-auto mb-6 text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.08] max-w-4xl" style={{ fontFamily: 'var(--font-heading)' }}>
-          <span style={{ color: '#F97316' }}>Run Your Business Like The Big </span>
+          <span style={{ color: '#FF6A00' }}>Run Your Business Like The Big </span>
           <span className="font-light" style={{ color: '#64748B' }}>Players </span>
-          <span style={{ color: '#F97316' }}>Without The Cost</span>
+          <span style={{ color: '#FF6A00' }}>Without The Cost</span>
         </h1>
 
         <div className="max-w-2xl mx-auto w-full text-left">
@@ -447,7 +447,7 @@ const LandingIntelligent = () => {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-4">
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a chatbot.</span>
-          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: '#0F172A', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
+          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: '#0F1720', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
             <Shield className="w-4 h-4" strokeWidth={1.5} /> Try It For Free
           </button>
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a dashboard.</span>
@@ -458,7 +458,7 @@ const LandingIntelligent = () => {
       {/* ── COGNITION-AS-A-SERVICE ── */}
       <section className="relative z-10 py-16 sm:py-24 px-6 sm:px-8 lg:px-12" data-testid="cognition-section">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-6 pl-4 border-l-2" style={{ borderColor: '#F97316' }}>
+          <div className="mb-6 pl-4 border-l-2" style={{ borderColor: '#FF6A00' }}>
             <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>What Cognition-as-a-Service Delivers</h3>
             <p className="text-sm text-slate-500 mt-1 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Industry benchmarks show that businesses embedding AI-driven decision systems experience:</p>
           </div>
@@ -471,7 +471,7 @@ const LandingIntelligent = () => {
               { value: '-25%', label: 'Reduction in preventable errors' },
             ].map((s, i) => (
               <div key={i} className="flex flex-col gap-1">
-                <span className="text-3xl sm:text-4xl font-extrabold leading-none" style={{ fontFamily: 'var(--font-heading)', color: '#F97316' }}>{s.value}</span>
+                <span className="text-3xl sm:text-4xl font-extrabold leading-none" style={{ fontFamily: 'var(--font-heading)', color: '#FF6A00' }}>{s.value}</span>
                 <span className="text-[10px] uppercase tracking-widest text-slate-500 leading-tight" style={{ fontFamily: 'var(--font-mono)' }}>{s.label}</span>
               </div>
             ))}
@@ -489,7 +489,7 @@ const LandingIntelligent = () => {
       <section className="relative z-10 py-16 sm:py-24 border-y" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(180,195,215,0.35)' }} data-testid="trust-strip">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 mb-8" style={{ fontFamily: 'var(--font-mono)' }}>
-            What <span style={{ color: '#F97316', textDecoration: 'underline', textUnderlineOffset: 3 }}>Australian businesses</span> are saying
+            What <span style={{ color: '#FF6A00', textDecoration: 'underline', textUnderlineOffset: 3 }}>Australian businesses</span> are saying
           </p>
           <div className="flex flex-wrap gap-10 sm:gap-16">
             {[
@@ -512,7 +512,7 @@ const LandingIntelligent = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 max-w-7xl mx-auto">
           {[['94%','faster loads','vs. live generation'],['15+','hrs/week','Reclaimed per operator'],['500+','integrations','Connected and syncing'],['24/7','sentinel','Always on, always watching']].map(([num,unit,desc],i) => (
             <div key={i} className="py-6 sm:py-10 px-3 sm:px-6 hover:bg-slate-50 transition-colors" style={{ borderRight: i % 2 === 0 ? '1px solid rgba(180,195,215,0.35)' : (i < 3 && i % 2 === 1 ? 'none' : 'none'), borderBottom: i < 2 ? '1px solid rgba(180,195,215,0.35)' : 'none' }}>
-              <div className="text-3xl sm:text-5xl font-extrabold mb-1" style={{ fontFamily: 'var(--font-heading)', color: '#F97316', letterSpacing: '-0.04em' }}>{num}</div>
+              <div className="text-3xl sm:text-5xl font-extrabold mb-1" style={{ fontFamily: 'var(--font-heading)', color: '#FF6A00', letterSpacing: '-0.04em' }}>{num}</div>
               <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1" style={{ fontFamily: 'var(--font-mono)' }}>{unit}</div>
               <div className="text-xs sm:text-sm text-slate-500 hidden sm:block">{desc}</div>
             </div>
@@ -546,7 +546,7 @@ const LandingIntelligent = () => {
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
               Dashboards tell you what happened.<br />
-              <span style={{ color: '#2563EB' }}>BIQc fixes what's happening.</span>
+              <span style={{ color: '#3B82F6' }}>BIQc fixes what's happening.</span>
             </h2>
             <p className="text-sm sm:text-base text-slate-500 max-w-xl leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Stop digging through charts to find problems. BIQc spots the leaks and hands you the solution — before you lose money.</p>
           </div>
@@ -599,23 +599,23 @@ const LandingIntelligent = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {pricingTiers.map((tier, i) => (
-              <div key={i} className={`rounded-2xl p-5 sm:p-7 flex flex-col transition-all hover:-translate-y-1 duration-300 ${tier.highlight ? 'sm:col-span-2 md:col-span-1' : ''}`} style={{ background: tier.highlight ? '#0F172A' : 'white', border: tier.highlight ? 'none' : '1px solid rgba(180,195,215,0.35)', boxShadow: tier.highlight ? '0 8px 40px rgba(0,0,0,0.2)' : '0 2px 12px rgba(100,120,160,0.06)', position: 'relative', order: tier.highlight ? -1 : 'unset' }}>
-                {tier.highlight && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white" style={{ background: '#F97316', fontFamily: 'var(--font-mono)' }}>Recommended</div>}
+              <div key={i} className={`rounded-2xl p-5 sm:p-7 flex flex-col transition-all hover:-translate-y-1 duration-300 ${tier.highlight ? 'sm:col-span-2 md:col-span-1' : ''}`} style={{ background: tier.highlight ? '#0F1720' : 'white', border: tier.highlight ? 'none' : '1px solid rgba(180,195,215,0.35)', boxShadow: tier.highlight ? '0 8px 40px rgba(0,0,0,0.2)' : '0 2px 12px rgba(100,120,160,0.06)', position: 'relative', order: tier.highlight ? -1 : 'unset' }}>
+                {tier.highlight && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white" style={{ background: '#FF6A00', fontFamily: 'var(--font-mono)' }}>Recommended</div>}
                 <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ fontFamily: 'var(--font-mono)', color: tier.highlight ? '#93C5FD' : '#64748B' }}>{tier.tagline}</p>
-                <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: tier.highlight ? 'white' : '#0F172A', letterSpacing: '-0.02em' }}>{tier.name}</h3>
+                <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: tier.highlight ? 'white' : '#0F1720', letterSpacing: '-0.02em' }}>{tier.name}</h3>
                 <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-extrabold" style={{ fontFamily: 'var(--font-heading)', color: tier.highlight ? 'white' : '#0F172A', letterSpacing: '-0.04em' }}>${tier.price}</span>
+                  <span className="text-4xl font-extrabold" style={{ fontFamily: 'var(--font-heading)', color: tier.highlight ? 'white' : '#0F1720', letterSpacing: '-0.04em' }}>${tier.price}</span>
                   <span className="text-sm" style={{ color: tier.highlight ? '#94A3B8' : '#64748B' }}>/mo</span>
                 </div>
                 <ul className="space-y-2.5 mb-7 flex-1">
                   {tier.features.map((f,j) => (
                     <li key={j} className="flex items-start gap-2.5 text-sm">
-                      <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: tier.highlight ? '#60A5FA' : '#F97316' }} strokeWidth={2.5} />
+                      <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: tier.highlight ? '#60A5FA' : '#FF6A00' }} strokeWidth={2.5} />
                       <span style={{ color: tier.highlight ? '#CBD5E1' : '#475569', fontFamily: 'var(--font-body)' }}>{f}</span>
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => nav('/register-supabase')} className="w-full py-3.5 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: tier.highlight ? '#2563EB' : '#0F172A', color: 'white', boxShadow: tier.highlight ? '0 3px 14px rgba(37,99,235,0.3)' : '0 2px 8px rgba(0,0,0,0.15)' }}>
+                <button onClick={() => nav('/register-supabase')} className="w-full py-3.5 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: tier.highlight ? '#3B82F6' : '#0F1720', color: 'white', boxShadow: tier.highlight ? '0 3px 14px rgba(37,99,235,0.3)' : '0 2px 8px rgba(0,0,0,0.15)' }}>
                   {tier.cta}
                 </button>
               </div>
@@ -625,16 +625,16 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="relative z-10 py-20 sm:py-32 px-6 sm:px-8 lg:px-12 overflow-hidden" style={{ background: '#0F172A' }}>
+      <section className="relative z-10 py-20 sm:py-32 px-6 sm:px-8 lg:px-12 overflow-hidden" style={{ background: '#0F1720' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%,rgba(249,115,22,0.07),transparent)' }} />
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
         <div className="relative z-10 max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-4xl lg:text-6xl font-extrabold text-white mb-5 tracking-tight leading-[1.07]" style={{ fontFamily: 'var(--font-heading)' }}>
-            Business clarity,<br /><span style={{ color: '#F97316' }}>mastered.</span>
+            Business clarity,<br /><span style={{ color: '#FF6A00' }}>mastered.</span>
           </h2>
           <p className="text-base sm:text-lg text-slate-400 mb-8" style={{ fontFamily: 'var(--font-body)' }}>Connect your systems. Let BIQc build context. Act with confidence.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#F97316', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#FF6A00', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
             <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Try It For Free</button>
           </div>
           <p className="text-xs text-slate-600 mt-5" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Free to start · No credit card · Australian owned and operated</p>
@@ -650,9 +650,9 @@ const LandingIntelligent = () => {
       </div>
 
       {/* Disclaimer */}
-      <div className="relative z-10 py-5 px-6 text-center" style={{ background: '#1E293B', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="relative z-10 py-5 px-6 text-center" style={{ background: '#243140', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <p className="text-xs text-slate-500 leading-relaxed max-w-3xl mx-auto">
-          <strong className="text-slate-400">Important:</strong> The Strategy Squad provides general information and educational content only. It does not constitute financial, legal, tax, or professional advice. See our <button onClick={() => nav('/terms')} style={{ color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Terms and Conditions</button> for full details.
+          <strong className="text-slate-400">Important:</strong> The Strategy Squad provides general information and educational content only. It does not constitute financial, legal, tax, or professional advice. See our <button onClick={() => nav('/terms')} style={{ color: '#FF6A00', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Terms and Conditions</button> for full details.
         </p>
       </div>
 
@@ -669,7 +669,7 @@ const LandingIntelligent = () => {
 
       {/* Sovereign badge */}
       <div className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-40 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full" style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(180,195,215,0.4)', boxShadow: '0 4px 20px rgba(100,120,160,0.15)' }} data-testid="sovereign-badge">
-        <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#F59E0B,#2563EB)' }}><Shield className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" strokeWidth={2.5} /></div>
+        <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#F59E0B,#3B82F6)' }}><Shield className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" strokeWidth={2.5} /></div>
         <span className="text-[10px] sm:text-xs font-semibold text-slate-700" style={{ fontFamily: 'var(--font-mono)' }}>Australian Sovereign Data</span>
       </div>
 

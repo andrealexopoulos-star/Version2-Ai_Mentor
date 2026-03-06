@@ -241,7 +241,7 @@ const EmailInbox = () => {
     const styles = {
       high: { bg: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', icon: AlertCircle },
       medium: { bg: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', icon: Clock },
-      low: { bg: 'rgba(34, 197, 94, 0.1)', color: '#22C55E', icon: CheckCircle2 }
+      low: { bg: 'rgba(34, 197, 94, 0.1)', color: '#10B981', icon: CheckCircle2 }
     };
     const style = styles[level] || styles.medium;
     const Icon = style.icon;
@@ -720,7 +720,7 @@ const EmailInbox = () => {
               emails={analysis.low_priority || []}
               priority="low"
               icon={CheckCircle2}
-              color="#22C55E"
+              color="#10B981"
             />
           </div>
         )}

@@ -56,6 +56,8 @@ const MarketPage = () => {
   const [watchtower, setWatchtower] = useState(null);
   const [pressure, setPressure] = useState(null);
   const [freshness, setFreshness] = useState(null);
+  const [cognitionMarket, setCognitionMarket] = useState(null);
+  const [signalTruth, setSignalTruth] = useState(null);
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
 
@@ -71,6 +73,16 @@ const MarketPage = () => {
     apiClient.get('/intelligence/watchtower').then(res => { if (res.data?.positions) setWatchtower(res.data); }).catch(() => {});
     apiClient.get('/intelligence/pressure').then(res => { if (res.data?.pressures) setPressure(res.data); }).catch(() => {});
     apiClient.get('/intelligence/freshness').then(res => { if (res.data?.freshness) setFreshness(res.data); }).catch(() => {});
+    // Cognition core market data
+    apiClient.get('/cognition/market').then(res => {
+      if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
+        setCognitionMarket(res.data);
+      }
+    }).catch(() => {});
+    // Canonical integration truth
+    apiClient.get('/integrations/merge/connected').then(res => {
+      if (res.data?.canonical_truth) setSignalTruth(res.data.canonical_truth);
+    }).catch(() => {});
   }, []);
 
   const fetchSnapshot = useCallback(async () => {
@@ -121,7 +133,8 @@ const MarketPage = () => {
   const moves = ap.top_3_marketing_moves || [];
   const blindside = ap.primary_blindside_risk;
   const lever = ap.hidden_growth_lever;
-  const hasCRM = channelsData?.channels?.some(ch => ch.key === 'crm' && ch.status === 'connected');
+  const hasCRM = signalTruth?.crm_connected || channelsData?.channels?.some(ch => ch.key === 'crm' && ch.status === 'connected');
+  const hasSignals = signalTruth?.live_signal_count > 0;
   const pipeline = hasCRM ? (c.pipeline_total || c.revenue?.pipeline) : null;
 
   const filteredMoves = hasCRM ? moves : moves.filter(m => !containsCRMClaim(m.move) && !containsCRMClaim(m.rationale));
@@ -174,7 +187,7 @@ const MarketPage = () => {
         </div>
 
         {/* ═══ TAB NAVIGATION ═══ */}
-        <div className="flex gap-1 p-1 rounded-lg overflow-x-auto" style={{ background: '#141C26', border: '1px solid #1E293B' }} data-testid="market-tabs">
+        <div className="flex gap-1 p-1 rounded-lg overflow-x-auto" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="market-tabs">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors shrink-0 ${activeTab === tab.id ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
@@ -563,13 +576,13 @@ const MarketPage = () => {
           <div className="space-y-4" data-testid="reports-tab">
             <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Intelligence Reports</h2>
             {reports.length === 0 && (
-              <div className="rounded-xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #1E293B' }}>
+              <div className="rounded-xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
                 <FileText className="w-8 h-8 mx-auto mb-3 text-[#64748B]/30" />
                 <p className="text-sm text-[#64748B]">Reports will appear here after your first cognitive snapshot.</p>
               </div>
             )}
             {reports.map((r, i) => (
-              <div key={i} className="rounded-xl p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: '#141C26', border: '1px solid #1E293B' }}
+              <div key={i} className="rounded-xl p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: '#141C26', border: '1px solid #243140' }}
                 onClick={() => sendToChat(`Summarise my ${r.type}`)}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-[#FF6A00]" /><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{r.type}</span></div>
@@ -621,7 +634,7 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
     {gapsOpen && (
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {(channelsData?.channels || [
-          { key: 'crm', name: 'CRM', color: '#FF7A59', status: 'not_connected', available: true },
+          { key: 'crm', name: 'CRM', color: '#FF6A00', status: 'not_connected', available: true },
           { key: 'google_ads', name: 'Google Ads', color: '#4285F4', status: 'not_connected', available: false },
           { key: 'meta_ads', name: 'Meta Ads', color: '#1877F2', status: 'not_connected', available: false },
           { key: 'linkedin', name: 'LinkedIn', color: '#0A66C2', status: 'not_connected', available: false },

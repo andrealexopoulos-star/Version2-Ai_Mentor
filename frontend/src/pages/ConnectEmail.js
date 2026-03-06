@@ -358,7 +358,7 @@ const ConnectEmail = () => {
                   <div className="flex items-start gap-4">
                     <div 
                       className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
-                      style={{ background: '#EA4335' }}
+                      style={{ background: '#EF4444' }}
                     >
                       GM
                     </div>

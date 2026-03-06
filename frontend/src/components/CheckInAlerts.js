@@ -102,9 +102,9 @@ export const CheckInAlerts = () => {
           border: `1px solid ${alert.severity === 'high' ? '#EF444425' : alert.severity === 'medium' ? '#F59E0B25' : '#3B82F625'}`,
         }}>
           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{
-            background: alert.type === 'recalibration' ? '#F9731615' : '#7C3AED15',
+            background: alert.type === 'recalibration' ? '#FF6A0015' : '#7C3AED15',
           }}>
-            {alert.type === 'recalibration' ? <RefreshCw className="w-4 h-4" style={{ color: '#F97316' }} /> : <Video className="w-4 h-4" style={{ color: '#7C3AED' }} />}
+            {alert.type === 'recalibration' ? <RefreshCw className="w-4 h-4" style={{ color: '#FF6A00' }} /> : <Video className="w-4 h-4" style={{ color: '#7C3AED' }} />}
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{alert.title}</p>
@@ -117,7 +117,7 @@ export const CheckInAlerts = () => {
                   setShowScheduler(alert.type);
                 }
               }} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-0.5" style={{
-                background: alert.type === 'recalibration' ? '#F97316' : '#7C3AED',
+                background: alert.type === 'recalibration' ? '#FF6A00' : '#7C3AED',
                 color: 'white',
                 fontFamily: fontFamily.mono,
               }} data-testid={`checkin-action-${alert.type}`}>

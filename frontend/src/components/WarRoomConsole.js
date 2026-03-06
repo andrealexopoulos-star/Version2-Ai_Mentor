@@ -8,9 +8,9 @@ const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const STATE_CFG = {
-  STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
-  DRIFT:       { label: 'Drift', color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
-  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#F97316' },
+  STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
+  DRIFT:       { label: 'Drift', color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
+  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#FF6A00' },
   CRITICAL:    { label: 'Critical', color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
 };
 
@@ -52,7 +52,7 @@ const WarRoomConsole = () => {
     <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: fontFamily.display }}>
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="flex items-center gap-5">
-          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#6B7280', textDecoration: 'none' }} data-testid="console-home-btn">← Dashboard</a>
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#64748B', textDecoration: 'none' }} data-testid="console-home-btn">← Dashboard</a>
           <div className="h-4 w-px" style={{ background: '#E5E7EB' }} />
           <span className="text-sm font-semibold" style={{ color: '#111827' }}>Strategic Console</span>
           {!loading && cognitive && (
@@ -62,7 +62,7 @@ const WarRoomConsole = () => {
             </div>
           )}
         </div>
-        <button onClick={refresh} disabled={refreshing || loading} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#9CA3AF' }} data-testid="refresh-btn">
+        <button onClick={refresh} disabled={refreshing || loading} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#64748B' }} data-testid="refresh-btn">
           <RefreshCw className="w-3.5 h-3.5" />
           {cacheAge !== null && cacheAge > 0 ? cacheAge + 'm ago' : 'Refresh'}
         </button>
@@ -72,7 +72,7 @@ const WarRoomConsole = () => {
           {loading && (
             <div className="flex flex-col items-center justify-center py-20">
               <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>analyzing...</span>
-              <p className="text-sm font-medium" style={{ color: '#374151' }}>Loading strategic brief...</p>
+              <p className="text-sm font-medium" style={{ color: '#243140' }}>Loading strategic brief...</p>
             </div>
           )}
           {error && !loading && (
@@ -83,7 +83,7 @@ const WarRoomConsole = () => {
           {cognitive && !loading && (
             <>
               <h1 className="text-2xl font-semibold" style={{ color: '#111827' }}>Good {timeOfDay}, {owner}.</h1>
-              {c.system_state_interpretation && <p className="text-sm" style={{ color: '#6B7280' }}>{c.system_state_interpretation}</p>}
+              {c.system_state_interpretation && <p className="text-sm" style={{ color: '#64748B' }}>{c.system_state_interpretation}</p>}
               {c.executive_memo && (
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)' }}>
                   <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#111827', fontFamily: fontFamily.mono }}>Executive Brief</span>
@@ -92,14 +92,14 @@ const WarRoomConsole = () => {
               )}
               {c.market_position && (
                 <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}>
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#6B7280', fontFamily: fontFamily.mono }}>Market Context</span>
-                  <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{c.market_position}</p>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Context</span>
+                  <p className="text-sm leading-relaxed" style={{ color: '#243140' }}>{c.market_position}</p>
                 </div>
               )}
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Sources:</span>
-                  {sources.map(function(s, i) { return <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>; })}
+                  <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
+                  {sources.map(function(s, i) { return <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#64748B', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>; })}
                 </div>
               )}
             </>

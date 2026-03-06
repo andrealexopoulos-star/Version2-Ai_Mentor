@@ -71,7 +71,7 @@ export const DailyBriefCard = () => {
     <div
       className="rounded-xl p-5 mb-6 relative overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #141C26 0%, #1A2332 100%)',
+        background: 'linear-gradient(135deg, #141C26 0%, #141C26 100%)',
         border: '1px solid #FF6A0030',
         boxShadow: '0 4px 24px rgba(255, 106, 0, 0.08)',
       }}

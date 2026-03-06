@@ -19,7 +19,7 @@ const GlassCard = ({ children, className = '' }) => (
 const StatBlock = ({ value, label }) => (
   <div className="text-center">
     <div className="text-[36px] sm:text-[42px] font-bold mb-2" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>{value}</div>
-    <div className="tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#A6B2C1', opacity: 0.6, fontSize: '12px' }}>{label}</div>
+    <div className="tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.6, fontSize: '12px' }}>{label}</div>
   </div>
 );
 
@@ -47,11 +47,11 @@ const HomePage = () => (
                 Try It For Free <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: fontFamily.mono, color: '#A6B2C1', marginBottom: 20 }} data-testid="hero-login">Already have an account? Log in</Link>
+            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', marginBottom: 20 }} data-testid="hero-login">Already have an account? Log in</Link>
 
             {/* Protect / Stabilise / Strengthen */}
             <div className="flex flex-col items-center gap-2">
-              <span style={{ fontFamily: fontFamily.body, color: '#A6B2C1', opacity: 0.4, fontSize: '13px' }}>Continuously Learning &amp; Designed to</span>
+              <span style={{ fontFamily: fontFamily.body, color: '#9FB0C3', opacity: 0.4, fontSize: '13px' }}>Continuously Learning &amp; Designed to</span>
               <div className="flex items-center gap-5 sm:gap-8">
                 {['Protect', 'Stabilise', 'Strengthen'].map((word) => (
                   <div key={word} className="flex items-center gap-1.5">
@@ -62,7 +62,7 @@ const HomePage = () => (
               </div>
             </div>
 
-            <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#A6B2C1', opacity: 0.25, fontSize: '11px' }}>No credit card required &middot; Australian owned & operated</p>
+            <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.25, fontSize: '11px' }}>No credit card required &middot; Australian owned & operated</p>
 
             {/* SMB Impact Stats */}
             <div className="mt-8 sm:mt-10" data-testid="stats-section">
@@ -73,7 +73,7 @@ const HomePage = () => (
                 <StatBlock value="$47K" label="Avg. Cash Recovered Annually" />
                 <StatBlock value="1" label="Single Source of Truth" />
               </div>
-              <p className="mt-3" style={{ fontFamily: fontFamily.body, color: '#A6B2C1', opacity: 0.3, fontSize: '11px' }}>Based on pilot data from Australian SMBs using BIQc intelligence systems</p>
+              <p className="mt-3" style={{ fontFamily: fontFamily.body, color: '#9FB0C3', opacity: 0.3, fontSize: '11px' }}>Based on pilot data from Australian SMBs using BIQc intelligence systems</p>
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ const HomePage = () => (
           <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: fontFamily.displayING, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base max-w-xl" style={{ fontFamily: fontFamily.body, color: '#A6B2C1' }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -121,7 +121,7 @@ const HomePage = () => (
                 <item.icon className="w-5 h-5" style={{ color: '#FF7A18' }} />
               </div>
               <h3 className="text-base font-semibold mb-2" style={{ fontFamily: fontFamily.displayING, color: '#E6EEF7' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#A6B2C1' }}>{item.desc}</p>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>{item.desc}</p>
             </GlassCard>
           ))}
         </div>
@@ -134,13 +134,13 @@ const HomePage = () => (
         <h2 className="text-2xl sm:text-3xl font-medium mb-4" style={{ fontFamily: fontFamily.displayING, color: '#E6EEF7' }}>
           Stop reacting. Start <span style={{ color: '#FF7A18' }}>preventing.</span>
         </h2>
-        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#A6B2C1' }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#A6B2C1', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
   </WebsiteLayout>

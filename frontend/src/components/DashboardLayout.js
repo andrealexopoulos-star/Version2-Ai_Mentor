@@ -290,7 +290,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                 ) : (
                   <div>
                     {notificationsList.map((notif, idx) => (
-                      <div key={notif.id || idx} className="p-3" style={{ borderBottom: '1px solid #1E293B', background: notif.severity === 'high' ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
+                      <div key={notif.id || idx} className="p-3" style={{ borderBottom: '1px solid #243140', background: notif.severity === 'high' ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
                         <div className="flex items-start gap-3">
                           <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: notif.severity === 'high' ? '#EF444415' : '#F59E0B15' }}>
                             <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? '#EF4444' : '#F59E0B' }} />
@@ -448,7 +448,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                   ].map(({ label, path, icon: Icon }) => (
                     <button key={path} onClick={() => navigate(path)}
                       className="flex items-center gap-2 text-left text-[11px] px-3 py-1.5 rounded-lg w-full transition-colors hover:bg-white/5 hover:text-[#9FB0C3]"
-                      style={{ color: '#4A5568', fontFamily: fontFamily.body }}>
+                      style={{ color: '#64748B', fontFamily: fontFamily.body }}>
                       <Icon className="w-3 h-3 shrink-0" />
                       {label}
                     </button>
@@ -473,7 +473,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
         </main>
 
         {/* Desktop Soundboard Panel — always visible on lg+ */}
-        <aside className="hidden lg:flex w-[380px] shrink-0 flex-col" style={{ background: '#0A1018', borderLeft: '1px solid #1E293B', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
+        <aside className="hidden lg:flex w-[380px] shrink-0 flex-col" style={{ background: '#0A1018', borderLeft: '1px solid #243140', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
           <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
         </aside>
       </div>
@@ -483,7 +483,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
         {!sbOpen ? (
           <button onClick={() => setSbOpen(true)}
             className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', boxShadow: '0 8px 32px rgba(255,106,0,0.4)' }}
+            style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', boxShadow: '0 8px 32px rgba(255,106,0,0.4)' }}
             data-testid="soundboard-fab">
             <MessageSquare className="w-5 h-5 text-white" />
           </button>
@@ -491,7 +491,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           <>
             <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
             <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: '#0A1018' }}>
-              <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid #1E293B' }}>
+              <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid #243140' }}>
                 <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
                 <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
               </div>

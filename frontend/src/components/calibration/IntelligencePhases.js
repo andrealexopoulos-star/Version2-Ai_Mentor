@@ -354,7 +354,7 @@ export const ForensicCalibrationUI = ({ onSkip }) => (
       </div>
       <div className="text-center space-y-3">
         <button className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-          style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}
+          style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.display, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}
           data-testid="forensic-unlock-btn">
           Unlock Forensic Calibration
         </button>

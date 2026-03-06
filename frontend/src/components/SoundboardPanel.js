@@ -208,7 +208,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   return (
     <div className="flex flex-col h-full" style={{ background: '#0A1018' }} data-testid="soundboard-panel">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1E293B' }}>
+      <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #243140' }}>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF6A0020' }}>
             <MessageSquare className="w-3.5 h-3.5 text-[#FF6A00]" />
@@ -226,7 +226,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       </div>
 
       {/* Top Action Buttons — server-side enforced via Supabase */}
-      <div className="px-3 pt-2 pb-1.5 shrink-0 space-y-1.5" style={{ borderBottom: '1px solid #1E293B' }}>
+      <div className="px-3 pt-2 pb-1.5 shrink-0 space-y-1.5" style={{ borderBottom: '1px solid #243140' }}>
 
         {/* Complete Calibration — only shown if NOT yet complete */}
         {scanUsage && !scanUsage.calibration_complete && (
@@ -267,8 +267,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all"
               style={{
                 background: canRun || isPaid ? '#3B82F615' : '#243140',
-                border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#1E293B'}`,
-                color: canRun || isPaid ? '#3B82F6' : '#4A5568',
+                border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#243140'}`,
+                color: canRun || isPaid ? '#3B82F6' : '#64748B',
                 fontFamily: fontFamily.mono,
                 cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
               }}
@@ -287,10 +287,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
       {/* History dropdown */}
       {showHistory && (
-        <div className="border-b overflow-y-auto max-h-60 shrink-0" style={{ borderColor: '#1E293B', background: '#0D1420' }}>
+        <div className="border-b overflow-y-auto max-h-60 shrink-0" style={{ borderColor: '#243140', background: '#0D1420' }}>
           <div className="p-2">
             <p className="text-[10px] uppercase tracking-wider px-2 py-1 mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Recent conversations</p>
-            {conversations.length === 0 && <p className="text-xs text-[#4A5568] px-2 py-2">No conversations yet</p>}
+            {conversations.length === 0 && <p className="text-xs text-[#64748B] px-2 py-2">No conversations yet</p>}
             {conversations.slice(0, 15).map(c => (
               <button key={c.id} onClick={() => loadConversation(c)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors truncate ${activeConvId === c.id ? 'bg-white/10 text-[#F4F7FA]' : 'text-[#9FB0C3] hover:bg-white/5'}`}
@@ -308,12 +308,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <MessageSquare className="w-10 h-10 mb-4 text-[#FF6A00]/20" />
             <p className="text-sm text-[#64748B] mb-1" style={{ fontFamily: fontFamily.body }}>Ask anything about your business</p>
-            <p className="text-[11px] text-[#4A5568] mb-6" style={{ fontFamily: fontFamily.mono }}>or click an insight to explore it here</p>
+            <p className="text-[11px] text-[#64748B] mb-6" style={{ fontFamily: fontFamily.mono }}>or click an insight to explore it here</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-[280px]">
               {['What should I focus on?', 'Show me my pipeline', 'Summarise my risks', 'How can I grow?'].map(q => (
                 <button key={q} onClick={() => setInput(q)}
                   className="text-[11px] px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
-                  style={{ background: '#141C26', color: '#9FB0C3', border: '1px solid #1E293B', fontFamily: fontFamily.mono }}>
+                  style={{ background: '#141C26', color: '#9FB0C3', border: '1px solid #243140', fontFamily: fontFamily.mono }}>
                   {q}
                 </button>
               ))}
@@ -327,7 +327,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               style={{
                 background: msg.role === 'user' ? '#FF6A00' : '#141C26',
                 color: msg.role === 'user' ? 'white' : '#D1D5DB',
-                border: msg.role === 'user' ? 'none' : '1px solid #1E293B',
+                border: msg.role === 'user' ? 'none' : '1px solid #243140',
                 fontFamily: fontFamily.body,
                 whiteSpace: 'pre-line',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
@@ -359,7 +359,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2" style={{ background: '#141C26', border: '1px solid #1E293B', borderRadius: '20px 20px 20px 4px' }}>
+            <div className="px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2" style={{ background: '#141C26', border: '1px solid #243140', borderRadius: '20px 20px 20px 4px' }}>
               <div className="flex gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '0ms' }} />
                 <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -371,7 +371,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       </div>
 
       {/* Input area */}
-      <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid #1E293B' }}>
+      <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid #243140' }}>
         {/* Attachment preview */}
         {attachedFile && (
           <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg" style={{ background: '#141C26', border: '1px solid rgba(255,106,0,0.3)' }}>
@@ -383,7 +383,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             </button>
           </div>
         )}
-        <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: '#141C26', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#1E293B'}` }}>
+        <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: '#141C26', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#243140'}` }}>
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
           <button onClick={() => fileRef.current?.click()} className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-upload">
             <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
@@ -410,7 +410,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <Send className="w-4 h-4 text-white" />
           </button>
         </div>
-        <p className="text-[9px] text-[#4A5568] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
+        <p className="text-[9px] text-[#64748B] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
           BIQc uses connected data only. No fabrication.
         </p>
       </div>

@@ -12,7 +12,7 @@ const automations = [
 ];
 
 const AutomationCard = ({ auto }) => (
-  <div className="rounded-lg overflow-hidden" style={{ background: '#141C26', border: `1px solid ${auto.active ? '#243140' : '#1E293B'}`, opacity: auto.active ? 1 : 0.7 }} data-testid={`automation-${auto.id}`}>
+  <div className="rounded-lg overflow-hidden" style={{ background: '#141C26', border: `1px solid ${auto.active ? '#243140' : '#243140'}`, opacity: auto.active ? 1 : 0.7 }} data-testid={`automation-${auto.id}`}>
     <div className="flex items-center justify-between px-5 py-4">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-md flex items-center justify-center" style={{ background: auto.active ? '#FF6A00' + '15' : '#243140' }}>

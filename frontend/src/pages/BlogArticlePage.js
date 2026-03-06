@@ -6,7 +6,7 @@ import { ArrowLeft, Clock, ArrowRight, Tag, ExternalLink } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
 
-const CAT_COLORS = { Strategy: '#FF6A00', Healthcare: '#10B981', Finance: '#3B82F6', Manufacturing: '#F59E0B', Retail: '#7C3AED', Construction: '#059669', Legal: '#EF4444', SMB: '#FF6A00', Technology: '#3B82F6', Operations: '#F59E0B', Marketing: '#7C3AED', 'Real Estate': '#059669', Education: '#10B981', Future: '#FF6A00', Regional: '#3B82F6' };
+const CAT_COLORS = { Strategy: '#FF6A00', Healthcare: '#10B981', Finance: '#3B82F6', Manufacturing: '#F59E0B', Retail: '#7C3AED', Construction: '#10B981', Legal: '#EF4444', SMB: '#FF6A00', Technology: '#3B82F6', Operations: '#F59E0B', Marketing: '#7C3AED', 'Real Estate': '#10B981', Education: '#10B981', Future: '#FF6A00', Regional: '#3B82F6' };
 
 // Simple markdown-like renderer for article content
 const RenderContent = ({ content }) => {

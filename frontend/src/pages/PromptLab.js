@@ -16,7 +16,7 @@ const AGENT_COLORS = {
   MyAdvisor: '#2563eb',
   MyIntel: '#0891b2',
   ChiefOfStrategy: '#7c3aed',
-  MySoundBoard: '#059669',
+  MySoundBoard: '#10B981',
   BoardRoom: '#dc2626',
   'BIQc-02': '#d97706',
   EmergentAdvisor: '#ea580c',
@@ -328,7 +328,7 @@ export default function PromptLab() {
                     )}
                     {log.new_content && (
                       <div className="mt-2">
-                        <p className="text-xs font-semibold mb-1" style={{ color: '#22C55E' }}>Added:</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#10B981' }}>Added:</p>
                         <pre className="text-xs p-2 rounded overflow-x-auto max-h-24" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}>
                           {(log.new_content || '').substring(0, 200)}{log.new_content?.length > 200 ? '...' : ''}
                         </pre>

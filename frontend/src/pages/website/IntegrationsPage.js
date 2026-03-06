@@ -155,7 +155,7 @@ const IntegrationsPage = () => (
     <section className="py-20">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>Connect your first platform in <span style={{ color: '#FF6A00' }}>under 2 minutes.</span></h2>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white mt-4" style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.displayING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white mt-4" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.displayING, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}>
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

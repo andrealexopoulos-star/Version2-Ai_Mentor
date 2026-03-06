@@ -7,15 +7,15 @@ import { fontFamily } from '../design-system/tokens';
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
 const STATE_CONFIG = {
-  STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
-  DRIFT:       { label: 'Drift',       color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
-  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#F97316' },
+  STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
+  DRIFT:       { label: 'Drift',       color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
+  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#FF6A00' },
   CRITICAL:    { label: 'Critical',    color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
 };
 
 const DIAGNOSIS_AREAS = [
   { id: 'cash_flow_financial_risk', label: 'Cash Flow & Financial Risk', icon: '$', color: '#16A34A', desc: 'Liquidity, payment obligations, and runway.' },
-  { id: 'revenue_momentum', label: 'Revenue Momentum', icon: '\u2197', color: '#2563EB', desc: 'Sales velocity, pipeline health, close rates.' },
+  { id: 'revenue_momentum', label: 'Revenue Momentum', icon: '\u2197', color: '#3B82F6', desc: 'Sales velocity, pipeline health, close rates.' },
   { id: 'strategy_effectiveness', label: 'Strategy Effectiveness', icon: '\u25CE', color: '#7C3AED', desc: 'Whether direction is producing expected outcomes.' },
   { id: 'operations_delivery', label: 'Operations & Delivery', icon: '\u2699', color: '#D97706', desc: 'Execution quality, timelines, bottlenecks.' },
   { id: 'people_retention_capacity', label: 'People & Capacity', icon: '\u2693', color: '#DB2777', desc: 'Team stability, workload, delegation gaps.' },
@@ -67,7 +67,7 @@ const BoardRoom = () => {
       {/* ═══ HEADER — Liquid Silver ═══ */}
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="flex items-center gap-5">
-          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#6B7280', textDecoration: 'none', fontFamily: fontFamily.display }} data-testid="boardroom-home">
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#64748B', textDecoration: 'none', fontFamily: fontFamily.display }} data-testid="boardroom-home">
             ← Dashboard
           </a>
           <div className="h-4 w-px" style={{ background: '#E5E7EB' }} />
@@ -77,7 +77,7 @@ const BoardRoom = () => {
             <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
           </div>
         </div>
-        <span className="text-[11px] font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>{new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        <span className="text-[11px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
       </header>
 
       {/* ═══ PRESSURE BAR ═══ */}
@@ -104,19 +104,19 @@ const BoardRoom = () => {
                           {typeof narrative === 'string' ? narrative : narrative.primary_tension}
                         </p>
                         {narrative.force_summary && (
-                          <p className="text-sm mt-3 leading-relaxed" style={{ color: '#6B7280' }}>{narrative.force_summary}</p>
+                          <p className="text-sm mt-3 leading-relaxed" style={{ color: '#64748B' }}>{narrative.force_summary}</p>
                         )}
                         {narrative.strategic_direction && (
                           <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
                             <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#16A34A', fontFamily: fontFamily.mono }}>Direction</span>
-                            <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#374151' }}>{narrative.strategic_direction}</p>
+                            <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#243140' }}>{narrative.strategic_direction}</p>
                           </div>
                         )}
                       </div>
                     )}
                     {!hasBrief && (
                       <div className="p-7 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}>
-                        <p className="text-sm" style={{ color: '#9CA3AF' }}>Executive briefing will appear here once intelligence is generated.</p>
+                        <p className="text-sm" style={{ color: '#64748B' }}>Executive briefing will appear here once intelligence is generated.</p>
                       </div>
                     )}
 
@@ -124,8 +124,8 @@ const BoardRoom = () => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {forces.map((f, i) => (
                           <div key={i} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}>
-                            <span className="text-xs font-semibold" style={{ color: '#374151' }}>{f.domain}</span>
-                            {f.detail && <p className="text-[11px] mt-1" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>{f.detail}</p>}
+                            <span className="text-xs font-semibold" style={{ color: '#243140' }}>{f.domain}</span>
+                            {f.detail && <p className="text-[11px] mt-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.detail}</p>}
                           </div>
                         ))}
                       </div>
@@ -136,7 +136,7 @@ const BoardRoom = () => {
 
               {/* ═══ DIAGNOSIS CARDS ═══ */}
               <section data-testid="diagnosis-zone">
-                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                   Diagnosis — Select an area to analyse
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -152,7 +152,7 @@ const BoardRoom = () => {
                         <span className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-medium" style={{ background: `${area.color}10`, color: area.color }}>{area.icon}</span>
                         <span className="text-sm font-semibold" style={{ color: '#1F2937' }}>{area.label}</span>
                       </div>
-                      <p className="text-[12px] leading-relaxed" style={{ color: '#6B7280' }}>{area.desc}</p>
+                      <p className="text-[12px] leading-relaxed" style={{ color: '#64748B' }}>{area.desc}</p>
                       <div className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="text-[10px] font-medium" style={{ color: area.color }}>Run diagnosis</span>
                         <ChevronRight className="w-3 h-3" style={{ color: area.color }} />
@@ -167,22 +167,22 @@ const BoardRoom = () => {
           {/* ═══ DIAGNOSIS RESULT ═══ */}
           {activeDiagnosis && (
             <section data-testid="diagnosis-result">
-              <button onClick={closeDiagnosis} className="flex items-center gap-2 text-xs font-medium mb-8 px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#6B7280' }}>
+              <button onClick={closeDiagnosis} className="flex items-center gap-2 text-xs font-medium mb-8 px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#64748B' }}>
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to Board Room
               </button>
 
               {diagnosing && (
                 <div className="flex flex-col items-center justify-center py-24">
                   <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>thinking...</span>
-                  <p className="text-sm font-medium" style={{ color: '#374151' }}>Analysing {activeArea?.label}...</p>
-                  <p className="text-[11px] mt-1.5" style={{ color: '#9CA3AF' }}>Reading your CRM, financials, and email signals</p>
+                  <p className="text-sm font-medium" style={{ color: '#243140' }}>Analysing {activeArea?.label}...</p>
+                  <p className="text-[11px] mt-1.5" style={{ color: '#64748B' }}>Reading your CRM, financials, and email signals</p>
                 </div>
               )}
 
               {diagError && (
                 <div className="p-8 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.06)' }}>
                   <p className="text-sm" style={{ color: '#D97706' }}>{diagError}</p>
-                  <button onClick={() => runDiagnosis(activeArea)} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#6B7280', border: '1px solid #E5E7EB' }}>Retry</button>
+                  <button onClick={() => runDiagnosis(activeArea)} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#64748B', border: '1px solid #E5E7EB' }}>Retry</button>
                 </div>
               )}
 
@@ -195,7 +195,7 @@ const BoardRoom = () => {
                       <div>
                         <h2 className="text-lg font-semibold" style={{ color: '#111827' }}>{activeArea?.label}</h2>
                         {diagnosisResult.confidence && (
-                          <span className="text-[10px] tracking-wider uppercase font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Confidence: {diagnosisResult.confidence}</span>
+                          <span className="text-[10px] tracking-wider uppercase font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Confidence: {diagnosisResult.confidence}</span>
                         )}
                       </div>
                     </div>
@@ -205,14 +205,14 @@ const BoardRoom = () => {
                   {/* Narrative */}
                   {diagnosisResult.narrative && (
                     <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.05)' }}>
-                      <p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#374151' }}>{diagnosisResult.narrative}</p>
+                      <p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
                     </div>
                   )}
 
                   {/* What to Watch */}
                   {diagnosisResult.what_to_watch && (
                     <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#92400E', fontFamily: fontFamily.mono }}>What to Watch</span>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>What to Watch</span>
                       <p className="text-sm leading-relaxed" style={{ color: '#78350F' }}>{diagnosisResult.what_to_watch}</p>
                     </div>
                   )}
@@ -228,9 +228,9 @@ const BoardRoom = () => {
                   {/* Sources */}
                   {diagnosisResult.data_sources_used?.length > 0 && (
                     <div className="flex items-center gap-3 pt-2">
-                      <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Sources:</span>
+                      <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
                       {diagnosisResult.data_sources_used.map((s, i) => (
-                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>
+                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ color: '#64748B', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>
                       ))}
                     </div>
                   )}

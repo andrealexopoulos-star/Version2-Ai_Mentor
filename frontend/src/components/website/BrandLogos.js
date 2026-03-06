@@ -1,16 +1,16 @@
 const LOGOS = {
   HubSpot: {
-    color: '#FF7A59',
+    color: '#FF6A00',
     svg: (
       <svg viewBox="0 0 32 32" fill="none">
-        <circle cx="16" cy="16" r="4.5" stroke="#FF7A59" strokeWidth="2.5" fill="none" />
-        <circle cx="24.5" cy="8" r="2" fill="#FF7A59" />
-        <path d="M20 13L24 9" stroke="#FF7A59" strokeWidth="1.8" />
-        <path d="M16 11.5V6" stroke="#FF7A59" strokeWidth="2" />
-        <path d="M11 14L7 10" stroke="#FF7A59" strokeWidth="1.8" />
-        <path d="M11 18L7 22" stroke="#FF7A59" strokeWidth="1.8" />
-        <path d="M16 20.5V26" stroke="#FF7A59" strokeWidth="2" />
-        <path d="M21 18L25 22" stroke="#FF7A59" strokeWidth="1.8" />
+        <circle cx="16" cy="16" r="4.5" stroke="#FF6A00" strokeWidth="2.5" fill="none" />
+        <circle cx="24.5" cy="8" r="2" fill="#FF6A00" />
+        <path d="M20 13L24 9" stroke="#FF6A00" strokeWidth="1.8" />
+        <path d="M16 11.5V6" stroke="#FF6A00" strokeWidth="2" />
+        <path d="M11 14L7 10" stroke="#FF6A00" strokeWidth="1.8" />
+        <path d="M11 18L7 22" stroke="#FF6A00" strokeWidth="1.8" />
+        <path d="M16 20.5V26" stroke="#FF6A00" strokeWidth="2" />
+        <path d="M21 18L25 22" stroke="#FF6A00" strokeWidth="1.8" />
       </svg>
     ),
   },
@@ -62,7 +62,7 @@ const LOGOS = {
         <path d="M4.7 16.8C4.7 14.5 5.5 12.3 6.9 10.6L3.2 7.6C1.2 10.2 0 13.4 0 16.8C0 20.2 1.2 23.4 3.2 26L6.9 23C5.5 21.3 4.7 19.1 4.7 16.8Z" fill="#FBBC05" />
         <path d="M16.3 28.8C19.3 28.8 21.8 27.8 23.8 26L20.2 23.2C19.1 24 17.8 24.4 16.3 24.4C12.5 24.4 9.3 21.2 9.2 16.9" fill="#34A853" />
         <path d="M27.1 14.8H16.3V18.5H22.8C22.3 20.8 20 23.2 16.3 24.4L20.2 27.2C22.2 25.4 27.3 21.5 27.3 17.1C27.3 16.2 27.2 15.5 27.1 14.8Z" fill="#4285F4" />
-        <path d="M6.9 10.6C8.5 8.8 10.7 7.6 13.2 7.2L16.3 4.8C13.3 4.8 10.5 5.8 8.2 7.5L6.9 10.6Z" fill="#EA4335" />
+        <path d="M6.9 10.6C8.5 8.8 10.7 7.6 13.2 7.2L16.3 4.8C13.3 4.8 10.5 5.8 8.2 7.5L6.9 10.6Z" fill="#EF4444" />
       </svg>
     ),
   },
