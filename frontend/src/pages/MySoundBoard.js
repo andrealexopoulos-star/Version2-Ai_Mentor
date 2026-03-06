@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
 import { fontFamily } from "../design-system/tokens";
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
@@ -15,6 +16,8 @@ import {
 
 
 const MySoundBoard = () => {
+  const { user } = useSupabaseAuth();
+  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
   const { isChatOpen, openChat, closeAll, activeDrawer } = useMobileDrawer();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -71,7 +74,7 @@ const MySoundBoard = () => {
       setConversations(convs);
       // Welcome message: show if user has NO prior conversations (server-side truth)
       if (convs.length === 0 && messages.length === 0) {
-        setMessages([{ role: 'assistant', content: "Good to meet you. I'm your Strategic Intelligence Advisor — I have access to your business data and I'm here to help you make better decisions, faster.\n\nWhen the data tells me something clearly, I'll tell you directly. When I need more context, I'll ask you one specific question. No waffle, no hedging.\n\nWhat's on your mind right now?" }]);
+        setMessages([{ role: 'assistant', content: `${firstName}, I'm your Strategic Intelligence Advisor. I've already analysed your business profile and live signals.\n\nI'll be direct — when your data shows something, I'll tell you exactly what it means and what to do about it. No generic advice, no hedging.\n\nWhat do you need to know right now?` }]);
       }
     } catch (error) {
       console.error('Failed to fetch conversations');

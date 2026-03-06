@@ -22,7 +22,7 @@ router = APIRouter()
 from routes.auth import get_current_user
 from guardrails import sanitise_output, log_llm_call_to_db
 
-OPENAI_KEY = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY", "")
+OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 
 class GenerateFileRequest(BaseModel):

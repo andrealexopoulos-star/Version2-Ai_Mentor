@@ -1,14 +1,13 @@
-"""BIQc Stripe Subscription Routes — Checkout, Status, Webhook.
+"""BIQc Stripe Subscription Routes — Direct stripe SDK. Zero emergentintegrations.
 
-Fixed packages defined server-side. No amount from frontend.
-Uses emergentintegrations Stripe library.
+Checkout, Status, Webhook — all via official stripe-python.
 """
 import os
 import logging
+import stripe
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -16,22 +15,18 @@ router = APIRouter()
 from routes.auth import get_current_user
 
 STRIPE_KEY = os.environ.get("STRIPE_API_KEY", "")
+stripe.api_key = STRIPE_KEY
 
-# Fixed subscription packages — server-side only
 PACKAGES = {
-    "starter": {"amount": 197.00, "currency": "aud", "name": "Starter", "tier": "starter"},
-    "professional": {"amount": 497.00, "currency": "aud", "name": "Professional", "tier": "professional"},
-    "enterprise": {"amount": 997.00, "currency": "aud", "name": "Enterprise", "tier": "enterprise"},
+    "starter": {"amount": 75000, "currency": "aud", "name": "Foundation", "tier": "starter"},
+    "professional": {"amount": 195000, "currency": "aud", "name": "Performance", "tier": "professional"},
+    "enterprise": {"amount": 390000, "currency": "aud", "name": "Growth", "tier": "enterprise"},
 }
 
 
 class CheckoutRequest(BaseModel):
     package_id: str
     origin_url: str
-
-
-class StatusRequest(BaseModel):
-    session_id: str
 
 
 @router.post("/payments/checkout")
@@ -48,16 +43,20 @@ async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get
     cancel_url = f"{req.origin_url}/subscribe?status=cancelled"
 
     try:
-        from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
-
-        webhook_url = f"{req.origin_url}/api/webhook/stripe"
-        stripe = StripeCheckout(api_key=STRIPE_KEY, webhook_url=webhook_url)
-
-        checkout_req = CheckoutSessionRequest(
-            amount=pkg["amount"],
-            currency=pkg["currency"],
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": pkg["currency"],
+                    "unit_amount": pkg["amount"],
+                    "product_data": {"name": f"BIQc {pkg['name']}"},
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
             success_url=success_url,
             cancel_url=cancel_url,
+            customer_email=user_email,
             metadata={
                 "user_id": user_id,
                 "user_email": user_email,
@@ -67,16 +66,13 @@ async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get
             },
         )
 
-        session = await stripe.create_checkout_session(checkout_req)
-
-        # Store pending transaction
         try:
             from supabase_client import get_supabase_client
             sb = get_supabase_client()
             sb.table("payment_transactions").insert({
                 "user_id": user_id,
-                "session_id": session.session_id,
-                "amount": pkg["amount"],
+                "session_id": session.id,
+                "amount": pkg["amount"] / 100,
                 "currency": pkg["currency"],
                 "package_id": req.package_id,
                 "tier": pkg["tier"],
@@ -86,10 +82,8 @@ async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get
         except Exception as e:
             logger.warning(f"Failed to store payment transaction: {e}")
 
-        return {"url": session.url, "session_id": session.session_id}
+        return {"url": session.url, "session_id": session.id}
 
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Payment library not available")
     except Exception as e:
         logger.error(f"Checkout creation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -99,46 +93,34 @@ async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get
 async def get_payment_status(session_id: str, current_user: dict = Depends(get_current_user)):
     """Check payment status and update tier if paid."""
     try:
-        from emergentintegrations.payments.stripe.checkout import StripeCheckout
+        session = stripe.checkout.Session.retrieve(session_id)
 
-        stripe = StripeCheckout(api_key=STRIPE_KEY, webhook_url="")
-        status = await stripe.get_checkout_status(session_id)
-
-        # Update transaction and tier if paid
-        if status.payment_status == "paid":
+        if session.payment_status == "paid":
             try:
                 from supabase_client import get_supabase_client
                 sb = get_supabase_client()
 
-                # Check if already processed
-                existing = sb.table("payment_transactions") \
-                    .select("payment_status") \
-                    .eq("session_id", session_id) \
-                    .execute()
-
+                existing = sb.table("payment_transactions").select("payment_status").eq("session_id", session_id).execute()
                 if existing.data and existing.data[0].get("payment_status") != "paid":
-                    # Update transaction
                     sb.table("payment_transactions").update({
                         "payment_status": "paid",
                         "paid_at": datetime.now(timezone.utc).isoformat(),
                     }).eq("session_id", session_id).execute()
 
-                    # Update user tier
-                    tier = status.metadata.get("tier", "starter")
+                    tier = session.metadata.get("tier", "starter")
                     sb.table("business_profiles").update({
                         "subscription_tier": tier,
                     }).eq("user_id", current_user["id"]).execute()
-
                     logger.info(f"Tier upgraded to {tier} for user {current_user['id']}")
             except Exception as e:
                 logger.warning(f"Failed to update tier: {e}")
 
         return {
-            "status": status.status,
-            "payment_status": status.payment_status,
-            "amount_total": status.amount_total,
-            "currency": status.currency,
-            "metadata": status.metadata,
+            "status": session.status,
+            "payment_status": session.payment_status,
+            "amount_total": session.amount_total,
+            "currency": session.currency,
+            "metadata": dict(session.metadata or {}),
         }
 
     except Exception as e:
@@ -150,36 +132,33 @@ async def get_payment_status(session_id: str, current_user: dict = Depends(get_c
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events."""
     try:
-        from emergentintegrations.payments.stripe.checkout import StripeCheckout
-
         body = await request.body()
-        sig = request.headers.get("Stripe-Signature", "")
+        event = stripe.Event.construct_from(
+            stripe.util.json.loads(body), stripe.api_key
+        )
 
-        stripe = StripeCheckout(api_key=STRIPE_KEY, webhook_url="")
-        event = await stripe.handle_webhook(body, sig)
+        logger.info(f"Stripe webhook: {event.type}")
 
-        logger.info(f"Stripe webhook: {event.event_type} | session={event.session_id} | status={event.payment_status}")
+        if event.type == "checkout.session.completed":
+            session = event.data.object
+            if session.payment_status == "paid":
+                try:
+                    from supabase_client import get_supabase_client
+                    sb = get_supabase_client()
 
-        if event.payment_status == "paid":
-            try:
-                from supabase_client import get_supabase_client
-                sb = get_supabase_client()
+                    sb.table("payment_transactions").update({
+                        "payment_status": "paid",
+                        "paid_at": datetime.now(timezone.utc).isoformat(),
+                    }).eq("session_id", session.id).execute()
 
-                # Update transaction
-                sb.table("payment_transactions").update({
-                    "payment_status": "paid",
-                    "paid_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("session_id", event.session_id).execute()
-
-                # Update tier
-                tier = event.metadata.get("tier", "starter")
-                user_id = event.metadata.get("user_id")
-                if user_id:
-                    sb.table("business_profiles").update({
-                        "subscription_tier": tier,
-                    }).eq("user_id", user_id).execute()
-            except Exception as e:
-                logger.warning(f"Webhook tier update failed: {e}")
+                    tier = session.metadata.get("tier", "starter")
+                    user_id = session.metadata.get("user_id")
+                    if user_id:
+                        sb.table("business_profiles").update({
+                            "subscription_tier": tier,
+                        }).eq("user_id", user_id).execute()
+                except Exception as e:
+                    logger.warning(f"Webhook tier update failed: {e}")
 
         return {"received": True}
 
