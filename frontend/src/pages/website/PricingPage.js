@@ -2,10 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { ArrowRight, Check, Plus } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 const PricingPage = () => (
   <WebsiteLayout>
@@ -13,13 +11,13 @@ const PricingPage = () => (
     <section className="relative overflow-hidden" data-testid="pricing-hero">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.03]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
       <div className="max-w-4xl mx-auto px-6 pt-16 sm:pt-28 pb-10 relative z-10 text-center">
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-medium leading-[1.12] mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: HEAD, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #FFFFFF' }}>
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-medium leading-[1.12] mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: fontFamily.display, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #FFFFFF' }}>
           Multiply the Capability<br />of Your Entire Team.
         </h1>
-        <p className="text-base text-[#C8D4E0] max-w-lg mx-auto mb-4" style={{ fontFamily: BODY, lineHeight: 1.7 }}>
+        <p className="text-base text-[#C8D4E0] max-w-lg mx-auto mb-4" style={{ fontFamily: fontFamily.body, lineHeight: 1.7 }}>
           BIQc enhances the judgement, clarity and execution speed of your CFO, COO and Commercial leaders.
         </p>
-        <p className="text-sm text-[#7A8FA3] max-w-xl mx-auto" style={{ fontFamily: BODY, lineHeight: 1.7 }}>
+        <p className="text-sm text-[#7A8FA3] max-w-xl mx-auto" style={{ fontFamily: fontFamily.body, lineHeight: 1.7 }}>
           Built for growth-stage businesses managing margin pressure, hiring decisions and competitive intensity. BIQc strengthens decision discipline across market, revenue and workforce.
         </p>
       </div>
@@ -31,12 +29,12 @@ const PricingPage = () => (
         <div className="rounded-2xl p-8 sm:p-10" style={{ background: 'rgba(255,106,0,0.02)', border: '1px solid rgba(255,106,0,0.12)' }}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
-              <h2 className="text-xl font-bold text-white" style={{ fontFamily: HEAD }}>Executive Market Assessment</h2>
-              <span className="text-[11px] tracking-[0.15em] uppercase" style={{ color: '#FF6A00', fontFamily: MONO }}>Complimentary</span>
+              <h2 className="text-xl font-bold text-white" style={{ fontFamily: fontFamily.display }}>Executive Market Assessment</h2>
+              <span className="text-[11px] tracking-[0.15em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Complimentary</span>
             </div>
           </div>
 
-          <p className="text-sm text-[#9FB0C3] mb-6" style={{ fontFamily: BODY, lineHeight: 1.7 }}>
+          <p className="text-sm text-[#9FB0C3] mb-6" style={{ fontFamily: fontFamily.body, lineHeight: 1.7 }}>
             A forensic review of your public digital footprint and competitive position.
           </p>
 
@@ -53,18 +51,18 @@ const PricingPage = () => (
             ].map((f, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <Check className="w-3.5 h-3.5 text-[#FF6A00] shrink-0 mt-0.5" />
-                <span className="text-xs text-[#C8D4E0]" style={{ fontFamily: BODY }}>{f}</span>
+                <span className="text-xs text-[#C8D4E0]" style={{ fontFamily: fontFamily.body }}>{f}</span>
               </div>
             ))}
           </div>
 
-          <p className="text-[11px] text-[#5A6B7D] mb-6" style={{ fontFamily: MONO }}>
+          <p className="text-[11px] text-[#5A6B7D] mb-6" style={{ fontFamily: fontFamily.mono }}>
             This assessment analyses public signals only. Internal performance modelling requires system integration.
           </p>
 
           <Link to="/register-supabase"
             className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: '#FF6A00', fontFamily: BODY }}
+            style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
             data-testid="cta-market-assessment">
             Request Market Assessment <ArrowRight className="w-4 h-4" />
           </Link>
@@ -76,8 +74,8 @@ const PricingPage = () => (
     <section className="py-14 px-4 sm:px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} data-testid="pricing-platform">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[#5A6B7D] block mb-3" style={{ fontFamily: MONO }}>BIQc Performance Platform</span>
-          <h2 className="text-2xl sm:text-3xl font-medium text-white" style={{ fontFamily: HEAD }}>Choose Your Level of Discipline</h2>
+          <span className="text-[10px] tracking-[0.2em] uppercase text-[#5A6B7D] block mb-3" style={{ fontFamily: fontFamily.mono }}>BIQc Performance Platform</span>
+          <h2 className="text-2xl sm:text-3xl font-medium text-white" style={{ fontFamily: fontFamily.display }}>Choose Your Level of Discipline</h2>
         </div>
 
         {/* Free tier compact bar */}
@@ -85,16 +83,16 @@ const PricingPage = () => (
           <div className="flex items-center gap-3">
             <div className="w-8 h-0.5 rounded-full" style={{ background: '#FF6A00' }} />
             <div>
-              <span className="text-sm font-bold text-white" style={{ fontFamily: HEAD }}>Market Intelligence Brief</span>
-              <span className="text-[10px] tracking-[0.12em] uppercase ml-2" style={{ color: '#FF6A00', fontFamily: MONO }}>Free</span>
+              <span className="text-sm font-bold text-white" style={{ fontFamily: fontFamily.display }}>Market Intelligence Brief</span>
+              <span className="text-[10px] tracking-[0.12em] uppercase ml-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Free</span>
             </div>
           </div>
-          <p className="text-xs text-[#7A8FA3] text-center sm:text-left flex-1 px-4" style={{ fontFamily: BODY }}>
+          <p className="text-xs text-[#7A8FA3] text-center sm:text-left flex-1 px-4" style={{ fontFamily: fontFamily.body }}>
             13-layer digital footprint scan, Market Presence Score, competitive overview, category positioning, trust comparison. Public signals only.
           </p>
           <Link to="/register-supabase"
             className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-semibold text-white shrink-0 transition-all hover:brightness-110"
-            style={{ background: '#FF6A00', fontFamily: BODY }}
+            style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
             data-testid="cta-free-bar">
             Request Market Assessment <ArrowRight className="w-3 h-3" />
           </Link>
@@ -191,8 +189,8 @@ const PricingPage = () => (
     <section className="py-12 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} data-testid="pricing-addons">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h3 className="text-lg font-bold text-white mb-1" style={{ fontFamily: HEAD }}>Expansion Modules</h3>
-          <p className="text-xs text-[#5A6B7D]" style={{ fontFamily: MONO }}>Available on Performance tier and above</p>
+          <h3 className="text-lg font-bold text-white mb-1" style={{ fontFamily: fontFamily.display }}>Expansion Modules</h3>
+          <p className="text-xs text-[#5A6B7D]" style={{ fontFamily: fontFamily.mono }}>Available on Performance tier and above</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
@@ -206,9 +204,9 @@ const PricingPage = () => (
                 <Plus className="w-3.5 h-3.5 text-[#FF6A00]" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white" style={{ fontFamily: HEAD }}>{a.name}</h4>
-                <span className="text-[11px] text-[#FF6A00] block mb-1" style={{ fontFamily: MONO }}>{a.price}</span>
-                <p className="text-xs text-[#5A6B7D]" style={{ fontFamily: BODY }}>{a.desc}</p>
+                <h4 className="text-sm font-semibold text-white" style={{ fontFamily: fontFamily.display }}>{a.name}</h4>
+                <span className="text-[11px] text-[#FF6A00] block mb-1" style={{ fontFamily: fontFamily.mono }}>{a.price}</span>
+                <p className="text-xs text-[#5A6B7D]" style={{ fontFamily: fontFamily.body }}>{a.desc}</p>
               </div>
             </div>
           ))}
@@ -219,16 +217,16 @@ const PricingPage = () => (
     {/* CLOSING */}
     <section className="py-16 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
       <div className="max-w-3xl mx-auto text-center">
-        <p className="text-lg text-[#C8D4E0] mb-2" style={{ fontFamily: HEAD, lineHeight: 1.6 }}>
+        <p className="text-lg text-[#C8D4E0] mb-2" style={{ fontFamily: fontFamily.display, lineHeight: 1.6 }}>
           BIQc does not replace your leadership team.
         </p>
-        <p className="text-lg text-white font-semibold" style={{ fontFamily: HEAD, lineHeight: 1.6 }}>
+        <p className="text-lg text-white font-semibold" style={{ fontFamily: fontFamily.display, lineHeight: 1.6 }}>
           It sharpens their judgement and strengthens their discipline.
         </p>
         <div className="mt-8">
           <Link to="/register-supabase"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: BODY, boxShadow: '0 8px 32px rgba(255,106,0,0.2)' }}
+            style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 8px 32px rgba(255,106,0,0.2)' }}
             data-testid="pricing-bottom-cta">
             Request Market Assessment <ArrowRight className="w-4 h-4" />
           </Link>
@@ -249,7 +247,7 @@ const PlanCard = ({ name, tagline, price, period, color, highlight, badge, descr
 
     {badge && (
       <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-        <span className="text-[9px] font-semibold tracking-[0.12em] uppercase px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: '#FF6A00', fontFamily: MONO }}>
+        <span className="text-[9px] font-semibold tracking-[0.12em] uppercase px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: '#FF6A00', fontFamily: fontFamily.mono }}>
           {badge}
         </span>
       </div>
@@ -257,15 +255,15 @@ const PlanCard = ({ name, tagline, price, period, color, highlight, badge, descr
 
     <div className="w-7 h-0.5 rounded-full mb-4" style={{ background: color }} />
 
-    <h3 className="text-base font-bold text-white" style={{ fontFamily: HEAD }}>{name}</h3>
-    <p className="text-[11px] mb-3" style={{ color, fontFamily: MONO }}>{tagline}</p>
+    <h3 className="text-base font-bold text-white" style={{ fontFamily: fontFamily.display }}>{name}</h3>
+    <p className="text-[11px] mb-3" style={{ color, fontFamily: fontFamily.mono }}>{tagline}</p>
 
     <div className="mb-1">
-      <span className="text-2xl font-bold text-white" style={{ fontFamily: MONO }}>{price}</span>
+      <span className="text-2xl font-bold text-white" style={{ fontFamily: fontFamily.mono }}>{price}</span>
       {period && <span className="text-xs text-[#5A6B7D] ml-1">{period}</span>}
     </div>
 
-    <p className="text-[11px] text-[#7A8FA3] mb-5 leading-relaxed" style={{ fontFamily: BODY }}>{description}</p>
+    <p className="text-[11px] text-[#7A8FA3] mb-5 leading-relaxed" style={{ fontFamily: fontFamily.body }}>{description}</p>
 
     <Link to={link}
       className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold mb-5 transition-all hover:brightness-110`}
@@ -273,7 +271,7 @@ const PlanCard = ({ name, tagline, price, period, color, highlight, badge, descr
         background: highlight ? '#FF6A00' : 'rgba(255,255,255,0.04)',
         color: highlight ? 'white' : '#E2E8F0',
         border: highlight ? 'none' : '1px solid rgba(255,255,255,0.08)',
-        fontFamily: BODY,
+        fontFamily: fontFamily.body,
       }}
       data-testid={`cta-${name.toLowerCase()}`}>
       {cta} <ArrowRight className="w-3.5 h-3.5" />
@@ -283,13 +281,13 @@ const PlanCard = ({ name, tagline, price, period, color, highlight, badge, descr
       {includesFrom && (
         <div className="flex items-start gap-2 mb-1">
           <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color }} />
-          <span className="text-xs text-[#C8D4E0] font-medium" style={{ fontFamily: BODY }}>Everything in {includesFrom}</span>
+          <span className="text-xs text-[#C8D4E0] font-medium" style={{ fontFamily: fontFamily.body }}>Everything in {includesFrom}</span>
         </div>
       )}
       {features.map((f, i) => (
         <div key={i} className="flex items-start gap-2">
           <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color }} />
-          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>{f}</span>
+          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{f}</span>
         </div>
       ))}
     </div>

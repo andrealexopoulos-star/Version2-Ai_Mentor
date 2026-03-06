@@ -24,7 +24,7 @@ const GmailTest = () => {
     setRawResponse(null);
 
     try {
-      console.log('=== TESTING GMAIL CONNECTION ===');
+      // console.log('=== TESTING GMAIL CONNECTION ===');
       
       // Get current Supabase session token
       const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
@@ -42,12 +42,12 @@ const GmailTest = () => {
         return;
       }
 
-      console.log('✅ Session token retrieved');
-      console.log('📧 Calling Edge Function: gmail_test');
+      // console.log('✅ Session token retrieved');
+      // console.log('📧 Calling Edge Function: gmail_test');
 
       // Call the Edge Function
       const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
-      console.log('Edge Function URL:', edgeFunctionUrl);
+      // console.log('Edge Function URL:', edgeFunctionUrl);
 
       const response = await fetch(edgeFunctionUrl, {
         method: 'POST',
@@ -59,8 +59,8 @@ const GmailTest = () => {
 
       const data = await response.json();
       
-      console.log('📥 Edge Function Response:', data);
-      console.log('Status:', response.status);
+      // console.log('📥 Edge Function Response:', data);
+      // console.log('Status:', response.status);
 
       setRawResponse({
         status: response.status,

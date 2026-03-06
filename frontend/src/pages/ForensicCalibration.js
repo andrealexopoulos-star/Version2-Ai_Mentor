@@ -4,10 +4,8 @@ import DashboardLayout from '../components/DashboardLayout';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { ArrowRight, ArrowLeft, CheckCircle2, Eye, Lock, AlertTriangle, TrendingUp, Shield, Target } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const QUESTIONS = [
   { id: 'revenue_ambition', question: 'What is your revenue ambition over the next 12 months?', options: ['Maintain current revenue — focus on stability', 'Grow 10-25% — steady organic growth', 'Grow 25-50% — aggressive but controlled', 'Double+ — hypergrowth mode'], weight: 'revenue' },
@@ -52,7 +50,7 @@ const ForensicCalibration = () => {
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center max-w-md">
             <Lock className="w-12 h-12 text-[#64748B] mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Coming Soon</h1>
+            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Coming Soon</h1>
             <p className="text-sm text-[#9FB0C3] mb-6">Forensic Market Calibration will be available in the Pro plan.</p>
             <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="forensic-back-btn">Back to Market</button>
           </div>
@@ -93,27 +91,27 @@ const ForensicCalibration = () => {
         <div className="max-w-3xl mx-auto py-10 px-6" data-testid="forensic-results">
           <div className="text-center mb-8">
             <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Forensic Calibration Complete</h1>
+            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Forensic Calibration Complete</h1>
             <p className="text-sm text-[#9FB0C3]">Your strategic profile has been scored and calibrated.</p>
           </div>
 
           {/* Composite Score */}
           <div className="text-center mb-8 p-6 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
-            <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Composite Score</span>
-            <span className="text-5xl font-bold block mb-2" style={{ fontFamily: MONO, color: displayResult.risk_color }}>{displayResult.composite_score}</span>
-            <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{ color: displayResult.risk_color, background: displayResult.risk_color + '15', fontFamily: MONO }}>{displayResult.risk_profile}</span>
+            <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Composite Score</span>
+            <span className="text-5xl font-bold block mb-2" style={{ fontFamily: fontFamily.mono, color: displayResult.risk_color }}>{displayResult.composite_score}</span>
+            <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{ color: displayResult.risk_color, background: displayResult.risk_color + '15', fontFamily: fontFamily.mono }}>{displayResult.risk_profile}</span>
           </div>
 
           {/* Dimension Scores */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {Object.entries(dims).map(([key, dim]) => (
               <div key={key} className="p-4 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <span className="text-[10px] text-[#64748B] block mb-1 capitalize" style={{ fontFamily: MONO }}>{key}</span>
-                <span className="text-lg font-bold text-[#F4F7FA] block" style={{ fontFamily: MONO }}>{dim.label}</span>
+                <span className="text-[10px] text-[#64748B] block mb-1 capitalize" style={{ fontFamily: fontFamily.mono }}>{key}</span>
+                <span className="text-lg font-bold text-[#F4F7FA] block" style={{ fontFamily: fontFamily.mono }}>{dim.label}</span>
                 <div className="h-1.5 rounded-full mt-2" style={{ background: '#243140' }}>
                   <div className="h-1.5 rounded-full transition-all" style={{ background: '#FF6A00', width: `${dim.score}%` }} />
                 </div>
-                <span className="text-[10px] text-[#64748B] mt-1 block" style={{ fontFamily: MONO }}>{dim.score}/100</span>
+                <span className="text-[10px] text-[#64748B] mt-1 block" style={{ fontFamily: fontFamily.mono }}>{dim.score}/100</span>
               </div>
             ))}
           </div>
@@ -121,7 +119,7 @@ const ForensicCalibration = () => {
           {/* Strategic Signals */}
           {displayResult.signals?.length > 0 && (
             <div className="space-y-2 mb-8">
-              <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: MONO }}>Strategic Signals</span>
+              <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Strategic Signals</span>
               {displayResult.signals.map((sig, i) => {
                 const Icon = SIGNAL_ICONS[sig.type] || Shield;
                 const color = SIGNAL_COLORS[sig.type] || '#3B82F6';
@@ -157,16 +155,16 @@ const ForensicCalibration = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5 text-[#FF6A00]" />
-            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: '#9FB0C3', fontFamily: MONO }}>Forensic Calibration</h1>
+            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>Forensic Calibration</h1>
           </div>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>{step + 1}/{QUESTIONS.length}</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>{step + 1}/{QUESTIONS.length}</span>
         </div>
         <div className="h-1.5 rounded-full overflow-hidden mb-8" style={{ background: '#243140' }}>
           <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FF6A00, #3B82F6)' }} />
         </div>
 
         <div className="mb-8">
-          <p className="text-xl font-bold text-[#F4F7FA] mb-6" style={{ fontFamily: HEAD }}>{q.question}</p>
+          <p className="text-xl font-bold text-[#F4F7FA] mb-6" style={{ fontFamily: fontFamily.display }}>{q.question}</p>
           <div className="space-y-3">
             {q.options.map((opt, i) => {
               const isSelected = selected === opt;

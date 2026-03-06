@@ -7,10 +7,8 @@ import {
   Loader2, Copy, Check, ChevronDown, Sparkles
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { fontFamily } from '../design-system/tokens';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
@@ -76,7 +74,7 @@ const MarketingAutomationPage = () => {
       <div className="space-y-4">
         {Object.entries(content).map(([key, value]) => (
           <div key={key} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-            <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1.5" style={{ fontFamily: MONO }}>{key.replace(/_/g, ' ')}</span>
+            <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1.5" style={{ fontFamily: fontFamily.mono }}>{key.replace(/_/g, ' ')}</span>
             {Array.isArray(value) ? (
               <div className="space-y-2">
                 {value.map((item, i) => (
@@ -102,9 +100,9 @@ const MarketingAutomationPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="marketing-automation-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-automation-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Marketing Automation</h1>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Marketing Automation</h1>
           <p className="text-sm text-[#9FB0C3]">Generate marketing content grounded in your business data and intelligence.</p>
         </div>
 
@@ -112,7 +110,7 @@ const MarketingAutomationPage = () => {
           {/* Left: Config */}
           <div className="space-y-5">
             <Panel>
-              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Content Type</h3>
+              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Content Type</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CONTENT_TYPES.map(ct => (
                   <button
@@ -136,10 +134,10 @@ const MarketingAutomationPage = () => {
             </Panel>
 
             <Panel>
-              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Parameters</h3>
+              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Parameters</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Topic *</label>
+                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Topic *</label>
                   <input
                     value={topic}
                     onChange={e => setTopic(e.target.value)}
@@ -151,7 +149,7 @@ const MarketingAutomationPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Tone</label>
+                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Tone</label>
                     <div className="relative">
                       <select
                         value={tone}
@@ -169,7 +167,7 @@ const MarketingAutomationPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Audience</label>
+                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Audience</label>
                     <input
                       value={audience}
                       onChange={e => setAudience(e.target.value)}
@@ -181,7 +179,7 @@ const MarketingAutomationPage = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Additional Context</label>
+                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Additional Context</label>
                   <textarea
                     value={context}
                     onChange={e => setContext(e.target.value)}
@@ -210,7 +208,7 @@ const MarketingAutomationPage = () => {
           <div>
             <Panel className="min-h-[400px]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Generated Content</h3>
+                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Generated Content</h3>
                 {result?.content && (
                   <button onClick={handleCopy} data-testid="marketing-copy-btn"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors"

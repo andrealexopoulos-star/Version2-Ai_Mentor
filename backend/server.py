@@ -102,24 +102,16 @@ async def api_health():
     return {"status": "healthy"}
 
 
-# ═══ VOICE CHAT (REALTIME) ═══
+# ═══ VOICE CHAT (REALTIME) — Direct OpenAI, no emergentintegrations ═══
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-voice_chat = None
 voice_router = APIRouter()
 if OPENAI_API_KEY:
     try:
-        from emergentintegrations.llm.openai import OpenAIChatRealtime
-        import aiohttp
-        voice_chat = OpenAIChatRealtime(api_key=OPENAI_API_KEY)
+        from core.llm_router import llm_realtime_session
 
         @voice_router.post("/realtime/session")
         async def create_voice_session(request: Request):
             """Create realtime session WITH business context instructions."""
-            from routes.deps import get_current_user
-            from supabase_intelligence_helpers import get_business_profile_supabase
-            from routes.deps import get_sb as deps_get_sb
-
-            # Try to get user context for instructions
             instructions = "You are a Strategic Intelligence Advisor for an Australian business. Be direct, specific, and reference the user's business data. Never give generic advice."
             try:
                 auth_header = request.headers.get("Authorization", "")
@@ -133,26 +125,20 @@ if OPENAI_API_KEY:
                         user_resp = admin.auth.get_user(token)
                         if user_resp and user_resp.user:
                             user_id = user_resp.user.id
-                            # Direct profile query (sync)
                             profile_result = admin.table('business_profiles').select(
-                                'business_name,industry,revenue_range,team_size,main_challenges,short_term_goals,competitive_advantages,market_position'
+                                'business_name,industry,revenue_range,team_size,main_challenges,short_term_goals'
                             ).eq('user_id', user_id).execute()
                             profile = profile_result.data[0] if profile_result.data else None
                         if profile:
                             biz_name = profile.get('business_name', 'their business')
-                            industry = profile.get('industry', '')
-                            revenue = profile.get('revenue_range', '')
-                            team = profile.get('team_size', '')
-                            challenges = profile.get('main_challenges', '')
-                            goals = profile.get('short_term_goals', '')
                             instructions = f"""You are a Strategic Intelligence Advisor inside BIQc, speaking with the owner of {biz_name}.
 
 Business: {biz_name}
-Industry: {industry}
-Revenue: {revenue}
-Team: {team}
-Challenges: {challenges}
-Goals: {goals}
+Industry: {profile.get('industry', '')}
+Revenue: {profile.get('revenue_range', '')}
+Team: {profile.get('team_size', '')}
+Challenges: {profile.get('main_challenges', '')}
+Goals: {profile.get('short_term_goals', '')}
 
 Rules:
 - Be direct and specific. Reference their business name, numbers, and industry.
@@ -163,31 +149,20 @@ Rules:
             except Exception as e:
                 logger.debug(f"Voice session context: {e}")
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    "https://api.openai.com/v1/realtime/sessions",
-                    headers={
-                        "Authorization": f"Bearer {OPENAI_API_KEY}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": "gpt-4o-realtime-preview-2024-12-17",
-                        "voice": "verse",
-                        "instructions": instructions,
-                    }
-                ) as response:
-                    from fastapi.responses import JSONResponse
-                    return JSONResponse(content=await response.json())
+            from fastapi.responses import JSONResponse
+            result = await llm_realtime_session(voice="verse", instructions=instructions, api_key=OPENAI_API_KEY)
+            return JSONResponse(content=result)
 
         @voice_router.post("/realtime/negotiate")
         async def negotiate_voice(request: Request):
-            """Handles WebRTC negotiation."""
-            sdp_offer = await request.body()
-            sdp_answer = await voice_chat.negotiate_connection(sdp_offer.decode())
+            """Handles WebRTC negotiation via direct OpenAI API."""
+            from core.llm_router import llm_realtime_negotiate
             from fastapi.responses import JSONResponse
+            sdp_offer = await request.body()
+            sdp_answer = await llm_realtime_negotiate(sdp_offer.decode(), api_key=OPENAI_API_KEY)
             return JSONResponse(content={"sdp": sdp_answer})
 
-        logger.info("Voice chat initialized with context-aware sessions")
+        logger.info("Voice chat initialized (direct OpenAI — no emergentintegrations)")
     except Exception as e:
         logger.error(f"Failed to initialize voice chat: {e}")
 

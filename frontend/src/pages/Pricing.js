@@ -2,10 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Check, X, ArrowRight, Shield, Zap, BarChart3, TrendingUp, Building2 } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -117,9 +115,9 @@ const Pricing = () => {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-              <span className="text-white font-bold text-xs" style={{ fontFamily: MONO }}>B</span>
+              <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
-            <span className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: HEAD }}>BIQc</span>
+            <span className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>BIQc</span>
           </button>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => navigate('/login-supabase')} className="text-[#9FB0C3] hover:text-white" data-testid="pricing-login">Log In</Button>
@@ -131,10 +129,10 @@ const Pricing = () => {
       {/* Hero */}
       <section className="pt-32 pb-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="font-bold text-3xl md:text-4xl lg:text-5xl text-[#F4F7FA] mb-4" style={{ fontFamily: HEAD }}>
+          <h1 className="font-bold text-3xl md:text-4xl lg:text-5xl text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>
             Choose the Level of Intelligence<br />Your Business Requires
           </h1>
-          <p className="text-base md:text-lg text-[#9FB0C3] max-w-2xl mx-auto" style={{ fontFamily: BODY }}>
+          <p className="text-base md:text-lg text-[#9FB0C3] max-w-2xl mx-auto" style={{ fontFamily: fontFamily.body }}>
             From visibility to full performance control, BIQc scales with your growth.
           </p>
         </div>
@@ -152,23 +150,23 @@ const Pricing = () => {
 
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: '#FF6A00', fontFamily: MONO }}>{plan.badge}</span>
+                    <span className="text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: '#FF6A00', fontFamily: fontFamily.mono }}>{plan.badge}</span>
                   </div>
                 )}
 
                 <div className="mb-4">
-                  <h3 className="text-base font-bold text-[#F4F7FA] mb-0.5" style={{ fontFamily: HEAD }}>{plan.name}</h3>
-                  <p className="text-[11px] text-[#FF6A00]" style={{ fontFamily: MONO }}>{plan.tagline}</p>
+                  <h3 className="text-base font-bold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>{plan.name}</h3>
+                  <p className="text-[11px] text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>{plan.tagline}</p>
                 </div>
 
                 <div className="mb-5">
-                  <span className="text-3xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{plan.price}</span>
+                  <span className="text-3xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{plan.price}</span>
                   {plan.period && <span className="text-sm text-[#64748B]">{plan.period}</span>}
                 </div>
 
                 <button onClick={plan.ctaAction}
                   className={`w-full py-2.5 rounded-lg text-sm font-semibold mb-5 transition-all hover:brightness-110 ${plan.highlight ? 'text-white' : 'text-[#F4F7FA]'}`}
-                  style={{ background: plan.highlight ? '#FF6A00' : '#1E293B', border: plan.highlight ? 'none' : '1px solid #2D3B4E', fontFamily: BODY }}
+                  style={{ background: plan.highlight ? '#FF6A00' : '#1E293B', border: plan.highlight ? 'none' : '1px solid #2D3B4E', fontFamily: fontFamily.body }}
                   data-testid={`cta-${plan.name.toLowerCase().replace(/\s/g, '-')}`}>
                   {plan.cta} <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
                 </button>
@@ -177,7 +175,7 @@ const Pricing = () => {
                   {plan.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <Check className="w-3.5 h-3.5 text-[#10B981] shrink-0 mt-0.5" />
-                      <span className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{f}</span>
+                      <span className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{f}</span>
                     </div>
                   ))}
                 </div>
@@ -200,8 +198,8 @@ const Pricing = () => {
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2" style={{ background: '#FF6A0010' }}>
                 <t.icon className="w-5 h-5 text-[#FF6A00]" />
               </div>
-              <p className="text-sm font-medium text-[#F4F7FA]" style={{ fontFamily: BODY }}>{t.title}</p>
-              <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{t.sub}</p>
+              <p className="text-sm font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{t.title}</p>
+              <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{t.sub}</p>
             </div>
           ))}
         </div>
@@ -210,12 +208,12 @@ const Pricing = () => {
       {/* FAQ */}
       <section className="py-16 px-6">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-center text-[#F4F7FA] mb-10" style={{ fontFamily: HEAD }}>Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-bold text-center text-[#F4F7FA] mb-10" style={{ fontFamily: fontFamily.display }}>Frequently Asked Questions</h2>
           <div className="space-y-4">
             {faqs.map((faq, i) => (
               <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #1E293B' }}>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>{faq.q}</h3>
-                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{faq.a}</p>
+                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>{faq.q}</h3>
+                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{faq.a}</p>
               </div>
             ))}
           </div>
@@ -225,10 +223,10 @@ const Pricing = () => {
       {/* Bottom CTA */}
       <section className="py-16 px-6" style={{ background: '#FF6A00' }}>
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3" style={{ fontFamily: HEAD }}>
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3" style={{ fontFamily: fontFamily.display }}>
             See what BIQc sees about your business
           </h2>
-          <p className="text-white/80 mb-6" style={{ fontFamily: BODY }}>
+          <p className="text-white/80 mb-6" style={{ fontFamily: fontFamily.body }}>
             Start with a free digital footprint scan. No credit card. No commitment.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -245,7 +243,7 @@ const Pricing = () => {
       {/* Disclaimer */}
       <section className="py-4 px-6" style={{ background: '#080C14', borderTop: '1px solid #1E293B' }}>
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-[#4A5568] text-[10px] leading-relaxed" style={{ fontFamily: MONO }}>
+          <p className="text-[#4A5568] text-[10px] leading-relaxed" style={{ fontFamily: fontFamily.mono }}>
             BIQc provides business intelligence based on connected data and public signals. It does not constitute financial, legal, or professional advice.
             Seek independent professional advice before making business decisions.
             <button onClick={() => navigate('/terms')} className="text-[#FF6A00] hover:underline ml-1">Terms & Conditions</button>
@@ -258,11 +256,11 @@ const Pricing = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-              <span className="text-white font-bold text-xs" style={{ fontFamily: MONO }}>B</span>
+              <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
-            <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: HEAD }}>BIQc by The Strategy Squad</span>
+            <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.display }}>BIQc by The Strategy Squad</span>
           </div>
-          <p className="text-[#4A5568] text-xs" style={{ fontFamily: MONO }}>
+          <p className="text-[#4A5568] text-xs" style={{ fontFamily: fontFamily.mono }}>
             &copy; {new Date().getFullYear()} The Strategy Squad Pty Ltd. Australian owned & operated.
           </p>
         </div>

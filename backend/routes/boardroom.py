@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, List, Optional
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger
 import os
 
@@ -174,8 +174,6 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
             system_prompt += f"\n\nRESOLVED BUSINESS FACTS:\n{facts_prompt}\n"
 
         api_key = OPENAI_KEY or os.environ.get('OPENAI_API_KEY')
-        chat = LlmChat(api_key=api_key, session_id=f"boardroom_{user_id}", system_message=system_prompt)
-        chat.with_model("openai", "gpt-4o")
 
         context_block = ""
         if history:
@@ -185,7 +183,12 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
                 context_block += f"[{label}]: {h.get('content', '')}\n"
             context_block += "\n---\n"
 
-        raw_response = await chat.send_message(UserMessage(text=f"{context_block}OPERATOR INPUT: {message}"))
+        raw_response = await llm_chat(
+            system_message=system_prompt,
+            user_message=f"{context_block}OPERATOR INPUT: {message}",
+            model="gpt-4o",
+            api_key=api_key,
+        )
 
         active_escalations = []
         try:

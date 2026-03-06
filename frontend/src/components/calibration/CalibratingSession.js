@@ -1,9 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
 
 const TOTAL_STEPS = 9;
 
@@ -47,17 +45,17 @@ const CalibratingSession = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-              <span className="text-white font-bold text-[10px]" style={{ fontFamily: MONO }}>B</span>
+              <span className="text-white font-bold text-[10px]" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
-            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: '#9FB0C3', letterSpacing: '0.12em', fontFamily: MONO }}>
+            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: '#9FB0C3', letterSpacing: '0.12em', fontFamily: fontFamily.mono }}>
               Calibration
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px]" style={{ color: '#64748B', fontFamily: MONO }}>
+            <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
               {STEP_LABELS[stepNum] || `Step ${stepNum}`}
             </span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>
               {stepNum}/{TOTAL_STEPS}
             </span>
           </div>
@@ -83,7 +81,7 @@ const CalibratingSession = ({
             <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3" style={{ background: '#FF6A0020' }}>
               <div className="w-3 h-3 rounded-full" style={{ background: '#FF6A00', animation: 'pulse 1.5s ease-in-out infinite' }} />
             </div>
-            <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}>Preparing your next question...</p>
+            <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>Preparing your next question...</p>
           </div>
         </div>
       )}
@@ -100,12 +98,12 @@ const CalibratingSession = ({
           <div className="w-full max-w-2xl mx-auto space-y-8">
             {insight && (
               <div className="text-center" style={{ animation: 'fadeIn 0.6s ease' }}>
-                <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY, maxWidth: 480, margin: '0 auto' }}>{insight}</p>
+                <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body, maxWidth: 480, margin: '0 auto' }}>{insight}</p>
               </div>
             )}
             {question && (
               <div className="text-center" style={{ animation: 'fadeIn 0.7s ease' }}>
-                <p className="text-xl sm:text-2xl leading-relaxed" style={{ fontFamily: HEAD, color: '#F4F7FA', fontWeight: 500, maxWidth: 560, margin: '0 auto' }}
+                <p className="text-xl sm:text-2xl leading-relaxed" style={{ fontFamily: fontFamily.display, color: '#F4F7FA', fontWeight: 500, maxWidth: 560, margin: '0 auto' }}
                   data-testid="calibration-question">
                   {question}
                 </p>
@@ -153,7 +151,7 @@ const CalibratingSession = ({
                 <textarea value={textValue} onChange={(e) => setTextValue(e.target.value)} disabled={isSubmitting} rows={3}
                   placeholder="Add additional context (optional)..."
                   className="w-full rounded-xl px-5 py-4 text-sm focus:outline-none resize-none"
-                  style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA', fontFamily: BODY }}
+                  style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA', fontFamily: fontFamily.body }}
                   data-testid="calibration-textarea" />
               </div>
             )}

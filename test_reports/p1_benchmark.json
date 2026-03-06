@@ -1,0 +1,107 @@
+{
+  "results": [
+    {
+      "i": 1,
+      "prompt": "What is my biggest risk right now?",
+      "len": 1536,
+      "ms": 12890,
+      "spec": 8,
+      "v": "PASS"
+    },
+    {
+      "i": 2,
+      "prompt": "What should I focus on this week?",
+      "len": 1361,
+      "ms": 12212,
+      "spec": 5,
+      "v": "PASS"
+    },
+    {
+      "i": 3,
+      "prompt": "How healthy is my cash flow?",
+      "len": 1530,
+      "ms": 10272,
+      "spec": 6,
+      "v": "PASS"
+    },
+    {
+      "i": 4,
+      "prompt": "Am I overstaffed or understaffed?",
+      "len": 1488,
+      "ms": 11719,
+      "spec": 9,
+      "v": "PASS"
+    },
+    {
+      "i": 5,
+      "prompt": "What are my competitors doing that I'm not?",
+      "len": 2194,
+      "ms": 13393,
+      "spec": 9,
+      "v": "PASS"
+    },
+    {
+      "i": 6,
+      "prompt": "Should I raise prices?",
+      "len": 1614,
+      "ms": 11199,
+      "spec": 9,
+      "v": "PASS"
+    },
+    {
+      "i": 7,
+      "prompt": "What's the #1 thing holding my business back?",
+      "len": 1400,
+      "ms": 11801,
+      "spec": 7,
+      "v": "PASS"
+    },
+    {
+      "i": 8,
+      "prompt": "Give me your honest assessment of my business",
+      "len": 1972,
+      "ms": 10859,
+      "spec": 14,
+      "v": "PASS"
+    },
+    {
+      "i": 9,
+      "prompt": "Where am I losing money?",
+      "len": 2188,
+      "ms": 12308,
+      "spec": 9,
+      "v": "PASS"
+    },
+    {
+      "i": 10,
+      "prompt": "What would you do differently if you ran my c",
+      "len": 2205,
+      "ms": 12387,
+      "spec": 12,
+      "v": "PASS"
+    },
+    {
+      "i": 11,
+      "prompt": "How do I grow revenue by 20% this year?",
+      "len": 2098,
+      "ms": 12259,
+      "spec": 11,
+      "v": "PASS"
+    },
+    {
+      "i": 12,
+      "prompt": "What should I tell my board this quarter?",
+      "len": 2106,
+      "ms": 11523,
+      "spec": 12,
+      "v": "PASS"
+    }
+  ],
+  "summary": {
+    "pass": 12,
+    "fail": 0,
+    "generic_rate": 0.0,
+    "p50": 12212,
+    "p95": 13393
+  }
+}

@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { supabase } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const HEAD = "var(--font-heading)";
-const MONO = "var(--font-mono)";
 
 const STATE_CONFIG = {
   STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
@@ -63,22 +62,22 @@ const BoardRoom = () => {
   const activeArea = DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis);
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: HEAD }}>
+    <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: fontFamily.display }}>
 
       {/* ═══ HEADER — Liquid Silver ═══ */}
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="flex items-center gap-5">
-          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#6B7280', textDecoration: 'none', fontFamily: HEAD }} data-testid="boardroom-home">
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#6B7280', textDecoration: 'none', fontFamily: fontFamily.display }} data-testid="boardroom-home">
             ← Dashboard
           </a>
           <div className="h-4 w-px" style={{ background: '#E5E7EB' }} />
           <span className="text-sm font-semibold" style={{ color: '#111827' }}>Board Room</span>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
-            <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+            <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
           </div>
         </div>
-        <span className="text-[11px] font-medium" style={{ color: '#9CA3AF', fontFamily: MONO }}>{new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        <span className="text-[11px] font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>{new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
       </header>
 
       {/* ═══ PRESSURE BAR ═══ */}
@@ -109,7 +108,7 @@ const BoardRoom = () => {
                         )}
                         {narrative.strategic_direction && (
                           <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#16A34A', fontFamily: MONO }}>Direction</span>
+                            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#16A34A', fontFamily: fontFamily.mono }}>Direction</span>
                             <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#374151' }}>{narrative.strategic_direction}</p>
                           </div>
                         )}
@@ -126,7 +125,7 @@ const BoardRoom = () => {
                         {forces.map((f, i) => (
                           <div key={i} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}>
                             <span className="text-xs font-semibold" style={{ color: '#374151' }}>{f.domain}</span>
-                            {f.detail && <p className="text-[11px] mt-1" style={{ color: '#9CA3AF', fontFamily: MONO }}>{f.detail}</p>}
+                            {f.detail && <p className="text-[11px] mt-1" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>{f.detail}</p>}
                           </div>
                         ))}
                       </div>
@@ -137,7 +136,7 @@ const BoardRoom = () => {
 
               {/* ═══ DIAGNOSIS CARDS ═══ */}
               <section data-testid="diagnosis-zone">
-                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: '#9CA3AF', fontFamily: MONO }}>
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>
                   Diagnosis — Select an area to analyse
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -196,7 +195,7 @@ const BoardRoom = () => {
                       <div>
                         <h2 className="text-lg font-semibold" style={{ color: '#111827' }}>{activeArea?.label}</h2>
                         {diagnosisResult.confidence && (
-                          <span className="text-[10px] tracking-wider uppercase font-medium" style={{ color: '#9CA3AF', fontFamily: MONO }}>Confidence: {diagnosisResult.confidence}</span>
+                          <span className="text-[10px] tracking-wider uppercase font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Confidence: {diagnosisResult.confidence}</span>
                         )}
                       </div>
                     </div>
@@ -213,7 +212,7 @@ const BoardRoom = () => {
                   {/* What to Watch */}
                   {diagnosisResult.what_to_watch && (
                     <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#92400E', fontFamily: MONO }}>What to Watch</span>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#92400E', fontFamily: fontFamily.mono }}>What to Watch</span>
                       <p className="text-sm leading-relaxed" style={{ color: '#78350F' }}>{diagnosisResult.what_to_watch}</p>
                     </div>
                   )}
@@ -221,7 +220,7 @@ const BoardRoom = () => {
                   {/* If Ignored */}
                   {diagnosisResult.if_ignored && (
                     <div className="p-6 rounded-2xl" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
-                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#991B1B', fontFamily: MONO }}>If Ignored</span>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#991B1B', fontFamily: fontFamily.mono }}>If Ignored</span>
                       <p className="text-sm leading-relaxed" style={{ color: '#7F1D1D' }}>{diagnosisResult.if_ignored}</p>
                     </div>
                   )}
@@ -229,9 +228,9 @@ const BoardRoom = () => {
                   {/* Sources */}
                   {diagnosisResult.data_sources_used?.length > 0 && (
                     <div className="flex items-center gap-3 pt-2">
-                      <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sources:</span>
+                      <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Sources:</span>
                       {diagnosisResult.data_sources_used.map((s, i) => (
-                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>
+                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>
                       ))}
                     </div>
                   )}

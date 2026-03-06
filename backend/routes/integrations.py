@@ -364,8 +364,29 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
                     "connected": True,
                 }
         
+        # P3: Add live signal freshness
+        signal_count = 0
+        last_signal = None
+        try:
+            obs = get_sb().table('observation_events').select('observed_at', count='exact').eq('user_id', user_id).order('observed_at', desc=True).limit(1).execute()
+            signal_count = obs.count or 0
+            if obs.data:
+                last_signal = obs.data[0].get('observed_at')
+        except Exception:
+            pass
+
         logger.info(f"Found {len(integrations)} integrations for user {user_id}")
-        return {"integrations": integrations}
+        return {
+            "integrations": integrations,
+            "canonical_truth": {
+                "crm_connected": any(v.get("category") == "crm" for v in integrations.values()),
+                "accounting_connected": any(v.get("category") == "accounting" for v in integrations.values()),
+                "email_connected": any(v.get("category") == "email" for v in integrations.values()),
+                "total_connected": len(integrations),
+                "live_signal_count": signal_count,
+                "last_signal_at": last_signal,
+            }
+        }
         
     except Exception as e:
         logger.error(f"Error fetching integrations: {str(e)}")

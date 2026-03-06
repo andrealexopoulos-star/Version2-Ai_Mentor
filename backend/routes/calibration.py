@@ -14,7 +14,7 @@ import json
 import logging
 
 import httpx
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, OPENAI_KEY, AI_MODEL, logger, cognitive_core,
@@ -1280,13 +1280,6 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
         if facts_prompt:
             system_with_facts += f"\n\nKNOWN BUSINESS FACTS (DO NOT ask for these again):\n{facts_prompt}\nIf you need any of these facts, use the provided values. Do not re-ask.\n"
 
-        chat = LlmChat(
-            api_key=OPENAI_KEY,
-            session_id=f"calibration_brain_{user_id}",
-            system_message=system_with_facts
-        )
-        chat.with_model("openai", "gpt-4o")
-
         # Inject history as context in the user message
         context_block = ""
         if history:
@@ -1298,8 +1291,12 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
             context_block += "\n---\nNEW USER MESSAGE:\n"
 
         full_message = f"{context_block}{message}\n\nRespond with JSON only."
-        user_msg = UserMessage(text=full_message)
-        raw_response = await chat.send_message(user_msg)
+        raw_response = await llm_chat(
+            system_message=system_with_facts,
+            user_message=full_message,
+            model="gpt-4o",
+            api_key=OPENAI_KEY,
+        )
 
         # Parse JSON from AI response
         cleaned = raw_response.strip()

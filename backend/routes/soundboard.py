@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import uuid
 import logging
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
 from prompt_registry import get_prompt
 from auth_supabase import get_user_by_id
@@ -243,6 +243,35 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     user_first_name = full_name.split()[0] if full_name and full_name != "there" else "there"
     user_email = (user_profile.get("email") if user_profile else None) or ""
 
+    # ═══ PERSONALIZATION GUARDRAIL ═══
+    context_fields = 0
+    if profile:
+        for field in ['business_name', 'industry', 'revenue_range', 'team_size', 'main_challenges', 'short_term_goals']:
+            if profile.get(field) and str(profile.get(field)) != 'None':
+                context_fields += 1
+
+    # Live signal freshness check
+    live_signal_count = 0
+    live_signal_age_hours = None
+    try:
+        obs_result = sb.table('observation_events').select('observed_at', count='exact').eq('user_id', user_id).order('observed_at', desc=True).limit(1).execute()
+        live_signal_count = obs_result.count or 0
+        if obs_result.data:
+            last_obs = datetime.fromisoformat(obs_result.data[0]['observed_at'].replace('Z', '+00:00'))
+            live_signal_age_hours = round((datetime.now(timezone.utc) - last_obs).total_seconds() / 3600, 1)
+    except Exception:
+        pass
+
+    if context_fields < 2:
+        logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id} context_fields={context_fields}")
+        guardrail_status = "BLOCKED"
+    elif context_fields < 4:
+        logger.info(f"[GUARDRAIL_DEGRADED] user={user_id} context_fields={context_fields} live_signals={live_signal_count}")
+        guardrail_status = "DEGRADED"
+    else:
+        guardrail_status = "FULL"
+        logger.info(f"[GUARDRAIL_FULL] user={user_id} context_fields={context_fields} live_signals={live_signal_count} age_hours={live_signal_age_hours}")
+
     # ═══ FULL BUSINESS DNA ═══
     biz_context = ""
     if profile:
@@ -469,7 +498,29 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
 
-    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + f"\n\nCONTEXT:\n{user_context}"
+    # ═══ PERSONALIZATION GUARDRAIL: Block generic advice ═══
+    if guardrail_status == "BLOCKED":
+        return {
+            "reply": "I need to know more about your business before I can give you specific advice. Please complete your business calibration first — it takes about 3 minutes and unlocks personalised intelligence across the entire platform.",
+            "guardrail": "BLOCKED",
+            "context_fields": context_fields,
+            "live_signals": live_signal_count,
+            "conversation_id": req.conversation_id,
+        }
+
+    # P1: Signal freshness injection
+    signal_injection = ""
+    if live_signal_count > 0:
+        signal_injection = f"\n\n═══ LIVE SIGNAL STATUS ═══\nActive observation signals: {live_signal_count}\nLast signal: {live_signal_age_hours}h ago\nUSE THESE to ground your advice.\n"
+
+    # P1: Response contract enforcement
+    contract_injection = "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\nEvery strategic response MUST include:\n1) SITUATION: What is happening? Use specific numbers or entity names from the data above.\n2) DECISION: One clear recommendation.\n3) THIS WEEK: One concrete action with who/what/by-when.\n4) RISK IF DELAYED: What happens if they don't act? Quantify.\nDo NOT output generic strategy. Every sentence must reference THIS business.\n"
+
+    guardrail_injection = ""
+    if guardrail_status == "DEGRADED":
+        guardrail_injection = f"\n[GUARDRAIL_DEGRADED: {context_fields} profile fields, {live_signal_count} live signals]\n"
+
+    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {
@@ -532,20 +583,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             # Fall through to normal chat response
 
     try:
-        chat = LlmChat(
-            api_key=OPENAI_KEY,
-            session_id=f"soundboard_{user_id}_{req.conversation_id or 'new'}",
-            system_message=system_message
-        )
-        chat.with_model("openai", AI_MODEL)
-        chat.with_params(temperature=0.7, max_tokens=1500)
-        for msg in messages_history:
-            if msg["role"] == "user":
-                chat.add_message(UserMessage(text=msg["content"]))
-
         import time as _time
         _start = _time.time()
-        response = await chat.send_message(UserMessage(text=clean_message))
+        response = await llm_chat(
+            system_message=system_message,
+            user_message=clean_message,
+            messages=messages_history,
+            model=AI_MODEL,
+            temperature=0.7,
+            max_tokens=1500,
+            api_key=OPENAI_KEY,
+        )
         _elapsed = int((_time.time() - _start) * 1000)
 
         # Post-process: enforce quality and remove AI crutches
@@ -574,14 +622,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         conversation_title = None
         if not conversation:
             title_prompt = f"Generate a very short title (3-5 words max) for a conversation that starts with: '{req.message[:100]}'. Just the title, nothing else."
-            title_chat = LlmChat(
-                api_key=OPENAI_KEY,
-                session_id=f"title_{user_id}_{now_dt.timestamp()}",
-                system_message="Generate very short conversation titles. Just output the title, nothing else."
-            )
-            title_chat.with_model("openai", AI_MODEL)
-            conversation_title = await title_chat.send_message(UserMessage(text=title_prompt))
-            conversation_title = conversation_title.strip().strip("\"'")[:50]
+            try:
+                conversation_title = await llm_chat(
+                    system_message="Generate very short conversation titles. Just output the title, nothing else.",
+                    user_message=title_prompt,
+                    model=AI_MODEL,
+                    max_tokens=30,
+                    api_key=OPENAI_KEY,
+                )
+                conversation_title = conversation_title.strip().strip("\"'")[:50]
+            except Exception:
+                conversation_title = req.message[:40]
 
         now = now_dt.isoformat()
         new_messages = [

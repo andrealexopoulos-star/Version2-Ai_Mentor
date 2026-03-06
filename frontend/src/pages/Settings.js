@@ -68,7 +68,7 @@ const Settings = () => {
     try {
       const res = await apiClient.get('/calibration/status');
       setCalibrationStatus(res.data?.status === 'COMPLETE' ? 'complete' : 'incomplete');
-      console.log('[Settings] Calibration status from DB:', res.data?.status);
+      // console.log('[Settings] Calibration status from DB:', res.data?.status);
     } catch (e) {
       console.error('[Settings] Failed to fetch calibration status:', e);
       setCalibrationStatus('error');

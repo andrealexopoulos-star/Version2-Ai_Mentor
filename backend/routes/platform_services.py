@@ -143,13 +143,11 @@ class ServiceRegistry:
 
     @staticmethod
     async def llm_chat(system_message: str, user_message: str, model: str = "gpt-4o", temperature: float = 0.3):
-        """LLM chat completion. Currently OpenAI via emergentintegrations. Swappable."""
+        """LLM chat completion via BIQc router."""
         import os
-        from emergentintegrations.llm.openai import LlmChat, UserMessage
+        from core.llm_router import llm_chat
         key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY", "")
-        chat = LlmChat(api_key=key, system_message=system_message)
-        chat.with_model("openai", model)
-        return await chat.send_message(UserMessage(text=user_message))
+        return await llm_chat(system_message=system_message, user_message=user_message, model=model, api_key=key)
 
     @staticmethod
     def get_auth():

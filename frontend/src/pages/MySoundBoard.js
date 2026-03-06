@@ -6,14 +6,13 @@ import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
-import { 
+import { fontFamily } from "../design-system/tokens";
+import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
   Paperclip, FileText, Download, Zap, Eye, Clock
 } from 'lucide-react';
 
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 const MySoundBoard = () => {
   const { isChatOpen, openChat, closeAll, activeDrawer } = useMobileDrawer();
@@ -408,7 +407,7 @@ const MySoundBoard = () => {
               {scanUsage && !scanUsage.calibration_complete && (
                 <a href="/calibration"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: MONO }}
+                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
                   data-testid="mysb-calibration-btn">
                   <Zap className="w-3.5 h-3.5" /> Complete Calibration
                 </a>
@@ -439,7 +438,7 @@ const MySoundBoard = () => {
                       background: canRun || isPaid ? '#3B82F615' : '#243140',
                       border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#1E293B'}`,
                       color: canRun || isPaid ? '#3B82F6' : '#4A5568',
-                      fontFamily: MONO,
+                      fontFamily: fontFamily.mono,
                       cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
                     }}
                     data-testid="mysb-exposure-scan-btn">
@@ -524,8 +523,8 @@ const MySoundBoard = () => {
                             style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
                             <Download className="w-3.5 h-3.5 shrink-0" style={{ color: '#FF6A00' }} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold truncate" style={{ color: '#FF6A00', fontFamily: MONO }}>{message.file.name}</p>
-                              <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: MONO }}>
+                              <p className="text-xs font-semibold truncate" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{message.file.name}</p>
+                              <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
                                 {message.file.type} · {Math.round((message.file.size || 0) / 1024)}KB
                               </p>
                             </div>
@@ -569,9 +568,9 @@ const MySoundBoard = () => {
               {attachedFile && (
                 <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(255,106,0,0.3)' }}>
                   <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: '#FF6A00' }} />
-                  <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-primary)', fontFamily: MONO }}>{attachedFile.name}</span>
-                  {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: MONO }}>ready</span>}
-                  {attachedFile.hint && <span className="text-[9px] truncate max-w-[100px]" style={{ color: '#F59E0B', fontFamily: MONO }}>{attachedFile.hint}</span>}
+                  <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-primary)', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
+                  {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
+                  {attachedFile.hint && <span className="text-[9px] truncate max-w-[100px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{attachedFile.hint}</span>}
                   <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: 'var(--text-muted)' }}>
                     <X className="w-3 h-3" />
                   </button>

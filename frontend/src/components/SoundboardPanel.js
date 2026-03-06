@@ -3,10 +3,8 @@ import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database,
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS } from '../lib/analytics';
+import { fontFamily } from '../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
-const HEAD = "'Cormorant Garamond', Georgia, serif";
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -215,7 +213,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF6A0020' }}>
             <MessageSquare className="w-3.5 h-3.5 text-[#FF6A00]" />
           </div>
-          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>SoundBoard</span>
+          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setShowHistory(!showHistory)} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" data-testid="sb-history-btn">
@@ -234,7 +232,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         {scanUsage && !scanUsage.calibration_complete && (
           <a href="/calibration"
             className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all hover:brightness-110"
-            style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: MONO }}
+            style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
             data-testid="sb-calibration-btn">
             <Zap className="w-3.5 h-3.5 shrink-0" />
             <span className="flex-1">Complete Calibration</span>
@@ -271,7 +269,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 background: canRun || isPaid ? '#3B82F615' : '#243140',
                 border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#1E293B'}`,
                 color: canRun || isPaid ? '#3B82F6' : '#4A5568',
-                fontFamily: MONO,
+                fontFamily: fontFamily.mono,
                 cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
               }}
               data-testid="sb-exposure-scan-btn">
@@ -291,12 +289,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       {showHistory && (
         <div className="border-b overflow-y-auto max-h-60 shrink-0" style={{ borderColor: '#1E293B', background: '#0D1420' }}>
           <div className="p-2">
-            <p className="text-[10px] uppercase tracking-wider px-2 py-1 mb-1" style={{ color: '#64748B', fontFamily: MONO }}>Recent conversations</p>
+            <p className="text-[10px] uppercase tracking-wider px-2 py-1 mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Recent conversations</p>
             {conversations.length === 0 && <p className="text-xs text-[#4A5568] px-2 py-2">No conversations yet</p>}
             {conversations.slice(0, 15).map(c => (
               <button key={c.id} onClick={() => loadConversation(c)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors truncate ${activeConvId === c.id ? 'bg-white/10 text-[#F4F7FA]' : 'text-[#9FB0C3] hover:bg-white/5'}`}
-                style={{ fontFamily: BODY }}>
+                style={{ fontFamily: fontFamily.body }}>
                 {c.title || 'Untitled'}
               </button>
             ))}
@@ -309,13 +307,13 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <MessageSquare className="w-10 h-10 mb-4 text-[#FF6A00]/20" />
-            <p className="text-sm text-[#64748B] mb-1" style={{ fontFamily: BODY }}>Ask anything about your business</p>
-            <p className="text-[11px] text-[#4A5568] mb-6" style={{ fontFamily: MONO }}>or click an insight to explore it here</p>
+            <p className="text-sm text-[#64748B] mb-1" style={{ fontFamily: fontFamily.body }}>Ask anything about your business</p>
+            <p className="text-[11px] text-[#4A5568] mb-6" style={{ fontFamily: fontFamily.mono }}>or click an insight to explore it here</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-[280px]">
               {['What should I focus on?', 'Show me my pipeline', 'Summarise my risks', 'How can I grow?'].map(q => (
                 <button key={q} onClick={() => setInput(q)}
                   className="text-[11px] px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
-                  style={{ background: '#141C26', color: '#9FB0C3', border: '1px solid #1E293B', fontFamily: MONO }}>
+                  style={{ background: '#141C26', color: '#9FB0C3', border: '1px solid #1E293B', fontFamily: fontFamily.mono }}>
                   {q}
                 </button>
               ))}
@@ -330,7 +328,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 background: msg.role === 'user' ? '#FF6A00' : '#141C26',
                 color: msg.role === 'user' ? 'white' : '#D1D5DB',
                 border: msg.role === 'user' ? 'none' : '1px solid #1E293B',
-                fontFamily: BODY,
+                fontFamily: fontFamily.body,
                 whiteSpace: 'pre-line',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
               }}>
@@ -339,7 +337,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               {msg.sources?.length > 0 && (
                 <div className="flex gap-1 mt-2 flex-wrap">
                   {msg.sources.map((s, j) => (
-                    <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#10B98110', color: '#10B981', fontFamily: MONO }}>{s}</span>
+                    <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#10B98110', color: '#10B981', fontFamily: fontFamily.mono }}>{s}</span>
                   ))}
                 </div>
               )}
@@ -350,8 +348,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
                   <Download className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold truncate" style={{ color: '#FF6A00', fontFamily: MONO }}>{msg.file.name}</p>
-                    <p className="text-[9px]" style={{ color: '#64748B', fontFamily: MONO }}>{msg.file.type} · {Math.round((msg.file.size || 0) / 1024)}KB</p>
+                    <p className="text-[11px] font-semibold truncate" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{msg.file.name}</p>
+                    <p className="text-[9px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{msg.file.type} · {Math.round((msg.file.size || 0) / 1024)}KB</p>
                   </div>
                 </a>
               )}
@@ -378,8 +376,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         {attachedFile && (
           <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg" style={{ background: '#141C26', border: '1px solid rgba(255,106,0,0.3)' }}>
             <FileText className="w-3 h-3 shrink-0" style={{ color: '#FF6A00' }} />
-            <span className="flex-1 text-[10px] truncate" style={{ color: '#F4F7FA', fontFamily: MONO }}>{attachedFile.name}</span>
-            {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: MONO }}>ready</span>}
+            <span className="flex-1 text-[10px] truncate" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
+            {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
             <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: '#64748B' }}>
               <X className="w-3 h-3" />
             </button>
@@ -402,7 +400,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything..."}
             rows={1}
             className="flex-1 px-2 py-2 text-sm outline-none resize-none bg-transparent"
-            style={{ color: '#F4F7FA', fontFamily: BODY, maxHeight: '120px' }}
+            style={{ color: '#F4F7FA', fontFamily: fontFamily.body, maxHeight: '120px' }}
             data-testid="sb-input"
           />
           <button onClick={sendMessage} disabled={(!input.trim() && !attachedFile) || loading}
@@ -412,7 +410,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <Send className="w-4 h-4 text-white" />
           </button>
         </div>
-        <p className="text-[9px] text-[#4A5568] text-center mt-1.5" style={{ fontFamily: MONO }}>
+        <p className="text-[9px] text-[#4A5568] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
           BIQc uses connected data only. No fabrication.
         </p>
       </div>

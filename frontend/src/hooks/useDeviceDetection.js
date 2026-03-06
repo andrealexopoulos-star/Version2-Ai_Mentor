@@ -40,7 +40,7 @@ export const useDeviceDetection = () => {
       setIsTablet(isTabletWidth && !isMobileUA);
       
       // Debug log
-      console.log('🔍 Device Detection:', {
+      // console.log('🔍 Device Detection:', {
         width,
         isMobileUA,
         isTouchDevice,

@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Loader2, Wifi, XCircle } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
@@ -74,9 +72,9 @@ const DataHealthPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="data-health-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="data-health-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Data Health</h1>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Data Health</h1>
           <p className="text-sm text-[#9FB0C3]">
             Integration sync status, data quality metrics, and system connectivity.
             {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
@@ -89,7 +87,7 @@ const DataHealthPage = () => {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${connectedCount > 0 ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
               <div>
-                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>
+                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
                   {connectedCount > 0 ? `${connectedCount} Systems Connected` : 'Awaiting Connections'}
                 </h2>
                 <p className="text-sm text-[#9FB0C3]">{dqSources} data sources active</p>
@@ -103,7 +101,7 @@ const DataHealthPage = () => {
 
         {/* Connected Systems */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Connected Systems</h3>
+          <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
           {systems.map((sys, i) => (
             <Panel key={i}>
               <div className="flex items-center gap-4">
@@ -113,12 +111,12 @@ const DataHealthPage = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h4 className="text-sm font-semibold text-[#F4F7FA]">{sys.name}</h4>
-                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{sys.type}</span>
+                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{sys.type}</span>
                   </div>
                   {sys.status === 'connected' && (
                     <div className="flex items-center gap-2 mt-0.5">
                       <Wifi className="w-3 h-3 text-[#10B981]" />
-                      <span className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>Syncing</span>
+                      <span className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Syncing</span>
                     </div>
                   )}
                 </div>
@@ -129,7 +127,7 @@ const DataHealthPage = () => {
                         <div className="h-1.5 rounded-full" style={{ background: '#10B98120' }}>
                           <div className="h-1.5 rounded-full" style={{ background: '#10B981', width: sys.health + '%' }} />
                         </div>
-                        <span className="text-[10px] text-[#10B981]" style={{ fontFamily: MONO }}>{sys.health}% healthy</span>
+                        <span className="text-[10px] text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{sys.health}% healthy</span>
                       </div>
                       <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
                     </>
@@ -144,7 +142,7 @@ const DataHealthPage = () => {
 
         {/* Data Quality */}
         <Panel>
-          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Data Quality Score</h3>
+          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Data Quality Score</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Completeness', value: dqCompleteness + '%', color: dqCompleteness > 80 ? '#10B981' : '#F59E0B' },
@@ -153,8 +151,8 @@ const DataHealthPage = () => {
               { label: 'Consistency', value: '91%', color: '#F59E0B' },
             ].map(m => (
               <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                <span className="text-xl font-bold block" style={{ fontFamily: MONO, color: m.color }}>{m.value}</span>
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.label}</span>
+                <span className="text-xl font-bold block" style={{ fontFamily: fontFamily.mono, color: m.color }}>{m.value}</span>
+                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
               </div>
             ))}
           </div>

@@ -62,7 +62,7 @@ async def _generate_image(prompt: str, size: str = "1024x1024") -> bytes:
 
 async def _generate_document(prompt: str, doc_type: str) -> str:
     """Generate text document via LLM."""
-    from emergentintegrations.llm.openai import LlmChat, UserMessage
+    from core.llm_router import llm_chat
 
     system_prompts = {
         'document': 'You are a professional document writer. Generate clear, well-structured business documents. Use markdown formatting.',
@@ -70,11 +70,14 @@ async def _generate_document(prompt: str, doc_type: str) -> str:
         'social_image': 'You are a creative director. Generate a detailed image prompt for a social media graphic. Be specific about colors, layout, text placement, and style.',
     }
 
-    chat = LlmChat(api_key=OPENAI_KEY, system_message=system_prompts.get(doc_type, system_prompts['document']))
-    chat.with_model("openai", "gpt-4o")
 
     start = time.time()
-    response = await chat.send_message(UserMessage(text=prompt))
+    response = await llm_chat(
+        system_message=system_prompts.get(doc_type, system_prompts['document']),
+        user_message=prompt,
+        model="gpt-4o",
+        api_key=OPENAI_KEY,
+    )
     elapsed = int((time.time() - start) * 1000)
 
     response = sanitise_output(response)

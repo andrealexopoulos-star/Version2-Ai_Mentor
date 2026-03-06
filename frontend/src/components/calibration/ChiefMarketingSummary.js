@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3 } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 // ── Footprint layers (kept for market presence score) ──
 const LAYERS = [
@@ -107,7 +105,7 @@ const ScoreBar = ({ score, max = 10, color }) => {
       <div className="flex-1 h-1.5 rounded-full" style={{ background: '#243140' }}>
         <div className="h-1.5 rounded-full transition-all" style={{ background: c, width: `${pct}%` }} />
       </div>
-      <span className="text-[11px] font-bold w-6 text-right" style={{ color: c, fontFamily: MONO }}>{score}</span>
+      <span className="text-[11px] font-bold w-6 text-right" style={{ color: c, fontFamily: fontFamily.mono }}>{score}</span>
     </div>
   );
 };
@@ -143,13 +141,13 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
         {/* ── HEADER ── */}
         <div className="text-center" style={{ animation: 'cmsFade 0.4s ease-out' }}>
-          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: MONO }}>
+          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
             Chief Marketing Officer Summary
           </span>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>
             {bizName}
           </h1>
-          <p className="text-sm text-[#64748B] max-w-md mx-auto" style={{ fontFamily: BODY }}>
+          <p className="text-sm text-[#64748B] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
             Based on publicly available digital signals only. No internal data assumed. No hallucination.
           </p>
         </div>
@@ -158,11 +156,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-6 space-y-4" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 0.6s ease-out' }} data-testid="business-summary">
           <div className="flex items-center gap-2 mb-1">
             <Target className="w-4 h-4" style={{ color: '#FF6A00' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Business Intelligence Summary</h2>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Business Intelligence Summary</h2>
           </div>
 
           {whatYouDo ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               <strong style={{ color: '#F4F7FA' }}>{bizName}</strong>
               {industry ? ` operates in the ${industry} sector` : ''}.
               {whatYouDo ? ` ${whatYouDo}.` : ''}
@@ -170,44 +168,44 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           ) : null}
 
           {whoYouServe ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               Their primary market is <strong style={{ color: '#F4F7FA' }}>{whoYouServe}</strong>{model ? `, operating on a ${model} model` : ''}.
             </p>
           ) : null}
 
           {uvp ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               Their stated competitive position: <em style={{ color: '#F4F7FA' }}>"{uvp.substring(0, 180)}{uvp.length > 180 ? '...' : ''}"</em>
             </p>
           ) : null}
 
           {challenges ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               Key challenges identified: {challenges.substring(0, 160)}{challenges.length > 160 ? '...' : ''}
             </p>
           ) : null}
 
           {growth ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               Growth focus: {growth.substring(0, 160)}{growth.length > 160 ? '...' : ''}
             </p>
           ) : null}
 
           {!whatYouDo && !whoYouServe && !uvp && (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>Insufficient website data to generate business summary. Manual profile completion recommended.</p>
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Insufficient website data to generate business summary. Manual profile completion recommended.</p>
           )}
         </div>
 
         {/* ── SECTION 2: MARKET PRESENCE SCORE ── */}
         <div className="rounded-xl p-6 text-center" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 0.8s ease-out' }} data-testid="presence-score">
-          <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: MONO }}>Digital Market Presence Score</span>
-          <span className="text-5xl font-bold block mb-2" style={{ color: scoreColor, fontFamily: MONO }}>{overall}</span>
-          <span className="text-sm text-[#64748B]" style={{ fontFamily: MONO }}>/100</span>
+          <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Digital Market Presence Score</span>
+          <span className="text-5xl font-bold block mb-2" style={{ color: scoreColor, fontFamily: fontFamily.mono }}>{overall}</span>
+          <span className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>/100</span>
           <div className="flex items-center justify-center gap-3 mt-3">
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: cappedConfidence === 'High' ? '#10B981' : cappedConfidence === 'Medium' ? '#F59E0B' : '#64748B', background: (cappedConfidence === 'High' ? '#10B981' : cappedConfidence === 'Medium' ? '#F59E0B' : '#64748B') + '15', fontFamily: MONO }}>
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: cappedConfidence === 'High' ? '#10B981' : cappedConfidence === 'Medium' ? '#F59E0B' : '#64748B', background: (cappedConfidence === 'High' ? '#10B981' : cappedConfidence === 'Medium' ? '#F59E0B' : '#64748B') + '15', fontFamily: fontFamily.mono }}>
               {cappedConfidence} confidence
             </span>
-            <span className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{raw.layersScored}/{raw.layersTotal} layers scored</span>
+            <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{raw.layersScored}/{raw.layersTotal} layers scored</span>
           </div>
           {/* Compact layer breakdown */}
           <div className="mt-4 space-y-1.5 text-left">
@@ -216,11 +214,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               const c = score === null ? '#243140' : score > 70 ? '#10B981' : score > 45 ? '#F59E0B' : '#EF4444';
               return (
                 <div key={l.key} className="flex items-center gap-3">
-                  <span className="text-[11px] text-[#9FB0C3] w-36 shrink-0" style={{ fontFamily: BODY }}>{l.label}</span>
+                  <span className="text-[11px] text-[#9FB0C3] w-36 shrink-0" style={{ fontFamily: fontFamily.body }}>{l.label}</span>
                   <div className="flex-1 h-1.5 rounded-full" style={{ background: '#243140' }}>
                     {score !== null && <div className="h-1.5 rounded-full" style={{ background: c, width: `${score}%` }} />}
                   </div>
-                  <span className="text-[10px] w-20 text-right shrink-0" style={{ color: c, fontFamily: MONO }}>{score !== null ? status : 'N/A'}</span>
+                  <span className="text-[10px] w-20 text-right shrink-0" style={{ color: c, fontFamily: fontFamily.mono }}>{score !== null ? status : 'N/A'}</span>
                 </div>
               );
             })}
@@ -231,8 +229,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div style={{ animation: 'cmsFade 1.0s ease-out' }} data-testid="communication-audit">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4" style={{ color: '#3B82F6' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Products & Services Communication Audit</h2>
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: (audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444') + '15', color: audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Products & Services Communication Audit</h2>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: (audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444') + '15', color: audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
               {audit.avg}/10 avg
             </span>
           </div>
@@ -243,7 +241,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors">
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: BODY }}>{c.category}</span>
+                      <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{c.category}</span>
                       {openAudit === i ? <ChevronUp className="w-3.5 h-3.5 text-[#64748B]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#64748B]" />}
                     </div>
                     <ScoreBar score={c.score} />
@@ -251,10 +249,10 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </button>
                 {openAudit === i && (
                   <div className="px-4 pb-4 space-y-2" style={{ borderTop: '1px solid #243140' }}>
-                    <p className="text-[11px] mt-2" style={{ color: '#64748B', fontFamily: MONO }}>{c.evidence}</p>
+                    <p className="text-[11px] mt-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{c.evidence}</p>
                     <div className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
                       <Zap className="w-3.5 h-3.5 text-[#10B981] shrink-0 mt-0.5" />
-                      <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}><strong style={{ color: '#10B981' }}>Recommendation:</strong> {c.advice}</p>
+                      <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}><strong style={{ color: '#10B981' }}>Recommendation:</strong> {c.advice}</p>
                     </div>
                   </div>
                 )}
@@ -267,29 +265,29 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 1.2s ease-out' }} data-testid="geographic-presence">
           <div className="flex items-center gap-2 mb-3">
             <Globe className="w-4 h-4" style={{ color: '#7C3AED' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Geographic Market Presence</h2>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Geographic Market Presence</h2>
           </div>
           {geo.loc ? (
             <>
-              <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: BODY }}>
+              <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
                 Based on publicly detectable signals, <strong style={{ color: '#F4F7FA' }}>{bizName}</strong> would most likely attract clients in and around <strong style={{ color: '#F4F7FA' }}>{geo.loc}</strong>.
               </p>
               {geo.hasSocialPresence ? (
-                <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: BODY }}>
+                <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
                   Active social presence detected on {geo.activeSocials.join(', ')} — these channels extend reach beyond the primary geographic market and may attract inbound from adjacent regions.
                 </p>
               ) : (
                 <div className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
                   <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>No active social media presence detected. Geographic reach is limited to direct website traffic and word of mouth. Social channels would expand acquisition surface significantly.</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>No active social media presence detected. Geographic reach is limited to direct website traffic and word of mouth. Social channels would expand acquisition surface significantly.</p>
                 </div>
               )}
               {full.geographic_focus && full.geographic_focus !== full.location && (
-                <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Declared geographic focus: {full.geographic_focus}</p>
+                <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Declared geographic focus: {full.geographic_focus}</p>
               )}
             </>
           ) : (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>No location data detected from website or registry. Geographic presence analysis unavailable — BIQc will not assume a market.</p>
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No location data detected from website or registry. Geographic presence analysis unavailable — BIQc will not assume a market.</p>
           )}
         </div>
 
@@ -297,36 +295,36 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 1.4s ease-out' }} data-testid="competitor-intelligence">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4" style={{ color: '#EF4444' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Competitive Intelligence</h2>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Competitive Intelligence</h2>
           </div>
           {competitors.hasCompetitorData ? (
             <>
               {competitors.competitiveAdvantages && (
                 <div className="mb-3">
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: MONO }}>Detected Competitive Advantages</p>
-                  <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{competitors.competitiveAdvantages.substring(0, 200)}{competitors.competitiveAdvantages.length > 200 ? '...' : ''}</p>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Detected Competitive Advantages</p>
+                  <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{competitors.competitiveAdvantages.substring(0, 200)}{competitors.competitiveAdvantages.length > 200 ? '...' : ''}</p>
                 </div>
               )}
               {competitors.moat && (
                 <div className="p-3 rounded-lg mb-3" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: MONO }}>Competitive Moat</p>
-                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>{competitors.moat.substring(0, 200)}{competitors.moat.length > 200 ? '...' : ''}</p>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Competitive Moat</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{competitors.moat.substring(0, 200)}{competitors.moat.length > 200 ? '...' : ''}</p>
                 </div>
               )}
               {competitors.industry && (
-                <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                   Industry: {competitors.industry}
                   {competitors.location ? ` · Primary market: ${competitors.location}` : ''}
                 </p>
               )}
               <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                   <strong style={{ color: '#3B82F6' }}>Note:</strong> Detailed competitor scoring (0–10 on Content, SEO, Paid, Website Quality, Reviews) requires integration with the Exposure Scan. Run Forensic Market Exposure from SoundBoard or the Reports section.
                 </p>
               </div>
             </>
           ) : (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
           )}
         </div>
 
@@ -334,7 +332,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#10B981]" />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Immediate Strategic Recommendations</h2>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Immediate Strategic Recommendations</h2>
           </div>
           <div className="space-y-3">
             {[
@@ -365,13 +363,13 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             ].filter(Boolean).slice(0, 5).map((rec, i) => (
               <div key={i} className="flex items-start gap-3">
                 <rec.icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color: rec.color }} />
-                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{rec.text}</p>
+                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{rec.text}</p>
               </div>
             ))}
             {[!full.unique_value_proposition, !full.pricing_model, !full.customer_count, !geo.hasSocialPresence].filter(Boolean).length === 0 && (
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#10B981]" />
-                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: BODY }}>Core digital presence signals are in place. Focus on conversion rate optimisation and competitor differentiation.</p>
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Core digital presence signals are in place. Focus on conversion rate optimisation and competitor differentiation.</p>
               </div>
             )}
           </div>
@@ -379,7 +377,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
         {/* ── NO DATA DISCLAIMER ── */}
         <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #24314050', animation: 'cmsFade 1.8s ease-out' }}>
-          <p className="text-xs text-[#64748B] leading-relaxed" style={{ fontFamily: MONO }}>
+          <p className="text-xs text-[#64748B] leading-relaxed" style={{ fontFamily: fontFamily.mono }}>
             All analysis above is based on publicly available digital signals only. No internal revenue, lead, or performance data has been assumed. Connect your integrations to unlock verified internal intelligence.
           </p>
         </div>
@@ -388,11 +386,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="text-center pt-4" style={{ animation: 'cmsFade 2s ease-out' }}>
           <button onClick={onConfirm} disabled={isSubmitting}
             className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40 inline-flex items-center gap-2"
-            style={{ background: '#FF6A00', fontFamily: HEAD }}
+            style={{ background: '#FF6A00', fontFamily: fontFamily.display }}
             data-testid="cms-continue-btn">
             {isSubmitting ? 'Confirming...' : 'Continue to Calibrate'} <ArrowRight className="w-4 h-4" />
           </button>
-          <p className="text-[10px] text-[#64748B] mt-3 max-w-sm mx-auto" style={{ fontFamily: MONO }}>
+          <p className="text-[10px] text-[#64748B] mt-3 max-w-sm mx-auto" style={{ fontFamily: fontFamily.mono }}>
             Next: Connect your business tools to replace surface analysis with real performance intelligence.
           </p>
         </div>

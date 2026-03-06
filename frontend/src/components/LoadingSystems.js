@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { fontFamily } from '../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 const MESH_MESSAGES = [
   'Mapping cross-functional signals…',
@@ -69,9 +68,9 @@ export const CognitiveMesh = ({ message, compact = false }) => {
       {/* Microcopy */}
       <div className="relative z-10 text-center">
         <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A00', animation: prefersReduced ? 'none' : 'meshGlow 3s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-sm" style={{ fontFamily: MONO }}>B</span>
+          <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
         </div>
-        <p className="text-xs transition-opacity duration-400" style={{ color: '#9FB0C3', fontFamily: MONO, opacity: fade ? 1 : 0 }}>
+        <p className="text-xs transition-opacity duration-400" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, opacity: fade ? 1 : 0 }}>
           {message || MESH_MESSAGES[msgIdx]}
         </p>
       </div>
@@ -164,7 +163,7 @@ export const RadarSweep = ({ message, compact = false }) => {
 
       {/* Microcopy */}
       <div className="relative z-10 text-center mt-auto mb-6">
-        <p className="text-xs transition-opacity duration-400" style={{ color: '#9FB0C3', fontFamily: MONO, opacity: fade ? 1 : 0 }}>
+        <p className="text-xs transition-opacity duration-400" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, opacity: fade ? 1 : 0 }}>
           {message || RADAR_MESSAGES[msgIdx]}
         </p>
       </div>
@@ -179,6 +178,6 @@ export const RadarSweep = ({ message, compact = false }) => {
 export const InlineLoading = ({ text = 'processing' }) => (
   <span className="inline-flex items-center gap-1.5" data-testid="inline-loading">
     <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6A00', animation: 'meshPulse 1.2s ease-in-out infinite' }} />
-    <span className="text-xs" style={{ color: '#FF6A00', fontFamily: MONO }}>{text}...</span>
+    <span className="text-xs" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{text}...</span>
   </span>
 );

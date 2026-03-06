@@ -2,11 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { Send, RefreshCw } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const HEAD = "var(--font-heading)";
-const MONO = "var(--font-mono)";
 
 const STATE_CFG = {
   STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
@@ -50,7 +49,7 @@ const WarRoomConsole = () => {
   var st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: HEAD }}>
+    <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: fontFamily.display }}>
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="flex items-center gap-5">
           <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#6B7280', textDecoration: 'none' }} data-testid="console-home-btn">← Dashboard</a>
@@ -59,7 +58,7 @@ const WarRoomConsole = () => {
           {!loading && cognitive && (
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: '1px solid ' + st.border }}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
-              <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+              <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
             </div>
           )}
         </div>
@@ -87,20 +86,20 @@ const WarRoomConsole = () => {
               {c.system_state_interpretation && <p className="text-sm" style={{ color: '#6B7280' }}>{c.system_state_interpretation}</p>}
               {c.executive_memo && (
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)' }}>
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#111827', fontFamily: MONO }}>Executive Brief</span>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#111827', fontFamily: fontFamily.mono }}>Executive Brief</span>
                   <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: '#1F2937' }}>{c.executive_memo}</p>
                 </div>
               )}
               {c.market_position && (
                 <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}>
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#6B7280', fontFamily: MONO }}>Market Context</span>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#6B7280', fontFamily: fontFamily.mono }}>Market Context</span>
                   <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{c.market_position}</p>
                 </div>
               )}
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sources:</span>
-                  {sources.map(function(s, i) { return <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>; })}
+                  <span className="text-[10px] font-medium" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Sources:</span>
+                  {sources.map(function(s, i) { return <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>; })}
                 </div>
               )}
             </>
@@ -124,7 +123,7 @@ const WarRoomConsole = () => {
         <div className="shrink-0 px-6 md:px-10 py-4" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
           <form onSubmit={function(e) { e.preventDefault(); askQuestion(); }} className="max-w-3xl mx-auto">
             <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: '#FFF', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <input ref={inputRef} type="text" value={question} onChange={function(e) { setQuestion(e.target.value); }} placeholder="Ask about your business..." disabled={asking} className="flex-1 text-sm outline-none bg-transparent" style={{ color: '#1F2937', fontFamily: HEAD }} data-testid="ask-input" />
+              <input ref={inputRef} type="text" value={question} onChange={function(e) { setQuestion(e.target.value); }} placeholder="Ask about your business..." disabled={asking} className="flex-1 text-sm outline-none bg-transparent" style={{ color: '#1F2937', fontFamily: fontFamily.display }} data-testid="ask-input" />
               <button type="submit" disabled={asking || !question.trim()} className="p-2 rounded-lg" style={{ color: question.trim() ? '#111827' : '#D1D5DB' }} data-testid="ask-submit"><Send className="w-4 h-4" /></button>
             </div>
           </form>

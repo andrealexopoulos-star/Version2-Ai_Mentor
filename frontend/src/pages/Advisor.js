@@ -260,7 +260,7 @@ const Advisor = () => {
               } : null
             }
           };
-          console.debug('🔍 [BIQC DEV] Track A evidence trace available at window.__BIQC_EVIDENCE_TRACE__');
+          // console.debug('🔍 [BIQC DEV] Track A evidence trace available at window.__BIQC_EVIDENCE_TRACE__');
         }
         
       } catch (error) {

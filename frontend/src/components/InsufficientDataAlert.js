@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertTriangle, X, ArrowRight, BookOpen } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
-const HEAD = "'Cormorant Garamond', Georgia, serif";
 
 const DATA_REQUIREMENTS = [
   { id: 'forensic', label: 'Forensic Calibration incomplete', detail: 'Revenue ambition, growth targets, and risk profile needed for drift analysis', action: 'Complete Forensic Calibration', kb: 'forensic-calibration' },
@@ -33,14 +31,14 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
       <div onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-white/[0.02] transition-colors cursor-pointer">
         <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
         <div className="flex-1">
-          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>
+          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
             {alerts.length} data source{alerts.length > 1 ? 's' : ''} needed for full intelligence
           </span>
-          <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>
+          <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>
             Click to see what's needed and how to fix it
           </span>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded-full shrink-0" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: MONO }}>
+        <span className="text-[10px] px-2 py-0.5 rounded-full shrink-0" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: fontFamily.mono }}>
           {alerts.length} action{alerts.length > 1 ? 's' : ''}
         </span>
         <button onClick={(e) => { e.stopPropagation(); setDismissed(true); }} className="p-1 rounded-lg hover:bg-white/5 shrink-0" data-testid="dismiss-data-alert">
@@ -60,10 +58,10 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
               </div>
               <div className="flex-1">
                 <span className="text-sm text-[#F4F7FA] block">{a.label}</span>
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{a.detail}</span>
+                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{a.detail}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <span className="text-[10px] text-[#F59E0B]" style={{ fontFamily: MONO }}>How to fix</span>
+                <span className="text-[10px] text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>How to fix</span>
                 <ArrowRight className="w-3 h-3 text-[#F59E0B]" />
               </div>
             </button>

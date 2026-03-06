@@ -2,20 +2,18 @@ import React from 'react';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const HEADING = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 const TrustPageShell = ({ title, lastUpdated, children }) => (
   <WebsiteLayout>
     <section className="py-24">
       <div className="max-w-3xl mx-auto px-6">
-        <Link to="/trust" className="inline-flex items-center gap-2 text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors mb-8" style={{ fontFamily: MONO }}>
+        <Link to="/trust" className="inline-flex items-center gap-2 text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors mb-8" style={{ fontFamily: fontFamily.mono }}>
           <ArrowLeft className="w-4 h-4" /> Back to Trust
         </Link>
-        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: HEADING, color: '#FFFFFF' }}>{title}</h1>
-        <p className="text-xs text-[#9FB0C3]/50 mb-10" style={{ fontFamily: MONO }}>Last updated: {lastUpdated}</p>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>{title}</h1>
+        <p className="text-xs text-[#9FB0C3]/50 mb-10" style={{ fontFamily: fontFamily.mono }}>Last updated: {lastUpdated}</p>
         <div className="prose-steel space-y-6">{children}</div>
       </div>
     </section>

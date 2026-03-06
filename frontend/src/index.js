@@ -37,7 +37,7 @@ import App from "@/App";
     navigator.serviceWorker.getRegistrations().then(function(registrations) {
       for (let registration of registrations) {
         registration.unregister();
-        console.log('%c SERVICE WORKER FORCE-KILLED:', 'color: red; font-weight: bold', registration.scope);
+        // console.log('%c SERVICE WORKER FORCE-KILLED:', 'color: red; font-weight: bold', registration.scope);
       }
     });
   }
@@ -46,7 +46,7 @@ import App from "@/App";
     caches.keys().then(function(names) {
       for (let name of names) {
         caches.delete(name);
-        console.log('%c CACHE DESTROYED:', 'color: red; font-weight: bold', name);
+        // console.log('%c CACHE DESTROYED:', 'color: red; font-weight: bold', name);
       }
     });
   }

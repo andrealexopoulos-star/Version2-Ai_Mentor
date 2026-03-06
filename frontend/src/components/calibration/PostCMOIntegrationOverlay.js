@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, X, CheckCircle2, Zap, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { fontFamily } from '../../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const INTEGRATIONS = [
   {
@@ -123,7 +121,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
         <div className="flex justify-end mb-4">
           <button onClick={onSkip}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
-            style={{ color: '#64748B', fontFamily: MONO }}>
+            style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
             <X className="w-3.5 h-3.5" /> Skip for now
           </button>
         </div>
@@ -140,13 +138,13 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ background: '#FF6A0015', border: '1px solid #FF6A0030' }}>
             <Zap className="w-3 h-3" style={{ color: '#FF6A00' }} />
-            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: MONO }}>Unified Integrations Engine</span>
+            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Unified Integrations Engine</span>
           </div>
 
-          <h1 className="text-2xl font-semibold mb-3" style={{ color: '#F4F7FA', fontFamily: HEAD }}>
+          <h1 className="text-2xl font-semibold mb-3" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
             Activate Your Intelligence{firstName ? `, ${firstName}` : ''}
           </h1>
-          <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+          <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
             Connect your email and calendar to unlock priority inbox intelligence, communication pattern analysis, and calendar density signals.
           </p>
         </div>
@@ -182,8 +180,8 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                 </div>
                 {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: '#F4F7FA', fontFamily: BODY }}>{intg.name}</p>
-                  <p className="text-[10px] leading-relaxed" style={{ color: '#64748B', fontFamily: BODY }}>{intg.description}</p>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{intg.name}</p>
+                  <p className="text-[10px] leading-relaxed" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{intg.description}</p>
                 </div>
               </button>
             );
@@ -195,17 +193,17 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
           {connected.length > 0 ? (
             <button onClick={handleContinue}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all hover:brightness-110"
-              style={{ background: '#FF6A00', color: 'white', fontFamily: HEAD }}>
+              style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.display }}>
               Continue to Market Intelligence <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button onClick={handleContinue}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', color: 'white', fontFamily: HEAD }}>
+              style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', color: 'white', fontFamily: fontFamily.display }}>
               Go to Market Intelligence <ArrowRight className="w-4 h-4" />
             </button>
           )}
-          <p className="text-center text-[10px]" style={{ color: '#4A5568', fontFamily: MONO }}>
+          <p className="text-center text-[10px]" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
             Read-only access · Australian data sovereignty · Connect at any time from Settings
           </p>
         </div>

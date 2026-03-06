@@ -19,10 +19,9 @@ import {
   BookOpen, Scale, Gavel, Target
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
+import { fontFamily } from '../design-system/tokens';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 // Business Verification Score Badge — shows identity confidence + data coverage
 const VerificationBadge = ({ navigate }) => {
@@ -49,22 +48,22 @@ const VerificationBadge = ({ navigate }) => {
         data-testid="verification-badge"
       >
         <div className="w-2 h-2 rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}50` }} />
-        <span className="text-[11px] font-semibold" style={{ color, fontFamily: MONO }}>{score}%</span>
+        <span className="text-[11px] font-semibold" style={{ color, fontFamily: fontFamily.mono }}>{score}%</span>
       </button>
       {showTooltip && (
         <div className="absolute right-0 top-10 w-64 rounded-xl p-4 shadow-xl z-50" style={{ background: '#141C26', border: '1px solid #243140' }}>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: MONO }}>Snapshot Confidence</span>
-            <span className="text-xs font-bold" style={{ color, fontFamily: MONO }}>{score}%</span>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Snapshot Confidence</span>
+            <span className="text-xs font-bold" style={{ color, fontFamily: fontFamily.mono }}>{score}%</span>
           </div>
           <div className="h-1.5 rounded-full mb-3" style={{ background: '#243140' }}>
             <div className="h-1.5 rounded-full" style={{ width: `${score}%`, background: color }} />
           </div>
-          <p className="text-[11px] text-[#9FB0C3] mb-3" style={{ fontFamily: BODY }}>
+          <p className="text-[11px] text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
             {score > 70 ? 'Strong data coverage. Intelligence is well-grounded.' : score > 40 ? 'Moderate coverage. Connect more systems to improve.' : 'Limited data. Most insights based on public signals.'}
           </p>
           <button onClick={() => { setShowTooltip(false); navigate('/integrations'); }}
-            className="text-[11px] text-[#FF6A00] hover:underline w-full text-left" style={{ fontFamily: MONO }}>
+            className="text-[11px] text-[#FF6A00] hover:underline w-full text-left" style={{ fontFamily: fontFamily.mono }}>
             Improve score — connect systems
           </button>
         </div>
@@ -251,7 +250,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           </button>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-              <span className="text-white font-bold text-xs" style={{ fontFamily: MONO }}>B</span>
+              <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
             <span className="font-semibold text-sm hidden sm:block text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Strategy Squad</span>
           </div>
@@ -278,14 +277,14 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                 <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid #243140', background: '#141C26' }}>
                   <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
                   <div className="flex items-center gap-2">
-                    {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#EF444415', color: '#EF4444', fontFamily: MONO }}>{notifications.high} urgent</span>}
-                    <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: MONO }}>View all</button>
+                    {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
+                    <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>View all</button>
                   </div>
                 </div>
                 {notificationsList.length === 0 ? (
                   <div className="p-6 text-center">
                     <Bell className="w-8 h-8 mx-auto mb-2 text-[#64748B]" />
-                    <p className="text-sm text-[#64748B]" style={{ fontFamily: BODY }}>No alerts</p>
+                    <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>No alerts</p>
                     <p className="text-xs mt-1 text-[#64748B]">Connect integrations to activate real-time alerts</p>
                   </div>
                 ) : (
@@ -297,29 +296,29 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                             <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? '#EF4444' : '#F59E0B' }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: BODY }}>{notif.title}</p>
-                            <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1" style={{ fontFamily: BODY }}>{notif.message}</p>
+                            <p className="text-xs font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.body }}>{notif.title}</p>
+                            <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1" style={{ fontFamily: fontFamily.body }}>{notif.message}</p>
                             {notif.action && <p className="text-[11px] text-[#FF6A00]">{notif.action}</p>}
                             {/* Action buttons inline in bell */}
                             <div className="flex gap-1.5 mt-2">
                               <button
                                 onClick={async (e) => { e.stopPropagation(); try { await apiClient.post(`/notifications/dismiss/${notif.id}`); fetchNotifications(); } catch {} }}
                                 className="text-[10px] px-2 py-1 rounded-md flex items-center gap-1"
-                                style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: MONO }}
+                                style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}
                                 data-testid={`notif-dismiss-${notif.id}`}>
                                 ✓ Done
                               </button>
                               <button
                                 onClick={async (e) => { e.stopPropagation(); try { await apiClient.post(`/notifications/dismiss/${notif.id}`); fetchNotifications(); } catch {} }}
                                 className="text-[10px] px-2 py-1 rounded-md flex items-center gap-1"
-                                style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30', fontFamily: MONO }}
+                                style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30', fontFamily: fontFamily.mono }}
                                 data-testid={`notif-ignore-${notif.id}`}>
                                 Ignore
                               </button>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setShowNotifications(false); navigate(notif.type === 'email' || notif.type === 'complaint' ? '/email-inbox' : notif.type === 'meeting' ? '/calendar' : '/intel-centre'); }}
                                 className="text-[10px] px-2 py-1 rounded-md"
-                                style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: MONO }}>
+                                style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: fontFamily.mono }}>
                                 Review
                               </button>
                             </div>
@@ -341,17 +340,17 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 p-1 pr-3 rounded-xl hover:bg-white/5 transition-colors" aria-label="User menu">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#FF6A00', fontFamily: BODY }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#FF6A00', fontFamily: fontFamily.body }}>
                   {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <span className="hidden sm:block text-sm font-medium text-[#F4F7FA]" style={{ fontFamily: BODY }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
+                <span className="hidden sm:block text-sm font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
                 <ChevronDown className="w-3.5 h-3.5 hidden sm:block text-[#64748B]" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56" style={{ background: '#141C26', border: '1px solid #243140', borderRadius: '12px' }}>
               <div className="px-3 py-2.5">
-                <p className="font-medium text-[#F4F7FA]" style={{ fontFamily: BODY }}>{user?.full_name}</p>
-                <p className="text-sm text-[#64748B]" style={{ fontFamily: MONO }}>{user?.email}</p>
+                <p className="font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{user?.full_name}</p>
+                <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{user?.email}</p>
               </div>
               <DropdownMenuSeparator style={{ background: '#243140' }} />
               <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
@@ -389,7 +388,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
               <div key={section.id} className="mb-1">
                 <button onClick={() => setExpandedSection(isExpanded ? null : section.id)}
                   className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-3'} py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.1em] transition-all`}
-                  style={{ color: hasActiveChild ? '#FF6A00' : '#64748B', fontFamily: MONO, minHeight: '40px' }}
+                  style={{ color: hasActiveChild ? '#FF6A00' : '#64748B', fontFamily: fontFamily.mono, minHeight: '40px' }}
                   title={sidebarCollapsed ? section.label : undefined}
                   data-testid={`nav-section-${section.id}`}>
                   {!sidebarCollapsed && <span>{section.label}</span>}
@@ -405,7 +404,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                         <button key={item.path} onClick={() => { navigate(item.path); closeAll(); }}
                           className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
                           style={{
-                            fontFamily: BODY,
+                            fontFamily: fontFamily.body,
                             color: active ? '#F4F7FA' : '#9FB0C3',
                             background: active ? '#FF6A00' + '15' : 'transparent',
                             borderLeft: active ? '2px solid #FF6A00' : '2px solid transparent',
@@ -433,7 +432,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
               >
                 <div className="flex items-center gap-2">
                   <Scale className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ fontFamily: MONO }}>BIQc Legal</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ fontFamily: fontFamily.mono }}>BIQc Legal</span>
                 </div>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedSection === 'legal' ? 'rotate-180' : ''}`} />
               </button>
@@ -449,7 +448,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                   ].map(({ label, path, icon: Icon }) => (
                     <button key={path} onClick={() => navigate(path)}
                       className="flex items-center gap-2 text-left text-[11px] px-3 py-1.5 rounded-lg w-full transition-colors hover:bg-white/5 hover:text-[#9FB0C3]"
-                      style={{ color: '#4A5568', fontFamily: BODY }}>
+                      style={{ color: '#4A5568', fontFamily: fontFamily.body }}>
                       <Icon className="w-3 h-3 shrink-0" />
                       {label}
                     </button>
@@ -493,7 +492,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
             <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
             <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: '#0A1018' }}>
               <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid #1E293B' }}>
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>SoundBoard</span>
+                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
                 <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
               </div>
               <div className="flex-1 overflow-hidden">

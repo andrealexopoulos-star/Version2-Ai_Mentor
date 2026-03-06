@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase } from '../context/SupabaseAuthContext';
 import { ClipboardList, Plug, Loader2, Shield } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
@@ -67,7 +65,7 @@ const AuditLogPage = () => {
   const renderNullState = () => (
     <Panel className="text-center py-12">
       <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-      <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>No verified signals available.</p>
+      <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No verified signals available.</p>
       <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">
         Connect your business integrations to begin recording governance events.
         Audit entries are created only from verified, connected data sources.
@@ -80,9 +78,9 @@ const AuditLogPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="audit-log-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="audit-log-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Governance Audit Log</h1>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Governance Audit Log</h1>
           <p className="text-sm text-[#9FB0C3]">Verified events from connected integrations. No AI-generated entries.</p>
         </div>
 
@@ -98,7 +96,7 @@ const AuditLogPage = () => {
         {!loading && integrations.length > 0 && events.length === 0 && (
           <Panel className="text-center py-8">
             <Shield className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
-            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>No governance events recorded.</p>
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded.</p>
             <p className="text-xs text-[#64748B]">Events will appear as BIQc processes verified signals from your {integrations.length} connected integration{integrations.length > 1 ? 's' : ''}.</p>
           </Panel>
         )}
@@ -106,8 +104,8 @@ const AuditLogPage = () => {
         {!loading && events.length > 0 && (
           <>
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: MONO }}>{events.length} verified events</span>
-              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{integrations.length} connected source{integrations.length > 1 ? 's' : ''}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: fontFamily.mono }}>{events.length} verified events</span>
+              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{integrations.length} connected source{integrations.length > 1 ? 's' : ''}</span>
             </div>
 
             <div className="space-y-2">
@@ -117,14 +115,14 @@ const AuditLogPage = () => {
                   <div key={ev.id} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }} data-testid={`audit-event-${ev.id}`}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: BODY }}>{ev.event_type}</span>
-                      {ev.signal_reference && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>ref: {ev.signal_reference}</span>}
+                      <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: fontFamily.body }}>{ev.event_type}</span>
+                      {ev.signal_reference && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>ref: {ev.signal_reference}</span>}
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: '#9FB0C3', background: '#24314050', fontFamily: MONO }}>{ev.source_system}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: '#9FB0C3', background: '#24314050', fontFamily: fontFamily.mono }}>{ev.source_system}</span>
                     {ev.confidence_score != null && (
-                      <span className="text-[10px] shrink-0" style={{ color, fontFamily: MONO }}>{Math.round(ev.confidence_score * 100)}%</span>
+                      <span className="text-[10px] shrink-0" style={{ color, fontFamily: fontFamily.mono }}>{Math.round(ev.confidence_score * 100)}%</span>
                     )}
-                    <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: MONO }}>
+                    <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: fontFamily.mono }}>
                       {new Date(ev.signal_timestamp).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>

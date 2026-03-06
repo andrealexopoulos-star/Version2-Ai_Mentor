@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Radar, TrendingUp, Bell, MoreHorizontal, X, Link2, Activity, FileText, Settings, Dna } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
 
 const NAV_ITEMS = [
   { id: 'pulse', label: 'Overview', icon: LayoutDashboard, path: '/advisor' },
@@ -43,7 +43,7 @@ const MobileNav = () => {
           <div className="fixed inset-0 bg-black/60 z-[1100]" onClick={() => setMoreOpen(false)} />
           <div className="fixed bottom-0 left-0 right-0 z-[1101] rounded-t-2xl" style={{ background: '#0A1018', borderTop: '1px solid #243140', paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))' }} data-testid="mobile-more-sheet">
             <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #243140' }}>
-              <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>More</span>
+              <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>More</span>
               <button onClick={() => setMoreOpen(false)} className="p-2 rounded-lg hover:bg-white/5" data-testid="close-more-sheet">
                 <X className="w-4 h-4 text-[#64748B]" />
               </button>
@@ -57,7 +57,7 @@ const MobileNav = () => {
                     style={{ background: active ? '#FF6A0010' : 'transparent', color: active ? '#FF6A00' : '#9FB0C3' }}
                     data-testid={`more-${item.label.toLowerCase().replace(/\s/g, '-')}`}>
                     <item.icon className="w-5 h-5" />
-                    <span className="text-[12px]" style={{ fontFamily: MONO }}>{item.label}</span>
+                    <span className="text-[12px]" style={{ fontFamily: fontFamily.mono }}>{item.label}</span>
                   </button>
                 );
               })}
@@ -78,7 +78,7 @@ const MobileNav = () => {
                 style={{ color: active ? '#FF6A00' : isMore && moreOpen ? '#FF6A00' : '#64748B' }}
                 data-testid={`mobile-nav-${item.id}`}>
                 <item.icon className="w-5 h-5" />
-                <span className="text-[11px] font-medium" style={{ fontFamily: MONO }}>{item.label}</span>
+                <span className="text-[11px] font-medium" style={{ fontFamily: fontFamily.mono }}>{item.label}</span>
                 {active && <div className="w-4 h-0.5 rounded-full mt-0.5" style={{ background: '#FF6A00' }} />}
               </button>
             );

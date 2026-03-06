@@ -4,10 +4,9 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Eye, EyeOff, Shield, Lock, Activity, Zap } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const LoginSupabase = () => {
   const navigate = useNavigate();
@@ -58,29 +57,29 @@ const LoginSupabase = () => {
       {/* Left: Login Form */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: '#0F1720' }}>
         <div className="max-w-sm w-full mx-auto">
-          <Link to="/" className="inline-flex items-center gap-2 mb-10 text-sm transition-colors hover:text-[#FF6A00]" style={{ color: '#64748B', fontFamily: BODY }} data-testid="login-back-to-home-link">
+          <Link to="/" className="inline-flex items-center gap-2 mb-10 text-sm transition-colors hover:text-[#FF6A00]" style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="login-back-to-home-link">
             <ArrowLeft className="w-4 h-4" /> Back to home
           </Link>
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-10">
             <div className="rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FF6A00', width: 40, height: 40, minWidth: 40 }}>
-              <span className="text-white font-bold text-sm" style={{ fontFamily: MONO }}>B</span>
+              <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
             <div className="min-w-0">
               <span className="text-xl font-semibold text-[#F4F7FA] block" style={{ fontFamily: DISPLAY }}>BIQc</span>
-              <span className="text-[10px] text-[#64748B] -mt-0.5 block truncate" style={{ fontFamily: MONO }}>powered by The Strategy Squad</span>
+              <span className="text-[10px] text-[#64748B] -mt-0.5 block truncate" style={{ fontFamily: fontFamily.mono }}>powered by The Strategy Squad</span>
             </div>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY, textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #F4F7FA' }}>Welcome back</h1>
-          <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>Sign in to your sovereign intelligence platform.</p>
+          <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>Sign in to your sovereign intelligence platform.</p>
 
           {/* OAuth */}
           <div className="space-y-3 mb-6">
             <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={oauthLoading || loading}
               className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
-              style={{ fontFamily: BODY, color: '#F4F7FA', background: '#141C26', border: '1px solid #243140' }}
+              style={{ fontFamily: fontFamily.body, color: '#F4F7FA', background: '#141C26', border: '1px solid #243140' }}
               data-testid="login-google-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "\x27JetBrains Mono\x27, monospace" }}>connecting...</span> : (
                 <>
@@ -91,7 +90,7 @@ const LoginSupabase = () => {
             </button>
             <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={oauthLoading || loading}
               className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
-              style={{ fontFamily: BODY, color: '#F4F7FA', background: '#141C26', border: '1px solid #243140' }}
+              style={{ fontFamily: fontFamily.body, color: '#F4F7FA', background: '#141C26', border: '1px solid #243140' }}
               data-testid="login-microsoft-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "\x27JetBrains Mono\x27, monospace" }}>connecting...</span> : (
                 <>
@@ -105,29 +104,29 @@ const LoginSupabase = () => {
           {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px" style={{ background: '#243140' }} />
-            <span className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>or continue with email</span>
+            <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>or continue with email</span>
             <div className="flex-1 h-px" style={{ background: '#243140' }} />
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: BODY }}>Email</label>
+              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Email</label>
               <Input id="email" type="email" inputMode="email" autoComplete="email" value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="you@company.com" required
                 className="h-12 text-sm rounded-xl"
-                style={{ fontFamily: BODY, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
+                style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
                 data-testid="login-email-input" />
             </div>
             <div>
-              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: BODY }}>Password</label>
+              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Password</label>
               <div className="relative">
                 <Input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" enterKeyHint="go"
                   value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="Enter password" required
                   className="h-12 pr-12 text-sm rounded-xl"
-                  style={{ fontFamily: BODY, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA', WebkitTextSecurity: showPassword ? 'none' : 'disc' }}
+                  style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA', WebkitTextSecurity: showPassword ? 'none' : 'disc' }}
                   data-testid="login-password-input" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#9FB0C3] transition-colors"
@@ -139,14 +138,14 @@ const LoginSupabase = () => {
 
             {/* Forgot Password */}
             <div className="text-right -mt-2">
-              <Link to="/reset-password" className="text-xs text-[#64748B] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: BODY }} data-testid="login-forgot-password">
+              <Link to="/reset-password" className="text-xs text-[#64748B] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="login-forgot-password">
                 Forgot password?
               </Link>
             </div>
 
             <div style={{ width: '100%' }}>
               <button type="submit" disabled={loading || oauthLoading}
-                style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: BODY, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                 data-testid="login-submit-btn">
                 {loading ? "Signing in..." : "Sign in"}
               </button>
@@ -154,7 +153,7 @@ const LoginSupabase = () => {
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-sm text-[#64748B]" style={{ fontFamily: BODY }}>
+            <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>
               Don't have an account?{' '}
               <Link to="/register-supabase" className="font-semibold text-[#FF6A00] hover:text-[#FF8C33] transition-colors" data-testid="login-signup-link">Sign up</Link>
             </p>
@@ -165,11 +164,11 @@ const LoginSupabase = () => {
       {/* Right: Trust Panel */}
       <div className="hidden lg:flex flex-1 items-center justify-center px-12" style={{ background: '#0A1018', borderLeft: '1px solid #243140' }}>
         <div className="max-w-sm">
-          <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#FF6A00] block mb-5" style={{ fontFamily: MONO }}>Sovereign Intelligence</span>
+          <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#FF6A00] block mb-5" style={{ fontFamily: fontFamily.mono }}>Sovereign Intelligence</span>
           <h2 className="text-3xl font-normal text-[#F4F7FA] mb-3 leading-snug" style={{ fontFamily: DISPLAY }}>
             Your business intelligence, protected by design.
           </h2>
-          <p className="text-sm text-[#9FB0C3] mb-8 leading-relaxed" style={{ fontFamily: BODY }}>100% Australian data sovereignty. Zero leakage. Military-grade encryption.</p>
+          <p className="text-sm text-[#9FB0C3] mb-8 leading-relaxed" style={{ fontFamily: fontFamily.body }}>100% Australian data sovereignty. Zero leakage. Military-grade encryption.</p>
 
           <div className="space-y-3">
             {[
@@ -180,8 +179,8 @@ const LoginSupabase = () => {
               <div key={i} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
                 <item.icon className="w-4 h-4 text-[#FF6A00] shrink-0" />
                 <div>
-                  <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: BODY }}>{item.label}</span>
-                  <span className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>{item.desc}</span>
+                  <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: fontFamily.body }}>{item.label}</span>
+                  <span className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.desc}</span>
                 </div>
               </div>
             ))}
@@ -189,7 +188,7 @@ const LoginSupabase = () => {
 
           <div className="mt-8 flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: '#10B98110', border: '1px solid #10B98120' }}>
             <Shield className="w-4 h-4 text-[#10B981]" />
-            <span className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>Data hosted exclusively in Sydney & Melbourne</span>
+            <span className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>Data hosted exclusively in Sydney & Melbourne</span>
           </div>
         </div>
       </div>

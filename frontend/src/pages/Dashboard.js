@@ -34,7 +34,7 @@ const Dashboard = () => {
       if (!response.data.completed) {
         // Don't force redirect - user can skip
         // Show degraded intelligence mode banner instead
-        console.log('ℹ️ Onboarding incomplete - degraded intelligence mode active');
+        // console.log('ℹ️ Onboarding incomplete - degraded intelligence mode active');
       }
       
       setCheckingOnboarding(false);
@@ -43,7 +43,7 @@ const Dashboard = () => {
       checkOutlookStatus();
     } catch (error) {
       // FAIL OPEN: If onboarding status unknown, allow access
-      console.log('Onboarding status unavailable');
+      // console.log('Onboarding status unavailable');
       setCheckingOnboarding(false);
       fetchStats();
       fetchFocus();

@@ -84,7 +84,7 @@ const Integrations = () => {
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
     linkToken: mergeLinkToken,
     onSuccess: async (public_token, metadata) => {
-      console.log('✅ Merge onboarding success', { public_token, metadata });
+      // console.log('✅ Merge onboarding success', { public_token, metadata });
       // Extract category from Merge API response structure
       const category = metadata?.integration?.categories?.[0] || metadata?.category || 'crm';
       const provider = metadata?.integration?.name || 'unknown';
@@ -99,7 +99,7 @@ const Integrations = () => {
           return;
         }
         
-        console.log('🔄 Exchanging token...', { category, provider });
+        // console.log('🔄 Exchanging token...', { category, provider });
         
         const response = await fetch(`${getBackendUrl()}/api/integrations/merge/exchange-account-token`, {
           method: 'POST',
@@ -116,7 +116,7 @@ const Integrations = () => {
         
         if (response.ok) {
           const result = await response.json();
-          console.log('✅ Token exchange successful:', result);
+          // console.log('✅ Token exchange successful:', result);
           toast.success(`${provider} connected successfully!`);
           await checkMergeIntegrations();
           setSelectedIntegration(null); // Close detail panel
@@ -142,17 +142,17 @@ const Integrations = () => {
         console.error('❌ Merge onboarding error:', error);
         toast.error(`Connection failed: ${error.message || 'Unknown error'}`);
       } else {
-        console.log('ℹ️ Merge onboarding exited - checking connection status...');
+        // console.log('ℹ️ Merge onboarding exited - checking connection status...');
         // FALLBACK: Check if connection succeeded even if onSuccess didn't fire
         setTimeout(async () => {
           try {
-            console.log('🔍 Checking Merge integrations after modal close...');
+            // console.log('🔍 Checking Merge integrations after modal close...');
             await checkMergeIntegrations();
             const response = await apiClient.get('/integrations/merge/connected');
             const integrations = response.data?.integrations || {};
             
             if (Object.keys(integrations).length > 0) {
-              console.log('✅ Integration detected after modal close:', integrations);
+              // console.log('✅ Integration detected after modal close:', integrations);
               const connectedProvider = Object.keys(integrations)[0];
               toast.success(`${connectedProvider} connected successfully!`);
             }
@@ -191,7 +191,7 @@ const Integrations = () => {
     const connectedEmail = searchParams.get('connected_email');
 
     if (gmailConnected === 'true') {
-      console.log('✅ Gmail OAuth completed successfully');
+      // console.log('✅ Gmail OAuth completed successfully');
       const message = connectedEmail 
         ? `Gmail (${decodeURIComponent(connectedEmail)}) connected successfully!`
         : 'Gmail connected successfully!';
@@ -214,7 +214,7 @@ const Integrations = () => {
     }
 
     if (outlookConnected === 'true') {
-      console.log('✅ Outlook OAuth completed successfully');
+      // console.log('✅ Outlook OAuth completed successfully');
       setOutlookStatus(prev => ({
         ...prev,
         connected: true,
@@ -251,7 +251,7 @@ const Integrations = () => {
     try {
       const response = await apiClient.get('/integrations/merge/connected');
       const integrations = response.data?.integrations || {};
-      console.log('📊 Connected Merge integrations:', integrations);
+      // console.log('📊 Connected Merge integrations:', integrations);
       setMergeIntegrations(integrations);
     } catch (error) {
       console.warn('Could not fetch Merge integrations:', error.message);
@@ -264,7 +264,7 @@ const Integrations = () => {
   const checkOutlookStatus = async () => {
     try {
       const response = await apiClient.get('/outlook/status');
-      console.log('📊 Outlook status:', response.data);
+      // console.log('📊 Outlook status:', response.data);
       
       if (response.data.degraded) {
         console.warn('Outlook status check degraded');
@@ -295,7 +295,7 @@ const Integrations = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.access_token) {
-        console.log('⚠️ No active session - cannot check Gmail status');
+        // console.log('⚠️ No active session - cannot check Gmail status');
         // FAIL OPEN: Preserve current state if no session
         return;
       }

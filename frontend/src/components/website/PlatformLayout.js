@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, TrendingUp, Settings as SettingsIcon, Shield, Radar, AlertTriangle, Zap, Workflow, Link2, Activity, FileText, ClipboardList, Bell, ChevronDown, ChevronRight, Menu, X, BarChart3 } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const NAV_GROUPS = [
   {
@@ -54,10 +52,10 @@ const PlatformLayout = ({ children, title }) => {
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-16 shrink-0" style={{ borderBottom: '1px solid #243140' }}>
           <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-            <span className="text-white font-bold text-xs" style={{ fontFamily: MONO }}>B</span>
+            <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
           </div>
-          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>BIQc</span>
-          <span className="text-[10px] text-[#64748B] ml-1" style={{ fontFamily: MONO }}>v2.1</span>
+          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>BIQc</span>
+          <span className="text-[10px] text-[#64748B] ml-1" style={{ fontFamily: fontFamily.mono }}>v2.1</span>
         </div>
 
         {/* Nav groups */}
@@ -65,7 +63,7 @@ const PlatformLayout = ({ children, title }) => {
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="mb-3">
               <button onClick={() => toggleGroup(group.label)} className="flex items-center justify-between w-full px-2 py-1.5 mb-1">
-                <span className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#64748B]" style={{ fontFamily: MONO }}>{group.label}</span>
+                <span className="text-[10px] font-semibold tracking-[0.15em] uppercase text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{group.label}</span>
                 {expandedGroups[group.label] ? <ChevronDown className="w-3 h-3 text-[#64748B]" /> : <ChevronRight className="w-3 h-3 text-[#64748B]" />}
               </button>
               {expandedGroups[group.label] && group.items.map((item) => {
@@ -74,7 +72,7 @@ const PlatformLayout = ({ children, title }) => {
                   <Link key={item.path} to={item.path} onClick={() => mobile && setMobileSidebar(false)}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all"
                     style={{
-                      fontFamily: INTER,
+                      fontFamily: fontFamily.body,
                       color: isActive ? '#F4F7FA' : '#9FB0C3',
                       background: isActive ? '#FF6A00' + '15' : 'transparent',
                       borderLeft: isActive ? '2px solid #FF6A00' : '2px solid transparent',
@@ -94,7 +92,7 @@ const PlatformLayout = ({ children, title }) => {
         <div className="px-4 py-4 shrink-0" style={{ borderTop: '1px solid #243140' }}>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>All systems nominal</span>
+            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>All systems nominal</span>
           </div>
         </div>
       </div>
@@ -113,12 +111,12 @@ const PlatformLayout = ({ children, title }) => {
             <button onClick={() => setMobileSidebar(true)} className="lg:hidden p-1.5 rounded-md hover:bg-white/5 text-[#9FB0C3]">
               <Menu className="w-5 h-5" />
             </button>
-            {title && <h1 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>{title}</h1>}
+            {title && <h1 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{title}</h1>}
           </div>
 
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: MONO }}>Production Environment</span>
+            <span className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Production Environment</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -128,11 +126,11 @@ const PlatformLayout = ({ children, title }) => {
             </button>
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ background: '#141C26', border: '1px solid #243140' }}>
               <BarChart3 className="w-3.5 h-3.5 text-green-500" />
-              <span className="text-xs font-medium text-[#F4F7FA]" style={{ fontFamily: MONO }}>74%</span>
+              <span className="text-xs font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>74%</span>
             </div>
             <div className="flex items-center gap-2.5" data-testid="user-menu">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style={{ background: '#FF6A00', fontFamily: SORA }}>A</div>
-              <span className="hidden sm:block text-sm text-[#F4F7FA]" style={{ fontFamily: INTER }}>Andre</span>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style={{ background: '#FF6A00', fontFamily: fontFamily.display }}>A</div>
+              <span className="hidden sm:block text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>Andre</span>
             </div>
           </div>
         </header>

@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings, User, Radar } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "var(--font-heading)";
-const MONO = "var(--font-mono)";
-const BODY = "var(--font-body)";
 
 /* ═══ ACTION BUTTONS ═══ */
 const ActionBtn = ({ icon: Icon, label, color }) => (
-  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:-translate-y-0.5 active:scale-95" style={{ background: `${color}12`, color, border: `1px solid ${color}30`, fontFamily: MONO }} data-testid={`action-${label.toLowerCase().replace(/\s/g,'-')}`}>
+  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:-translate-y-0.5 active:scale-95" style={{ background: `${color}12`, color, border: `1px solid ${color}30`, fontFamily: fontFamily.mono }} data-testid={`action-${label.toLowerCase().replace(/\s/g,'-')}`}>
     <Icon className="w-3.5 h-3.5" />{label}
   </button>
 );
@@ -137,23 +135,23 @@ const CognitiveSnapshotV2Mockup = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#FAFAF8', fontFamily: HEAD }}>
+      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#FAFAF8', fontFamily: fontFamily.display }}>
 
         {/* ═══ STICKY HEADER ═══ */}
         <div className="sticky top-14 z-30" style={{ background: st.bg, borderBottom: `1px solid ${st.b}` }}>
           <div className="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: st.d }} />
-              <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: MONO }}>DRIFT</span>
+              <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: fontFamily.mono }}>DRIFT</span>
               <span className="text-[11px]" style={{ color: st.c }}>↘ worsening</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: MONO }}>78%</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>4.2mo runway</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: fontFamily.mono }}>78%</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>4.2mo runway</span>
             </div>
           </div>
         </div>
 
         <div className="max-w-5xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-semibold mb-6" style={{ color: '#111827', fontFamily: HEAD }}>Good morning, Andre.</h1>
+          <h1 className="text-3xl font-semibold mb-6" style={{ color: '#111827', fontFamily: fontFamily.display }}>Good morning, Andre.</h1>
 
           {/* ═══ 5 COGNITION TABS ═══ */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2" data-testid="cognition-tabs">
@@ -169,7 +167,7 @@ const CognitiveSnapshotV2Mockup = () => {
                     color: isActive ? 'white' : '#374151',
                     border: `1.5px solid ${isActive ? g.color : 'rgba(0,0,0,0.08)'}`,
                     boxShadow: isActive ? `0 4px 16px ${g.color}30` : '0 1px 3px rgba(0,0,0,0.04)',
-                    fontFamily: HEAD,
+                    fontFamily: fontFamily.display,
                   }}
                   data-testid={`tab-${g.id}`}
                 >
@@ -179,7 +177,7 @@ const CognitiveSnapshotV2Mockup = () => {
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{
                       background: isActive ? 'rgba(255,255,255,0.25)' : SEV[d.severity].bg,
                       color: isActive ? 'white' : SEV[d.severity].d,
-                      fontFamily: MONO,
+                      fontFamily: fontFamily.mono,
                     }}>{d.alerts}</span>
                   )}
                 </button>
@@ -196,20 +194,20 @@ const CognitiveSnapshotV2Mockup = () => {
                 <group.icon className="w-4 h-4" style={{ color: group.color }} />
               </div>
               <div>
-                <h2 className="text-lg font-bold" style={{ color: '#111827', fontFamily: HEAD }}>{group.label}</h2>
-                <p className="text-xs" style={{ color: '#9CA3AF', fontFamily: MONO }}>{group.description}</p>
+                <h2 className="text-lg font-bold" style={{ color: '#111827', fontFamily: fontFamily.display }}>{group.label}</h2>
+                <p className="text-xs" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>{group.description}</p>
               </div>
             </div>
 
             {/* AI Insight Summary */}
             <Card className="p-5">
-              <p className="text-sm leading-relaxed" style={{ color: '#374151', fontFamily: BODY }}>{gd.insight}</p>
+              <p className="text-sm leading-relaxed" style={{ color: '#374151', fontFamily: fontFamily.body }}>{gd.insight}</p>
             </Card>
 
             {/* Resolution Items */}
             {gd.resolutions.length > 0 && (
               <div>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: MONO }}>Needs Attention</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Needs Attention</h3>
                 <div className="space-y-3">
                   {gd.resolutions.map((item, i) => {
                     const sv = SEV[item.severity];
@@ -218,8 +216,8 @@ const CognitiveSnapshotV2Mockup = () => {
                         <div className="flex items-start gap-3">
                           <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                           <div className="flex-1">
-                            <p className="text-sm font-semibold" style={{ color: '#1F2937', fontFamily: HEAD }}>{item.title}</p>
-                            <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280', fontFamily: BODY }}>{item.detail}</p>
+                            <p className="text-sm font-semibold" style={{ color: '#1F2937', fontFamily: fontFamily.display }}>{item.title}</p>
+                            <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280', fontFamily: fontFamily.body }}>{item.detail}</p>
                             <ActionBar actions={item.actions} />
                           </div>
                         </div>
@@ -232,23 +230,23 @@ const CognitiveSnapshotV2Mockup = () => {
 
             {gd.resolutions.length === 0 && (
               <Card className="p-6 text-center">
-                <p className="text-sm" style={{ color: '#9CA3AF', fontFamily: BODY }}>No items need attention right now. All clear.</p>
+                <p className="text-sm" style={{ color: '#9CA3AF', fontFamily: fontFamily.body }}>No items need attention right now. All clear.</p>
               </Card>
             )}
 
             {/* Group-Specific Metrics */}
             {activeGroup === 'money' && (
               <Card className="p-6">
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Financial Position</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Financial Position</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div><span className="text-2xl font-bold" style={{ color: '#F97316', fontFamily: HEAD }}>{gd.metrics.runway}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Months Runway</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#92400E', fontFamily: HEAD }}>{gd.metrics.margin}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Margins</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#374151', fontFamily: HEAD }}>{gd.metrics.outstanding}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Outstanding</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#EF4444', fontFamily: HEAD }}>{gd.metrics.overdue}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Overdue</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#F97316', fontFamily: fontFamily.display }}>{gd.metrics.runway}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Months Runway</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: '#92400E', fontFamily: fontFamily.display }}>{gd.metrics.margin}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Margins</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: '#374151', fontFamily: fontFamily.display }}>{gd.metrics.outstanding}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Outstanding</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.overdue}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Overdue</p></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {[{ l: 'Best', t: gd.scenarios.best, c: '#166534', bg: '#F0FDF4' }, { l: 'Base', t: gd.scenarios.base, c: '#6B7280', bg: '#F9FAFB' }, { l: 'Worst', t: gd.scenarios.worst, c: '#991B1B', bg: '#FEF2F2' }].map((s, i) => (
-                    <div key={i} className="rounded-xl p-3" style={{ background: s.bg }}><p className="text-[10px] font-semibold uppercase mb-1" style={{ color: s.c, fontFamily: MONO }}>30d {s.l}</p><p className="text-xs" style={{ color: s.c, fontFamily: BODY }}>{s.t}</p></div>
+                    <div key={i} className="rounded-xl p-3" style={{ background: s.bg }}><p className="text-[10px] font-semibold uppercase mb-1" style={{ color: s.c, fontFamily: fontFamily.mono }}>30d {s.l}</p><p className="text-xs" style={{ color: s.c, fontFamily: fontFamily.body }}>{s.t}</p></div>
                   ))}
                 </div>
               </Card>
@@ -256,61 +254,61 @@ const CognitiveSnapshotV2Mockup = () => {
 
             {activeGroup === 'revenue' && (
               <Card className="p-6">
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Pipeline</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Pipeline</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  <div><span className="text-2xl font-bold" style={{ fontFamily: HEAD }}>{gd.metrics.pipeline}</span><span className="text-[10px] ml-1" style={{ color: '#9CA3AF', fontFamily: MONO }}>total</span></div>
-                  <div><span className="text-2xl font-bold" style={{ color: '#2563EB', fontFamily: HEAD }}>{gd.metrics.weighted}</span><span className="text-[10px] ml-1" style={{ color: '#9CA3AF', fontFamily: MONO }}>weighted</span></div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#FFFBEB', color: '#92400E', fontFamily: MONO }}>{gd.metrics.entropy}</span>
+                  <div><span className="text-2xl font-bold" style={{ fontFamily: fontFamily.display }}>{gd.metrics.pipeline}</span><span className="text-[10px] ml-1" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>total</span></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#2563EB', fontFamily: fontFamily.display }}>{gd.metrics.weighted}</span><span className="text-[10px] ml-1" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>weighted</span></div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#FFFBEB', color: '#92400E', fontFamily: fontFamily.mono }}>{gd.metrics.entropy}</span>
                 </div>
-                <div className="space-y-2">{gd.deals.map((d, i) => (<div key={i} className="flex items-center gap-3"><span className="text-sm w-28 truncate" style={{ fontFamily: HEAD }}>{d.name}</span><span className="text-xs w-12 text-right" style={{ fontFamily: MONO }}>${d.value}K</span><span className="text-xs w-10 text-right font-semibold" style={{ color: d.prob >= 70 ? '#166534' : d.prob >= 50 ? '#92400E' : '#991B1B', fontFamily: MONO }}>{d.prob}%</span><div className="flex-1 h-2 rounded-full" style={{ background: '#F3F4F6' }}><div className="h-full rounded-full" style={{ width: `${d.prob}%`, background: d.prob >= 70 ? '#22C55E' : d.prob >= 50 ? '#F59E0B' : '#EF4444' }} /></div>{d.stall > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#FEF2F2', color: '#991B1B', fontFamily: MONO }}>{d.stall}d stalled</span>}</div>))}</div>
+                <div className="space-y-2">{gd.deals.map((d, i) => (<div key={i} className="flex items-center gap-3"><span className="text-sm w-28 truncate" style={{ fontFamily: fontFamily.display }}>{d.name}</span><span className="text-xs w-12 text-right" style={{ fontFamily: fontFamily.mono }}>${d.value}K</span><span className="text-xs w-10 text-right font-semibold" style={{ color: d.prob >= 70 ? '#166534' : d.prob >= 50 ? '#92400E' : '#991B1B', fontFamily: fontFamily.mono }}>{d.prob}%</span><div className="flex-1 h-2 rounded-full" style={{ background: '#F3F4F6' }}><div className="h-full rounded-full" style={{ width: `${d.prob}%`, background: d.prob >= 70 ? '#22C55E' : d.prob >= 50 ? '#F59E0B' : '#EF4444' }} /></div>{d.stall > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#FEF2F2', color: '#991B1B', fontFamily: fontFamily.mono }}>{d.stall}d stalled</span>}</div>))}</div>
               </Card>
             )}
 
             {activeGroup === 'operations' && (
               <Card className="p-6">
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Execution</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Execution</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div><span className="text-2xl font-bold" style={{ color: '#EF4444', fontFamily: HEAD }}>{gd.metrics.sla_breaches}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>SLA Breaches</p></div>
-                  <div><span className="text-2xl font-bold" style={{ color: '#F59E0B', fontFamily: HEAD }}>{gd.metrics.task_aging}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Task Aging</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#374151', fontFamily: HEAD }}>{gd.metrics.sop_compliance}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>SOP Compliance</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#374151', fontFamily: HEAD }}>{gd.metrics.bottleneck}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Bottleneck</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.sla_breaches}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>SLA Breaches</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.display }}>{gd.metrics.task_aging}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Task Aging</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: '#374151', fontFamily: fontFamily.display }}>{gd.metrics.sop_compliance}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>SOP Compliance</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: '#374151', fontFamily: fontFamily.display }}>{gd.metrics.bottleneck}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Bottleneck</p></div>
                 </div>
-                <div className="mb-4"><p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>Resource Load</p><div className="flex gap-4">{Object.entries(gd.load).map(([k, v]) => (<div key={k} className="flex items-center gap-2"><span className="text-xs" style={{ fontFamily: BODY }}>{k}</span><div className="w-24 h-2 rounded-full" style={{ background: '#F3F4F6' }}><div className="h-full rounded-full" style={{ width: `${Math.min(v, 100)}%`, background: v > 100 ? '#EF4444' : v > 80 ? '#F59E0B' : '#22C55E' }} /></div><span className="text-[10px] font-semibold" style={{ color: v > 100 ? '#EF4444' : '#6B7280', fontFamily: MONO }}>{v}%</span></div>))}</div></div>
-                {gd.recs.map((r, i) => (<p key={i} className="text-sm mt-1" style={{ color: '#F97316', fontFamily: HEAD }}>→ {r}</p>))}
+                <div className="mb-4"><p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Resource Load</p><div className="flex gap-4">{Object.entries(gd.load).map(([k, v]) => (<div key={k} className="flex items-center gap-2"><span className="text-xs" style={{ fontFamily: fontFamily.body }}>{k}</span><div className="w-24 h-2 rounded-full" style={{ background: '#F3F4F6' }}><div className="h-full rounded-full" style={{ width: `${Math.min(v, 100)}%`, background: v > 100 ? '#EF4444' : v > 80 ? '#F59E0B' : '#22C55E' }} /></div><span className="text-[10px] font-semibold" style={{ color: v > 100 ? '#EF4444' : '#6B7280', fontFamily: fontFamily.mono }}>{v}%</span></div>))}</div></div>
+                {gd.recs.map((r, i) => (<p key={i} className="text-sm mt-1" style={{ color: '#F97316', fontFamily: fontFamily.display }}>→ {r}</p>))}
               </Card>
             )}
 
             {activeGroup === 'people' && (
               <Card className="p-6">
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Capacity</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Capacity</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div><span className="text-2xl font-bold" style={{ color: '#EF4444', fontFamily: HEAD }}>{gd.metrics.capacity}%</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Capacity</p></div>
-                  <div><span className="text-2xl font-bold" style={{ color: '#374151', fontFamily: HEAD }}>{gd.metrics.meetings}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Meetings (avg {gd.metrics.avg_meetings})</p></div>
-                  <div><span className="text-2xl font-bold" style={{ color: '#F59E0B', fontFamily: HEAD }}>{gd.metrics.decisions}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Decisions Pending</p></div>
-                  <div><span className="text-sm font-bold" style={{ color: '#EF4444', fontFamily: HEAD }}>{gd.metrics.fatigue}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Fatigue Risk</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.capacity}%</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Capacity</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#374151', fontFamily: fontFamily.display }}>{gd.metrics.meetings}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Meetings (avg {gd.metrics.avg_meetings})</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.display }}>{gd.metrics.decisions}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Decisions Pending</p></div>
+                  <div><span className="text-sm font-bold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.fatigue}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Fatigue Risk</p></div>
                 </div>
-                <div className="mb-3"><p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>Single Points of Failure</p>{gd.spof.map((s, i) => (<p key={i} className="text-sm mb-1" style={{ color: '#374151', fontFamily: BODY }}>• {s}</p>))}</div>
+                <div className="mb-3"><p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Single Points of Failure</p>{gd.spof.map((s, i) => (<p key={i} className="text-sm mb-1" style={{ color: '#374151', fontFamily: fontFamily.body }}>• {s}</p>))}</div>
               </Card>
             )}
 
             {activeGroup === 'market' && (
               <Card className="p-6">
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: MONO }}>Competitive Intelligence</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Competitive Intelligence</h3>
                 <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div><span className="text-2xl font-bold" style={{ color: '#7C3AED', fontFamily: HEAD }}>{gd.metrics.competitors_tracked}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Tracked</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#F97316', fontFamily: HEAD }}>{gd.metrics.pricing_vs_market}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>vs Market</p></div>
-                  <div><span className="text-sm font-semibold" style={{ fontFamily: HEAD }}>{gd.metrics.sentiment}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sentiment</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#7C3AED', fontFamily: fontFamily.display }}>{gd.metrics.competitors_tracked}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Tracked</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: '#F97316', fontFamily: fontFamily.display }}>{gd.metrics.pricing_vs_market}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>vs Market</p></div>
+                  <div><span className="text-sm font-semibold" style={{ fontFamily: fontFamily.display }}>{gd.metrics.sentiment}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Sentiment</p></div>
                 </div>
-                <div className="space-y-2 mb-3">{gd.competitors.map((c, i) => (<div key={i} className="flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#F3F4F6', fontFamily: MONO }}>{c.name}</span><span className="text-xs" style={{ color: '#6B7280', fontFamily: BODY }}>{c.signal}</span></div>))}</div>
-                <div className="flex flex-wrap gap-2 mt-3">{gd.regulatory.map((r, i) => (<span key={i} className="text-[10px] px-2 py-1 rounded-lg" style={{ background: r.sev === 'med' ? '#FFFBEB' : '#F9FAFB', color: r.sev === 'med' ? '#92400E' : '#6B7280', fontFamily: MONO }}>{r.item}</span>))}</div>
+                <div className="space-y-2 mb-3">{gd.competitors.map((c, i) => (<div key={i} className="flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#F3F4F6', fontFamily: fontFamily.mono }}>{c.name}</span><span className="text-xs" style={{ color: '#6B7280', fontFamily: fontFamily.body }}>{c.signal}</span></div>))}</div>
+                <div className="flex flex-wrap gap-2 mt-3">{gd.regulatory.map((r, i) => (<span key={i} className="text-[10px] px-2 py-1 rounded-lg" style={{ background: r.sev === 'med' ? '#FFFBEB' : '#F9FAFB', color: r.sev === 'med' ? '#92400E' : '#6B7280', fontFamily: fontFamily.mono }}>{r.item}</span>))}</div>
               </Card>
             )}
 
             {/* Alignment Contradictions (shown for all groups) */}
             {alignment.contradictions.length > 0 && (
               <div>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: MONO }}>Alignment Gaps</h3>
-                {alignment.contradictions.map((c, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}><p className="text-xs" style={{ color: '#92400E', fontFamily: MONO }}>⚠ {c}</p></div>))}
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Alignment Gaps</h3>
+                {alignment.contradictions.map((c, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}><p className="text-xs" style={{ color: '#92400E', fontFamily: fontFamily.mono }}>⚠ {c}</p></div>))}
               </div>
             )}
           </div>
@@ -320,20 +318,20 @@ const CognitiveSnapshotV2Mockup = () => {
             <Card className="p-0 overflow-hidden">
               <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
-                  <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#9CA3AF', fontFamily: MONO }}>This Week</span>
-                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#F97316', fontFamily: HEAD }}>${weeklyBrief.cash.toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>recovered</span></div>
-                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#059669', fontFamily: HEAD }}>{weeklyBrief.hours}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>saved</span></div>
-                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#2563EB', fontFamily: HEAD }}>{weeklyBrief.actions}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>actions</span></div>
-                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#7C3AED', fontFamily: HEAD }}>{weeklyBrief.sop}%</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: MONO }}>sop</span></div>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>This Week</span>
+                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#F97316', fontFamily: fontFamily.display }}>${weeklyBrief.cash.toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>recovered</span></div>
+                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#059669', fontFamily: fontFamily.display }}>{weeklyBrief.hours}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>saved</span></div>
+                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#2563EB', fontFamily: fontFamily.display }}>{weeklyBrief.actions}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>actions</span></div>
+                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#7C3AED', fontFamily: fontFamily.display }}>{weeklyBrief.sop}%</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>sop</span></div>
                 </div>
                 {briefOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
               </button>
               {briefOpen && (
                 <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#F97316' }}>Cash:</strong> Sent {weeklyBrief.actions} payment reminders, recovering ${weeklyBrief.cash.toLocaleString()}.</p>
-                  <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#059669' }}>Time:</strong> Handled {weeklyBrief.tasks} tasks, saving {weeklyBrief.hours} hours.</p>
-                  <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#2563EB' }}>Team:</strong> Assigned {weeklyBrief.leads} leads; {weeklyBrief.actioned} actioned in 2 hours.</p>
-                  <p className="text-sm" style={{ color: '#374151', fontFamily: BODY }}><strong style={{ color: '#7C3AED' }}>SOPs:</strong> {weeklyBrief.sop}% compliance, {weeklyBrief.fixes} auto-fixes.</p>
+                  <p className="text-sm" style={{ color: '#374151', fontFamily: fontFamily.body }}><strong style={{ color: '#F97316' }}>Cash:</strong> Sent {weeklyBrief.actions} payment reminders, recovering ${weeklyBrief.cash.toLocaleString()}.</p>
+                  <p className="text-sm" style={{ color: '#374151', fontFamily: fontFamily.body }}><strong style={{ color: '#059669' }}>Time:</strong> Handled {weeklyBrief.tasks} tasks, saving {weeklyBrief.hours} hours.</p>
+                  <p className="text-sm" style={{ color: '#374151', fontFamily: fontFamily.body }}><strong style={{ color: '#2563EB' }}>Team:</strong> Assigned {weeklyBrief.leads} leads; {weeklyBrief.actioned} actioned in 2 hours.</p>
+                  <p className="text-sm" style={{ color: '#374151', fontFamily: fontFamily.body }}><strong style={{ color: '#7C3AED' }}>SOPs:</strong> {weeklyBrief.sop}% compliance, {weeklyBrief.fixes} auto-fixes.</p>
                 </div>
               )}
             </Card>
@@ -342,16 +340,16 @@ const CognitiveSnapshotV2Mockup = () => {
           {/* ═══ EXECUTIVE MEMO (Collapsible) ═══ */}
           <div className="mb-8">
             <button onClick={() => setMemoOpen(!memoOpen)} className="flex items-center justify-between w-full mb-3">
-              <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280', fontFamily: MONO }}>Executive Memo</h3>
+              <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#6B7280', fontFamily: fontFamily.mono }}>Executive Memo</h3>
               {memoOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
             </button>
-            {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#1F2937', fontFamily: BODY }}>{memo}</p></Card>}
+            {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#1F2937', fontFamily: fontFamily.body }}>{memo}</p></Card>}
           </div>
 
           {/* Sources */}
           <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-            <span className="text-[10px]" style={{ color: '#9CA3AF', fontFamily: MONO }}>Sources:</span>
-            {["business_profile", "calibration", "emails (25)", "HubSpot CRM", "Xero (12 invoices)", "signals (18)", "Perplexity"].map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: MONO }}>{s}</span>))}
+            <span className="text-[10px]" style={{ color: '#9CA3AF', fontFamily: fontFamily.mono }}>Sources:</span>
+            {["business_profile", "calibration", "emails (25)", "HubSpot CRM", "Xero (12 invoices)", "signals (18)", "Perplexity"].map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#6B7280', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>))}
           </div>
         </div>
       </div>
