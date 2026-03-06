@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import uuid
 import logging
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
 from prompt_registry import get_prompt
 from auth_supabase import get_user_by_id
@@ -565,19 +565,16 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             # Fall through to normal chat response
 
     try:
-        from core.llm_adapter import chat_completion
         import time as _time
         _start = _time.time()
-
-        response = await chat_completion(
-            api_key=OPENAI_KEY,
+        response = await llm_chat(
             system_message=system_message,
-            messages=messages_history,
             user_message=clean_message,
+            messages=messages_history,
             model=AI_MODEL,
             temperature=0.7,
             max_tokens=1500,
-            session_id=f"soundboard_{user_id}_{req.conversation_id or 'new'}",
+            api_key=OPENAI_KEY,
         )
         _elapsed = int((_time.time() - _start) * 1000)
 
@@ -607,14 +604,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         conversation_title = None
         if not conversation:
             title_prompt = f"Generate a very short title (3-5 words max) for a conversation that starts with: '{req.message[:100]}'. Just the title, nothing else."
-            title_chat = LlmChat(
-                api_key=OPENAI_KEY,
-                session_id=f"title_{user_id}_{now_dt.timestamp()}",
-                system_message="Generate very short conversation titles. Just output the title, nothing else."
-            )
-            title_chat.with_model("openai", AI_MODEL)
-            conversation_title = await title_chat.send_message(UserMessage(text=title_prompt))
-            conversation_title = conversation_title.strip().strip("\"'")[:50]
+            try:
+                conversation_title = await llm_chat(
+                    system_message="Generate very short conversation titles. Just output the title, nothing else.",
+                    user_message=title_prompt,
+                    model=AI_MODEL,
+                    max_tokens=30,
+                    api_key=OPENAI_KEY,
+                )
+                conversation_title = conversation_title.strip().strip("\"'")[:50]
+            except Exception:
+                conversation_title = req.message[:40]
 
         now = now_dt.isoformat()
         new_messages = [

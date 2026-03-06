@@ -13,7 +13,7 @@ import json
 import re
 import logging
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, OPENAI_KEY, AI_MODEL, AI_MODEL_ADVANCED, cognitive_core, logger,

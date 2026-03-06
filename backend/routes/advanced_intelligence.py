@@ -100,17 +100,15 @@ async def rerank_results(query: str, results: List[dict], current_user: dict = D
         return {'results': []}
 
     import os
-    from emergentintegrations.llm.openai import LlmChat, UserMessage
+    from core.llm_router import llm_chat
 
-    key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY", "")
-    chat = LlmChat(api_key=key, system_message="You are a relevance scorer. For each document, rate its relevance to the query on a scale of 0-10. Return ONLY a JSON array of scores in the same order as the documents. Example: [8, 3, 9, 1]")
-    chat.with_model("openai", "gpt-4o-mini")
+    key = os.environ.get("OPENAI_API_KEY", "")
 
     docs_text = "\n".join([f"Doc {i+1}: {r.get('content', '')[:200]}" for i, r in enumerate(results[:10])])
     prompt = f"Query: {query}\n\nDocuments:\n{docs_text}\n\nReturn relevance scores as JSON array:"
 
     start = time.time()
-    response = await chat.send_message(UserMessage(text=prompt))
+    response = await llm_chat(system_message="You are a relevance scorer. Rate each document's relevance 0-10. Return ONLY a JSON array.", user_message=prompt, model="gpt-4o-mini", api_key=key)
     elapsed = int((time.time() - start) * 1000)
 
     import json

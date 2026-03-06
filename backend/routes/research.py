@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from routes.deps import get_current_user, OPENAI_KEY, logger
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import httpx
@@ -332,16 +332,8 @@ HEADINGS: {'; '.join(content['headings'])}
 BODY CONTENT:
 {content['body_text'][:6000]}"""
 
-        import uuid
-        chat = LlmChat(
-            api_key=OPENAI_KEY,
-            session_id=str(uuid.uuid4()),
-            system_message=LLM_PROMPT
-        )
-        chat.with_model("openai", "gpt-4o")
-
-        response = await chat.send_message(UserMessage(text=content_block))
-        raw = response.strip() if isinstance(response, str) else response.text.strip()
+        response = await llm_chat(system_message=LLM_PROMPT, user_message=content_block, model="gpt-4o", api_key=OPENAI_KEY)
+        raw = response.strip()
 
         # Strip markdown code fences if present
         if raw.startswith("```"):

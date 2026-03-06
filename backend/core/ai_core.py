@@ -7,7 +7,7 @@ Usage from route modules:
 """
 import logging
 from fastapi import HTTPException
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from routes.deps import OPENAI_KEY, AI_MODEL, AI_MODEL_ADVANCED, cognitive_core
 
 # Re-export from sub-modules for backward compatibility
@@ -63,11 +63,8 @@ async def get_ai_response(
         # STEP 3: Generate system prompt and call LLM
         system_prompt = await get_system_prompt(context_type, user_data, business_knowledge, metadata)
 
-        chat = LlmChat(api_key=OPENAI_KEY, session_id=session_id, system_message=system_prompt)
         model = AI_MODEL_ADVANCED if use_advanced else AI_MODEL
-        chat.with_model("openai", model)
-
-        response = await chat.send_message(UserMessage(text=message))
+        response = await llm_chat(system_message=system_prompt, user_message=message, model=model, api_key=OPENAI_KEY)
         return response
 
     except Exception as e:

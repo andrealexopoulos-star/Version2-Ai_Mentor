@@ -15,7 +15,7 @@ import jwt
 from urllib.parse import quote
 
 import httpx
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from core.llm_router import llm_chat
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, OPENAI_KEY, AI_MODEL, logger,
@@ -1623,14 +1623,7 @@ Return ONLY valid JSON, no markdown."""
 
     try:
         email_sys = await get_prompt("email_priority_analysis_v1", _EMAIL_PRIORITY_FALLBACK)
-        chat = LlmChat(
-            api_key=OPENAI_KEY,
-            session_id=f"email_priority_{user_id}_{datetime.now().timestamp()}",
-            system_message=email_sys
-        )
-        chat.with_model("openai", AI_MODEL)
-        
-        response = await chat.send_message(UserMessage(text=priority_prompt))
+        response = await llm_chat(system_message=email_sys, user_message=priority_prompt, model=AI_MODEL, api_key=OPENAI_KEY)
         
         # Parse AI response
         import json
@@ -1794,14 +1787,7 @@ Return ONLY valid JSON in this exact format:
 
         # 6. Generate with LLM
         reply_sys = await get_prompt("email_reply_generator_v1", _EMAIL_REPLY_FALLBACK)
-        chat = LlmChat(
-            api_key=OPENAI_KEY,
-            session_id=f"biqc_reply_{user_id}_{email_id}",
-            system_message=reply_sys
-        )
-        chat.with_model("openai", AI_MODEL)
-        
-        response = await chat.send_message(UserMessage(text=reply_prompt))
+        response = await llm_chat(system_message=reply_sys, user_message=reply_prompt, model=AI_MODEL, api_key=OPENAI_KEY)
         
         # 7. Parse response
         import json

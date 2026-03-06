@@ -1,6 +1,6 @@
 """BIQc RAG Service — Embedding generation, storage, retrieval.
 
-Uses OpenAI text-embedding-3-small (1536 dims) via emergentintegrations.
+Uses OpenAI text-embedding-3-small (1536 dims) via BIQc router.
 Stores in Supabase pgvector. Retrieves via cosine similarity.
 Feature-flagged: rag_chat_enabled.
 """
@@ -35,17 +35,10 @@ class SearchRequest(BaseModel):
 
 
 async def generate_embedding(text: str) -> List[float]:
-    """Generate embedding using OpenAI text-embedding-3-small."""
-    import os
+    """Generate embedding using OpenAI text-embedding-3-small via BIQc router."""
     try:
-        from emergentintegrations.llm.openai import OpenAIChat
-        import openai
-        client = openai.AsyncOpenAI(api_key=os.environ.get('EMERGENT_LLM_KEY') or os.environ.get('OPENAI_API_KEY'))
-        response = await client.embeddings.create(
-            model="text-embedding-3-small",
-            input=text[:8000],
-        )
-        return response.data[0].embedding
+        from core.llm_router import llm_embed
+        return await llm_embed(text[:8000])
     except Exception as e:
         logger.error(f"Embedding generation failed: {e}")
         raise

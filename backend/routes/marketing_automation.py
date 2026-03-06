@@ -94,12 +94,10 @@ Target audience: {audience}
 Generate {content_type.replace('_', ' ')} content. Return ONLY valid JSON."""
 
     try:
-        from emergentintegrations.llm.openai import LlmChat, UserMessage
-        chat = LlmChat(api_key=OPENAI_KEY, system_message=template['system'])
-        chat.with_model("openai", "gpt-4o")
+        from core.llm_router import llm_chat
 
         start = time.time()
-        response = await chat.send_message(UserMessage(text=prompt))
+        response = await llm_chat(system_message=template['system'], user_message=prompt, model="gpt-4o", api_key=OPENAI_KEY)
         elapsed = int((time.time() - start) * 1000)
 
         response = sanitise_output(response)
