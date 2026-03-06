@@ -55,7 +55,9 @@ const WebsiteNav = () => {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo">
-          <img src="/biqc-logo.png" alt="BIQc" className="w-9 h-9 rounded-lg object-contain" style={{ background: 'rgba(255,106,0,0.08)' }} />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF8C33)' }}>
+            <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
+          </div>
           <span className="text-lg font-semibold text-[#F4F7FA] tracking-tight" style={{ fontFamily: fontFamily.display }}>BIQc</span>
         </Link>
 
@@ -121,7 +123,9 @@ const WebsiteFooter = () => (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         <div>
           <div className="flex items-center gap-2 mb-6">
-            <img src="/biqc-logo.png" alt="BIQc" className="w-7 h-7 rounded-md object-contain" />
+            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
+              <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
+            </div>
             <span className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>BIQc</span>
           </div>
           <p className="text-xs text-[#9FB0C3]/60 leading-relaxed" style={{ fontFamily: fontFamily.display }}>Autonomous Business Intelligence for SMBs. Australian owned & operated.</p>
