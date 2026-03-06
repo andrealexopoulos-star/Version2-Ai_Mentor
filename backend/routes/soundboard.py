@@ -244,24 +244,33 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     user_email = (user_profile.get("email") if user_profile else None) or ""
 
     # ═══ PERSONALIZATION GUARDRAIL ═══
-    # Determine context richness before generating advice
     context_fields = 0
     if profile:
         for field in ['business_name', 'industry', 'revenue_range', 'team_size', 'main_challenges', 'short_term_goals']:
             if profile.get(field) and str(profile.get(field)) != 'None':
                 context_fields += 1
 
+    # Live signal freshness check
+    live_signal_count = 0
+    live_signal_age_hours = None
+    try:
+        obs_result = sb.table('observation_events').select('observed_at', count='exact').eq('user_id', user_id).order('observed_at', desc=True).limit(1).execute()
+        live_signal_count = obs_result.count or 0
+        if obs_result.data:
+            last_obs = datetime.fromisoformat(obs_result.data[0]['observed_at'].replace('Z', '+00:00'))
+            live_signal_age_hours = round((datetime.now(timezone.utc) - last_obs).total_seconds() / 3600, 1)
+    except Exception:
+        pass
+
     if context_fields < 2:
-        # GUARDRAIL_BLOCKED: Insufficient personalization data
-        logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id} context_fields={context_fields} — insufficient business context for personalized advice")
+        logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id} context_fields={context_fields}")
         guardrail_status = "BLOCKED"
     elif context_fields < 4:
-        # GUARDRAIL_DEGRADED: Partial context — advice will be less specific
-        logger.info(f"[GUARDRAIL_DEGRADED] user={user_id} context_fields={context_fields} — partial business context")
+        logger.info(f"[GUARDRAIL_DEGRADED] user={user_id} context_fields={context_fields} live_signals={live_signal_count}")
         guardrail_status = "DEGRADED"
     else:
         guardrail_status = "FULL"
-        logger.info(f"[GUARDRAIL_FULL] user={user_id} context_fields={context_fields}")
+        logger.info(f"[GUARDRAIL_FULL] user={user_id} context_fields={context_fields} live_signals={live_signal_count} age_hours={live_signal_age_hours}")
 
     # ═══ FULL BUSINESS DNA ═══
     biz_context = ""
@@ -494,15 +503,24 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         return {
             "reply": "I need to know more about your business before I can give you specific advice. Please complete your business calibration first — it takes about 3 minutes and unlocks personalised intelligence across the entire platform.",
             "guardrail": "BLOCKED",
+            "context_fields": context_fields,
+            "live_signals": live_signal_count,
             "conversation_id": req.conversation_id,
         }
 
-    # Inject guardrail status into system message
+    # P1: Signal freshness injection
+    signal_injection = ""
+    if live_signal_count > 0:
+        signal_injection = f"\n\n═══ LIVE SIGNAL STATUS ═══\nActive observation signals: {live_signal_count}\nLast signal: {live_signal_age_hours}h ago\nUSE THESE to ground your advice.\n"
+
+    # P1: Response contract enforcement
+    contract_injection = "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\nEvery strategic response MUST include:\n1) SITUATION: What is happening? Use specific numbers or entity names from the data above.\n2) DECISION: One clear recommendation.\n3) THIS WEEK: One concrete action with who/what/by-when.\n4) RISK IF DELAYED: What happens if they don't act? Quantify.\nDo NOT output generic strategy. Every sentence must reference THIS business.\n"
+
     guardrail_injection = ""
     if guardrail_status == "DEGRADED":
-        guardrail_injection = "\n\n[SYSTEM: GUARDRAIL_DEGRADED — Limited business context available. Be transparent about what you can and cannot assess. Recommend completing calibration for deeper insight.]\n"
+        guardrail_injection = f"\n[GUARDRAIL_DEGRADED: {context_fields} profile fields, {live_signal_count} live signals]\n"
 
-    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + guardrail_injection + f"\n\nCONTEXT:\n{user_context}"
+    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {

@@ -1,46 +1,69 @@
 """
 BIQc LLM Router — Single provider routing layer for ALL AI calls.
-Replaces emergentintegrations dependency entirely for AI inference.
+Direct OpenAI by default. No emergentintegrations dependency.
 
-Default provider: openai_direct (no emergentintegrations dependency)
-Supported providers: openai, claude, perplexity, gemini (future)
+Route table:
+  soundboard_strategy → openai/gpt-4o (primary), timeout 60s
+  voice_realtime      → openai/realtime, timeout 30s
+  embedding           → openai/text-embedding-3-small, timeout 30s
+  file_generation     → openai/gpt-4o, timeout 60s
+  title_generation    → openai/gpt-4o-mini, timeout 15s
+  relevance_scoring   → openai/gpt-4o-mini, timeout 30s
 
-ENV:
-  LLM_PROVIDER=openai (default)
-  OPENAI_API_KEY=sk-...
-
-Usage:
-  from core.llm_router import llm_chat, llm_embed, get_router_config
-  response = await llm_chat(system_message=..., user_message=..., model="gpt-4o")
-  embedding = await llm_embed(text=..., model="text-embedding-3-small")
+No parallel fan-out. Single-primary per route. Fallback is None unless explicitly configured.
 """
 import os
 import logging
 import httpx
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+
+# ═══ ROUTE TABLE (P2: deterministic per-task routing) ═══
+ROUTE_TABLE = {
+    "soundboard_strategy": {"provider": "openai", "model": "gpt-4o", "timeout": 60, "fallback": None, "max_tokens": 1500, "temperature": 0.7},
+    "voice_realtime":      {"provider": "openai", "model": "gpt-4o-realtime-preview-2024-12-17", "timeout": 30, "fallback": None},
+    "embedding":           {"provider": "openai", "model": "text-embedding-3-small", "timeout": 30, "fallback": None},
+    "file_generation":     {"provider": "openai", "model": "gpt-4o", "timeout": 60, "fallback": None, "max_tokens": 4000, "temperature": 0.5},
+    "title_generation":    {"provider": "openai", "model": "gpt-4o-mini", "timeout": 15, "fallback": None, "max_tokens": 30, "temperature": 0.3},
+    "relevance_scoring":   {"provider": "openai", "model": "gpt-4o-mini", "timeout": 30, "fallback": None, "max_tokens": 200, "temperature": 0.0},
+    "calibration":         {"provider": "openai", "model": "gpt-4o", "timeout": 60, "fallback": None, "max_tokens": 2000, "temperature": 0.5},
+    "email_analysis":      {"provider": "openai", "model": "gpt-4o", "timeout": 45, "fallback": None, "max_tokens": 1500, "temperature": 0.3},
+    "boardroom":           {"provider": "openai", "model": "gpt-4o", "timeout": 60, "fallback": None, "max_tokens": 2000, "temperature": 0.7},
+    "default":             {"provider": "openai", "model": "gpt-4o", "timeout": 60, "fallback": None, "max_tokens": 1500, "temperature": 0.7},
+}
+
+
+def _get_route(route_name: str = None) -> dict:
+    """Resolve route config. Falls back to 'default' if route not found."""
+    return ROUTE_TABLE.get(route_name, ROUTE_TABLE["default"])
 
 
 async def llm_chat(
     system_message: str,
     user_message: str,
     messages: list = None,
-    model: str = "gpt-4o",
-    temperature: float = 0.7,
-    max_tokens: int = 1500,
+    model: str = None,
+    temperature: float = None,
+    max_tokens: int = None,
     api_key: str = None,
+    route: str = None,
 ) -> str:
     """
     Single entry point for all LLM chat completions.
-    Returns assistant response as string.
+    If `route` is specified, uses the route table config.
+    Otherwise uses explicit params or defaults.
     """
     key = api_key or OPENAI_API_KEY
     if not key:
         raise ValueError("OPENAI_API_KEY not configured")
+
+    cfg = _get_route(route)
+    model = model or cfg["model"]
+    temperature = temperature if temperature is not None else cfg.get("temperature", 0.7)
+    max_tokens = max_tokens or cfg.get("max_tokens", 1500)
+    timeout = cfg.get("timeout", 60)
 
     formatted = [{"role": "system", "content": system_message}]
     for msg in (messages or []):
@@ -50,7 +73,7 @@ async def llm_chat(
             formatted.append({"role": role, "content": content})
     formatted.append({"role": "user", "content": user_message})
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=float(timeout)) as client:
         resp = await client.post(
             "https://api.openai.com/v1/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
@@ -61,35 +84,36 @@ async def llm_chat(
         return data["choices"][0]["message"]["content"]
 
 
-async def llm_embed(text: str, model: str = "text-embedding-3-small", api_key: str = None) -> list:
-    """Generate embedding vector. Returns list of floats."""
+async def llm_embed(text: str, model: str = None, api_key: str = None) -> list:
+    """Generate embedding vector."""
     key = api_key or OPENAI_API_KEY
     if not key:
         raise ValueError("OPENAI_API_KEY not configured")
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    cfg = _get_route("embedding")
+    model = model or cfg["model"]
+
+    async with httpx.AsyncClient(timeout=float(cfg["timeout"])) as client:
         resp = await client.post(
             "https://api.openai.com/v1/embeddings",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             json={"model": model, "input": text},
         )
         resp.raise_for_status()
-        data = resp.json()
-        return data["data"][0]["embedding"]
+        return resp.json()["data"][0]["embedding"]
 
 
-async def llm_realtime_session(voice: str = "verse", model: str = "gpt-4o-realtime-preview-2024-12-17",
-                                instructions: str = "", api_key: str = None) -> dict:
+async def llm_realtime_session(voice: str = "verse", model: str = None, instructions: str = "", api_key: str = None) -> dict:
     """Create OpenAI Realtime API session for voice chat."""
     key = api_key or OPENAI_API_KEY
-    if not key:
-        raise ValueError("OPENAI_API_KEY not configured")
+    cfg = _get_route("voice_realtime")
+    model = model or cfg["model"]
 
     payload = {"model": model, "voice": voice}
     if instructions:
         payload["instructions"] = instructions
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    async with httpx.AsyncClient(timeout=float(cfg["timeout"])) as client:
         resp = await client.post(
             "https://api.openai.com/v1/realtime/sessions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
@@ -100,7 +124,7 @@ async def llm_realtime_session(voice: str = "verse", model: str = "gpt-4o-realti
 
 
 async def llm_realtime_negotiate(sdp_offer: str, api_key: str = None) -> str:
-    """Negotiate WebRTC connection with OpenAI Realtime API."""
+    """Negotiate WebRTC connection."""
     key = api_key or OPENAI_API_KEY
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(
@@ -113,18 +137,9 @@ async def llm_realtime_negotiate(sdp_offer: str, api_key: str = None) -> str:
 
 
 def get_router_config() -> dict:
-    """Return current router configuration for health checks."""
+    """Return route table + provider state for health checks."""
     return {
-        "provider": LLM_PROVIDER,
-        "model_default": "gpt-4o",
-        "embed_model": "text-embedding-3-small",
-        "realtime_model": "gpt-4o-realtime-preview-2024-12-17",
+        "provider": "openai_direct",
         "api_key_set": bool(OPENAI_API_KEY),
-        "routing_table": {
-            "soundboard_strategy": {"primary": "openai/gpt-4o", "fallback": None, "timeout": 60},
-            "voice_realtime": {"primary": "openai/realtime", "fallback": None, "timeout": 30},
-            "embedding": {"primary": "openai/text-embedding-3-small", "fallback": None, "timeout": 30},
-            "file_generation": {"primary": "openai/gpt-4o", "fallback": None, "timeout": 60},
-            "title_generation": {"primary": "openai/gpt-4o", "fallback": None, "timeout": 15},
-        },
+        "routes": {name: {"model": cfg["model"], "timeout": cfg["timeout"], "fallback": cfg.get("fallback")} for name, cfg in ROUTE_TABLE.items()},
     }

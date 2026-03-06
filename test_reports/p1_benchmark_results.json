@@ -1,0 +1,156 @@
+{
+  "results": [
+    {
+      "prompt": "What is my biggest risk right now?",
+      "len": 0,
+      "latency_ms": 4,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "What should I focus on this week?",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "How healthy is my cash flow?",
+      "len": 0,
+      "latency_ms": 5,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "Am I overstaffed or understaffed?",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "What are my competitors doing that I'm not?",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "Should I raise prices?",
+      "len": 0,
+      "latency_ms": 3,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "What's the #1 thing holding my business back?",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "Give me your honest assessment of my business heal",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "Where am I losing money?",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "What would you do differently if you ran my compan",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "How do I grow revenue by 20% this year?",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    },
+    {
+      "prompt": "What should I tell my board this quarter?",
+      "len": 0,
+      "latency_ms": 2,
+      "specificity": 0,
+      "markers": [],
+      "has_situation": false,
+      "has_action": false,
+      "has_risk": false,
+      "is_generic": true,
+      "verdict": "FAIL"
+    }
+  ],
+  "summary": {
+    "pass": 0,
+    "warn": 0,
+    "fail": 12,
+    "generic_rate": 100.0,
+    "p50": 2,
+    "p95": 5
+  }
+}
