@@ -40,7 +40,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   // ── Server-side scan usage (Supabase) ──
   const [scanUsage, setScanUsage] = useState(null); // null = loading
   const [recordingScans, setRecordingScans] = useState({});
-  const { session } = useSupabaseAuth();
+  const { session, user } = useSupabaseAuth();
+  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
 
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
@@ -306,13 +307,24 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4" style={{ minHeight: 0 }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <MessageSquare className="w-10 h-10 mb-4 text-[#FF6A00]/20" />
-            <p className="text-sm text-[#64748B] mb-1" style={{ fontFamily: fontFamily.body }}>Ask anything about your business</p>
-            <p className="text-[11px] text-[#64748B] mb-6" style={{ fontFamily: fontFamily.mono }}>or click an insight to explore it here</p>
-            <div className="flex flex-wrap gap-2 justify-center max-w-[280px]">
-              {['What should I focus on?', 'Show me my pipeline', 'Summarise my risks', 'How can I grow?'].map(q => (
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: '#FF6A0015' }}>
+              <Zap className="w-6 h-6" style={{ color: '#FF6A00' }} />
+            </div>
+            <p className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+              {firstName ? `${firstName}, your advisor is ready.` : 'Your advisor is ready.'}
+            </p>
+            <p className="text-xs mb-6 max-w-[240px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+              I've read your business data. Ask me anything specific — deals, cash flow, risks, competitors.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center max-w-[300px]">
+              {[
+                'What needs my attention this week?',
+                'Show me stalled deals',
+                'How is my cash flow?',
+                'What are my biggest risks?',
+              ].map(q => (
                 <button key={q} onClick={() => setInput(q)}
-                  className="text-[11px] px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
+                  className="text-[11px] px-3 py-2 rounded-lg transition-all hover:bg-[#FF6A00]/10 hover:border-[#FF6A00]/30"
                   style={{ background: '#141C26', color: '#9FB0C3', border: '1px solid #243140', fontFamily: fontFamily.mono }}>
                   {q}
                 </button>
