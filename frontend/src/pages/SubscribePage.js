@@ -5,10 +5,8 @@ import { resolveTier } from '../lib/tierResolver';
 import { apiClient } from '../lib/api';
 import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const FEATURE_LABELS = {
   '/revenue': 'Revenue Engine', '/operations': 'Operations Intelligence', '/risk': 'Risk & Workforce',
@@ -104,9 +102,9 @@ const SubscribePage = () => {
         <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A0015' }}>
           <Lock className="w-6 h-6 text-[#FF6A00]" />
         </div>
-        {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: MONO }}>{featureLabel} requires a paid plan</p>}
-        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Upgrade Your Intelligence</h1>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: BODY }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
+        {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
+        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Upgrade Your Intelligence</h1>
+        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full mb-8">
@@ -119,12 +117,12 @@ const SubscribePage = () => {
               boxShadow: plan.recommended ? `0 8px 32px ${plan.color}20` : 'none',
             }} data-testid={`plan-${plan.id}`}>
               {plan.recommended && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: plan.color, fontFamily: MONO }}>RECOMMENDED</span>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: plan.color, fontFamily: fontFamily.mono }}>RECOMMENDED</span>
               )}
-              <h3 className="text-lg font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{plan.name}</h3>
+              <h3 className="text-lg font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-3xl font-bold" style={{ color: plan.color, fontFamily: MONO }}>{plan.price}</span>
-                <span className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{plan.period}</span>
+                <span className="text-3xl font-bold" style={{ color: plan.color, fontFamily: fontFamily.mono }}>{plan.price}</span>
+                <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{plan.period}</span>
               </div>
               <div className="space-y-2 mb-6">
                 {plan.features.map(f => (
@@ -135,9 +133,9 @@ const SubscribePage = () => {
                 ))}
               </div>
               {isCurrent ? (
-                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: MONO }}>Current Plan</span>
+                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: fontFamily.mono }}>Current Plan</span>
               ) : plan.id === 'free' ? (
-                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: MONO }}>Free Forever</span>
+                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: fontFamily.mono }}>Free Forever</span>
               ) : (
                 <button onClick={() => handleUpgrade(plan.id)} disabled={loading === plan.id}
                   className="w-full py-2.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
@@ -150,7 +148,7 @@ const SubscribePage = () => {
         })}
       </div>
 
-      <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: MONO }}>Back to dashboard</Link>
+      <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Back to dashboard</Link>
     </div>
   );
 };

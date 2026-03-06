@@ -1,7 +1,7 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
 
 // Data confidence derived from integration state + signal availability
 const DataConfidence = ({ cognitive, channelsData }) => {
@@ -21,10 +21,10 @@ const DataConfidence = ({ cognitive, channelsData }) => {
   return (
     <div className="flex items-center gap-2" data-testid="data-confidence">
       <Shield className="w-3.5 h-3.5" style={{ color }} />
-      <span className="text-[11px]" style={{ color, fontFamily: MONO }}>
+      <span className="text-[11px]" style={{ color, fontFamily: fontFamily.mono }}>
         Data Confidence: {level}
       </span>
-      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>
+      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
         ({signals}/{total} signals)
       </span>
     </div>

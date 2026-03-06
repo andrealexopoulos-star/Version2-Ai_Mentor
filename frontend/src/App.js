@@ -327,7 +327,7 @@ function App() {
       navigator.serviceWorker.getRegistrations().then(registrations => {
         registrations.forEach(reg => {
           reg.unregister();
-          console.log('[SW] Unregistered service worker:', reg.scope);
+          // console.log('[SW] Unregistered service worker:', reg.scope);
         });
       });
     }
@@ -335,7 +335,7 @@ function App() {
       caches.keys().then(names => {
         names.forEach(name => {
           caches.delete(name);
-          console.log('[SW] Deleted cache:', name);
+          // console.log('[SW] Deleted cache:', name);
         });
       });
     }

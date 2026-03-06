@@ -5,10 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { trackEvent } from '../lib/analytics';
 import { TrendingUp, TrendingDown, Globe, BarChart3, Target, ArrowRight, Loader2, RefreshCw, Award, Users } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 const ScoreGauge = ({ score, maxScore = 100, label, color }) => {
   const pct = Math.min((score / maxScore) * 100, 100);
@@ -24,14 +22,14 @@ const ScoreGauge = ({ score, maxScore = 100, label, color }) => {
           strokeDasharray={circumference} strokeDashoffset={offset}
           strokeLinecap="round" transform="rotate(-90 65 65)"
           style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
-        <text x="65" y="58" textAnchor="middle" style={{ fill: '#F4F7FA', fontSize: '28px', fontFamily: MONO, fontWeight: 700 }}>
+        <text x="65" y="58" textAnchor="middle" style={{ fill: '#F4F7FA', fontSize: '28px', fontFamily: fontFamily.mono, fontWeight: 700 }}>
           {score}
         </text>
-        <text x="65" y="78" textAnchor="middle" style={{ fill: '#64748B', fontSize: '10px', fontFamily: MONO, textTransform: 'uppercase' }}>
+        <text x="65" y="78" textAnchor="middle" style={{ fill: '#64748B', fontSize: '10px', fontFamily: fontFamily.mono, textTransform: 'uppercase' }}>
           / {maxScore}
         </text>
       </svg>
-      {label && <p className="text-xs mt-2 font-medium" style={{ color: '#9FB0C3', fontFamily: MONO }}>{label}</p>}
+      {label && <p className="text-xs mt-2 font-medium" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>{label}</p>}
     </div>
   );
 };
@@ -47,8 +45,8 @@ const PillarBar = ({ label, score, maxScore = 100, icon: Icon }) => {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium" style={{ color: '#F4F7FA', fontFamily: BODY }}>{label}</span>
-          <span className="text-sm font-bold" style={{ color, fontFamily: MONO }}>{score}</span>
+          <span className="text-sm font-medium" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{label}</span>
+          <span className="text-sm font-bold" style={{ color, fontFamily: fontFamily.mono }}>{score}</span>
         </div>
         <div className="h-1.5 rounded-full" style={{ background: '#243140' }}>
           <div className="h-full rounded-full transition-all duration-700" style={{ background: color, width: `${pct}%` }} />
@@ -114,10 +112,10 @@ export default function CompetitiveBenchmarkPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }} data-testid="benchmark-title">
+            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }} data-testid="benchmark-title">
               Competitive Benchmark
             </h1>
-            <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+            <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
               Weekly Digital Footprint score & industry percentile ranking
             </p>
           </div>
@@ -144,11 +142,11 @@ export default function CompetitiveBenchmarkPage() {
                   ) : data.trend === 'declining' ? (
                     <TrendingDown className="w-4 h-4" style={{ color: '#EF4444' }} />
                   ) : null}
-                  <span className="text-xs" style={{ color: data.trend === 'improving' ? '#10B981' : data.trend === 'declining' ? '#EF4444' : '#64748B', fontFamily: MONO }}>
+                  <span className="text-xs" style={{ color: data.trend === 'improving' ? '#10B981' : data.trend === 'declining' ? '#EF4444' : '#64748B', fontFamily: fontFamily.mono }}>
                     {data.trend === 'improving' ? 'Trending up' : data.trend === 'declining' ? 'Trending down' : 'Stable'}
                   </span>
                 </div>
-                <p className="text-xs mt-2" style={{ color: '#64748B', fontFamily: MONO }}>
+                <p className="text-xs mt-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                   Last updated: {new Date(data.lastUpdated).toLocaleDateString()}
                 </p>
               </CardContent>
@@ -159,20 +157,20 @@ export default function CompetitiveBenchmarkPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Award className="w-5 h-5" style={{ color: '#FF6A00' }} />
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: MONO }}>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
                     Industry Ranking
                   </span>
                 </div>
                 <div className="text-center py-4">
-                  <p className="text-5xl font-bold" style={{ color: '#F4F7FA', fontFamily: MONO }} data-testid="percentile-value">
+                  <p className="text-5xl font-bold" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }} data-testid="percentile-value">
                     {data.percentile}<span className="text-lg" style={{ color: '#64748B' }}>th</span>
                   </p>
-                  <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: BODY }}>percentile in your industry</p>
+                  <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>percentile in your industry</p>
                 </div>
                 <div className="mt-4 p-3 rounded-lg" style={{ background: '#0A1018', border: '1px solid #243140' }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs" style={{ color: '#64748B', fontFamily: MONO }}>Industry Average</span>
-                    <span className="text-sm font-bold" style={{ color: '#9FB0C3', fontFamily: MONO }}>{data.industryAvg}/100</span>
+                    <span className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Industry Average</span>
+                    <span className="text-sm font-bold" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>{data.industryAvg}/100</span>
                   </div>
                   <div className="h-1.5 rounded-full mt-2" style={{ background: '#243140' }}>
                     <div className="h-full rounded-full relative" style={{ background: '#64748B', width: `${data.industryAvg}%` }}>
@@ -180,8 +178,8 @@ export default function CompetitiveBenchmarkPage() {
                     </div>
                   </div>
                   <div className="flex justify-between mt-1">
-                    <span className="text-xs" style={{ color: '#64748B', fontFamily: MONO }}>0</span>
-                    <span className="text-xs" style={{ color: '#64748B', fontFamily: MONO }}>100</span>
+                    <span className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>0</span>
+                    <span className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>100</span>
                   </div>
                 </div>
               </CardContent>
@@ -190,7 +188,7 @@ export default function CompetitiveBenchmarkPage() {
             {/* 5-Pillar Breakdown */}
             <Card className="md:col-span-2" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="pillars-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: '#F4F7FA', fontFamily: HEAD }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
                   <BarChart3 className="w-5 h-5" style={{ color: '#FF6A00' }} />
                   5-Pillar Digital Footprint
                 </CardTitle>
@@ -208,7 +206,7 @@ export default function CompetitiveBenchmarkPage() {
             {data.competitors.length > 0 && (
               <Card className="md:col-span-2" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="competitors-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: '#F4F7FA', fontFamily: HEAD }}>
+                  <CardTitle className="flex items-center gap-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
                     <Users className="w-5 h-5" style={{ color: '#FF6A00' }} />
                     Competitive Landscape
                   </CardTitle>
@@ -216,12 +214,12 @@ export default function CompetitiveBenchmarkPage() {
                 <CardContent>
                   {data.competitors.slice(0, 5).map((comp, i) => (
                     <div key={i} className="flex items-center justify-between py-3" style={{ borderBottom: i < data.competitors.length - 1 ? '1px solid #243140' : 'none' }}>
-                      <span className="text-sm" style={{ color: '#F4F7FA', fontFamily: BODY }}>{comp.name || comp}</span>
+                      <span className="text-sm" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{comp.name || comp}</span>
                       {comp.threat_level && (
                         <span className="text-xs px-2 py-0.5 rounded" style={{
                           background: comp.threat_level === 'high' ? '#EF444415' : '#F59E0B15',
                           color: comp.threat_level === 'high' ? '#EF4444' : '#F59E0B',
-                          fontFamily: MONO,
+                          fontFamily: fontFamily.mono,
                         }}>
                           {comp.threat_level}
                         </span>
@@ -235,8 +233,8 @@ export default function CompetitiveBenchmarkPage() {
         ) : (
           <div className="text-center py-16 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <Globe className="w-10 h-10 mx-auto mb-3" style={{ color: '#243140' }} />
-            <p className="text-lg font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>No benchmark data yet</p>
-            <p className="text-sm mt-1" style={{ color: '#64748B', fontFamily: BODY }}>Complete calibration to unlock competitive benchmarking.</p>
+            <p className="text-lg font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>No benchmark data yet</p>
+            <p className="text-sm mt-1" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Complete calibration to unlock competitive benchmarking.</p>
           </div>
         )}
       </div>

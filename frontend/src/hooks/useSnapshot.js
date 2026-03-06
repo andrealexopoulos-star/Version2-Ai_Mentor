@@ -135,7 +135,7 @@ export function useSnapshot() {
           filter: `user_id=eq.${session.user.id}`,
         }, (payload) => {
           // New snapshot inserted (by pg_cron or manual trigger) → refresh
-          console.log('[Realtime] New snapshot detected, refreshing...');
+          // console.log('[Realtime] New snapshot detected, refreshing...');
           refresh();
         })
         .subscribe();

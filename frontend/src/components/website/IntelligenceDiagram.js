@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { fontFamily } from '../../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
-const INTER = "'Inter', sans-serif";
 
 const SYSTEMS = [
   { label: 'Finance Systems', tools: ['Xero', 'NetSuite', 'QuickBooks', 'MYOB'] },
@@ -50,8 +49,8 @@ const GlowCard = ({ children, className = '', glow = false }) => (
 
 const FlowLabel = ({ label, sublabel }) => (
   <div className="text-center">
-    <span className="font-semibold tracking-[0.2em] uppercase block" style={{ fontFamily: MONO, color: '#FF9C45', fontSize: '12px' }}>{label}</span>
-    {sublabel && <span className="block mt-1" style={{ fontFamily: INTER, color: '#A6B2C1', fontWeight: 300, fontSize: '13px' }}>{sublabel}</span>}
+    <span className="font-semibold tracking-[0.2em] uppercase block" style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: '12px' }}>{label}</span>
+    {sublabel && <span className="block mt-1" style={{ fontFamily: fontFamily.body, color: '#A6B2C1', fontWeight: 300, fontSize: '13px' }}>{sublabel}</span>}
   </div>
 );
 
@@ -144,10 +143,10 @@ export const IntelligenceDiagram = () => (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 relative z-10">
           {SYSTEMS.map(sys => (
             <GlowCard key={sys.label}>
-              <h4 className="font-bold tracking-[0.15em] uppercase mb-3 text-center" style={{ fontFamily: MONO, color: '#FF9C45', fontSize: '12px' }}>{sys.label}</h4>
+              <h4 className="font-bold tracking-[0.15em] uppercase mb-3 text-center" style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: '12px' }}>{sys.label}</h4>
               <div className="flex flex-wrap justify-center gap-2">
                 {sys.tools.map(t => (
-                  <span key={t} className="px-2.5 py-1 rounded-md transition-colors hover:bg-orange-500/10" style={{ fontFamily: MONO, color: '#A6B2C1', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '12px' }}>{t}</span>
+                  <span key={t} className="px-2.5 py-1 rounded-md transition-colors hover:bg-orange-500/10" style={{ fontFamily: fontFamily.mono, color: '#A6B2C1', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '12px' }}>{t}</span>
                 ))}
               </div>
             </GlowCard>
@@ -181,8 +180,8 @@ export const IntelligenceDiagram = () => (
       <div className="flex items-center justify-center gap-6 sm:gap-10">
         {/* Left inputs */}
         <div className="text-right flex-1 max-w-[160px] hidden sm:block">
-          <p className="text-[12px] sm:text-[13px] mb-1" style={{ fontFamily: INTER, fontWeight: 300, color: '#A6B2C1' }}>Risk Signals</p>
-          <p className="text-[12px] sm:text-[13px]" style={{ fontFamily: INTER, fontWeight: 300, color: '#A6B2C1' }}>Market Intelligence</p>
+          <p className="text-[12px] sm:text-[13px] mb-1" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#A6B2C1' }}>Risk Signals</p>
+          <p className="text-[12px] sm:text-[13px]" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#A6B2C1' }}>Market Intelligence</p>
         </div>
 
         {/* Animated input lines */}
@@ -217,9 +216,9 @@ export const IntelligenceDiagram = () => (
             border: '2px solid rgba(255,140,40,0.5)',
             animation: 'coreGlow 6s ease-in-out infinite',
           }}>
-            <span className="text-xl sm:text-2xl font-bold block" style={{ fontFamily: MONO, color: '#FF7A18', textShadow: '0 0 20px rgba(255,122,24,0.5)' }}>BIQc</span>
-            <span className="tracking-[0.15em] uppercase block mt-1" style={{ fontFamily: MONO, color: '#A6B2C1', fontSize: '10px' }}>Business Intelligence</span>
-            <span className="tracking-[0.15em] uppercase block" style={{ fontFamily: MONO, color: '#A6B2C1', fontSize: '10px' }}>Quotient Centre</span>
+            <span className="text-xl sm:text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', textShadow: '0 0 20px rgba(255,122,24,0.5)' }}>BIQc</span>
+            <span className="tracking-[0.15em] uppercase block mt-1" style={{ fontFamily: fontFamily.mono, color: '#A6B2C1', fontSize: '10px' }}>Business Intelligence</span>
+            <span className="tracking-[0.15em] uppercase block" style={{ fontFamily: fontFamily.mono, color: '#A6B2C1', fontSize: '10px' }}>Quotient Centre</span>
           </div>
         </div>
 
@@ -237,8 +236,8 @@ export const IntelligenceDiagram = () => (
 
         {/* Right outputs */}
         <div className="flex-1 max-w-[160px] hidden sm:block">
-          <p className="text-[12px] sm:text-[13px] mb-1" style={{ fontFamily: INTER, fontWeight: 300, color: '#A6B2C1' }}>Decision Guidance</p>
-          <p className="text-[12px] sm:text-[13px]" style={{ fontFamily: INTER, fontWeight: 300, color: '#A6B2C1' }}>Growth Signals</p>
+          <p className="text-[12px] sm:text-[13px] mb-1" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#A6B2C1' }}>Decision Guidance</p>
+          <p className="text-[12px] sm:text-[13px]" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#A6B2C1' }}>Growth Signals</p>
         </div>
       </div>
 
@@ -253,7 +252,7 @@ export const IntelligenceDiagram = () => (
       <div className="flex items-center justify-center gap-6 sm:gap-10 flex-wrap mt-12 sm:mt-16">
         {['HubSpot', 'Salesforce', 'Xero', 'Stripe', 'Slack', 'Google'].map(name => (
           <div key={name} className="flex items-center gap-2 opacity-50 hover:opacity-90 transition-opacity cursor-default">
-            <span className="text-[12px] sm:text-[13px]" style={{ fontFamily: INTER, fontWeight: 400, color: getBrandColor(name) }}>{name}</span>
+            <span className="text-[12px] sm:text-[13px]" style={{ fontFamily: fontFamily.body, fontWeight: 400, color: getBrandColor(name) }}>{name}</span>
           </div>
         ))}
       </div>

@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import PlatformLayout from '../../../components/website/PlatformLayout';
 import { Link2, X, RefreshCw, Shield, Clock, ChevronRight } from 'lucide-react';
+import { fontFamily } from '../../../design-system/tokens';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const integrations = [
   { name: 'Xero', category: 'Accounting', status: 'connected', lastSync: '12 min ago', data: ['Invoices', 'Transactions', 'Bank feeds', 'Aged receivables'], frequency: 'Every 15 minutes', permissions: ['Read invoices', 'Read bank transactions', 'Read contacts'] },
@@ -32,30 +30,30 @@ const IntegrationsPlatform = () => {
           <div className="flex gap-4">
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
               <Link2 className="w-4 h-4 text-[#10B981]" />
-              <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>Connected</span>
-              <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{connected.length}</span>
+              <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Connected</span>
+              <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{connected.length}</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
               <Clock className="w-4 h-4 text-[#9FB0C3]" />
-              <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>Last sync</span>
-              <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: MONO }}>1 min ago</span>
+              <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Last sync</span>
+              <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>1 min ago</span>
             </div>
           </div>
 
           {/* Connected */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-[#64748B] mb-3" style={{ fontFamily: MONO }}>Connected Systems</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Connected Systems</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {connected.map(i => (
                 <button key={i.name} onClick={() => setSelected(i)} className="flex items-center gap-3 px-4 py-3.5 rounded-lg text-left transition-all hover:border-[#FF6A00]/30 group" style={{ background: '#141C26', border: `1px solid ${selected?.name === i.name ? '#FF6A00' + '50' : '#243140'}` }}>
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-sm font-bold text-[#9FB0C3] group-hover:text-[#FF6A00] transition-colors" style={{ fontFamily: MONO }}>{i.name.charAt(0)}</span>
+                    <span className="text-sm font-bold text-[#9FB0C3] group-hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.mono }}>{i.name.charAt(0)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: SORA }}>{i.name}</span>
+                    <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: fontFamily.display }}>{i.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{i.lastSync}</span>
+                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{i.lastSync}</span>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-[#64748B] group-hover:text-[#FF6A00] transition-colors shrink-0" />
@@ -66,18 +64,18 @@ const IntegrationsPlatform = () => {
 
           {/* Available */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-[#64748B] mb-3" style={{ fontFamily: MONO }}>Available to Connect</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Available to Connect</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {disconnected.map(i => (
                 <div key={i.name} className="flex items-center gap-3 px-4 py-3.5 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140', opacity: 0.6 }}>
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-sm font-bold text-[#64748B]" style={{ fontFamily: MONO }}>{i.name.charAt(0)}</span>
+                    <span className="text-sm font-bold text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{i.name.charAt(0)}</span>
                   </div>
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#9FB0C3]" style={{ fontFamily: SORA }}>{i.name}</span>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{i.category}</span>
+                    <span className="text-sm font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.display }}>{i.name}</span>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>{i.category}</span>
                   </div>
-                  <button className="text-xs px-3 py-1.5 rounded-md font-medium" style={{ color: '#FF6A00', background: '#FF6A00' + '15', border: '1px solid #FF6A0020', fontFamily: INTER }}>Connect</button>
+                  <button className="text-xs px-3 py-1.5 rounded-md font-medium" style={{ color: '#FF6A00', background: '#FF6A00' + '15', border: '1px solid #FF6A0020', fontFamily: fontFamily.body }}>Connect</button>
                 </div>
               ))}
             </div>
@@ -88,34 +86,34 @@ const IntegrationsPlatform = () => {
         {selected && (
           <div className="hidden lg:block w-[340px] shrink-0 rounded-lg overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="integration-detail-panel">
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #243140' }}>
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>{selected.name}</h3>
+              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{selected.name}</h3>
               <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-white/5 text-[#64748B]"><X className="w-4 h-4" /></button>
             </div>
             <div className="px-5 py-4 space-y-5">
               <div>
-                <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-2" style={{ fontFamily: MONO }}>Data Types Ingested</span>
+                <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-2" style={{ fontFamily: fontFamily.mono }}>Data Types Ingested</span>
                 <div className="flex flex-wrap gap-1.5">
                   {selected.data.map(d => (
-                    <span key={d} className="text-[11px] px-2 py-1 rounded" style={{ fontFamily: MONO, color: '#9FB0C3', background: '#0F1720', border: '1px solid #243140' }}>{d}</span>
+                    <span key={d} className="text-[11px] px-2 py-1 rounded" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', background: '#0F1720', border: '1px solid #243140' }}>{d}</span>
                   ))}
                 </div>
               </div>
               <div>
-                <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: MONO }}>Sync Frequency</span>
-                <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: INTER }}>{selected.frequency}</span>
+                <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Sync Frequency</span>
+                <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{selected.frequency}</span>
               </div>
               <div>
-                <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-2" style={{ fontFamily: MONO }}>Permission Scope</span>
+                <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-2" style={{ fontFamily: fontFamily.mono }}>Permission Scope</span>
                 <div className="space-y-1">
                   {selected.permissions.map(p => (
                     <div key={p} className="flex items-center gap-2">
                       <Shield className="w-3 h-3 text-[#10B981]" />
-                      <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: INTER }}>{p}</span>
+                      <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{p}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-medium text-[#EF4444] mt-4" style={{ background: '#EF4444' + '10', border: '1px solid #EF444420', fontFamily: INTER }}>
+              <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-medium text-[#EF4444] mt-4" style={{ background: '#EF4444' + '10', border: '1px solid #EF444420', fontFamily: fontFamily.body }}>
                 <X className="w-3.5 h-3.5" /> Disconnect
               </button>
             </div>

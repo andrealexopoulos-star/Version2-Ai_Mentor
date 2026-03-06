@@ -4,13 +4,11 @@ import { apiClient } from '../lib/api';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier, hasAccess } from '../lib/tierResolver';
 import { BarChart3, Target, TrendingUp, Users, Eye, Loader2, RefreshCw, Plug, Clock, Lock, ArrowRight } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
 const BENCHMARK_COOLDOWN_KEY = 'biqc_benchmark_last_run';
 const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 const PILLAR_LABELS = {
   brand_visibility: { label: 'Brand Visibility', color: '#FF6A00', icon: Eye },
@@ -94,10 +92,10 @@ const MarketingIntelPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: BODY }} data-testid="marketing-intel-page">
+      <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-intel-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Marketing Intelligence</h1>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Marketing Intelligence</h1>
             <p className="text-sm text-[#9FB0C3]">5-pillar competitive benchmark. Evidence-based scoring.</p>
           </div>
           {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#F4F7FA] disabled:opacity-50" style={{ border: '1px solid #243140', color: canRun ? '#9FB0C3' : '#64748B' }}>
@@ -114,12 +112,12 @@ const MarketingIntelPage = () => {
         {!loading && !benchmark && (
           <div className="rounded-2xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <BarChart3 className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <h2 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Run Your First Benchmark</h2>
+            <h2 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Run Your First Benchmark</h2>
             <p className="text-sm text-[#64748B] mb-4 max-w-md mx-auto">Compare your marketing presence against up to 5 competitors across Brand Visibility, Digital Presence, Content Maturity, Social Engagement, and AI Citation Share.</p>
             {!isPaid && (
               <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}>
                 <Clock className="w-3 h-3" style={{ color: '#F59E0B' }} />
-                <span className="text-[11px]" style={{ color: '#F59E0B', fontFamily: MONO }}>Free tier: 1 scan per 30 days</span>
+                <span className="text-[11px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Free tier: 1 scan per 30 days</span>
               </div>
             )}
             <input value={competitors} onChange={e => setCompetitors(e.target.value)} placeholder="competitor1.com, competitor2.com, competitor3.com" className="w-full h-11 px-4 rounded-xl text-sm mb-3 outline-none" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} />
@@ -136,8 +134,8 @@ const MarketingIntelPage = () => {
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 shrink-0" style={{ color: '#F59E0B' }} />
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>Next free scan available in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#64748B', fontFamily: BODY }}>Free tier includes 1 benchmark scan per 30 days. Upgrade for unlimited scans.</p>
+                  <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Next free scan available in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Free tier includes 1 benchmark scan per 30 days. Upgrade for unlimited scans.</p>
                 </div>
               </div>
               <button onClick={() => window.location.href = '/subscribe?plan=starter&from=/marketing-intelligence'}
@@ -153,19 +151,19 @@ const MarketingIntelPage = () => {
           <>
             {/* Overall Score */}
             <div className="rounded-2xl p-6 text-center" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
-              <span className="text-5xl font-bold" style={{ fontFamily: MONO, color: '#FF6A00' }}>{Math.round((benchmark.overall || benchmark.scores?.overall || 0) * 100)}</span>
-              <span className="text-lg text-[#64748B]" style={{ fontFamily: MONO }}>/100</span>
+              <span className="text-5xl font-bold" style={{ fontFamily: fontFamily.mono, color: '#FF6A00' }}>{Math.round((benchmark.overall || benchmark.scores?.overall || 0) * 100)}</span>
+              <span className="text-lg text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>/100</span>
               <p className="text-sm text-[#9FB0C3] mt-1">Overall Marketing Intelligence Score</p>
             </div>
 
             {/* Radar + Pillars */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="rounded-2xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Competitive Radar</h3>
+                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Competitive Radar</h3>
                 <RadarChart data={benchmark.radar || benchmark.radar_data} />
                 <div className="flex justify-center gap-4 mt-3">
-                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#FF6A00' }} /><span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>You</span></div>
-                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#64748B', borderStyle: 'dashed' }} /><span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Competitors</span></div>
+                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#FF6A00' }} /><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>You</span></div>
+                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#64748B', borderStyle: 'dashed' }} /><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Competitors</span></div>
                 </div>
               </div>
 
@@ -180,7 +178,7 @@ const MarketingIntelPage = () => {
                       <div className="flex-1">
                         <div className="flex justify-between mb-1">
                           <span className="text-xs text-[#9FB0C3]">{label}</span>
-                          <span className="text-xs font-bold" style={{ fontFamily: MONO, color }}>{Math.round(score * 100)}%</span>
+                          <span className="text-xs font-bold" style={{ fontFamily: fontFamily.mono, color }}>{Math.round(score * 100)}%</span>
                         </div>
                         <div className="h-1.5 rounded-full" style={{ background: color + '20' }}>
                           <div className="h-1.5 rounded-full" style={{ width: `${score * 100}%`, background: color }} />
@@ -195,11 +193,11 @@ const MarketingIntelPage = () => {
             {/* Competitors */}
             {(benchmark.competitors || []).length > 0 && (
               <div className="rounded-2xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Competitors Benchmarked</h3>
+                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Competitors Benchmarked</h3>
                 {benchmark.competitors.map((c, i) => (
                   <div key={i} className="flex items-center gap-2 py-2" style={{ borderBottom: i < benchmark.competitors.length - 1 ? '1px solid #243140' : 'none' }}>
                     <span className="text-xs text-[#F4F7FA]">{c.name || c.domain}</span>
-                    <span className="text-[10px] text-[#64748B] ml-auto" style={{ fontFamily: MONO }}>{c.domain}</span>
+                    <span className="text-[10px] text-[#64748B] ml-auto" style={{ fontFamily: fontFamily.mono }}>{c.domain}</span>
                   </div>
                 ))}
               </div>

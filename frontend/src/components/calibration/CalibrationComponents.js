@@ -50,7 +50,7 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
       try {
         const reconRes = await apiClient.post('/intelligence/recon', {});
         if (reconRes.data?.ok) {
-          console.log('[Recon] SWOT generated:', reconRes.data.signals_created, 'signals');
+          // console.log('[Recon] SWOT generated:', reconRes.data.signals_created, 'signals');
         }
       } catch (e) {
         console.warn('[Recon] Edge function trigger failed (non-blocking):', e);

@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CheckCircle2, Pencil, RefreshCw, XCircle, Globe, Building2, MapPin, Hash, Mail, Phone, Link2, Shield } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
 
 function computeIdentityConfidence(signals) {
   const reasons = [];
@@ -118,11 +117,11 @@ const SignalBlock = ({ icon: Icon, label, value, sub, warning, hint }) => (
   <div className="rounded-lg p-4" style={{ background: '#141C26', border: `1px solid ${warning ? '#F59E0B20' : '#243140'}` }}>
     <div className="flex items-center gap-2 mb-1.5">
       <Icon className="w-3.5 h-3.5 text-[#3B82F6]" />
-      <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: MONO }}>{label}</span>
+      <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{label}</span>
     </div>
     <span className={`text-sm block ${warning ? 'text-[#4A5568]' : 'text-[#F4F7FA]'}`}>{value}</span>
     {sub && <span className="text-xs text-[#64748B] block mt-0.5">{sub}</span>}
-    {hint && <span className="text-[11px] text-[#F59E0B] block mt-1" style={{ fontFamily: MONO }}>{hint}</span>}
+    {hint && <span className="text-[11px] text-[#F59E0B] block mt-1" style={{ fontFamily: fontFamily.mono }}>{hint}</span>}
   </div>
 );
 
@@ -173,7 +172,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
       <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="identity-edit-mode">
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
-            <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Edit Business Details</h1>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Edit Business Details</h1>
             <p className="text-sm text-[#9FB0C3] mt-1">Correct any details below, then regenerate the scan.</p>
           </div>
           {[
@@ -182,7 +181,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             { key: 'abn', label: 'ABN (optional)', val: editFields.abn ?? signals.abn },
           ].map(f => (
             <div key={f.key}>
-              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: MONO }}>{f.label}</label>
+              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={f.val || ''} onChange={e => setEditFields(p => ({ ...p, [f.key]: e.target.value }))}
                 className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] outline-none focus:ring-1 focus:ring-[#FF6A00]"
                 style={{ background: '#141C26', border: '1px solid #243140' }} data-testid={`edit-${f.key}`} />
@@ -208,7 +207,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
       <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="identity-reject-mode">
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
-            <h1 className="text-2xl font-semibold text-[#EF4444]" style={{ fontFamily: HEAD }}>Not Your Business</h1>
+            <h1 className="text-2xl font-semibold text-[#EF4444]" style={{ fontFamily: fontFamily.display }}>Not Your Business</h1>
             <p className="text-sm text-[#9FB0C3] mt-1">Please provide at least one identifier so we can find the correct business.</p>
           </div>
           {[
@@ -217,7 +216,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             { key: 'abn', label: 'ABN (optional)', ph: '12 345 678 901' },
           ].map(f => (
             <div key={f.key}>
-              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: MONO }}>{f.label}</label>
+              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={rejectFields[f.key]} onChange={e => setRejectFields(p => ({ ...p, [f.key]: e.target.value }))}
                 placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] placeholder:text-[#4A5568] outline-none focus:ring-1 focus:ring-[#FF6A00]"
                 style={{ background: '#141C26', border: '1px solid #243140' }} data-testid={`reject-${f.key}`} />
@@ -244,10 +243,10 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
       <style>{`@keyframes idFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
       <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-5">
         <div className="text-center" style={{ animation: 'idFade 0.5s ease-out' }}>
-          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#FF6A00', fontFamily: MONO }}>
+          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
             Identity Verification
           </span>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>
             Is this your business?
           </h1>
           <p className="text-sm text-[#9FB0C3]">
@@ -272,7 +271,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <div className="rounded-lg p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <div className="flex items-center gap-2 mb-2">
               <Mail className="w-3.5 h-3.5 text-[#3B82F6]" />
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: MONO }}>Contact Signals</span>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Contact Signals</span>
             </div>
             <div className="space-y-1">
               {signals.emails?.length > 0 ? signals.emails.map((e, i) => (
@@ -289,12 +288,12 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <div className="rounded-lg p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <div className="flex items-center gap-2 mb-2">
               <Link2 className="w-3.5 h-3.5 text-[#3B82F6]" />
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: MONO }}>Social Links</span>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Social Links</span>
             </div>
             {signals.socials?.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {signals.socials.map((s, i) => (
-                  <span key={i} className="text-xs px-2 py-1 rounded-full" style={{ color: '#9FB0C3', background: '#0F172050', border: '1px solid #243140', fontFamily: MONO }}>
+                  <span key={i} className="text-xs px-2 py-1 rounded-full" style={{ color: '#9FB0C3', background: '#0F172050', border: '1px solid #243140', fontFamily: fontFamily.mono }}>
                     {s.platform}
                   </span>
                 ))}
@@ -305,8 +304,8 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <div className="rounded-lg p-4" style={{ background: confColor + '08', border: `1px solid ${confColor}25` }}>
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-3.5 h-3.5" style={{ color: confColor }} />
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: MONO }}>Identity Confidence</span>
-              <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ color: confColor, background: confColor + '15', fontFamily: MONO }}>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Identity Confidence</span>
+              <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ color: confColor, background: confColor + '15', fontFamily: fontFamily.mono }}>
                 {confidence.level}
               </span>
             </div>
@@ -315,7 +314,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
                 <span key={i} className="text-[11px] px-2 py-0.5 rounded-full" style={{
                   color: r.positive ? '#10B981' : '#64748B',
                   background: r.positive ? '#10B98110' : '#24314050',
-                  fontFamily: MONO,
+                  fontFamily: fontFamily.mono,
                 }}>
                   {r.positive ? '\u2713' : '\u2014'} {r.label}
                 </span>
@@ -326,7 +325,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
 
         {confidence.level === 'Low' && (
           <div className="rounded-lg p-4" style={{ background: '#EF444408', border: '1px solid #EF444425', animation: 'idFade 0.9s ease-out' }}>
-            <p className="text-xs text-[#EF4444] leading-relaxed" style={{ fontFamily: MONO }}>
+            <p className="text-xs text-[#EF4444] leading-relaxed" style={{ fontFamily: fontFamily.mono }}>
               Low confidence — please edit details or provide ABN to improve accuracy before proceeding.
             </p>
           </div>
@@ -337,7 +336,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <div className="rounded-lg p-4" style={{ background: '#3B82F608', border: '1px solid #3B82F625', animation: 'idFade 0.95s ease-out' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#3B82F6] font-semibold mb-1" style={{ fontFamily: MONO }}>ABN Registry Lookup</p>
+                <p className="text-xs text-[#3B82F6] font-semibold mb-1" style={{ fontFamily: fontFamily.mono }}>ABN Registry Lookup</p>
                 <p className="text-[11px] text-[#64748B]">Search the Australian Business Register to verify identity</p>
               </div>
               <button onClick={handleAbnLookupClick} disabled={lookingUp}
@@ -352,7 +351,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
               <div className="mt-3 pt-3" style={{ borderTop: '1px solid #24314050' }}>
                 {lookupResult.status === 'found' && (
                   <div className="space-y-1">
-                    <p className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>Match found in Australian Business Register</p>
+                    <p className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>Match found in Australian Business Register</p>
                     {lookupResult.legal_name && <p className="text-sm text-[#F4F7FA]">Legal name: {lookupResult.legal_name}</p>}
                     {lookupResult.abn && <p className="text-sm text-[#9FB0C3]">ABN: {lookupResult.abn}</p>}
                     {lookupResult.address && <p className="text-sm text-[#9FB0C3]">Location: {lookupResult.address}</p>}
@@ -360,17 +359,17 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
                 )}
                 {lookupResult.status === 'ambiguous' && lookupResult.suggestions?.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs text-[#F59E0B]" style={{ fontFamily: MONO }}>Multiple matches — review below</p>
+                    <p className="text-xs text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>Multiple matches — review below</p>
                     {lookupResult.suggestions.slice(0, 3).map((s, i) => (
                       <p key={i} className="text-[11px] text-[#9FB0C3]">{s.name} (ABN: {s.abn}) — {s.state}</p>
                     ))}
                   </div>
                 )}
                 {lookupResult.status === 'not_found' && (
-                  <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{lookupResult.match_reason || 'No match found'}</p>
+                  <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{lookupResult.match_reason || 'No match found'}</p>
                 )}
                 {lookupResult.status === 'unavailable' && (
-                  <p className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>{lookupResult.message}</p>
+                  <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{lookupResult.message}</p>
                 )}
               </div>
             )}

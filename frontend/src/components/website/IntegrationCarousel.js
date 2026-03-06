@@ -1,7 +1,6 @@
 import { BrandLogo, getBrandColor } from './BrandLogos';
+import { fontFamily } from '../../design-system/tokens';
 
-const MONO = "'JetBrains Mono', monospace";
-const INTER = "'Inter', sans-serif";
 
 const ROW1_BRANDS = [
   'HubSpot','Salesforce','Xero','Stripe','Slack','Google','Shopify',
@@ -28,7 +27,7 @@ const LogoCard = ({ name }) => (
     data-testid={`integration-card-${name.toLowerCase()}`}
   >
     <BrandLogo name={name} size={36} />
-    <span className="font-medium" style={{ fontFamily: MONO, color: getBrandColor(name), opacity: 0.8, fontSize: '11px' }}>
+    <span className="font-medium" style={{ fontFamily: fontFamily.mono, color: getBrandColor(name), opacity: 0.8, fontSize: '11px' }}>
       {name}
     </span>
   </div>
@@ -37,10 +36,10 @@ const LogoCard = ({ name }) => (
 export const IntegrationCarousel = () => (
   <section className="py-14 sm:py-20 overflow-hidden" style={{ background: '#07121E' }} data-testid="integration-carousel">
     <div className="max-w-5xl mx-auto px-6 mb-12 text-center">
-      <span className="font-medium tracking-widest uppercase" style={{ fontFamily: MONO, color: '#FF7A18', fontSize: '12px' }}>
+      <span className="font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', fontSize: '12px' }}>
         500+ Integrations
       </span>
-      <p className="text-sm sm:text-base mt-3" style={{ fontFamily: INTER, color: '#A6B2C1', opacity: 0.45, fontWeight: 300 }}>
+      <p className="text-sm sm:text-base mt-3" style={{ fontFamily: fontFamily.body, color: '#A6B2C1', opacity: 0.45, fontWeight: 300 }}>
         Connects to the tools your business already uses
       </p>
     </div>

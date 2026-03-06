@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const INTER = "'Inter', sans-serif";
 
 // Parse **word** for orange and //word// for italic
 const RichText = ({ text, style }) => {
@@ -55,12 +55,12 @@ const HeroLayer = ({ variant, phase, zIndex }) => {
       ...layerStyle,
     }}>
       <h1 className="text-[22px] sm:text-[32px] lg:text-[40px] xl:text-[44px] leading-[1.18] mb-5 tracking-tight max-w-[800px] mx-auto px-4"
-        style={{ fontFamily: INTER, fontWeight: 400, color: '#E6EEF7', letterSpacing: '-0.01em' }}>
+        style={{ fontFamily: fontFamily.body, fontWeight: 400, color: '#E6EEF7', letterSpacing: '-0.01em' }}>
         <RichText text={variant.h1} />
       </h1>
       {variant.h2 && (
         <h2 className="text-[13px] sm:text-[16px] lg:text-[18px] max-w-xl mx-auto leading-[1.6] px-4"
-          style={{ fontFamily: INTER, fontWeight: 300, color: '#A6B2C1' }}>
+          style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#A6B2C1' }}>
           <RichText text={variant.h2} />
         </h2>
       )}

@@ -10,14 +10,12 @@ import DataConfidence from '../components/DataConfidence';
 import { DailyBriefCard, DailyBriefBanner } from '../components/DailyBriefCard';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 /* ═══ ACTION BUTTONS ═══ */
 const ActionBtn = ({ icon: Icon, label, color }) => (
-  <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold transition-all hover:-translate-y-0.5 active:scale-95" style={{ background: `${color}15`, color, border: `1px solid ${color}30`, fontFamily: MONO }} data-testid={`action-${label.toLowerCase().replace(/\s/g,'-')}`}>
+  <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold transition-all hover:-translate-y-0.5 active:scale-95" style={{ background: `${color}15`, color, border: `1px solid ${color}30`, fontFamily: fontFamily.mono }} data-testid={`action-${label.toLowerCase().replace(/\s/g,'-')}`}>
     <Icon className="w-3.5 h-3.5" />{label}
   </button>
 );
@@ -61,8 +59,8 @@ const IntegrationRequired = ({ groupId, color }) => {
   return (
     <Card className="p-8 text-center">
       <Plug className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-      <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{l.title}</p>
-      <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#64748B', fontFamily: BODY }}>{l.desc}</p>
+      <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{l.title}</p>
+      <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{l.desc}</p>
       <a href="/integrations" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: color }} data-testid={`connect-${groupId}`}>
         <Plug className="w-3.5 h-3.5" /> {l.cta}
       </a>
@@ -78,8 +76,8 @@ const WelcomeBanner = ({ owner }) => (
         <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
       </div>
       <div className="flex-1">
-        <h3 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: HEAD }}>Welcome{owner ? `, ${owner}` : ''}. Let's activate your intelligence.</h3>
-        <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+        <h3 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Welcome{owner ? `, ${owner}` : ''}. Let's activate your intelligence.</h3>
+        <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
           BIQc needs to connect to your business tools to surface real intelligence. Connect at least one tool to get started.
         </p>
         <div className="flex flex-wrap gap-2">
@@ -114,14 +112,14 @@ const DailySummary = ({ cognitive }) => {
     <Card className="p-5 mb-6" data-testid="daily-summary">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6A00' }} />
-        <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: MONO }}>What changed in 24h</span>
+        <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>What changed in 24h</span>
       </div>
       {newAlerts.length > 0 && (
-        <p className="text-xs mb-2" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+        <p className="text-xs mb-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
           <span className="font-semibold" style={{ color: '#F4F7FA' }}>{newAlerts.length} new signal{newAlerts.length > 1 ? 's' : ''}</span> detected across your systems.
         </p>
       )}
-      {memo && <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{memo.substring(0, 200)}{memo.length > 200 ? '...' : ''}</p>}
+      {memo && <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{memo.substring(0, 200)}{memo.length > 200 ? '...' : ''}</p>}
     </Card>
   );
 };
@@ -298,20 +296,20 @@ const StabilityScoreCard = ({ score, status, velocity, interpretation, cognition
                 strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease' }} />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold leading-none" style={{ color: scoreColor, fontFamily: MONO }}>{score}</span>
-              <span className="text-[8px] tracking-widest uppercase mt-0.5" style={{ color: '#64748B', fontFamily: MONO }}>SCORE</span>
+              <span className="text-xl font-bold leading-none" style={{ color: scoreColor, fontFamily: fontFamily.mono }}>{score}</span>
+              <span className="text-[8px] tracking-widest uppercase mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SCORE</span>
             </div>
           </div>
           {/* Status Info */}
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full" style={{ background: cfg.color }} />
-              <span className="text-sm font-semibold" style={{ color: cfg.color, fontFamily: MONO }}>{cfg.label}</span>
+              <span className="text-sm font-semibold" style={{ color: cfg.color, fontFamily: fontFamily.mono }}>{cfg.label}</span>
               {velocity && <span className="text-xs" style={{ color: cfg.color }}>{velIcon} {velocity}</span>}
             </div>
-            <h2 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: HEAD }}>Business Stability</h2>
-            {interpretation && <p className="text-xs max-w-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{interpretation.substring(0, 120)}{interpretation.length > 120 ? '...' : ''}</p>}
-            {!interpretation && <p className="text-xs" style={{ color: '#64748B', fontFamily: BODY }}>Overall operational health across all connected systems.</p>}
+            <h2 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Business Stability</h2>
+            {interpretation && <p className="text-xs max-w-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{interpretation.substring(0, 120)}{interpretation.length > 120 ? '...' : ''}</p>}
+            {!interpretation && <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Overall operational health across all connected systems.</p>}
           </div>
         </div>
 
@@ -330,9 +328,9 @@ const StabilityScoreCard = ({ score, status, velocity, interpretation, cognition
               const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
               return (
                 <div key={key} className="p-2 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140', minWidth: 80 }}>
-                  <span className="text-[9px] font-bold tracking-widest uppercase block" style={{ color: ic, fontFamily: MONO }}>{label}</span>
-                  <span className="text-base font-bold" style={{ color: ic, fontFamily: MONO }}>{pct}%</span>
-                  <span className="text-[9px] block" style={{ color: '#64748B', fontFamily: MONO }}>{title}</span>
+                  <span className="text-[9px] font-bold tracking-widest uppercase block" style={{ color: ic, fontFamily: fontFamily.mono }}>{label}</span>
+                  <span className="text-base font-bold" style={{ color: ic, fontFamily: fontFamily.mono }}>{pct}%</span>
+                  <span className="text-[9px] block" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{title}</span>
                 </div>
               );
             }).filter(Boolean)}
@@ -342,8 +340,8 @@ const StabilityScoreCard = ({ score, status, velocity, interpretation, cognition
         {/* Confidence badge */}
         {cognitionConf != null && (
           <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">
-            <span className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Confidence</span>
-            <span className="text-lg font-bold" style={{ color: cognitionConf > 0.6 ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{Math.round(cognitionConf * 100)}%</span>
+            <span className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Confidence</span>
+            <span className="text-lg font-bold" style={{ color: cognitionConf > 0.6 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(cognitionConf * 100)}%</span>
           </div>
         )}
       </div>
@@ -431,7 +429,7 @@ const AdvisorWatchtower = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: HEAD }} data-testid="biqc-insights-page">
+      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
 
         {/* LOADING — Animated cognitive screen */}
         {loading && (
@@ -457,20 +455,20 @@ const AdvisorWatchtower = () => {
               <div className="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ background: st.d, boxShadow: `0 0 8px ${st.d}50` }} />
-                  <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: MONO }}>{ST_LABELS[stateStatus] || 'On Track'}</span>
+                  <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: fontFamily.mono }}>{ST_LABELS[stateStatus] || 'On Track'}</span>
                   {stateVelocity && <span className="text-[11px]" style={{ color: st.c }}>{stateVelocity === 'worsening' ? '↘' : stateVelocity === 'improving' ? '↗' : '→'} {stateVelocity}</span>}
-                  {stateConf && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: MONO }}>{typeof stateConf === 'number' ? `${stateConf}%` : stateConf}</span>}
+                  {stateConf && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: fontFamily.mono }}>{typeof stateConf === 'number' ? `${stateConf}%` : stateConf}</span>}
                 </div>
                 <button onClick={refresh} disabled={refreshing} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg hover:bg-white/5" style={{ color: '#64748B' }} data-testid="refresh-btn">
                   <RefreshCw className="w-3 h-3" />
                 </button>
               </div>
-              {stateInterp && <div className="max-w-5xl mx-auto px-6 pb-2"><p className="text-[12px]" style={{ color: st.c, fontFamily: BODY }}>{stateInterp}</p></div>}
+              {stateInterp && <div className="max-w-5xl mx-auto px-6 pb-2"><p className="text-[12px]" style={{ color: st.c, fontFamily: fontFamily.body }}>{stateInterp}</p></div>}
             </div>
 
             <div className="max-w-5xl mx-auto px-6 py-8">
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>
+                <h1 className="text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
                   Good {timeOfDay || 'morning'}, {owner || 'there'}.
                 </h1>
                 <DataConfidence cognitive={cognitive} />
@@ -508,11 +506,11 @@ const AdvisorWatchtower = () => {
                   return (
                     <button key={g.id} onClick={() => setActiveGroup(g.id)}
                       className="flex items-center gap-2.5 px-4 py-3 min-h-[48px] rounded-xl transition-all shrink-0"
-                      style={{ background: isActive ? g.color : '#141C26', color: isActive ? 'white' : '#9FB0C3', border: `1.5px solid ${isActive ? g.color : '#243140'}`, boxShadow: isActive ? `0 4px 16px ${g.color}30` : 'none', fontFamily: HEAD }}
+                      style={{ background: isActive ? g.color : '#141C26', color: isActive ? 'white' : '#9FB0C3', border: `1.5px solid ${isActive ? g.color : '#243140'}`, boxShadow: isActive ? `0 4px 16px ${g.color}30` : 'none', fontFamily: fontFamily.display }}
                       data-testid={`tab-${g.id}`}>
                       <Icon className="w-4 h-4" />
                       <span className="text-sm font-semibold">{g.label}</span>
-                      {d.alerts > 0 && d.hasData && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: isActive ? 'rgba(255,255,255,0.25)' : SEV[d.severity].bg, color: isActive ? 'white' : SEV[d.severity].d, fontFamily: MONO }}>{d.alerts}</span>}
+                      {d.alerts > 0 && d.hasData && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: isActive ? 'rgba(255,255,255,0.25)' : SEV[d.severity].bg, color: isActive ? 'white' : SEV[d.severity].d, fontFamily: fontFamily.mono }}>{d.alerts}</span>}
                     </button>
                   );
                 })}
@@ -527,11 +525,11 @@ const AdvisorWatchtower = () => {
                     <group.icon className="w-4 h-4" style={{ color: group.color }} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{group.label}</h2>
-                    <p className="text-xs" style={{ color: '#64748B', fontFamily: MONO }}>{group.description}</p>
+                    <h2 className="text-lg font-bold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{group.label}</h2>
+                    <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{group.description}</p>
                   </div>
                   {gd.score > 0 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full ml-auto" style={{ color: gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981', background: (gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981') + '15', fontFamily: MONO }} data-testid="insight-score">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full ml-auto" style={{ color: gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981', background: (gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981') + '15', fontFamily: fontFamily.mono }} data-testid="insight-score">
                       Score: {gd.score}
                     </span>
                   )}
@@ -544,9 +542,9 @@ const AdvisorWatchtower = () => {
                   <>
                     {/* AI Insight */}
                     {gd.insight ? (
-                      <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{gd.insight}</p></Card>
+                      <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{gd.insight}</p></Card>
                     ) : (
-                      <Card className="p-5"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>
+                      <Card className="p-5"><p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
                         {gd.hasData ? 'Insufficient data to generate insight.' : 'No active signals detected. Connect relevant integrations to activate monitoring.'}
                       </p></Card>
                     )}
@@ -556,8 +554,8 @@ const AdvisorWatchtower = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {gd.metrics.map((m, i) => (
                           <Card key={i} className="p-4">
-                            <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{m.label}</span>
-                            <span className="text-lg font-bold block" style={{ color: m.color, fontFamily: MONO }}>{m.value}</span>
+                            <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
+                            <span className="text-lg font-bold block" style={{ color: m.color, fontFamily: fontFamily.mono }}>{m.value}</span>
                           </Card>
                         ))}
                       </div>
@@ -566,17 +564,17 @@ const AdvisorWatchtower = () => {
                     {/* Tab-specific detail panels */}
                     {activeId === 'revenue' && gd.details?.deals?.length > 0 && (
                       <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Deal Pipeline</h3>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Deal Pipeline</h3>
                         <div className="space-y-2">
                           {gd.details.deals.slice(0, 5).map((d, i) => (
                             <Card key={i} className="p-4 flex items-center justify-between">
                               <div>
-                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{d.name}</span>
-                                {d.stall > 0 && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: MONO }}>{d.stall}d stalled</span>}
+                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{d.name}</span>
+                                {d.stall > 0 && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{d.stall}d stalled</span>}
                               </div>
                               <div className="text-right">
-                                {d.value != null && <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>${d.value}K</span>}
-                                {d.prob != null && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{d.prob}% prob</span>}
+                                {d.value != null && <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>${d.value}K</span>}
+                                {d.prob != null && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>{d.prob}% prob</span>}
                               </div>
                             </Card>
                           ))}
@@ -592,8 +590,8 @@ const AdvisorWatchtower = () => {
                           gd.details.worst && { label: 'Worst Case (30d)', value: gd.details.worst, color: '#EF4444' },
                         ].filter(Boolean).map((s, i) => (
                           <Card key={i} className="p-4">
-                            <span className="text-[10px] font-semibold block mb-1" style={{ color: s.color, fontFamily: MONO }}>{s.label}</span>
-                            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{s.value}</p>
+                            <span className="text-[10px] font-semibold block mb-1" style={{ color: s.color, fontFamily: fontFamily.mono }}>{s.label}</span>
+                            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{s.value}</p>
                           </Card>
                         ))}
                       </div>
@@ -601,11 +599,11 @@ const AdvisorWatchtower = () => {
 
                     {activeId === 'operations' && gd.details?.recs?.length > 0 && (
                       <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Recommendations</h3>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Recommendations</h3>
                         <div className="space-y-2">
                           {gd.details.recs.map((r, i) => (
                             <Card key={i} className="p-4">
-                              <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>{r}</p>
+                              <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{r}</p>
                             </Card>
                           ))}
                         </div>
@@ -614,20 +612,20 @@ const AdvisorWatchtower = () => {
 
                     {activeId === 'people' && gd.details && (
                       <div className="space-y-3">
-                        {gd.details.calendar && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Calendar</span><p className="text-sm text-[#9FB0C3]">{gd.details.calendar}</p></Card>}
-                        {gd.details.email_stress && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Email Stress</span><p className="text-sm text-[#9FB0C3]">{gd.details.email_stress}</p></Card>}
+                        {gd.details.calendar && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Calendar</span><p className="text-sm text-[#9FB0C3]">{gd.details.calendar}</p></Card>}
+                        {gd.details.email_stress && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Email Stress</span><p className="text-sm text-[#9FB0C3]">{gd.details.email_stress}</p></Card>}
                       </div>
                     )}
 
                     {activeId === 'market' && gd.details?.competitors?.length > 0 && (
                       <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Competitor Signals</h3>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitor Signals</h3>
                         <div className="space-y-2">
                           {gd.details.competitors.map((comp, i) => (
                             <Card key={i} className="p-4 flex items-start gap-3">
                               <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#7C3AED' }} />
                               <div>
-                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{comp.name}</span>
+                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{comp.name}</span>
                                 <p className="text-xs text-[#9FB0C3] mt-0.5">{comp.signal}</p>
                               </div>
                             </Card>
@@ -639,7 +637,7 @@ const AdvisorWatchtower = () => {
                     {/* Resolution Items */}
                     {gd.resolutions.length > 0 ? (
                       <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Needs Attention</h3>
+                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Needs Attention</h3>
                         <div className="space-y-3">
                           {gd.resolutions.map((item, i) => {
                             const sv = SEV[item.severity] || SEV.medium;
@@ -648,8 +646,8 @@ const AdvisorWatchtower = () => {
                                 <div className="flex items-start gap-3">
                                   <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                                   <div className="flex-1">
-                                    <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{item.title}</p>
-                                    {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{item.detail}</p>}
+                                    <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{item.title}</p>
+                                    {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.detail}</p>}
                                     <ActionBar actions={item.actions || ["hand-off", "dismiss"]} />
                                   </div>
                                 </div>
@@ -659,7 +657,7 @@ const AdvisorWatchtower = () => {
                         </div>
                       </div>
                     ) : (
-                      !gd.hasData ? null : <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>No items need attention right now. All clear.</p></Card>
+                      !gd.hasData ? null : <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.body }}>No items need attention right now. All clear.</p></Card>
                     )}
                   </>
                 )}
@@ -667,9 +665,9 @@ const AdvisorWatchtower = () => {
                 {/* Alignment Gaps — only if from real data */}
                 {isTabConnected && (alignment || contradictions.length > 0) && (
                   <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Alignment</h3>
-                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{alignment}</p></Card>}
-                    {contradictions.map((ct, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}><p className="text-xs" style={{ color: '#F59E0B', fontFamily: MONO }}>&#x26A0; {ct}</p></div>))}
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Alignment</h3>
+                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{alignment}</p></Card>}
+                    {contradictions.map((ct, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}><p className="text-xs" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>&#x26A0; {ct}</p></div>))}
                   </div>
                 )}
               </div>
@@ -677,20 +675,20 @@ const AdvisorWatchtower = () => {
               {/* PROPAGATION MAP — Phase B: shows risk chain when cognition deployed */}
               {propagationMap && propagationMap.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: MONO }}>Risk Propagation</h3>
+                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Risk Propagation</h3>
                   <div className="space-y-2">
                     {propagationMap.slice(0, 3).map((chain, i) => (
                       <Card key={i} className="p-4">
                         <div className="flex items-center gap-2 flex-wrap">
                           {(chain.chain || [chain.source, chain.target]).filter(Boolean).map((node, ni, arr) => (
                             <React.Fragment key={ni}>
-                              <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: '#EF444415', color: '#EF4444', fontFamily: MONO }}>{node}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>{node}</span>
                               {ni < arr.length - 1 && <span className="text-[10px]" style={{ color: '#64748B' }}>→</span>}
                             </React.Fragment>
                           ))}
-                          {chain.probability && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: MONO }}>{Math.round(chain.probability * 100)}% likelihood</span>}
+                          {chain.probability && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(chain.probability * 100)}% likelihood</span>}
                         </div>
-                        {chain.description && <p className="text-xs mt-2" style={{ color: '#9FB0C3', fontFamily: BODY }}>{chain.description}</p>}
+                        {chain.description && <p className="text-xs mt-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{chain.description}</p>}
                       </Card>
                     ))}
                   </div>
@@ -703,17 +701,17 @@ const AdvisorWatchtower = () => {
                   <Card className="p-0 overflow-hidden">
                     <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors">
                       <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
-                        <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#64748B', fontFamily: MONO }}>This Week</span>
-                        {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#FF6A00', fontFamily: HEAD }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>recovered</span></div>}
-                        {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#10B981', fontFamily: HEAD }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>saved</span></div>}
-                        {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#3B82F6', fontFamily: HEAD }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: MONO }}>actions</span></div>}
+                        <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>This Week</span>
+                        {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.display }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>recovered</span></div>}
+                        {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#10B981', fontFamily: fontFamily.display }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>saved</span></div>}
+                        {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#3B82F6', fontFamily: fontFamily.display }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>actions</span></div>}
                       </div>
                       {briefOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
                     </button>
                     {briefOpen && (
                       <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid #243140' }}>
-                        {wb.cashflow_recovered && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>}
-                        {wb.hours_saved && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: BODY }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>}
+                        {wb.cashflow_recovered && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>}
+                        {wb.hours_saved && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>}
                       </div>
                     )}
                   </Card>
@@ -725,7 +723,7 @@ const AdvisorWatchtower = () => {
                 <div className="mt-8 mb-4">
                   <Card className="p-6 text-center">
                     <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Connect your business tools</p>
+                    <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Connect your business tools</p>
                     <p className="text-xs text-[#64748B] mb-4 max-w-lg mx-auto">Connect your CRM, accounting, and email integrations to unlock verified intelligence across all modules.</p>
                     <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="overview-connect-cta">
                       <Plug className="w-4 h-4" /> Connect Integrations
@@ -738,18 +736,18 @@ const AdvisorWatchtower = () => {
               {memo && (
                 <div className="mb-8">
                   <button onClick={() => setMemoOpen(!memoOpen)} className="flex items-center justify-between w-full mb-3">
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: MONO }}>Executive Memo</h3>
+                    <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Executive Memo</h3>
                     {memoOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
                   </button>
-                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#9FB0C3', fontFamily: BODY }}>{memo}</p></Card>}
+                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{memo}</p></Card>}
                 </div>
               )}
 
               {/* Sources */}
               {sources && sources.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid #243140' }}>
-                  <span className="text-[10px]" style={{ color: '#64748B', fontFamily: MONO }}>Sources:</span>
-                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: '#141C26', fontFamily: MONO }}>{s}</span>))}
+                  <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
+                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: '#141C26', fontFamily: fontFamily.mono }}>{s}</span>))}
                 </div>
               )}
             </div>

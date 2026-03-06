@@ -6,15 +6,13 @@ import EngagementScanCard from '../components/EngagementScanCard';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { containsCRMClaim } from '../constants/integrationTruth';
+import { fontFamily } from '../design-system/tokens';
 import {
   TrendingUp, ArrowRight, Target, Shield, AlertTriangle,
   Zap, CheckCircle2, Eye, ChevronDown, ChevronUp, Link2, RefreshCw,
   MessageSquare, FileText, Layers, Crosshair, Filter, BarChart3, Plug, Activity
 } from 'lucide-react';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '', ...props }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }} {...props}>{children}</div>
@@ -31,10 +29,10 @@ const GaugeMeter = ({ value, label, suffix = '%', thresholds = [30, 60, 80] }) =
   const color = value >= thresholds[2] ? '#10B981' : value >= thresholds[1] ? '#F59E0B' : value >= thresholds[0] ? '#FF6A00' : '#EF4444';
   return (
     <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>{label}</span>
+      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>{label}</span>
       <div className="flex items-end gap-1">
-        <span className="text-2xl font-bold" style={{ color, fontFamily: MONO }}>{value != null ? value : '—'}</span>
-        {value != null && <span className="text-xs mb-0.5" style={{ color: '#64748B', fontFamily: MONO }}>{suffix}</span>}
+        <span className="text-2xl font-bold" style={{ color, fontFamily: fontFamily.mono }}>{value != null ? value : '—'}</span>
+        {value != null && <span className="text-xs mb-0.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{suffix}</span>}
       </div>
       {value != null && (
         <div className="h-1.5 rounded-full mt-2" style={{ background: color + '20' }}>
@@ -150,7 +148,7 @@ const MarketPage = () => {
 
   return (
     <DashboardLayout actionMessage={actionMessage} onActionConsumed={() => setActionMessage('')}>
-      <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: BODY, overflowY: 'visible' }} data-testid="market-page">
+      <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body, overflowY: 'visible' }} data-testid="market-page">
         <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
         {loading && <CognitiveMesh message="Pulling your latest signals..." />}
@@ -162,10 +160,10 @@ const MarketPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full" style={{ background: st.color, boxShadow: `0 0 12px ${st.color}50` }} />
-              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: HEAD }}>{snapshot ? st.label : 'Waiting for data'}</span>
+              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: fontFamily.display }}>{snapshot ? st.label : 'Waiting for data'}</span>
             </div>
             <div className="flex items-center gap-2">
-              {confidence && <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: MONO }}>{confidence}% confidence</span>}
+              {confidence && <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: fontFamily.mono }}>{confidence}% confidence</span>}
               <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-white/5" data-testid="market-refresh">
                 <RefreshCw className="w-3.5 h-3.5 text-[#64748B]" />
               </button>
@@ -180,7 +178,7 @@ const MarketPage = () => {
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors shrink-0 ${activeTab === tab.id ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
-              style={{ background: activeTab === tab.id ? '#FF6A0015' : 'transparent', fontFamily: MONO }}
+              style={{ background: activeTab === tab.id ? '#FF6A0015' : 'transparent', fontFamily: fontFamily.mono }}
               data-testid={`tab-${tab.id}`}>
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
@@ -196,13 +194,13 @@ const MarketPage = () => {
           {filteredMemo && (
             <Panel data-testid="brief-section">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-[#FF6A00]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Executive Brief</h2></div>
-                <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: MONO }}>MARKET INTELLIGENCE</span>
+                <div className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-[#FF6A00]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Executive Brief</h2></div>
+                <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>MARKET INTELLIGENCE</span>
               </div>
               <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
               <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid #243140' }}>
-                <span className="text-[10px]" style={{ color: '#64748B', fontFamily: MONO }}>Full reports available under Governance → Reports</span>
-                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: '#FF6A00', fontFamily: MONO }}>
+                <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Full reports available under Governance → Reports</span>
+                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
                   View Reports <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -210,23 +208,23 @@ const MarketPage = () => {
           )}
           {filteredMoves.length > 0 && (
             <div style={{ animation: 'snapFade 0.6s ease-out' }} data-testid="focus-section">
-              <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: HEAD }}>What To Focus On Next</h2>
+              <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>What To Focus On Next</h2>
               <div className="space-y-3">
                 {filteredMoves.map((m, i) => (
                   <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
                     <div className="flex items-start gap-3">
-                      <span className="text-sm font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: MONO }}>#{i + 1}</span>
+                      <span className="text-sm font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>{m.move}</p>
+                        <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>{m.move}</p>
                         <p className="text-xs text-[#9FB0C3] leading-relaxed mb-3">{m.rationale}</p>
                         <div className="flex flex-wrap gap-3">
-                          {m.expected_impact && <span className="text-[11px] text-[#10B981]" style={{ fontFamily: MONO }}>{m.expected_impact}</span>}
-                          {m.confidence != null && <span className="text-[11px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.confidence}% confidence</span>}
-                          {m.urgency && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: m.urgency === 'immediate' ? '#EF4444' : '#F59E0B', background: (m.urgency === 'immediate' ? '#EF4444' : '#F59E0B') + '15', fontFamily: MONO }}>{m.urgency?.replace('_', ' ')}</span>}
+                          {m.expected_impact && <span className="text-[11px] text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{m.expected_impact}</span>}
+                          {m.confidence != null && <span className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.confidence}% confidence</span>}
+                          {m.urgency && <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: m.urgency === 'immediate' ? '#EF4444' : '#F59E0B', background: (m.urgency === 'immediate' ? '#EF4444' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{m.urgency?.replace('_', ' ')}</span>}
                         </div>
                         <button onClick={() => sendToChat(`Help me execute: ${m.move}. ${m.rationale}`)}
                           className="flex items-center gap-1.5 mt-3 text-[11px] px-3 py-1.5 rounded-lg transition-colors hover:bg-[#FF6A0015]"
-                          style={{ color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: MONO }}
+                          style={{ color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: fontFamily.mono }}
                           data-testid={`execute-move-${i}`}>
                           <MessageSquare className="w-3 h-3" /> Execute in Chat
                         </button>
@@ -239,20 +237,20 @@ const MarketPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                   {ap.probability_shift_if_executed != null && (
                     <div className="p-4 rounded-lg text-center" style={{ background: '#10B98108', border: '1px solid #10B98125' }}>
-                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If you act</span>
-                      <span className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: MONO }}>+{ap.probability_shift_if_executed}%</span>
+                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>If you act</span>
+                      <span className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>+{ap.probability_shift_if_executed}%</span>
                     </div>
                   )}
                   {ap.probability_shift_if_ignored != null && (
                     <div className="p-4 rounded-lg text-center" style={{ background: '#EF444408', border: '1px solid #EF444425' }}>
-                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>If you don't</span>
-                      <span className="text-2xl font-bold text-[#EF4444]" style={{ fontFamily: MONO }}>-{Math.abs(ap.probability_shift_if_ignored)}%</span>
+                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>If you don't</span>
+                      <span className="text-2xl font-bold text-[#EF4444]" style={{ fontFamily: fontFamily.mono }}>-{Math.abs(ap.probability_shift_if_ignored)}%</span>
                     </div>
                   )}
                   {ap.decision_window_pressure && (
                     <div className="p-4 rounded-lg text-center" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
-                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Time to act</span>
-                      <span className="text-2xl font-bold text-[#F59E0B]" style={{ fontFamily: MONO }}>{ap.decision_window_pressure.window_days}d</span>
+                      <span className="text-[11px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Time to act</span>
+                      <span className="text-2xl font-bold text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>{ap.decision_window_pressure.window_days}d</span>
                     </div>
                   )}
                 </div>
@@ -264,24 +262,24 @@ const MarketPage = () => {
           )}
           {filteredBlindside && (
             <div className="rounded-xl p-5" style={{ background: '#EF444406', border: '1px solid #EF444420' }} data-testid="risk-section">
-              <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-[#EF4444]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Biggest Risk Right Now</h2></div>
+              <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-[#EF4444]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Biggest Risk Right Now</h2></div>
               <p className="text-sm text-[#F4F7FA] mb-2">{filteredBlindside.risk}</p>
               {filteredBlindside.evidence && <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{filteredBlindside.evidence}</p>}
-              {filteredBlindside.prevention_action && <p className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>What to do: {filteredBlindside.prevention_action}</p>}
+              {filteredBlindside.prevention_action && <p className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>What to do: {filteredBlindside.prevention_action}</p>}
             </div>
           )}
           {filteredLever && (
             <div className="rounded-xl p-5" style={{ background: '#10B98106', border: '1px solid #10B98120' }} data-testid="opportunity-section">
-              <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4 text-[#10B981]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Growth Opportunity You're Missing</h2></div>
+              <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4 text-[#10B981]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Growth Opportunity You're Missing</h2></div>
               <p className="text-sm text-[#F4F7FA] mb-2">{filteredLever.lever}</p>
               {filteredLever.evidence && <p className="text-xs text-[#9FB0C3] mb-2">{filteredLever.evidence}</p>}
-              {filteredLever.potential_value && <span className="text-xs text-[#10B981]" style={{ fontFamily: MONO }}>Potential: {filteredLever.potential_value}</span>}
+              {filteredLever.potential_value && <span className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>Potential: {filteredLever.potential_value}</span>}
             </div>
           )}
           {(goalProb != null || filteredAlignment) && (
             <Panel data-testid="track-section">
-              <h2 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Are You On Track?</h2>
-              {goalProb != null && <div className="flex items-center gap-4 mb-3"><span className="text-3xl font-bold" style={{ fontFamily: MONO, color: goalProb > 60 ? '#10B981' : '#F59E0B' }}>{goalProb}%</span><span className="text-sm text-[#9FB0C3]">chance of hitting your goals</span></div>}
+              <h2 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Are You On Track?</h2>
+              {goalProb != null && <div className="flex items-center gap-4 mb-3"><span className="text-3xl font-bold" style={{ fontFamily: fontFamily.mono, color: goalProb > 60 ? '#10B981' : '#F59E0B' }}>{goalProb}%</span><span className="text-sm text-[#9FB0C3]">chance of hitting your goals</span></div>}
               {filteredAlignment && <p className="text-sm text-[#9FB0C3] leading-relaxed">{filteredAlignment}</p>}
             </Panel>
           )}
@@ -291,9 +289,9 @@ const MarketPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-2">
               <Shield className="w-3.5 h-3.5 text-[#64748B]" />
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Reports</h3>
+              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Forensic Reports</h3>
             </div>
-            <p className="text-xs mb-3" style={{ color: '#64748B', fontFamily: BODY }}>Forensic Calibration and Market Exposure Scan reports have been moved to the Reports section for download as Board-ready PDFs.</p>
+            <p className="text-xs mb-3" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Forensic Calibration and Market Exposure Scan reports have been moved to the Reports section for download as Board-ready PDFs.</p>
             <button onClick={() => navigate('/reports')} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}>
               <ArrowRight className="w-3 h-3" /> Go to Governance Reports
             </button>
@@ -305,13 +303,13 @@ const MarketPage = () => {
         {/* ═══════════════════════════════════════════════════ */}
         {activeTab === 'saturation' && (
           <div className="space-y-6" data-testid="saturation-tab">
-            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Market Saturation Analysis</h2>
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Saturation Analysis</h2>
             <p className="text-xs text-[#64748B]">How crowded is your market and where do you stand relative to competitors.</p>
 
             {!snapshot && !watchtower ? (
               <Panel className="text-center py-10">
                 <Layers className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Complete calibration to unlock saturation analysis.</p>
+                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Complete calibration to unlock saturation analysis.</p>
                 <p className="text-xs text-[#64748B] mb-4">BIQc needs your business context to assess market density, positioning, and competitive pressure.</p>
                 <button onClick={() => navigate('/market/calibration')} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#7C3AED' }} data-testid="saturation-calibrate-cta">
                   <Eye className="w-4 h-4" /> Start Calibration
@@ -324,8 +322,8 @@ const MarketPage = () => {
                   <GaugeMeter value={saturationScore} label="Market Position Score" suffix="/100" thresholds={[25, 50, 75]} />
                   <GaugeMeter value={demandCapture} label="Demand Capture Rate" suffix="%" thresholds={[30, 50, 70]} />
                   <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Position Verdict</span>
-                    <span className="text-xl font-bold" style={{ color: positionVerdict === 'STABLE' ? '#10B981' : positionVerdict === 'DRIFT' ? '#F59E0B' : '#EF4444', fontFamily: MONO }}>
+                    <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Position Verdict</span>
+                    <span className="text-xl font-bold" style={{ color: positionVerdict === 'STABLE' ? '#10B981' : positionVerdict === 'DRIFT' ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
                       {positionVerdict || '—'}
                     </span>
                   </div>
@@ -335,7 +333,7 @@ const MarketPage = () => {
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
                     <BarChart3 className="w-4 h-4 text-[#7C3AED]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Competitive Landscape</h3>
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Competitive Landscape</h3>
                   </div>
                   {competitors.length > 0 ? (
                     <div className="space-y-2">
@@ -343,10 +341,10 @@ const MarketPage = () => {
                         <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
                           <div className="flex-1 min-w-0">
-                            <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: HEAD }}>{comp.name}</span>
+                            <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: fontFamily.display }}>{comp.name}</span>
                             {comp.signal && <p className="text-[10px] text-[#64748B] mt-0.5">{comp.signal}</p>}
                           </div>
-                          {comp.threat_level && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: comp.threat_level === 'high' ? '#EF4444' : '#F59E0B', background: (comp.threat_level === 'high' ? '#EF4444' : '#F59E0B') + '15', fontFamily: MONO }}>{comp.threat_level}</span>}
+                          {comp.threat_level && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: comp.threat_level === 'high' ? '#EF4444' : '#F59E0B', background: (comp.threat_level === 'high' ? '#EF4444' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{comp.threat_level}</span>}
                         </div>
                       ))}
                     </div>
@@ -360,7 +358,7 @@ const MarketPage = () => {
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
                       <Activity className="w-4 h-4 text-[#3B82F6]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Signal Positions by Source</h3>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Signal Positions by Source</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {Object.entries(watchtower.positions).map(([domain, pos]) => {
@@ -369,9 +367,9 @@ const MarketPage = () => {
                           <div key={domain} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
-                              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: posColor, background: posColor + '15', fontFamily: MONO }}>{pos.position}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: posColor, background: posColor + '15', fontFamily: fontFamily.mono }}>{pos.position}</span>
                             </div>
-                            <div className="flex gap-3 text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>
+                            <div className="flex gap-3 text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                               <span>{pos.events_30d} events</span>
                               <span>{pos.velocity}</span>
                             </div>
@@ -391,13 +389,13 @@ const MarketPage = () => {
         {/* ═══════════════════════════════════════════════════ */}
         {activeTab === 'demand' && (
           <div className="space-y-6" data-testid="demand-tab">
-            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Demand Capture Analysis</h2>
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Demand Capture Analysis</h2>
             <p className="text-xs text-[#64748B]">How effectively you're capturing available market demand and converting interest into revenue.</p>
 
             {!hasCRM && !snapshot ? (
               <Panel className="text-center py-10">
                 <Crosshair className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Connect CRM to analyse demand capture.</p>
+                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Connect CRM to analyse demand capture.</p>
                 <p className="text-xs text-[#64748B] mb-4">Demand capture analysis requires CRM data (deals, contacts) and calibration to assess market opportunity.</p>
                 <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#3B82F6' }} data-testid="demand-connect-cta">
                   <Plug className="w-4 h-4" /> Connect CRM
@@ -411,8 +409,8 @@ const MarketPage = () => {
                   <GaugeMeter value={mi.misalignment_index != null ? mi.misalignment_index : null} label="Misalignment Index" suffix="/100" thresholds={[60, 40, 20]} />
                   {pipeline != null && (
                     <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Active Pipeline</span>
-                      <span className="text-2xl font-bold text-[#3B82F6]" style={{ fontFamily: MONO }}>${Math.round(pipeline / 1000)}K</span>
+                      <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Active Pipeline</span>
+                      <span className="text-2xl font-bold text-[#3B82F6]" style={{ fontFamily: fontFamily.mono }}>${Math.round(pipeline / 1000)}K</span>
                     </div>
                   )}
                 </div>
@@ -422,7 +420,7 @@ const MarketPage = () => {
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
                       <Target className="w-4 h-4 text-[#FF6A00]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Demand Pressure by Channel</h3>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Demand Pressure by Channel</h3>
                     </div>
                     <div className="space-y-3">
                       {Object.entries(pressure.pressures).map(([domain, p]) => {
@@ -432,8 +430,8 @@ const MarketPage = () => {
                             <div className="flex justify-between mb-1">
                               <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: levelColor, background: levelColor + '15', fontFamily: MONO }}>{p.level}</span>
-                                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{p.events_14d} signals</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: levelColor, background: levelColor + '15', fontFamily: fontFamily.mono }}>{p.level}</span>
+                                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{p.events_14d} signals</span>
                               </div>
                             </div>
                             <div className="h-1.5 rounded-full" style={{ background: levelColor + '20' }}>
@@ -458,13 +456,13 @@ const MarketPage = () => {
         {/* ═══════════════════════════════════════════════════ */}
         {activeTab === 'friction' && (
           <div className="space-y-6" data-testid="friction-tab">
-            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Funnel Friction Analysis</h2>
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Funnel Friction Analysis</h2>
             <p className="text-xs text-[#64748B]">Where prospects drop off and where your conversion engine has resistance.</p>
 
             {!hasCRM && !snapshot ? (
               <Panel className="text-center py-10">
                 <Filter className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Connect CRM to analyse funnel friction.</p>
+                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Connect CRM to analyse funnel friction.</p>
                 <p className="text-xs text-[#64748B] mb-4">Funnel analysis requires deal stage data from your CRM to identify where deals stall, drop off, or slow down.</p>
                 <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#F59E0B' }} data-testid="friction-connect-cta">
                   <Plug className="w-4 h-4" /> Connect CRM
@@ -477,7 +475,7 @@ const MarketPage = () => {
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
                       <RefreshCw className="w-4 h-4 text-[#3B82F6]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Data Freshness by Source</h3>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Data Freshness by Source</h3>
                     </div>
                     <p className="text-xs text-[#64748B] mb-4">Stale data creates blind spots. Fresh data reduces friction in decision-making.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -487,10 +485,10 @@ const MarketPage = () => {
                           <div key={domain} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
-                              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: fColor, background: fColor + '15', fontFamily: MONO }}>{f.status}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: fColor, background: fColor + '15', fontFamily: fontFamily.mono }}>{f.status}</span>
                             </div>
-                            <span className="text-lg font-bold block" style={{ color: fColor, fontFamily: MONO }}>{f.hours_old != null ? (f.hours_old < 24 ? Math.round(f.hours_old) + 'h' : Math.round(f.hours_old / 24) + 'd') : '—'}</span>
-                            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Decay: {f.decay_factor != null ? Math.round(f.decay_factor * 100) + '%' : '—'} signal strength</span>
+                            <span className="text-lg font-bold block" style={{ color: fColor, fontFamily: fontFamily.mono }}>{f.hours_old != null ? (f.hours_old < 24 ? Math.round(f.hours_old) + 'h' : Math.round(f.hours_old / 24) + 'd') : '—'}</span>
+                            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Decay: {f.decay_factor != null ? Math.round(f.decay_factor * 100) + '%' : '—'} signal strength</span>
                           </div>
                         );
                       })}
@@ -502,7 +500,7 @@ const MarketPage = () => {
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
                     <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Identified Friction Points</h3>
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Identified Friction Points</h3>
                   </div>
                   {c.data_gaps && c.data_gaps.length > 0 ? (
                     <div className="space-y-2">
@@ -513,7 +511,7 @@ const MarketPage = () => {
                             <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: impactColor }} />
                             <div className="flex-1">
                               <span className="text-xs font-semibold text-[#F4F7FA]">{gap.area}</span>
-                              <span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{ color: impactColor, background: impactColor + '15', fontFamily: MONO }}>{gap.status}</span>
+                              <span className="text-[10px] ml-2 px-1.5 py-0.5 rounded" style={{ color: impactColor, background: impactColor + '15', fontFamily: fontFamily.mono }}>{gap.status}</span>
                               {gap.fix && <p className="text-[10px] text-[#64748B] mt-1">{gap.fix}</p>}
                             </div>
                           </div>
@@ -535,20 +533,20 @@ const MarketPage = () => {
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
                       <TrendingUp className="w-4 h-4 text-[#10B981]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Conversion Intelligence</h3>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Conversion Intelligence</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {goalProb != null && (
                         <div className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                          <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Goal Achievement</span>
-                          <span className="text-3xl font-bold" style={{ color: goalProb > 60 ? '#10B981' : '#F59E0B', fontFamily: MONO }}>{goalProb}%</span>
+                          <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Goal Achievement</span>
+                          <span className="text-3xl font-bold" style={{ color: goalProb > 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{goalProb}%</span>
                           <span className="text-[10px] text-[#64748B] block mt-1">probability at current pace</span>
                         </div>
                       )}
                       {mi.misalignment_index != null && (
                         <div className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                          <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Strategy-Execution Gap</span>
-                          <span className="text-3xl font-bold" style={{ color: mi.misalignment_index > 50 ? '#EF4444' : mi.misalignment_index > 25 ? '#F59E0B' : '#10B981', fontFamily: MONO }}>{mi.misalignment_index}</span>
+                          <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Strategy-Execution Gap</span>
+                          <span className="text-3xl font-bold" style={{ color: mi.misalignment_index > 50 ? '#EF4444' : mi.misalignment_index > 25 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{mi.misalignment_index}</span>
                           <span className="text-[10px] text-[#64748B] block mt-1">misalignment index (lower is better)</span>
                         </div>
                       )}
@@ -563,7 +561,7 @@ const MarketPage = () => {
         {/* ═══ REPORTS TAB ═══ */}
         {activeTab === 'reports' && (
           <div className="space-y-4" data-testid="reports-tab">
-            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Intelligence Reports</h2>
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Intelligence Reports</h2>
             {reports.length === 0 && (
               <div className="rounded-xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #1E293B' }}>
                 <FileText className="w-8 h-8 mx-auto mb-3 text-[#64748B]/30" />
@@ -574,10 +572,10 @@ const MarketPage = () => {
               <div key={i} className="rounded-xl p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: '#141C26', border: '1px solid #1E293B' }}
                 onClick={() => sendToChat(`Summarise my ${r.type}`)}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-[#FF6A00]" /><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{r.type}</span></div>
-                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{new Date(r.date).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-[#FF6A00]" /><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{r.type}</span></div>
+                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{new Date(r.date).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-1 mt-2"><MessageSquare className="w-3 h-3 text-[#FF6A00]" /><span className="text-[10px] text-[#FF6A00]" style={{ fontFamily: MONO }}>Discuss in SoundBoard</span></div>
+                <div className="flex items-center gap-1 mt-2"><MessageSquare className="w-3 h-3 text-[#FF6A00]" /><span className="text-[10px] text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>Discuss in SoundBoard</span></div>
               </div>
             ))}
           </div>

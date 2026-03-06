@@ -7,10 +7,8 @@ import {
   Loader2, ChevronRight, Clock, CheckCircle2 
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { fontFamily } from '../design-system/tokens';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
@@ -26,7 +24,7 @@ const StatusBadge = ({ status }) => {
   const c = colors[status] || colors.draft;
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider" 
-          style={{ background: c.bg, color: c.text, fontFamily: MONO }}>
+          style={{ background: c.bg, color: c.text, fontFamily: fontFamily.mono }}>
       {c.label}
     </span>
   );
@@ -86,10 +84,10 @@ const ABTestingPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="ab-testing-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="ab-testing-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>A/B Testing</h1>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>A/B Testing</h1>
             <p className="text-sm text-[#9FB0C3]">Create and manage experiments to optimise your intelligence outputs.</p>
           </div>
           <Button
@@ -104,10 +102,10 @@ const ABTestingPage = () => {
         {/* Create Form */}
         {showCreate && (
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>New Experiment</h3>
+            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>New Experiment</h3>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Name *</label>
+                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Name *</label>
                 <input
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -118,7 +116,7 @@ const ABTestingPage = () => {
                 />
               </div>
               <div>
-                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Description</label>
+                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Description</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
@@ -130,7 +128,7 @@ const ABTestingPage = () => {
                 />
               </div>
               <div>
-                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: MONO }}>Primary Metric</label>
+                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Primary Metric</label>
                 <select
                   value={form.metric}
                   onChange={e => setForm(f => ({ ...f, metric: e.target.value }))}
@@ -170,7 +168,7 @@ const ABTestingPage = () => {
         {!loading && experiments.length === 0 && (
           <Panel className="text-center py-12">
             <FlaskConical className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>No experiments yet</p>
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No experiments yet</p>
             <p className="text-xs text-[#64748B] mb-4">Create your first A/B test to start optimising intelligence outputs.</p>
           </Panel>
         )}
@@ -215,22 +213,22 @@ const ABTestingPage = () => {
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid #243140' }}>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Metric</span>
-                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: MONO }}>{(exp.metric || 'conversion_rate').replace(/_/g, ' ')}</span>
+                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Metric</span>
+                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{(exp.metric || 'conversion_rate').replace(/_/g, ' ')}</span>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Variants</span>
-                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: MONO }}>{exp.variants?.length || 2}</span>
+                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Variants</span>
+                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{exp.variants?.length || 2}</span>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Created</span>
-                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: MONO }}>
+                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Created</span>
+                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
                           {exp.created_at ? new Date(exp.created_at).toLocaleDateString() : '—'}
                         </span>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: MONO }}>Impressions</span>
-                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: MONO }}>{exp.total_impressions || 0}</span>
+                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Impressions</span>
+                        <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{exp.total_impressions || 0}</span>
                       </div>
                     </div>
                   </div>

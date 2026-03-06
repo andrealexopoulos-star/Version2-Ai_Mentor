@@ -3,10 +3,8 @@ import { apiClient } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { Zap, ArrowRight, TrendingDown, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 /**
  * DailyBriefCard — Rendered on the Advisor page.
@@ -97,21 +95,21 @@ export const DailyBriefCard = () => {
           <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#FF6A00', fontFamily: MONO }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
             Today's Priority
           </p>
-          <p className="text-sm leading-relaxed" style={{ color: '#F4F7FA', fontFamily: BODY }}>
+          <p className="text-sm leading-relaxed" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
             {brief.priority_message}
           </p>
           {brief.suggested_action && (
-            <p className="text-xs mt-2" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+            <p className="text-xs mt-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
               Suggested: {brief.suggested_action}
             </p>
           )}
           <button
             onClick={handleOpen}
             className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-[#FF6A00]/10"
-            style={{ color: '#FF6A00', fontFamily: MONO, border: '1px solid #FF6A0030' }}
+            style={{ color: '#FF6A00', fontFamily: fontFamily.mono, border: '1px solid #FF6A0030' }}
             data-testid="open-brief-btn"
           >
             Open Brief <ArrowRight className="w-3 h-3" />
@@ -123,12 +121,12 @@ export const DailyBriefCard = () => {
       {(brief.alerts_count > 0 || brief.priority_domain) && (
         <div className="flex items-center gap-4 mt-4 pt-3" style={{ borderTop: '1px solid #243140' }}>
           {brief.priority_domain && (
-            <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#FF6A0010', color: '#FF6A00', fontFamily: MONO }}>
+            <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#FF6A0010', color: '#FF6A00', fontFamily: fontFamily.mono }}>
               {brief.priority_domain}
             </span>
           )}
           {brief.alerts_count > 0 && (
-            <span className="flex items-center gap-1 text-xs" style={{ color: '#F59E0B', fontFamily: MONO }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
               <AlertTriangle className="w-3 h-3" /> {brief.alerts_count} alert{brief.alerts_count !== 1 ? 's' : ''}
             </span>
           )}
@@ -165,13 +163,13 @@ export const DailyBriefBanner = ({ onOpen }) => {
     >
       <div className="flex items-center gap-3 max-w-xl">
         <Zap className="w-4 h-4 shrink-0" style={{ color: '#FF6A00' }} />
-        <p className="text-sm" style={{ color: '#F4F7FA', fontFamily: BODY }}>
+        <p className="text-sm" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
           Your Business Brief is ready.
         </p>
         <button
           onClick={() => { setVisible(false); onOpen?.(); }}
           className="px-3 py-1 rounded-lg text-xs font-semibold shrink-0"
-          style={{ background: '#FF6A00', color: 'white', fontFamily: MONO }}
+          style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.mono }}
           data-testid="view-brief-btn"
         >
           View

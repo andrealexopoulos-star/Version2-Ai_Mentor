@@ -46,14 +46,14 @@ const EmailInbox = () => {
       }
 
       // CANONICAL: Query email_connections ONLY
-      console.log("Querying email_connections for user:", session.user.id);
+      // console.log("Querying email_connections for user:", session.user.id);
       
       const { data: rows, error } = await supabase
         .from('email_connections')
         .select('*')
         .eq('user_id', session.user.id);
       
-      console.log("Query result:", { rows, error });
+      // console.log("Query result:", { rows, error });
       
       if (error) {
         console.error('Database query error:', error);
@@ -67,7 +67,7 @@ const EmailInbox = () => {
       
       // CANONICAL: rows.length > 0 means connected
       if (!rows || rows.length === 0) {
-        console.log('No email provider connected');
+        // console.log('No email provider connected');
         setGmailConnected(false);
         setOutlookConnected(false);
         setActiveProvider(null);
@@ -77,7 +77,7 @@ const EmailInbox = () => {
       }
       
       const connection = rows[0];
-      console.log('Email connection found:', connection);
+      // console.log('Email connection found:', connection);
       
       // Set state and fetch inbox
       if (connection.provider === 'outlook') {

@@ -2,13 +2,12 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Lock, Server, Globe, ChevronLeft, Check, Eye, Database, Scale } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
 const AZURE = '#007AFF';
 const MINT = '#00D995';
 const SLATE = '#1E293B';
 const MUTED = '#64748B';
-const HEAD = "var(--font-heading)";
-const MONO = "'Geist Mono', monospace";
 
 const glass = { background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.3)', boxShadow: '0 24px 48px -12px rgba(0,0,0,0.05)' };
 const up = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55 } } };
@@ -52,18 +51,18 @@ const TrustPage = () => {
 
       <nav className="fixed top-0 inset-x-0 z-50 bg-white/80" style={{ backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-16 py-4 flex items-center justify-between">
-          <button onClick={() => nav('/')} className="flex items-center gap-2 text-[13px] font-medium rounded-lg px-3 py-1.5 hover:bg-slate-50" style={{ color: MUTED, fontFamily: HEAD }} data-testid="trust-back-btn">
+          <button onClick={() => nav('/')} className="flex items-center gap-2 text-[13px] font-medium rounded-lg px-3 py-1.5 hover:bg-slate-50" style={{ color: MUTED, fontFamily: fontFamily.display }} data-testid="trust-back-btn">
             <ChevronLeft className="w-4 h-4" /> Back to BIQc
           </button>
-          <button onClick={() => nav('/register-supabase')} className="text-[13px] font-semibold px-5 py-2.5 rounded-lg text-white" style={{ background: AZURE, fontFamily: HEAD, boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }} data-testid="trust-start-btn">Start Free</button>
+          <button onClick={() => nav('/register-supabase')} className="text-[13px] font-semibold px-5 py-2.5 rounded-lg text-white" style={{ background: AZURE, fontFamily: fontFamily.display, boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }} data-testid="trust-start-btn">Start Free</button>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="relative z-10 pt-36 sm:pt-44 pb-20 px-6 lg:px-16" data-testid="trust-hero">
         <motion.div initial="hidden" animate="visible" variants={stg} className="max-w-3xl mx-auto text-center space-y-8">
-          <motion.p variants={up} className="text-[11px] uppercase tracking-[0.3em] font-semibold" style={{ fontFamily: MONO, color: AZURE }}>The Vault</motion.p>
-          <motion.h1 variants={up} className="text-[2.6rem] sm:text-[3.2rem] font-semibold leading-[1.08] tracking-[-0.02em]" style={{ fontFamily: HEAD }}>
+          <motion.p variants={up} className="text-[11px] uppercase tracking-[0.3em] font-semibold" style={{ fontFamily: fontFamily.mono, color: AZURE }}>The Vault</motion.p>
+          <motion.h1 variants={up} className="text-[2.6rem] sm:text-[3.2rem] font-semibold leading-[1.08] tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>
             Trust & Security
           </motion.h1>
           <motion.p variants={up} className="text-base leading-[1.75] max-w-xl mx-auto" style={{ color: MUTED }}>
@@ -72,8 +71,8 @@ const TrustPage = () => {
           <motion.div variants={up} className="inline-flex items-center gap-4 px-8 py-5 rounded-2xl" style={{ ...glass, boxShadow: '0 24px 48px -12px rgba(0,122,255,0.08)' }}>
             <Lock className="w-7 h-7" style={{ color: AZURE }} strokeWidth={1.5} />
             <div className="text-left">
-              <p className="text-2xl font-bold tracking-wider" style={{ fontFamily: MONO, color: AZURE }}>AES-256</p>
-              <p className="text-[9px] tracking-[0.2em] uppercase font-medium" style={{ fontFamily: MONO, color: MUTED }}>Military-Grade Encryption</p>
+              <p className="text-2xl font-bold tracking-wider" style={{ fontFamily: fontFamily.mono, color: AZURE }}>AES-256</p>
+              <p className="text-[9px] tracking-[0.2em] uppercase font-medium" style={{ fontFamily: fontFamily.mono, color: MUTED }}>Military-Grade Encryption</p>
             </div>
           </motion.div>
         </motion.div>
@@ -86,7 +85,7 @@ const TrustPage = () => {
             <div className="flex items-start gap-6">
               <div className="w-1 self-stretch flex-shrink-0 rounded-full" style={{ background: `linear-gradient(${AZURE}, ${MINT})` }} />
               <div className="space-y-4">
-                <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em]" style={{ fontFamily: HEAD }}>Your Business DNA is yours.</h2>
+                <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>Your Business DNA is yours.</h2>
                 <p className="text-sm leading-[1.8]" style={{ color: MUTED }}>
                   Physically hosted on encrypted Sydney and Melbourne nodes. Zero leakage to global LLM training. We are a Sovereign Intelligence Partner, not a data broker.
                 </p>
@@ -100,7 +99,7 @@ const TrustPage = () => {
             <div className="flex items-start gap-6">
               <div className="w-1 self-stretch flex-shrink-0 rounded-full" style={{ background: AZURE }} />
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold tracking-[-0.02em]" style={{ fontFamily: HEAD }}>Australian Jurisdiction, Australian Law</h2>
+                <h2 className="text-xl font-semibold tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>Australian Jurisdiction, Australian Law</h2>
                 <p className="text-sm leading-[1.8]" style={{ color: MUTED }}>
                   In the event of a legal or compliance query, your data remains protected under Australian Privacy Principles (APP) 2026, never subject to the U.S. Cloud Act or offshore surveillance. Australian law. Australian jurisdiction. Full stop.
                 </p>
@@ -114,8 +113,8 @@ const TrustPage = () => {
       <section className="relative z-10 py-24 sm:py-32 px-6 lg:px-16" data-testid="trust-principles">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stg} className="max-w-6xl mx-auto">
           <motion.div variants={up} className="text-center mb-16">
-            <p className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-4" style={{ fontFamily: MONO, color: AZURE }}>Security Architecture</p>
-            <h2 className="text-[2rem] sm:text-[2.4rem] font-semibold tracking-[-0.02em]" style={{ fontFamily: HEAD }}>Built for trust at every layer</h2>
+            <p className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-4" style={{ fontFamily: fontFamily.mono, color: AZURE }}>Security Architecture</p>
+            <h2 className="text-[2rem] sm:text-[2.4rem] font-semibold tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>Built for trust at every layer</h2>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {CARDS.map((c, i) => (
@@ -123,7 +122,7 @@ const TrustPage = () => {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style={{ background: `${c.accent}10` }}>
                   <c.icon className="w-5 h-5" style={{ color: c.accent }} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-sm font-semibold mb-2 tracking-tight" style={{ fontFamily: HEAD }}>{c.title}</h3>
+                <h3 className="text-sm font-semibold mb-2 tracking-tight" style={{ fontFamily: fontFamily.display }}>{c.title}</h3>
                 <p className="text-[12px] leading-relaxed" style={{ color: MUTED }}>{c.desc}</p>
               </motion.div>
             ))}
@@ -134,16 +133,16 @@ const TrustPage = () => {
       {/* CTA */}
       <section className="relative z-10 py-20 px-6 lg:px-16" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
         <div className="max-w-2xl mx-auto text-center space-y-6">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em]" style={{ fontFamily: HEAD }}>Ready to deploy sovereign intelligence?</h2>
-          <button onClick={() => nav('/register-supabase')} className="px-10 py-4 rounded-xl text-[13px] font-semibold inline-flex items-center gap-2 text-white" style={{ background: AZURE, fontFamily: HEAD, boxShadow: '0 8px 24px rgba(0,122,255,0.25)' }} data-testid="trust-cta-deploy">
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>Ready to deploy sovereign intelligence?</h2>
+          <button onClick={() => nav('/register-supabase')} className="px-10 py-4 rounded-xl text-[13px] font-semibold inline-flex items-center gap-2 text-white" style={{ background: AZURE, fontFamily: fontFamily.display, boxShadow: '0 8px 24px rgba(0,122,255,0.25)' }} data-testid="trust-cta-deploy">
             Start Free Trial
           </button>
-          <p className="text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: MONO, color: '#94A3B8' }}>Australian owned · Australian hosted · Your data, your sovereignty</p>
+          <p className="text-[10px] tracking-[0.1em] uppercase font-medium" style={{ fontFamily: fontFamily.mono, color: '#94A3B8' }}>Australian owned · Australian hosted · Your data, your sovereignty</p>
         </div>
       </section>
 
       <footer className="relative z-10 py-8 px-6 lg:px-16" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-        <p className="text-center text-[11px]" style={{ color: '#94A3B8', fontFamily: MONO }}>&copy; 2026 BIQc — Business IQ Centre. Powered by The Strategy Squad.</p>
+        <p className="text-center text-[11px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>&copy; 2026 BIQc — Business IQ Centre. Powered by The Strategy Squad.</p>
       </footer>
     </div>
   );

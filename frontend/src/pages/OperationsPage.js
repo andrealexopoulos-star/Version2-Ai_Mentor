@@ -4,10 +4,8 @@ import { apiClient } from '../lib/api';
 import EnterpriseContactGate from '../components/EnterpriseContactGate';
 import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
+import { fontFamily } from '../design-system/tokens';
 
-const SORA = "'Cormorant Garamond', Georgia, serif";
-const INTER = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
@@ -53,13 +51,13 @@ const OperationsPage = () => {
   return (
     <DashboardLayout>
       <EnterpriseContactGate featureName="Delivery & Operations">
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: INTER }} data-testid="operations-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="operations-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Delivery & Operations</h1>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Delivery & Operations</h1>
             <p className="text-sm text-[#9FB0C3]">
               {hasRealOpsData ? 'Operational signals from connected data.' : 'Connect integrations to assess operations.'}
-              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: MONO }}>syncing...</span>}
+              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>syncing...</span>}
             </p>
           </div>
           <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} />
@@ -75,7 +73,7 @@ const OperationsPage = () => {
         {!loading && !hasRealOpsData && (
           <Panel className="text-center py-12">
             <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Connect integrations to view verified data.</p>
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Connect integrations to view verified data.</p>
             <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">
               Operations intelligence requires connected project management, CRM, or accounting tools.
               Connect your systems to enable SOP compliance tracking, bottleneck detection, and workload analysis.
@@ -101,9 +99,9 @@ const OperationsPage = () => {
                     <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: m.color + '15' }}>
                       <m.icon className="w-3.5 h-3.5" style={{ color: m.color }} />
                     </div>
-                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{m.label}</span>
+                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
                   </div>
-                  <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{m.value}</span>
+                  <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
                 </Panel>
               ))}
             </div>
@@ -116,7 +114,7 @@ const OperationsPage = () => {
                     <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Active Bottleneck</h3>
+                    <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Active Bottleneck</h3>
                     <p className="text-sm text-[#9FB0C3] leading-relaxed">{exec.bottleneck}</p>
                   </div>
                 </div>
@@ -126,7 +124,7 @@ const OperationsPage = () => {
             {/* Recommendations from snapshot */}
             {exec.recs?.length > 0 && (
               <Panel>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: SORA }}>Recommendations</h3>
+                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Recommendations</h3>
                 <div className="space-y-2">
                   {exec.recs.map((r, i) => (
                     <div key={i} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
@@ -144,9 +142,9 @@ const OperationsPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-[#059669]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Operations Intelligence</h3>
+                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Operations Intelligence</h3>
                   </div>
-                  <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: MONO }}>COGNITION CORE</span>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>COGNITION CORE</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -161,9 +159,9 @@ const OperationsPage = () => {
                     const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
                     return (
                       <div key={key} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                        <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: MONO }}>{label}</span>
-                        <div className="text-2xl font-bold" style={{ color: ic, fontFamily: MONO }}>{pct}%</div>
-                        <span className="text-[9px]" style={{ color: '#64748B', fontFamily: MONO }}>{title}</span>
+                        <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: fontFamily.mono }}>{label}</span>
+                        <div className="text-2xl font-bold" style={{ color: ic, fontFamily: fontFamily.mono }}>{pct}%</div>
+                        <span className="text-[9px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{title}</span>
                         <div className="h-1 rounded-full mt-2" style={{ background: ic + '20' }}>
                           <div className="h-1 rounded-full" style={{ background: ic, width: pct + '%' }} />
                         </div>
@@ -180,7 +178,7 @@ const OperationsPage = () => {
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
                       <AlertTriangle className="w-4 h-4 text-[#FF6A00]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Cross-Domain Bottlenecks</h3>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Cross-Domain Bottlenecks</h3>
                     </div>
                     <div className="space-y-2">
                       {unifiedOps.signals.bottlenecks.map((b, i) => (
@@ -188,7 +186,7 @@ const OperationsPage = () => {
                           <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#FF6A00' }} />
                           <div>
                             <p className="text-xs text-[#9FB0C3]">{b.detail}</p>
-                            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Source: {b.source}</span>
+                            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source: {b.source}</span>
                           </div>
                         </div>
                       ))}
@@ -200,7 +198,7 @@ const OperationsPage = () => {
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
                       <Zap className="w-4 h-4 text-[#F59E0B]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Capacity Alerts</h3>
+                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Capacity Alerts</h3>
                     </div>
                     <div className="space-y-2">
                       {unifiedOps.signals.capacity_alerts.map((a, i) => (
@@ -208,7 +206,7 @@ const OperationsPage = () => {
                           <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#F59E0B' }} />
                           <div>
                             <p className="text-xs text-[#9FB0C3]">{a.detail}</p>
-                            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Source: {a.source}</span>
+                            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source: {a.source}</span>
                           </div>
                         </div>
                       ))}

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 /**
  * CognitiveIgnitionScreen — Phase 1: Cinematic ignition.
@@ -43,20 +41,20 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
         {/* Logo */}
         <div className="mb-10" style={{ animation: 'ignFadeUp 1s ease-out' }}>
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#FF6A00', animation: 'ignPulse 2s ease-in-out infinite' }}>
-            <span className="text-white font-bold text-3xl" style={{ fontFamily: MONO }}>B</span>
+            <span className="text-white font-bold text-3xl" style={{ fontFamily: fontFamily.mono }}>B</span>
           </div>
         </div>
 
         {/* Phase 0-1: Header */}
         <div style={{ animation: 'ignFadeUp 1.2s ease-out', opacity: phase >= 0 ? 1 : 0, transition: 'opacity 0.8s ease' }}>
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#F4F7FA] mb-4 tracking-tight" style={{ fontFamily: HEAD }}>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#F4F7FA] mb-4 tracking-tight" style={{ fontFamily: fontFamily.display }}>
             {ownerName ? `Welcome to BIQc, ${ownerName}.` : 'Welcome to BIQc.'}
           </h1>
         </div>
 
         {/* Phase 1: Subheader */}
         <div style={{ opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
-          <p className="text-lg text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>
+          <p className="text-lg text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>
             This is not a dashboard. It's a strategic intelligence system.
           </p>
         </div>
@@ -72,11 +70,11 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-lg text-left" style={{ background: '#141C2680', border: '1px solid #24314060' }}>
                 <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#FF6A0015' }}>
-                  <span className="text-xs font-bold" style={{ color: '#FF6A00', fontFamily: MONO }}>{i + 1}</span>
+                  <span className="text-xs font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{i + 1}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>{item.title}</p>
-                  <p className="text-xs text-[#64748B] mt-0.5" style={{ fontFamily: BODY }}>{item.desc}</p>
+                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
+                  <p className="text-xs text-[#64748B] mt-0.5" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -87,7 +85,7 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
         <div style={{ opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
           <button onClick={onComplete}
             className="px-10 py-4 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110 active:scale-95"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: HEAD, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}
+            style={{ background: 'linear-gradient(135deg, #FF6A00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}
             data-testid="ignition-cta">
             Meet BIQc
           </button>
@@ -140,7 +138,7 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
         <div className="relative w-32 h-32 mx-auto mb-8">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#FF6A00', animation: 'cogPulseGlow 2s ease-in-out infinite' }}>
-              <span className="text-white font-bold text-2xl" style={{ fontFamily: MONO }}>B</span>
+              <span className="text-white font-bold text-2xl" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
           </div>
           {[0, 1, 2, 3, 4, 5].map(i => (
@@ -151,10 +149,10 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
         </div>
 
         <div style={{ animation: 'cogFadeUp 0.6s ease-out' }}>
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#F4F7FA] mb-3 tracking-tight" style={{ fontFamily: HEAD }}>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#F4F7FA] mb-3 tracking-tight" style={{ fontFamily: fontFamily.display }}>
             {ownerName ? `${ownerName}, ` : ''}{pack.headline}
           </h2>
-          <p className="text-base text-[#9FB0C3] leading-relaxed mb-8" style={{ fontFamily: BODY }}>{pack.sub}</p>
+          <p className="text-base text-[#9FB0C3] leading-relaxed mb-8" style={{ fontFamily: fontFamily.body }}>{pack.sub}</p>
         </div>
 
         <div className="space-y-3 text-left max-w-sm mx-auto mb-8">
@@ -163,7 +161,7 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
               <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED'][i % 4] + '20' }}>
                 <div className="w-1.5 h-1.5 rounded-full" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED'][i % 4], animation: `cogDotStep 1.4s ease-in-out infinite ${i * 0.2}s` }} />
               </div>
-              <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: MONO }}>{step}</span>
+              <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{step}</span>
             </div>
           ))}
         </div>
@@ -172,7 +170,7 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FF6A00, #3B82F6, #10B981)' }} />
           </div>
-          <p className="text-[10px] text-[#64748B] mt-2" style={{ fontFamily: MONO }}>Updating your intelligence...</p>
+          <p className="text-[10px] text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Updating your intelligence...</p>
         </div>
       </div>
     </div>

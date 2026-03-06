@@ -110,7 +110,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
           const eventData = JSON.parse(event.data);
           handleRealtimeEvent(eventData);
         } catch (e) {
-          console.log("Received event:", event.data);
+          // console.log("Received event:", event.data);
         }
       };
 
@@ -149,7 +149,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
 
   // Handle realtime events from OpenAI
   const handleRealtimeEvent = (event) => {
-    console.log("Realtime event:", event);
+    // console.log("Realtime event:", event);
     
     if (event.type === "response.audio.delta") {
       setIsAgentSpeaking(true);

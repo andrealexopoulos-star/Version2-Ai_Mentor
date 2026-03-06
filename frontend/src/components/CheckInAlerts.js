@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Video, RefreshCw } from 'lucide-react';
 import { supabase } from '../context/SupabaseAuthContext';
+import { fontFamily } from '../design-system/tokens';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const MONO = "var(--font-mono)";
-const HEAD = "var(--font-heading)";
-const BODY = "var(--font-body)";
 
 const callCheckin = async (action, extra = {}) => {
   const { data: { session } } = await supabase.auth.getSession();
@@ -109,8 +107,8 @@ export const CheckInAlerts = () => {
             {alert.type === 'recalibration' ? <RefreshCw className="w-4 h-4" style={{ color: '#F97316' }} /> : <Video className="w-4 h-4" style={{ color: '#7C3AED' }} />}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{alert.title}</p>
-            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{alert.message}</p>
+            <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{alert.title}</p>
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{alert.message}</p>
             <div className="flex gap-2 mt-3">
               <button onClick={() => {
                 if (alert.type === 'recalibration') {
@@ -121,14 +119,14 @@ export const CheckInAlerts = () => {
               }} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-0.5" style={{
                 background: alert.type === 'recalibration' ? '#F97316' : '#7C3AED',
                 color: 'white',
-                fontFamily: MONO,
+                fontFamily: fontFamily.mono,
               }} data-testid={`checkin-action-${alert.type}`}>
                 {alert.type === 'recalibration' ? 'Recalibrate Now' : 'Schedule Check-In'}
               </button>
               <button onClick={() => setShowScheduler(alert.type)} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:-translate-y-0.5" style={{
                 color: '#9FB0C3',
                 borderColor: '#243140',
-                fontFamily: MONO,
+                fontFamily: fontFamily.mono,
               }} data-testid={`checkin-schedule-${alert.type}`}>
                 <Calendar className="w-3 h-3 inline mr-1" />
                 Pick a Date
@@ -147,7 +145,7 @@ export const CheckInAlerts = () => {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowScheduler(null)} />
           <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl p-6" style={{ background: '#141C26', border: '1px solid #243140' }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold" style={{ fontFamily: HEAD, color: '#F4F7FA' }}>
+              <h3 className="text-lg font-bold" style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
                 {showScheduler === 'recalibration' ? 'Schedule Recalibration' : 'Schedule Video Check-In'}
               </h3>
               <button onClick={() => setShowScheduler(null)} className="p-1 rounded-lg hover:bg-white/5">
@@ -155,7 +153,7 @@ export const CheckInAlerts = () => {
               </button>
             </div>
 
-            <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+            <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
               {showScheduler === 'recalibration'
                 ? 'Choose a date and time to update your business profile and recalibrate BIQc.'
                 : 'Choose a date and time for a video check-in with your BIQc advisor.'}
@@ -163,7 +161,7 @@ export const CheckInAlerts = () => {
 
             {/* Date Selection */}
             <div className="mb-4">
-              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#64748B', fontFamily: MONO }}>Select Date</label>
+              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Select Date</label>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                 {dateOptions.map((d) => (
                   <button key={d.value} onClick={() => setSelectedDate(d.value)}
@@ -172,7 +170,7 @@ export const CheckInAlerts = () => {
                       background: selectedDate === d.value ? '#FF6A00' : '#0F1720',
                       color: selectedDate === d.value ? 'white' : '#9FB0C3',
                       border: `1px solid ${selectedDate === d.value ? '#FF6A00' : '#243140'}`,
-                      fontFamily: MONO,
+                      fontFamily: fontFamily.mono,
                     }}>
                     {d.label}
                   </button>
@@ -182,7 +180,7 @@ export const CheckInAlerts = () => {
 
             {/* Time Selection */}
             <div className="mb-6">
-              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#64748B', fontFamily: MONO }}>Select Time (AEST)</label>
+              <label className="text-[10px] font-semibold uppercase tracking-widest block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Select Time (AEST)</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                 {timeSlots.map((t) => (
                   <button key={t} onClick={() => setSelectedTime(t)}
@@ -191,7 +189,7 @@ export const CheckInAlerts = () => {
                       background: selectedTime === t ? '#FF6A00' : '#0F1720',
                       color: selectedTime === t ? 'white' : '#9FB0C3',
                       border: `1px solid ${selectedTime === t ? '#FF6A00' : '#243140'}`,
-                      fontFamily: MONO,
+                      fontFamily: fontFamily.mono,
                     }}>
                     {t}
                   </button>
@@ -201,7 +199,7 @@ export const CheckInAlerts = () => {
 
             <button onClick={handleSchedule} disabled={!selectedDate || submitting}
               className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40"
-              style={{ background: '#FF6A00', fontFamily: HEAD }}
+              style={{ background: '#FF6A00', fontFamily: fontFamily.display }}
               data-testid="schedule-confirm">
               {submitting ? 'Scheduling...' : `Schedule for ${selectedDate ? new Date(selectedDate).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '...'} at ${selectedTime}`}
             </button>

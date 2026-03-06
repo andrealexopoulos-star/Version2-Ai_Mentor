@@ -4,10 +4,8 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier, hasAccess } from '../lib/tierResolver';
 import { Check, ArrowRight } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const PLANS = PRICING_TIERS;
 
@@ -34,10 +32,10 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4" style={{ background: '#FF6A0015', border: '1px solid #FF6A0030' }}>
-          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: MONO }}>Upgrade Required</span>
+          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Upgrade Required</span>
         </div>
-        <h1 className="text-3xl font-normal mb-2" style={{ color: '#F4F7FA', fontFamily: HEAD }}>{featureName}</h1>
-        <p className="text-sm max-w-md mx-auto" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+        <h1 className="text-3xl font-normal mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{featureName}</h1>
+        <p className="text-sm max-w-md mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
           Unlock this feature by upgrading to the right plan. Choose the tier that fits your business.
         </p>
       </div>
@@ -63,22 +61,22 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
               data-testid={`upgrade-plan-${plan.id}`}>
               {isRecommended && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
-                  style={{ background: plan.color, color: 'white', fontFamily: MONO }}>Most Adopted</div>
+                  style={{ background: plan.color, color: 'white', fontFamily: fontFamily.mono }}>Most Adopted</div>
               )}
               {isCurrent && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
-                  style={{ background: '#243140', color: '#9FB0C3', fontFamily: MONO }}>Current Plan</div>
+                  style={{ background: '#243140', color: '#9FB0C3', fontFamily: fontFamily.mono }}>Current Plan</div>
               )}
               <div className="w-7 h-1 rounded-full mb-4" style={{ background: plan.color }} />
               <div>
-                <p className="text-base font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: HEAD }}>{plan.name}</p>
-                <p className="text-[11px] mb-4" style={{ color: plan.color, fontFamily: MONO }}>{plan.subtitle || ''}</p>
+                <p className="text-base font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>{plan.name}</p>
+                <p className="text-[11px] mb-4" style={{ color: plan.color, fontFamily: fontFamily.mono }}>{plan.subtitle || ''}</p>
               </div>
               <div className="mb-4">
                 {plan.price ? (
-                  <><span className="text-3xl font-bold" style={{ color: '#F4F7FA', fontFamily: MONO }}>{plan.price}</span><span className="text-xs text-[#64748B]">/mo</span></>
+                  <><span className="text-3xl font-bold" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>{plan.price}</span><span className="text-xs text-[#64748B]">/mo</span></>
                 ) : (
-                  <span className="text-xl font-bold" style={{ color: '#F4F7FA', fontFamily: MONO }}>Contact Sales</span>
+                  <span className="text-xl font-bold" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>Contact Sales</span>
                 )}
               </div>
               <button
@@ -86,7 +84,7 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
                 style={{
                   background: isUpgrade ? (isRecommended ? plan.color : '#FF6A00') : '#243140',
                   color: isUpgrade ? 'white' : '#64748B',
-                  fontFamily: BODY,
+                  fontFamily: fontFamily.body,
                 }}
                 onClick={e => { e.stopPropagation(); isUpgrade && handlePlanClick(plan); }}>
                 {ctaLabel} {isUpgrade && <ArrowRight className="w-3.5 h-3.5" />}
@@ -95,7 +93,7 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
                 {plan.features.map((f, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <Check className="w-3 h-3 mt-0.5 shrink-0" style={{ color: plan.color }} />
-                    <span className="text-[11px] leading-relaxed" style={{ color: '#9FB0C3', fontFamily: BODY }}>{f}</span>
+                    <span className="text-[11px] leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{f}</span>
                   </div>
                 ))}
               </div>
@@ -103,7 +101,7 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
           );
         })}
       </div>
-      <p className="text-center text-xs mt-6" style={{ color: '#64748B', fontFamily: MONO }}>
+      <p className="text-center text-xs mt-6" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
         All plans billed monthly · Cancel anytime · Australian owned & operated
       </p>
     </div>

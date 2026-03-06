@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { apiClient } from '../lib/api';
 import { Shield, Search, Loader2, AlertTriangle, CheckCircle2, TrendingUp, MapPin, Star, ExternalLink, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
@@ -37,7 +35,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
     return (
       <Panel className="text-center py-8" data-testid="engagement-scan-trigger">
         <Eye className="w-8 h-8 text-[#FF6A00] mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Forensic Market Exposure Scan</h3>
+        <h3 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Forensic Market Exposure Scan</h3>
         <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">Analyse your competitive position, review presence, search visibility, and authority markers against real competitors.</p>
         <button onClick={runScan} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="run-engagement-scan">
           <Search className="w-4 h-4" /> Run Exposure Scan
@@ -51,7 +49,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
     return (
       <Panel className="text-center py-10" data-testid="engagement-scanning">
         <Loader2 className="w-8 h-8 text-[#FF6A00] mx-auto mb-3 animate-spin" />
-        <h3 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: HEAD }}>Scanning competitive landscape...</h3>
+        <h3 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Scanning competitive landscape...</h3>
         <p className="text-xs text-[#64748B]">Checking reviews, search presence, competitors, and authority markers.</p>
       </Panel>
     );
@@ -70,29 +68,29 @@ const EngagementScanCard = ({ url, businessName, location }) => {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <Shield className="w-5 h-5 text-[#FF6A00]" />
-            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Competitive Exposure Report</h2>
+            <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Competitive Exposure Report</h2>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-bold" style={{ color: confColor, fontFamily: MONO }}>{confScore}%</span>
-            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>confidence</span>
+            <span className="text-2xl font-bold" style={{ color: confColor, fontFamily: fontFamily.mono }}>{confScore}%</span>
+            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>confidence</span>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3 rounded" style={{ background: '#0F1720' }}>
-            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Structure</span>
-            <span className="text-sm font-bold text-[#F4F7FA] capitalize" style={{ fontFamily: MONO }}>{r.structure?.structure?.replace(/_/g, ' ')}</span>
+            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Structure</span>
+            <span className="text-sm font-bold text-[#F4F7FA] capitalize" style={{ fontFamily: fontFamily.mono }}>{r.structure?.structure?.replace(/_/g, ' ')}</span>
           </div>
           <div className="p-3 rounded" style={{ background: '#0F1720' }}>
-            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Asymmetries</span>
-            <span className="text-sm font-bold" style={{ color: asymCount >= 3 ? '#EF4444' : '#F59E0B', fontFamily: MONO }}>{asymCount}</span>
+            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Asymmetries</span>
+            <span className="text-sm font-bold" style={{ color: asymCount >= 3 ? '#EF4444' : '#F59E0B', fontFamily: fontFamily.mono }}>{asymCount}</span>
           </div>
           <div className="p-3 rounded" style={{ background: '#0F1720' }}>
-            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Reviews</span>
-            <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{r.reviews?.total_reviews || 0}</span>
+            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Reviews</span>
+            <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{r.reviews?.total_reviews || 0}</span>
           </div>
           <div className="p-3 rounded" style={{ background: '#0F1720' }}>
-            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Competitors</span>
-            <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{r.competitors?.length || 0}</span>
+            <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Competitors</span>
+            <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{r.competitors?.length || 0}</span>
           </div>
         </div>
       </div>
@@ -103,7 +101,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
           <button onClick={() => toggle('asym')} className="w-full flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Structural Exposures ({r.asymmetries.length})</h3>
+              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Structural Exposures ({r.asymmetries.length})</h3>
             </div>
             {expanded.asym ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
           </button>
@@ -111,20 +109,20 @@ const EngagementScanCard = ({ url, businessName, location }) => {
             <div className="mt-4 space-y-3">
               {r.asymmetries.map((a, i) => (
                 <div key={i} className="p-4 rounded-lg" style={{ background: '#EF444406', border: '1px solid #EF444415' }}>
-                  <span className="text-xs font-semibold text-[#EF4444] block mb-2" style={{ fontFamily: MONO }}>{a.structural_implication}</span>
+                  <span className="text-xs font-semibold text-[#EF4444] block mb-2" style={{ fontFamily: fontFamily.mono }}>{a.structural_implication}</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
-                      <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: MONO }}>You</span>
+                      <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>You</span>
                       <span className="text-[#9FB0C3]">{a.subject_signal}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: MONO }}>Competitor</span>
+                      <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>Competitor</span>
                       <span className="text-[#F4F7FA]">{a.competitor_signal}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 mt-2">
-                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Source: {a.evidence_source}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: MONO }}>{Math.round(a.confidence * 100)}%</span>
+                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source: {a.evidence_source}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: fontFamily.mono }}>{Math.round(a.confidence * 100)}%</span>
                   </div>
                 </div>
               ))}
@@ -138,7 +136,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
         <button onClick={() => toggle('reviews')} className="w-full flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-[#F59E0B]" />
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Review Surface</h3>
+            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Review Surface</h3>
           </div>
           {expanded.reviews ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
         </button>
@@ -148,8 +146,8 @@ const EngagementScanCard = ({ url, businessName, location }) => {
               <div className="flex items-center justify-between p-3 rounded" style={{ background: '#0F1720' }}>
                 <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-[#10B981]" /><span className="text-xs text-[#F4F7FA]">Google Maps</span></div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[#F59E0B]" style={{ fontFamily: MONO }}>{r.reviews.google_maps.rating}/5</span>
-                  <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: MONO }}>{r.reviews.google_maps.reviews} reviews</span>
+                  <span className="text-xs font-bold text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>{r.reviews.google_maps.rating}/5</span>
+                  <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{r.reviews.google_maps.reviews} reviews</span>
                 </div>
               </div>
             ) : (
@@ -175,18 +173,18 @@ const EngagementScanCard = ({ url, businessName, location }) => {
           <button onClick={() => toggle('search')} className="w-full flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#3B82F6]" />
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Search Visibility</h3>
+              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Search Visibility</h3>
               <span className="text-[10px] px-2 py-0.5 rounded" style={{
                 color: r.search_dominance.search_dominance === 'present' ? '#10B981' : '#EF4444',
                 background: (r.search_dominance.search_dominance === 'present' ? '#10B981' : '#EF4444') + '15',
-                fontFamily: MONO,
+                fontFamily: fontFamily.mono,
               }}>{r.search_dominance.search_dominance}</span>
             </div>
             {expanded.search ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
           </button>
           {expanded.search && (
             <div className="mt-4">
-              <p className="text-xs text-[#64748B] mb-2" style={{ fontFamily: MONO }}>Query: "{r.search_dominance.query}"</p>
+              <p className="text-xs text-[#64748B] mb-2" style={{ fontFamily: fontFamily.mono }}>Query: "{r.search_dominance.query}"</p>
               {r.search_dominance.subject_found ? (
                 <p className="text-xs text-[#10B981] mb-2">You appear at position {r.search_dominance.subject_position}</p>
               ) : (
@@ -195,7 +193,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
               {r.search_dominance.top_competitors?.slice(0, 3).map((c, i) => (
                 <div key={i} className="flex items-center justify-between p-2 rounded mb-1" style={{ background: '#0F1720' }}>
                   <span className="text-xs text-[#9FB0C3] truncate flex-1">{c.name}</span>
-                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>Position {c.position}</span>
+                  <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Position {c.position}</span>
                 </div>
               ))}
             </div>
@@ -206,18 +204,18 @@ const EngagementScanCard = ({ url, businessName, location }) => {
       {/* Competitor Reviews Comparison */}
       {r.competitor_reviews?.length > 0 && (
         <Panel>
-          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Competitor Review Comparison</h3>
+          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Competitor Review Comparison</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between p-3 rounded" style={{ background: '#FF6A0008', border: '1px solid #FF6A0015' }}>
               <span className="text-xs font-semibold text-[#FF6A00]">You ({r.business_name})</span>
-              <span className="text-xs font-bold" style={{ fontFamily: MONO, color: '#FF6A00' }}>{r.reviews?.google_maps?.reviews || 0} reviews</span>
+              <span className="text-xs font-bold" style={{ fontFamily: fontFamily.mono, color: '#FF6A00' }}>{r.reviews?.google_maps?.reviews || 0} reviews</span>
             </div>
             {r.competitor_reviews.filter(c => c.reviews > 0).map((c, i) => (
               <div key={i} className="flex items-center justify-between p-3 rounded" style={{ background: '#0F1720' }}>
                 <span className="text-xs text-[#9FB0C3] truncate">{c.name}</span>
                 <div className="flex items-center gap-2">
-                  {c.rating && <span className="text-xs text-[#F59E0B]" style={{ fontFamily: MONO }}>{c.rating}/5</span>}
-                  <span className="text-xs font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{c.reviews} reviews</span>
+                  {c.rating && <span className="text-xs text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>{c.rating}/5</span>}
+                  <span className="text-xs font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{c.reviews} reviews</span>
                 </div>
               </div>
             ))}
@@ -227,7 +225,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
 
       {/* Rescan button */}
       <div className="text-center">
-        <button onClick={runScan} className="text-xs text-[#64748B] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: MONO }}>
+        <button onClick={runScan} className="text-xs text-[#64748B] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.mono }}>
           Re-run scan
         </button>
       </div>

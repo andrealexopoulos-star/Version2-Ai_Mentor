@@ -3,10 +3,8 @@ import DashboardLayout from '../components/DashboardLayout';
 import { supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { FileText, DollarSign, Plug, Loader2, Download, Shield, AlertTriangle } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
@@ -31,10 +29,10 @@ const ForensicReportCard = () => {
     <Panel>
       <div className="flex items-center gap-2 mb-4">
         <Shield className="w-4 h-4 text-[#FF6A00]" />
-        <h3 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Intelligence Reports</h3>
-        <span className="text-[9px] px-2 py-0.5 rounded-full ml-auto" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: MONO }}>FREE TIER: 1/30 DAYS</span>
+        <h3 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Forensic Intelligence Reports</h3>
+        <span className="text-[9px] px-2 py-0.5 rounded-full ml-auto" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>FREE TIER: 1/30 DAYS</span>
       </div>
-      <p className="text-xs text-[#64748B] mb-4" style={{ fontFamily: BODY }}>
+      <p className="text-xs text-[#64748B] mb-4" style={{ fontFamily: fontFamily.body }}>
         Downloadable Board-ready Executive Summary reports. Free tier: one scan per 30 days. Upgrade for unlimited.
       </p>
       <div className="space-y-3">
@@ -44,11 +42,11 @@ const ForensicReportCard = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="w-3.5 h-3.5 text-[#7C3AED]" />
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Forensic Calibration Report</span>
+                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Forensic Calibration Report</span>
               </div>
               <p className="text-xs text-[#64748B]">Digital footprint analysis, identity verification, and strategic positioning assessment.</p>
               {calibDate > 0 && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#64748B', fontFamily: MONO }}>
+                <p className="text-[10px] mt-1.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                   Last generated: {new Date(calibDate).toLocaleDateString('en-AU')} · Next available: {calibDays > 0 ? calibNextDate : 'Now'}
                 </p>
               )}
@@ -71,11 +69,11 @@ const ForensicReportCard = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="w-3.5 h-3.5 text-[#3B82F6]" />
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>Market Exposure Scan Report</span>
+                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Exposure Scan Report</span>
               </div>
               <p className="text-xs text-[#64748B]">Structural competitive exposure analysis — gaps, vulnerabilities, and market positioning risks.</p>
               {scanDate > 0 && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#64748B', fontFamily: MONO }}>
+                <p className="text-[10px] mt-1.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                   Last generated: {new Date(scanDate).toLocaleDateString('en-AU')} · Next available: {scanDays > 0 ? scanNextDate : 'Now'}
                 </p>
               )}
@@ -165,7 +163,7 @@ const ReportsPage = () => {
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-[#64748B] shrink-0 mt-0.5" />
         <div>
-          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Financial Snapshot Unavailable</h3>
+          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Financial Snapshot Unavailable</h3>
           <p className="text-xs text-[#64748B] leading-relaxed">
             No accounting integration connected. Connect Xero, QuickBooks, or MYOB to generate verified financial reports.
             BIQc does not compute runway, margin, or budget metrics without verified accounting records.
@@ -177,16 +175,16 @@ const ReportsPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: BODY }} data-testid="reports-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="reports-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>Intelligence Reports</h1>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Intelligence Reports</h1>
             <p className="text-sm text-[#9FB0C3]">Verified intelligence from connected data sources only.</p>
           </div>
           {hasEvents && (
             <button onClick={handleExportPDF} disabled={generating}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-white/5 disabled:opacity-50"
-              style={{ color: '#9FB0C3', border: '1px solid #243140', fontFamily: MONO }}
+              style={{ color: '#9FB0C3', border: '1px solid #243140', fontFamily: fontFamily.mono }}
               data-testid="export-pdf-btn">
               <Download className="w-3.5 h-3.5" />
               {generating ? 'Generating...' : 'Export PDF'}
@@ -207,7 +205,7 @@ const ReportsPage = () => {
         {!loading && !hasAnyIntegration && (
           <Panel className="text-center py-12">
             <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: HEAD }}>No integrations connected.</p>
+            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No integrations connected.</p>
             <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">
               Connect your CRM, accounting, and email integrations to generate verified intelligence reports.
               Reports contain only data from connected, verified sources.
@@ -229,9 +227,9 @@ const ReportsPage = () => {
                   <Panel key={type}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-2 h-2 rounded-full" style={{ background: connected ? '#10B981' : '#64748B' }} />
-                      <span className="text-[10px] text-[#9FB0C3] capitalize" style={{ fontFamily: MONO }}>{type}</span>
+                      <span className="text-[10px] text-[#9FB0C3] capitalize" style={{ fontFamily: fontFamily.mono }}>{type}</span>
                     </div>
-                    <span className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>
+                    <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                       {connected ? `Synced ${int?.last_sync_at ? new Date(int.last_sync_at).toLocaleDateString('en-AU') : 'recently'}` : 'Not connected'}
                     </span>
                   </Panel>
@@ -242,7 +240,7 @@ const ReportsPage = () => {
             {/* Financial Snapshot — only with accounting */}
             {hasAccounting ? (
               <Panel>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Financial Snapshot</h3>
+                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Financial Snapshot</h3>
                 <p className="text-xs text-[#9FB0C3]">Financial data from connected accounting integration. Metrics computed from verified transaction records.</p>
               </Panel>
             ) : renderFinancialNullState()}
@@ -250,19 +248,19 @@ const ReportsPage = () => {
             {/* Governance Events Summary */}
             {hasEvents ? (
               <Panel>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: HEAD }}>Signal Summary</h3>
+                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Signal Summary</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Total Events</span>
-                    <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{events.length}</span>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Total Events</span>
+                    <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{events.length}</span>
                   </div>
                   <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Avg Confidence</span>
-                    <span className="text-xl font-bold" style={{ fontFamily: MONO, color: avgConfidence > 70 ? '#10B981' : '#F59E0B' }}>{avgConfidence}%</span>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Avg Confidence</span>
+                    <span className="text-xl font-bold" style={{ fontFamily: fontFamily.mono, color: avgConfidence > 70 ? '#10B981' : '#F59E0B' }}>{avgConfidence}%</span>
                   </div>
                   <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Data Sources</span>
-                    <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{integrations.length}</span>
+                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Data Sources</span>
+                    <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{integrations.length}</span>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -270,7 +268,7 @@ const ReportsPage = () => {
                     <div key={ev.id} className="flex items-center gap-2 px-3 py-2 rounded" style={{ background: '#0F1720' }}>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: ev.confidence_score >= 0.7 ? '#10B981' : '#F59E0B' }} />
                       <span className="text-xs text-[#9FB0C3] flex-1 truncate">{ev.event_type}</span>
-                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{ev.source_system}</span>
+                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{ev.source_system}</span>
                     </div>
                   ))}
                 </div>
@@ -285,7 +283,7 @@ const ReportsPage = () => {
             {/* Executive Memo — only if governance events exist */}
             {!hasEvents && (
               <Panel>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#64748B', fontFamily: MONO }}>Executive Memo</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Executive Memo</h3>
                 <p className="text-xs text-[#64748B]">No verified signals available to generate executive memo. Memo requires governance events from connected integrations.</p>
               </Panel>
             )}

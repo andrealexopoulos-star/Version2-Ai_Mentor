@@ -329,7 +329,7 @@ export const SupabaseAuthProvider = ({ children }) => {
 
         if (cancelled) return;
 
-        console.log(`[CALIBRATION ROUTING] Decision: ${calibrationComplete ? 'READY (calibrated)' : 'NEEDS_CALIBRATION'}`);
+        // console.log(`[CALIBRATION ROUTING] Decision: ${calibrationComplete ? 'READY (calibrated)' : 'NEEDS_CALIBRATION'}`);
 
         // Mark this user as bootstrapped so token refreshes don't re-trigger
         lastBootstrapUserId.current = activeSession.user.id;

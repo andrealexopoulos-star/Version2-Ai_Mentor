@@ -1,9 +1,7 @@
 import React from 'react';
 import { Shield, Target, Users, TrendingUp, Zap } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const BODY = "'Inter', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
 
 const REVEAL_PHASES = [
   'Compiling your Business DNA...',
@@ -25,10 +23,10 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
         <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#FF6A00', animation: 'revealPulse 2s ease-in-out infinite' }}>
           <Zap className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: HEAD }}>
+        <h2 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
           Calibration Complete{firstName ? `, ${firstName}` : ''}.
         </h2>
-        <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: BODY }}>
+        <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           Your Business DNA has been captured. Your AI agents are now calibrated to your communication style, risk posture, and decision-making approach.
         </p>
 
@@ -43,14 +41,14 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
             <div key={item.label} className="p-3 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
               <div className="flex items-center gap-2 mb-1">
                 <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>{item.label}</span>
+                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.label}</span>
               </div>
-              <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: BODY }}>{item.value}</span>
+              <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{item.value}</span>
             </div>
           ))}
         </div>
 
-        <p className="text-xs text-[#64748B] mt-4" style={{ fontFamily: MONO }}>
+        <p className="text-xs text-[#64748B] mt-4" style={{ fontFamily: fontFamily.mono }}>
           Redirecting to your intelligence dashboard...
         </p>
       </div>
@@ -58,14 +56,14 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
       /* Progress phases */
       <div className="max-w-md w-full text-center">
         <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-6" style={{ background: '#FF6A00', animation: 'revealPulse 2s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-xl" style={{ fontFamily: MONO }}>B</span>
+          <span className="text-white font-bold text-xl" style={{ fontFamily: fontFamily.mono }}>B</span>
         </div>
 
-        <p className="text-lg mb-2 text-[#F4F7FA]" style={{ fontFamily: HEAD }}>
+        <p className="text-lg mb-2 text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
           Thank you{firstName ? `, ${firstName}` : ''}.
         </p>
         {lastResponse && (
-          <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: BODY }}>
+          <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>
             Your alignment preferences have been integrated into your Decision DNA.
           </p>
         )}
@@ -82,7 +80,7 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
         </div>
 
         <p className="text-base text-center leading-relaxed transition-opacity duration-700"
-          style={{ fontFamily: HEAD, color: '#F4F7FA', maxWidth: 400, margin: '0 auto' }}>
+          style={{ fontFamily: fontFamily.display, color: '#F4F7FA', maxWidth: 400, margin: '0 auto' }}>
           {REVEAL_PHASES[revealPhase]}
         </p>
 

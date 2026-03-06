@@ -28,7 +28,7 @@ const ConnectEmail = () => {
     const gmailConnected = urlParams.get('gmail_connected');
     
     if (outlookConnected === 'true') {
-      console.log("Outlook OAuth completed - refreshing connection status");
+      // console.log("Outlook OAuth completed - refreshing connection status");
       // Clean URL
       window.history.replaceState({}, '', '/connect-email');
       // Refresh connection status after a brief delay
@@ -36,7 +36,7 @@ const ConnectEmail = () => {
     }
     
     if (gmailConnected === 'true') {
-      console.log("Gmail OAuth completed - refreshing connection status");
+      // console.log("Gmail OAuth completed - refreshing connection status");
       // Clean URL
       window.history.replaceState({}, '', '/connect-email');
       // Refresh connection status after a brief delay
@@ -51,7 +51,7 @@ const ConnectEmail = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        console.log("No session - user not authenticated");
+        // console.log("No session - user not authenticated");
         setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
         setLoading(false);
@@ -59,14 +59,14 @@ const ConnectEmail = () => {
       }
       
       // CANONICAL: Query email_connections ONLY
-      console.log("Querying email_connections for user:", session.user.id);
+      // console.log("Querying email_connections for user:", session.user.id);
       
       const { data: rows, error } = await supabase
         .from('email_connections')
         .select('*')
         .eq('user_id', session.user.id);
       
-      console.log("Query result:", { rows, error });
+      // console.log("Query result:", { rows, error });
       
       if (error) {
         console.error('Database query error:', error);
@@ -78,7 +78,7 @@ const ConnectEmail = () => {
       
       // CANONICAL: rows.length > 0 means connected
       if (!rows || rows.length === 0) {
-        console.log('No email provider connected');
+        // console.log('No email provider connected');
         setOutlookStatus({ connected: false });
         setGmailStatus({ connected: false });
         setLoading(false);
@@ -86,7 +86,7 @@ const ConnectEmail = () => {
       }
       
       const connection = rows[0];
-      console.log('Email connection found:', connection);
+      // console.log('Email connection found:', connection);
       
       // Set state based on provider
       if (connection.provider === 'outlook') {
@@ -112,7 +112,7 @@ const ConnectEmail = () => {
     try {
       setConnecting('outlook');
       
-      console.log("📧 Email connect provider: outlook");
+      // console.log("📧 Email connect provider: outlook");
       
       // Get session with error handling
       let token;
@@ -140,7 +140,7 @@ const ConnectEmail = () => {
         return;
       }
       
-      console.log("✅ Token obtained, redirecting to OAuth...");
+      // console.log("✅ Token obtained, redirecting to OAuth...");
       
       // EXPLICIT: Pass provider parameter
       window.location.assign(
@@ -158,7 +158,7 @@ const ConnectEmail = () => {
     try {
       setConnecting('gmail');
       
-      console.log("📧 Email connect provider: gmail");
+      // console.log("📧 Email connect provider: gmail");
       
       // Get session with error handling
       let token;
@@ -186,7 +186,7 @@ const ConnectEmail = () => {
         return;
       }
       
-      console.log("✅ Token obtained, redirecting to OAuth...");
+      // console.log("✅ Token obtained, redirecting to OAuth...");
       
       // EXPLICIT: Pass provider parameter
       window.location.assign(

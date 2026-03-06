@@ -15,14 +15,14 @@ const OutlookTest = () => {
   const handleConnect = async () => {
     setLoading(true);
     try {
-      console.log('Fetching auth URL...');
+      // console.log('Fetching auth URL...');
       const response = await apiClient.get('/auth/outlook/login');
-      console.log('Response:', response.data);
+      // console.log('Response:', response.data);
       
       const url = response.data.auth_url;
       setAuthUrl(url);
       
-      console.log('Redirecting to:', url);
+      // console.log('Redirecting to:', url);
       toast.success('Redirecting to Microsoft...');
       
       // Wait a moment then redirect

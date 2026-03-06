@@ -10,10 +10,8 @@ import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { Plus, Clock, CheckCircle2, AlertTriangle, ArrowRight, Loader2, Target, TrendingUp, DollarSign, Users, BarChart3 } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
-const HEAD = "'Cormorant Garamond', Georgia, serif";
-const MONO = "'JetBrains Mono', monospace";
-const BODY = "'Inter', sans-serif";
 
 const DECISION_TYPES = [
   { value: 'hiring', label: 'Hiring', icon: Users },
@@ -110,10 +108,10 @@ export default function DecisionsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }} data-testid="decisions-title">
+            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }} data-testid="decisions-title">
               Decision Tracker
             </h1>
-            <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+            <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
               Record strategic decisions. Track outcomes at 30, 60, and 90 days.
             </p>
           </div>
@@ -132,12 +130,12 @@ export default function DecisionsPage() {
         {showForm && (
           <Card className="mb-8" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="decision-form">
             <CardHeader>
-              <CardTitle style={{ color: '#F4F7FA', fontFamily: HEAD }}>Record a Decision</CardTitle>
+              <CardTitle style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Record a Decision</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
               {/* Decision Type */}
               <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: MONO, fontSize: 11 }}>Decision Type</Label>
+                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Decision Type</Label>
                 <Select value={form.decision_category} onValueChange={v => setForm(p => ({ ...p, decision_category: v }))}>
                   <SelectTrigger className="mt-1.5" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} data-testid="decision-type-select">
                     <SelectValue placeholder="Select type..." />
@@ -152,7 +150,7 @@ export default function DecisionsPage() {
 
               {/* Description */}
               <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: MONO, fontSize: 11 }}>Decision Description</Label>
+                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Decision Description</Label>
                 <Textarea
                   className="mt-1.5"
                   value={form.decision_statement}
@@ -166,7 +164,7 @@ export default function DecisionsPage() {
 
               {/* Affected Domains */}
               <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: MONO, fontSize: 11 }}>Domains Affected</Label>
+                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Domains Affected</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {DOMAINS.map(d => (
                     <button
@@ -177,7 +175,7 @@ export default function DecisionsPage() {
                         background: form.affected_domains.includes(d.id) ? d.color + '20' : '#0A1018',
                         color: form.affected_domains.includes(d.id) ? d.color : '#64748B',
                         border: `1px solid ${form.affected_domains.includes(d.id) ? d.color + '50' : '#243140'}`,
-                        fontFamily: BODY,
+                        fontFamily: fontFamily.body,
                       }}
                       data-testid={`domain-${d.id}`}
                     >
@@ -189,7 +187,7 @@ export default function DecisionsPage() {
 
               {/* Time Horizon */}
               <div>
-                <Label style={{ color: '#9FB0C3', fontFamily: MONO, fontSize: 11 }}>Expected Time Horizon (days)</Label>
+                <Label style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, fontSize: 11 }}>Expected Time Horizon (days)</Label>
                 <Input
                   type="number"
                   value={form.expected_time_horizon}
@@ -225,13 +223,13 @@ export default function DecisionsPage() {
           {loading ? (
             <div className="text-center py-12">
               <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: '#FF6A00' }} />
-              <p className="text-sm" style={{ color: '#64748B', fontFamily: BODY }}>Loading decisions...</p>
+              <p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Loading decisions...</p>
             </div>
           ) : decisions.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="no-decisions">
               <Target className="w-10 h-10 mx-auto mb-3" style={{ color: '#243140' }} />
-              <p className="text-lg font-semibold" style={{ color: '#F4F7FA', fontFamily: HEAD }}>No decisions recorded yet</p>
-              <p className="text-sm mt-1" style={{ color: '#64748B', fontFamily: BODY }}>
+              <p className="text-lg font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>No decisions recorded yet</p>
+              <p className="text-sm mt-1" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
                 Record your first strategic decision to start tracking outcomes.
               </p>
               <Button onClick={() => setShowForm(true)} className="mt-4 gap-2" style={{ background: '#FF6A00', color: 'white' }} data-testid="first-decision-btn">
@@ -289,14 +287,14 @@ function DecisionCard({ decision, onOutcomeRecorded }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: MONO }}>
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
               {typeInfo.label}
             </span>
-            <span className="text-xs" style={{ color: '#64748B', fontFamily: MONO }}>
+            <span className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
               {decision.created_at ? new Date(decision.created_at).toLocaleDateString() : ''}
             </span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: '#F4F7FA', fontFamily: BODY }}>
+          <p className="text-sm leading-relaxed" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
             {decision.decision_statement}
           </p>
 
@@ -306,7 +304,7 @@ function DecisionCard({ decision, onOutcomeRecorded }) {
               {decision.affected_domains.map(d => {
                 const domain = DOMAINS.find(dm => dm.id === d);
                 return (
-                  <span key={d} className="px-2 py-0.5 rounded text-xs" style={{ background: (domain?.color || '#64748B') + '15', color: domain?.color || '#64748B', fontFamily: MONO }}>
+                  <span key={d} className="px-2 py-0.5 rounded text-xs" style={{ background: (domain?.color || '#64748B') + '15', color: domain?.color || '#64748B', fontFamily: fontFamily.mono }}>
                     {domain?.label || d}
                   </span>
                 );
@@ -317,7 +315,7 @@ function DecisionCard({ decision, onOutcomeRecorded }) {
           {/* Checkpoints */}
           {expanded && checkpoints.length > 0 && (
             <div className="mt-4 pt-4 space-y-2" style={{ borderTop: '1px solid #243140' }}>
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748B', fontFamily: MONO }}>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                 Outcome Checkpoints
               </p>
               {checkpoints.map(cp => {
@@ -326,8 +324,8 @@ function DecisionCard({ decision, onOutcomeRecorded }) {
                 return (
                   <div key={cp.id || cp.checkpoint_day} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{ background: '#0A1018' }}>
                     <StIcon className="w-4 h-4 shrink-0" style={{ color: st.color }} />
-                    <span className="text-xs font-medium" style={{ color: '#F4F7FA', fontFamily: MONO }}>Day {cp.checkpoint_day}</span>
-                    <span className="text-xs flex-1" style={{ color: '#9FB0C3', fontFamily: BODY }}>
+                    <span className="text-xs font-medium" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>Day {cp.checkpoint_day}</span>
+                    <span className="text-xs flex-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
                       {cp.scheduled_at ? new Date(cp.scheduled_at).toLocaleDateString() : 'Scheduled'}
                     </span>
                     {(cp.status === 'pending' && new Date(cp.scheduled_at) <= new Date()) ? (
@@ -336,7 +334,7 @@ function DecisionCard({ decision, onOutcomeRecorded }) {
                           onClick={(e) => { e.stopPropagation(); handleRecordOutcome(cp.checkpoint_day, true); }}
                           disabled={recordingCheckpoint === cp.checkpoint_day}
                           className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-80"
-                          style={{ background: '#10B98120', color: '#10B981', fontFamily: MONO }}
+                          style={{ background: '#10B98120', color: '#10B981', fontFamily: fontFamily.mono }}
                           data-testid={`outcome-positive-${cp.checkpoint_day}`}
                         >
                           {recordingCheckpoint === cp.checkpoint_day ? '...' : 'Effective'}
@@ -345,14 +343,14 @@ function DecisionCard({ decision, onOutcomeRecorded }) {
                           onClick={(e) => { e.stopPropagation(); handleRecordOutcome(cp.checkpoint_day, false); }}
                           disabled={recordingCheckpoint === cp.checkpoint_day}
                           className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-80"
-                          style={{ background: '#EF444420', color: '#EF4444', fontFamily: MONO }}
+                          style={{ background: '#EF444420', color: '#EF4444', fontFamily: fontFamily.mono }}
                           data-testid={`outcome-negative-${cp.checkpoint_day}`}
                         >
                           {recordingCheckpoint === cp.checkpoint_day ? '...' : 'Ineffective'}
                         </button>
                       </div>
                     ) : (
-                      <span className="text-xs" style={{ color: st.color, fontFamily: MONO }}>{st.label}</span>
+                      <span className="text-xs" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
                     )}
                   </div>
                 );

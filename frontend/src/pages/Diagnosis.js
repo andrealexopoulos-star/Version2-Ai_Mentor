@@ -257,7 +257,7 @@ const Diagnosis = ({ embedded = false }) => {
       });
       
     } catch (error) {
-      console.log('Assessment from emails not available');
+      // console.log('Assessment from emails not available');
       // When no data, explicitly state uncertainty
       setAssessment({
         diagnoses: Object.entries(businessCategories).map(([id, config]) => ({
