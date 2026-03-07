@@ -676,7 +676,8 @@ DO $$ BEGIN
   DROP POLICY IF EXISTS "Users manage own feature usage" ON user_feature_usage;
 END $$;
 
-CREATE POLICY IF NOT EXISTS "Users manage own feature usage"
+DROP POLICY IF EXISTS "Users manage own feature usage" ON user_feature_usage;
+CREATE POLICY "Users manage own feature usage"
   ON user_feature_usage FOR ALL
   USING (auth.uid() = user_id);
 
