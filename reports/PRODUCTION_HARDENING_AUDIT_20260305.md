@@ -132,7 +132,7 @@ curl -s -X POST "http://localhost:8001/api/soundboard/chat" \
   -d '{"message":"What should I focus on?","conversation_id":null}'
 
 # Backend log output:
-INFO:server:[GUARDRAIL_FULL] user=d1fe9b52-e712-49a2-8db2-3b7415cce9cf context_fields=6
+INFO:server:[GUARDRAIL_FULL] user=biqc-calibration context_fields=6
 
 # Response (1474 chars, personalized):
 "Trent, given your current position with Campos Coffee... let's focus on optimizing your cash flow and expanding your B2B partnerships..."
