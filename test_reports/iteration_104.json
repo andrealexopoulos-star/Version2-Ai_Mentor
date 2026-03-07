@@ -1,0 +1,218 @@
+{
+  "summary": "BIQc Master Forensic Audit - Iteration 104. Comprehensive pre-launch readiness test at https://biqc.thestrategysquad.com. All 5 SMB type signups completed. Calibration Edge Functions CONFIRMED WORKING (major improvement from iteration_103). Outlook OAuth still critically broken. Executive Intelligence Snapshot UI blocker discovered. Dashboard, market, competitive benchmark, settings, integrations pages all load correctly. Mobile nav 5-item bottom bar works. 26 Edge Functions confirmed deployed.",
+
+  "test_credentials": {
+    "existing": "newtest1@biqctest.io / BIQcTest!2026 (calibration COMPLETE)",
+    "new_signups": [
+      "hvac@biqctest.io / BIQcTest!2026 - calibration partially complete (got stuck on Executive Intelligence Snapshot, then completed via auto-save)",
+      "realestate@biqctest.io / BIQcTest!2026 - calibration in progress, scanned raywhite.com.au (HIGH confidence)",
+      "restaurant@biqctest.io / BIQcTest!2026 - created, at calibration ignition",
+      "ecommerce@biqctest.io / BIQcTest!2026 - scanned koala.com, at identity verification",
+      "consulting@biqctest.io / BIQcTest!2026 - scanned mckinsey.com (HIGH confidence, full address extracted)"
+    ]
+  },
+
+  "phase1_new_user_journey": {
+    "hvac_snowman": "PARTIAL PASS - Signup ✓, scan snowman.com.au ✓ (ABN 64 082 081 392 extracted, Medium confidence), CMO Summary ✓ (22/100 Digital Market Presence), Integration Connect overlay ✓, BLOCKED at Executive Intelligence Snapshot (no CTA button when intelligenceData=null)",
+    "realestate_raywhite": "PASS - Signup ✓, scan raywhite.com.au ✓ (RAY WHITE NSW PTY LTD, ABN 88 054 813 660, 3 phones extracted, HIGH confidence)",
+    "restaurant": "PASS - Signup ✓, redirected to calibration",
+    "ecommerce_koala": "PASS - Signup ✓, scan koala.com ✓ (Koala/The Koala Company Limited, ABN 18 605 237 090, Location Sydney extracted)",
+    "consulting_mckinsey": "OUTSTANDING PASS - Signup ✓, scan mckinsey.com ✓ (McKinsey Pacific Rim Inc / McKinsey & Company, Level 35 88 Phillip Street Sydney NSW 2000, ABN 66 055 131 443, YouTube social, HIGH confidence)"
+  },
+
+  "phase4_critical_features": {
+    "4a_camposbeans_edge_function": "NOT DIRECTLY TESTED (ran out of fresh accounts) - BUT Edge Functions confirmed working on all 4 tested sites. Very likely now returns data vs iteration_103 where it failed. Status: LIKELY WORKING",
+    "4b_post_calibration_connect_overlay": "PASS - Integration overlay appears after CMO summary with 6 providers: Gmail, Outlook, Yahoo Mail, iCloud Mail, Exchange, Other/IMAP. 'Skip for now' and 'Go to Market Intelligence' buttons present",
+    "4c_outlook_oauth": "CRITICAL FAIL - client_id=None AND redirect_uri=http://localhost:8001/api/auth/outlook/callback. SAME bug as iteration_103. NOT FIXED. URL: login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=None&redirect_uri=http%3A%2F%2Flocalhost%3A8001...",
+    "4d_decisions_create": "N/A - Decisions page is auto-detection only (BIQc detects when signals require a decision). No manual creation UI present.",
+    "4e_competitive_benchmark_refresh": "PASS - Refresh button works, score updates from 58→70 after refresh with new industry ranking"
+  },
+
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/auth/outlook/login",
+        "issue": "STILL BROKEN from iteration_103. Microsoft OAuth URL: client_id=None, redirect_uri=http://localhost:8001/api/auth/outlook/callback. Azure Client ID not configured in production. OAuth cannot work.",
+        "priority": "CRITICAL",
+        "evidence": "Confirmed via direct curl: login.microsoftonline.com/...?client_id=None&redirect_uri=http%3A%2F%2Flocalhost%3A8001..."
+      },
+      {
+        "endpoint": "/api/auth/gmail/login",
+        "issue": "Likely same OAuth config issue as Outlook (GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI not set in production)",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/soundboard/scan-usage",
+        "issue": "Returns 404 in production but 200 locally. Production backend deployment outdated. Endpoint exists in /routes/soundboard.py:846",
+        "priority": "MEDIUM"
+      },
+      {
+        "endpoint": "/api/cognition/overview",
+        "issue": "Returns 404 in production but 200 locally. Production backend deployment outdated. Endpoint at /routes/cognition_contract.py (via /cognition/{tab})",
+        "priority": "MEDIUM"
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ExecutiveCMOSnapshot / IntelligencePhases.js",
+        "issue": "CRITICAL UX BLOCKER: 'Continue to Dashboard' CTA button never appears when biqc-insights-cognitive Edge Function returns null data or status='ANALYZING'. Users get PERMANENTLY STUCK on Executive Intelligence Snapshot with only 'Sign out' button available. Root cause: isReady=false when stateStatus is undefined/ANALYZING, ctaVisible never becomes true.",
+        "file": "/app/frontend/src/components/calibration/IntelligencePhases.js:14-341",
+        "selector": "[data-testid='cmo-continue-btn']",
+        "priority": "CRITICAL",
+        "fix": "Add a 30-second timeout fallback: if isReady is still false after 30s, show the CTA button anyway so users can proceed. Or check intelligenceData=null and show CTA immediately."
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Outlook Connect OAuth",
+        "issue": "Connect Outlook button calls /api/auth/outlook/login which redirects to Microsoft with client_id=None and localhost:8001 callback URI. OAuth WILL FAIL for all users.",
+        "affected_selectors": ["button:has-text('Connect Outlook')"]
+      },
+      {
+        "flow": "SoundBoard AI Response Quality",
+        "issue": "SoundBoard chat responds generically saying 'I don't have access to your specific business stability score, as there are no data sources connected' even when calibration data is available. AI should use business profile data (name, website, calibration summary) for context even without integrations.",
+        "affected_selectors": ["[data-testid*='soundboard']"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Connect Email page (mobile)",
+        "issues": ["'Connect Outlook' and 'Connect Gmail' buttons use blue color, inconsistent with brand orange (#FF6A00) used elsewhere. Minor but inconsistent with design tokens."]
+      },
+      {
+        "screen": "Executive Intelligence Snapshot",
+        "issues": ["When stuck in ANALYZING state with no CTA button, user has no escape path except Sign Out. Missing timeout/fallback UI."]
+      },
+      {
+        "screen": "Tutorial modals",
+        "issues": ["Tutorial modals appear on EVERY PAGE on every login session until explicitly dismissed. While helpful for onboarding, persistent re-showing could frustrate returning users if tutorial state is not properly persisted."]
+      }
+    ]
+  },
+
+  "phase2_design_audit": {
+    "landing_page": "EXCELLENT - Hero 'A Single Intelligence Layer Across All Business Systems', clean dark theme, stats section, pricing, CTAs. Australian badge. Professional.",
+    "login_page": "EXCELLENT - Clean split design, Google + Microsoft OAuth buttons, email/password form, security trust signals on right.",
+    "register_page": "GOOD - 6 fields (Full Name, Email, Company, Industry, Password, Confirm Password). Could use field labels more prominently.",
+    "calibration_page": "EXCELLENT - Multi-step flow with tutorial modals, identity verification card, CMO summary with scoring. Professional execution.",
+    "advisor_dashboard": "EXCELLENT - Dark theme, Cormorant Garamond serif headings, SoundBoard AI chat, left sidebar nav, weekly check-in prompts, business stability score.",
+    "market_page": "GOOD - 5 tabs (Focus, Saturation, Demand, Friction, Reports), market position score (40% confidence), Executive Brief. Navigation works.",
+    "revenue_page": "ACCEPTABLE - Behind enterprise paywall for free users. Shows callback form. Could benefit from better preview of features.",
+    "decisions_page": "GOOD - Auto-detection system, 'No decisions pending' state clear and professional.",
+    "competitive_benchmark": "EXCELLENT - Digital Footprint score (56-70/100), gauge chart, industry ranking percentile, 5-pillar breakdown, Refresh button WORKS.",
+    "watchtower_page": "NOTE: /advisor route IS the AdvisorWatchtower component. Shows priority items, business stability, today's actions.",
+    "settings_page": "GOOD - Account/Preferences/Tools/Billing tabs, agent calibration status, sync/recalibrate buttons.",
+    "connect_email": "GOOD design but BROKEN Outlook OAuth. Gmail/Outlook/Yahoo/iCloud/Exchange/IMAP options shown.",
+    "integrations_page": "GOOD - 6 category tabs (CRM, Financial, HRIS, ATS, E-Commerce, Knowledge Base). Clear upgrade paths."
+  },
+
+  "phase3_navigation_audit": {
+    "desktop_sidebar": "WORKING - All nav items: BIQc Overview, Decisions, Revenue, Operations, Risk, Market & Positioning, Competitive Benchmark, EXECUTION, SYSTEMS, MARKETING, GOVERNANCE & LEGAL, BIQC LEGAL",
+    "mobile_bottom_nav": "WORKING - 5 items: Overview, Market, Revenue, Alerts, More. Fixed bottom position. Correct active state highlighting.",
+    "tab_switching": "PARTIAL - Market page has 5 tabs (Focus, Saturation, Demand, Friction, Reports). Tabs switch correctly.",
+    "soundboard_chat": "WORKING but GENERIC - AI responds but says 'no data sources connected' rather than using calibration/business profile data.",
+    "mobile_fab": "WORKING - Orange floating action button (SoundBoard) visible on all dashboard pages in bottom-right corner."
+  },
+
+  "phase5_launch_readiness_scores": {
+    "ui_quality": {
+      "score": 78,
+      "notes": "Professional dark theme, consistent design tokens, Cormorant Garamond serif, excellent calibration flow UI. Deductions: Executive Intelligence Snapshot UX blocker, tutorial persistence issues, Connect Email button color inconsistency."
+    },
+    "ux_clarity": {
+      "score": 65,
+      "notes": "Clear calibration steps, good tutorial modals. MAJOR DEDUCTION: Users get permanently stuck on Executive Intelligence Snapshot with no escape. Revenue/Operations/Risk pages show paywall without preview. SoundBoard gives unhelpful generic responses."
+    },
+    "ai_intelligence_quality": {
+      "score": 68,
+      "notes": "Edge Functions EXCELLENT - extracts business names, ABNs, full addresses, phone numbers, social links with HIGH confidence for major brands. CMO Summary scoring system (2-10 across 9 categories) is professional. DEDUCTIONS: SoundBoard generic responses, Executive Intelligence Snapshot gets stuck in ANALYZING state."
+    },
+    "platform_stability": {
+      "score": 72,
+      "notes": "Core flows work (signup→calibration→dashboard). Calibration Edge Functions deployed and working. Competitive benchmark refresh works. DEDUCTIONS: Executive Intelligence Snapshot stuck, production backend missing 2 endpoints vs local, onboarding flow added as new step after calibration."
+    },
+    "integration_reliability": {
+      "score": 30,
+      "notes": "CRITICAL: Outlook OAuth COMPLETELY BROKEN (client_id=None, localhost redirect). Gmail likely same. No email integrations work. Competitive benchmark data refreshes via Edge Functions. HubSpot/CRM integration not tested directly. Zero email/calendar integrations functional in production."
+    },
+    "overall_score": 62.6,
+    "verdict": "NOT READY for first paying client",
+    "verdict_reasoning": "Two critical blockers must be fixed before launch: (1) Outlook/Gmail OAuth completely broken - email connectivity is a core value proposition; (2) Executive Intelligence Snapshot UX blocker - users can get permanently stuck during calibration with no escape path. Once these are fixed, the platform has excellent potential - calibration intelligence extraction is impressive, UI is professional, mobile experience is solid."
+  },
+
+  "improvements_from_iteration_103": [
+    "✓ FIXED: Calibration Edge Functions now DEPLOYED and WORKING on new Supabase vwwandhoydemcybltoxz",
+    "✓ FIXED: window.confirm() replaced with inline UI in ForensicIdentityCard",
+    "✓ NO REDIRECT LOOP detected",
+    "✓ NEW: Identity Verification step added with ABN Registry Lookup",
+    "✓ NEW: Post-CMO Integration Connect overlay shows 6 email providers",
+    "✓ NEW: Onboarding wizard added after calibration",
+    "✗ STILL BROKEN: Outlook OAuth client_id=None (NOT FIXED from iteration_103)",
+    "✗ NEW ISSUE: Executive Intelligence Snapshot stuck (no CTA when intelligenceData=null)"
+  ],
+
+  "action_items": [
+    "CRITICAL P0: Set AZURE_CLIENT_ID and AZURE_CLIENT_SECRET in production backend env. Set AZURE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/outlook/callback. Register callback URL in Azure AD App Registration.",
+    "CRITICAL P0: Fix Executive Intelligence Snapshot stuck state. Add 30-second timeout fallback in IntelligencePhases.js ExecutiveCMOSnapshot component: if isReady is still false after 30s, show CTA button anyway. Fix: add useEffect timer that sets ctaVisible=true after 30s regardless of isReady status.",
+    "HIGH P1: Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/gmail/callback in production backend.",
+    "MEDIUM P2: Deploy updated backend code to production. /api/soundboard/scan-usage and /api/cognition/overview return 404 in production but work locally. Production is behind local codebase.",
+    "MEDIUM P2: Improve SoundBoard AI to use calibration data (business name, website, industry, CMO summary) as context even when no external integrations connected. Currently says 'no data sources' ignoring calibration data.",
+    "LOW P3: Test camposbeans.com.au with a fresh test account to confirm Phase 4a (Edge Function was working for all 4 other sites tested).",
+    "LOW P3: Fix Connect Email page button color inconsistency - 'Connect Outlook' and 'Connect Gmail' buttons appear blue but brand color is orange (#FF6A00).",
+    "LOW P3: Add timeout/skip mechanism on Executive Intelligence Snapshot for cases where biqc-insights-cognitive Edge Function is slow or returns ANALYZING state."
+  ],
+
+  "critical_code_review_comments": [
+    "CRITICAL: IntelligencePhases.js:ExecutiveCMOSnapshot - ctaVisible only becomes true when isReady=true (stateStatus !== 'ANALYZING'). When biqc-insights-cognitive returns null or ANALYZING, users are permanently stuck. Add: setTimeout fallback to show CTA after 30-40 seconds regardless.",
+    "CRITICAL: Production backend environment missing AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI - Outlook OAuth completely broken since iteration_103.",
+    "HIGH: SoundBoard chat prompt doesn't inject business profile context (business name, industry, website, calibration summary) when responding. All responses are generic 'no data connected' even when calibration is COMPLETE.",
+    "MEDIUM: Production backend outdated - /api/soundboard/scan-usage and /api/cognition/overview exist in local code but not deployed to production.",
+    "LOW: Connect Email buttons use blue color (#3B82F6) instead of brand orange (#FF6A00) inconsistent with design tokens."
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_104.py",
+    "/app/test_reports/pytest/pytest_iteration_104.xml",
+    "/app/test_reports/iteration_104.json"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_iteration_104.py"
+  ],
+
+  "success_rate": {
+    "backend": "78% (core APIs work, Outlook/Gmail OAuth broken, 2 endpoints 404 in production)",
+    "frontend": "80% (all pages load, calibration Edge Functions working excellently, 2 critical UX blockers)"
+  },
+
+  "seed_data_creation": "Created 5 new test accounts: hvac@biqctest.io, realestate@biqctest.io, restaurant@biqctest.io, ecommerce@biqctest.io, consulting@biqctest.io (all password: BIQcTest!2026)",
+
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Iteration 104 - Master Forensic Audit. Production: https://biqc.thestrategysquad.com. New Supabase: vwwandhoydemcybltoxz. KEY FIXES NEEDED: (1) Outlook OAuth STILL broken - client_id=None, localhost redirect. (2) Executive Intelligence Snapshot stuck - add timeout fallback for CTA button in IntelligencePhases.js. TEST ACCOUNTS: newtest1@biqctest.io (calibration COMPLETE), hvac/realestate/restaurant/ecommerce/consulting @biqctest.io (all BIQcTest!2026, various calibration states). MAJOR WIN: Calibration Edge Functions now working - snowman/raywhite/koala/mckinsey all return ABN/business name/address. window.confirm() was replaced. No redirect loop. Mobile nav 5-item bar works. Competitive benchmark refresh works. SoundBoard chat works but responses generic. Production backend missing 2 endpoints vs local (/api/soundboard/scan-usage, /api/cognition/overview).",
+
+  "rca_of_issues": {
+    "executive_intelligence_snapshot_stuck": {
+      "root_cause": "ExecutiveCMOSnapshot component only shows CTA button when isReady=true (stateStatus !== 'ANALYZING' && stateStatus !== undefined). biqc-insights-cognitive Edge Function either returns null or system_state='ANALYZING' for new users. Since fetchIntelligence() is called non-blocking before setEntry('integration_connect'), by the time user reaches 'intelligence-first' entry after clicking 'Go to Market Intelligence', intelligenceData may still be null or ANALYZING.",
+      "file": "/app/frontend/src/components/calibration/IntelligencePhases.js:15-34",
+      "reproduction": "1. Create new account 2. Complete calibration scan 3. Confirm identity 4. CMO Summary → Continue 5. Integration Connect → Go to Market Intelligence 6. Page shows ANALYZING spinner with no way to proceed",
+      "mitigation": "In ExecutiveCMOSnapshot useEffect (line 30-34), add additional timer: setTimeout(() => setCtaVisible(true), 30000) to force CTA visible after 30 seconds regardless of isReady status."
+    },
+    "outlook_oauth_broken": {
+      "root_cause": "Production Azure backend missing AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI environment variables. Backend defaults to None/localhost.",
+      "evidence": "OAuth URL: client_id=None, redirect_uri=http://localhost:8001/api/auth/outlook/callback",
+      "mitigation": "Set in Azure App Service: AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/outlook/callback"
+    },
+    "production_backend_outdated": {
+      "root_cause": "Production backend deployment is behind local codebase. /api/soundboard/scan-usage and /api/cognition/overview exist in local routes but not deployed to production Azure backend.",
+      "evidence": "Local test: both return 200. Production: both return 404.",
+      "mitigation": "Redeploy production backend (Azure App Service). Ensure CI/CD pipeline is syncing latest code."
+    }
+  }
+}
