@@ -1,3 +1,4 @@
+CREATE SCHEMA IF NOT EXISTS intelligence_core;
 -- CHUNK 2: Intelligence Engine
 -- 029_payment_transactions.sql
 -- Payment transactions table for Stripe
@@ -14,8 +15,8 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payment_session ON payment_transactions(session_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_payment_user ON payment_transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_payment_session ON payment_transactions(session_id);
+CREATE INDEX IF NOT EXISTS idx_payment_user ON payment_transactions(user_id);
 
 ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY IF NOT EXISTS "Users read own payments" ON payment_transactions FOR SELECT USING (true);
@@ -69,9 +70,9 @@ CREATE TABLE IF NOT EXISTS intelligence_core.intelligence_events (
     created_at TIMESTAMP DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_events_tenant ON intelligence_core.intelligence_events(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_events_type ON intelligence_core.intelligence_events(event_type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_events_created ON intelligence_core.intelligence_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ic_events_tenant ON intelligence_core.intelligence_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ic_events_type ON intelligence_core.intelligence_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_ic_events_created ON intelligence_core.intelligence_events(created_at DESC);
 
 
 -- ═══ 3. DAILY METRIC SNAPSHOTS ═══
@@ -88,7 +89,7 @@ CREATE TABLE IF NOT EXISTS intelligence_core.daily_metric_snapshots (
     UNIQUE (tenant_id, snapshot_date)
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_snapshots_tenant_date ON intelligence_core.daily_metric_snapshots(tenant_id, snapshot_date DESC);
+CREATE INDEX IF NOT EXISTS idx_ic_snapshots_tenant_date ON intelligence_core.daily_metric_snapshots(tenant_id, snapshot_date DESC);
 
 
 -- ═══ 4. ONTOLOGY GRAPH ═══
@@ -114,11 +115,11 @@ CREATE TABLE IF NOT EXISTS intelligence_core.ontology_edges (
     created_at TIMESTAMP DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_nodes_tenant ON intelligence_core.ontology_nodes(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_nodes_type ON intelligence_core.ontology_nodes(node_type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_edges_from ON intelligence_core.ontology_edges(from_node);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_edges_to ON intelligence_core.ontology_edges(to_node);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_edges_tenant ON intelligence_core.ontology_edges(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ic_nodes_tenant ON intelligence_core.ontology_nodes(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ic_nodes_type ON intelligence_core.ontology_nodes(node_type);
+CREATE INDEX IF NOT EXISTS idx_ic_edges_from ON intelligence_core.ontology_edges(from_node);
+CREATE INDEX IF NOT EXISTS idx_ic_edges_to ON intelligence_core.ontology_edges(to_node);
+CREATE INDEX IF NOT EXISTS idx_ic_edges_tenant ON intelligence_core.ontology_edges(tenant_id);
 
 
 -- ═══ 5. DECISION REGISTRY ═══
@@ -144,8 +145,8 @@ CREATE TABLE IF NOT EXISTS intelligence_core.decision_outcomes (
     created_at TIMESTAMP DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_decisions_tenant ON intelligence_core.decisions(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_outcomes_decision ON intelligence_core.decision_outcomes(decision_id);
+CREATE INDEX IF NOT EXISTS idx_ic_decisions_tenant ON intelligence_core.decisions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ic_outcomes_decision ON intelligence_core.decision_outcomes(decision_id);
 
 
 -- ═══ 6. MODEL GOVERNANCE ═══
@@ -173,9 +174,9 @@ CREATE TABLE IF NOT EXISTS intelligence_core.model_executions (
     created_at TIMESTAMP DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_registry_name ON intelligence_core.model_registry(model_name);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_executions_tenant ON intelligence_core.model_executions(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_executions_model ON intelligence_core.model_executions(model_name);
+CREATE INDEX IF NOT EXISTS idx_ic_registry_name ON intelligence_core.model_registry(model_name);
+CREATE INDEX IF NOT EXISTS idx_ic_executions_tenant ON intelligence_core.model_executions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ic_executions_model ON intelligence_core.model_executions(model_name);
 
 
 -- ═══ 7. FEATURE FLAG ═══
@@ -304,9 +305,9 @@ CREATE TABLE IF NOT EXISTS ic_intelligence_events (
     confidence_score FLOAT,
     created_at TIMESTAMP DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_events_tenant ON ic_intelligence_events(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_events_type ON ic_intelligence_events(event_type);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_events_created ON ic_intelligence_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ic_events_tenant ON ic_intelligence_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ic_events_type ON ic_intelligence_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_ic_events_created ON ic_intelligence_events(created_at DESC);
 
 -- Daily metric snapshots
 CREATE TABLE IF NOT EXISTS ic_daily_metric_snapshots (
@@ -326,7 +327,7 @@ CREATE TABLE IF NOT EXISTS ic_daily_metric_snapshots (
     created_at TIMESTAMP DEFAULT now(),
     UNIQUE (tenant_id, snapshot_date)
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_snaps_tenant ON ic_daily_metric_snapshots(tenant_id, snapshot_date DESC);
+CREATE INDEX IF NOT EXISTS idx_ic_snaps_tenant ON ic_daily_metric_snapshots(tenant_id, snapshot_date DESC);
 
 -- Ontology graph
 CREATE TABLE IF NOT EXISTS ic_ontology_nodes (
@@ -349,9 +350,9 @@ CREATE TABLE IF NOT EXISTS ic_ontology_edges (
     weight FLOAT DEFAULT 1,
     created_at TIMESTAMP DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_nodes_tenant ON ic_ontology_nodes(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_edges_from ON ic_ontology_edges(from_node);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_edges_to ON ic_ontology_edges(to_node);
+CREATE INDEX IF NOT EXISTS idx_ic_nodes_tenant ON ic_ontology_nodes(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ic_edges_from ON ic_ontology_edges(from_node);
+CREATE INDEX IF NOT EXISTS idx_ic_edges_to ON ic_ontology_edges(to_node);
 
 -- Decision registry
 CREATE TABLE IF NOT EXISTS ic_decisions (
@@ -638,7 +639,7 @@ CREATE TABLE IF NOT EXISTS ic_event_queue (
     processed_at TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_queue_status ON ic_event_queue(status) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_ic_queue_status ON ic_event_queue(status) WHERE status = 'pending';
 
 -- Process queue function (called by pg_cron every minute)
 CREATE OR REPLACE FUNCTION ic_process_event_queue()
@@ -1116,7 +1117,7 @@ CREATE TABLE IF NOT EXISTS ic_risk_weight_configs (
     )
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ic_weights_active ON ic_risk_weight_configs(is_active, industry_code);
+CREATE INDEX IF NOT EXISTS idx_ic_weights_active ON ic_risk_weight_configs(is_active, industry_code);
 
 
 -- ═══ 2. IMMUTABILITY TRIGGER ═══
@@ -1549,12 +1550,12 @@ END $$;
 -- Prevents two active configs for same industry
 
 -- For industry-specific (non-null industry_code)
-CREATE UNIQUE INDEX IF NOT EXISTS IF NOT EXISTS uniq_active_weight_per_industry
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_active_weight_per_industry
     ON ic_risk_weight_configs (industry_code)
     WHERE is_active = true AND industry_code IS NOT NULL;
 
 -- For global default (null industry_code)
-CREATE UNIQUE INDEX IF NOT EXISTS IF NOT EXISTS uniq_active_weight_global
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_active_weight_global
     ON ic_risk_weight_configs ((1))
     WHERE is_active = true AND industry_code IS NULL;
 
@@ -2055,7 +2056,7 @@ CREATE TABLE IF NOT EXISTS episodic_memory (
     session_id TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_episodic_tenant ON episodic_memory(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_episodic_tenant ON episodic_memory(tenant_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS semantic_memory (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -2068,8 +2069,8 @@ CREATE TABLE IF NOT EXISTS semantic_memory (
     created_at TIMESTAMP DEFAULT NOW(),
     expires_at TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_semantic_tenant ON semantic_memory(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_semantic_subject ON semantic_memory(subject);
+CREATE INDEX IF NOT EXISTS idx_semantic_tenant ON semantic_memory(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_semantic_subject ON semantic_memory(subject);
 
 CREATE TABLE IF NOT EXISTS context_summaries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -2081,7 +2082,7 @@ CREATE TABLE IF NOT EXISTS context_summaries (
     key_outcomes JSONB DEFAULT '[]',
     created_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_summaries_tenant ON context_summaries(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_summaries_tenant ON context_summaries(tenant_id, created_at DESC);
 
 -- ═══ 2. MARKETING INTELLIGENCE ═══
 
@@ -2097,8 +2098,8 @@ CREATE TABLE IF NOT EXISTS marketing_benchmarks (
     is_current BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_benchmarks_tenant ON marketing_benchmarks(tenant_id);
-CREATE UNIQUE INDEX IF NOT EXISTS IF NOT EXISTS idx_benchmarks_current ON marketing_benchmarks(tenant_id) WHERE is_current = true;
+CREATE INDEX IF NOT EXISTS idx_benchmarks_tenant ON marketing_benchmarks(tenant_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_benchmarks_current ON marketing_benchmarks(tenant_id) WHERE is_current = true;
 
 -- ═══ 3. MARKETING AUTOMATION ═══
 
@@ -2114,7 +2115,7 @@ CREATE TABLE IF NOT EXISTS action_log (
     created_at TIMESTAMP DEFAULT NOW(),
     completed_at TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_action_tenant ON action_log(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_action_tenant ON action_log(tenant_id, created_at DESC);
 
 -- ═══ 4. OBSERVABILITY ═══
 
@@ -2136,8 +2137,8 @@ CREATE TABLE IF NOT EXISTS llm_call_log (
     endpoint TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_llm_log_tenant ON llm_call_log(tenant_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_llm_log_model ON llm_call_log(model_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_llm_log_tenant ON llm_call_log(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_llm_log_model ON llm_call_log(model_name, created_at DESC);
 
 -- ═══ 5. FEATURE FLAGS FOR NEW MODULES ═══
 
@@ -2202,11 +2203,11 @@ CREATE TABLE IF NOT EXISTS rag_embeddings (
     UNIQUE(tenant_id, content_hash)
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_rag_tenant ON rag_embeddings(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_rag_source ON rag_embeddings(source_type);
+CREATE INDEX IF NOT EXISTS idx_rag_tenant ON rag_embeddings(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_rag_source ON rag_embeddings(source_type);
 
 -- HNSW index for fast similarity search
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_rag_embedding ON rag_embeddings
+CREATE INDEX IF NOT EXISTS idx_rag_embedding ON rag_embeddings
     USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
 
@@ -2303,9 +2304,9 @@ CREATE TABLE IF NOT EXISTS ab_metrics (
     recorded_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ab_assign_exp ON ab_assignments(experiment_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ab_assign_tenant ON ab_assignments(tenant_id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_ab_metrics_exp ON ab_metrics(experiment_id);
+CREATE INDEX IF NOT EXISTS idx_ab_assign_exp ON ab_assignments(experiment_id);
+CREATE INDEX IF NOT EXISTS idx_ab_assign_tenant ON ab_assignments(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ab_metrics_exp ON ab_metrics(experiment_id);
 
 -- Deterministic assignment function
 CREATE OR REPLACE FUNCTION ab_get_variant(p_experiment_name TEXT, p_tenant_id UUID)
@@ -2400,8 +2401,8 @@ CREATE TABLE IF NOT EXISTS admin_actions (
     ip_address TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_admin_actions_admin ON admin_actions(admin_user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_admin_actions_target ON admin_actions(target_user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_actions_admin ON admin_actions(admin_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_actions_target ON admin_actions(target_user_id);
 
 ALTER TABLE admin_actions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY IF NOT EXISTS "superadmin_read" ON admin_actions FOR SELECT USING (true);
