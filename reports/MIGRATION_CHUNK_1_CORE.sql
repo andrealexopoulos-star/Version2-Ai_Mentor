@@ -90,6 +90,7 @@ CREATE POLICY "Service role full access" ON public.watchtower_events
     WITH CHECK (true);
 
 -- Auto-update updated_at
+DROP FUNCTION IF EXISTS update_watchtower_updated_at CASCADE;
 CREATE OR REPLACE FUNCTION update_watchtower_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -111,6 +112,7 @@ COMMENT ON TABLE public.watchtower_events IS 'Authoritative intelligence events 
 -- Moves email analysis to PostgreSQL for performance
 
 -- 1. ANALYZE GHOSTING (Server-Side)
+DROP FUNCTION IF EXISTS analyze_ghosted_vips CASCADE;
 CREATE OR REPLACE FUNCTION analyze_ghosted_vips(
   target_user_id UUID, 
   lookback_days INT DEFAULT 180,
@@ -138,6 +140,7 @@ END;
 $$;
 
 -- 2. ANALYZE BURNOUT (Server-Side)
+DROP FUNCTION IF EXISTS analyze_burnout_risk CASCADE;
 CREATE OR REPLACE FUNCTION analyze_burnout_risk(
   target_user_id UUID
 )
@@ -281,6 +284,7 @@ COMMENT ON COLUMN public.business_profiles.business_domains IS
 'Workspace-owned domains for internal classification (e.g. ["company.com", "company.io"])';
 
 -- 3. CREATE BUSINESS VITALS RPC (SIGNAL-TO-NOISE CLASSIFICATION)
+DROP FUNCTION IF EXISTS get_business_vitals CASCADE;
 CREATE OR REPLACE FUNCTION get_business_vitals(
   target_user_id UUID,
   analysis_window_days INT DEFAULT 90
@@ -481,6 +485,7 @@ COMMENT ON FUNCTION get_business_vitals IS
 -- 006_fix_business_vitals_rpc.sql
 -- FIX: SIGNAL-TO-NOISE RPC (Remove ambiguous column reference)
 
+DROP FUNCTION IF EXISTS get_business_vitals CASCADE;
 CREATE OR REPLACE FUNCTION get_business_vitals(
   target_user_id UUID,
   analysis_window_days INT DEFAULT 90
@@ -671,6 +676,7 @@ $$;
 -- 007_final_fix_business_vitals.sql
 -- FINAL FIX: SIGNAL-TO-NOISE RPC (Fix CTE scope)
 
+DROP FUNCTION IF EXISTS get_business_vitals CASCADE;
 CREATE OR REPLACE FUNCTION get_business_vitals(
   target_user_id UUID,
   analysis_window_days INT DEFAULT 90
@@ -1315,6 +1321,7 @@ CREATE INDEX IF NOT EXISTS idx_cal_sched_status ON calibration_schedules(user_id
 -- Called by biqc-insights-cognitive Edge Function before LLM synthesis
 -- Prevents pure-AI drift by anchoring risk signals in deterministic logic
 
+DROP FUNCTION IF EXISTS compute_market_risk_weight CASCADE;
 CREATE OR REPLACE FUNCTION compute_market_risk_weight(
   contradiction_count INT DEFAULT 0,
   runway_months INT DEFAULT 24,
@@ -1352,6 +1359,7 @@ $$ LANGUAGE plpgsql;
 -- Writes to: contradiction_memory table
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS detect_contradictions CASCADE;
 CREATE OR REPLACE FUNCTION detect_contradictions(p_user_id UUID)
 RETURNS JSON AS $$
 DECLARE
@@ -1495,6 +1503,7 @@ CREATE POLICY "Users read own decision_pressure" ON decision_pressure FOR SELECT
   END IF;
 END $$;
 
+DROP FUNCTION IF EXISTS calibrate_pressure CASCADE;
 CREATE OR REPLACE FUNCTION calibrate_pressure(p_user_id UUID)
 RETURNS JSON AS $$
 DECLARE
@@ -1602,6 +1611,7 @@ CREATE POLICY "Users read own evidence_freshness" ON evidence_freshness FOR SELE
   END IF;
 END $$;
 
+DROP FUNCTION IF EXISTS decay_evidence CASCADE;
 CREATE OR REPLACE FUNCTION decay_evidence(p_user_id UUID)
 RETURNS JSON AS $$
 DECLARE
@@ -1736,6 +1746,7 @@ CREATE POLICY "Users read own escalation_memory" ON escalation_memory FOR SELECT
   END IF;
 END $$;
 
+DROP FUNCTION IF EXISTS update_escalation CASCADE;
 CREATE OR REPLACE FUNCTION update_escalation(p_user_id UUID)
 RETURNS JSON AS $$
 DECLARE
@@ -2010,6 +2021,7 @@ CREATE POLICY "Service role manages report_exports" ON report_exports
 -- ═══════════════════════════════════════════════════════════════
 
 -- Workforce health assessment function
+DROP FUNCTION IF EXISTS compute_workforce_health CASCADE;
 CREATE OR REPLACE FUNCTION compute_workforce_health(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2097,6 +2109,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 
 -- Scenario modeling function
+DROP FUNCTION IF EXISTS compute_revenue_scenarios CASCADE;
 CREATE OR REPLACE FUNCTION compute_revenue_scenarios(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2187,6 +2200,7 @@ $$;
 -- Score = (severity_weight * alert_count) + metric_bonus + detail_bonus
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS compute_insight_scores CASCADE;
 CREATE OR REPLACE FUNCTION compute_insight_scores(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2300,6 +2314,7 @@ GROUP BY workspace_id, source_system;
 -- Computes revenue concentration from CRM deal events
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS compute_concentration_risk CASCADE;
 CREATE OR REPLACE FUNCTION compute_concentration_risk(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2375,6 +2390,7 @@ GRANT SELECT ON v_governance_summary TO authenticated;
 -- Replaces: contradiction_engine.py
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS detect_contradictions CASCADE;
 CREATE OR REPLACE FUNCTION detect_contradictions(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2472,6 +2488,7 @@ $$;
 -- Replaces: pressure_calibration.py
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS compute_pressure_levels CASCADE;
 CREATE OR REPLACE FUNCTION compute_pressure_levels(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2534,6 +2551,7 @@ $$;
 -- Replaces: evidence_freshness.py
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS compute_evidence_freshness CASCADE;
 CREATE OR REPLACE FUNCTION compute_evidence_freshness(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2603,6 +2621,7 @@ $$;
 -- Replaces: silence_detection.py
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS detect_silence CASCADE;
 CREATE OR REPLACE FUNCTION detect_silence(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2695,6 +2714,7 @@ CREATE TABLE IF NOT EXISTS escalation_history (
 
 CREATE INDEX IF NOT EXISTS idx_escalation_workspace ON escalation_history(workspace_id);
 
+DROP FUNCTION IF EXISTS get_escalation_summary CASCADE;
 CREATE OR REPLACE FUNCTION get_escalation_summary(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2747,6 +2767,7 @@ $$;
 -- Replaces: merge_emission_layer.py (event creation part)
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS emit_governance_event CASCADE;
 CREATE OR REPLACE FUNCTION emit_governance_event(
     p_workspace_id UUID,
     p_event_type TEXT,
@@ -2781,6 +2802,7 @@ $$;
 -- Replaces: snapshot_agent.py (_build_summary)
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS build_intelligence_summary CASCADE;
 CREATE OR REPLACE FUNCTION build_intelligence_summary(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2860,6 +2882,7 @@ $$;
 -- Replaces: Python completeness calculation
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS compute_profile_completeness CASCADE;
 CREATE OR REPLACE FUNCTION compute_profile_completeness(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2932,6 +2955,7 @@ $$;
 -- How ready is the workspace for intelligence
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS compute_data_readiness CASCADE;
 CREATE OR REPLACE FUNCTION compute_data_readiness(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -3014,6 +3038,7 @@ $$;
 -- Replaces: watchtower_engine.py (_compute_position)
 -- ═══════════════════════════════════════════════════════════════
 
+DROP FUNCTION IF EXISTS compute_watchtower_positions CASCADE;
 CREATE OR REPLACE FUNCTION compute_watchtower_positions(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -3084,6 +3109,7 @@ $$;
 -- ═══════════════════════════════════════════════════════════════
 
 -- Trigger 1: Auto-update last_sync_at when new governance event arrives
+DROP FUNCTION IF EXISTS trigger_update_integration_sync CASCADE;
 CREATE OR REPLACE FUNCTION trigger_update_integration_sync()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -3107,6 +3133,7 @@ CREATE OR REPLACE TRIGGER trg_governance_event_sync
 
 
 -- Trigger 2: Auto-log integration status changes
+DROP FUNCTION IF EXISTS trigger_log_integration_change CASCADE;
 CREATE OR REPLACE FUNCTION trigger_log_integration_change()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -3138,6 +3165,7 @@ CREATE OR REPLACE TRIGGER trg_integration_status_change
 
 
 -- Trigger 3: Auto-record report exports as governance events
+DROP FUNCTION IF EXISTS trigger_log_report_export CASCADE;
 CREATE OR REPLACE FUNCTION trigger_log_report_export()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -3225,6 +3253,7 @@ CREATE POLICY "Service manages escalation_history" ON escalation_history FOR ALL
 -- ═══════════════════════════════════════════════════════════════
 
 -- FIX 1: get_escalation_summary — fix ORDER BY with jsonb_agg
+DROP FUNCTION IF EXISTS get_escalation_summary CASCADE;
 CREATE OR REPLACE FUNCTION get_escalation_summary(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -3274,6 +3303,7 @@ END;
 $$;
 
 -- FIX 2: build_intelligence_summary — handle missing functions gracefully
+DROP FUNCTION IF EXISTS build_intelligence_summary CASCADE;
 CREATE OR REPLACE FUNCTION build_intelligence_summary(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -3612,6 +3642,7 @@ BEGIN
 END $$;
 
 -- Monthly counter reset function (called by pg_cron)
+DROP FUNCTION IF EXISTS reset_monthly_counters CASCADE;
 CREATE OR REPLACE FUNCTION reset_monthly_counters()
 RETURNS void
 LANGUAGE plpgsql
@@ -3631,6 +3662,7 @@ $$;
 -- SELECT cron.schedule('biqc-monthly-reset', '0 0 * * *', $$SELECT reset_monthly_counters()$$);
 
 -- Atomic snapshot counter increment
+DROP FUNCTION IF EXISTS increment_snapshot_counter CASCADE;
 CREATE OR REPLACE FUNCTION increment_snapshot_counter(p_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -3670,6 +3702,7 @@ END;
 $$;
 
 -- Atomic audit counter increment
+DROP FUNCTION IF EXISTS increment_audit_counter CASCADE;
 CREATE OR REPLACE FUNCTION increment_audit_counter(p_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql

@@ -397,6 +397,7 @@ CREATE POLICY "Admins see all enterprise_contact_requests" ON enterprise_contact
 -- ============================================================
 
 -- ── 1. ASSEMBLE EVIDENCE PACK ──────────────────────────────
+DROP FUNCTION IF EXISTS fn_assemble_evidence_pack CASCADE;
 CREATE OR REPLACE FUNCTION fn_assemble_evidence_pack(
   p_tenant_id UUID,
   p_tab TEXT
@@ -439,6 +440,7 @@ $$;
 GRANT EXECUTE ON FUNCTION fn_assemble_evidence_pack(UUID, TEXT) TO authenticated, service_role;
 
 -- ── 2. COMPUTE PROPAGATION MAP ─────────────────────────────
+DROP FUNCTION IF EXISTS fn_compute_propagation_map CASCADE;
 CREATE OR REPLACE FUNCTION fn_compute_propagation_map(
   p_tenant_id UUID,
   p_active_risks TEXT[]
@@ -466,6 +468,7 @@ $$;
 GRANT EXECUTE ON FUNCTION fn_compute_propagation_map(UUID, TEXT[]) TO authenticated, service_role;
 
 -- ── 3. EVALUATE PENDING CHECKPOINTS ────────────────────────
+DROP FUNCTION IF EXISTS fn_evaluate_pending_checkpoints CASCADE;
 CREATE OR REPLACE FUNCTION fn_evaluate_pending_checkpoints(p_tenant_id UUID) RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_evaluated INTEGER := 0; r RECORD;
@@ -481,6 +484,7 @@ $$;
 GRANT EXECUTE ON FUNCTION fn_evaluate_pending_checkpoints(UUID) TO authenticated, service_role;
 
 -- ── 4. RECALIBRATE CONFIDENCE ──────────────────────────────
+DROP FUNCTION IF EXISTS fn_recalibrate_confidence CASCADE;
 CREATE OR REPLACE FUNCTION fn_recalibrate_confidence(p_tenant_id UUID) RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -501,6 +505,7 @@ $$;
 GRANT EXECUTE ON FUNCTION fn_recalibrate_confidence(UUID) TO authenticated, service_role;
 
 -- ── 5. CHECK INTEGRATION HEALTH ────────────────────────────
+DROP FUNCTION IF EXISTS fn_check_integration_health CASCADE;
 CREATE OR REPLACE FUNCTION fn_check_integration_health(p_tenant_id UUID) RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -518,6 +523,7 @@ $$;
 GRANT EXECUTE ON FUNCTION fn_check_integration_health(UUID) TO authenticated, service_role;
 
 -- ── 6. SNAPSHOT DAILY INSTABILITY ──────────────────────────
+DROP FUNCTION IF EXISTS fn_snapshot_daily_instability CASCADE;
 CREATE OR REPLACE FUNCTION fn_snapshot_daily_instability(p_tenant_id UUID) RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
@@ -530,6 +536,7 @@ $$;
 GRANT EXECUTE ON FUNCTION fn_snapshot_daily_instability(UUID) TO authenticated, service_role;
 
 -- ── 7. DETECT DRIFT ────────────────────────────────────────
+DROP FUNCTION IF EXISTS fn_detect_drift CASCADE;
 CREATE OR REPLACE FUNCTION fn_detect_drift(p_tenant_id UUID) RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -547,6 +554,7 @@ $$;
 GRANT EXECUTE ON FUNCTION fn_detect_drift(UUID) TO authenticated, service_role;
 
 -- ── 8. MASTER COGNITION CONTRACT ───────────────────────────
+DROP FUNCTION IF EXISTS ic_generate_cognition_contract CASCADE;
 CREATE OR REPLACE FUNCTION ic_generate_cognition_contract(
   p_tenant_id UUID,
   p_tab TEXT DEFAULT 'overview'
@@ -632,6 +640,7 @@ $$;
 GRANT EXECUTE ON FUNCTION ic_generate_cognition_contract(UUID, TEXT) TO authenticated, service_role;
 
 -- ── 9. CALCULATE RISK BASELINE ─────────────────────────────
+DROP FUNCTION IF EXISTS ic_calculate_risk_baseline CASCADE;
 CREATE OR REPLACE FUNCTION ic_calculate_risk_baseline(p_tenant_id UUID) RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_result JSONB;
@@ -780,6 +789,7 @@ WHERE au.email IN (
 -- Actual columns: pr.base_probability, pr.time_horizon, pr.mechanism
 -- Run this in Supabase SQL Editor to fix the cognition/overview 500 error
 
+DROP FUNCTION IF EXISTS fn_compute_propagation_map CASCADE;
 CREATE OR REPLACE FUNCTION fn_compute_propagation_map(p_tenant_id UUID, p_active_risks TEXT[]) RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
