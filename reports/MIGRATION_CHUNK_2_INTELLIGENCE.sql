@@ -2660,31 +2660,31 @@ DO $$ BEGIN ALTER FUNCTION compute_forensic_score() SET search_path = ''; EXCEPT
 
 -- ab_assignments
 DROP POLICY IF EXISTS "manage_assignments" ON ab_assignments;
-CREATE POLICY IF NOT EXISTS "manage_assignments" ON ab_assignments FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_assignments" ON ab_assignments FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ab_experiments
 DROP POLICY IF EXISTS "manage_experiments" ON ab_experiments;
-CREATE POLICY IF NOT EXISTS "manage_experiments" ON ab_experiments FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_experiments" ON ab_experiments FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ab_metrics
 DROP POLICY IF EXISTS "manage_metrics" ON ab_metrics;
-CREATE POLICY IF NOT EXISTS "manage_metrics" ON ab_metrics FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_metrics" ON ab_metrics FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- action_log
 DROP POLICY IF EXISTS "service_all" ON action_log;
-CREATE POLICY IF NOT EXISTS "service_all" ON action_log FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_all" ON action_log FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- admin_actions
 DROP POLICY IF EXISTS "service_manage" ON admin_actions;
-CREATE POLICY IF NOT EXISTS "service_manage" ON admin_actions FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_manage" ON admin_actions FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- context_summaries
 DROP POLICY IF EXISTS "service_all" ON context_summaries;
-CREATE POLICY IF NOT EXISTS "service_all" ON context_summaries FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_all" ON context_summaries FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- episodic_memory
 DROP POLICY IF EXISTS "service_all" ON episodic_memory;
-CREATE POLICY IF NOT EXISTS "service_all" ON episodic_memory FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_all" ON episodic_memory FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- escalation_history
 DROP POLICY IF EXISTS "Service manages escalation_history" ON escalation_history;
@@ -2693,39 +2693,39 @@ CREATE POLICY "service_manage_escalation" ON escalation_history FOR ALL TO servi
 
 -- ic_daily_metric_snapshots
 DROP POLICY IF EXISTS "manage_snaps" ON ic_daily_metric_snapshots;
-CREATE POLICY IF NOT EXISTS "manage_snaps" ON ic_daily_metric_snapshots FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_snaps" ON ic_daily_metric_snapshots FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_decision_outcomes
 DROP POLICY IF EXISTS "manage_outcomes" ON ic_decision_outcomes;
-CREATE POLICY IF NOT EXISTS "manage_outcomes" ON ic_decision_outcomes FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_outcomes" ON ic_decision_outcomes FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_decisions
 DROP POLICY IF EXISTS "manage_decisions" ON ic_decisions;
-CREATE POLICY IF NOT EXISTS "manage_decisions" ON ic_decisions FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_decisions" ON ic_decisions FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_feature_flags
 DROP POLICY IF EXISTS "manage_flags" ON ic_feature_flags;
-CREATE POLICY IF NOT EXISTS "manage_flags" ON ic_feature_flags FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_flags" ON ic_feature_flags FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_intelligence_events
 DROP POLICY IF EXISTS "manage_events" ON ic_intelligence_events;
-CREATE POLICY IF NOT EXISTS "manage_events" ON ic_intelligence_events FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_events" ON ic_intelligence_events FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_model_executions
 DROP POLICY IF EXISTS "manage_executions" ON ic_model_executions;
-CREATE POLICY IF NOT EXISTS "manage_executions" ON ic_model_executions FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_executions" ON ic_model_executions FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_model_registry
 DROP POLICY IF EXISTS "manage_registry" ON ic_model_registry;
-CREATE POLICY IF NOT EXISTS "manage_registry" ON ic_model_registry FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_registry" ON ic_model_registry FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_ontology_edges
 DROP POLICY IF EXISTS "manage_edges" ON ic_ontology_edges;
-CREATE POLICY IF NOT EXISTS "manage_edges" ON ic_ontology_edges FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_edges" ON ic_ontology_edges FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_ontology_nodes
 DROP POLICY IF EXISTS "manage_nodes" ON ic_ontology_nodes;
-CREATE POLICY IF NOT EXISTS "manage_nodes" ON ic_ontology_nodes FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "manage_nodes" ON ic_ontology_nodes FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ingestion_audits
 DROP POLICY IF EXISTS "Service manages audits" ON ingestion_audits;
@@ -2755,15 +2755,15 @@ CREATE POLICY "service_manage_outcomes" ON insight_outcomes FOR ALL TO service_r
 
 -- llm_call_log
 DROP POLICY IF EXISTS "service_all" ON llm_call_log;
-CREATE POLICY IF NOT EXISTS "service_all" ON llm_call_log FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_all" ON llm_call_log FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- marketing_benchmarks
 DROP POLICY IF EXISTS "service_all" ON marketing_benchmarks;
-CREATE POLICY IF NOT EXISTS "service_all" ON marketing_benchmarks FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_all" ON marketing_benchmarks FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- rag_embeddings
 DROP POLICY IF EXISTS "service_manage_embeddings" ON rag_embeddings;
-CREATE POLICY IF NOT EXISTS "service_manage_embeddings" ON rag_embeddings FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_manage_embeddings" ON rag_embeddings FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- report_exports
 DROP POLICY IF EXISTS "Service role manages report_exports" ON report_exports;
@@ -2772,7 +2772,7 @@ CREATE POLICY "service_manage_reports" ON report_exports FOR ALL TO service_role
 
 -- semantic_memory
 DROP POLICY IF EXISTS "service_all" ON semantic_memory;
-CREATE POLICY IF NOT EXISTS "service_all" ON semantic_memory FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_all" ON semantic_memory FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- workspace_integrations
 DROP POLICY IF EXISTS "Service role manages workspace_integrations" ON workspace_integrations;
@@ -2781,5 +2781,5 @@ CREATE POLICY "service_manage_integrations" ON workspace_integrations FOR ALL TO
 
 -- governance_events (keep insert-only for service role - already hardened)
 DROP POLICY IF EXISTS "service_insert_governance_events" ON governance_events;
-CREATE POLICY IF NOT EXISTS "service_insert_governance_events" ON governance_events FOR INSERT TO service_role WITH CHECK (true);
+CREATE POLICY "service_insert_governance_events" ON governance_events FOR INSERT TO service_role WITH CHECK (true);
 
