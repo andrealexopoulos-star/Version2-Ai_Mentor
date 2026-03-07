@@ -177,19 +177,50 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     
     # Manual token validation (browser redirects can't send Authorization header)
     current_user = None
-    
+
     if token:
         try:
-            from auth_supabase import get_user_by_id
             payload = jwt.decode(token, options={"verify_signature": False})
             user_id = payload.get("sub")
             if user_id:
+                # Fast path: look up in users table
                 user_data = await get_user_by_id(user_id)
                 if user_data:
                     current_user = user_data
-        except:
-            pass
-    
+                else:
+                    # Fallback: user exists in Supabase Auth but not yet in users table
+                    # (happens when the frontend signUp DB insert failed silently)
+                    # Verify the token cryptographically via Supabase Admin, then auto-provision
+                    try:
+                        from supabase_client import get_sb
+                        auth_resp = get_sb().auth.get_user(token)
+                        if auth_resp and auth_resp.user:
+                            now_iso = datetime.now(timezone.utc).isoformat()
+                            user_record = {
+                                "id": auth_resp.user.id,
+                                "email": auth_resp.user.email or "",
+                                "full_name": (
+                                    (auth_resp.user.user_metadata or {}).get("full_name")
+                                    or (auth_resp.user.user_metadata or {}).get("name")
+                                    or ""
+                                ),
+                                "role": "user",
+                                "subscription_tier": "free",
+                                "is_master_account": auth_resp.user.email == "andre@thestrategysquad.com.au",
+                                "created_at": now_iso,
+                                "updated_at": now_iso,
+                            }
+                            try:
+                                get_sb().table("users").upsert(user_record, on_conflict="id").execute()
+                                logger.info(f"[outlook/login] Auto-provisioned missing users record for {auth_resp.user.id}")
+                            except Exception as upsert_err:
+                                logger.warning(f"[outlook/login] users upsert failed (non-fatal): {upsert_err}")
+                            current_user = user_record
+                    except Exception as auth_fb_err:
+                        logger.warning(f"[outlook/login] Supabase Auth fallback failed: {auth_fb_err}")
+        except Exception as token_err:
+            logger.warning(f"[outlook/login] Token parse error: {token_err}")
+
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
     
@@ -261,16 +292,39 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     current_user = None
     if token:
         try:
-            from auth_supabase import get_user_by_id
             payload = jwt.decode(token, options={"verify_signature": False})
             user_id = payload.get("sub")
             if user_id:
                 user_data = await get_user_by_id(user_id)
                 if user_data:
                     current_user = user_data
-        except:
-            pass
-    
+                else:
+                    try:
+                        from supabase_client import get_sb
+                        auth_resp = get_sb().auth.get_user(token)
+                        if auth_resp and auth_resp.user:
+                            now_iso = datetime.now(timezone.utc).isoformat()
+                            user_record = {
+                                "id": auth_resp.user.id,
+                                "email": auth_resp.user.email or "",
+                                "full_name": (auth_resp.user.user_metadata or {}).get("full_name") or (auth_resp.user.user_metadata or {}).get("name") or "",
+                                "role": "user",
+                                "subscription_tier": "free",
+                                "is_master_account": auth_resp.user.email == "andre@thestrategysquad.com.au",
+                                "created_at": now_iso,
+                                "updated_at": now_iso,
+                            }
+                            try:
+                                get_sb().table("users").upsert(user_record, on_conflict="id").execute()
+                                logger.info(f"[gmail/login] Auto-provisioned missing users record for {auth_resp.user.id}")
+                            except Exception as upsert_err:
+                                logger.warning(f"[gmail/login] users upsert failed (non-fatal): {upsert_err}")
+                            current_user = user_record
+                    except Exception as auth_fb_err:
+                        logger.warning(f"[gmail/login] Supabase Auth fallback failed: {auth_fb_err}")
+        except Exception as token_err:
+            logger.warning(f"[gmail/login] Token parse error: {token_err}")
+
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
     
