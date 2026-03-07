@@ -64,10 +64,10 @@ CREATE TABLE IF NOT EXISTS public.watchtower_events (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_watchtower_account_status ON public.watchtower_events(account_id, status);
-CREATE INDEX idx_watchtower_domain ON public.watchtower_events(domain);
-CREATE INDEX idx_watchtower_severity ON public.watchtower_events(severity);
-CREATE INDEX idx_watchtower_created ON public.watchtower_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_watchtower_account_status ON public.watchtower_events(account_id, status);
+CREATE INDEX IF NOT EXISTS idx_watchtower_domain ON public.watchtower_events(domain);
+CREATE INDEX IF NOT EXISTS idx_watchtower_severity ON public.watchtower_events(severity);
+CREATE INDEX IF NOT EXISTS idx_watchtower_created ON public.watchtower_events(created_at DESC);
 
 -- RLS Policies
 ALTER TABLE public.watchtower_events ENABLE ROW LEVEL SECURITY;
@@ -210,9 +210,9 @@ CREATE TABLE public.outlook_emails (
 );
 
 -- Indexes for RPC performance
-CREATE INDEX idx_outlook_emails_user_received ON public.outlook_emails(user_id, received_date DESC);
-CREATE INDEX idx_outlook_emails_user_folder ON public.outlook_emails(user_id, folder);
-CREATE INDEX idx_outlook_emails_from_address ON public.outlook_emails(from_address);
+CREATE INDEX IF NOT EXISTS idx_outlook_emails_user_received ON public.outlook_emails(user_id, received_date DESC);
+CREATE INDEX IF NOT EXISTS idx_outlook_emails_user_folder ON public.outlook_emails(user_id, folder);
+CREATE INDEX IF NOT EXISTS idx_outlook_emails_from_address ON public.outlook_emails(from_address);
 
 -- RLS Policies
 ALTER TABLE public.outlook_emails ENABLE ROW LEVEL SECURITY;
@@ -917,11 +917,11 @@ CREATE TABLE IF NOT EXISTS public.calibration_schedules (
 );
 
 -- Indexes
-CREATE INDEX idx_calibration_user ON public.calibration_schedules(user_id);
-CREATE INDEX idx_calibration_account ON public.calibration_schedules(account_id);
-CREATE INDEX idx_calibration_status ON public.calibration_schedules(schedule_status);
-CREATE INDEX idx_calibration_weekly_due ON public.calibration_schedules(next_weekly_due_at) WHERE schedule_status = 'active';
-CREATE INDEX idx_calibration_quarterly_due ON public.calibration_schedules(next_quarterly_due_at) WHERE schedule_status = 'active';
+CREATE INDEX IF NOT EXISTS idx_calibration_user ON public.calibration_schedules(user_id);
+CREATE INDEX IF NOT EXISTS idx_calibration_account ON public.calibration_schedules(account_id);
+CREATE INDEX IF NOT EXISTS idx_calibration_status ON public.calibration_schedules(schedule_status);
+CREATE INDEX IF NOT EXISTS idx_calibration_weekly_due ON public.calibration_schedules(next_weekly_due_at) WHERE schedule_status = 'active';
+CREATE INDEX IF NOT EXISTS idx_calibration_quarterly_due ON public.calibration_schedules(next_quarterly_due_at) WHERE schedule_status = 'active';
 
 -- RLS
 ALTER TABLE public.calibration_schedules ENABLE ROW LEVEL SECURITY;
@@ -979,8 +979,8 @@ CREATE TABLE IF NOT EXISTS public.strategy_profiles (
     CONSTRAINT unique_strategy_profile UNIQUE (business_profile_id)
 );
 
-CREATE INDEX idx_strategy_user ON public.strategy_profiles(user_id);
-CREATE INDEX idx_strategy_account ON public.strategy_profiles(account_id);
+CREATE INDEX IF NOT EXISTS idx_strategy_user ON public.strategy_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_strategy_account ON public.strategy_profiles(account_id);
 
 ALTER TABLE public.strategy_profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users read own strategy" ON public.strategy_profiles FOR SELECT USING (user_id = auth.uid());
@@ -1008,8 +1008,8 @@ CREATE TABLE IF NOT EXISTS public.calibration_sessions (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_calibration_sessions_user ON public.calibration_sessions(user_id);
-CREATE INDEX idx_calibration_sessions_profile ON public.calibration_sessions(business_profile_id);
+CREATE INDEX IF NOT EXISTS idx_calibration_sessions_user ON public.calibration_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_calibration_sessions_profile ON public.calibration_sessions(business_profile_id);
 
 ALTER TABLE public.calibration_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users read own calibration sessions" ON public.calibration_sessions FOR SELECT USING (user_id = auth.uid());
@@ -1045,8 +1045,8 @@ CREATE TABLE IF NOT EXISTS public.working_schedules (
     CONSTRAINT unique_week_per_profile UNIQUE (business_profile_id, week_number)
 );
 
-CREATE INDEX idx_schedule_profile ON public.working_schedules(business_profile_id);
-CREATE INDEX idx_schedule_week ON public.working_schedules(week_number);
+CREATE INDEX IF NOT EXISTS idx_schedule_profile ON public.working_schedules(business_profile_id);
+CREATE INDEX IF NOT EXISTS idx_schedule_week ON public.working_schedules(week_number);
 
 ALTER TABLE public.working_schedules ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users read own schedules" ON public.working_schedules FOR SELECT USING (user_id = auth.uid());
@@ -1075,8 +1075,8 @@ CREATE TABLE IF NOT EXISTS public.intelligence_priorities (
     CONSTRAINT unique_priority_per_profile UNIQUE (business_profile_id, signal_category)
 );
 
-CREATE INDEX idx_intelligence_priority_profile ON public.intelligence_priorities(business_profile_id);
-CREATE INDEX idx_intelligence_priority_rank ON public.intelligence_priorities(priority_rank);
+CREATE INDEX IF NOT EXISTS idx_intelligence_priority_profile ON public.intelligence_priorities(business_profile_id);
+CREATE INDEX IF NOT EXISTS idx_intelligence_priority_rank ON public.intelligence_priorities(priority_rank);
 
 ALTER TABLE public.intelligence_priorities ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users read own priorities" ON public.intelligence_priorities FOR SELECT USING (user_id = auth.uid());
@@ -1108,7 +1108,7 @@ CREATE TABLE IF NOT EXISTS public.progress_cadence (
     CONSTRAINT unique_cadence_per_profile UNIQUE (business_profile_id)
 );
 
-CREATE INDEX idx_progress_cadence_profile ON public.progress_cadence(business_profile_id);
+CREATE INDEX IF NOT EXISTS idx_progress_cadence_profile ON public.progress_cadence(business_profile_id);
 
 ALTER TABLE public.progress_cadence ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users read own cadence" ON public.progress_cadence FOR SELECT USING (user_id = auth.uid());
