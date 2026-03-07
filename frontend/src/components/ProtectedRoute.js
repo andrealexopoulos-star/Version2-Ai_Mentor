@@ -128,16 +128,20 @@ export default function ProtectedRoute({ children, adminOnly }) {
     return <AuthError />;
   }
 
+  // NEEDS_CALIBRATION → redirect to /calibration FIRST (before READY check)
+  if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
+    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
+    if (allowedPaths.some(p => location.pathname.startsWith(p))) {
+      return children;
+    }
+    return <Navigate to="/calibration" replace />;
+  }
+
   // READY or has session → enforce gates
   if (authState === AUTH_STATE.READY || user || session) {
     // Admin pages bypass onboarding/calibration checks entirely
     const ADMIN_PATHS = ['/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
     const isAdminPath = ADMIN_PATHS.some(p => location.pathname.startsWith(p));
-
-    // Calibrated users must NEVER see /calibration UNLESS they're super admin recalibrating
-    if (location.pathname === '/calibration' && !(user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au')) {
-      return <Navigate to="/advisor" replace />;
-    }
 
     // Admin check
     if (adminOnly) {
@@ -151,7 +155,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
     // Onboarding check — if null, default to showing content (don't block with loading screen)
     if (onboardingStatus === null) {
-      return children; // Show content while onboarding status loads
+      return children;
     }
     
     if (!onboardingStatus.completed && !ONBOARDING_EXEMPT_PATHS.includes(location.pathname)) {
@@ -159,15 +163,6 @@ export default function ProtectedRoute({ children, adminOnly }) {
     }
     
     return children;
-  }
-
-  // NEEDS_CALIBRATION → redirect to /calibration (but allow admin paths)
-  if (authState === AUTH_STATE.NEEDS_CALIBRATION) {
-    const allowedPaths = ['/calibration', '/settings', '/onboarding', '/onboarding-decision', '/profile-import', '/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
-    if (allowedPaths.some(p => location.pathname.startsWith(p))) {
-      return children;
-    }
-    return <Navigate to="/calibration" replace />;
   }
 
   return children;
