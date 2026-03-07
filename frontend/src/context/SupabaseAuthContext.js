@@ -237,6 +237,16 @@ export const SupabaseAuthProvider = ({ children }) => {
     setOnboardingStatus(prev => ({ ...prev, completed: true, deferred: true }));
   }, []);
 
+  // Clear the auth bootstrap cache — called by calibration on completion so the next
+  // full-page navigation re-fetches calibration status instead of reading stale cache.
+  const clearBootstrapCache = useCallback(() => {
+    const userId = session?.user?.id;
+    if (userId) {
+      try { sessionStorage.removeItem(`biqc_auth_bootstrap_${userId}`); } catch {}
+    }
+    lastBootstrapUserId.current = null;
+  }, [session]);
+
   // Track which user ID we've already bootstrapped for.
   // Prevents re-running calibration check on token refresh (same user, new token).
   const lastBootstrapUserId = useRef(null);
@@ -424,6 +434,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     onboardingStatus,
     markOnboardingComplete,
     deferOnboarding,
+    clearBootstrapCache,
     signUp,
     signIn,
     signInWithOAuth,
