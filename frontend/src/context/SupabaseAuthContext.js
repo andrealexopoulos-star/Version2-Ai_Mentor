@@ -311,11 +311,23 @@ export const SupabaseAuthProvider = ({ children }) => {
             // HTML response = likely nginx/proxy error, not a calibration state. Fail-closed.
             calibrationComplete = false;
           } else if (calRes.status === 401 || calRes.status === 403) {
-            // Auth failed — could be JWT mismatch during deployment transition
-            // Don't sign out immediately — the session may still be valid
-            // Fail-open: let the user through, individual pages will handle auth errors
-            console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — fail-open to READY`);
-            calibrationComplete = true;
+            // Auth error — session may not have propagated yet. Retry once.
+            console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — retrying once`);
+            await new Promise(r => setTimeout(r, 1500));
+            const retryRes = await fetch(calUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+              }
+            });
+            if (retryRes.ok) {
+              const retryCal = await retryRes.json();
+              calibrationComplete = retryCal.status === 'COMPLETE';
+            } else {
+              // Still failing — new user, let calibration flow handle it
+              calibrationComplete = false;
+            }
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
             // Non-auth server error — fail-open to prevent blocking user
