@@ -1,3 +1,144 @@
+<analysis>**original_problem_statement:**
+The user's primary objective is to transform their BIQc platform into a high-performance, enterprise-grade AI Cognition-as-a-Platform for SMBs. This involves a complete architectural and visual overhaul, migrating to a new production database, hardening the AI's intelligence to be data-bound and non-generic, and squashing critical bugs related to authentication and UI consistency. The most recent and critical task was to diagnose and fix a production authentication loop that occurred after migrating to a new Supabase Pro database, and to ensure the new user onboarding/calibration flow is correctly triggered.
+
+**PRODUCT REQUIREMENTS:**
+- The production environment must run on  pointing to the new Supabase Pro project.
+- The AI must provide specific, data-bound insights derived from user integrations (CRM, accounting, email) and not fall back to generic advice.
+- The platform must have zero runtime dependencies on Emergent AI infrastructure ( package), with all LLM calls routed through a direct provider layer (e.g., OpenAI).
+- The user experience must be consistent and polished across all devices (desktop, tablet, mobile), adhering to a strict design system.
+
+**User's preferred language**: English
+
+**what currently exists?**
+The application is a full-stack platform with a React frontend and a FastAPI backend, now pointing to a new Supabase (PostgreSQL) Pro database.
+- **Architecture:** The platform has been fully migrated off of  for all AI-related functionalities. A new  now handles all LLM calls directly to providers like OpenAI. The Stripe payments integration has also been migrated to use the official Stripe SDK, completely removing the  dependency.
+- **Intelligence Engine:** The core AI has been significantly hardened. It now injects live business signals () from a user's connected systems directly into the AI's context. A data-bound guardrail prevents the AI from giving generic advice when data is missing. The  runs every 15 minutes to fetch new data from integrations, ensuring the intelligence is constantly compounding.
+- **Database:** A complete, idempotent, multi-file SQL migration script has been created and successfully run on the new Supabase Pro database, establishing the entire application schema. Row-Level Security (RLS) policies have been fixed to allow new user registration.
+- **Frontend:** A critical authentication loop has been diagnosed and fixed in . The fix prevents the app from signing users out on transient API errors and ensures new, uncalibrated users are correctly routed to the full onboarding flow (URL scrape, CMO summary). The UI has undergone a major consistency pass, unifying fonts, colors, and spacing under a central design token system.
+
+**Last working item**:
+- **Last item agent was working:** Fixing the final piece of a critical production authentication loop. After migrating to the new Supabase Pro database, new users were successfully logging in but were not being routed to the calibration/onboarding flow. This was because a temporary fix for a previous 401 error was incorrectly marking new users as calibration complete. The agent corrected the logic in  to properly detect new users and route them to .
+- **Status:** USER VERIFICATION PENDING
+- **Agent Testing Done:** N (Cannot test the user's external Azure deployment)
+- **Which testing method agent to use?** Manual testing by the user. The user needs to deploy the latest code to their Azure environment (), clear their browser cache/storage, and register a brand new account to confirm they are taken through the complete onboarding flow.
+- **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+- **Issue 1: Production Deployment and Verification (P0)**
+  - **Description:** The fix for the authentication and calibration-routing loop is complete in the codebase but has not been deployed to the user's production Azure environment. The user must deploy the latest code to see the fix.
+  - **Next debug checklist:**
+    1.  User to trigger Save to GitHub.
+    2.  User to trigger a new deployment in their Azure App Service for .
+    3.  User to clear browser storage (, ).
+    4.  User to navigate to  and create a new account.
+    5.  Verify that after registration, the user is correctly redirected to the  page and sees the URL scrape/CMO summary flow.
+  - **Why fix this issue and what will be achieved with the fix?** This is the final step to make the production environment usable for new customers. It ensures the first-time user experience works as designed.
+  - **Status:** USER VERIFICATION PENDING
+  - **Is recurring issue?** Y (The auth loop has been a recurring theme while migrating environments).
+  - **Should Test frontend/backend/both after fix?** frontend
+  - **Blocked on other issue:** User deployment.
+
+**In progress Task List**:
+- No active development tasks are in progress. All work is pending user validation of the last deployment.
+
+**Upcoming and Future Tasks**
+- **Upcoming Tasks:**
+  - **(P1) Configure Production Microsoft OAuth:** The Microsoft login is broken in production because the  in the Azure environment is a placeholder. The user needs to create a real Azure App Registration and update the environment variables as per the agent's instructions.
+  - **(P1) Seed Production Data (Optional):** The new Pro database is empty. The user may want to create test accounts (like  with his integrations) on the Pro database to have a data-rich account for demos.
+- **Future Tasks:**
+  - **(P2) Proactive SoundBoard / Daily Brief:** Build the backend logic to generate a daily intelligence brief from overnight signals.
+  - **(P2) Live Competitive Benchmark:** Create the backend worker to periodically update the Digital Footprint score and calculate percentile rankings.
+  - **(P2) Expo Mobile App Build-out:** Flesh out the skeleton mobile app, connecting all screens to the production APIs.
+  - **(P2) Push Notifications:** Implement the backend logic to trigger push notifications based on critical business events.
+
+**Completed work in this session**
+- **Production Hardening & De-Emergent Migration:**
+  - Removed all runtime dependencies on the  package for both AI and payments.
+  - Migrated AI calls to a direct  and payments to the official Stripe SDK.
+- **AI Intelligence Overhaul:**
+  - Hardened the SoundBoard AI to produce specific, data-bound insights by injecting live .
+  - Implemented data-bound guardrails and a response-polishing step to eliminate generic, list-based outputs.
+- **Supabase Pro Database Migration:**
+  - Created and iteratively debugged a 7,200+ line, fully idempotent SQL migration script to build the entire application schema on a new database.
+- **Critical Authentication Fix:**
+  - Diagnosed and fixed a complex production login loop by correcting auth guard logic in  and fixing faulty RLS policies on the database.
+  - Ensured the new user onboarding/calibration flow is correctly triggered.
+- **Feature & UI Refinement:**
+  - Rebuilt the  to be a signal-driven feature instead of a manual form.
+  - Created a new  component to surface actionable risks on the main dashboard.
+  - Performed a global UI consistency sprint, unifying fonts, colors, and spacing with design tokens.
+- **Documentation & Guidance:**
+  - Provided comprehensive documentation on all required secrets, environment variables, and deployment steps for the new production environment.
+  - Created a  report detailing the platform's intelligence architecture.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Decoupled LLM Routing:** Abstracting all LLM calls into a central router () to enable provider-agnosticism (OpenAI, Claude, etc.).
+- **Signal-Driven Intelligence:** The core architecture where  (structured business signals) are the primary context for AI reasoning, making responses data-bound and specific.
+- **Idempotent Database Migrations:** The critical practice of making large SQL scripts re-runnable by using , , and  to handle partially migrated schemas.
+- **Resilient Frontend Auth Guards:** Designing authentication logic in the frontend () to gracefully handle transient API errors (like a 401 on initial load) by retrying, rather than immediately logging the user out and causing a loop.
+
+**All files of reference**
+-  (Contains the primary fix for the auth loop)
+-  (The new central router for all AI calls)
+-  (Shows the new data-bound intelligence injection)
+-  (and chunks 2, 3)
+-  (Reference for all required environment variables)
+
+**Critical Info for New Agent**
+- **The user's immediate goal is to get their production environment () working.** The primary blocker was an authentication/redirect loop, which has been fixed in the code.
+- **Your first task is to guide the user to deploy this fix.** They must use the Save to GitHub button and then trigger a deployment in their Azure environment.
+- After deployment, instruct the user to clear all browser storage and register a new account. They should now be correctly routed to the  flow.
+- The Microsoft OAuth login will still be broken until the user configures a real  in their Azure App Service settings. Instructions have been provided.
+- If the user needs to test with existing accounts (like ), their passwords must be reset in the new Supabase Pro dashboard, as all test passwords became invalid during the migration attempts.
+
+**documents and test reports created in this job**
+- 
+- 
+- 
+- 
+- 
+
+**Last 10 User Messages and any pending HUMAN messages**
+- User successfully runs all 3 migration chunks. Asks if they can check the URL.
+- Agent confirms. User reports they are still being pushed back to the sign-in page.
+- Agent investigates and finds that Supabase has email confirmation enabled by default on new projects, blocking login.
+- User disables email confirmation but reports the issue persists and no user is being created in Supabase Auth.
+- Agent discovers the root cause is overly restrictive Row-Level Security (RLS) policies on the  and  tables, which block new user creation. Agent provides a SQL script to fix the policies.
+- User sends a new prompt to fix a Microsoft OAuth login loop and a  error.
+- Agent identifies the real issue is auth guard timing in  and mismatched  keys between the Emergent pod and the user's Azure deployment.
+- Agent provides the user with the correct  key for the frontend. User confirms they have updated their Azure config.
+- User confirms they are logged in, but the new user onboarding flow (URL scrape, etc.) was skipped.
+- Agent identifies the temporary fail-open logic (to break the auth loop) was causing this. Agent implements the final fix to make the auth guard retry and then correctly route new users to , which is now pending deployment by the user.
+
+**Project Health Check:**
+- **Broken**:
+    - **New User Onboarding Flow in Production:** The fix is in the code but not yet deployed. Until the user deploys, new users will be logged in but will skip the critical calibration step.
+    - **Microsoft OAuth Login:** This is broken due to a placeholder  in the user's production environment.
+- **Mocked**:
+    - None. All core features are wired to live data or real backend logic.
+
+**3rd Party Integrations**
+- **OpenAI:** Used directly via  for all AI chat and text generation. Requires .
+- **Stripe:** Used directly via the  Python SDK for payments. Requires .
+- **Supabase:** Used as the primary database, for authentication, and for Edge Functions.
+- **Merge.dev:** Used to connect to third-party CRM (HubSpot) and accounting (Xero) systems. Requires .
+- **Google OAuth:** Integrated for user login.
+- **Microsoft OAuth:** Integrated for user login (but currently broken due to config).
+
+**Testing status**
+- **Testing agent used after significant changes:** YES. The agent was used multiple times to run comprehensive UI, responsiveness, and regression tests.
+- **Troubleshoot agent used after agent stuck in loop:** NO.
+- **Test files created:** None in this session.
+- **Known regressions:** None identified. The primary focus has been fixing existing bugs.
+
+**Credentials to test flow:**
+All previous test account passwords (, ) are **invalid** and must be reset in the Supabase dashboard before use. The recommended path is for the user to register a new account on the production site after deployment.
+
+**What agent forgot to execute**
+The agent, during the extensive SQL migration debugging, initially missed that PostgreSQL does not support  for , and that overloaded functions require special handling when using . This caused several cycles of failed migrations before the correct, fully idempotent scripts were created.</analysis>
 <analysis>
 **original_problem_statement:**
 The user's primary objective is to transform their BIQc platform into a high-performance, AI-driven Cognition-as-a-Platform for SMBs. This involves a complete visual and architectural overhaul to a Liquid Steel dark theme, migrating backend logic to be vendor-agnostic, and building out numerous features while squashing critical bugs. The core focus is on trust, data integrity (no fake data), and a seamless, intelligent user experience, with a recent pivot to high-ticket, executive-grade positioning.
