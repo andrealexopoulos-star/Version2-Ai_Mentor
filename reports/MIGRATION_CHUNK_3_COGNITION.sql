@@ -43,17 +43,17 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Storage RLS policies
-CREATE POLICY "Users read own files" ON storage.objects FOR SELECT USING (
+CREATE POLICY IF NOT EXISTS "Users read own files" ON storage.objects FOR SELECT USING (
     bucket_id IN ('user-files', 'reports') AND
     (storage.foldername(name))[1] = auth.uid()::text
 );
 
-CREATE POLICY "Users upload own files" ON storage.objects FOR INSERT WITH CHECK (
+CREATE POLICY IF NOT EXISTS "Users upload own files" ON storage.objects FOR INSERT WITH CHECK (
     bucket_id IN ('user-files', 'reports') AND
     (storage.foldername(name))[1] = auth.uid()::text
 );
 
-CREATE POLICY "Service manages all files" ON storage.objects FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY IF NOT EXISTS "Service manages all files" ON storage.objects FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- 3. File registry table (tracks all generated files)
 CREATE TABLE IF NOT EXISTS generated_files (
@@ -71,11 +71,11 @@ CREATE TABLE IF NOT EXISTS generated_files (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_files_tenant ON generated_files(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_files_tenant ON generated_files(tenant_id, created_at DESC);
 
 ALTER TABLE generated_files ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenant_read_files" ON generated_files FOR SELECT USING (true);
-CREATE POLICY "service_manage_files" ON generated_files FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY IF NOT EXISTS "tenant_read_files" ON generated_files FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "service_manage_files" ON generated_files FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- 044_cognition_core.sql
 -- ============================================================
@@ -134,8 +134,8 @@ ALTER TABLE evidence_packs ADD COLUMN IF NOT EXISTS evidence_items JSONB DEFAULT
 ALTER TABLE evidence_packs ADD COLUMN IF NOT EXISTS evidence_count INTEGER DEFAULT 0;
 ALTER TABLE evidence_packs ADD COLUMN IF NOT EXISTS quality_score FLOAT DEFAULT 0.5;
 
-CREATE INDEX IF NOT EXISTS idx_evidence_packs_tenant ON evidence_packs(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_evidence_packs_tenant_tab ON evidence_packs(tenant_id, intelligence_tab);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_evidence_packs_tenant ON evidence_packs(tenant_id);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_evidence_packs_tenant_tab ON evidence_packs(tenant_id, intelligence_tab);
 
 -- ── 3. COGNITION DECISIONS ─────────────────────────────────
 CREATE TABLE IF NOT EXISTS cognition_decisions (
@@ -159,8 +159,8 @@ ALTER TABLE cognition_decisions ADD COLUMN IF NOT EXISTS decision_statement TEXT
 ALTER TABLE cognition_decisions ADD COLUMN IF NOT EXISTS affected_domains TEXT[] DEFAULT '{}';
 ALTER TABLE cognition_decisions ADD COLUMN IF NOT EXISTS model_version TEXT DEFAULT 'v1';
 
-CREATE INDEX IF NOT EXISTS idx_cognition_decisions_tenant ON cognition_decisions(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_cognition_decisions_created ON cognition_decisions(created_at DESC);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_cognition_decisions_tenant ON cognition_decisions(tenant_id);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_cognition_decisions_created ON cognition_decisions(created_at DESC);
 
 -- ── 4. OUTCOME CHECKPOINTS ─────────────────────────────────
 CREATE TABLE IF NOT EXISTS outcome_checkpoints (
@@ -181,8 +181,8 @@ CREATE TABLE IF NOT EXISTS outcome_checkpoints (
 ALTER TABLE outcome_checkpoints ADD COLUMN IF NOT EXISTS checkpoint_day INTEGER NOT NULL DEFAULT 30;
 ALTER TABLE outcome_checkpoints ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
 
-CREATE INDEX IF NOT EXISTS idx_outcome_checkpoints_decision ON outcome_checkpoints(decision_id);
-CREATE INDEX IF NOT EXISTS idx_outcome_checkpoints_tenant ON outcome_checkpoints(tenant_id);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_outcome_checkpoints_decision ON outcome_checkpoints(decision_id);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_outcome_checkpoints_tenant ON outcome_checkpoints(tenant_id);
 
 -- ── 5. PROPAGATION RULES — table already exists in production schema ──────────
 -- Skip CREATE TABLE. Just ensure seed data is present using correct column names.
@@ -275,7 +275,7 @@ ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS failure_reason TEXT;
 ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS result JSONB DEFAULT '{}';
 ALTER TABLE automation_executions ADD COLUMN IF NOT EXISTS rollback_executed BOOLEAN DEFAULT false;
 
-CREATE INDEX IF NOT EXISTS idx_automation_executions_tenant ON automation_executions(tenant_id);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_automation_executions_tenant ON automation_executions(tenant_id);
 
 -- ── 8. INSTABILITY SNAPSHOTS ───────────────────────────────
 CREATE TABLE IF NOT EXISTS instability_snapshots (
@@ -304,7 +304,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 
-CREATE INDEX IF NOT EXISTS idx_instability_snapshots_tenant ON instability_snapshots(tenant_id, snapshot_date DESC);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS idx_instability_snapshots_tenant ON instability_snapshots(tenant_id, snapshot_date DESC);
 
 -- ── 9. CONFIDENCE RECALIBRATIONS ───────────────────────────
 CREATE TABLE IF NOT EXISTS confidence_recalibrations (
@@ -362,16 +362,16 @@ DO $$ BEGIN
   DROP POLICY IF EXISTS "Users see own enterprise_contact_requests" ON enterprise_contact_requests;
 END $$;
 
-CREATE POLICY "Users see own integration_health" ON integration_health FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Users see own integration_health_history" ON integration_health_history FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Users see own evidence_packs" ON evidence_packs FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Users see own cognition_decisions" ON cognition_decisions FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Users see own outcome_checkpoints" ON outcome_checkpoints FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Users see own automation_executions" ON automation_executions FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Users see own instability_snapshots" ON instability_snapshots FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Users see own confidence_recalibrations" ON confidence_recalibrations FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY "Anyone can submit enterprise_contact_requests" ON enterprise_contact_requests FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admins see all enterprise_contact_requests" ON enterprise_contact_requests FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY IF NOT EXISTS "Users see own integration_health" ON integration_health FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Users see own integration_health_history" ON integration_health_history FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Users see own evidence_packs" ON evidence_packs FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Users see own cognition_decisions" ON cognition_decisions FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Users see own outcome_checkpoints" ON outcome_checkpoints FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Users see own automation_executions" ON automation_executions FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Users see own instability_snapshots" ON instability_snapshots FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Users see own confidence_recalibrations" ON confidence_recalibrations FOR ALL USING (auth.uid() = tenant_id);
+CREATE POLICY IF NOT EXISTS "Anyone can submit enterprise_contact_requests" ON enterprise_contact_requests FOR INSERT WITH CHECK (true);
+CREATE POLICY IF NOT EXISTS "Admins see all enterprise_contact_requests" ON enterprise_contact_requests FOR SELECT USING (auth.uid() IS NOT NULL);
 
 -- 045_cognition_core_functions.sql
 -- ============================================================
@@ -652,7 +652,7 @@ DO $$ BEGIN
   DROP POLICY IF EXISTS "Users manage own feature usage" ON user_feature_usage;
 END $$;
 
-CREATE POLICY "Users manage own feature usage"
+CREATE POLICY IF NOT EXISTS "Users manage own feature usage"
   ON user_feature_usage FOR ALL
   USING (auth.uid() = user_id);
 
