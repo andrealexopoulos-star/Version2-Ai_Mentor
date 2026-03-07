@@ -53,7 +53,7 @@ class TestAuthenticatedAPIs:
         import httpx
         
         # Supabase auth endpoint
-        supabase_url = "https://uxyqpdfftxpkzeppqtvk.supabase.co"
+        supabase_url = os.environ.get("SUPABASE_URL", os.environ.get("REACT_APP_SUPABASE_URL", ""))
         anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4eXFwZGZmdHhwa3plcHBxdHZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0MzcwNDcsImV4cCI6MjA4NDAxMzA0N30.Xu9Wg5M638qJSgDpJKwFYlr9YZDiYPLv4Igh69KHJ0k"
         
         # Login with Supabase

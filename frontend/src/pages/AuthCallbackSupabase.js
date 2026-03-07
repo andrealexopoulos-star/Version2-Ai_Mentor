@@ -2,44 +2,114 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../context/SupabaseAuthContext';
 
+/**
+ * AuthCallbackSupabase — handles both PKCE and implicit OAuth flows.
+ *
+ * PKCE flow  (Supabase v2 default): URL has ?code=XXXX
+ *   → must call exchangeCodeForSession(code) to get a session
+ *
+ * Implicit flow (legacy / some providers): URL has #access_token=...
+ *   → detectSessionInUrl:true in the Supabase client handles it automatically
+ *   → getSession() will return the session immediately
+ *
+ * Both paths end at /advisor on success, /login-supabase on failure.
+ */
 const AuthCallbackSupabase = () => {
   const navigate = useNavigate();
-  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('Completing sign in...');
 
   useEffect(() => {
     let mounted = true;
 
-    const resolve = async () => {
+    const handleCallback = async () => {
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        const params = new URLSearchParams(window.location.search);
 
-        if (!mounted) return;
-
-        if (sessionError || !data.session) {
-          navigate('/login-supabase', { replace: true });
+        // OAuth provider returned an error
+        const oauthError = params.get('error');
+        const oauthErrorDesc = params.get('error_description');
+        if (oauthError) {
+          console.error('[AuthCallback] OAuth error:', oauthError, oauthErrorDesc);
+          if (mounted) {
+            setStatus(`Sign in failed: ${oauthErrorDesc || oauthError}`);
+            setTimeout(() => navigate('/login-supabase', { replace: true }), 2500);
+          }
           return;
         }
 
-        navigate('/advisor', { replace: true });
+        // PKCE flow — exchange the one-time code for a session
+        const code = params.get('code');
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('[AuthCallback] exchangeCodeForSession error:', exchangeError.message);
+            // Don't throw — fall through and try getSession() in case session was set another way
+          }
+        }
+
+        // Both PKCE (after exchange) and implicit flow: session should now exist
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+
+        if (!mounted) return;
+
+        if (data?.session) {
+          navigate('/advisor', { replace: true });
+          return;
+        }
+
+        // Session not yet available — wait for onAuthStateChange (covers edge cases / timing)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (!mounted) { subscription.unsubscribe(); return; }
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+            subscription.unsubscribe();
+            navigate('/advisor', { replace: true });
+          }
+        });
+
+        // Safety timeout — if nothing fires in 5 s, send to login
+        const timeout = setTimeout(() => {
+          subscription.unsubscribe();
+          if (mounted) navigate('/login-supabase', { replace: true });
+        }, 5000);
+
+        return () => {
+          clearTimeout(timeout);
+          subscription.unsubscribe();
+        };
+
       } catch (e) {
+        console.error('[AuthCallback] Unexpected error:', e.message);
         if (mounted) {
-          setError(e.message);
-          setTimeout(() => navigate('/login-supabase', { replace: true }), 2000);
+          setStatus(`Error: ${e.message}`);
+          setTimeout(() => navigate('/login-supabase', { replace: true }), 2500);
         }
       }
     };
 
-    resolve();
+    handleCallback();
     return () => { mounted = false; };
   }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#0F1720' }}>
-      <div className="text-center">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A00' }}>
+      <style>{`
+        @keyframes biqcPulse{0%,100%{opacity:0.4;transform:scale(0.95)}50%{opacity:1;transform:scale(1.05)}}
+        @keyframes biqcBar{0%{width:0}100%{width:100%}}
+      `}</style>
+      <div className="text-center space-y-5">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto"
+          style={{ background: '#FF6A00', animation: 'biqcPulse 2s ease-in-out infinite' }}
+        >
           <span className="text-white font-bold text-xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
         </div>
-        <p className="text-sm text-[#9FB0C3]">{error ? `Error: ${error}` : 'Completing sign in...'}</p>
+        <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: "'Inter', sans-serif" }}>{status}</p>
+        <div className="w-40 mx-auto">
+          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
+            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg,#FF6A00,#FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
+          </div>
+        </div>
       </div>
     </div>
   );
