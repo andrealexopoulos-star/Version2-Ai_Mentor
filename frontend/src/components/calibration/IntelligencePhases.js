@@ -33,6 +33,12 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
     return () => clearTimeout(timer);
   }, [isReady]);
 
+  // Fallback: if still ANALYZING after 35s, show CTA so users never get permanently stuck
+  useEffect(() => {
+    const fallback = setTimeout(() => setCtaVisible(true), 35000);
+    return () => clearTimeout(fallback);
+  }, []);
+
   // Integration truth — suppress CRM claims without integration
   const hasCRMSource = sources.some(s => ['crm', 'hubspot', 'email', 'pipeline'].includes(s?.toLowerCase?.()));
   const rawMemo = c.executive_memo || c.memo || '';
