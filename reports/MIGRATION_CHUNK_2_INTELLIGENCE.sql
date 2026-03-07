@@ -19,8 +19,10 @@ CREATE INDEX IF NOT EXISTS idx_payment_session ON payment_transactions(session_i
 CREATE INDEX IF NOT EXISTS idx_payment_user ON payment_transactions(user_id);
 
 ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "Users read own payments" ON payment_transactions FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "Service manages payments" ON payment_transactions FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users read own payments" ON payment_transactions;
+CREATE POLICY "Users read own payments" ON payment_transactions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages payments" ON payment_transactions;
+CREATE POLICY "Service manages payments" ON payment_transactions FOR ALL USING (true) WITH CHECK (true);
 
 -- 030_intelligence_spine.sql
 -- ═══════════════════════════════════════════════════════════════
@@ -209,43 +211,61 @@ ALTER TABLE intelligence_core.model_executions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE intelligence_core.feature_flags ENABLE ROW LEVEL SECURITY;
 
 -- Tenant-scoped read policies (authenticated users read own tenant data)
-CREATE POLICY IF NOT EXISTS "tenant_read_events" ON intelligence_core.intelligence_events
+DROP POLICY IF EXISTS "tenant_read_events" ON intelligence_core.intelligence_events;
+CREATE POLICY "tenant_read_events" ON intelligence_core.intelligence_events
     FOR SELECT TO authenticated USING (tenant_id = auth.uid());
-CREATE POLICY IF NOT EXISTS "tenant_read_snapshots" ON intelligence_core.daily_metric_snapshots
+DROP POLICY IF EXISTS "tenant_read_snapshots" ON intelligence_core.daily_metric_snapshots;
+CREATE POLICY "tenant_read_snapshots" ON intelligence_core.daily_metric_snapshots
     FOR SELECT TO authenticated USING (tenant_id = auth.uid());
-CREATE POLICY IF NOT EXISTS "tenant_read_nodes" ON intelligence_core.ontology_nodes
+DROP POLICY IF EXISTS "tenant_read_nodes" ON intelligence_core.ontology_nodes;
+CREATE POLICY "tenant_read_nodes" ON intelligence_core.ontology_nodes
     FOR SELECT TO authenticated USING (tenant_id = auth.uid());
-CREATE POLICY IF NOT EXISTS "tenant_read_edges" ON intelligence_core.ontology_edges
+DROP POLICY IF EXISTS "tenant_read_edges" ON intelligence_core.ontology_edges;
+CREATE POLICY "tenant_read_edges" ON intelligence_core.ontology_edges
     FOR SELECT TO authenticated USING (tenant_id = auth.uid());
-CREATE POLICY IF NOT EXISTS "tenant_read_decisions" ON intelligence_core.decisions
+DROP POLICY IF EXISTS "tenant_read_decisions" ON intelligence_core.decisions;
+CREATE POLICY "tenant_read_decisions" ON intelligence_core.decisions
     FOR SELECT TO authenticated USING (tenant_id = auth.uid());
-CREATE POLICY IF NOT EXISTS "tenant_read_outcomes" ON intelligence_core.decision_outcomes
+DROP POLICY IF EXISTS "tenant_read_outcomes" ON intelligence_core.decision_outcomes;
+CREATE POLICY "tenant_read_outcomes" ON intelligence_core.decision_outcomes
     FOR SELECT TO authenticated USING (true);
-CREATE POLICY IF NOT EXISTS "tenant_read_registry" ON intelligence_core.model_registry
+DROP POLICY IF EXISTS "tenant_read_registry" ON intelligence_core.model_registry;
+CREATE POLICY "tenant_read_registry" ON intelligence_core.model_registry
     FOR SELECT TO authenticated USING (true);
-CREATE POLICY IF NOT EXISTS "tenant_read_executions" ON intelligence_core.model_executions
+DROP POLICY IF EXISTS "tenant_read_executions" ON intelligence_core.model_executions;
+CREATE POLICY "tenant_read_executions" ON intelligence_core.model_executions
     FOR SELECT TO authenticated USING (tenant_id = auth.uid());
-CREATE POLICY IF NOT EXISTS "anyone_read_flags" ON intelligence_core.feature_flags
+DROP POLICY IF EXISTS "anyone_read_flags" ON intelligence_core.feature_flags;
+CREATE POLICY "anyone_read_flags" ON intelligence_core.feature_flags
     FOR SELECT TO authenticated USING (true);
 
 -- Service role full access (for backend operations)
-CREATE POLICY IF NOT EXISTS "service_all_events" ON intelligence_core.intelligence_events
+DROP POLICY IF EXISTS "service_all_events" ON intelligence_core.intelligence_events;
+CREATE POLICY "service_all_events" ON intelligence_core.intelligence_events
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_snapshots" ON intelligence_core.daily_metric_snapshots
+DROP POLICY IF EXISTS "service_all_snapshots" ON intelligence_core.daily_metric_snapshots;
+CREATE POLICY "service_all_snapshots" ON intelligence_core.daily_metric_snapshots
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_nodes" ON intelligence_core.ontology_nodes
+DROP POLICY IF EXISTS "service_all_nodes" ON intelligence_core.ontology_nodes;
+CREATE POLICY "service_all_nodes" ON intelligence_core.ontology_nodes
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_edges" ON intelligence_core.ontology_edges
+DROP POLICY IF EXISTS "service_all_edges" ON intelligence_core.ontology_edges;
+CREATE POLICY "service_all_edges" ON intelligence_core.ontology_edges
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_decisions" ON intelligence_core.decisions
+DROP POLICY IF EXISTS "service_all_decisions" ON intelligence_core.decisions;
+CREATE POLICY "service_all_decisions" ON intelligence_core.decisions
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_outcomes" ON intelligence_core.decision_outcomes
+DROP POLICY IF EXISTS "service_all_outcomes" ON intelligence_core.decision_outcomes;
+CREATE POLICY "service_all_outcomes" ON intelligence_core.decision_outcomes
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_registry" ON intelligence_core.model_registry
+DROP POLICY IF EXISTS "service_all_registry" ON intelligence_core.model_registry;
+CREATE POLICY "service_all_registry" ON intelligence_core.model_registry
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_executions" ON intelligence_core.model_executions
+DROP POLICY IF EXISTS "service_all_executions" ON intelligence_core.model_executions;
+CREATE POLICY "service_all_executions" ON intelligence_core.model_executions
     FOR ALL TO service_role USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "service_all_flags" ON intelligence_core.feature_flags
+DROP POLICY IF EXISTS "service_all_flags" ON intelligence_core.feature_flags;
+CREATE POLICY "service_all_flags" ON intelligence_core.feature_flags
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 
@@ -411,24 +431,42 @@ ALTER TABLE ic_decision_outcomes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ic_model_registry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ic_model_executions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "read_flags" ON ic_feature_flags FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_flags" ON ic_feature_flags FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_events" ON ic_intelligence_events FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_events" ON ic_intelligence_events FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_snaps" ON ic_daily_metric_snapshots FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_snaps" ON ic_daily_metric_snapshots FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_nodes" ON ic_ontology_nodes FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_nodes" ON ic_ontology_nodes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_edges" ON ic_ontology_edges FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_edges" ON ic_ontology_edges FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_decisions" ON ic_decisions FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_decisions" ON ic_decisions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_outcomes" ON ic_decision_outcomes FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_outcomes" ON ic_decision_outcomes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_registry" ON ic_model_registry FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_registry" ON ic_model_registry FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_executions" ON ic_model_executions FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_executions" ON ic_model_executions FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_flags" ON ic_feature_flags;
+CREATE POLICY "read_flags" ON ic_feature_flags FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_flags" ON ic_feature_flags;
+CREATE POLICY "manage_flags" ON ic_feature_flags FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_events" ON ic_intelligence_events;
+CREATE POLICY "read_events" ON ic_intelligence_events FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_events" ON ic_intelligence_events;
+CREATE POLICY "manage_events" ON ic_intelligence_events FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_snaps" ON ic_daily_metric_snapshots;
+CREATE POLICY "read_snaps" ON ic_daily_metric_snapshots FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_snaps" ON ic_daily_metric_snapshots;
+CREATE POLICY "manage_snaps" ON ic_daily_metric_snapshots FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_nodes" ON ic_ontology_nodes;
+CREATE POLICY "read_nodes" ON ic_ontology_nodes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_nodes" ON ic_ontology_nodes;
+CREATE POLICY "manage_nodes" ON ic_ontology_nodes FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_edges" ON ic_ontology_edges;
+CREATE POLICY "read_edges" ON ic_ontology_edges FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_edges" ON ic_ontology_edges;
+CREATE POLICY "manage_edges" ON ic_ontology_edges FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_decisions" ON ic_decisions;
+CREATE POLICY "read_decisions" ON ic_decisions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_decisions" ON ic_decisions;
+CREATE POLICY "manage_decisions" ON ic_decisions FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_outcomes" ON ic_decision_outcomes;
+CREATE POLICY "read_outcomes" ON ic_decision_outcomes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_outcomes" ON ic_decision_outcomes;
+CREATE POLICY "manage_outcomes" ON ic_decision_outcomes FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_registry" ON ic_model_registry;
+CREATE POLICY "read_registry" ON ic_model_registry FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_registry" ON ic_model_registry;
+CREATE POLICY "manage_registry" ON ic_model_registry FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_executions" ON ic_model_executions;
+CREATE POLICY "read_executions" ON ic_model_executions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_executions" ON ic_model_executions;
+CREATE POLICY "manage_executions" ON ic_model_executions FOR ALL USING (true) WITH CHECK (true);
 
 -- Feature flag check function (tenant-scoped with global fallback)
 CREATE OR REPLACE FUNCTION is_spine_enabled()
@@ -580,7 +618,8 @@ GRANT EXECUTE ON FUNCTION ic_generate_all_snapshots() TO postgres;
 DROP POLICY IF EXISTS "Service role manages governance_events" ON governance_events;
 
 -- Replace with INSERT-only for service role
-CREATE POLICY IF NOT EXISTS "service_insert_governance_events" ON governance_events
+DROP POLICY IF EXISTS "service_insert_governance_events" ON governance_events;
+CREATE POLICY "service_insert_governance_events" ON governance_events
     FOR INSERT TO service_role
     WITH CHECK (true);
 
@@ -620,7 +659,7 @@ END;
 $$;
 
 DROP TRIGGER IF EXISTS trg_prevent_governance_update ON governance_events;
-CREATE TRIGGER trg_prevent_governance_update
+CREATE OR REPLACE TRIGGER trg_prevent_governance_update
     BEFORE UPDATE ON governance_events
     FOR EACH ROW
     EXECUTE FUNCTION prevent_governance_update();
@@ -765,7 +804,8 @@ GRANT EXECUTE ON FUNCTION ic_process_event_queue() TO postgres;
 
 -- RLS on queue
 ALTER TABLE ic_event_queue ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "service_manage_queue" ON ic_event_queue FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_queue" ON ic_event_queue;
+CREATE POLICY "service_manage_queue" ON ic_event_queue FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- 033_risk_baseline.sql
 -- ═══════════════════════════════════════════════════════════════
@@ -1133,7 +1173,7 @@ END;
 $$;
 
 DROP TRIGGER IF EXISTS trg_prevent_weight_update ON ic_risk_weight_configs;
-CREATE TRIGGER trg_prevent_weight_update
+CREATE OR REPLACE TRIGGER trg_prevent_weight_update
     BEFORE UPDATE ON ic_risk_weight_configs
     FOR EACH ROW
     WHEN (OLD.is_active IS NOT DISTINCT FROM NEW.is_active)
@@ -1483,8 +1523,10 @@ $$;
 
 -- ═══ RLS + GRANTS ═══
 ALTER TABLE ic_risk_weight_configs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "read_weights" ON ic_risk_weight_configs FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_manage_weights" ON ic_risk_weight_configs FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_weights" ON ic_risk_weight_configs;
+CREATE POLICY "read_weights" ON ic_risk_weight_configs FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_manage_weights" ON ic_risk_weight_configs;
+CREATE POLICY "service_manage_weights" ON ic_risk_weight_configs FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 GRANT EXECUTE ON FUNCTION ic_resolve_industry_code(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION ic_calculate_risk_baseline(UUID) TO authenticated;
@@ -1534,14 +1576,15 @@ INSERT INTO ic_industry_codes (code, description) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 ALTER TABLE ic_industry_codes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "read_industry_codes" ON ic_industry_codes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "read_industry_codes" ON ic_industry_codes;
+CREATE POLICY "read_industry_codes" ON ic_industry_codes FOR SELECT USING (true);
 
 -- Add industry_code column to business_profiles for eventual migration
 -- (free-text industry remains for backward compat)
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'industry_code') THEN
-        ALTER TABLE business_profiles ADD COLUMN industry_code TEXT;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS industry_code TEXT;
     END IF;
 END $$;
 
@@ -2161,18 +2204,30 @@ ALTER TABLE marketing_benchmarks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE action_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE llm_call_log ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "tenant_read" ON episodic_memory FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_all" ON episodic_memory FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "tenant_read" ON semantic_memory FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_all" ON semantic_memory FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "tenant_read" ON context_summaries FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_all" ON context_summaries FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "tenant_read" ON marketing_benchmarks FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_all" ON marketing_benchmarks FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "tenant_read" ON action_log FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_all" ON action_log FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "tenant_read" ON llm_call_log FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_all" ON llm_call_log FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read" ON episodic_memory;
+CREATE POLICY "tenant_read" ON episodic_memory FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_all" ON episodic_memory;
+CREATE POLICY "service_all" ON episodic_memory FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read" ON semantic_memory;
+CREATE POLICY "tenant_read" ON semantic_memory FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_all" ON semantic_memory;
+CREATE POLICY "service_all" ON semantic_memory FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read" ON context_summaries;
+CREATE POLICY "tenant_read" ON context_summaries FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_all" ON context_summaries;
+CREATE POLICY "service_all" ON context_summaries FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read" ON marketing_benchmarks;
+CREATE POLICY "tenant_read" ON marketing_benchmarks FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_all" ON marketing_benchmarks;
+CREATE POLICY "service_all" ON marketing_benchmarks FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read" ON action_log;
+CREATE POLICY "tenant_read" ON action_log FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_all" ON action_log;
+CREATE POLICY "service_all" ON action_log FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read" ON llm_call_log;
+CREATE POLICY "tenant_read" ON llm_call_log FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_all" ON llm_call_log;
+CREATE POLICY "service_all" ON llm_call_log FOR ALL USING (true) WITH CHECK (true);
 
 -- 038_rag_infrastructure.sql
 -- ═══════════════════════════════════════════════════════════════
@@ -2260,8 +2315,10 @@ GROUP BY tenant_id, source_type;
 
 -- ═══ RLS ═══
 ALTER TABLE rag_embeddings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "tenant_read_embeddings" ON rag_embeddings FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_manage_embeddings" ON rag_embeddings FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read_embeddings" ON rag_embeddings;
+CREATE POLICY "tenant_read_embeddings" ON rag_embeddings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_manage_embeddings" ON rag_embeddings;
+CREATE POLICY "service_manage_embeddings" ON rag_embeddings FOR ALL USING (true) WITH CHECK (true);
 
 GRANT EXECUTE ON FUNCTION rag_search(UUID, vector, INT, TEXT[], FLOAT) TO authenticated;
 GRANT SELECT ON rag_stats TO authenticated;
@@ -2367,12 +2424,18 @@ $$;
 ALTER TABLE ab_experiments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ab_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ab_metrics ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "read_experiments" ON ab_experiments FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_experiments" ON ab_experiments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_assignments" ON ab_assignments FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_assignments" ON ab_assignments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "read_metrics" ON ab_metrics FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "manage_metrics" ON ab_metrics FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_experiments" ON ab_experiments;
+CREATE POLICY "read_experiments" ON ab_experiments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_experiments" ON ab_experiments;
+CREATE POLICY "manage_experiments" ON ab_experiments FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_assignments" ON ab_assignments;
+CREATE POLICY "read_assignments" ON ab_assignments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_assignments" ON ab_assignments;
+CREATE POLICY "manage_assignments" ON ab_assignments FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "read_metrics" ON ab_metrics;
+CREATE POLICY "read_metrics" ON ab_metrics FOR SELECT USING (true);
+DROP POLICY IF EXISTS "manage_metrics" ON ab_metrics;
+CREATE POLICY "manage_metrics" ON ab_metrics FOR ALL USING (true) WITH CHECK (true);
 
 GRANT EXECUTE ON FUNCTION ab_get_variant(TEXT, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION ab_experiment_results(TEXT) TO authenticated;
@@ -2405,17 +2468,19 @@ CREATE INDEX IF NOT EXISTS idx_admin_actions_admin ON admin_actions(admin_user_i
 CREATE INDEX IF NOT EXISTS idx_admin_actions_target ON admin_actions(target_user_id);
 
 ALTER TABLE admin_actions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "superadmin_read" ON admin_actions FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_manage" ON admin_actions FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "superadmin_read" ON admin_actions;
+CREATE POLICY "superadmin_read" ON admin_actions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_manage" ON admin_actions;
+CREATE POLICY "service_manage" ON admin_actions FOR ALL USING (true) WITH CHECK (true);
 
 -- 2. Ensure role column on users
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'role') THEN
-        ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user';
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_disabled') THEN
-        ALTER TABLE users ADD COLUMN is_disabled BOOLEAN DEFAULT false;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_disabled BOOLEAN DEFAULT false;
     END IF;
 END $$;
 
@@ -2598,7 +2663,8 @@ CREATE POLICY IF NOT EXISTS "service_all" ON episodic_memory FOR ALL TO service_
 
 -- escalation_history
 DROP POLICY IF EXISTS "Service manages escalation_history" ON escalation_history;
-CREATE POLICY IF NOT EXISTS "service_manage_escalation" ON escalation_history FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_escalation" ON escalation_history;
+CREATE POLICY "service_manage_escalation" ON escalation_history FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ic_daily_metric_snapshots
 DROP POLICY IF EXISTS "manage_snaps" ON ic_daily_metric_snapshots;
@@ -2638,24 +2704,29 @@ CREATE POLICY IF NOT EXISTS "manage_nodes" ON ic_ontology_nodes FOR ALL TO servi
 
 -- ingestion_audits
 DROP POLICY IF EXISTS "Service manages audits" ON ingestion_audits;
-CREATE POLICY IF NOT EXISTS "service_manage_audits" ON ingestion_audits FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_audits" ON ingestion_audits;
+CREATE POLICY "service_manage_audits" ON ingestion_audits FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ingestion_cleaned
 DROP POLICY IF EXISTS "Service manages cleaned" ON ingestion_cleaned;
-CREATE POLICY IF NOT EXISTS "service_manage_cleaned" ON ingestion_cleaned FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_cleaned" ON ingestion_cleaned;
+CREATE POLICY "service_manage_cleaned" ON ingestion_cleaned FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ingestion_pages
 DROP POLICY IF EXISTS "Service manages pages" ON ingestion_pages;
-CREATE POLICY IF NOT EXISTS "service_manage_pages" ON ingestion_pages FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_pages" ON ingestion_pages;
+CREATE POLICY "service_manage_pages" ON ingestion_pages FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ingestion_sessions
 DROP POLICY IF EXISTS "Service manages sessions" ON ingestion_sessions;
-CREATE POLICY IF NOT EXISTS "service_manage_sessions" ON ingestion_sessions FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_sessions" ON ingestion_sessions;
+CREATE POLICY "service_manage_sessions" ON ingestion_sessions FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- insight_outcomes
 DROP POLICY IF EXISTS "Service role can insert outcomes" ON insight_outcomes;
 DROP POLICY IF EXISTS "Service role can update outcomes" ON insight_outcomes;
-CREATE POLICY IF NOT EXISTS "service_manage_outcomes" ON insight_outcomes FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_outcomes" ON insight_outcomes;
+CREATE POLICY "service_manage_outcomes" ON insight_outcomes FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- llm_call_log
 DROP POLICY IF EXISTS "service_all" ON llm_call_log;
@@ -2671,7 +2742,8 @@ CREATE POLICY IF NOT EXISTS "service_manage_embeddings" ON rag_embeddings FOR AL
 
 -- report_exports
 DROP POLICY IF EXISTS "Service role manages report_exports" ON report_exports;
-CREATE POLICY IF NOT EXISTS "service_manage_reports" ON report_exports FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_reports" ON report_exports;
+CREATE POLICY "service_manage_reports" ON report_exports FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- semantic_memory
 DROP POLICY IF EXISTS "service_all" ON semantic_memory;
@@ -2679,7 +2751,8 @@ CREATE POLICY IF NOT EXISTS "service_all" ON semantic_memory FOR ALL TO service_
 
 -- workspace_integrations
 DROP POLICY IF EXISTS "Service role manages workspace_integrations" ON workspace_integrations;
-CREATE POLICY IF NOT EXISTS "service_manage_integrations" ON workspace_integrations FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "service_manage_integrations" ON workspace_integrations;
+CREATE POLICY "service_manage_integrations" ON workspace_integrations FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- governance_events (keep insert-only for service role - already hardened)
 DROP POLICY IF EXISTS "service_insert_governance_events" ON governance_events;

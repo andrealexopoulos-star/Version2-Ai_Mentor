@@ -43,17 +43,20 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Storage RLS policies
-CREATE POLICY IF NOT EXISTS "Users read own files" ON storage.objects FOR SELECT USING (
+DROP POLICY IF EXISTS "Users read own files" ON storage.objects;
+CREATE POLICY "Users read own files" ON storage.objects FOR SELECT USING (
     bucket_id IN ('user-files', 'reports') AND
     (storage.foldername(name))[1] = auth.uid()::text
 );
 
-CREATE POLICY IF NOT EXISTS "Users upload own files" ON storage.objects FOR INSERT WITH CHECK (
+DROP POLICY IF EXISTS "Users upload own files" ON storage.objects;
+CREATE POLICY "Users upload own files" ON storage.objects FOR INSERT WITH CHECK (
     bucket_id IN ('user-files', 'reports') AND
     (storage.foldername(name))[1] = auth.uid()::text
 );
 
-CREATE POLICY IF NOT EXISTS "Service manages all files" ON storage.objects FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Service manages all files" ON storage.objects;
+CREATE POLICY "Service manages all files" ON storage.objects FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- 3. File registry table (tracks all generated files)
 CREATE TABLE IF NOT EXISTS generated_files (
@@ -74,8 +77,10 @@ CREATE TABLE IF NOT EXISTS generated_files (
 CREATE INDEX IF NOT EXISTS idx_files_tenant ON generated_files(tenant_id, created_at DESC);
 
 ALTER TABLE generated_files ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "tenant_read_files" ON generated_files FOR SELECT USING (true);
-CREATE POLICY IF NOT EXISTS "service_manage_files" ON generated_files FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "tenant_read_files" ON generated_files;
+CREATE POLICY "tenant_read_files" ON generated_files FOR SELECT USING (true);
+DROP POLICY IF EXISTS "service_manage_files" ON generated_files;
+CREATE POLICY "service_manage_files" ON generated_files FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- 044_cognition_core.sql
 -- ============================================================
@@ -362,16 +367,26 @@ DO $$ BEGIN
   DROP POLICY IF EXISTS "Users see own enterprise_contact_requests" ON enterprise_contact_requests;
 END $$;
 
-CREATE POLICY IF NOT EXISTS "Users see own integration_health" ON integration_health FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Users see own integration_health_history" ON integration_health_history FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Users see own evidence_packs" ON evidence_packs FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Users see own cognition_decisions" ON cognition_decisions FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Users see own outcome_checkpoints" ON outcome_checkpoints FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Users see own automation_executions" ON automation_executions FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Users see own instability_snapshots" ON instability_snapshots FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Users see own confidence_recalibrations" ON confidence_recalibrations FOR ALL USING (auth.uid() = tenant_id);
-CREATE POLICY IF NOT EXISTS "Anyone can submit enterprise_contact_requests" ON enterprise_contact_requests FOR INSERT WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "Admins see all enterprise_contact_requests" ON enterprise_contact_requests FOR SELECT USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Users see own integration_health" ON integration_health;
+CREATE POLICY "Users see own integration_health" ON integration_health FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Users see own integration_health_history" ON integration_health_history;
+CREATE POLICY "Users see own integration_health_history" ON integration_health_history FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Users see own evidence_packs" ON evidence_packs;
+CREATE POLICY "Users see own evidence_packs" ON evidence_packs FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Users see own cognition_decisions" ON cognition_decisions;
+CREATE POLICY "Users see own cognition_decisions" ON cognition_decisions FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Users see own outcome_checkpoints" ON outcome_checkpoints;
+CREATE POLICY "Users see own outcome_checkpoints" ON outcome_checkpoints FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Users see own automation_executions" ON automation_executions;
+CREATE POLICY "Users see own automation_executions" ON automation_executions FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Users see own instability_snapshots" ON instability_snapshots;
+CREATE POLICY "Users see own instability_snapshots" ON instability_snapshots FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Users see own confidence_recalibrations" ON confidence_recalibrations;
+CREATE POLICY "Users see own confidence_recalibrations" ON confidence_recalibrations FOR ALL USING (auth.uid() = tenant_id);
+DROP POLICY IF EXISTS "Anyone can submit enterprise_contact_requests" ON enterprise_contact_requests;
+CREATE POLICY "Anyone can submit enterprise_contact_requests" ON enterprise_contact_requests FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Admins see all enterprise_contact_requests" ON enterprise_contact_requests;
+CREATE POLICY "Admins see all enterprise_contact_requests" ON enterprise_contact_requests FOR SELECT USING (auth.uid() IS NOT NULL);
 
 -- 045_cognition_core_functions.sql
 -- ============================================================

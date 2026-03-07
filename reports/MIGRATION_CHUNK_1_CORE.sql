@@ -73,8 +73,8 @@ CREATE INDEX IF NOT EXISTS idx_watchtower_created ON public.watchtower_events(cr
 ALTER TABLE public.watchtower_events ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their workspace's events
-CREATE POLICY "Users can read workspace watchtower events"
-    ON public.watchtower_events
+DROP POLICY IF EXISTS "Users can read workspace watchtower events" ON public.watchtower_events;
+CREATE POLICY "Users can read workspace watchtower events" ON public.watchtower_events
     FOR SELECT
     USING (
         account_id IN (
@@ -83,8 +83,8 @@ CREATE POLICY "Users can read workspace watchtower events"
     );
 
 -- Service role can do anything
-CREATE POLICY "Service role full access"
-    ON public.watchtower_events
+DROP POLICY IF EXISTS "Service role full access" ON public.watchtower_events;
+CREATE POLICY "Service role full access" ON public.watchtower_events
     FOR ALL
     USING (true)
     WITH CHECK (true);
@@ -98,7 +98,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER watchtower_updated_at
+CREATE OR REPLACE TRIGGER watchtower_updated_at
     BEFORE UPDATE ON public.watchtower_events
     FOR EACH ROW
     EXECUTE FUNCTION update_watchtower_updated_at();
@@ -175,7 +175,7 @@ GRANT EXECUTE ON FUNCTION analyze_burnout_risk TO authenticated;
 -- Drop and recreate to ensure clean schema
 DROP TABLE IF EXISTS public.outlook_emails CASCADE;
 
-CREATE TABLE public.outlook_emails (
+CREATE TABLE IF NOT EXISTS public.outlook_emails (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     
@@ -218,14 +218,14 @@ CREATE INDEX IF NOT EXISTS idx_outlook_emails_from_address ON public.outlook_ema
 ALTER TABLE public.outlook_emails ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own emails
-CREATE POLICY "Users can read own emails"
-    ON public.outlook_emails
+DROP POLICY IF EXISTS "Users can read own emails" ON public.outlook_emails;
+CREATE POLICY "Users can read own emails" ON public.outlook_emails
     FOR SELECT
     USING (user_id = auth.uid());
 
 -- Service role can do anything
-CREATE POLICY "Service role full access"
-    ON public.outlook_emails
+DROP POLICY IF EXISTS "Service role full access" ON public.outlook_emails;
+CREATE POLICY "Service role full access" ON public.outlook_emails
     FOR ALL
     USING (true)
     WITH CHECK (true);
@@ -926,12 +926,12 @@ CREATE INDEX IF NOT EXISTS idx_calibration_quarterly_due ON public.calibration_s
 -- RLS
 ALTER TABLE public.calibration_schedules ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can read own schedules"
-    ON public.calibration_schedules FOR SELECT
+DROP POLICY IF EXISTS "Users can read own schedules" ON public.calibration_schedules;
+CREATE POLICY "Users can read own schedules" ON public.calibration_schedules FOR SELECT
     USING (user_id = auth.uid());
 
-CREATE POLICY "Service role full access"
-    ON public.calibration_schedules FOR ALL
+DROP POLICY IF EXISTS "Service role full access" ON public.calibration_schedules;
+CREATE POLICY "Service role full access" ON public.calibration_schedules FOR ALL
     USING (true) WITH CHECK (true);
 
 COMMENT ON TABLE public.calibration_schedules IS 'Post-induction monitoring schedule - structure only, execution logic separate';
@@ -983,7 +983,9 @@ CREATE INDEX IF NOT EXISTS idx_strategy_user ON public.strategy_profiles(user_id
 CREATE INDEX IF NOT EXISTS idx_strategy_account ON public.strategy_profiles(account_id);
 
 ALTER TABLE public.strategy_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own strategy" ON public.strategy_profiles;
 CREATE POLICY "Users read own strategy" ON public.strategy_profiles FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "Service role full access" ON public.strategy_profiles;
 CREATE POLICY "Service role full access" ON public.strategy_profiles FOR ALL USING (true) WITH CHECK (true);
 
 -- 2. CALIBRATION SESSIONS (Audit Trail)
@@ -1012,7 +1014,9 @@ CREATE INDEX IF NOT EXISTS idx_calibration_sessions_user ON public.calibration_s
 CREATE INDEX IF NOT EXISTS idx_calibration_sessions_profile ON public.calibration_sessions(business_profile_id);
 
 ALTER TABLE public.calibration_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own calibration sessions" ON public.calibration_sessions;
 CREATE POLICY "Users read own calibration sessions" ON public.calibration_sessions FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "Service role full access" ON public.calibration_sessions;
 CREATE POLICY "Service role full access" ON public.calibration_sessions FOR ALL USING (true) WITH CHECK (true);
 
 -- 3. 15-WEEK SCHEDULE SCAFFOLD
@@ -1049,7 +1053,9 @@ CREATE INDEX IF NOT EXISTS idx_schedule_profile ON public.working_schedules(busi
 CREATE INDEX IF NOT EXISTS idx_schedule_week ON public.working_schedules(week_number);
 
 ALTER TABLE public.working_schedules ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own schedules" ON public.working_schedules;
 CREATE POLICY "Users read own schedules" ON public.working_schedules FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "Service role full access" ON public.working_schedules;
 CREATE POLICY "Service role full access" ON public.working_schedules FOR ALL USING (true) WITH CHECK (true);
 
 -- 4. INTELLIGENCE PRIORITY HIERARCHY
@@ -1079,7 +1085,9 @@ CREATE INDEX IF NOT EXISTS idx_intelligence_priority_profile ON public.intellige
 CREATE INDEX IF NOT EXISTS idx_intelligence_priority_rank ON public.intelligence_priorities(priority_rank);
 
 ALTER TABLE public.intelligence_priorities ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own priorities" ON public.intelligence_priorities;
 CREATE POLICY "Users read own priorities" ON public.intelligence_priorities FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "Service role full access" ON public.intelligence_priorities;
 CREATE POLICY "Service role full access" ON public.intelligence_priorities FOR ALL USING (true) WITH CHECK (true);
 
 -- 5. PROGRESS TRACKING CADENCE
@@ -1111,7 +1119,9 @@ CREATE TABLE IF NOT EXISTS public.progress_cadence (
 CREATE INDEX IF NOT EXISTS idx_progress_cadence_profile ON public.progress_cadence(business_profile_id);
 
 ALTER TABLE public.progress_cadence ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own cadence" ON public.progress_cadence;
 CREATE POLICY "Users read own cadence" ON public.progress_cadence FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "Service role full access" ON public.progress_cadence;
 CREATE POLICY "Service role full access" ON public.progress_cadence FOR ALL USING (true) WITH CHECK (true);
 
 COMMENT ON TABLE public.strategy_profiles IS 'Strategic calibration data - raw inputs + AI-generated drafts';
@@ -1143,10 +1153,12 @@ CREATE TABLE IF NOT EXISTS fact_resolution_ledger (
 ALTER TABLE fact_resolution_ledger ENABLE ROW LEVEL SECURITY;
 
 -- Allow users to read their own facts
+DROP POLICY IF EXISTS "Users can view own facts" ON fact_resolution_ledger;
 CREATE POLICY "Users can view own facts" ON fact_resolution_ledger
     FOR SELECT USING (auth.uid() = user_id);
 
 -- Allow service role full access
+DROP POLICY IF EXISTS "Service role full access" ON fact_resolution_ledger;
 CREATE POLICY "Service role full access" ON fact_resolution_ledger
     FOR ALL USING (auth.role() = 'service_role');
 
@@ -1223,21 +1235,21 @@ CREATE TABLE IF NOT EXISTS user_operator_profile (
 -- Row Level Security
 ALTER TABLE user_operator_profile ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can read own profile"
-  ON user_operator_profile FOR SELECT
+DROP POLICY IF EXISTS "Users can read own profile" ON user_operator_profile;
+CREATE POLICY "Users can read own profile" ON user_operator_profile FOR SELECT
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert own profile"
-  ON user_operator_profile FOR INSERT
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_operator_profile;
+CREATE POLICY "Users can insert own profile" ON user_operator_profile FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update own profile"
-  ON user_operator_profile FOR UPDATE
+DROP POLICY IF EXISTS "Users can update own profile" ON user_operator_profile;
+CREATE POLICY "Users can update own profile" ON user_operator_profile FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Service role bypass for Edge Functions
-CREATE POLICY "Service role full access"
-  ON user_operator_profile FOR ALL
+DROP POLICY IF EXISTS "Service role full access" ON user_operator_profile;
+CREATE POLICY "Service role full access" ON user_operator_profile FOR ALL
   USING (auth.role() = 'service_role');
 
 -- Index
@@ -1461,12 +1473,12 @@ ALTER TABLE decision_pressure ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'decision_pressure' AND policyname = 'Service role full access on decision_pressure') THEN
-    CREATE POLICY "Service role full access on decision_pressure"
-      ON decision_pressure FOR ALL TO service_role USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Service role full access on decision_pressure" ON decision_pressure;
+CREATE POLICY "Service role full access on decision_pressure" ON decision_pressure FOR ALL TO service_role USING (true) WITH CHECK (true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'decision_pressure' AND policyname = 'Users read own decision_pressure') THEN
-    CREATE POLICY "Users read own decision_pressure"
-      ON decision_pressure FOR SELECT TO authenticated
+    DROP POLICY IF EXISTS "Users read own decision_pressure" ON decision_pressure;
+CREATE POLICY "Users read own decision_pressure" ON decision_pressure FOR SELECT TO authenticated
       USING (auth.uid() = user_id);
   END IF;
 END $$;
@@ -1568,12 +1580,12 @@ ALTER TABLE evidence_freshness ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'evidence_freshness' AND policyname = 'Service role full access on evidence_freshness') THEN
-    CREATE POLICY "Service role full access on evidence_freshness"
-      ON evidence_freshness FOR ALL TO service_role USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Service role full access on evidence_freshness" ON evidence_freshness;
+CREATE POLICY "Service role full access on evidence_freshness" ON evidence_freshness FOR ALL TO service_role USING (true) WITH CHECK (true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'evidence_freshness' AND policyname = 'Users read own evidence_freshness') THEN
-    CREATE POLICY "Users read own evidence_freshness"
-      ON evidence_freshness FOR SELECT TO authenticated
+    DROP POLICY IF EXISTS "Users read own evidence_freshness" ON evidence_freshness;
+CREATE POLICY "Users read own evidence_freshness" ON evidence_freshness FOR SELECT TO authenticated
       USING (auth.uid() = user_id);
   END IF;
 END $$;
@@ -1702,12 +1714,12 @@ ALTER TABLE escalation_memory ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'escalation_memory' AND policyname = 'Service role full access on escalation_memory') THEN
-    CREATE POLICY "Service role full access on escalation_memory"
-      ON escalation_memory FOR ALL TO service_role USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Service role full access on escalation_memory" ON escalation_memory;
+CREATE POLICY "Service role full access on escalation_memory" ON escalation_memory FOR ALL TO service_role USING (true) WITH CHECK (true);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'escalation_memory' AND policyname = 'Users read own escalation_memory') THEN
-    CREATE POLICY "Users read own escalation_memory"
-      ON escalation_memory FOR SELECT TO authenticated
+    DROP POLICY IF EXISTS "Users read own escalation_memory" ON escalation_memory;
+CREATE POLICY "Users read own escalation_memory" ON escalation_memory FOR SELECT TO authenticated
       USING (auth.uid() = user_id);
   END IF;
 END $$;
@@ -1927,13 +1939,13 @@ CREATE TABLE IF NOT EXISTS report_exports (
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'source_map') THEN
-        ALTER TABLE business_profiles ADD COLUMN source_map JSONB;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS source_map JSONB;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'confidence_map') THEN
-        ALTER TABLE business_profiles ADD COLUMN confidence_map JSONB;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS confidence_map JSONB;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'timestamp_map') THEN
-        ALTER TABLE business_profiles ADD COLUMN timestamp_map JSONB;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS timestamp_map JSONB;
     END IF;
 END $$;
 
@@ -1949,18 +1961,24 @@ ALTER TABLE governance_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE report_exports ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated users to read their own workspace data
+DROP POLICY IF EXISTS "Users read own workspace_integrations" ON workspace_integrations;
 CREATE POLICY "Users read own workspace_integrations" ON workspace_integrations
     FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users read own governance_events" ON governance_events;
 CREATE POLICY "Users read own governance_events" ON governance_events
     FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users read own report_exports" ON report_exports;
 CREATE POLICY "Users read own report_exports" ON report_exports
     FOR SELECT USING (true);
 
 -- Service role can insert/update
+DROP POLICY IF EXISTS "Service role manages workspace_integrations" ON workspace_integrations;
 CREATE POLICY "Service role manages workspace_integrations" ON workspace_integrations
     FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Service role manages governance_events" ON governance_events;
 CREATE POLICY "Service role manages governance_events" ON governance_events
     FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Service role manages report_exports" ON report_exports;
 CREATE POLICY "Service role manages report_exports" ON report_exports
     FOR ALL USING (true) WITH CHECK (true);
 
@@ -3070,7 +3088,7 @@ END;
 $$;
 
 DROP TRIGGER IF EXISTS trg_governance_event_sync ON governance_events;
-CREATE TRIGGER trg_governance_event_sync
+CREATE OR REPLACE TRIGGER trg_governance_event_sync
     AFTER INSERT ON governance_events
     FOR EACH ROW
     EXECUTE FUNCTION trigger_update_integration_sync();
@@ -3101,7 +3119,7 @@ END;
 $$;
 
 DROP TRIGGER IF EXISTS trg_integration_status_change ON workspace_integrations;
-CREATE TRIGGER trg_integration_status_change
+CREATE OR REPLACE TRIGGER trg_integration_status_change
     AFTER INSERT OR UPDATE ON workspace_integrations
     FOR EACH ROW
     EXECUTE FUNCTION trigger_log_integration_change();
@@ -3130,7 +3148,7 @@ END;
 $$;
 
 DROP TRIGGER IF EXISTS trg_report_export_log ON report_exports;
-CREATE TRIGGER trg_report_export_log
+CREATE OR REPLACE TRIGGER trg_report_export_log
     AFTER INSERT ON report_exports
     FOR EACH ROW
     EXECUTE FUNCTION trigger_log_report_export();
@@ -3182,7 +3200,9 @@ GRANT EXECUTE ON FUNCTION compute_watchtower_positions(UUID) TO authenticated;
 
 -- Escalation history RLS
 ALTER TABLE escalation_history ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own escalation_history" ON escalation_history;
 CREATE POLICY "Users read own escalation_history" ON escalation_history FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages escalation_history" ON escalation_history;
 CREATE POLICY "Service manages escalation_history" ON escalation_history FOR ALL USING (true) WITH CHECK (true);
 
 -- 024_sql_hotfix.sql
@@ -3463,7 +3483,9 @@ CREATE TABLE IF NOT EXISTS ingestion_audits (
 
 CREATE INDEX IF NOT EXISTS idx_ingestion_audits_workspace ON ingestion_audits(workspace_id);
 ALTER TABLE ingestion_audits ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users read own audits" ON ingestion_audits;
 CREATE POLICY "Users read own audits" ON ingestion_audits FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages audits" ON ingestion_audits;
 CREATE POLICY "Service manages audits" ON ingestion_audits FOR ALL USING (true) WITH CHECK (true);
 
 -- 027_ingestion_engine.sql
@@ -3525,7 +3547,7 @@ CREATE TABLE IF NOT EXISTS ingestion_cleaned (
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'dna_trace') THEN
-        ALTER TABLE business_profiles ADD COLUMN dna_trace JSONB;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS dna_trace JSONB;
     END IF;
 END $$;
 
@@ -3539,11 +3561,17 @@ ALTER TABLE ingestion_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ingestion_pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ingestion_cleaned ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users read own sessions" ON ingestion_sessions;
 CREATE POLICY "Users read own sessions" ON ingestion_sessions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages sessions" ON ingestion_sessions;
 CREATE POLICY "Service manages sessions" ON ingestion_sessions FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users read own pages" ON ingestion_pages;
 CREATE POLICY "Users read own pages" ON ingestion_pages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages pages" ON ingestion_pages;
 CREATE POLICY "Service manages pages" ON ingestion_pages FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Users read own cleaned" ON ingestion_cleaned;
 CREATE POLICY "Users read own cleaned" ON ingestion_cleaned FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Service manages cleaned" ON ingestion_cleaned;
 CREATE POLICY "Service manages cleaned" ON ingestion_cleaned FOR ALL USING (true) WITH CHECK (true);
 
 -- 028_access_control.sql
@@ -3558,16 +3586,16 @@ CREATE POLICY "Service manages cleaned" ON ingestion_cleaned FOR ALL USING (true
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'subscription_tier') THEN
-        ALTER TABLE business_profiles ADD COLUMN subscription_tier TEXT DEFAULT 'free';
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS subscription_tier TEXT DEFAULT 'free';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'monthly_snapshot_count') THEN
-        ALTER TABLE business_profiles ADD COLUMN monthly_snapshot_count INTEGER DEFAULT 0;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS monthly_snapshot_count INTEGER DEFAULT 0;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'monthly_audit_refresh_count') THEN
-        ALTER TABLE business_profiles ADD COLUMN monthly_audit_refresh_count INTEGER DEFAULT 0;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS monthly_audit_refresh_count INTEGER DEFAULT 0;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'billing_cycle_start') THEN
-        ALTER TABLE business_profiles ADD COLUMN billing_cycle_start DATE DEFAULT CURRENT_DATE;
+        ALTER TABLE business_profiles ADD COLUMN IF NOT EXISTS billing_cycle_start DATE DEFAULT CURRENT_DATE;
     END IF;
 END $$;
 
