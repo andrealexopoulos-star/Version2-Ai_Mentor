@@ -1189,7 +1189,19 @@ CREATE TABLE IF NOT EXISTS system_prompts (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS prompt_key TEXT;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS version TEXT DEFAULT '1.0';
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS agent TEXT DEFAULT 'system';
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS source_file TEXT;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS source_function TEXT;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS source_lines TEXT;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS dynamic_variables JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS raw_content TEXT;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS system_message TEXT;
+ALTER TABLE IF EXISTS system_prompts ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 CREATE INDEX IF NOT EXISTS idx_system_prompts_key ON system_prompts(prompt_key);
+ALTER TABLE system_prompts ADD COLUMN IF NOT EXISTS agent TEXT DEFAULT 'system';
 CREATE INDEX IF NOT EXISTS idx_system_prompts_agent ON system_prompts(agent);
 CREATE INDEX IF NOT EXISTS idx_system_prompts_active ON system_prompts(is_active);
 
