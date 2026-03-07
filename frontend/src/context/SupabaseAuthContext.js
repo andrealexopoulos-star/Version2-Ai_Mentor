@@ -169,7 +169,8 @@ export const SupabaseAuthProvider = ({ children }) => {
     });
     if (error) throw error;
     if (data.user) {
-      await supabase.from('users').insert([{
+      // upsert so a retry after a failed insert doesn't throw duplicate key
+      const { error: dbError } = await supabase.from('users').upsert([{
         id: data.user.id, email: data.user.email,
         full_name: metadata.full_name || null,
         company_name: metadata.company_name || null,
@@ -179,13 +180,16 @@ export const SupabaseAuthProvider = ({ children }) => {
         is_master_account: email === 'andre@thestrategysquad.com.au',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }]);
-      await supabase.from('cognitive_profiles').insert([{
+      }], { onConflict: 'id' });
+      if (dbError) console.error('[signUp] users upsert failed:', dbError.message);
+
+      const { error: cpError } = await supabase.from('cognitive_profiles').upsert([{
         user_id: data.user.id,
         immutable_reality: {}, behavioural_truth: {},
         delivery_preference: {}, consequence_memory: {},
         last_updated: new Date().toISOString()
-      }]);
+      }], { onConflict: 'user_id' });
+      if (cpError) console.error('[signUp] cognitive_profiles upsert failed:', cpError.message);
     }
     return data;
   };
@@ -236,6 +240,16 @@ export const SupabaseAuthProvider = ({ children }) => {
   const deferOnboarding = useCallback(() => {
     setOnboardingStatus(prev => ({ ...prev, completed: true, deferred: true }));
   }, []);
+
+  // Clear the auth bootstrap cache — called by calibration on completion so the next
+  // full-page navigation re-fetches calibration status instead of reading stale cache.
+  const clearBootstrapCache = useCallback(() => {
+    const userId = session?.user?.id;
+    if (userId) {
+      try { sessionStorage.removeItem(`biqc_auth_bootstrap_${userId}`); } catch {}
+    }
+    lastBootstrapUserId.current = null;
+  }, [session]);
 
   // Track which user ID we've already bootstrapped for.
   // Prevents re-running calibration check on token refresh (same user, new token).
@@ -424,6 +438,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     onboardingStatus,
     markOnboardingComplete,
     deferOnboarding,
+    clearBootstrapCache,
     signUp,
     signIn,
     signInWithOAuth,

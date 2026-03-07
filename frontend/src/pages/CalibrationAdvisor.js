@@ -25,7 +25,7 @@ const CARD_BORDER = '#243140';
 
 const CalibrationAdvisor = () => {
   const cal = useCalibrationState();
-  const { user } = useSupabaseAuth();
+  const { user, clearBootstrapCache } = useSupabaseAuth();
   const [skipping, setSkipping] = useState(false);
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
@@ -34,6 +34,7 @@ const CalibrationAdvisor = () => {
     setSkipping(true);
     try {
       await apiClient.post('/calibration/skip');
+      try { clearBootstrapCache(); } catch {}
       window.location.href = '/advisor';
     } catch {
       setSkipping(false);

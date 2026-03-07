@@ -19,7 +19,7 @@ const extractFirstName = (raw) => {
 
 export const useCalibrationState = () => {
   const navigate = useNavigate();
-  const { user, session, loading, signOut } = useSupabaseAuth();
+  const { user, session, loading, signOut, clearBootstrapCache } = useSupabaseAuth();
 
   const [entry, setEntry] = useState("loading");
   const [userName, setUserName] = useState("");
@@ -120,6 +120,9 @@ export const useCalibrationState = () => {
   };
 
   const triggerComplete = () => {
+    // Clear stale auth bootstrap cache so the next page load re-checks calibration status
+    // from the server instead of reading the cached NEEDS_CALIBRATION state.
+    try { clearBootstrapCache(); } catch {}
     setCompleting(true); setEntry("completing"); setRevealPhase(0);
     (async () => {
       try {
@@ -187,7 +190,11 @@ export const useCalibrationState = () => {
       const res = await apiClient.get('/calibration/status');
       const d = res.data;
       setUserName(d.user_name || '');
-      if (d.status === 'COMPLETE') { window.location.href = '/market'; return; }
+      if (d.status === 'COMPLETE') {
+        // Clear cache so /market page load fetches fresh COMPLETE status
+        try { clearBootstrapCache(); } catch {}
+        window.location.href = '/market'; return;
+      }
       if (d.status === 'IN_PROGRESS' && d.calibration_step > 1) {
         autoSave(9, "COMPLETE");
         triggerComplete();
