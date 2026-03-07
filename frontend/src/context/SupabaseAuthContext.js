@@ -311,12 +311,11 @@ export const SupabaseAuthProvider = ({ children }) => {
             // HTML response = likely nginx/proxy error, not a calibration state. Fail-closed.
             calibrationComplete = false;
           } else if (calRes.status === 401 || calRes.status === 403) {
-            // Auth failed — session expired or backend JWT mismatch
-            console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — redirecting to login`);
-            // Sign out and redirect to login — don't loop to calibration
-            try { await supabase.auth.signOut(); } catch {}
-            setAuthState(AUTH_STATE.UNAUTHENTICATED);
-            return;
+            // Auth failed — could be JWT mismatch during deployment transition
+            // Don't sign out immediately — the session may still be valid
+            // Fail-open: let the user through, individual pages will handle auth errors
+            console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — fail-open to READY`);
+            calibrationComplete = true;
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
             // Non-auth server error — fail-open to prevent blocking user
