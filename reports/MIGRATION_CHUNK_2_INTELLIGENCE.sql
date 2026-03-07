@@ -273,7 +273,11 @@ CREATE POLICY "service_all_flags" ON intelligence_core.feature_flags
 -- PHASE 3: Feature flag check function (non-destructive)
 -- ═══════════════════════════════════════════════════════════════
 
-DROP FUNCTION IF EXISTS intelligence_core.is_spine_enabled CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'is_spine_enabled' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION intelligence_core.is_spine_enabled()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -470,13 +474,21 @@ DROP POLICY IF EXISTS "manage_executions" ON ic_model_executions;
 CREATE POLICY "manage_executions" ON ic_model_executions FOR ALL USING (true) WITH CHECK (true);
 
 -- Feature flag check function (tenant-scoped with global fallback)
-DROP FUNCTION IF EXISTS is_spine_enabled CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'is_spine_enabled' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION is_spine_enabled()
 RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER AS $$
     SELECT COALESCE((SELECT enabled FROM ic_feature_flags WHERE flag_name = 'intelligence_spine_enabled'), false);
 $$;
 
-DROP FUNCTION IF EXISTS is_spine_enabled_for CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'is_spine_enabled_for' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION is_spine_enabled_for(p_tenant_id UUID)
 RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER AS $$
     SELECT COALESCE(
@@ -490,7 +502,11 @@ GRANT EXECUTE ON FUNCTION is_spine_enabled() TO authenticated;
 GRANT EXECUTE ON FUNCTION is_spine_enabled_for(UUID) TO authenticated;
 
 -- Snapshot generator function
-DROP FUNCTION IF EXISTS ic_generate_daily_snapshot CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_generate_daily_snapshot' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_generate_daily_snapshot(p_tenant_id UUID)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
@@ -576,7 +592,11 @@ END;
 $$;
 
 -- Batch snapshot for all tenants (for pg_cron)
-DROP FUNCTION IF EXISTS ic_generate_all_snapshots CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_generate_all_snapshots' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_generate_all_snapshots()
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
@@ -632,7 +652,11 @@ CREATE POLICY "service_insert_governance_events" ON governance_events
 -- "Users read own governance_events" already exists (FOR SELECT)
 
 -- Emergency delete for super admin (via function only, not direct)
-DROP FUNCTION IF EXISTS emergency_delete_governance_event CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'emergency_delete_governance_event' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION emergency_delete_governance_event(p_event_id UUID, p_admin_email TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -654,7 +678,11 @@ END;
 $$;
 
 -- Trigger to prevent UPDATE on governance_events
-DROP FUNCTION IF EXISTS prevent_governance_update CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'prevent_governance_update' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION prevent_governance_update()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -688,7 +716,11 @@ CREATE TABLE IF NOT EXISTS ic_event_queue (
 CREATE INDEX IF NOT EXISTS idx_ic_queue_status ON ic_event_queue(status) WHERE status = 'pending';
 
 -- Process queue function (called by pg_cron every minute)
-DROP FUNCTION IF EXISTS ic_process_event_queue CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_process_event_queue' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_process_event_queue()
 RETURNS INT
 LANGUAGE plpgsql
@@ -758,7 +790,11 @@ $$;
 
 -- ═══ 3. EVENT-TO-SNAPSHOT CORRELATION CHECK ═══
 
-DROP FUNCTION IF EXISTS ic_validate_snapshot_correlation CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_validate_snapshot_correlation' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_validate_snapshot_correlation(p_tenant_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -861,7 +897,11 @@ ON CONFLICT DO NOTHING;
 
 -- ═══ RISK BASELINE FUNCTION ═══
 
-DROP FUNCTION IF EXISTS ic_calculate_risk_baseline CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_calculate_risk_baseline' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_calculate_risk_baseline(p_tenant_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -1082,7 +1122,11 @@ $$;
 
 -- ═══ BATCH EXECUTION ═══
 
-DROP FUNCTION IF EXISTS ic_calculate_all_risk_baselines CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_calculate_all_risk_baselines' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_calculate_all_risk_baselines()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -1173,7 +1217,11 @@ CREATE INDEX IF NOT EXISTS idx_ic_weights_active ON ic_risk_weight_configs(is_ac
 
 -- ═══ 2. IMMUTABILITY TRIGGER ═══
 
-DROP FUNCTION IF EXISTS ic_prevent_weight_update CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_prevent_weight_update' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_prevent_weight_update()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -1233,7 +1281,11 @@ ON CONFLICT DO NOTHING;
 -- ═══ 4. INDUSTRY CODE RESOLVER ═══
 -- Maps free-text business_profiles.industry to standardized industry_code
 
-DROP FUNCTION IF EXISTS ic_resolve_industry_code CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_resolve_industry_code' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_resolve_industry_code(p_industry TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -1914,7 +1966,11 @@ GROUP BY COALESCE(output_summary->'config'->>'industry_code', 'GLOBAL');
 -- Answers: Does one index dominate the composite?
 -- Cannot use CORR in a view across JSONB easily, so use function.
 
-DROP FUNCTION IF EXISTS ic_index_dominance_analysis CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_index_dominance_analysis' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_index_dominance_analysis()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -1980,7 +2036,11 @@ $$;
 -- ═══ 4. FULL CALIBRATION REPORT FUNCTION ═══
 -- 14-day window. Combines distribution + industry + dominance.
 
-DROP FUNCTION IF EXISTS ic_risk_calibration_report CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ic_risk_calibration_report' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ic_risk_calibration_report()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2286,7 +2346,11 @@ CREATE INDEX IF NOT EXISTS idx_rag_embedding ON rag_embeddings
     WITH (m = 16, ef_construction = 64);
 
 -- ═══ 2. SIMILARITY SEARCH FUNCTION ═══
-DROP FUNCTION IF EXISTS rag_search CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'rag_search' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION rag_search(
     p_tenant_id UUID,
     p_query_embedding vector(1536),
@@ -2386,7 +2450,11 @@ CREATE INDEX IF NOT EXISTS idx_ab_assign_tenant ON ab_assignments(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_ab_metrics_exp ON ab_metrics(experiment_id);
 
 -- Deterministic assignment function
-DROP FUNCTION IF EXISTS ab_get_variant CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ab_get_variant' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ab_get_variant(p_experiment_name TEXT, p_tenant_id UUID)
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -2414,7 +2482,11 @@ END;
 $$;
 
 -- Experiment results summary
-DROP FUNCTION IF EXISTS ab_experiment_results CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'ab_experiment_results' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION ab_experiment_results(p_experiment_name TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2518,7 +2590,11 @@ INSERT INTO ic_feature_flags (flag_name, enabled, description) VALUES
 ON CONFLICT (flag_name) DO UPDATE SET enabled = true;
 
 -- 5. Admin user list RPC (secure — only returns non-sensitive fields)
-DROP FUNCTION IF EXISTS admin_list_users CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'admin_list_users' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION admin_list_users()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2544,7 +2620,11 @@ END;
 $$;
 
 -- 6. Admin disable/enable user
-DROP FUNCTION IF EXISTS admin_toggle_user CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'admin_toggle_user' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION admin_toggle_user(p_admin_id UUID, p_target_id UUID, p_disable BOOLEAN)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -2563,7 +2643,11 @@ END;
 $$;
 
 -- 7. Admin update subscription
-DROP FUNCTION IF EXISTS admin_update_subscription CASCADE;
+DO $$ BEGIN
+  FOR r IN SELECT oid::regprocedure FROM pg_proc WHERE proname = 'admin_update_subscription' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.oid::regprocedure || ' CASCADE'; END LOOP;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 CREATE OR REPLACE FUNCTION admin_update_subscription(p_admin_id UUID, p_target_id UUID, p_tier TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
