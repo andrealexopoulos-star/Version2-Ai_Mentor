@@ -117,3 +117,15 @@ jobs:
         run: |
           az webapp restart --name ${{ env.AZURE_WEBAPP_FRONTEND }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_FRONTEND }} --query resourceGroup -o tsv)
           az webapp restart --name ${{ env.AZURE_WEBAPP_BACKEND }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_BACKEND }} --query resourceGroup -o tsv)
+
+      # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
+      # This prevents the beta.thestrategysquad.com redirect loop from ever
+      # recurring due to a deployment resetting the Supabase config.
+      - name: Lock Supabase site_url to production
+        run: |
+          curl -s -X PATCH "https://api.supabase.com/v1/projects/vwwandhoydemcybltoxz/config/auth" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"site_url":"https://biqc.thestrategysquad.com","additional_redirect_urls":"https://biqc.thestrategysquad.com/**,https://biqc.thestrategysquad.com/auth/callback"}' \
+            | grep -o '"site_url":"[^"]*"' | head -1
+          echo "Supabase site_url locked to production ✓"
