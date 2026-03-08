@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
-import { resolveTier, hasAccess } from '../lib/tierResolver';
+import { resolveTier, hasAccess, TIER_RANK } from '../lib/tierResolver';
 import { Check, ArrowRight } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
 import { fontFamily } from '../design-system/tokens';
@@ -16,8 +16,7 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
 
   if (hasAccess(tier, requiredTier)) return children;
 
-  const currentRankMap = { free: 0, starter: 1, professional: 2, growth: 3, enterprise: 3, super_admin: 99 };
-  const currentRank = currentRankMap[tier] || 0;
+  const currentRank = TIER_RANK[tier] || 0;
 
   const handlePlanClick = (plan) => {
     if (plan.id === 'super_admin') {
@@ -43,8 +42,8 @@ export default function UpgradeCardsGate({ children, requiredTier = 'starter', f
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANS.filter(p => p.id !== 'free').map((plan) => {
-          const planRank = currentRankMap[plan.id] || 0;
-          const isCurrent = plan.id === tier || (tier === 'growth' && plan.id === 'enterprise');
+          const planRank = TIER_RANK[plan.id] || 0;
+          const isCurrent = plan.id === tier;
           const isRecommended = plan.popular;
           const isUpgrade = planRank > currentRank;
           const ctaLabel = plan.cta || (plan.price ? `Upgrade to ${plan.name}` : 'Speak to Sales');

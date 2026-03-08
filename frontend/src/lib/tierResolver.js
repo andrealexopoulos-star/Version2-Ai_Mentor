@@ -6,8 +6,8 @@
 
 const SUPER_ADMIN_EMAIL = 'andre@thestrategysquad.com.au';
 
-const TIERS = ['free', 'starter', 'professional', 'growth', 'enterprise', 'super_admin'];
-const TIER_RANK = { free: 0, starter: 1, professional: 2, growth: 3, enterprise: 3, super_admin: 99 };
+const TIERS = ['free', 'starter', 'professional', 'enterprise', 'super_admin'];
+export const TIER_RANK = { free: 0, starter: 1, professional: 2, enterprise: 3, super_admin: 99, growth: 3 }; // growth kept as legacy alias only
 
 // Route → minimum tier
 const ROUTE_ACCESS = {
