@@ -112,4 +112,28 @@ export const EVENTS = {
   AUTOMATION_TRIGGER_CLICK: 'automation_trigger_click',
   DAILY_BRIEF_OPEN: 'daily_brief_open',
   ALERT_OPEN: 'alert_open',
+  // ── Snapshot telemetry ──
+  SNAPSHOT_START: 'snapshot_start',
+  SNAPSHOT_STAGE_COMPLETE: 'snapshot_stage_complete',
+  SNAPSHOT_FINISH: 'snapshot_finish',
+  SNAPSHOT_ERROR: 'snapshot_error',
+  SNAPSHOT_TIMEOUT: 'snapshot_timeout',
+  SNAPSHOT_RESUME: 'snapshot_resume',
+  // ── Page telemetry ──
+  PAGE_LOAD_START: 'page_load_start',
+  PAGE_LOAD_COMPLETE: 'page_load_complete',
+  PAGE_LOAD_ERROR: 'page_load_error',
+  PAGE_RETRY: 'page_retry',
 };
+
+/**
+ * Track a snapshot timing event with standardised payload.
+ * @param {string} type - EVENTS.SNAPSHOT_*
+ * @param {object} payload - { stage, elapsed_ms, error, state, ... }
+ */
+export function trackSnapshotEvent(type, payload = {}) {
+  trackEvent(type, {
+    module: payload.module || 'executive_snapshot',
+    ...payload,
+  });
+}

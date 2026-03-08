@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { PageLoadingState } from '../components/PageStateComponents';
 import { trackEvent } from '../lib/analytics';
 import { TrendingUp, TrendingDown, Globe, BarChart3, Target, ArrowRight, Loader2, RefreshCw, Award, Users } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
@@ -126,9 +127,8 @@ export default function CompetitiveBenchmarkPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: '#FF6A00' }} />
-            <p className="text-sm" style={{ color: '#64748B' }}>Loading benchmark data...</p>
+          <div className="py-8">
+            <PageLoadingState message="Loading benchmark data…" />
           </div>
         ) : data ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

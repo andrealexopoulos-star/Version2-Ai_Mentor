@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSnapshot } from '../hooks/useSnapshot';
+import { useSnapshotProgress } from '../hooks/useSnapshotProgress';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { apiClient } from '../lib/api';
 import DashboardLayout from '../components/DashboardLayout';
@@ -11,6 +11,8 @@ import DataConfidence from '../components/DataConfidence';
 import { DailyBriefCard, DailyBriefBanner } from '../components/DailyBriefCard';
 import { RiskSuggestions } from '../components/RiskSuggestions';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
+import { PageErrorState } from '../components/PageStateComponents';
+import { StageProgressBar } from '../components/AsyncDataLoader';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
@@ -366,7 +368,7 @@ const StabilityScoreCard = ({ score, status, velocity, interpretation, cognition
 };
 
 const AdvisorWatchtower = () => {
-  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
+  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh, stage, progress, startedAt, resumeSnapshot } = useSnapshotProgress();
   const c = useMemo(() => cognitive || {}, [cognitive]);
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
   const [cognitionData, setCognitionData] = useState(null);
@@ -439,19 +441,25 @@ const AdvisorWatchtower = () => {
     <DashboardLayout>
       <div className="min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
 
-        {/* LOADING — Animated cognitive screen */}
+        {/* LOADING — Animated cognitive screen with progress bar */}
         {loading && (
-          <CognitiveLoadingScreen
-            mode={cacheAge === null ? 'first' : 'returning'}
-            ownerName={owner}
-          />
+          <>
+            <CognitiveLoadingScreen
+              mode={cacheAge === null ? 'first' : 'returning'}
+              ownerName={owner}
+            />
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6" data-testid="advisor-progress-bar">
+              <div className="rounded-xl p-4" style={{ background: '#141C26', border: '1px solid #243140', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                <StageProgressBar stage={stage} progress={progress} startedAt={startedAt} />
+              </div>
+            </div>
+          </>
         )}
 
         {/* ERROR */}
         {error && !loading && !cognitive && (
-          <div className="max-w-3xl mx-auto px-6 py-16 text-center">
-            <p className="text-sm" style={{ color: '#FF6A00' }}>{error}</p>
-            <button onClick={refresh} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#9FB0C3', border: '1px solid #243140' }}>Retry</button>
+          <div className="max-w-3xl mx-auto px-6 py-16">
+            <PageErrorState error={error} onRetry={resumeSnapshot} moduleName="BIQc Overview" />
           </div>
         )}
 

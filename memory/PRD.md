@@ -33,7 +33,17 @@
 - Backend `POST /api/notifications/register-device` endpoint
 - Listeners for foreground + tap notifications integrated in App.tsx
 
-### Sprint 2: Integration Status & Data Coverage (Complete — Mar 2026)
+### Sprint 3: Resilient UX, Progress Tracking & Cross-Module Consistency (Complete — Mar 2026)
+- **`AsyncDataLoader.js`**: Universal reusable async wrapper — handles loading stages, determinate progress bar, skeleton cards, tier gating, integration gating, timeout fallback CTA, multi-action error state (Retry/Support/Troubleshoot)
+- **`PageStateComponents.js`**: `PageLoadingState` + `PageErrorState` — consistent loading/error for ALL pages
+- **`useSnapshotProgress.js`**: Enhanced snapshot hook — granular stages (fetching→preprocessing→analyzing→assembling→complete), auto-advancing progress, telemetry events (snapshot_start/stage_complete/finish/error/timeout/resume), `resumeSnapshot()` method
+- **`StageProgressBar`**: Determinate progress bar with stage pills — fills over 30s if no real updates
+- **IntelligencePhases.js**: Stage-aware progress bar during analysis, actionable timeout CTA with support/troubleshoot links, telemetry on start/finish/timeout
+- **AdvisorWatchtower**: Uses `useSnapshotProgress`, floating progress bar overlay during load, `PageErrorState` with resume option
+- **analytics.js**: Added snapshot telemetry events (SNAPSHOT_START/FINISH/ERROR/TIMEOUT/RESUME) + page load events + `trackSnapshotEvent()` helper
+- **All module pages updated**: RiskPage, RevenuePage, OperationsPage, MarketPage, Dashboard, DataCenter, CompetitiveBenchmark, DecisionsPage — all use `PageLoadingState`/`PageErrorState` consistently
+- **RiskPage**: Now uses `useIntegrationStatus` (removed `/integrations/merge/connected` call), `IntegrationStatusWidget` for "not connected" state
+
 - **`GET /api/user/integration-status`**: Unified endpoint returning granular per-integration status (connected, provider, records_count, last_sync_at, error_message)
 - **`POST /api/user/integration-status/sync`**: Manual sync trigger — fetches deal/invoice counts from Merge API
 - **`IntegrationStatusWidget`** component: Replaces all generic "Missing Integrations" banners with actionable, per-integration status rows:

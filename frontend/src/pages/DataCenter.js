@@ -1,4 +1,4 @@
-import { CognitiveMesh } from '../components/LoadingSystems';
+import { PageLoadingState } from '../components/PageStateComponents';
 import { useState, useEffect, useCallback } from 'react';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
@@ -180,8 +180,8 @@ const DataCenter = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <CognitiveMesh compact />
+        <div className="max-w-3xl p-8">
+          <PageLoadingState message="Loading data centre…" />
         </div>
       </DashboardLayout>
     );

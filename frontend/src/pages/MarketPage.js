@@ -7,6 +7,7 @@ import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { containsCRMClaim } from '../constants/integrationTruth';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { PageLoadingState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
 import {
   TrendingUp, ArrowRight, Target, Shield, AlertTriangle,
@@ -159,7 +160,7 @@ const MarketPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body, overflowY: 'visible' }} data-testid="market-page">
         <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
-        {loading && <CognitiveMesh message="Pulling your latest signals..." />}
+        {loading && <PageLoadingState message="Pulling your latest market signals…" />}
 
         {!loading && <>
 

@@ -6,6 +6,7 @@ import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2,
 import DataConfidence from '../components/DataConfidence';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
+import { PageLoadingState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -61,12 +62,7 @@ const OperationsPage = () => {
           <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} />
         </div>
 
-        {loading && (
-          <Panel className="text-center py-12">
-            <Loader2 className="w-6 h-6 text-[#FF6A00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#9FB0C3]">Loading operational data...</p>
-          </Panel>
-        )}
+        {loading && <PageLoadingState message="Loading operational data…" />}
 
         {!loading && !hasRealOpsData && (
           <Panel className="py-8">

@@ -7,6 +7,7 @@ import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -117,6 +118,8 @@ const RevenuePage = () => {
           </div>
           <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} />
         </div>
+
+        {loading && <PageLoadingState message="Loading revenue data…" />}
 
         {!loading && !hasDeals && !hasFinancials && (
           <Panel className="py-8">

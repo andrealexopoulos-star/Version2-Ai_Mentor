@@ -5,6 +5,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { trackEvent, EVENTS } from '../lib/analytics';
+import { PageLoadingState } from '../components/PageStateComponents';
 import { fontFamily, colors } from '../design-system/tokens';
 import { AlertTriangle, TrendingDown, Clock, CheckCircle2, XCircle, ArrowRight, Loader2, Zap, DollarSign, Users, BarChart3 } from 'lucide-react';
 
@@ -120,10 +121,7 @@ export default function DecisionsPage() {
 
         {/* Active Decision Prompts — from signals */}
         {loading ? (
-          <div className="text-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" style={{ color: colors.brand }} />
-            <p className="text-sm" style={{ color: colors.textMuted }}>Scanning for decision triggers...</p>
-          </div>
+          <PageLoadingState message="Scanning for decision triggers…" />
         ) : prompts.length > 0 ? (
           <div className="space-y-4 mb-8">
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: colors.brand, fontFamily: fontFamily.mono }}>

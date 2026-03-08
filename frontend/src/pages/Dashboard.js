@@ -1,4 +1,4 @@
-import { CognitiveMesh } from '../components/LoadingSystems';
+import { PageLoadingState } from '../components/PageStateComponents';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -127,8 +127,8 @@ const Dashboard = () => {
   if (loading || checkingOnboarding) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <CognitiveMesh compact />
+        <div className="max-w-3xl">
+          <PageLoadingState message="Loading your dashboard…" />
         </div>
       </DashboardLayout>
     );

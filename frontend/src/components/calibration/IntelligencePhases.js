@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, AlertTriangle, Shield, ArrowRight, Target, Activity, BarChart3, Eye, Link2 } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Shield, ArrowRight, Target, Activity, BarChart3, Eye, Link2, RefreshCw, MessageSquare } from 'lucide-react';
 import { containsCRMClaim } from '../../constants/integrationTruth';
 import { fontFamily } from '../../design-system/tokens';
+import { StageProgressBar } from '../AsyncDataLoader';
+import { trackSnapshotEvent, EVENTS } from '../../lib/analytics';
 
 
 const ST_COLORS = {
@@ -13,6 +15,8 @@ const ST_COLORS = {
 
 export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
   const [ctaVisible, setCtaVisible] = useState(false);
+  const [snapshotStage, setSnapshotStage] = useState('fetching');
+  const [startedAt] = useState(() => Date.now());
 
   const c = intelligenceData?.cognitive || {};
   const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
@@ -27,17 +31,41 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
   const isReady = !!(stateStatus && stateStatus !== 'ANALYZING');
   const hasData = !!(c.executive_memo || c.memo || stateStatus);
 
+  // Auto-advance stages while analyzing
+  useEffect(() => {
+    if (isReady) return;
+    const stages = ['fetching', 'preprocessing', 'analyzing', 'assembling'];
+    const delays = [0, 4000, 10000, 20000];
+    const timers = stages.map((s, i) => setTimeout(() => setSnapshotStage(s), delays[i]));
+    return () => timers.forEach(clearTimeout);
+  }, [isReady]);
+
+  // Update stage to complete when data arrives
+  useEffect(() => {
+    if (isReady && hasData) {
+      setSnapshotStage('complete');
+      trackSnapshotEvent(EVENTS.SNAPSHOT_FINISH, {
+        elapsed_ms: Date.now() - startedAt,
+        state: stateStatus,
+      });
+    }
+  }, [isReady, hasData, stateStatus, startedAt]);
+
+  // Show CTA after data is ready (3s delay) or after timeout (35s fallback)
   useEffect(() => {
     if (!isReady) { setCtaVisible(false); return; }
     const timer = setTimeout(() => setCtaVisible(true), 3000);
     return () => clearTimeout(timer);
   }, [isReady]);
 
-  // Fallback: if still ANALYZING after 35s, show CTA so users never get permanently stuck
   useEffect(() => {
-    const fallback = setTimeout(() => setCtaVisible(true), 35000);
+    trackSnapshotEvent(EVENTS.SNAPSHOT_START, { timestamp: startedAt });
+    const fallback = setTimeout(() => {
+      setCtaVisible(true);
+      trackSnapshotEvent(EVENTS.SNAPSHOT_TIMEOUT, { elapsed_ms: 35000 });
+    }, 35000);
     return () => clearTimeout(fallback);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Integration truth — suppress CRM claims without integration
   const hasCRMSource = sources.some(s => ['crm', 'hubspot', 'email', 'pipeline'].includes(s?.toLowerCase?.()));
@@ -302,14 +330,15 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           </div>
         )}
 
-        {/* No data — ANALYZING state */}
+        {/* No data — ANALYZING state — show stage progress bar */}
         {!isReady && (
-          <div className="rounded-xl p-8 mb-6 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
-            <div className="flex justify-center mb-4">
-              <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#FF6A00', borderTopColor: 'transparent' }} />
+          <div className="rounded-xl p-6 mb-6" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="snapshot-analyzing-state">
+            <div className="mb-4">
+              <StageProgressBar stage={snapshotStage} startedAt={startedAt} />
             </div>
-            <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Generating your executive snapshot...</p>
-            <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Intelligence snapshot will populate as BIQc connects to your systems.</p>
+            <p className="text-xs text-center mt-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+              Intelligence snapshot will populate as BIQc analyses your systems.
+            </p>
           </div>
         )}
 
@@ -333,8 +362,19 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
               Continue to Dashboard <ArrowRight className="w-4 h-4" />
             </button>
             <p className="text-[10px] text-[#64748B] mt-3" style={{ fontFamily: fontFamily.mono }}>
-              Your intelligence will sharpen as more data connects
+              {isReady ? 'Your intelligence will sharpen as more data connects' : 'Analysis continues in the background — you\'ll be notified when ready'}
             </p>
+            {!isReady && (
+              <div className="flex justify-center gap-3 mt-3">
+                <a href="mailto:support@biqc.com.au" className="text-[10px] text-[#64748B] hover:text-[#9FB0C3] underline" style={{ fontFamily: fontFamily.mono }}>
+                  Contact support
+                </a>
+                <span className="text-[10px] text-[#3A4A5C]">·</span>
+                <a href="/knowledge-base" className="text-[10px] text-[#64748B] hover:text-[#9FB0C3] underline" style={{ fontFamily: fontFamily.mono }}>
+                  Troubleshooting guide
+                </a>
+              </div>
+            )}
           </div>
         ) : isReady ? (
           <div className="text-center">
