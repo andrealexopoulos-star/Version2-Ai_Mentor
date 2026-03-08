@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE, supabase } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { apiClient } from '../lib/api';
-import { useTutorial, HelpButton, TutorialModal } from './TutorialOverlay';
+import { useTutorial, HelpButton, PageTutorial } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
 import MobileNav from './MobileNav';
 import SoundboardPanel from './SoundboardPanel';
@@ -78,7 +78,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const { user, signOut, authState } = useSupabaseAuth();
   const { isNavOpen, openNav, closeAll } = useMobileDrawer();
   const isCalibrated = authState === AUTH_STATE.READY;
-  const { showTutorial, closeTutorial, openTutorial, tutorial } = useTutorial(location.pathname);
+  const { openTutorial, tutorial } = useTutorial(location.pathname);
   const [sbOpen, setSbOpen] = useState(false);
 
   // Selective clear — preserve tutorials and preferences on logout
@@ -510,7 +510,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
       <FirstLoginNotification />
 
       {/* Tutorial */}
-      {showTutorial && tutorial && <TutorialModal tutorial={tutorial} onClose={closeTutorial} />}
+      <PageTutorial pageKey={location.pathname} />
     </div>
   );
 };
