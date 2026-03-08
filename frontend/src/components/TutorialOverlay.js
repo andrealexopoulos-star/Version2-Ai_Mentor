@@ -1,20 +1,48 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, ChevronLeft, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
+import { apiClient } from '../lib/api';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { hasAccess, resolveTier } from '../lib/tierResolver';
 
 const STORAGE_KEY = 'biqc_tutorials_seen';
 
-const getSeen = () => {
+// ─── Local storage helpers (fallback + cache) ───
+const getLocal = () => {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
   catch { return {}; }
 };
-
-const markSeen = (pageKey) => {
-  const seen = getSeen();
-  seen[pageKey] = true;
+const setLocal = (key, val) => {
+  const seen = getLocal();
+  seen[key] = val;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(seen));
 };
 
-// Tutorial content for each page — written for non-AI-savvy users
+// ─── Session-level server cache (avoids repeat API calls per session) ───
+let _serverCache = null; // { completed: {}, tutorials_disabled: bool }
+let _cacheLoaded = false;
+
+const loadServerState = async () => {
+  if (_cacheLoaded) return _serverCache;
+  try {
+    const res = await apiClient.get('/tutorials/status');
+    _serverCache = res.data;
+    _cacheLoaded = true;
+  } catch {
+    _serverCache = { completed: {}, tutorials_disabled: false };
+    _cacheLoaded = true;
+  }
+  return _serverCache;
+};
+
+export const invalidateTutorialCache = () => {
+  _serverCache = null;
+  _cacheLoaded = false;
+};
+
+// ─── Tutorial content ───
+// showIf: { minTier, calibrationRequired }
+// minTier: minimum tier required to see this tutorial
+// calibrationRequired: only show if calibration is complete
 const TUTORIALS = {
   '/advisor': {
     title: 'BIQc Insights',
@@ -26,6 +54,7 @@ const TUTORIALS = {
   },
   '/war-room': {
     title: 'Strategic Console',
+    showIf: { minTier: 'starter' },
     steps: [
       { title: 'Your War Room', body: 'The Strategic Console is where you tackle high-priority decisions. Think of it as your private strategy room for the most critical business issues.' },
       { title: 'Real-Time Intelligence', body: 'Data feeds update in real-time. Use the console to drill into risks, track action items, and make informed decisions under pressure.' },
@@ -33,6 +62,7 @@ const TUTORIALS = {
   },
   '/board-room': {
     title: 'Board Room',
+    showIf: { minTier: 'starter' },
     steps: [
       { title: 'Executive Overview', body: 'The Board Room gives you a high-level summary of your business health — the kind of view you\'d present to investors or a board of directors.' },
       { title: 'Key Metrics', body: 'Track the metrics that matter most. Everything here is generated from your real business data, not generic templates.' },
@@ -45,116 +75,59 @@ const TUTORIALS = {
       { title: 'Task Tracking', body: 'Track operational tasks, follow up on outstanding items, and keep your business running smoothly.' },
     ],
   },
-  '/soundboard': {
-    title: 'SoundBoard',
+  '/market': {
+    title: 'Market Intelligence',
+    showIf: { calibrationRequired: true },
     steps: [
-      { title: 'Think Out Loud', body: 'SoundBoard is your space to bounce ideas off BIQc. Type in a business idea, challenge, or scenario and get instant strategic feedback.' },
-      { title: 'No Wrong Answers', body: 'This is a safe space to explore "what if" scenarios. BIQc won\'t judge — it will help you think through the implications.' },
+      { title: 'Your Market Position', body: 'BIQc analyses your market landscape — competitors, trends, and signals relevant to your industry — based on your calibration data.' },
+      { title: '5 Intelligence Domains', body: 'Explore Focus, Saturation, Demand, Friction, and Reports. Each tab surfaces a different lens on your market position.' },
     ],
   },
-  '/diagnosis': {
-    title: 'Business Diagnosis',
+  '/competitive-benchmark': {
+    title: 'Competitive Benchmark',
+    showIf: { calibrationRequired: true },
     steps: [
-      { title: 'Health Check', body: 'Diagnosis runs a comprehensive check on your business, identifying strengths, weaknesses, and areas that need immediate attention.' },
-      { title: 'Actionable Insights', body: 'Each finding comes with a recommended action. Focus on the high-priority items first for maximum impact.' },
+      { title: 'Digital Footprint Score', body: 'Your Digital Footprint Score shows how your online presence compares to industry benchmarks across 5 pillars: Website, Social, Reviews, Content, and SEO.' },
+      { title: 'Refresh Weekly', body: 'Click Refresh to re-run the benchmark scan. Your score updates based on your latest online activity.' },
     ],
   },
-  '/analysis': {
-    title: 'Analysis',
+  '/decisions': {
+    title: 'Decision Tracker',
+    showIf: { calibrationRequired: true },
     steps: [
-      { title: 'Deep Dive', body: 'Use Analysis to explore specific aspects of your business in detail — revenue trends, customer patterns, competitive positioning, and more.' },
-      { title: 'Data-Driven Decisions', body: 'All analysis is based on your actual business data. The insights adapt as your business evolves.' },
-    ],
-  },
-  '/market-analysis': {
-    title: 'Market Analysis',
-    steps: [
-      { title: 'Know Your Market', body: 'Market Analysis scans your industry landscape — competitors, trends, and opportunities you might be missing.' },
-      { title: 'Stay Ahead', body: 'Use these insights to position your business strategically. Knowledge of your market is your competitive edge.' },
-    ],
-  },
-  '/intel-centre': {
-    title: 'Intel Centre',
-    steps: [
-      { title: 'Intelligence Hub', body: 'The Intel Centre aggregates all intelligence signals — market movements, competitor activity, and internal data — into one place.' },
-      { title: 'Signal vs Noise', body: 'BIQc filters out the noise and highlights what actually matters to your business. Focus on the signals that drive action.' },
-    ],
-  },
-  '/sop-generator': {
-    title: 'SOP Generator',
-    steps: [
-      { title: 'Standard Operating Procedures', body: 'Automatically generate professional SOPs (Standard Operating Procedures) for any process in your business.' },
-      { title: 'How to Use', body: 'Describe the process you want documented, and BIQc will create a clear, step-by-step procedure your team can follow.' },
-    ],
-  },
-  '/data-center': {
-    title: 'Data Center',
-    steps: [
-      { title: 'Your Data Hub', body: 'The Data Center is where all your business data lives. Upload documents, connect data sources, and manage the information BIQc uses to advise you.' },
-      { title: 'Better Data, Better Advice', body: 'The more data you provide, the more accurate and personalised BIQc\'s insights become.' },
-    ],
-  },
-  '/documents': {
-    title: 'Documents',
-    steps: [
-      { title: 'Document Library', body: 'Store and organise important business documents. BIQc can reference these when providing strategic advice.' },
-      { title: 'Easy Access', body: 'Upload, view, and manage your files. Everything is securely stored with Australian data sovereignty.' },
-    ],
-  },
-  '/intelligence-baseline': {
-    title: 'Intelligence Baseline',
-    steps: [
-      { title: 'Your Starting Point', body: 'The Intelligence Baseline captures where your business stands today. It\'s the foundation BIQc uses to measure progress and identify changes.' },
-      { title: 'Regular Updates', body: 'Review and update your baseline periodically to ensure BIQc\'s advice stays relevant and accurate.' },
-    ],
-  },
-  '/business-profile': {
-    title: 'Business DNA',
-    steps: [
-      { title: 'Your Business Identity', body: 'Business DNA captures the core details of your business — who you are, what you do, and how you operate.' },
-      { title: 'Keep It Updated', body: 'The more accurate your profile, the better BIQc can tailor its advice. Update it whenever your business changes significantly.' },
+      { title: 'Signal-Driven Decisions', body: 'BIQc automatically detects when your business data signals a decision point. You\'ll see prompts here when action is recommended.' },
+      { title: '30/60/90 Checkpoints', body: 'Every decision tracks its outcome at 30, 60, and 90 days. Mark each checkpoint to help BIQc learn what works for your business.' },
     ],
   },
   '/integrations': {
     title: 'Integrations',
     steps: [
-      { title: 'Connect Your Tools', body: 'Integrations let you connect external tools and services to BIQc — email, calendar, CRM, and more.' },
-      { title: 'Automatic Intelligence', body: 'Once connected, BIQc automatically pulls relevant data from your tools to enhance its analysis and recommendations.' },
+      { title: 'Connect Your Tools', body: 'Integrations let you connect your CRM, accounting, email, and other business tools to BIQc.' },
+      { title: 'Automatic Intelligence', body: 'Once connected, BIQc automatically pulls signals from your tools and surfaces them in your intelligence feed.' },
     ],
   },
   '/connect-email': {
     title: 'Email Connection',
     steps: [
-      { title: 'Connect Your Email', body: 'Link your business email (Outlook or Gmail) so BIQc can analyse communication patterns and extract business intelligence.' },
-      { title: 'Privacy First', body: 'BIQc only reads metadata and key topics — it doesn\'t store your full emails. All data stays within Australian sovereignty.' },
+      { title: 'Connect Your Email', body: 'Link your Outlook or Gmail so BIQc can detect communication patterns, flag urgent items, and surface email-based business signals.' },
+      { title: 'Privacy First', body: 'BIQc only reads metadata and key topics — it never stores full email content. All data is processed within Australian sovereignty.' },
     ],
   },
-  '/email-inbox': {
-    title: 'Email Inbox',
+  '/business-profile': {
+    title: 'Business DNA',
     steps: [
-      { title: 'Smart Email View', body: 'Your Email Inbox shows connected emails with AI-enhanced context — BIQc highlights what\'s important and flags items that need attention.' },
-    ],
-  },
-  '/calendar': {
-    title: 'Calendar',
-    steps: [
-      { title: 'Your Schedule', body: 'View your connected calendar events. BIQc can use your schedule to provide context-aware advice and identify time management insights.' },
+      { title: 'Your Business Identity', body: 'Business DNA captures the core details of your business. This is what BIQc uses to personalise every insight and recommendation.' },
+      { title: 'Keep It Updated', body: 'Update your profile whenever your business changes significantly — new products, new markets, team growth.' },
     ],
   },
   '/settings': {
     title: 'Settings',
     steps: [
-      { title: 'Customise Your Experience', body: 'Manage your account settings, notification preferences, and personalisation options here.' },
-      { title: 'Security', body: 'Update your password, manage connected accounts, and review your security settings to keep your data safe.' },
+      { title: 'Customise Your Experience', body: 'Manage your account, AI preferences, notification settings, and tutorial options here.' },
+      { title: 'Tutorial Preferences', body: 'Under Preferences, you can reset or disable tutorials across the entire platform at any time.' },
     ],
   },
-  '/admin': {
-    title: 'Admin Dashboard',
-    steps: [
-      { title: 'System Administration', body: 'Manage users, monitor system health, and configure platform-wide settings from the Admin Dashboard.' },
-    ],
-  },
-  // Calibration pages (not in DashboardLayout)
+  // Calibration pages
   'calibration-welcome': {
     title: 'Welcome to Calibration',
     steps: [
@@ -165,30 +138,44 @@ const TUTORIALS = {
   'calibration-chat': {
     title: 'Calibration Questions',
     steps: [
-      { title: 'Answer Naturally', body: 'BIQc will ask you a series of questions about your business. Just answer naturally — there are no wrong answers.' },
-      { title: 'Your Progress is Saved', body: 'Don\'t worry about losing your progress. Your answers are automatically saved after each step, so you can pick up right where you left off.' },
+      { title: 'Answer Naturally', body: 'BIQc will ask a series of questions about your business. Answer naturally — there are no wrong answers and your progress is saved automatically.' },
     ],
   },
   'calibration-wow': {
     title: 'Business Summary Review',
     steps: [
-      { title: 'Review Your Profile', body: 'BIQc has created a summary of your business based on what it found. Review each section and click to edit anything that\'s not quite right.' },
-      { title: 'Confirm When Ready', body: 'Once you\'re happy with the summary, confirm it. This becomes the foundation for all of BIQc\'s strategic advice.' },
+      { title: 'Review Your Profile', body: 'BIQc has built a summary of your business from the scan. Review each section and edit anything that isn\'t accurate.' },
+      { title: 'Confirm When Ready', body: 'Once confirmed, this becomes the foundation for all of BIQc\'s strategic advice.' },
     ],
   },
 };
 
-// The overlay component
-const TutorialModal = ({ tutorial, onClose }) => {
+// ─── Context-aware filter ───
+const shouldShowTutorial = (tutorial, user, authState) => {
+  if (!tutorial?.showIf) return true;
+  const { minTier, calibrationRequired } = tutorial.showIf;
+
+  if (minTier && !hasAccess(resolveTier(user), minTier)) return false;
+
+  if (calibrationRequired) {
+    const { AUTH_STATE } = require('../context/SupabaseAuthContext');
+    if (authState !== AUTH_STATE?.READY) return false;
+  }
+
+  return true;
+};
+
+// ─── Modal ───
+const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
   const [step, setStep] = useState(0);
   const total = tutorial.steps.length;
   const current = tutorial.steps[step];
 
   const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape') onClose();
+    if (e.key === 'Escape') onDismissForNow();
     if (e.key === 'ArrowRight' && step < total - 1) setStep(s => s + 1);
     if (e.key === 'ArrowLeft' && step > 0) setStep(s => s - 1);
-  }, [step, total, onClose]);
+  }, [step, total, onDismissForNow]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -197,34 +184,46 @@ const TutorialModal = ({ tutorial, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center" data-testid="tutorial-overlay">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      {/* Modal */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onDismissForNow} />
       <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl mx-4"
         style={{ background: '#141C26', border: '1px solid #243140' }}>
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
-          <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#FF6A00' }}>
-            {tutorial.title}
-          </span>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" style={{ color: '#FF6A00' }} />
+            <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#FF6A00' }}>
+              {tutorial.title}
+            </span>
+          </div>
+          <button onClick={onDismissForNow} className="p-1 rounded-lg hover:bg-white/5 transition-colors"
             data-testid="tutorial-close-btn" aria-label="Close tutorial">
             <X className="w-4 h-4" style={{ color: '#64748B' }} />
           </button>
         </div>
+
+        {/* Progress bar */}
+        <div className="px-6 pb-1">
+          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
+            <div className="h-full rounded-full transition-all duration-300"
+              style={{ background: '#FF6A00', width: `${((step + 1) / total) * 100}%` }} />
+          </div>
+          <p className="text-[10px] mt-1" style={{ color: '#64748B' }}>Step {step + 1} of {total}</p>
+        </div>
+
         {/* Body */}
-        <div className="px-6 py-4" style={{ minHeight: 120 }}>
-          <h3 className="text-lg font-semibold mb-2" style={{ color: '#F4F7FA' }}>{current.title}</h3>
+        <div className="px-6 py-4" style={{ minHeight: 100 }}>
+          <h3 className="text-base font-semibold mb-2" style={{ color: '#F4F7FA' }}>{current.title}</h3>
           <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{current.body}</p>
         </div>
+
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 pb-5 pt-2">
-          <div className="flex gap-1.5">
-            {Array.from({ length: total }).map((_, i) => (
-              <div key={i} className="w-2 h-2 rounded-full transition-colors"
-                style={{ background: i === step ? '#FF6A00' : '#243140' }} />
-            ))}
-          </div>
+        <div className="flex items-center justify-between px-6 pb-5 pt-1">
+          <button onClick={onDismissForNow}
+            className="text-xs transition-colors hover:text-[#9FB0C3]"
+            style={{ color: '#64748B' }} data-testid="tutorial-dismiss-btn">
+            Learn later
+          </button>
           <div className="flex gap-2">
             {step > 0 && (
               <button onClick={() => setStep(s => s - 1)}
@@ -241,7 +240,7 @@ const TutorialModal = ({ tutorial, onClose }) => {
               </button>
             ) : (
               <button onClick={onClose}
-                className="px-4 py-2 rounded-lg text-xs font-medium text-white transition-opacity"
+                className="px-4 py-2 rounded-lg text-xs font-medium text-white"
                 style={{ background: '#FF6A00' }} data-testid="tutorial-done-btn">
                 Got it
               </button>
@@ -253,48 +252,112 @@ const TutorialModal = ({ tutorial, onClose }) => {
   );
 };
 
-// Hook for pages to use tutorials
+// ─── Hook ───
 export const useTutorial = (pageKey) => {
   const [showTutorial, setShowTutorial] = useState(false);
+  const [ready, setReady] = useState(false);
+  const { user, authState } = useSupabaseAuth();
   const tutorial = TUTORIALS[pageKey];
+  const dismissedLocallyRef = useRef(false);
 
+  // On mount: load server state (cached per session), decide whether to show
   useEffect(() => {
-    if (!tutorial) return;
-    const seen = getSeen();
-    if (!seen[pageKey]) {
-      const timer = setTimeout(() => setShowTutorial(true), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [pageKey, tutorial]);
+    if (!tutorial || !pageKey) return;
+    if (!shouldShowTutorial(tutorial, user, authState)) return;
 
-  const closeTutorial = useCallback(() => {
+    let cancelled = false;
+    const check = async () => {
+      const state = await loadServerState();
+      if (cancelled) return;
+
+      // Disabled globally for this user
+      if (state.tutorials_disabled) return;
+
+      // Already completed server-side
+      if (state.completed?.[pageKey]) return;
+
+      // Fallback: check localStorage (backward compat + "dismiss for now")
+      const local = getLocal();
+      if (local[pageKey] === 'permanent') return;
+      if (local[pageKey] === 'dismissed') return; // dismissed for now — don't re-show in same session
+
+      const timer = setTimeout(() => {
+        if (!cancelled) setShowTutorial(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    };
+
+    check();
+    return () => { cancelled = true; };
+  }, [pageKey, tutorial, user, authState]);
+
+  // "Got it" — persists to server + localStorage permanently
+  const closeTutorial = useCallback(async () => {
     setShowTutorial(false);
-    markSeen(pageKey);
+    setLocal(pageKey, 'permanent');
+    // Update session cache immediately
+    if (_serverCache) {
+      _serverCache.completed = { ..._serverCache.completed, [pageKey]: new Date().toISOString() };
+    }
+    try {
+      await apiClient.post('/tutorials/mark', { page_key: pageKey });
+    } catch {
+      // localStorage fallback already written — not fatal
+    }
+  }, [pageKey]);
+
+  // "Learn later" — dismisses for this session only, not persisted to server
+  const dismissForNow = useCallback(() => {
+    setShowTutorial(false);
+    dismissedLocallyRef.current = true;
+    setLocal(pageKey, 'dismissed');
   }, [pageKey]);
 
   const openTutorial = useCallback(() => {
     setShowTutorial(true);
   }, []);
 
-  return { showTutorial, closeTutorial, openTutorial, tutorial };
+  return { showTutorial, closeTutorial, dismissForNow, openTutorial, tutorial };
 };
 
-// Help button component
+// ─── Help button ───
 export const HelpButton = ({ onClick }) => (
   <button onClick={onClick}
-    className="p-2 rounded-lg transition-colors hover:bg-gray-100"
-    style={{ color: 'var(--text-secondary, #64748B)' }}
+    className="p-2 rounded-lg transition-colors hover:bg-white/5"
+    style={{ color: '#64748B' }}
     title="Show page guide" aria-label="Show page guide"
     data-testid="tutorial-help-btn">
     <HelpCircle className="w-5 h-5" />
   </button>
 );
 
-// Standalone tutorial wrapper for non-DashboardLayout pages (calibration)
-export const CalibrationTutorial = ({ pageKey }) => {
-  const { showTutorial, closeTutorial, tutorial } = useTutorial(pageKey);
+// ─── Wrapper for DashboardLayout usage ───
+// DashboardLayout renders this; it passes openTutorial to HelpButton
+export const PageTutorial = ({ pageKey }) => {
+  const { showTutorial, closeTutorial, dismissForNow, tutorial } = useTutorial(pageKey);
   if (!showTutorial || !tutorial) return null;
-  return <TutorialModal tutorial={tutorial} onClose={closeTutorial} />;
+  return (
+    <TutorialModal
+      tutorial={tutorial}
+      onClose={closeTutorial}
+      onDismissForNow={dismissForNow}
+      pageKey={pageKey}
+    />
+  );
+};
+
+// ─── Calibration-specific wrapper ───
+export const CalibrationTutorial = ({ pageKey }) => {
+  const { showTutorial, closeTutorial, dismissForNow, tutorial } = useTutorial(pageKey);
+  if (!showTutorial || !tutorial) return null;
+  return (
+    <TutorialModal
+      tutorial={tutorial}
+      onClose={closeTutorial}
+      onDismissForNow={dismissForNow}
+      pageKey={pageKey}
+    />
+  );
 };
 
 export { TutorialModal, TUTORIALS };

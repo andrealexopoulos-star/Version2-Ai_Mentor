@@ -1113,6 +1113,8 @@ def tier_from_user(user: dict) -> str:
 @router.put("/admin/users/{user_id}/subscription")
 async def admin_set_subscription(user_id: str, update: SubscriptionUpdate, admin: dict = Depends(get_super_admin)):
     tier = update.subscription_tier.lower().strip()
+    if tier == 'growth':
+        tier = 'enterprise'  # normalise legacy alias
     if tier not in {"free", "starter", "professional", "enterprise"}:
         raise HTTPException(status_code=400, detail="Invalid subscription tier")
 

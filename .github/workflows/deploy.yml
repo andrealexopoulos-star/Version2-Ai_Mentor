@@ -1,0 +1,119 @@
+name: Build & Deploy BIQc
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: biqcregistry.azurecr.io
+  FRONTEND_IMAGE: biqcregistry.azurecr.io/biqc-frontend
+  BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-api
+  AZURE_WEBAPP_FRONTEND: biqc-web
+  AZURE_WEBAPP_BACKEND: biqc-api
+
+jobs:
+  # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "tag=sha-$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_OUTPUT
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+          build-args: |
+            REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
+            REACT_APP_SUPABASE_URL=${{ secrets.REACT_APP_SUPABASE_URL }}
+            REACT_APP_SUPABASE_ANON_KEY=${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+            REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
+
+  # ─── BUILD & PUSH BACKEND ────────────────────────────────────────────────
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "tag=sha-$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_OUTPUT
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.BACKEND_IMAGE }}:latest
+
+  # ─── DEPLOY TO AZURE ─────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: [build-frontend, build-backend]
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy frontend to Azure App Service
+        run: |
+          az webapp config container set \
+            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_FRONTEND }} --query resourceGroup -o tsv) \
+            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:${{ needs.build-frontend.outputs.image-tag }} \
+            --docker-registry-server-url https://${{ env.REGISTRY }} \
+            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
+            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
+
+      - name: Deploy backend to Azure App Service
+        run: |
+          az webapp config container set \
+            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+            --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_BACKEND }} --query resourceGroup -o tsv) \
+            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:${{ needs.build-backend.outputs.image-tag }} \
+            --docker-registry-server-url https://${{ env.REGISTRY }} \
+            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
+            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
+
+      - name: Restart apps
+        run: |
+          az webapp restart --name ${{ env.AZURE_WEBAPP_FRONTEND }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_FRONTEND }} --query resourceGroup -o tsv)
+          az webapp restart --name ${{ env.AZURE_WEBAPP_BACKEND }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_BACKEND }} --query resourceGroup -o tsv)

@@ -9,12 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard, RefreshCw } from 'lucide-react';
+import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard, RefreshCw, BookOpen } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
+import { invalidateTutorialCache } from '../components/TutorialOverlay';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -26,8 +27,10 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('account');
   const [profile, setProfile] = useState({});
-  const [calibrationStatus, setCalibrationStatus] = useState(null); // DB authority only
+  const [calibrationStatus, setCalibrationStatus] = useState(null);
   const [resettingCalibration, setResettingCalibration] = useState(false);
+  const [tutorialPrefs, setTutorialPrefs] = useState({ tutorials_disabled: false });
+  const [tutorialAction, setTutorialAction] = useState(null); // 'resetting' | 'toggling'
   const [syncing, setSyncing] = useState(false);
   const [accountData, setAccountData] = useState({
     name: user?.name || '',
@@ -96,6 +99,40 @@ const Settings = () => {
       console.error('Failed to load profile:', error);
     } finally {
       setLoading(false);
+    }
+    // Load tutorial preferences
+    try {
+      const tutRes = await apiClient.get('/tutorials/status');
+      setTutorialPrefs({ tutorials_disabled: tutRes.data?.tutorials_disabled || false });
+    } catch { /* non-fatal */ }
+  };
+
+  const handleResetTutorials = async () => {
+    setTutorialAction('resetting');
+    try {
+      await apiClient.post('/tutorials/reset');
+      invalidateTutorialCache();
+      localStorage.removeItem('biqc_tutorials_seen');
+      setTutorialPrefs(prev => ({ ...prev }));
+      toast.success('Tutorials reset — they will show again on your next visit to each page.');
+    } catch {
+      toast.error('Could not reset tutorials. Please try again.');
+    } finally {
+      setTutorialAction(null);
+    }
+  };
+
+  const handleToggleTutorials = async (disabled) => {
+    setTutorialAction('toggling');
+    try {
+      await apiClient.post('/tutorials/preferences', { tutorials_disabled: disabled });
+      invalidateTutorialCache();
+      setTutorialPrefs({ tutorials_disabled: disabled });
+      toast.success(disabled ? 'Tutorials disabled across all pages.' : 'Tutorials re-enabled.');
+    } catch {
+      toast.error('Could not update tutorial preferences.');
+    } finally {
+      setTutorialAction(null);
     }
   };
 
@@ -480,6 +517,51 @@ const Settings = () => {
                       {saving ? null : <Save className="w-4 h-4 mr-2" />}
                       Save Preferences
                     </Button>
+                  </div>
+
+                  {/* Tutorial Preferences */}
+                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <BookOpen className="w-4 h-4" style={{ color: '#FF6A00' }} />
+                      <Label className="text-base">Tutorial Guides</Label>
+                    </div>
+                    <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+                      Page guides appear once on your first visit to each section. You can reset or disable them here.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={handleResetTutorials}
+                        disabled={tutorialAction !== null}
+                        data-testid="reset-tutorials-btn"
+                        className="flex items-center gap-2"
+                      >
+                        {tutorialAction === 'resetting'
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <RefreshCw className="w-4 h-4" />}
+                        Reset all tutorials
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleToggleTutorials(!tutorialPrefs.tutorials_disabled)}
+                        disabled={tutorialAction !== null}
+                        data-testid="toggle-tutorials-btn"
+                        className="flex items-center gap-2"
+                        style={tutorialPrefs.tutorials_disabled
+                          ? { borderColor: '#10B981', color: '#10B981' }
+                          : { borderColor: '#64748B', color: '#64748B' }}
+                      >
+                        {tutorialAction === 'toggling'
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : null}
+                        {tutorialPrefs.tutorials_disabled ? 'Re-enable tutorials' : 'Disable all tutorials'}
+                      </Button>
+                    </div>
+                    {tutorialPrefs.tutorials_disabled && (
+                      <p className="text-xs mt-2" style={{ color: '#F59E0B' }}>
+                        Tutorials are currently disabled. Click Re-enable to turn them back on.
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
