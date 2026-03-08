@@ -1191,8 +1191,8 @@ const Integrations = () => {
                   );
                 })()}
 
-                {/* Fully empty state */}
-                {!mergeLoading && !outlookStatus.connected && !gmailStatus.connected && Object.keys(mergeIntegrations).length === 0 && (unifiedStatus?.canonical_truth?.total_connected === 0 || !unifiedStatus) && (
+                {/* Fully empty state — only show when no categories to display as CTAs */}
+                {!mergeLoading && !outlookStatus.connected && !gmailStatus.connected && Object.keys(mergeIntegrations).length === 0 && !unifiedStatus && (
                   <div className="text-center py-16">
                     <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
                       <Sparkles className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />

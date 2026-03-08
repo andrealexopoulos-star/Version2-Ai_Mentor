@@ -1699,6 +1699,17 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
             "hris": "employees", "ats": "candidates", "file_storage": "files",
         }
 
+        # Also fetch workspace_integrations for last_sync_at
+        workspace_sync_map = {}
+        try:
+            ws_result = get_sb().table("workspace_integrations").select(
+                "integration_type, last_sync_at, status"
+            ).eq("workspace_id", user_id).execute()
+            for ws_row in (ws_result.data or []):
+                workspace_sync_map[ws_row.get("integration_type", "")] = ws_row.get("last_sync_at")
+        except Exception:
+            pass
+
         for row in (merge_result.data or []):
             provider = row.get("provider", "Unknown")
             category = row.get("category", "unknown")
@@ -1714,6 +1725,13 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
             except Exception:
                 pass
 
+            # Use workspace_sync_map for last_sync_at when cached not available
+            last_sync = (
+                (cached.get("last_sync_at") if cached else None) or
+                workspace_sync_map.get(category) or
+                row.get("connected_at")
+            )
+
             integrations.append({
                 "integration_name": provider,
                 "category": category,
@@ -1721,7 +1739,7 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
                 "provider": provider,
                 "records_count": cached.get("records_count", 0) if cached else 0,
                 "record_type": record_type_map.get(category, "records"),
-                "last_sync_at": (cached.get("last_sync_at") if cached else None) or row.get("connected_at"),
+                "last_sync_at": last_sync,
                 "error_message": cached.get("error_message") if cached else None,
             })
     except Exception as e:

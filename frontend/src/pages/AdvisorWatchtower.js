@@ -455,6 +455,13 @@ const AdvisorWatchtower = () => {
           </div>
         )}
 
+        {/* EMPTY STATE — no data yet, no error */}
+        {!loading && !cognitive && !error && (
+          <div className="max-w-5xl mx-auto px-6 py-12">
+            <WelcomeBanner owner={owner} />
+          </div>
+        )}
+
         {/* MAIN CONTENT */}
         {!loading && cognitive && (
           <>
