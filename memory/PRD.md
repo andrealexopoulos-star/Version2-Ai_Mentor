@@ -33,7 +33,17 @@
 - Backend `POST /api/notifications/register-device` endpoint
 - Listeners for foreground + tap notifications integrated in App.tsx
 
-### Sprint 3: Resilient UX, Progress Tracking & Cross-Module Consistency (Complete — Mar 2026)
+### Sprint 4: AI Confidence Gating & Context Injection (Complete — Mar 2026)
+- **`data_coverage.py`** (backend): Weighted field schema across 5 domains (Revenue, Cash, Operations, People, Market) with critical (weight 2) and optional (weight 1) fields; `calculate_coverage()` returns coverage_pct, per_domain breakdown, missing_fields, guardrail_status
+- **`GET /api/user/data-coverage`**: New endpoint returning coverage + missing fields + guardrail status
+- **SoundBoard guardrails updated**: Now uses percentage-based gating (BLOCKED <20%, DEGRADED 20-40%, FULL >40%) replacing simple field-count logic; BLOCKED response includes specific missing critical fields + actionable CTAs
+- **Calibration context injection**: When no integrations connected, ABN/website/preferences injected into prompt for personalised guidance even without CRM/accounting
+- **Updated system prompt**: Enhanced `_SOUNDBOARD_FALLBACK` with Situation/Analysis/Recommendation structure, tone calibration, transparency rules, banned phrases — aligned with Sprint 4 spec
+- **`DataCoverageGate.js`** (frontend): Blocked state shows critical missing fields with direct links; Degraded shows compact dismissible notice with improvement suggestions; Full hides component
+- **SoundboardPanel**: Integrated `DataCoverageGate`; emits `ai_response_blocked`/`ai_response_degraded`/`ai_response_full` telemetry events
+- **StageProgressBar tooltips**: Each stage pill now has ARIA-accessible hover/focus tooltip explaining "What's being analysed?" (Fetching/Preprocessing/Analysing/Assembling stages)
+- **analytics.js**: Added AI_RESPONSE_BLOCKED, AI_RESPONSE_DEGRADED, AI_RESPONSE_FULL events
+
 - **`AsyncDataLoader.js`**: Universal reusable async wrapper — handles loading stages, determinate progress bar, skeleton cards, tier gating, integration gating, timeout fallback CTA, multi-action error state (Retry/Support/Troubleshoot)
 - **`PageStateComponents.js`**: `PageLoadingState` + `PageErrorState` — consistent loading/error for ALL pages
 - **`useSnapshotProgress.js`**: Enhanced snapshot hook — granular stages (fetching→preprocessing→analyzing→assembling→complete), auto-advancing progress, telemetry events (snapshot_start/stage_complete/finish/error/timeout/resume), `resumeSnapshot()` method

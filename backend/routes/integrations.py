@@ -1877,3 +1877,48 @@ async def sync_integration_status_counts(current_user: dict = Depends(get_curren
         "synced_at": datetime.now(timezone.utc).isoformat(),
     }
 
+
+
+# ═══════════════════════════════════════════════════════════════
+# DATA COVERAGE — Sprint 4
+# GET /user/data-coverage
+# ═══════════════════════════════════════════════════════════════
+
+@router.get("/user/data-coverage")
+async def get_user_data_coverage(current_user: dict = Depends(get_current_user)):
+    """
+    Returns weighted data coverage percentage for the current user.
+    Used to gate SoundBoard AI responses (blocked <20%, degraded 20-40%, full >40%).
+    """
+    from data_coverage import calculate_coverage
+    from supabase_intelligence_helpers import get_business_profile_supabase
+
+    user_id = current_user["id"]
+
+    profile = None
+    try:
+        profile = await get_business_profile_supabase(get_sb(), user_id)
+    except Exception:
+        pass
+
+    has_crm = has_accounting = has_email = False
+    try:
+        int_result = get_sb().table("integration_accounts").select("category").eq("user_id", user_id).execute()
+        for row in (int_result.data or []):
+            cat = row.get("category", "")
+            if cat == "crm": has_crm = True
+            elif cat == "accounting": has_accounting = True
+    except Exception:
+        pass
+    try:
+        email_res = get_sb().table("email_connections").select("id").eq("user_id", user_id).limit(1).execute()
+        has_email = bool(email_res.data)
+    except Exception:
+        pass
+
+    return calculate_coverage(
+        profile=profile or {},
+        has_crm=has_crm,
+        has_accounting=has_accounting,
+        has_email=has_email,
+    )

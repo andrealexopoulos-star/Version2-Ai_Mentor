@@ -26,11 +26,16 @@ import { fontFamily } from '../design-system/tokens';
 
 // ── Stage config ──────────────────────────────────────────────
 const STAGE_CONFIG = {
-  fetching:    { label: 'Fetching context',           pct: 15, color: '#3B82F6' },
-  preprocessing:{ label: 'Preprocessing signals',     pct: 35, color: '#8B5CF6' },
-  analyzing:   { label: 'Analysing your business',    pct: 60, color: '#FF6A00' },
-  assembling:  { label: 'Preparing recommendations',  pct: 85, color: '#F59E0B' },
-  complete:    { label: 'Ready',                       pct: 100, color: '#10B981' },
+  fetching:    { label: 'Fetching context',           pct: 15, color: '#3B82F6',
+    tooltip: 'Reading your business profile, ABN, connected integrations and preferences.' },
+  preprocessing:{ label: 'Preprocessing signals',     pct: 35, color: '#8B5CF6',
+    tooltip: 'Cleaning and structuring your data ready for AI analysis.' },
+  analyzing:   { label: 'Analysing your business',    pct: 60, color: '#FF6A00',
+    tooltip: 'Running AI models across your revenue, cash, operations and market data.' },
+  assembling:  { label: 'Preparing recommendations',  pct: 85, color: '#F59E0B',
+    tooltip: 'Summarising insights and preparing your personalised intelligence report.' },
+  complete:    { label: 'Ready',                       pct: 100, color: '#10B981',
+    tooltip: 'Your intelligence snapshot is ready.' },
 };
 
 // ── Skeleton pulse card ───────────────────────────────────────
@@ -68,7 +73,7 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
 
   return (
     <div className="w-full" data-testid="stage-progress-bar">
-      {/* Stage pills */}
+      {/* Stage pills with tooltips */}
       <div className="flex items-center justify-between mb-3 overflow-x-auto gap-1">
         {stages.map((s, i) => {
           const past = i < currentIdx;
@@ -77,15 +82,38 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
           return (
             <div key={s} className="flex items-center gap-1 flex-shrink-0">
               <div
-                className="px-2 py-1 rounded text-[9px] font-semibold whitespace-nowrap transition-all"
+                className="relative group px-2 py-1 rounded text-[9px] font-semibold whitespace-nowrap transition-all cursor-default"
                 style={{
                   background: active ? sc2.color + '20' : past ? '#10B98110' : 'transparent',
                   color: active ? sc2.color : past ? '#10B981' : '#4A5568',
                   border: `1px solid ${active ? sc2.color + '40' : past ? '#10B98130' : '#243140'}`,
                   fontFamily: fontFamily.mono,
                 }}
+                tabIndex={0}
+                role="status"
+                aria-label={`${sc2.label}: ${sc2.tooltip}`}
               >
                 {active && <span className="mr-1">●</span>}{sc2.label}
+                {/* Tooltip */}
+                <div
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-[10px] leading-snug pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity z-50"
+                  style={{
+                    background: '#1E2A38',
+                    border: '1px solid #2D3E50',
+                    color: '#9FB0C3',
+                    fontFamily: fontFamily.body,
+                    width: '160px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                  }}
+                  role="tooltip"
+                >
+                  <span className="font-semibold block mb-0.5" style={{ color: sc2.color, fontFamily: fontFamily.mono }}>
+                    {sc2.label}
+                  </span>
+                  {sc2.tooltip}
+                  {/* Arrow */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #2D3E50' }} />
+                </div>
               </div>
               {i < stages.length - 1 && (
                 <div className="w-3 h-px flex-shrink-0" style={{ background: past ? '#10B98150' : '#243140' }} />
