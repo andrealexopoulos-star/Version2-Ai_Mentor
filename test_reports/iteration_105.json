@@ -1,0 +1,100 @@
+{
+  "summary": "Sprint 2 Integration Status & Data Coverage testing. All 11 backend tests pass. Integrations page Data Connections tab works correctly with all Sprint 2 CTAs after 16-second load (due to 500 error on integration-status in browser). AdvisorWatchtower shows blank content area (no empty state when cognitive=null). Revenue/Operations pages blocked by EnterpriseContactGate for free-tier test account.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/user/integration-status",
+        "issue": "Returns HTTP 500 in browser context (but 200 via direct curl/requests). Likely cause: `integration_status` Supabase table missing in preview environment OR Supabase connection pool issue under concurrent browser requests. This causes ~16s load time in Data Connections tab as frontend waits for the error/timeout before rendering fallback.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "AdvisorWatchtower (/advisor)",
+        "issue": "Blank main content area — shows completely empty between sidebar and SoundBoard. The `{!loading && cognitive && ...}` block never renders because `cognitive` is null (fetchFresh returns null when Supabase session not found on full page reload). No empty state or placeholder shown when cognitive=null and error=null. `data-testid='biqc-insights-page'` is present but has no visible content. Reproduces consistently in Playwright (multiple runs).",
+        "selector": "[data-testid='biqc-insights-page']",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Integrations / Data Connections Tab",
+        "issue": "Double empty state: when no integrations connected, BOTH the 'NOT YET CONNECTED' CTA section AND 'No data connections yet. Connect integrations from the Connected Apps tab.' text appear simultaneously below the CTA rows. The empty state condition should hide when 'NOT YET CONNECTED' items are showing.",
+        "selector": "[data-testid='integrations-tab-data-connections']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Revenue page > IntegrationStatusWidget when no CRM connected",
+        "issue": "Cannot test — Revenue page wrapped in EnterpriseContactGate which shows callback form for free-tier account (newtest1@biqctest.io). data-testid='revenue-page' not rendered. IntegrationStatusWidget not visible. Test requires Enterprise/Growth plan account.",
+        "affected_selectors": ["[data-testid='revenue-page']", "[data-testid='integration-status-widget']", "[data-testid='data-connections-connect-crm']"]
+      },
+      {
+        "flow": "Operations page > IntegrationStatusWidget when no integrations",
+        "issue": "Cannot test — Operations page wrapped in EnterpriseContactGate. Same as Revenue page issue above.",
+        "affected_selectors": ["[data-testid='operations-page']", "[data-testid='integration-status-widget']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "sprint2_feature_checklist": {
+    "GET /api/user/integration-status requires auth (401/403)": "PASS",
+    "POST /api/user/integration-status/sync requires auth (401/403)": "PASS",
+    "Integrations page Connected Apps tab present": "PASS",
+    "Integrations page Data Connections tab present": "PASS",
+    "Data Connections Refresh All button [data-testid=integrations-refresh-all-btn]": "PASS",
+    "Data Connections Not Yet Connected section": "PASS — shows after 16s (500 error causes delay)",
+    "Data Connections CRM connect CTA [data-testid=data-connections-connect-crm]": "PASS",
+    "Data Connections Accounting connect CTA": "PASS",
+    "Data Connections Email connect CTA": "PASS",
+    "AdvisorWatchtower loads without blank screen": "FAIL — blank main content area",
+    "Revenue page IntegrationStatusWidget when no CRM": "BLOCKED — enterprise gate",
+    "Operations page IntegrationStatusWidget when no integrations": "BLOCKED — enterprise gate",
+    "Market page loads without errors": "PASS — renders with loading state",
+    "IntegrationStatusWidget connect CTAs (via Integrations page)": "PASS"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_105.py",
+    "/app/test_reports/pytest/pytest_iteration_105.xml"
+  ],
+  "action_items": [
+    "FIX CRITICAL: /api/user/integration-status returns 500 in browser. Run SQL migration (create_integration_status.sql) on preview Supabase to create the table. Backend may have uncaught exception path for missing table despite try/except wrappers — check backend logs for the 500 path.",
+    "FIX HIGH: AdvisorWatchtower blank content — add empty/error state when cognitive=null && !loading && !error. Current code shows nothing in this state. Also check: useSnapshot hook's fetchFresh() returning null due to supabase.auth.getSession() returning null on fresh page loads.",
+    "FIX MEDIUM: Data Connections tab shows dual empty states simultaneously. Add condition to hide 'No data connections yet' text when 'NOT YET CONNECTED' CTA section is already showing (missingCategories.length > 0).",
+    "INFO: Revenue/Operations IntegrationStatusWidget cannot be tested with free-tier account. Consider creating an enterprise test account for full feature validation, or mock the EnterpriseContactGate in test environments.",
+    "NOTE: The useSnapshot hook 3-second hard timeout (line 89-91) has a stale closure bug — `loading` captured at call time is always `true`, so condition `if (mountedRef.current && loading)` is always true. This is technically harmless but misleading. More importantly, when fetchFresh() returns null (session not found), there's no empty state to show the user — blank page persists."
+  ],
+  "critical_code_review_comments": [
+    "useSnapshot.js line 89-91: Stale closure in setTimeout — `loading` is always `true` at closure creation time. Should use `setLoading(prev => prev ? false : prev)` or use mountedRef pattern consistently.",
+    "useSnapshot.js line 54: if (!session) return null — when Supabase session not found on fresh page load, fetchFresh returns null silently with no error set. Combined with 3s timeout → blank screen with no feedback to user.",
+    "AdvisorWatchtower.js line 459: Missing empty state: {!loading && !cognitive && !error && <EmptyState />} — currently shows nothing when all three are in this state.",
+    "Integrations.js Data Connections: Dual empty state logic bug — both 'NOT YET CONNECTED' CTAs and 'No data connections yet' text render simultaneously when nothing is connected.",
+    "RevenuePage/OperationsPage: IntegrationStatusWidget is inside EnterpriseContactGate, meaning the Sprint 2 feature cannot be verified for free-tier users."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_105.py"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11 tests pass via direct API)",
+    "frontend": "60% (6/10 Sprint 2 checklist items pass, 2 blocked by enterprise gate, 2 failing)"
+  },
+  "test_credentials": "newtest1@biqctest.io / BIQcTest!2026 (free-tier, no integrations connected)",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Sprint 2 core features (Data Connections tab, Refresh All, Not Yet Connected CTAs) ARE working but require 16s due to 500 error on integration-status. Run SQL migration first. AdvisorWatchtower blank screen is a persistent high-priority issue. Revenue/Operations IntegrationStatusWidget testing requires enterprise account or bypassing EnterpriseContactGate. Backend tests in test_iteration_105.py cover all new Sprint 2 endpoints with auth.",
+  "rca_of_issues": {
+    "integration_status_500": {
+      "symptom": "/api/user/integration-status returns 500 in browser, 200 via curl",
+      "likely_cause": "The integration_status Supabase table doesn't exist in preview environment. Even with try/except wrappers, there may be an uncaught exception path in the endpoint that results in FastAPI returning 500. The SQL migration (create_integration_status.sql) has not been run on the preview Supabase instance.",
+      "mitigation": "Run /app/supabase_migrations/create_integration_status.sql on preview Supabase. Check backend logs for the specific exception that causes the 500."
+    },
+    "advisor_blank_screen": {
+      "symptom": "AdvisorWatchtower shows blank main content for 20+ seconds after page reload",
+      "likely_cause": "supabase.auth.getSession() returns null session on fresh React initialization in Playwright. fetchFresh() returns null at line 54. With no cached snapshot and null fetchFresh result, cognitive stays null. 3-second timeout fires → loading=false, cognitive=null → blank page with no empty state.",
+      "mitigation": "Add empty state: {!loading && !cognitive && !error && <WelcomeBanner owner={owner} />}. Also investigate why getSession() returns null on fresh page loads (Supabase JS SDK initialization timing)."
+    }
+  }
+}

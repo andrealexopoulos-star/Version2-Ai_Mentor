@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSnapshot } from '../hooks/useSnapshot';
+import { useSnapshotProgress } from '../hooks/useSnapshotProgress';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { apiClient } from '../lib/api';
 import DashboardLayout from '../components/DashboardLayout';
 import { CheckInAlerts } from '../components/CheckInAlerts';
@@ -9,6 +10,9 @@ import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign
 import DataConfidence from '../components/DataConfidence';
 import { DailyBriefCard, DailyBriefBanner } from '../components/DailyBriefCard';
 import { RiskSuggestions } from '../components/RiskSuggestions';
+import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
+import { PageErrorState } from '../components/PageStateComponents';
+import { StageProgressBar } from '../components/AsyncDataLoader';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
@@ -45,26 +49,39 @@ const ST = { STABLE: { c: '#10B981', bg: '#10B98108', b: '#10B98125', d: '#10B98
 const ST_LABELS = { STABLE: 'On Track', DRIFT: 'Market Shift', COMPRESSION: 'Under Pressure', CRITICAL: 'At Risk' };
 const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
 
-const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>);
+const Card = ({ children, className = '', ...props }) => (<div className={`rounded-2xl ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }} {...props}>{children}</div>);
 
-/* Integration-aware empty state */
-const IntegrationRequired = ({ groupId, color }) => {
-  const labels = {
-    revenue: { title: 'CRM Not Connected', desc: 'Connect your CRM (HubSpot, Salesforce) to view pipeline, deal velocity, and churn signals.', cta: 'Connect CRM' },
-    money: { title: 'Accounting Not Connected', desc: 'Connect your accounting tool (Xero, QuickBooks) to view cash flow, margins, and runway.', cta: 'Connect Accounting' },
-    operations: { title: 'Integrations Required', desc: 'Connect CRM and project management tools to view SOP compliance, bottlenecks, and task data.', cta: 'Connect Tools' },
-    people: { title: 'Email/Calendar Not Connected', desc: 'Connect your email and calendar to view capacity, fatigue, and workload signals.', cta: 'Connect Email' },
-    market: { title: 'Market Data Unavailable', desc: 'Complete calibration to enable market positioning analysis.', cta: 'Start Calibration' },
-  };
-  const l = labels[groupId] || labels.market;
+/* Integration-aware empty state — uses granular IntegrationStatusWidget */
+const GROUP_CATEGORY_MAP = {
+  revenue: ['crm'],
+  money: ['accounting'],
+  operations: ['crm'],
+  people: ['email'],
+  market: [],
+};
+
+const IntegrationRequired = ({ groupId, color, integrationStatus, integrationLoading, onRefresh, integrationSyncing }) => {
+  const categories = GROUP_CATEGORY_MAP[groupId] || [];
+  if (categories.length === 0) {
+    return (
+      <Card className="p-8 text-center">
+        <Radar className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
+        <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Market Data Unavailable</p>
+        <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Complete calibration to enable market positioning analysis.</p>
+        <a href="/calibration" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: color }}>Start Calibration</a>
+      </Card>
+    );
+  }
   return (
-    <Card className="p-8 text-center">
-      <Plug className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-      <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{l.title}</p>
-      <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{l.desc}</p>
-      <a href="/integrations" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: color }} data-testid={`connect-${groupId}`}>
-        <Plug className="w-3.5 h-3.5" /> {l.cta}
-      </a>
+    <Card className="p-6">
+      <IntegrationStatusWidget
+        categories={categories}
+        status={integrationStatus}
+        loading={integrationLoading}
+        syncing={integrationSyncing}
+        onRefresh={onRefresh}
+        showRefresh={true}
+      />
     </Card>
   );
 };
@@ -351,34 +368,26 @@ const StabilityScoreCard = ({ score, status, velocity, interpretation, cognition
 };
 
 const AdvisorWatchtower = () => {
-  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
+  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh, stage, progress, startedAt, resumeSnapshot } = useSnapshotProgress();
   const c = useMemo(() => cognitive || {}, [cognitive]);
-  const [connectedIntegrations, setConnectedIntegrations] = useState([]);
+  const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
   const [cognitionData, setCognitionData] = useState(null);
 
-  // Fetch integration status to determine what data is real
+  // Derive connectedIntegrations from unified status for parseToGroups compatibility
+  const connectedIntegrations = useMemo(() => {
+    if (!integrationStatus?.integrations) return [];
+    return integrationStatus.integrations
+      .filter(i => i.connected)
+      .map(i => i.category.toLowerCase());
+  }, [integrationStatus]);
+
   useEffect(() => {
-    const checkIntegrations = async () => {
-      try {
-        const res = await apiClient.get('/integrations/merge/connected');
-        if (res.data?.integrations) {
-          const names = Object.entries(res.data.integrations)
-            .filter(([, v]) => v)
-            .map(([k]) => k.toLowerCase());
-          setConnectedIntegrations(names);
-        }
-      } catch {
-        setConnectedIntegrations([]);
-      }
-    };
-    checkIntegrations();
-    // Also try fetching from cognition core (Phase B)
+    // Cognition core (Phase B)
     apiClient.get('/cognition/overview').then(res => {
       if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
         setCognitionData(res.data);
       }
     }).catch(() => {});
-    // Analytics: track dashboard view
     trackEvent(EVENTS.DASHBOARD_VIEW, { page: 'advisor' });
     trackPageRender('advisor');
   }, []);
@@ -432,19 +441,32 @@ const AdvisorWatchtower = () => {
     <DashboardLayout>
       <div className="min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
 
-        {/* LOADING — Animated cognitive screen */}
+        {/* LOADING — Animated cognitive screen with progress bar */}
         {loading && (
-          <CognitiveLoadingScreen
-            mode={cacheAge === null ? 'first' : 'returning'}
-            ownerName={owner}
-          />
+          <>
+            <CognitiveLoadingScreen
+              mode={cacheAge === null ? 'first' : 'returning'}
+              ownerName={owner}
+            />
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6" data-testid="advisor-progress-bar">
+              <div className="rounded-xl p-4" style={{ background: '#141C26', border: '1px solid #243140', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                <StageProgressBar stage={stage} progress={progress} startedAt={startedAt} />
+              </div>
+            </div>
+          </>
         )}
 
         {/* ERROR */}
         {error && !loading && !cognitive && (
-          <div className="max-w-3xl mx-auto px-6 py-16 text-center">
-            <p className="text-sm" style={{ color: '#FF6A00' }}>{error}</p>
-            <button onClick={refresh} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#9FB0C3', border: '1px solid #243140' }}>Retry</button>
+          <div className="max-w-3xl mx-auto px-6 py-16">
+            <PageErrorState error={error} onRetry={resumeSnapshot} moduleName="BIQc Overview" />
+          </div>
+        )}
+
+        {/* EMPTY STATE — no data yet, no error */}
+        {!loading && !cognitive && !error && (
+          <div className="max-w-5xl mx-auto px-6 py-12">
+            <WelcomeBanner owner={owner} />
           </div>
         )}
 
@@ -541,7 +563,14 @@ const AdvisorWatchtower = () => {
 
                 {/* Show integration-required state if tab needs unconnected integration */}
                 {!isTabConnected && !gd.hasData ? (
-                  <IntegrationRequired groupId={activeId} color={group.color} />
+                  <IntegrationRequired
+                    groupId={activeId}
+                    color={group.color}
+                    integrationStatus={integrationStatus}
+                    integrationLoading={integrationLoading}
+                    integrationSyncing={integrationSyncing}
+                    onRefresh={refreshIntegrations}
+                  />
                 ) : (
                   <>
                     {/* AI Insight */}

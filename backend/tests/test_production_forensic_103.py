@@ -1,6 +1,6 @@
 """
 Iteration 103: Production Forensic Backend Tests
-Tests backend API at https://biqc-calibration.preview.emergentagent.com
+Tests backend API at https://cognition-sme.preview.emergentagent.com
 """
 import pytest
 import requests

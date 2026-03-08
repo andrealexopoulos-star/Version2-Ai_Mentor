@@ -22,7 +22,7 @@ SERPER_API_KEY=5b4733e54463108c9b410ef3d38074f667ee3e46
 # biqc-api — VERIFY THESE EXISTING VARS ARE CORRECT
 # ============================================================
 
-AZURE_CLIENT_ID=111ac726-7248-4b0c-b0dc-71cacea7a8c5
+AZURE_CLIENT_ID=cognition-sme
 AZURE_CLIENT_SECRET=[must be real Azure App Registration client secret]
 AZURE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/outlook/callback
 FRONTEND_URL=https://biqc.thestrategysquad.com

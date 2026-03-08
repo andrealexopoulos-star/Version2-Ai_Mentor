@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
 import { toast } from 'sonner';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { 
   Plug, Check, ExternalLink, Search, X,
   Lock, ArrowRight, Zap, AlertCircle, CheckCircle2,
@@ -78,6 +79,7 @@ const Integrations = () => {
   const [syncing, setSyncing] = useState(false);
   const [mergeIntegrations, setMergeIntegrations] = useState({});
   const [mergeLoading, setMergeLoading] = useState(false); // Start false — show content immediately, load state async
+  const { status: unifiedStatus, loading: unifiedLoading, syncing: unifiedSyncing, refresh: refreshUnifiedStatus } = useIntegrationStatus();
   
   // Merge Link integration
   const [mergeLinkToken, setMergeLinkToken] = useState(null);
@@ -983,129 +985,223 @@ const Integrations = () => {
 
         {activeTab === 'data-connections' && (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                Connected Data Sources
-              </h2>
-              <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-                All connected integrations providing data to BIQC
-              </p>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                  Connected Data Sources
+                </h2>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Real-time status of all integrations powering BIQC intelligence
+                </p>
+              </div>
+              <button
+                onClick={refreshUnifiedStatus}
+                disabled={unifiedSyncing}
+                data-testid="integrations-refresh-all-btn"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                style={{ color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#FF6A00'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-light)'}
+              >
+                <RefreshCw className={`w-4 h-4 ${unifiedSyncing ? 'animate-spin' : ''}`} style={{ color: unifiedSyncing ? '#FF6A00' : undefined }} />
+                {unifiedSyncing ? 'Syncing...' : 'Refresh All'}
+              </button>
             </div>
 
-            {/* Email Connections */}
-            {(outlookStatus.connected || gmailStatus.connected) && (
-              <div>
-                <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
-                  Email Providers
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {outlookStatus.connected && (
-                    <div className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-[#0078D4] flex items-center justify-center text-white font-bold">
-                          OL
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm text-[#F4F7FA]">Microsoft Outlook</span>
-                            <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-                          </div>
-                          <p className="text-xs text-[#64748B]">{outlookStatus.connected_email || 'Connected'}</p>
-                        </div>
-                        <Button
-                          onClick={handleOutlookDisconnect}
-                          variant="outline"
-                          size="sm"
-                          disabled={disconnecting}
-                          data-testid="integrations-outlook-disconnect-inline-button"
-                          className="text-[#EF4444] hover:bg-[#EF4444]/10 border-[#EF4444]/30"
-                        >
-                          {disconnecting ? <InlineLoading text="disconnecting" /> : 'Disconnect'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {gmailStatus.connected && (
-                    <div className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-[#EF4444] flex items-center justify-center text-white font-bold">
-                          GM
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm text-[#F4F7FA]">Gmail</span>
-                            <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-                          </div>
-                          <p className="text-xs text-[#64748B]">{gmailStatus.connected_email || 'Connected'}</p>
-                        </div>
-                        <Button
-                          onClick={handleGmailDisconnect}
-                          variant="outline"
-                          size="sm"
-                          disabled={disconnecting}
-                          data-testid="integrations-gmail-disconnect-inline-button"
-                          className="text-[#EF4444] hover:bg-[#EF4444]/10 border-[#EF4444]/30"
-                        >
-                          {disconnecting ? <InlineLoading text="disconnecting" /> : 'Disconnect'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {unifiedLoading ? (
+              <div className="flex items-center gap-2 py-4">
+                <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#FF6A00' }} />
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading integration status...</span>
               </div>
-            )}
+            ) : (
+              <div className="space-y-4">
+                {/* Email Connections */}
+                {(outlookStatus.connected || gmailStatus.connected) && (
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                      Email Providers
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {outlookStatus.connected && (
+                        <div className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-lg bg-[#0078D4] flex items-center justify-center text-white font-bold flex-shrink-0">OL</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-sm text-[#F4F7FA]">Microsoft Outlook</span>
+                                <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                              </div>
+                              <p className="text-xs text-[#64748B]">{outlookStatus.connected_email || 'Connected'}</p>
+                              {outlookStatus.emails_synced > 0 && (
+                                <p className="text-xs mt-1" style={{ color: '#10B981' }}>{outlookStatus.emails_synced} emails synced</p>
+                              )}
+                            </div>
+                            <Button onClick={handleOutlookDisconnect} variant="outline" size="sm" disabled={disconnecting}
+                              data-testid="integrations-outlook-disconnect-inline-button"
+                              className="text-[#EF4444] hover:bg-[#EF4444]/10 border-[#EF4444]/30 flex-shrink-0">
+                              {disconnecting ? <InlineLoading text="..." /> : 'Disconnect'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {gmailStatus.connected && (
+                        <div className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-lg bg-[#EF4444] flex items-center justify-center text-white font-bold flex-shrink-0">GM</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-sm text-[#F4F7FA]">Gmail</span>
+                                <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                              </div>
+                              <p className="text-xs text-[#64748B]">{gmailStatus.connected_email || 'Connected'}</p>
+                              {gmailStatus.labels_count > 0 && (
+                                <p className="text-xs mt-1" style={{ color: '#10B981' }}>{gmailStatus.labels_count} labels accessible</p>
+                              )}
+                            </div>
+                            <Button onClick={handleGmailDisconnect} variant="outline" size="sm" disabled={disconnecting}
+                              data-testid="integrations-gmail-disconnect-inline-button"
+                              className="text-[#EF4444] hover:bg-[#EF4444]/10 border-[#EF4444]/30 flex-shrink-0">
+                              {disconnecting ? <InlineLoading text="..." /> : 'Disconnect'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-            {/* Merge Integrations (CRM, Finance, etc.) */}
-            {Object.keys(mergeIntegrations).length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
-                  Business Systems
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(mergeIntegrations).map(([key, integration]) => {
-                    const integrationConfig = integrations.find(i => 
-                      i.name.toLowerCase() === key.toLowerCase() || 
-                      i.id.toLowerCase() === key.toLowerCase()
-                    );
-                    
-                    return (
-                      <div key={key} className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                        <div className="flex items-center gap-3">
-                          {integrationConfig && (
-                            <div 
-                              className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold"
-                              style={{ background: integrationConfig.color }}
+                {/* Business Systems — Merge.dev CRM/Finance etc. with record counts */}
+                {Object.keys(mergeIntegrations).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                      Business Systems
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(mergeIntegrations).map(([key, integration]) => {
+                        const integrationConfig = integrations.find(i =>
+                          i.name.toLowerCase() === key.toLowerCase() ||
+                          i.id.toLowerCase() === key.toLowerCase()
+                        );
+                        // Get record count from unified status
+                        const statusEntry = unifiedStatus?.integrations?.find(
+                          i => i.provider?.toLowerCase() === key.toLowerCase() && i.connected
+                        );
+                        const recordCount = statusEntry?.records_count || 0;
+                        const recordType = statusEntry?.record_type || 'records';
+                        const lastSync = statusEntry?.last_sync_at
+                          ? new Date(statusEntry.last_sync_at).toLocaleString('en-AU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                          : null;
+
+                        return (
+                          <div key={key} className="p-4 rounded-xl" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                            <div className="flex items-center gap-3">
+                              {integrationConfig && (
+                                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: integrationConfig.color }}>
+                                  {integrationConfig.logo}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{key}</span>
+                                  <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                                </div>
+                                {recordCount > 0 ? (
+                                  <p className="text-xs" style={{ color: '#10B981' }}>
+                                    {recordCount} {recordType} imported
+                                    {lastSync && <span style={{ color: '#64748B' }}> · {lastSync}</span>}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs" style={{ color: '#64748B' }}>
+                                    {integration.category} · Connected via Merge.dev
+                                    <span className="ml-1" style={{ color: '#F59E0B' }}>· 0 {recordType} yet — sync may take a few minutes</span>
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                data-testid={`data-connections-disconnect-${key}`}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!window.confirm(`Disconnect ${key}? This will stop data collection.`)) return;
+                                  try {
+                                    await apiClient.post('/merge/disconnect', { provider: key, category: integration.category });
+                                    setMergeIntegrations(prev => { const n = {...prev}; delete n[key]; return n; });
+                                    await refreshUnifiedStatus();
+                                    toast.success(`${key} disconnected`);
+                                  } catch (err) {
+                                    toast.error(`Disconnect failed: ${err.response?.data?.detail || err.message}`);
+                                  }
+                                }}
+                                className="flex-shrink-0 text-xs px-2 py-1 rounded border transition-colors"
+                                style={{ borderColor: 'var(--border-light)', color: 'var(--text-muted)' }}
+                                onMouseEnter={e => { e.target.style.borderColor = '#ef4444'; e.target.style.color = '#ef4444'; }}
+                                onMouseLeave={e => { e.target.style.borderColor = 'var(--border-light)'; e.target.style.color = 'var(--text-muted)'; }}
+                              >
+                                Disconnect
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Not-connected categories — show CTAs */}
+                {(() => {
+                  const missingCategories = [
+                    { cat: 'crm', label: 'CRM', desc: 'HubSpot, Salesforce, Pipedrive', color: '#FF7A59' },
+                    { cat: 'accounting', label: 'Accounting', desc: 'Xero, QuickBooks, MYOB', color: '#13B5EA' },
+                    { cat: 'email', label: 'Email', desc: 'Gmail, Outlook', color: '#EF4444' },
+                  ].filter(m => {
+                    if (m.cat === 'email') return !outlookStatus.connected && !gmailStatus.connected;
+                    const connected = unifiedStatus?.canonical_truth;
+                    if (m.cat === 'crm') return !connected?.crm_connected;
+                    if (m.cat === 'accounting') return !connected?.accounting_connected;
+                    return true;
+                  });
+                  if (missingCategories.length === 0) return null;
+                  return (
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                        Not Yet Connected
+                      </h3>
+                      <div className="space-y-3">
+                        {missingCategories.map(m => (
+                          <div key={m.cat} className="flex items-center gap-4 p-4 rounded-xl" style={{ background: 'rgba(255, 106, 0, 0.04)', border: '1px solid rgba(255, 106, 0, 0.15)' }}>
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ background: m.color }}>
+                              {m.label[0]}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{m.label} not connected</p>
+                              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{m.desc}</p>
+                            </div>
+                            <button
+                              onClick={() => { setActiveTab('connected-apps'); setSelectedCategory(m.cat === 'email' ? null : m.cat); }}
+                              data-testid={`data-connections-connect-${m.cat}`}
+                              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:brightness-110"
+                              style={{ background: m.color }}
                             >
-                              {integrationConfig.logo}
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{key}</span>
-                              <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-                            </div>
-                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              {integration.category} • Connected via Merge.dev
-                            </p>
+                              <Plug className="w-3 h-3" />
+                              Connect
+                            </button>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                    </div>
+                  );
+                })()}
 
-            {/* Empty State — only show after loading completes */}
-            {!mergeLoading && !outlookStatus.connected && !gmailStatus.connected && Object.keys(mergeIntegrations).length === 0 && (
-              <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                     style={{ background: 'var(--bg-tertiary)' }}>
-                  <Sparkles className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
-                </div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  No data connections yet. Connect integrations from the Connected Apps tab.
-                </p>
+                {/* Fully empty state — only show when no categories to display as CTAs */}
+                {!mergeLoading && !outlookStatus.connected && !gmailStatus.connected && Object.keys(mergeIntegrations).length === 0 && !unifiedStatus && (
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
+                      <Sparkles className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+                    </div>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      No data connections yet. Connect integrations from the Connected Apps tab.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

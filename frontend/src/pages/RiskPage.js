@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { apiClient } from '../lib/api';
-import { CognitiveMesh } from '../components/LoadingSystems';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
+import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import DataConfidence from '../components/DataConfidence';
 import { AlertTriangle, Shield, DollarSign, TrendingDown, CheckCircle2, Users, UserX, Clock, Plug, Activity, Heart } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
@@ -30,7 +32,7 @@ const RiskMeter = ({ value, label, thresholds = [30, 60] }) => {
 };
 
 const RiskPage = () => {
-  const { cognitive, loading } = useSnapshot();
+  const { cognitive, loading, error, refresh } = useSnapshot();
   const c = cognitive || {};
   const risk = c.risk || {};
   const cap = c.capital || {};
@@ -38,37 +40,22 @@ const RiskPage = () => {
   const alignment = c.alignment || {};
   const fv = c.founder_vitals || {};
 
-  const [integrations, setIntegrations] = useState([]);
+  const { status: integrationStatus } = useIntegrationStatus();
   const [activeTab, setActiveTab] = useState('governance');
   const [sqlWorkforce, setSqlWorkforce] = useState(null);
   const [sqlScores, setSqlScores] = useState(null);
   const [unifiedRisk, setUnifiedRisk] = useState(null);
 
   useEffect(() => {
-    // Fetch integration status from both Merge and workspace_integrations
-    apiClient.get('/integrations/merge/connected').then(res => {
-      if (res.data?.integrations) {
-        const names = Object.entries(res.data.integrations).filter(([, v]) => v).map(([k]) => k.toLowerCase());
-        setIntegrations(names);
-      }
-    }).catch(() => {});
-
-    // Fetch SQL-backed workforce health
     apiClient.get('/intelligence/workforce').then(res => {
       if (res.data?.has_data) setSqlWorkforce(res.data);
     }).catch(() => {});
-
-    // Fetch weighted insight scores
     apiClient.get('/intelligence/scores').then(res => {
       if (res.data?.scores) setSqlScores(res.data.scores);
     }).catch(() => {});
-
-    // Fetch unified risk intelligence
     apiClient.get('/unified/risk').then(res => {
       if (res.data) setUnifiedRisk(res.data);
     }).catch(() => {});
-
-    // Cognition core data (Phase B)
     apiClient.get('/cognition/risk').then(res => {
       if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
         setUnifiedRisk(prev => ({ ...prev, ...res.data }));
@@ -76,10 +63,10 @@ const RiskPage = () => {
     }).catch(() => {});
   }, []);
 
-  const hasCRM = integrations.some(i => i.includes('crm') || i.includes('hubspot'));
-  const hasAccounting = integrations.some(i => i.includes('accounting') || i.includes('xero'));
-  const hasEmail = integrations.some(i => i.includes('email') || i.includes('gmail') || i.includes('outlook'));
-  const hasAnyIntegration = integrations.length > 0;
+  const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
+  const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
+  const hasEmail = integrationStatus?.canonical_truth?.email_connected;
+  const hasAnyIntegration = integrationStatus?.canonical_truth?.total_connected > 0;
 
   const spofs = risk.spof || [];
   const regulatory = risk.regulatory || [];
@@ -123,19 +110,20 @@ const RiskPage = () => {
           ))}
         </div>
 
-        {loading && <CognitiveMesh message="Scanning risk signals..." />}
+        {loading && <PageLoadingState message="Scanning risk signals…" />}
+        {error && !loading && <PageErrorState error={error} onRetry={refresh} moduleName="Risk Intelligence" />}
 
         {/* ═══ GOVERNANCE TAB ═══ */}
         {!loading && activeTab === 'governance' && (
           <>
             {!hasAnyIntegration && (
-              <Panel className="text-center py-10">
-                <Shield className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Connect integrations to assess risk.</p>
-                <p className="text-xs text-[#64748B] mb-4">CRM, accounting, and email integrations enable risk detection, SPOF analysis, and governance monitoring.</p>
-                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="risk-connect-cta">
-                  <Plug className="w-4 h-4" /> Connect Integrations
-                </a>
+              <Panel className="py-8">
+                <IntegrationStatusWidget
+                  categories={['crm', 'accounting', 'email']}
+                  status={integrationStatus}
+                  loading={false}
+                  showRefresh={false}
+                />
               </Panel>
             )}
 

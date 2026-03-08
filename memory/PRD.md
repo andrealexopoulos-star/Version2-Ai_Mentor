@@ -33,7 +33,33 @@
 - Backend `POST /api/notifications/register-device` endpoint
 - Listeners for foreground + tap notifications integrated in App.tsx
 
-### Backlog Items (Complete — Mar 2026)
+### Sprint 3: Resilient UX, Progress Tracking & Cross-Module Consistency (Complete — Mar 2026)
+- **`AsyncDataLoader.js`**: Universal reusable async wrapper — handles loading stages, determinate progress bar, skeleton cards, tier gating, integration gating, timeout fallback CTA, multi-action error state (Retry/Support/Troubleshoot)
+- **`PageStateComponents.js`**: `PageLoadingState` + `PageErrorState` — consistent loading/error for ALL pages
+- **`useSnapshotProgress.js`**: Enhanced snapshot hook — granular stages (fetching→preprocessing→analyzing→assembling→complete), auto-advancing progress, telemetry events (snapshot_start/stage_complete/finish/error/timeout/resume), `resumeSnapshot()` method
+- **`StageProgressBar`**: Determinate progress bar with stage pills — fills over 30s if no real updates
+- **IntelligencePhases.js**: Stage-aware progress bar during analysis, actionable timeout CTA with support/troubleshoot links, telemetry on start/finish/timeout
+- **AdvisorWatchtower**: Uses `useSnapshotProgress`, floating progress bar overlay during load, `PageErrorState` with resume option
+- **analytics.js**: Added snapshot telemetry events (SNAPSHOT_START/FINISH/ERROR/TIMEOUT/RESUME) + page load events + `trackSnapshotEvent()` helper
+- **All module pages updated**: RiskPage, RevenuePage, OperationsPage, MarketPage, Dashboard, DataCenter, CompetitiveBenchmark, DecisionsPage — all use `PageLoadingState`/`PageErrorState` consistently
+- **RiskPage**: Now uses `useIntegrationStatus` (removed `/integrations/merge/connected` call), `IntegrationStatusWidget` for "not connected" state
+
+- **`GET /api/user/integration-status`**: Unified endpoint returning granular per-integration status (connected, provider, records_count, last_sync_at, error_message)
+- **`POST /api/user/integration-status/sync`**: Manual sync trigger — fetches deal/invoice counts from Merge API
+- **`IntegrationStatusWidget`** component: Replaces all generic "Missing Integrations" banners with actionable, per-integration status rows:
+  - ✅ Connected + data: "HubSpot connected — 15 deals"
+  - ⏳ Connected, no data: "Xero connected — 0 invoices; first sync may take a few minutes"
+  - 🔴 Not connected: "CRM not connected — Connect to analyse pipeline" + CTA button
+- **`useIntegrationStatus`** hook: Shared hook for all pages consuming integration status
+- **Pages updated**: AdvisorWatchtower, RevenuePage, OperationsPage, MarketPage, Integrations Data Connections tab
+- **Integrations Data Connections tab**: Shows record counts, last sync time, disconnect buttons, "Not Yet Connected" CTAs, "Refresh All" button
+- **Background sync**: After OAuth token exchange, immediately fetches initial record counts
+- **AdvisorWatchtower**: Added `WelcomeBanner` empty state for `!loading && !cognitive && !error`
+- **SQL migration**: `/app/supabase_migrations/create_integration_status.sql` — needs to be run on production Supabase to enable record count caching
+
+### NOTE: SQL Migration Required
+Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL editor for the `vwwandhoydemcybltoxz` project to enable the `integration_status` caching table. Until then, records_count always returns 0 (endpoint still works correctly, just without cached counts).
+
 - **Competitive Benchmark** (`/competitive-benchmark`): Digital Footprint score gauge, Industry percentile ranking, 5-Pillar breakdown (Website/Social/Reviews/Content/SEO), competitor landscape
 - **Decision Outcome Recording**: Expandable checkpoint timeline with "Effective"/"Ineffective" buttons for due checkpoints. Backend `POST /api/cognition/decisions/checkpoint-outcome`
 
@@ -58,17 +84,23 @@
 ## Remaining Backlog
 
 ### P0
-1. CDN cache purge for `beta.thestrategysquad.com`
-2. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
-3. Create `push_devices` table in Supabase for device token storage
+1. **Run SQL migration** `create_integration_status.sql` in Supabase (vwwandhoydemcybltoxz) to enable `records_count` caching for integration status
+2. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
+3. CDN cache purge for `beta.thestrategysquad.com`
+4. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
+5. Create `push_devices` table in Supabase for device token storage
 
 ### P1
-4. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
-5. API performance optimization
-6. Admin panel billing adjustments
-7. Mobile App Store deployment (TestFlight/Play Store)
+6. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
+7. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
+8. API performance optimization
+9. Admin panel billing adjustments
+10. Mobile App Store deployment (TestFlight/Play Store)
+11. **Deploy updated backend to production** — `/api/soundboard/scan-usage` and `/api/cognition/overview` return 404 in production (endpoint exists locally)
 
 ### P2
-8. Decision outcome visualization (trend charts at checkpoints)
-9. Competitive Benchmark auto-refresh (weekly cron)
-10. Push notification backend triggers (instability breach, checkpoint due, daily brief)
+12. Decision outcome visualization (trend charts at checkpoints)
+13. Competitive Benchmark auto-refresh (weekly cron)
+14. Push notification backend triggers (instability breach, checkpoint due, daily brief)
+15. Sprint 3: Snapshot Failure State UI (error/retry when intelligence snapshot fails)
+16. SoundBoard AI context injection — use calibration data (business name, industry, CMO summary) even when no external integrations connected

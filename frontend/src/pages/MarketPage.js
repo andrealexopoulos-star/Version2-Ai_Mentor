@@ -6,6 +6,8 @@ import EngagementScanCard from '../components/EngagementScanCard';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { containsCRMClaim } from '../constants/integrationTruth';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { PageLoadingState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
 import {
   TrendingUp, ArrowRight, Target, Shield, AlertTriangle,
@@ -57,7 +59,7 @@ const MarketPage = () => {
   const [pressure, setPressure] = useState(null);
   const [freshness, setFreshness] = useState(null);
   const [cognitionMarket, setCognitionMarket] = useState(null);
-  const [signalTruth, setSignalTruth] = useState(null);
+  const { status: integrationStatus } = useIntegrationStatus();
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
 
@@ -69,19 +71,13 @@ const MarketPage = () => {
       }
       setReports(snaps);
     }).catch(() => {});
-    // Fetch SQL-backed intelligence
     apiClient.get('/intelligence/watchtower').then(res => { if (res.data?.positions) setWatchtower(res.data); }).catch(() => {});
     apiClient.get('/intelligence/pressure').then(res => { if (res.data?.pressures) setPressure(res.data); }).catch(() => {});
     apiClient.get('/intelligence/freshness').then(res => { if (res.data?.freshness) setFreshness(res.data); }).catch(() => {});
-    // Cognition core market data
     apiClient.get('/cognition/market').then(res => {
       if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
         setCognitionMarket(res.data);
       }
-    }).catch(() => {});
-    // Canonical integration truth
-    apiClient.get('/integrations/merge/connected').then(res => {
-      if (res.data?.canonical_truth) setSignalTruth(res.data.canonical_truth);
     }).catch(() => {});
   }, []);
 
@@ -133,8 +129,8 @@ const MarketPage = () => {
   const moves = ap.top_3_marketing_moves || [];
   const blindside = ap.primary_blindside_risk;
   const lever = ap.hidden_growth_lever;
-  const hasCRM = signalTruth?.crm_connected || channelsData?.channels?.some(ch => ch.key === 'crm' && ch.status === 'connected');
-  const hasSignals = signalTruth?.live_signal_count > 0;
+  const hasCRM = integrationStatus?.canonical_truth?.crm_connected || channelsData?.channels?.some(ch => ch.key === 'crm' && ch.status === 'connected');
+  const hasSignals = integrationStatus?.canonical_truth?.total_connected > 0;
   const pipeline = hasCRM ? (c.pipeline_total || c.revenue?.pipeline) : null;
 
   const filteredMoves = hasCRM ? moves : moves.filter(m => !containsCRMClaim(m.move) && !containsCRMClaim(m.rationale));
@@ -164,7 +160,7 @@ const MarketPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body, overflowY: 'visible' }} data-testid="market-page">
         <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
-        {loading && <CognitiveMesh message="Pulling your latest signals..." />}
+        {loading && <PageLoadingState message="Pulling your latest market signals…" />}
 
         {!loading && <>
 
