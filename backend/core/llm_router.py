@@ -84,6 +84,52 @@ async def llm_chat(
         return data["choices"][0]["message"]["content"]
 
 
+async def llm_chat_with_usage(
+    system_message: str,
+    user_message: str,
+    messages: list = None,
+    model: str = None,
+    temperature: float = None,
+    max_tokens: int = None,
+    api_key: str = None,
+    route: str = None,
+) -> tuple:
+    """
+    Same as llm_chat but returns (content, usage_dict) so callers can
+    log actual token counts instead of character-based estimates.
+    usage_dict keys: prompt_tokens, completion_tokens, total_tokens
+    """
+    key = api_key or OPENAI_API_KEY
+    if not key:
+        raise ValueError("OPENAI_API_KEY not configured")
+
+    cfg = _get_route(route)
+    model = model or cfg["model"]
+    temperature = temperature if temperature is not None else cfg.get("temperature", 0.7)
+    max_tokens = max_tokens or cfg.get("max_tokens", 1500)
+    timeout = cfg.get("timeout", 60)
+
+    formatted = [{"role": "system", "content": system_message}]
+    for msg in (messages or []):
+        role = msg.get("role", "user")
+        content = msg.get("content", msg.get("text", ""))
+        if content:
+            formatted.append({"role": role, "content": content})
+    formatted.append({"role": "user", "content": user_message})
+
+    async with httpx.AsyncClient(timeout=float(timeout)) as client:
+        resp = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={"model": model, "messages": formatted, "temperature": temperature, "max_tokens": max_tokens},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        content = data["choices"][0]["message"]["content"]
+        usage = data.get("usage", {})
+        return content, usage
+
+
 async def llm_embed(text: str, model: str = None, api_key: str = None) -> list:
     """Generate embedding vector."""
     key = api_key or OPENAI_API_KEY

@@ -136,9 +136,12 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
   const confidence = useMemo(() => computeIdentityConfidence(signals), [signals]);
   const confColor = confidence.level === 'High' ? '#10B981' : confidence.level === 'Medium' ? '#F59E0B' : '#EF4444';
 
+  const [showLowConfirmWarning, setShowLowConfirmWarning] = useState(false);
+
   const handleConfirm = () => {
-    if (confidence.level === 'Low') {
-      if (!window.confirm('Identity confidence is Low. Are you sure this is your business? You may want to edit details or regenerate the scan for better accuracy.')) return;
+    if (confidence.level === 'Low' && !showLowConfirmWarning) {
+      setShowLowConfirmWarning(true);
+      return;
     }
     onConfirm({ ...signals, ...editFields, confidence: confidence.level });
   };
@@ -377,6 +380,21 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
         )}
 
         <div className="space-y-3 pt-2" style={{ animation: 'idFade 1s ease-out' }}>
+          {showLowConfirmWarning && (
+            <div className="rounded-xl p-3 mb-1" style={{ background: '#EF444415', border: '1px solid #EF444440' }} data-testid="low-confidence-warning">
+              <p className="text-xs text-[#EF4444] mb-2">Confidence is Low — are you sure this is your business? You may want to edit details or regenerate for better accuracy.</p>
+              <div className="flex gap-2">
+                <button onClick={() => onConfirm({ ...signals, ...editFields, confidence: confidence.level })}
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#EF4444' }} data-testid="low-confirm-yes-btn">
+                  Yes, continue anyway
+                </button>
+                <button onClick={() => setShowLowConfirmWarning(false)}
+                  className="flex-1 py-2 rounded-lg text-xs" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="low-confirm-cancel-btn">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
           <button onClick={handleConfirm}
             className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 flex items-center justify-center gap-2"
             style={{ background: '#FF6A00' }} data-testid="identity-confirm-btn">
