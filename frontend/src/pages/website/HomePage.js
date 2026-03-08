@@ -17,20 +17,20 @@ const GlassCard = ({ children, className = '' }) => (
 );
 
 const StatBlock = ({ value, label }) => (
-  <div className="text-center">
-    <div className="text-[36px] sm:text-[42px] font-bold mb-2" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>{value}</div>
-    <div className="tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.6, fontSize: '12px' }}>{label}</div>
+  <div className="text-center px-2">
+    <div className="text-3xl sm:text-[42px] font-bold mb-1.5" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>{value}</div>
+    <div className="tracking-wider uppercase leading-tight" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.6, fontSize: '10px' }}>{label}</div>
   </div>
 );
 
 const HomePage = () => (
   <WebsiteLayout>
     {/* HERO */}
-    <section className="relative overflow-hidden" style={{ minHeight: '70vh', maxHeight: '95vh', position: 'relative' }} data-testid="hero-section">
+    <section className="relative overflow-hidden" style={{ minHeight: '60vh', position: 'relative' }} data-testid="hero-section">
       <div className="absolute inset-0" style={{ background: '#07121E', zIndex: 0 }} />
 
       <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', padding: '0 20px' }} className="pt-6 sm:pt-20">
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', padding: '0 20px' }} className="pt-4 sm:pt-20">
           {/* Trust badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
             <Shield className="w-3.5 h-3.5" style={{ color: '#FF7A18' }} />
@@ -65,12 +65,12 @@ const HomePage = () => (
             <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.25, fontSize: '11px' }}>No credit card required &middot; Australian owned & operated</p>
 
             {/* SMB Impact Stats */}
-            <div className="mt-8 sm:mt-10" data-testid="stats-section">
-              <p className="font-medium tracking-widest uppercase mb-5" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', fontSize: '11px' }}>What SMBs Gain With BIQc</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 sm:gap-6 max-w-3xl mx-auto">
-                <StatBlock value="6hrs" label="Saved Per Week on Reporting" />
+            <div className="mt-6 sm:mt-10" data-testid="stats-section">
+              <p className="font-medium tracking-widest uppercase mb-4" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', fontSize: '11px' }}>What SMBs Gain With BIQc</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-3xl mx-auto">
+                <StatBlock value="6hrs" label="Saved Per Week" />
                 <StatBlock value="83%" label="Faster Risk Detection" />
-                <StatBlock value="$47K" label="Avg. Cash Recovered Annually" />
+                <StatBlock value="$47K" label="Avg. Cash Recovered" />
                 <StatBlock value="1" label="Single Source of Truth" />
               </div>
               <p className="mt-3" style={{ fontFamily: fontFamily.body, color: '#9FB0C3', opacity: 0.3, fontSize: '11px' }}>Based on pilot data from Australian SMBs using BIQc intelligence systems</p>

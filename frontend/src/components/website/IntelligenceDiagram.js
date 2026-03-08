@@ -9,8 +9,8 @@ const SYSTEMS = [
 ];
 
 const AnimatedConnector = ({ height = 40 }) => (
-  <div className="flex justify-center relative" style={{ padding: '8px 0', height: height + 16 }}>
-    <div className="absolute left-1/2 -translate-x-1/2" style={{
+  <div className="flex justify-center relative" style={{ padding: '6px 0', height: height + 12 }}>
+    <div className="absolute left-1/2 -translate-x-1/2 top-[6px]" style={{
       width: 2,
       height,
       background: 'linear-gradient(to bottom, rgba(255,140,40,0.5), rgba(255,140,40,0.15))',
@@ -21,17 +21,18 @@ const AnimatedConnector = ({ height = 40 }) => (
       height: 6,
       borderRadius: '50%',
       background: '#FF8C28',
+      top: 6,
       boxShadow: '0 0 12px rgba(255,140,40,0.8), 0 0 24px rgba(255,140,40,0.4)',
     }} />
     <style>{`
       .signal-pulse {
-        animation: signalMove ${1.5 + Math.random()}s ease-in-out infinite;
+        animation: signalMove 2s ease-in-out infinite;
       }
       @keyframes signalMove {
-        0% { top: 8px; opacity: 0; }
+        0% { transform: translateX(-50%) translateY(0); opacity: 0; }
         20% { opacity: 1; }
         80% { opacity: 1; }
-        100% { top: ${height + 8}px; opacity: 0; }
+        100% { transform: translateX(-50%) translateY(${height}px); opacity: 0; }
       }
     `}</style>
   </div>
@@ -140,13 +141,13 @@ export const IntelligenceDiagram = () => (
 
       {/* Three system blocks with animated connecting lines */}
       <div className="relative">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 relative z-10">
           {SYSTEMS.map(sys => (
             <GlowCard key={sys.label}>
               <h4 className="font-bold tracking-[0.15em] uppercase mb-3 text-center" style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: '12px' }}>{sys.label}</h4>
               <div className="flex flex-wrap justify-center gap-2">
                 {sys.tools.map(t => (
-                  <span key={t} className="px-2.5 py-1 rounded-md transition-colors hover:bg-orange-500/10" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '12px' }}>{t}</span>
+                  <span key={t} className="px-3 py-1 rounded-md transition-colors hover:bg-orange-500/10" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '12px', whiteSpace: 'nowrap' }}>{t}</span>
                 ))}
               </div>
             </GlowCard>
