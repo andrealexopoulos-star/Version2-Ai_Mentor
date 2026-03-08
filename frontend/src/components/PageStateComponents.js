@@ -80,6 +80,14 @@ export const PageErrorState = ({ error, onRetry, moduleName = 'this page' }) => 
       >
         <MessageSquare className="w-3.5 h-3.5" /> Contact support
       </a>
+      <a
+        href="/knowledge-base"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+        style={{ color: '#9FB0C3', background: '#141C26', border: '1px solid #243140' }}
+        data-testid="page-error-troubleshoot-link"
+      >
+        Troubleshoot
+      </a>
     </div>
   </div>
 );

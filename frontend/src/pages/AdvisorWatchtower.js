@@ -49,7 +49,7 @@ const ST = { STABLE: { c: '#10B981', bg: '#10B98108', b: '#10B98125', d: '#10B98
 const ST_LABELS = { STABLE: 'On Track', DRIFT: 'Market Shift', COMPRESSION: 'Under Pressure', CRITICAL: 'At Risk' };
 const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
 
-const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>);
+const Card = ({ children, className = '', ...props }) => (<div className={`rounded-2xl ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }} {...props}>{children}</div>);
 
 /* Integration-aware empty state — uses granular IntegrationStatusWidget */
 const GROUP_CATEGORY_MAP = {

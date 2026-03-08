@@ -85,7 +85,7 @@ Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL edi
 
 ### P0
 1. **Run SQL migration** `create_integration_status.sql` in Supabase (vwwandhoydemcybltoxz) to enable `records_count` caching for integration status
-2. **Fix Executive Intelligence Snapshot stuck** — Add 30-second timeout fallback in `IntelligencePhases.js` ExecutiveCMOSnapshot component (if `isReady=false` after 30s, show CTA anyway)
+2. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
 3. CDN cache purge for `beta.thestrategysquad.com`
 4. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
 5. Create `push_devices` table in Supabase for device token storage
