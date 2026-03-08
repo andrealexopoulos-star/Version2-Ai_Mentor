@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import uuid
 import logging
 
-from core.llm_router import llm_chat
+from core.llm_router import llm_chat, llm_chat_with_usage
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
 from prompt_registry import get_prompt
 from auth_supabase import get_user_by_id
@@ -561,11 +561,30 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         signal_injection = f"\n\n═══ LIVE SIGNAL STATUS ═══\nActive observation signals: {live_signal_count}\nLast signal: {live_signal_age_hours}h ago\nUSE THESE to ground your advice.\n"
 
     # P1: Response contract enforcement
-    contract_injection = "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\nEvery strategic response MUST include:\n1) SITUATION: What is happening? Use specific numbers or entity names from the data above.\n2) DECISION: One clear recommendation.\n3) THIS WEEK: One concrete action with who/what/by-when.\n4) RISK IF DELAYED: What happens if they don't act? Quantify.\nDo NOT output generic strategy. Every sentence must reference THIS business.\n"
+    contract_injection = "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\nEvery strategic response MUST include:\n1) SITUATION: What is happening? Use specific numbers or entity names from the data above.\n2) DECISION: One clear recommendation.\n3) THIS WEEK: One concrete action with who/what/by-when.\n4) RISK IF DELAYED: What happens if they don't act? Quantify.\nDo NOT output generic strategy. Every sentence must reference THIS business.\nDATA ATTRIBUTION: When referencing a fact, state its source inline — e.g. 'Based on your calibration data...' or 'Your HubSpot pipeline shows...' or 'From your Xero invoices...'. Never state a fact without its source.\n"
 
     guardrail_injection = ""
     if guardrail_status == "DEGRADED":
-        guardrail_injection = f"\n[GUARDRAIL_DEGRADED: {context_fields} profile fields, {live_signal_count} live signals]\n"
+        calibration_fields = []
+        if profile:
+            for field, label in [
+                ('business_name', 'Business Name'), ('industry', 'Industry'),
+                ('location', 'Location'), ('team_size', 'Team Size'),
+                ('main_products_services', 'Products/Services'),
+                ('target_market', 'Target Market'), ('short_term_goals', 'Goals'),
+                ('main_challenges', 'Challenges'),
+            ]:
+                if profile.get(field) and str(profile.get(field)) not in ('None', ''):
+                    calibration_fields.append(label)
+        calibration_summary = ', '.join(calibration_fields) if calibration_fields else 'business name and industry'
+        guardrail_injection = (
+            f"\n[ADVISOR CONTEXT: You have calibration data for this business covering: {calibration_summary}. "
+            f"You DO have access to this data — it is injected above in BUSINESS DNA. "
+            f"Do NOT say 'I don't have access to your data' or 'no data sources connected'. "
+            f"Use the calibration data you have. Acknowledge that live integrations (CRM, accounting) are not yet connected "
+            f"and focus your advisory on what you know from their calibration profile. "
+            f"Be specific using the business name, industry, goals and challenges you have been given.]\n"
+        )
 
     system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
@@ -632,7 +651,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     try:
         import time as _time
         _start = _time.time()
-        response = await llm_chat(
+        response, token_usage = await llm_chat_with_usage(
             system_message=system_message,
             user_message=clean_message,
             messages=messages_history,
@@ -642,6 +661,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             api_key=OPENAI_KEY,
         )
         _elapsed = int((_time.time() - _start) * 1000)
+        _actual_tokens = token_usage.get("total_tokens") or (token_usage.get("prompt_tokens", 0) + token_usage.get("completion_tokens", 0))
 
         # Post-process: enforce quality and remove AI crutches
         logger.info(f"[POLISH_DEBUG] response type={type(response).__name__}, is_str={isinstance(response, str)}")
@@ -658,11 +678,11 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             response = _polish_response(response_str)
             response = sanitise_output(response)
 
-        # Log to observability
+        # Log to observability — actual token counts from API
         log_llm_call_to_db(
             tenant_id=user_id, model_name=AI_MODEL, endpoint='soundboard/chat',
-            total_tokens=(len(clean_message) + len(response if isinstance(response, str) else '')) // 4,
-            latency_ms=_elapsed, feature_flag='rag_chat_enabled' if False else 'soundboard',
+            total_tokens=_actual_tokens,
+            latency_ms=_elapsed, feature_flag='soundboard',
         )
 
         # Generate title for new conversations

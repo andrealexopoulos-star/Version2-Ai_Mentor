@@ -510,7 +510,7 @@ serve(async (req) => {
             body: JSON.stringify({
               model: "gpt-4o-mini",
               messages: [{ role: "system", content: COGNITIVE_SYSTEM_PROMPT }, { role: "user", content: `Precompute snapshot.\n${buildPrioritizedContext(ctx)}` }],
-              temperature: 0.5, max_tokens: 3000, response_format: { type: "json_object" },
+              temperature: 0.3, max_tokens: 3000, response_format: { type: "json_object" },
             }),
           });
           if (aiRes.ok) {
@@ -703,7 +703,7 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
           { role: "system", content: COGNITIVE_SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        temperature: 0.5,
+        temperature: 0.3,
         max_tokens: 6000,
         response_format: { type: "json_object" },
       }),
