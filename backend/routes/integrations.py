@@ -255,7 +255,13 @@ async def exchange_merge_account_token(
             logger.info(f"✅ Governance event emitted: integration_connected_{integration_name}")
         except Exception as gov_err:
             logger.warning(f"⚠️ Governance event emission failed (non-blocking): {gov_err}")
-        
+
+        # Trigger background record count sync (non-blocking)
+        try:
+            asyncio.create_task(_sync_category_counts(get_sb(), user_id, category))
+        except Exception:
+            pass
+
         return {
             "success": True,
             "provider": integration_name,
@@ -267,6 +273,37 @@ async def exchange_merge_account_token(
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
+async def _sync_category_counts(sb, user_id: str, category: str):
+    """Background: Fetch initial record counts after integration connects."""
+    try:
+        from workspace_helpers import get_user_account, get_merge_account_token
+        from merge_client import get_merge_client
+        account = await get_user_account(sb, user_id)
+        if not account:
+            return
+        account_id = account["id"]
+        token = await get_merge_account_token(sb, account_id, category)
+        if not token:
+            return
+        merge = get_merge_client()
+        count = 0
+        record_type = "records"
+        if category == "crm":
+            data = await merge.get_deals(account_token=token, page_size=100)
+            count = len(data.get("results", []))
+            record_type = "deals"
+        elif category == "accounting":
+            data = await merge.get_invoices(account_token=token, page_size=100)
+            count = len(data.get("results", []))
+            record_type = "invoices"
+        prow = sb.table("integration_accounts").select("provider").eq(
+            "user_id", user_id).eq("category", category).maybe_single().execute()
+        provider = (prow.data or {}).get("provider", category)
+        await _upsert_integration_status(sb, user_id, provider, category,
+            connected=True, provider=provider,
+            records_count=count, record_type=record_type)
+    except Exception as e:
+        logger.warning(f"[bg-sync] count sync failed for {user_id}/{category}: {e}")
 class MergeDisconnectRequest(BaseModel):
     provider: str
     category: str
@@ -1609,5 +1646,216 @@ async def get_channel_status(current_user: dict = Depends(get_current_user)):
         "forensic_calibration_complete": forensic_done,
         "email_connected": email_connected,
         "drive_connected": drive_connected,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
+# UNIFIED INTEGRATION STATUS — Sprint 2
+# GET  /user/integration-status
+# POST /user/integration-status/sync
+# ═══════════════════════════════════════════════════════════════
+
+async def _upsert_integration_status(sb, user_id: str, integration_name: str, category: str,
+                                     connected: bool, provider: str = None,
+                                     records_count: int = 0, record_type: str = None,
+                                     last_sync_at: str = None, error_message: str = None):
+    """Upsert a single integration status row — non-blocking."""
+    try:
+        row = {
+            "user_id": user_id,
+            "integration_name": integration_name,
+            "category": category,
+            "connected": connected,
+            "provider": provider or integration_name,
+            "records_count": records_count,
+            "record_type": record_type,
+            "last_sync_at": last_sync_at or datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if error_message:
+            row["error_message"] = error_message
+        sb.table("integration_status").upsert(row, on_conflict="user_id,integration_name").execute()
+    except Exception as e:
+        logger.warning(f"[integration-status] upsert failed (non-critical): {e}")
+
+
+@router.get("/user/integration-status")
+async def get_user_integration_status(current_user: dict = Depends(get_current_user)):
+    """
+    Unified integration status — granular per-integration connection state.
+    Returns connected status, record counts, last sync time, and error messages.
+    """
+    user_id = current_user["id"]
+    integrations = []
+
+    # ── 1. Merge.dev integrations (CRM, Accounting, HRIS, ATS) ──
+    try:
+        merge_result = get_sb().table("integration_accounts").select(
+            "provider, category, connected_at, merge_account_id"
+        ).eq("user_id", user_id).execute()
+
+        record_type_map = {
+            "crm": "deals", "accounting": "invoices",
+            "hris": "employees", "ats": "candidates", "file_storage": "files",
+        }
+
+        for row in (merge_result.data or []):
+            provider = row.get("provider", "Unknown")
+            category = row.get("category", "unknown")
+            if category == "email":
+                continue
+
+            cached = None
+            try:
+                cached_res = get_sb().table("integration_status").select(
+                    "records_count, record_type, last_sync_at, error_message"
+                ).eq("user_id", user_id).eq("integration_name", provider).maybe_single().execute()
+                cached = cached_res.data if cached_res else None
+            except Exception:
+                pass
+
+            integrations.append({
+                "integration_name": provider,
+                "category": category,
+                "connected": True,
+                "provider": provider,
+                "records_count": cached.get("records_count", 0) if cached else 0,
+                "record_type": record_type_map.get(category, "records"),
+                "last_sync_at": (cached.get("last_sync_at") if cached else None) or row.get("connected_at"),
+                "error_message": cached.get("error_message") if cached else None,
+            })
+    except Exception as e:
+        logger.warning(f"[integration-status] merge lookup failed: {e}")
+
+    # ── 2. Email connections ──
+    try:
+        email_result = get_sb().table("email_connections").select(
+            "provider, status, connected_at, emails_synced"
+        ).eq("user_id", user_id).execute()
+
+        for row in (email_result.data or []):
+            if row.get("status") in ("connected", "active", "COMPLETE"):
+                provider_raw = row.get("provider", "email")
+                display = {"outlook": "Microsoft Outlook", "gmail": "Gmail"}.get(
+                    provider_raw.lower(), provider_raw.title()
+                )
+                integrations.append({
+                    "integration_name": provider_raw,
+                    "category": "email",
+                    "connected": True,
+                    "provider": display,
+                    "records_count": row.get("emails_synced") or 0,
+                    "record_type": "emails",
+                    "last_sync_at": row.get("connected_at"),
+                    "error_message": None,
+                })
+    except Exception as e:
+        logger.warning(f"[integration-status] email lookup failed: {e}")
+
+    # ── 3. Canonical truth ──
+    canonical_truth = {
+        "crm_connected": any(i["category"] == "crm" for i in integrations),
+        "accounting_connected": any(i["category"] == "accounting" for i in integrations),
+        "email_connected": any(i["category"] == "email" for i in integrations),
+        "hris_connected": any(i["category"] == "hris" for i in integrations),
+        "total_connected": len(integrations),
+    }
+
+    # ── 4. Add placeholder entries for unconnected core categories ──
+    connected_cats = {i["category"] for i in integrations}
+    for cat in ["crm", "accounting", "email"]:
+        if cat not in connected_cats:
+            integrations.append({
+                "integration_name": cat,
+                "category": cat,
+                "connected": False,
+                "provider": None,
+                "records_count": 0,
+                "record_type": None,
+                "last_sync_at": None,
+                "error_message": None,
+            })
+
+    return {"integrations": integrations, "canonical_truth": canonical_truth}
+
+
+@router.post("/user/integration-status/sync")
+async def sync_integration_status_counts(current_user: dict = Depends(get_current_user)):
+    """
+    Trigger immediate record count refresh for all connected integrations.
+    Fetches deal counts from CRM, invoice counts from Accounting via Merge API.
+    """
+    from workspace_helpers import get_user_account, get_merge_account_token
+    from merge_client import get_merge_client
+
+    user_id = current_user["id"]
+    results = []
+    merge_client = get_merge_client()
+
+    try:
+        account = await get_user_account(get_sb(), user_id)
+    except Exception:
+        account = None
+
+    if account:
+        account_id = account["id"]
+
+        # CRM: deals count
+        try:
+            token = await get_merge_account_token(get_sb(), account_id, "crm")
+            if token:
+                deals_data = await merge_client.get_deals(account_token=token, page_size=100)
+                deal_count = len(deals_data.get("results", []))
+                crm_row = get_sb().table("integration_accounts").select("provider").eq(
+                    "user_id", user_id).eq("category", "crm").maybe_single().execute()
+                provider = (crm_row.data or {}).get("provider", "CRM")
+                await _upsert_integration_status(
+                    get_sb(), user_id, provider, "crm",
+                    connected=True, provider=provider,
+                    records_count=deal_count, record_type="deals",
+                )
+                results.append({"category": "crm", "provider": provider, "records_count": deal_count})
+        except Exception as e:
+            logger.warning(f"[sync] CRM failed: {e}")
+
+        # Accounting: invoices count
+        try:
+            token = await get_merge_account_token(get_sb(), account_id, "accounting")
+            if token:
+                inv_data = await merge_client.get_invoices(account_token=token, page_size=100)
+                inv_count = len(inv_data.get("results", []))
+                acc_row = get_sb().table("integration_accounts").select("provider").eq(
+                    "user_id", user_id).eq("category", "accounting").maybe_single().execute()
+                provider = (acc_row.data or {}).get("provider", "Accounting")
+                await _upsert_integration_status(
+                    get_sb(), user_id, provider, "accounting",
+                    connected=True, provider=provider,
+                    records_count=inv_count, record_type="invoices",
+                )
+                results.append({"category": "accounting", "provider": provider, "records_count": inv_count})
+        except Exception as e:
+            logger.warning(f"[sync] Accounting failed: {e}")
+
+    # Email: use cached synced count
+    try:
+        email_rows = get_sb().table("email_connections").select(
+            "provider, emails_synced"
+        ).eq("user_id", user_id).execute()
+        for row in (email_rows.data or []):
+            provider = row.get("provider", "email")
+            count = row.get("emails_synced") or 0
+            await _upsert_integration_status(
+                get_sb(), user_id, provider, "email",
+                connected=True, provider=provider,
+                records_count=count, record_type="emails",
+            )
+            results.append({"category": "email", "provider": provider, "records_count": count})
+    except Exception as e:
+        logger.warning(f"[sync] Email failed: {e}")
+
+    return {
+        "success": True,
+        "synced": results,
+        "synced_at": datetime.now(timezone.utc).isoformat(),
     }
 

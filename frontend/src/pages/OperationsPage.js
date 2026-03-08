@@ -4,6 +4,8 @@ import { apiClient } from '../lib/api';
 import EnterpriseContactGate from '../components/EnterpriseContactGate';
 import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -14,28 +16,23 @@ const Panel = ({ children, className = '' }) => (
 const OperationsPage = () => {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [integrations, setIntegrations] = useState(null);
   const [unifiedOps, setUnifiedOps] = useState(null);
+  const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [snapRes, intRes, unifiedRes, cognitionRes] = await Promise.allSettled([
+        const [snapRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/snapshot/latest'),
-          apiClient.get('/integrations/merge/connected'),
           apiClient.get('/unified/operations'),
           apiClient.get('/cognition/operations'),
         ]);
         if (snapRes.status === 'fulfilled' && snapRes.value.data?.cognitive) {
           setSnapshot(snapRes.value.data.cognitive);
         }
-        if (intRes.status === 'fulfilled' && intRes.value.data) {
-          setIntegrations(intRes.value.data);
-        }
         if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
           setUnifiedOps(unifiedRes.value.data);
         }
-        // Cognition core data (Phase B)
         if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
           setUnifiedOps(prev => ({ ...prev, ...cognitionRes.value.data }));
         }
@@ -44,9 +41,10 @@ const OperationsPage = () => {
     load();
   }, []);
 
-  const hasIntegrations = integrations?.integrations && Object.values(integrations.integrations).some(Boolean);
+  const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
+  const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
   const exec = snapshot?.execution || {};
-  const hasRealOpsData = hasIntegrations && (exec.sla_breaches != null || exec.bottleneck);
+  const hasRealOpsData = (hasCRM || hasAccounting) && (exec.sla_breaches != null || exec.bottleneck);
 
   return (
     <DashboardLayout>
@@ -71,16 +69,14 @@ const OperationsPage = () => {
         )}
 
         {!loading && !hasRealOpsData && (
-          <Panel className="text-center py-12">
-            <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Connect integrations to view verified data.</p>
-            <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">
-              Operations intelligence requires connected project management, CRM, or accounting tools.
-              Connect your systems to enable SOP compliance tracking, bottleneck detection, and workload analysis.
-            </p>
-            <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="ops-connect-cta">
-              <Plug className="w-4 h-4" /> Connect Integrations
-            </a>
+          <Panel className="py-8">
+            <IntegrationStatusWidget
+              categories={['crm', 'accounting']}
+              status={integrationStatus}
+              loading={integrationLoading}
+              syncing={integrationSyncing}
+              onRefresh={refreshIntegrations}
+            />
           </Panel>
         )}
 

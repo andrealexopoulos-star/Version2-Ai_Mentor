@@ -5,6 +5,8 @@ import EnterpriseContactGate from '../components/EnterpriseContactGate';
 import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight, FileWarning, Receipt } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -21,18 +23,17 @@ const RevenuePage = () => {
   const [activeTab, setActiveTab] = useState('pipeline');
   const [sqlScenarios, setSqlScenarios] = useState(null);
   const [unified, setUnified] = useState(null);
-  const [signalTruth, setSignalTruth] = useState(null);
+  const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes, signalsRes] = await Promise.allSettled([
+        const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/integrations/crm/deals'),
           apiClient.get('/integrations/accounting/summary'),
           apiClient.get('/intelligence/scenarios'),
           apiClient.get('/unified/revenue'),
           apiClient.get('/cognition/revenue'),
-          apiClient.get('/integrations/merge/connected'),
         ]);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
           setDeals(dealsRes.value.data.results);
@@ -48,13 +49,6 @@ const RevenuePage = () => {
         }
         if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
           setUnified(prev => ({ ...prev, ...cognitionRes.value.data }));
-        }
-        // Use canonical truth for connection status
-        if (signalsRes.status === 'fulfilled') {
-          const truth = signalsRes.value.data?.canonical_truth;
-          if (truth) {
-            setSignalTruth(truth);
-          }
         }
       } catch {} finally { setLoading(false); }
     };
@@ -126,33 +120,13 @@ const RevenuePage = () => {
 
         {!loading && !hasDeals && !hasFinancials && (
           <Panel className="py-8">
-            {signalTruth?.crm_connected || signalTruth?.live_signal_count > 0 ? (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
-                  <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Revenue Intelligence</h2>
-                </div>
-                <p className="text-sm text-[#9FB0C3] mb-4">
-                  {signalTruth.live_signal_count} live signals detected from your connected systems.
-                  {signalTruth.last_signal_at && ` Last signal: ${new Date(signalTruth.last_signal_at).toLocaleString()}`}
-                </p>
-                <p className="text-sm text-[#9FB0C3] mb-2">Your SoundBoard advisor has access to all deal, invoice, and cash flow signals. Ask it directly:</p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {['Show me stalled deals', 'What invoices are overdue?', 'Cash flow analysis'].map(q => (
-                    <a key={q} href="/soundboard" className="px-3 py-2 rounded-lg text-xs font-medium" style={{ background: '#FF6A0010', color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: fontFamily.mono }}>{q}</a>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center">
-                <DollarSign className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Revenue data not connected.</p>
-                <p className="text-xs text-[#64748B] mb-4">Connect your CRM to view pipeline, deal velocity, scenario modeling, and revenue concentration.</p>
-                <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="revenue-connect-cta">
-                  <Plug className="w-4 h-4" /> Connect CRM
-                </a>
-              </div>
-            )}
+            <IntegrationStatusWidget
+              categories={['crm', 'accounting']}
+              status={integrationStatus}
+              loading={integrationLoading}
+              syncing={integrationSyncing}
+              onRefresh={refreshIntegrations}
+            />
           </Panel>
         )}
 
