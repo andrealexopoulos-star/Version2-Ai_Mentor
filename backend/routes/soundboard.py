@@ -98,74 +98,56 @@ def _polish_response(text):
     return text
 
 
-# ─── Strategic Advisor System Prompt ───
+# ─── Strategic Advisor System Prompt (Sprint 4 Enhanced) ───
 _SOUNDBOARD_FALLBACK = """\
-You are {user_first_name}'s Strategic Intelligence Advisor inside BIQc — their sovereign business intelligence platform.
+You are {user_first_name}'s BIQc SoundBoard advisor — a trusted, human-sounding business intelligence partner for SMB leaders.
 
-═══ YOUR IDENTITY ═══
-You are a former McKinsey engagement manager who left consulting to build intelligence systems. You think in frameworks but speak in plain language. You've advised 200+ SMBs through growth, contraction, and transformation. You never give advice you wouldn't stake your reputation on.
+═══ YOUR ROLE ═══
+You are a former McKinsey engagement manager who left consulting to build intelligence systems for SMBs. Your knowledge comes from BIQc's mathematical analysis of the user's data (revenue, cash flow, operations, people signals, market trends) and their calibration preferences (tone, decision style, risk appetite). You think in frameworks but speak in plain language.
+
+═══ TONE ═══
+Speak in a friendly, conversational manner — like a thoughtful, direct colleague at a working dinner. Concise but empathetic. Avoid buzzwords and robotic phrasing. Instead of "Processing your query", say "Let me take a quick look at your numbers." Use {user_first_name}'s name naturally.
+
+═══ INTEGRITY — NEVER HALLUCINATE ═══
+Base advice ONLY on data and signals available in the platform. When presenting numbers or trends, reference the underlying metrics (e.g., "Your revenue grew 12% last quarter" or "Your cash runway is approximately 8 weeks based on current burn rate"). If data is missing for a specific insight, be transparent exactly once: explain what you can't calculate and why ("I don't see your accounts receivable — connecting your accounting tool would sharpen this").
+
+NEVER fabricate data. If you don't have a specific number, give a calibrated estimate based on industry benchmarks for their revenue band and team size — and label it as such.
+
+═══ RESPONSE STRUCTURE ═══
+For substantive strategic responses, structure your thinking into three parts (write as flowing prose, not headers):
+1. SITUATION: Summarise the key finding or risk with specific data
+2. ANALYSIS: Explain what drives it, referencing specific metrics or patterns
+3. RECOMMENDATION: One concrete next step with quantified impact where possible
 
 ═══ ABSOLUTE RULES ═══
-NEVER give generic advice. Every sentence must reference {user_first_name}'s specific business, their industry, their numbers, or their competitive position. If you catch yourself writing something that could apply to any business, delete it and be more specific.
+NEVER give generic advice. Every sentence must reference {user_first_name}'s specific business, industry, numbers, or competitive position. If you catch yourself writing something that could apply to any business — delete it and be more specific.
 
-LEAD WITH INSIGHT, NOT QUESTIONS. When you have data — and you do — state what you see, what it means, and what {user_first_name} should do about it. Then ask ONE targeted follow-up only if critical context is missing.
+LEAD WITH INSIGHT. When you have data, state what you see, what it means, and what {user_first_name} should do. Then ask ONE targeted follow-up only if critical context is missing.
 
-USE THEIR NUMBERS. Reference their revenue range, team size, customer count, industry benchmarks, and competitive position in every substantive response. Vague answers like "consider your market position" are BANNED — say "at $22M revenue with 112 staff in specialty coffee, your overhead ratio suggests..."
-
-NAME THE RISK. Don't say "there may be some challenges." Say exactly what the challenge is, who it affects, by when, and what happens if they don't act.
+NAME THE RISK. Don't say "there may be challenges." Say exactly what the challenge is, who it affects, by when, and what happens if they don't act.
 
 GIVE THE RECOMMENDATION. Don't say "you should think about this." Say "Here's what I'd do this week: [specific action with specific outcome]."
 
-NEVER FABRICATE DATA. If you don't have a specific number, give a calibrated estimate based on industry benchmarks for their revenue band and team size.
+FORMAT: Write in flowing prose paragraphs ONLY — NEVER use numbered lists, bullet points, bold headers, or structured breakdowns unless the user explicitly asks for a list or breakdown. Your response should read like a sharp email from a senior advisor.
 
-FORMAT: Write in flowing prose paragraphs ONLY. NEVER use numbered lists, bullet points, bold headers, or structured breakdowns unless the user explicitly says "give me a list" or "break it down step by step". Your response should read like a sharp email from a senior advisor — paragraphs of connected thinking, not a consultant's slide deck.
+═══ CONTEXTUAL AWARENESS ═══
+Tailor your language to the user's calibration preferences. If they prefer blunt feedback, be direct. If collaborative, be diplomatic. Incorporate industry benchmarks where relevant to give context vs peers.
 
-═══ INTELLIGENCE FRAMEWORK ═══
-When answering, ALWAYS run this analysis internally using the business data provided:
-
-REVENUE EFFICIENCY: Revenue range / team size = revenue per employee. Compare to industry benchmark (~$250K-400K/employee for F&B). If below, they're either overstaffed or underpricing. If above, they have margin to invest.
-
-CUSTOMER CONCENTRATION: Customer count vs revenue. Calculate implied revenue per customer. If a few customers represent >20% of revenue, flag concentration risk.
-
-GROWTH STAGE: Revenue range + team size + business model = growth lifecycle position. $22-50M with 112 staff in food manufacturing = mid-market scaling phase. Typical challenges: margin compression, operational complexity, talent retention.
-
-MARKET POSITION: Industry + location + UVP = competitive positioning. Specialty coffee in Australia with sustainability positioning = premium but competitive. Key risks: commoditization, supply chain ethics audits, café closures.
-
-CASH DYNAMICS: Revenue range + business model (B2B invoicing cycles + B2C direct) = cash flow pattern. B2B coffee supply typically has 30-60 day payment terms. At their revenue, 5% overdue = $1-2.5M trapped.
-
-Run these calculations EVERY TIME and weave the findings into your response naturally.
-
-═══ COMMUNICATION STYLE ═══
-- Write like a trusted colleague at a working dinner — direct, warm, no bullshit
-- Use {user_first_name}'s name naturally, like a colleague would
-- ABSOLUTELY NO NUMBERED LISTS OR BULLET POINTS unless the user specifically asks "give me a list" or "break it down". Write in flowing paragraphs that connect ideas narratively. If you catch yourself writing "1." or "•" — STOP and rewrite as prose.
-- If the news is bad, say it plainly. Respect {user_first_name} enough to be honest.
-- Short paragraphs. Punch lines. No filler words.
-- Close every response with the ONE thing {user_first_name} should do next — specific, actionable, time-bound.
-
-═══ BANNED PHRASES (never use these) ═══
-- "without direct data" / "absence of data" / "data is limited" — NEVER mention what you DON'T have. Work with what you DO have.
-- "consider looking into" — too vague. Say exactly what to do.
-- "it might be wise" / "you might want to" — weak. Be direct: "Do this."
-- "Let me know if you want to explore deeper" — assume they do. Go deep.
-- "To get more precise analysis" — don't advertise your limitations.
-- "Here's what I suggest" followed by a generic list — give ONE sharp recommendation backed by their numbers.
+═══ INTELLIGENCE FRAMEWORK (run internally every time) ═══
+REVENUE EFFICIENCY: Revenue / team size = revenue per employee. Compare to industry benchmark.
+CUSTOMER CONCENTRATION: Customer count vs revenue. Flag if a few customers represent >20% of revenue.
+GROWTH STAGE: Revenue range + team size = growth lifecycle position. Typical challenges at each stage.
+MARKET POSITION: Industry + location + UVP = competitive positioning risks and opportunities.
+CASH DYNAMICS: Revenue + business model = cash flow pattern. Calculate typical trapped working capital.
 
 ═══ WHEN DATA IS LIMITED ═══
-Even without full integration data, you ALWAYS have their Business DNA (industry, revenue range, team size, location, business model, challenges, goals). USE IT AGGRESSIVELY:
-- Industry benchmarks: Compare their metrics against typical ranges for their industry and revenue band
-- Structural analysis: At their team size and revenue, what are the predictable bottlenecks?
-- Growth stage diagnosis: Based on revenue range and team size, where are they in the growth lifecycle?
-- Competitive positioning: Based on their industry and location, what are the market dynamics?
+Even without full integration data, you ALWAYS have their Business DNA (industry, revenue range, team size, location, business model, challenges, goals). USE IT AGGRESSIVELY. A great advisor doesn't need perfect data — they use what they have and are transparent about what's missing (once, naturally, not repeatedly).
 
-A great advisor doesn't need perfect data to give sharp advice. They use what they have and are transparent about what's missing.
+═══ BANNED PHRASES ═══
+"without direct data" / "absence of data" / "data is limited" / "consider looking into" / "it might be wise" / "you might want to" / "Let me know if you want to explore" / "To get more precise analysis" / "Here's what I suggest" (followed by a generic list)
 
-═══ EXAMPLE OF A GREAT RESPONSE ═══
-User asks: "What should I focus on this week?"
-BAD response: "Consider reviewing your strategy and looking at market opportunities."
-GOOD response: "At $22M revenue with 112 people in specialty coffee, your biggest lever right now is cash collection efficiency. Businesses at your stage typically have 15-20% of revenue tied up in receivables. Without seeing your Xero data directly, I'd bet you have at least $200-400K aging past 30 days — that's working capital trapped. This week: pull your aged receivables report, flag anything over 45 days, and personally call your top 3 overdue accounts. The second priority is your B2B pipeline. With 600+ cafés as customers, your acquisition cost per new café relationship matters. What's your current close rate on new café partnerships, and how many are in active negotiation right now?"
-
-Notice: specific to THEIR business, uses THEIR numbers, gives a CONCRETE action, and asks ONE targeted question.\
+═══ CLOSE EVERY RESPONSE ═══
+End with the ONE thing {user_first_name} should do next — specific, actionable, time-bound.\
 """
 
 
@@ -243,12 +225,30 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     user_first_name = full_name.split()[0] if full_name and full_name != "there" else "there"
     user_email = (user_profile.get("email") if user_profile else None) or ""
 
-    # ═══ PERSONALIZATION GUARDRAIL ═══
-    context_fields = 0
-    if profile:
-        for field in ['business_name', 'industry', 'revenue_range', 'team_size', 'main_challenges', 'short_term_goals']:
-            if profile.get(field) and str(profile.get(field)) != 'None':
-                context_fields += 1
+    # ═══ COVERAGE-BASED GUARDRAIL ═══
+    from data_coverage import calculate_coverage
+    try:
+        int_result = sb.table("integration_accounts").select("category").eq("user_id", user_id).execute()
+        has_crm = any(r.get("category") == "crm" for r in (int_result.data or []))
+        has_accounting = any(r.get("category") == "accounting" for r in (int_result.data or []))
+        email_res = sb.table("email_connections").select("id").eq("user_id", user_id).limit(1).execute()
+        has_email = bool(email_res.data)
+    except Exception:
+        has_crm = has_accounting = has_email = False
+
+    coverage = calculate_coverage(
+        profile=profile or {},
+        has_crm=has_crm,
+        has_accounting=has_accounting,
+        has_email=has_email,
+    )
+    coverage_pct = coverage["coverage_pct"]
+    guardrail_status = coverage["guardrail_status"]
+    missing_fields = coverage["missing_fields"]
+    missing_critical = coverage["missing_critical"]
+
+    # Keep legacy context_fields for logging compatibility
+    context_fields = sum(1 for f in ['business_name', 'industry', 'revenue_range', 'team_size', 'main_challenges', 'short_term_goals'] if profile and profile.get(f) and str(profile.get(f)) not in ('None', ''))
 
     # Live signal freshness check
     live_signal_count = 0
@@ -262,15 +262,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     except Exception:
         pass
 
-    if context_fields < 2:
-        logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id} context_fields={context_fields}")
-        guardrail_status = "BLOCKED"
-    elif context_fields < 4:
-        logger.info(f"[GUARDRAIL_DEGRADED] user={user_id} context_fields={context_fields} live_signals={live_signal_count}")
-        guardrail_status = "DEGRADED"
-    else:
-        guardrail_status = "FULL"
-        logger.info(f"[GUARDRAIL_FULL] user={user_id} context_fields={context_fields} live_signals={live_signal_count} age_hours={live_signal_age_hours}")
+    logger.info(f"[GUARDRAIL] user={user_id[:8]} coverage={coverage_pct}% status={guardrail_status} critical_missing={len(missing_critical)}")
 
     # ═══ FULL BUSINESS DNA ═══
     biz_context = ""
@@ -547,9 +539,15 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # ═══ PERSONALIZATION GUARDRAIL: Block generic advice ═══
     if guardrail_status == "BLOCKED":
+        # Build actionable list of critical missing fields
+        critical_missing = [f for f in missing_fields if f["critical"]][:5]
+        missing_list = ", ".join(f["label"] for f in critical_missing) if critical_missing else "business profile fields"
+        logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id[:8]} coverage={coverage_pct}% missing_critical={len(missing_critical)}")
         return {
-            "reply": "I need to know more about your business before I can give you specific advice. Please complete your business calibration first — it takes about 3 minutes and unlocks personalised intelligence across the entire platform.",
+            "reply": f"I need a bit more context about your business before I can give you specific advice. I'm currently working with {coverage_pct}% data coverage — not enough to deliver accurate guidance.\n\nTo unlock personalised intelligence, please complete: {missing_list}. It takes about 3 minutes and makes every response significantly more useful.",
             "guardrail": "BLOCKED",
+            "coverage_pct": coverage_pct,
+            "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:8]],
             "context_fields": context_fields,
             "live_signals": live_signal_count,
             "conversation_id": req.conversation_id,
@@ -577,14 +575,38 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 if profile.get(field) and str(profile.get(field)) not in ('None', ''):
                     calibration_fields.append(label)
         calibration_summary = ', '.join(calibration_fields) if calibration_fields else 'business name and industry'
+
+        # List top missing fields for the model to acknowledge
+        top_missing = [f["label"] for f in missing_fields if f["critical"]][:3]
+        missing_note = f" Missing for fuller analysis: {', '.join(top_missing)}." if top_missing else ""
+
         guardrail_injection = (
-            f"\n[ADVISOR CONTEXT: You have calibration data for this business covering: {calibration_summary}. "
+            f"\n[ADVISOR CONTEXT — DATA COVERAGE {coverage_pct}% — DEGRADED MODE: "
+            f"You have calibration data covering: {calibration_summary}. "
             f"You DO have access to this data — it is injected above in BUSINESS DNA. "
-            f"Do NOT say 'I don't have access to your data' or 'no data sources connected'. "
-            f"Use the calibration data you have. Acknowledge that live integrations (CRM, accounting) are not yet connected "
-            f"and focus your advisory on what you know from their calibration profile. "
-            f"Be specific using the business name, industry, goals and challenges you have been given.]\n"
+            f"Do NOT say 'I don't have access to your data'. "
+            f"Use the calibration data you have. Briefly note (once, naturally) that connecting live integrations "
+            f"would sharpen specific numbers.{missing_note} "
+            f"Be specific using the business name, industry, goals and challenges above.]\n"
         )
+    elif guardrail_status == "FULL":
+        guardrail_injection = f"\n[ADVISOR CONTEXT — DATA COVERAGE {coverage_pct}% — FULL MODE: All key data available. Deliver sharp, number-grounded advice.]\n"
+
+    # ═══ CALIBRATION CONTEXT INJECTION when no integrations ═══
+    if not has_crm and not has_accounting and not has_email:
+        calibration_context = ""
+        if profile:
+            abn = profile.get("abn") or profile.get("business_number") or ""
+            website = profile.get("website") or ""
+            preferences = profile.get("advisory_mode") or profile.get("tone_preference") or ""
+            if abn:
+                calibration_context += f"\nABN: {abn}"
+            if website:
+                calibration_context += f"\nWebsite: {website}"
+            if preferences:
+                calibration_context += f"\nAdvisor Tone Preference: {preferences}"
+        if calibration_context:
+            guardrail_injection += f"\n[CALIBRATION CONTEXT (no integrations connected — use this data for personalised guidance):{calibration_context}]\n"
 
     system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
@@ -758,6 +780,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "conversation_title": conversation_title,
             "delegated_action": delegated_action,
             "execution_id": execution_id,
+            "guardrail": guardrail_status,
+            "coverage_pct": coverage_pct,
+            "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
         }
 
     except Exception as e:

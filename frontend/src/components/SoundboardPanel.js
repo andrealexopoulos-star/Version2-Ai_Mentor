@@ -3,6 +3,7 @@ import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database,
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS } from '../lib/analytics';
+import DataCoverageGate from './DataCoverageGate';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -36,6 +37,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [attachedFile, setAttachedFile] = useState(null);
+  // ── Coverage gate state ──
+  const [coverageGate, setCoverageGate] = useState(null); // {guardrail, coveragePct, missingFields}
 
   // ── Server-side scan usage (Supabase) ──
   const [scanUsage, setScanUsage] = useState(null); // null = loading
@@ -139,6 +142,26 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         if (res.data.conversation_id && !activeConvId) {
           setActiveConvId(res.data.conversation_id);
           setConversations(prev => [{ id: res.data.conversation_id, title: res.data.conversation_title || 'New chat', updated_at: new Date().toISOString() }, ...prev]);
+        }
+
+        // ── Coverage gate + telemetry ──
+        const guardrail = res.data?.guardrail;
+        const coveragePct = res.data?.coverage_pct ?? null;
+        const missingFields = res.data?.missing_fields || [];
+
+        if (guardrail) {
+          // Emit telemetry
+          const eventName = guardrail === 'BLOCKED' ? 'ai_response_blocked'
+            : guardrail === 'DEGRADED' ? 'ai_response_degraded' : 'ai_response_full';
+          trackEvent(eventName, { coverage_pct: coveragePct, missing_count: missingFields.length });
+
+          if (guardrail === 'BLOCKED') {
+            setCoverageGate({ guardrail: 'BLOCKED', coveragePct, missingFields });
+          } else if (guardrail === 'DEGRADED') {
+            setCoverageGate({ guardrail: 'DEGRADED', coveragePct, missingFields });
+          } else {
+            setCoverageGate(null);
+          }
         }
       }
     } catch {
@@ -384,6 +407,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
       {/* Input area */}
       <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid #243140' }}>
+        {/* Coverage gate — shown above input when blocked or degraded */}
+        {coverageGate && (
+          <DataCoverageGate
+            guardrail={coverageGate.guardrail}
+            coveragePct={coverageGate.coveragePct}
+            missingFields={coverageGate.missingFields}
+            compact={coverageGate.guardrail === 'DEGRADED'}
+            data-testid="soundboard-coverage-gate"
+          />
+        )}
         {/* Attachment preview */}
         {attachedFile && (
           <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg" style={{ background: '#141C26', border: '1px solid rgba(255,106,0,0.3)' }}>

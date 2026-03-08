@@ -124,6 +124,10 @@ export const EVENTS = {
   PAGE_LOAD_COMPLETE: 'page_load_complete',
   PAGE_LOAD_ERROR: 'page_load_error',
   PAGE_RETRY: 'page_retry',
+  // ── AI response gating ──
+  AI_RESPONSE_BLOCKED: 'ai_response_blocked',
+  AI_RESPONSE_DEGRADED: 'ai_response_degraded',
+  AI_RESPONSE_FULL: 'ai_response_full',
 };
 
 /**
