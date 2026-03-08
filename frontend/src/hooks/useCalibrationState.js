@@ -20,6 +20,7 @@ const extractFirstName = (raw) => {
 export const useCalibrationState = () => {
   const navigate = useNavigate();
   const { user, session, loading, signOut, clearBootstrapCache } = useSupabaseAuth();
+  const supabase = useSupabaseAuth().supabase;
 
   const [entry, setEntry] = useState("loading");
   const [userName, setUserName] = useState("");
@@ -147,7 +148,27 @@ export const useCalibrationState = () => {
     try {
       await apiClient.post('/console/state', { current_step: step, status });
     } catch (e) {
-      console.warn('Auto-save failed (non-blocking):', e);
+      console.warn('Auto-save API failed (non-blocking):', e);
+    }
+    // Belt-and-suspenders: write COMPLETE directly to Supabase so it is
+    // never lost due to API timing or network issues on redirect.
+    if (status === "COMPLETE" && session?.user?.id) {
+      try {
+        await supabase.from('strategic_console_state').upsert({
+          user_id: session.user.id,
+          status: 'COMPLETE',
+          is_complete: true,
+          current_step: step,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+        await supabase.from('user_operator_profile').upsert({
+          user_id: session.user.id,
+          persona_calibration_status: 'complete',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+      } catch (sbErr) {
+        console.warn('Auto-save Supabase direct write failed:', sbErr);
+      }
     }
   };
 
@@ -474,8 +495,8 @@ export const useCalibrationState = () => {
   };
 
   // ═══ PHASE 5: Snapshot → Dashboard ═══
-  const proceedFromIntelligence = () => {
-    autoSave(9, "COMPLETE");
+  const proceedFromIntelligence = async () => {
+    await autoSave(9, "COMPLETE");
     triggerComplete();
   };
 
@@ -493,7 +514,7 @@ export const useCalibrationState = () => {
   };
 
   const startCalibration = async () => {
-    autoSave(9, "COMPLETE");
+    await autoSave(9, "COMPLETE");
     triggerComplete();
   };
 
@@ -505,9 +526,9 @@ export const useCalibrationState = () => {
     if (isProbe) payload.probe = true;
     try {
       const data = await callEdge(payload);
-      autoSave(currentStep, data.status === "COMPLETE" ? "COMPLETE" : "IN_PROGRESS");
-      if (data.status === "COMPLETE") { triggerComplete(); return; }
-      if (currentStep >= 9) { autoSave(9, "COMPLETE"); triggerComplete(); return; }
+      if (data.status === "COMPLETE") { await autoSave(9, "COMPLETE"); triggerComplete(); return; }
+      if (currentStep >= 9) { await autoSave(9, "COMPLETE"); triggerComplete(); return; }
+      autoSave(currentStep, "IN_PROGRESS");
       await new Promise(r => setTimeout(r, 400));
       applyResponse(data);
     } catch { setError("Calibration engine temporarily unavailable."); }
@@ -527,7 +548,7 @@ export const useCalibrationState = () => {
         return Math.min(next, 9);
       });
       autoSave(currentStep + 1);
-      if (data.status === "COMPLETE") { autoSave(9, "COMPLETE"); triggerComplete(); return; }
+      if (data.status === "COMPLETE") { await autoSave(9, "COMPLETE"); triggerComplete(); return; }
       if (data.question && data.options?.length > 0) { applyResponse(data); return; }
       if (data.message) {
         setMessages(prev => [...prev, { role: "edge", text: data.message }]);
@@ -536,7 +557,7 @@ export const useCalibrationState = () => {
           try {
             const nextStep = Math.min(currentStep + 2, 9);
             const followUp = await callEdge({ step: nextStep, message: "continue" });
-            if (followUp.status === "COMPLETE") { autoSave(9, "COMPLETE"); triggerComplete(); return; }
+            if (followUp.status === "COMPLETE") { await autoSave(9, "COMPLETE"); triggerComplete(); return; }
             if (followUp.question && followUp.options?.length > 0) { applyResponse(followUp); return; }
             if (followUp.message) setMessages(prev => [...prev, { role: "edge", text: followUp.message }]);
           } catch {}
