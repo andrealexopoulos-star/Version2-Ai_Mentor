@@ -72,16 +72,16 @@ const DataCenter = () => {
 
   const fetchData = async () => {
     try {
-      const [filesRes, statsRes, profileRes] = await Promise.all([
+      const [filesRes, statsRes, profileRes] = await Promise.allSettled([
         apiClient.get(`/data-center/files`),
         apiClient.get(`/data-center/stats`),
         apiClient.get(`/business-profile`)
       ]);
-      setFiles(filesRes.data);
-      setStats(statsRes.data);
-      setProfile(profileRes.data);
+      if (filesRes.status === 'fulfilled') setFiles(filesRes.value.data);
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
     } catch (error) {
-      toast.error('Failed to load data center');
+      // Silently fail — page renders with empty/default state
     } finally {
       setLoading(false);
     }
