@@ -1,0 +1,157 @@
+{
+  "summary": "Comprehensive functional audit of ALL 25 dashboard pages. Login works (email/password). TierGate pass-through confirmed — ALL pages load without upgrade blocks (Risk, Revenue, Operations all accessible). Key findings: (1) Forensic Audit spins ~60s before showing error (backend /ingestion/hybrid + /ingestion/run both timeout), (2) Exposure Scan spins ~90s before showing error (explicit 90s timeout on /dsee/scan), (3) 4 other pages have backend API performance issues causing slow loads (30s delays). Most pages work correctly including Market (5 tabs), SoundBoard (message sending), Settings (4 tabs), Integrations Connected Apps, Marketing Automation, A/B Testing create.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/ingestion/hybrid",
+        "issue": "Does not respond within 30s (apiClient default timeout). ForensicAuditPage falls back to /ingestion/run which also times out. Total 60s before error shown. User-visible as 'infinite spin' for ~60 seconds.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "/api/ingestion/run",
+        "issue": "Fallback for /ingestion/hybrid — also times out after 30s. Combined with primary, causes 60s total spin on Forensic Audit page.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "/api/dsee/scan",
+        "issue": "Does not respond within 90s (DSEEPage has explicit timeout: 90000ms). User sees spinner for full 90 seconds before error.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "/api/user/integration-status",
+        "issue": "Returns 500 in browser context (persisting from iteration_106). Data Connections tab shows 'Loading integration status...' — resolves with error state eventually but CRM/Accounting/Email CTAs may not appear.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/business-profile/context",
+        "issue": "Slow — takes 30s to timeout (AxiosError logged). Business DNA page shows skeleton for 30s before form renders. Form does render after timeout with empty fields."
+      },
+      {
+        "endpoint": "/api/marketing/benchmark/latest",
+        "issue": "Slow — takes >15s to respond (spinner still present at t=15s). Eventually resolves to 'Run Your First Benchmark' empty state."
+      },
+      {
+        "endpoint": "/api/experiments/list",
+        "issue": "Slow — takes >15s to respond (spinner still present at t=15s). Eventually resolves to 'No experiments yet' empty state."
+      },
+      {
+        "endpoint": "/api/competitive-benchmark or similar",
+        "issue": "Competitive Benchmark shows skeleton loading at t=8s. Eventually resolves."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ForensicAuditPage.js — runAudit()",
+        "issue": "No explicit timeout on apiClient.post('/ingestion/hybrid'). Uses 30s default × 2 (primary + fallback) = 60s total before error. Should add explicit shorter timeout (e.g. 45s) and show error more quickly. The page DOES show error eventually — NOT truly infinite, just very slow.",
+        "selector": "[data-testid='audit-run-btn']",
+        "priority": "HIGH"
+      },
+      {
+        "component": "DSEEPage.js — runScan()",
+        "issue": "Has explicit timeout: 90000 (90s). Very long wait before error shows. Consider reducing to 45-60s and showing interim progress message.",
+        "selector": "[data-testid='dsee-run']",
+        "priority": "HIGH"
+      },
+      {
+        "component": "BusinessProfile.js — fetchProfile()",
+        "issue": "No explicit timeout on apiClient.get('/business-profile/context'). Takes 30s before AxiosError fires and form renders with empty fields. Consider adding loading timeout with user-friendly message.",
+        "selector": "n/a",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Integrations / Data Connections tab",
+        "issue": "useIntegrationStatus hook calls /api/user/integration-status which returns 500. CRM/Accounting/Email connection CTAs may not appear. Persisting from iteration_106.",
+        "affected_selectors": ["[data-testid='integrations-tab-data-connections']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "page_by_page_status": {
+    "/advisor": "OK — loads empty state 'Welcome. Let\u2019s activate your intelligence.' Connect CRM/Accounting/Email CTAs shown. No infinite spin.",
+    "/decisions": "OK — loads with spinner during data fetch (normal), shows Decision Centre heading",
+    "/revenue": "OK — loads Revenue Engine, spinner for data load (normal)",
+    "/operations": "OK — loads Delivery & Operations, spinner for data load (normal)",
+    "/risk": "OK — TierGate removed, loads Risk & Workforce Intelligence (PREVIOUSLY BLOCKED, NOW FIXED)",
+    "/market": "OK — loads, all 5 tabs clickable (Focus/Saturation/Demand/Friction/Reports). 'Waiting for data' empty state shown.",
+    "/competitive-benchmark": "OK — loads, Refresh button visible and clickable. Skeleton loading (slow API)",
+    "/alerts": "OK — Alert Centre loads",
+    "/actions": "OK — Resolution Centre loads",
+    "/automations": "OK — Automations loads",
+    "/email-inbox": "OK — Priority Inbox loads",
+    "/compliance": "OK — Compliance Intelligence loads",
+    "/reports": "OK — Intelligence Reports loads",
+    "/audit-log": "OK — Governance Audit Log loads",
+    "/marketing-intelligence": "SLOW — loads with spinner, still spinning at t=15s. Eventually resolves to 'Run Your First Benchmark' empty state (~30s timeout)",
+    "/marketing-automation": "OK — loads, content types selectable (Google Ads/Blog/Social/Landing Page/Job Description), Generate button functional",
+    "/ab-testing": "SLOW — loads with 'Loading experiments...', still at t=15s. Eventually resolves to 'No experiments yet' empty state (~30s timeout)",
+    "/integrations": "PARTIAL — Connected Apps tab WORKS (shows CRM/Financial/HRIS/ATS/E-Commerce/Knowledge Base categories). Data Connections tab SPINNING due to /api/user/integration-status 500",
+    "/data-health": "OK — Data Health loads",
+    "/forensic-audit": "BROKEN — Run Audit spins for ~60s (30s primary + 30s fallback) before showing error. Backend endpoints not responding.",
+    "/exposure-scan": "BROKEN — Scan spins for 90s before showing error. Backend /dsee/scan not responding.",
+    "/business-profile": "SLOW — shows skeleton for 30s (API timeout), then renders empty form with 4 tabs (Market/Product/Team/Strategy)",
+    "/settings": "OK — loads Settings with 4 tabs (Account/Preferences/Tools/Billing). Full Name, Business Name, Industry fields visible.",
+    "/calendar": "OK — Calendar Intelligence loads",
+    "/soundboard": "OK — MySoundBoard loads, message sending works (AI responds with 'Thinking...' then gives answer)"
+  },
+  "tier_gate_status": {
+    "TierGate": "PASS-THROUGH — returns children directly. All routes accessible.",
+    "EnterpriseContactGate": "PASS-THROUGH — all features accessible.",
+    "tierResolver": "superadmin/admin role maps to super_admin tier (verified in code).",
+    "blocked_pages": "NONE — all pages accessible with test account"
+  },
+  "test_report_links": ["/app/test_reports/iteration_107.json"],
+  "action_items": [
+    "CRITICAL: Fix backend /api/ingestion/hybrid endpoint — it does not respond within 30s. This is the primary cause of Forensic Audit 'infinite spin'. Check backend logs for the handler at this endpoint.",
+    "CRITICAL: Fix backend /api/dsee/scan endpoint — it does not respond within 90s. Exposure Scan appears to spin forever from user perspective.",
+    "HIGH: Fix /api/user/integration-status 500 error (iteration_106 bug persisting). Data Connections tab CTAs (CRM/Accounting/Email) not appearing.",
+    "MEDIUM: Fix /api/business-profile/context — takes 30s to timeout causing blank Business DNA page for 30 seconds. User sees skeleton for too long.",
+    "MEDIUM: Fix /api/marketing/benchmark/latest and /api/experiments/list — both slow (>15s). Consider adding proper empty states that show quickly.",
+    "LOW: Consider adding shorter explicit timeouts on ForensicAuditPage (runAudit) and DSEEPage (runScan) to reduce UX wait time while backend is being fixed. E.g. 45s instead of 60s+90s.",
+    "INFO: All TierGate passes work correctly. Risk/Revenue/Operations pages now accessible."
+  ],
+  "critical_code_review_comments": [
+    "ForensicAuditPage.js runAudit(): No explicit timeout → uses 30s default × 2 (primary + fallback). Consider adding { timeout: 45000 } to both calls and better progress messaging.",
+    "DSEEPage.js runScan(): Has { timeout: 90000 } which is too long. Reduce to 45s or add incremental status messaging.",
+    "BusinessProfile.js fetchProfile(): No explicit timeout. After AxiosError at 30s, form renders empty which is confusing — add error state message 'Could not load profile, showing empty form'.",
+    "MarketingIntelPage.js: uses .then().catch(() => {}).finally() pattern — spinner stops at 30s. Consider adding early error state for better UX.",
+    "Integrations.js Data Connections: Uses useIntegrationStatus hook which has proper finally { setLoading(false) } — should resolve after 500 response or timeout. But check if Data Connections renders loading indefinitely even after hook loading=false."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A — frontend only testing",
+    "frontend": "80% (20/25 pages fully functional, 3 slow/delayed loads, 2 broken on feature execution)"
+  },
+  "test_credentials": "newtest1@biqctest.io / BIQcTest!2026",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "All 25 pages tested comprehensively. TierGate pass-through confirmed working. Key issues: (1) Forensic Audit and Exposure Scan appear to spin indefinitely but actually timeout at 60s and 90s respectively — root cause is backend endpoints /ingestion/hybrid, /ingestion/run, /dsee/scan not responding. (2) Business DNA shows skeleton for 30s before form renders (backend timeout). (3) Data Connections 500 error persists from iteration_106. (4) Marketing Intel and A/B Testing slow to load (>15s spinner). Settings works with 4 tabs, Market page has all 5 tabs, SoundBoard sends messages, Marketing Automation and Connected Apps both functional.",
+  "rca_of_issues": {
+    "forensic_audit_spin": {
+      "symptom": "Run Audit button shows 'Auditing...' spinner for ~60 seconds",
+      "root_cause": "Backend /api/ingestion/hybrid endpoint does not respond within 30s (apiClient default timeout). After timeout, ForensicAuditPage falls back to /ingestion/run which also times out after 30s. Total: 60s before error shown.",
+      "mitigation": "Fix backend endpoint performance. Interim frontend fix: add explicit shorter timeout (e.g. 30s total) and show 'still processing...' message at 15s mark."
+    },
+    "exposure_scan_spin": {
+      "symptom": "Scan button shows 'Scanning...' spinner for up to 90 seconds",
+      "root_cause": "DSEEPage.js explicitly sets timeout: 90000 on /dsee/scan API call. Backend endpoint not responding in time.",
+      "mitigation": "Fix backend /dsee/scan performance. Frontend: reduce timeout to 45s."
+    },
+    "data_connections_500": {
+      "symptom": "Data Connections tab shows 'Loading integration status...' — CRM CTAs don't appear",
+      "root_cause": "/api/user/integration-status returns 500. Same as iteration_106. Backend Supabase migration may not be deployed on preview.",
+      "mitigation": "Run migration on preview environment or fix the backend endpoint."
+    },
+    "business_dna_slow": {
+      "symptom": "Business DNA shows skeleton for 30 seconds before form renders",
+      "root_cause": "/api/business-profile/context times out after 30s (apiClient default). After AxiosError, form renders with empty fields.",
+      "mitigation": "Fix backend endpoint performance. Frontend: add user-visible message 'Profile not loaded, showing empty form' after timeout."
+    }
+  }
+}
