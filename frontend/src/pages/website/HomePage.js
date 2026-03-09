@@ -122,16 +122,16 @@ const HomePage = () => (
         </p>
 
         {/* ── Protect / Stabilise / Strengthen ── */}
-        <div className="flex flex-col items-center gap-1.5 mb-10">
-          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-8">
+        <div className="flex flex-col items-center gap-2 mb-16">
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
             {['Protect', 'Stabilise', 'Strengthen'].map(word => (
               <div key={word} className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#FF7A18' }} />
-                <span className="text-sm sm:text-base font-semibold" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
+                <span className="text-base sm:text-lg font-semibold" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-center" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4 }}>
+          <p className="text-xs text-center mt-1" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4 }}>
             No credit card required &middot; Australian owned &amp; operated
           </p>
         </div>
@@ -140,8 +140,8 @@ const HomePage = () => (
             AI ERA SECTION — sits at the fold
         ════════════════════════════════════ */}
 
-        {/* Section heading — just at the fold */}
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 mt-4"
+        {/* Section heading */}
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 mt-6"
           style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
           What Businesses Are Achieving In The AI Era
         </h2>
