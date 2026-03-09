@@ -28,8 +28,9 @@ function getAvailableDates() {
 }
 
 export default function EnterpriseContactGate({ children, featureName = 'This feature' }) {
-  const { user } = useSupabaseAuth();
-  const tier = resolveTier(user);
+  // All gates removed — full platform access for all users
+  return children;
+}
 
   const fullName = user?.user_metadata?.full_name || user?.full_name || '';
   const email = user?.email || '';

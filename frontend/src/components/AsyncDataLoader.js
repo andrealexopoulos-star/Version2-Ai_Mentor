@@ -264,8 +264,8 @@ const AsyncDataLoader = ({
     return () => clearTimeout(t);
   }, [loading, timeoutMs]);
 
-  // Tier gate
-  if (tierLocked) return <TierGateBanner feature={feature} />;
+  // Tier gate — disabled, full access for all users
+  // if (tierLocked) return <TierGateBanner feature={feature} />;
 
   // Error state
   if (error && !loading) return <ErrorPanel error={error} onRetry={onRetry} moduleName={moduleName} />;

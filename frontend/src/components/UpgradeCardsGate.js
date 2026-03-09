@@ -10,11 +10,9 @@ import { fontFamily } from '../design-system/tokens';
 const PLANS = PRICING_TIERS;
 
 export default function UpgradeCardsGate({ children, requiredTier = 'starter', featureName = 'This feature' }) {
-  const { user } = useSupabaseAuth();
-  const navigate = useNavigate();
-  const tier = resolveTier(user);
-
-  if (hasAccess(tier, requiredTier)) return children;
+  // All gates removed — full platform access for all users
+  return children;
+}
 
   const currentRank = TIER_RANK[tier] || 0;
 
