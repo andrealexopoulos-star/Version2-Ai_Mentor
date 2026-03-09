@@ -84,58 +84,58 @@ const HomePage = () => (
       <div className="relative flex flex-col items-center text-center px-5 sm:px-8"
         style={{ minHeight: '100vh', zIndex: 3, paddingTop: 88, paddingBottom: 64 }}>
 
+        {/* ── Australian Shield — ABOVE headline ── */}
+        <div className="inline-flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-full mb-7"
+          style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
+          <Shield className="w-7 h-7 flex-shrink-0" style={{ color: '#FF7A18' }} />
+          <span className="text-sm sm:text-base font-semibold tracking-widest uppercase whitespace-nowrap"
+            style={{ fontFamily: fontFamily.mono, color: '#FF7A18', lineHeight: 1 }}>
+            Australian Owned &amp; Operated
+          </span>
+        </div>
+
         {/* ── Headline — widened ── */}
         <div className="w-full max-w-5xl mx-auto mb-7">
           <LiquidSteelHeroRotator />
         </div>
 
-        {/* ── Two CTAs ── */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4 w-full max-w-lg mx-auto">
+        {/* ── Two CTAs — same size, stacked on mobile ── */}
+        <div className="flex flex-col items-stretch w-full max-w-xs sm:max-w-md mx-auto gap-3 mb-4">
           <Link to="/register-supabase"
-            className="w-full sm:w-auto px-12 py-4 rounded-xl text-base font-semibold text-white inline-flex items-center justify-center transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)', minWidth: 200 }}
+            className="px-10 py-4 rounded-2xl text-base font-semibold text-white text-center transition-all hover:brightness-110"
+            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)' }}
             data-testid="hero-cta">
             Try It For Free
           </Link>
           <Link to="/platform"
-            className="w-full sm:w-auto px-12 py-4 rounded-xl text-base font-semibold inline-flex items-center justify-center transition-all hover:bg-white/5"
-            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.25)', color: '#FFFFFF', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 200 }}
+            className="px-10 py-4 rounded-2xl text-base font-semibold text-white text-center transition-all hover:bg-white/5"
+            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', fontFamily: fontFamily.body, fontWeight: 600 }}
             data-testid="hero-learn-more">
             Learn More
           </Link>
         </div>
 
-        {/* Login link */}
-        <Link to="/login-supabase"
-          className="text-sm hover:text-white transition-colors mb-7"
-          style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}
-          data-testid="hero-login">
-          Already have an account? <span className="font-semibold text-white">Log in</span>
-        </Link>
+        {/* Login link — centred */}
+        <p className="text-sm mb-7 text-center" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+          Already have an account?{' '}
+          <Link to="/login-supabase" className="font-semibold text-white hover:text-[#FF7A18] transition-colors" data-testid="hero-login">
+            Log in
+          </Link>
+        </p>
 
-        {/* ── Protect / Stabilise / Strengthen — larger ── */}
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+        {/* ── Protect / Stabilise / Strengthen — larger, centred ── */}
+        <div className="flex flex-col items-center gap-2 mb-10">
+          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-8">
             {['Protect', 'Stabilise', 'Strengthen'].map(word => (
-              <div key={word} className="flex items-center gap-2.5">
+              <div key={word} className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: '#FF7A18' }} />
                 <span className="text-base sm:text-lg font-semibold" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
               </div>
             ))}
           </div>
-          <p style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4, fontSize: '12px' }}>
+          <p className="text-xs text-center whitespace-nowrap" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.45 }}>
             No credit card required &middot; Australian owned &amp; operated
           </p>
-        </div>
-
-        {/* ── Australian Shield Badge — 2× size, placed here ── */}
-        <div className="flex items-center justify-center gap-3 mb-10 px-5 py-3 rounded-full"
-          style={{ background: 'rgba(255,122,24,0.07)', border: '1px solid rgba(255,122,24,0.18)' }}>
-          <Shield className="w-8 h-8" style={{ color: '#FF7A18' }} />
-          <span className="text-base font-semibold tracking-widest uppercase"
-            style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>
-            Australian Owned &amp; Operated
-          </span>
         </div>
 
         {/* ════════════════════════════════════
