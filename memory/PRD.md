@@ -1,4 +1,11 @@
 # BIQc Platform — Product Requirements Document
+### Phase 5 — React Native Token Alignment + Full Regression (Complete — Mar 2026)
+- **Mobile theme fully aligned** — textMuted/tabInactive #8B9DB5 (WCAG AA), bgPanel, bgSidebar, helper exports
+- **font-display:optional** — eliminates FOUT on slow connections
+- **Pricing trust badge** — "Privacy Act Compliant" (was "Zero Data Leakage")
+- **Regression suite (33/33 PASS)** — all 20 dark routes, 8 light routes, all Phase 1-4 features, FCP 1820ms
+
+
 ### Phase 4 — Font Unification (Complete — Mar 2026)
 - **`fontFamily.displayING` undefined fixed** — 37 marketing heading instances now render Cormorant Garamond (was browser default fallback)
 - **Tailwind + tokens.js unified** — `heading/display: Cormorant Garamond`, `sans/body: Inter`, `mono: JetBrains Mono` across all config files
