@@ -1,66 +1,265 @@
 {
-  "identity": "E1: The Anti-AI Designer",
-  "mission": "Update BIQc Homepage Hero Rotator with 'Liquid Steel' precision, impactful copy, and manual controls.",
-  "target_audience": "SMB owners/founders in Australia, non-technical, time-poor.",
-  "design_philosophy": {
-    "theme": "Liquid Steel",
-    "background": "#0F1720",
-    "accent": "#FF6A00",
-    "secondary": "#9FB0C3",
-    "fonts": {
-      "heading": "'Cormorant Garamond', Georgia, serif",
-      "body": "'Inter', sans-serif"
+  "identity": {
+    "persona": "E1",
+    "mission": "Create a high-performance, aesthetically unique SaaS integrations marketplace.",
+    "principles": [
+      "Fusion over Imitation: Mix Notion's clean utility with Linear's dark elegance.",
+      "Emotion First: The page should feel 'powerful' and 'connected'.",
+      "Content is King: Logos and status are the heroes.",
+      "Contrast: High contrast between the dark slate background and the vibrant orange accent."
+    ]
+  },
+  "visual_system": {
+    "colors": {
+      "page_background": "#0F1720",
+      "card_background": "#141C26",
+      "card_border": "#243140",
+      "accent_primary": "#FF6A00",
+      "accent_hover": "#E55F00",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#94A3B8",
+      "success_glow": "rgba(34, 197, 94, 0.5)",
+      "status_connected": "#22C55E",
+      "status_available": "#94A3B8"
+    },
+    "typography": {
+      "font_family_sans": "var(--font-body)",
+      "font_family_heading": "var(--font-heading)",
+      "font_family_mono": "var(--font-mono)"
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-8 lg:p-12",
+      "grid_gap": "gap-4 md:gap-6",
+      "card_padding": "p-5"
+    },
+    "effects": {
+      "hover_lift": "hover:-translate-y-1 transition-transform duration-200 ease-out",
+      "card_shadow": "shadow-lg hover:shadow-xl",
+      "border_glow": "ring-1 ring-white/10 hover:ring-[#FF6A00]/50"
     }
   },
-  "components": [
-    {
-      "name": "LiquidSteelHeroRotator",
-      "path": "/app/frontend/src/components/website/LiquidSteelHeroRotator.js",
-      "description": "The core rotating hero component. Needs updated copy, orange highlights, manual navigation, and 12s interval.",
-      "requirements": {
-        "rotation_interval": 12000,
-        "manual_navigation": true,
-        "transition_animation": "Slide left->right (translateX)",
-        "content_variants": [
-          {
-            "h1": "BIQc — A Single **Stability Engine** Across All Departments & Tools",
-            "h2": "Unify fragmented business tools, data and departments into **structured decision ready intelligence**",
-            "prefix": "Continuously Learning & Designed to;",
-            "inlineBullets": ["Protect", "Stabilise", "Strengthen"]
-          },
-          {
-            "h1": "**Integrates** your Financials, Operational, Sales & Marketing Systems Into **One Intelligence Layer**",
-            "h2": "BIQc connects your systems, **detects emerging risk**, and measures the real impact of **leadership decisions**.",
-            "prefix": "Continuously Learning & Designed to;",
-            "inlineBullets": ["Protect", "Stabilise", "Strengthen"]
-          },
-          {
-            "h1": "BIQc — **Intelligence** Above Your Systems",
-            "h2": "**Detect instability**, constantly learning from every past and present to **strengthen** your business decisions",
-            "prefix": "Continuously Learning & Designed to;",
-            "inlineBullets": ["Protect", "Stabilise", "Strengthen"]
-          }
-        ],
-        "highlight_color": "#FF6A00",
-        "highlight_parsing": "Parse '**' markers in h1 and h2 strings to apply the highlight color.",
-        "icons": "Use ChevronLeft and ChevronRight from 'lucide-react' for navigation arrows."
-      },
-      "implementation_notes": [
-        "Use 'lucide-react' for icons.",
-        "Remove the 'bullets' array from the variants (as per 'NO bullet points' rule).",
-        "Ensure navigation arrows reset the auto-rotation timer when clicked.",
-        "Arrows should be absolutely positioned on the left and right edges of the viewport, vertically centered.",
-        "Ensure arrows have z-index > 2 to be clickable over the text layers.",
-        "Maintain the existing 'phase' based transition logic (current-static, current-exiting, etc.).",
-        "Ensure the component handles rich text parsing safely (e.g., helper function to split string by '**')."
-      ]
+  "layout_structure": {
+    "type": "Sidebar-Grid",
+    "mobile_behavior": "Stack with Dropdown Navigation",
+    "grid_columns": "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+  },
+  "components": {
+    "PageContainer": {
+      "description": "Full-screen dark container with specific background color.",
+      "classes": "min-h-screen bg-[#0F1720] text-white flex flex-col md:flex-row"
+    },
+    "Sidebar": {
+      "description": "Left navigation for categories. Fixed on desktop, hidden on mobile (replaced by dropdown).",
+      "width": "w-64",
+      "styling": "border-r border-[#243140] bg-[#0F1720] p-6 hidden md:block",
+      "item_styling": "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-[#94A3B8] hover:text-white hover:bg-[#141C26]",
+      "active_styling": "bg-[#141C26] text-[#FF6A00] border-l-2 border-[#FF6A00]"
+    },
+    "MobileNav": {
+      "description": "Dropdown or horizontal scroll for categories on mobile.",
+      "styling": "md:hidden p-4 border-b border-[#243140] bg-[#0F1720] sticky top-0 z-20"
+    },
+    "MainContent": {
+      "description": "Right side area containing search and grid.",
+      "styling": "flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto"
+    },
+    "Header": {
+      "description": "Contains Page Title, Total Count, and Search Bar.",
+      "styling": "flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4"
+    },
+    "SearchBar": {
+      "description": "Input field with search icon.",
+      "styling": "bg-[#141C26] border border-[#243140] text-white rounded-lg px-4 py-2 w-full md:w-80 focus:ring-1 focus:ring-[#FF6A00] focus:border-[#FF6A00] placeholder-gray-500"
+    },
+    "IntegrationCard": {
+      "description": "The main unit of the grid.",
+      "styling": "group bg-[#141C26] border border-[#243140] rounded-xl p-6 flex flex-col items-start gap-4 hover:border-[#FF6A00] transition-all duration-300 relative overflow-hidden",
+      "connected_styling": "border-[#22C55E]/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+    },
+    "LogoContainer": {
+      "description": "White rounded square for Clearbit logos to ensure visibility on dark bg.",
+      "styling": "w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0"
+    },
+    "StatusBadge": {
+      "description": "Small pill showing connection status.",
+      "styling": "text-xs font-semibold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5",
+      "variants": {
+        "connected": "bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20",
+        "available": "bg-[#243140] text-[#94A3B8] border border-[#243140]",
+        "coming_soon": "bg-[#141C26] text-gray-600 border border-[#243140] border-dashed"
+      }
+    },
+    "ConnectButton": {
+      "description": "Primary action button.",
+      "styling": "mt-auto w-full py-2 px-4 bg-[#FF6A00] hover:bg-[#E55F00] text-white text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
+      "connected_styling": "bg-[#141C26] border border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10"
     }
+  },
+  "data_resources": {
+    "categories": [
+      {"id": "all", "label": "All Apps", "icon": "LayoutGrid"},
+      {"id": "email", "label": "Email", "icon": "Mail"},
+      {"id": "crm", "label": "CRM", "icon": "Users"},
+      {"id": "financial", "label": "Financial", "icon": "DollarSign"},
+      {"id": "hris", "label": "HRIS", "icon": "Briefcase"},
+      {"id": "ats", "label": "ATS", "icon": "UserPlus"},
+      {"id": "ticketing", "label": "Ticketing", "icon": "Ticket"},
+      {"id": "storage", "label": "File Storage", "icon": "HardDrive"},
+      {"id": "wiki", "label": "Knowledge Base", "icon": "Book"}
+    ],
+    "integrations": [
+      {
+        "name": "Gmail",
+        "domain": "google.com",
+        "category": "email",
+        "description": "Sync emails and calendar events directly.",
+        "status": "available"
+      },
+      {
+        "name": "Outlook",
+        "domain": "outlook.com",
+        "category": "email",
+        "description": "Connect your Microsoft 365 Outlook account.",
+        "status": "available"
+      },
+      {
+        "name": "HubSpot",
+        "domain": "hubspot.com",
+        "category": "crm",
+        "description": "Sync contacts, companies, and deals.",
+        "status": "connected"
+      },
+      {
+        "name": "Salesforce",
+        "domain": "salesforce.com",
+        "category": "crm",
+        "description": "Enterprise CRM synchronization.",
+        "status": "available"
+      },
+      {
+        "name": "Pipedrive",
+        "domain": "pipedrive.com",
+        "category": "crm",
+        "description": "Sales pipeline management tool.",
+        "status": "available"
+      },
+      {
+        "name": "QuickBooks",
+        "domain": "quickbooks.intuit.com",
+        "category": "financial",
+        "description": "Accounting software integration.",
+        "status": "available"
+      },
+      {
+        "name": "Xero",
+        "domain": "xero.com",
+        "category": "financial",
+        "description": "Online accounting for small businesses.",
+        "status": "available"
+      },
+      {
+        "name": "Stripe",
+        "domain": "stripe.com",
+        "category": "financial",
+        "description": "Payment processing integration.",
+        "status": "available"
+      },
+      {
+        "name": "BambooHR",
+        "domain": "bamboohr.com",
+        "category": "hris",
+        "description": "HR software for small and medium businesses.",
+        "status": "available"
+      },
+      {
+        "name": "Workday",
+        "domain": "workday.com",
+        "category": "hris",
+        "description": "Finance, HR, and planning system.",
+        "status": "coming_soon"
+      },
+      {
+        "name": "Gusto",
+        "domain": "gusto.com",
+        "category": "hris",
+        "description": "Payroll, benefits, and HR platform.",
+        "status": "available"
+      },
+      {
+        "name": "Greenhouse",
+        "domain": "greenhouse.io",
+        "category": "ats",
+        "description": "Recruiting and onboarding software.",
+        "status": "available"
+      },
+      {
+        "name": "Lever",
+        "domain": "lever.co",
+        "category": "ats",
+        "description": "Talent acquisition suite.",
+        "status": "available"
+      },
+      {
+        "name": "Jira",
+        "domain": "atlassian.com",
+        "category": "ticketing",
+        "description": "Issue and project tracking.",
+        "status": "connected"
+      },
+      {
+        "name": "Zendesk",
+        "domain": "zendesk.com",
+        "category": "ticketing",
+        "description": "Customer service software.",
+        "status": "available"
+      },
+      {
+        "name": "Dropbox",
+        "domain": "dropbox.com",
+        "category": "storage",
+        "description": "File hosting service integration.",
+        "status": "available"
+      },
+      {
+        "name": "Google Drive",
+        "domain": "google.com",
+        "category": "storage",
+        "description": "Cloud file storage and synchronization.",
+        "status": "available"
+      },
+      {
+        "name": "Box",
+        "domain": "box.com",
+        "category": "storage",
+        "description": "Cloud content management.",
+        "status": "available"
+      },
+      {
+        "name": "Notion",
+        "domain": "notion.so",
+        "category": "wiki",
+        "description": "All-in-one workspace for notes and docs.",
+        "status": "available"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Use 'lucide-react' for all icons.",
+    "Implement the 'Clearbit Logo' URL pattern: https://logo.clearbit.com/{domain}",
+    "CRITICAL: Maintain the existing 'openMergeLink()' function for the connection action. Do not break existing business logic.",
+    "CRITICAL: Preserve OAuth flows for Gmail and Outlook.",
+    "Use the exact hex codes provided for the dark theme. Do not use generic Tailwind 'gray-900'.",
+    "Ensure the layout is responsive: Sidebar on desktop, Dropdown on mobile.",
+    "Add a 'connected' state visual: Green border glow + 'Connected' badge.",
+    "The search bar should filter the integrations list in real-time.",
+    "Display a 'Total Connected' count in the header area.",
+    "Ensure all interactive elements have data-testid attributes (e.g., 'integration-card-hubspot', 'connect-btn-hubspot').",
+    "CODEBASE IS JS: Write code in .js and .jsx files. Do not use TypeScript types."
   ],
-  "universal_guidelines": [
-    "Do not use gradients for text unless specified.",
-    "Ensure high contrast for accessibility.",
-    "Use 'data-testid' for all interactive elements (arrows).",
-    "Strictly follow the 'Liquid Steel' color palette.",
-    "Do not add any 'AI' emojis to the UI."
+  "UNIVERSAL_GUIDELINES": [
+    "Do not use gradients for the main background; use the solid #0F1720.",
+    "Use 'Inter' or 'Plus Jakarta Sans' for the body text if available in tokens.",
+    "Ensure accessibility: Text contrast on the #141C26 card background must be high.",
+    "Motion: Add subtle hover effects to cards (translate-y, border color change)."
   ]
 }
