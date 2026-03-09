@@ -84,56 +84,54 @@ const HomePage = () => (
       <div className="relative flex flex-col items-center text-center px-5 sm:px-8"
         style={{ minHeight: '100vh', zIndex: 3, paddingTop: 88, paddingBottom: 64 }}>
 
-        {/* ── Australian Shield — ABOVE headline ── */}
-        <div className="inline-flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-full mb-7"
-          style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
-          <Shield className="w-7 h-7 flex-shrink-0" style={{ color: '#FF7A18' }} />
-          <span className="text-sm sm:text-base font-semibold tracking-widest uppercase whitespace-nowrap"
-            style={{ fontFamily: fontFamily.mono, color: '#FF7A18', lineHeight: 1 }}>
+        {/* ── Australian Shield — subtle pill above headline ── */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5"
+          style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
+          <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#FF7A18', opacity: 0.8 }} />
+          <span className="text-xs font-medium tracking-widest uppercase"
+            style={{ fontFamily: fontFamily.mono, color: '#FF7A18', opacity: 0.8 }}>
             Australian Owned &amp; Operated
           </span>
         </div>
 
-        {/* ── Headline — widened ── */}
-        <div className="w-full max-w-5xl mx-auto mb-7">
+        {/* ── Headline ── */}
+        <div className="w-full max-w-5xl mx-auto mb-5">
           <LiquidSteelHeroRotator />
         </div>
 
-        {/* ── Two CTAs — same size, stacked on mobile ── */}
-        <div className="flex flex-col items-stretch w-full max-w-xs sm:max-w-md mx-auto gap-3 mb-4">
+        {/* ── Two CTAs — side by side on desktop, stacked on mobile ── */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3 w-full max-w-sm sm:max-w-none mx-auto">
           <Link to="/register-supabase"
-            className="px-10 py-4 rounded-2xl text-base font-semibold text-white text-center transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)' }}
+            className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:brightness-110"
+            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 6px 24px rgba(255,122,24,0.28)', minWidth: 180 }}
             data-testid="hero-cta">
             Try It For Free
           </Link>
           <Link to="/platform"
-            className="px-10 py-4 rounded-2xl text-base font-semibold text-white text-center transition-all hover:bg-white/5"
-            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', fontFamily: fontFamily.body, fontWeight: 600 }}
+            className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:bg-white/5"
+            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.22)', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 180 }}
             data-testid="hero-learn-more">
             Learn More
           </Link>
         </div>
 
-        {/* Login link — centred */}
-        <p className="text-sm mb-7 text-center" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+        {/* Login link */}
+        <p className="text-xs mb-5 text-center" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
           Already have an account?{' '}
-          <Link to="/login-supabase" className="font-semibold text-white hover:text-[#FF7A18] transition-colors" data-testid="hero-login">
-            Log in
-          </Link>
+          <Link to="/login-supabase" className="font-semibold text-white hover:text-[#FF7A18] transition-colors" data-testid="hero-login">Log in</Link>
         </p>
 
-        {/* ── Protect / Stabilise / Strengthen — larger, centred ── */}
-        <div className="flex flex-col items-center gap-2 mb-10">
+        {/* ── Protect / Stabilise / Strengthen ── */}
+        <div className="flex flex-col items-center gap-1.5 mb-10">
           <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-8">
             {['Protect', 'Stabilise', 'Strengthen'].map(word => (
               <div key={word} className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: '#FF7A18' }} />
-                <span className="text-base sm:text-lg font-semibold" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#FF7A18' }} />
+                <span className="text-sm sm:text-base font-semibold" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-center whitespace-nowrap" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.45 }}>
+          <p className="text-xs text-center" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4 }}>
             No credit card required &middot; Australian owned &amp; operated
           </p>
         </div>
