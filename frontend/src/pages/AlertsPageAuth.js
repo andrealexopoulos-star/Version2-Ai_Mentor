@@ -129,9 +129,9 @@ const AlertsPageAuth = () => {
             filtered.map(a => <AlertItem key={a.id} alert={a} />)
           ) : !loading ? (
             <div className="rounded-lg p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
-              <Bell className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-              <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>No alerts detected.</p>
-              <p className="text-xs text-[#64748B] mt-1">Alerts generate automatically as BIQc processes signals from connected integrations.</p>
+              <Bell className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
+              <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>All systems normal — no alerts.</p>
+              <p className="text-xs mt-1" style={{ color: '#9FB0C3' }}>BIQc monitors your connected data 24/7. You'll be notified here the moment something requires your attention.</p>
             </div>
           ) : null}
         </div>

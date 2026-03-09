@@ -65,13 +65,15 @@ const OperationsPage = () => {
         {loading && <PageLoadingState message="Loading operational data…" />}
 
         {!loading && !hasRealOpsData && (
-          <Panel className="py-8">
+          <Panel className="py-10">
             <IntegrationStatusWidget
               categories={['crm', 'accounting']}
               status={integrationStatus}
               loading={integrationLoading}
               syncing={integrationSyncing}
               onRefresh={refreshIntegrations}
+              emptyStateTitle="Operations intelligence activates with your data"
+              emptyStateDesc="Connect CRM or accounting tools to see SLA compliance, task bottlenecks, delivery health and workload analysis — continuously monitored in real time."
             />
           </Panel>
         )}

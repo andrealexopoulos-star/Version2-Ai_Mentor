@@ -122,13 +122,15 @@ const RevenuePage = () => {
         {loading && <PageLoadingState message="Loading revenue data…" />}
 
         {!loading && !hasDeals && !hasFinancials && (
-          <Panel className="py-8">
+          <Panel className="py-10">
             <IntegrationStatusWidget
               categories={['crm', 'accounting']}
               status={integrationStatus}
               loading={integrationLoading}
               syncing={integrationSyncing}
               onRefresh={refreshIntegrations}
+              emptyStateTitle="Your pipeline is waiting to be analysed"
+              emptyStateDesc="Connect HubSpot, Salesforce or Xero to see deal velocity, stalled opportunities, cash flow and revenue concentration risk — updated automatically."
             />
           </Panel>
         )}

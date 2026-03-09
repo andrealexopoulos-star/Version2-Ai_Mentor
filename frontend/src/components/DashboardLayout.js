@@ -178,7 +178,19 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     } catch {}
   };
 
-  const [expandedSection, setExpandedSection] = useState(null);
+  // Multi-expand sections — all relevant sections stay open simultaneously
+  const [expandedSections, setExpandedSections] = useState(() => {
+    // Default: expand Intelligence + Execution (most-used) on first load
+    return new Set(['intelligence', 'execution']);
+  });
+
+  const toggleSection = (sectionId) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      next.has(sectionId) ? next.delete(sectionId) : next.add(sectionId);
+      return next;
+    });
+  };
 
   const navSections = [
     { id: 'intelligence', label: 'Intelligence', items: [
@@ -202,12 +214,10 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
       { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
     ]},
-    { id: 'marketing', label: 'Marketing', items: [
+    { id: 'governance', label: 'Settings & Growth', items: [
       { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
       { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
       { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
-    ]},
-    { id: 'governance', label: 'Governance & Legal', items: [
       { icon: Shield, label: 'Compliance', path: '/compliance' },
       { icon: FileText, label: 'Reports', path: '/reports' },
       { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
@@ -231,9 +241,13 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   }
 
   useEffect(() => {
-    if (!expandedSection) {
-      const active = navSections.find(s => s.items.some(i => isActive(i.path)));
-      if (active) setExpandedSection(active.id);
+    // Auto-expand the section containing the active route
+    const active = navSections.find(s => s.items.some(i => isActive(i.path)));
+    if (active) {
+      setExpandedSections(prev => {
+        if (prev.has(active.id)) return prev;
+        return new Set([...prev, active.id]);
+      });
     }
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -402,12 +416,12 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
         <nav className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
           {visibleSections.map((section) => {
-            const isExpanded = expandedSection === section.id;
+            const isExpanded = expandedSections.has(section.id);
             const hasActiveChild = section.items.some(i => isActive(i.path));
 
             return (
               <div key={section.id} className="mb-1">
-                <button onClick={() => setExpandedSection(isExpanded ? null : section.id)}
+                <button onClick={() => toggleSection(section.id)}
                   className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-3'} py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.1em] transition-all`}
                   style={{ color: hasActiveChild ? '#FF6A00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
                   title={sidebarCollapsed ? section.label : undefined}
@@ -448,19 +462,20 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
           {/* BIQc Legal — collapsible section at bottom */}
           {!sidebarCollapsed && (
-            <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid #243140' }}>
+            <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, #243140)' }}>
               <button
-                onClick={() => setExpandedSection(expandedSection === 'legal' ? null : 'legal')}
+                onClick={() => toggleSection('legal')}
                 className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-white/5 group"
-                style={{ color: '#64748B' }}
+                style={{ color: 'var(--biqc-text-muted, #8B9DB5)' }}
+                aria-expanded={expandedSections.has('legal')}
               >
                 <div className="flex items-center gap-2">
                   <Scale className="w-3.5 h-3.5" />
                   <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ fontFamily: fontFamily.mono }}>BIQc Legal</span>
                 </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedSection === 'legal' ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedSections.has('legal') ? 'rotate-180' : ''}`} />
               </button>
-              {expandedSection === 'legal' && (
+              {expandedSections.has('legal') && (
                 <div className="mt-1 space-y-0.5">
                   {[
                     { label: 'BIQc AI Learning Guarantee', path: '/trust/ai-learning-guarantee', icon: Zap },

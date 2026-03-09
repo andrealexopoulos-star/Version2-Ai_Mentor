@@ -181,9 +181,9 @@ export default function DecisionsPage() {
           <Card className="mb-8" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }} data-testid="no-decisions">
             <CardContent className="text-center py-10">
               <CheckCircle2 className="w-10 h-10 mx-auto mb-3" style={{ color: colors.success }} />
-              <p className="text-lg font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }}>No decisions pending</p>
-              <p className="text-sm mt-1" style={{ color: colors.textMuted, fontFamily: fontFamily.body }}>
-                BIQc is monitoring your systems. When a signal requires a leadership decision, it will appear here.
+              <p className="text-lg font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }}>No decisions pending right now</p>
+              <p className="text-sm mt-1 max-w-sm mx-auto" style={{ color: colors.textMuted, fontFamily: fontFamily.body }}>
+                BIQc monitors your connected systems continuously. Decisions surface automatically when deal stalls, cash burn, or operational signals require leadership action.
               </p>
             </CardContent>
           </Card>

@@ -65,10 +65,9 @@ const AuditLogPage = () => {
   const renderNullState = () => (
     <Panel className="text-center py-12">
       <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-      <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No verified signals available.</p>
-      <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">
-        Connect your business integrations to begin recording governance events.
-        Audit entries are created only from verified, connected data sources.
+      <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded yet.</p>
+      <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#9FB0C3' }}>
+        The audit log records every verified intelligence event from your connected systems — deal changes, invoice movements, compliance flags. Connect CRM or accounting to start building your governance trail.
       </p>
       <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="audit-connect-cta">
         <Plug className="w-4 h-4" /> Connect Integrations
