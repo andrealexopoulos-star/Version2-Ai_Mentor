@@ -82,10 +82,10 @@ const HomePage = () => (
 
       {/* Content — centred column */}
       <div className="relative flex flex-col items-center text-center px-5 sm:px-8"
-        style={{ minHeight: '100vh', zIndex: 3, paddingTop: 88, paddingBottom: 64 }}>
+        style={{ minHeight: '100vh', zIndex: 3, paddingTop: 72, paddingBottom: 64 }}>
 
         {/* ── Australian Shield — subtle pill above headline ── */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5"
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-3"
           style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
           <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#FF7A18', opacity: 0.8 }} />
           <span className="text-xs font-medium tracking-widest uppercase"
