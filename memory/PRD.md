@@ -1,4 +1,11 @@
 # BIQc Platform — Product Requirements Document
+### Phase 4 — Font Unification (Complete — Mar 2026)
+- **`fontFamily.displayING` undefined fixed** — 37 marketing heading instances now render Cormorant Garamond (was browser default fallback)
+- **Tailwind + tokens.js unified** — `heading/display: Cormorant Garamond`, `sans/body: Inter`, `mono: JetBrains Mono` across all config files
+- **3 unused fonts removed** from `index.html` (Plus Jakarta Sans, DM Sans, Sora) — reduces page load
+- **Typography**: Hero H1 → Inter (intentional high-impact); Section H2/H3 → Cormorant Garamond; Body → Inter; Data → JetBrains Mono
+
+
 
 ## CRITICAL SESSION REQUIREMENT
 **Every fork/session MUST set `frontend/.env` to `beta.thestrategysquad.com`.**
