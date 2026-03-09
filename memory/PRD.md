@@ -33,7 +33,16 @@
 - Backend `POST /api/notifications/register-device` endpoint
 - Listeners for foreground + tap notifications integrated in App.tsx
 
-### Phase 2 — Navigation & UX (Complete — Mar 2026)
+### Phase 2b — Light Mode Full Coverage + Phase 3 Trust & Conversion (Complete — Mar 2026)
+- **743 inline style color replacements** across 63 files: `#141C26` → `var(--biqc-bg-card)`, `#0F1720` → `var(--biqc-bg)`, `#0A1018` → `var(--biqc-bg-input)`, `#243140` → `var(--biqc-border)`, `#F4F7FA/9FB0C3/64748B` → CSS vars — ALL 10 platform pages pass light mode test
+- **CSS Tailwind overrides** in `index.css`: `[data-theme="light"]` selectors for Tailwind utility classes that can't be controlled via inline CSS vars
+- **`--biqc-panel-bg` + `--biqc-sidebar-bg`** tokens added to complete the variable set
+- **New Pricing.js** — 5-plan grid, Monthly/Annual toggle (20% savings), feature comparison table (12 rows × 5 columns), trust badges, expandable FAQ, orange gradient CTA
+- **Routing fixed** — `/pricing` now serves new `Pricing.js` (was serving old `SitePricingPage`)
+- **Homepage** — Trust badges section (🇦🇺/🔒/🛡️/✅) + 3-card testimonials section with SMB metrics
+- **Login page** — 4th trust item added: "Australian Hosted — Sydney & Melbourne, zero offshore processing"
+- **Test result**: Light mode 100% verified (13/13 platform pages), Phase 3 features verified ✅ (iteration_111)
+
 - **Sidebar multi-expand** — Changed from single accordion to `Set<sectionId>` multi-expand. Intelligence + Execution open by default. Active section auto-expands without closing others. ARIA: `aria-expanded`, `aria-controls` on all sections.
 - **4 sidebar sections** (was 5) — Marketing merged into "Settings & Growth" alongside Compliance, Reports, Settings, Business DNA. Reduces cognitive load, eliminates unnecessary section header.
 - **Mobile nav Risk = direct tab** — Bottom bar now: Overview | Revenue | **Risk** | Alerts | More (Risk was 2 taps, now 1). Market moved to More sheet.
