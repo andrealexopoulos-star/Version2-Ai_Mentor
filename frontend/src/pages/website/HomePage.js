@@ -4,7 +4,7 @@ import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import { ArrowRight, CheckCircle2, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 
@@ -15,65 +15,91 @@ const GlassCard = ({ children, className = '' }) => (
   </div>
 );
 
-/* ── Diamond/hex grid background pattern ─────────────────── */
 const DIAMOND_PATTERN = `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cpath d='M40 4L76 40L40 76L4 40z' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E")`;
 
-/* ── Stat item matching reference image style ─────────────── */
-const StatItem = ({ icon: Icon, value, label, iconColor = '#FF7A18' }) => (
-  <div className="flex items-center gap-3">
-    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-      style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.15)' }}>
-      <Icon className="w-6 h-6" style={{ color: iconColor }} />
-    </div>
-    <div>
-      <div className="text-2xl sm:text-3xl font-bold leading-none" style={{ fontFamily: fontFamily.mono, color: '#FFFFFF' }}>{value}</div>
-      <div className="text-xs mt-0.5 leading-tight" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>{label}</div>
-    </div>
+/* ── Stat card — orange-bordered rounded card like Intelligence Diagram ─── */
+const StatCard = ({ stat, body, biqc }) => (
+  <div
+    className="rounded-2xl p-7 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
+    style={{
+      background: 'rgba(20,28,38,0.85)',
+      border: '1px solid rgba(255,122,24,0.25)',
+      borderRadius: 18,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,122,24,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
+      backdropFilter: 'blur(12px)',
+    }}
+  >
+    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{stat}</p>
+    <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{body}</p>
+    <p className="text-sm italic leading-relaxed" style={{ color: '#FF7A18', fontFamily: fontFamily.body }}>{biqc}</p>
   </div>
 );
 
+const STATS = [
+  {
+    stat: '90% of data is created every two years',
+    body: <>Yet most businesses use less than <strong style={{ color: '#FFFFFF' }}>10% of it.</strong></>,
+    biqc: 'BIQc transforms scattered data into practical business intelligence.',
+  },
+  {
+    stat: '40% of business decisions lack the right data',
+    body: 'Leaders often rely on instinct instead of insight.',
+    biqc: 'BIQc highlights the signals that matter before decisions are made.',
+  },
+  {
+    stat: '75% of businesses are experimenting with AI',
+    body: <>But fewer than <strong style={{ color: '#FFFFFF' }}>5% see real operational value.</strong></>,
+    biqc: 'BIQc delivers practical AI insights for everyday decisions.',
+  },
+  {
+    stat: 'Poor decisions can cost up to 3% of revenue',
+    body: 'Small mistakes add up quickly.',
+    biqc: 'BIQc helps identify risks and opportunities early.',
+  },
+  {
+    stat: 'Data-driven companies grow significantly faster',
+    body: 'Intelligence creates competitive advantage.',
+    biqc: 'BIQc provides the clarity leaders need to scale.',
+  },
+];
+
 const HomePage = () => (
   <WebsiteLayout>
-    {/* ── HERO ─────────────────────────────────────────────── */}
+
+    {/* ══════════════════════════════════════
+        HERO — above the fold
+    ══════════════════════════════════════ */}
     <section className="relative overflow-hidden" style={{ minHeight: '100vh', background: '#070E18' }} data-testid="hero-section">
 
-      {/* Diamond grid pattern */}
+      {/* Diamond grid background */}
       <div className="absolute inset-0" style={{ backgroundImage: DIAMOND_PATTERN, backgroundSize: '80px 80px', zIndex: 1 }} />
 
-      {/* Radial spotlight glow from center-top */}
+      {/* Centre spotlight glow */}
       <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse 80% 60% at 50% 10%, rgba(30,50,80,0.6) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse 80% 55% at 50% 15%, rgba(30,50,80,0.55) 0%, transparent 70%)',
         zIndex: 2,
       }} />
 
-      {/* Subtle orange brand glow at very center */}
-      <div className="absolute" style={{
-        top: '30%', left: '50%', transform: 'translate(-50%,-50%)',
-        width: 600, height: 300,
-        background: 'radial-gradient(ellipse, rgba(255,122,24,0.04) 0%, transparent 70%)',
-        zIndex: 2,
-      }} />
+      {/* Content — centred column */}
+      <div className="relative flex flex-col items-center text-center px-5 sm:px-8"
+        style={{ minHeight: '100vh', zIndex: 3, paddingTop: 88, paddingBottom: 64 }}>
 
-      {/* Content */}
-      <div className="relative flex flex-col items-center justify-center text-center px-4 sm:px-6"
-        style={{ minHeight: '100vh', zIndex: 3, paddingTop: 80, paddingBottom: 60 }}>
-
-        {/* Rotating headline */}
-        <div className="w-full max-w-4xl mx-auto mb-6">
+        {/* ── Headline — widened ── */}
+        <div className="w-full max-w-5xl mx-auto mb-7">
           <LiquidSteelHeroRotator />
         </div>
 
-        {/* CTA buttons — two side-by-side like reference */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4 w-full max-w-md mx-auto">
+        {/* ── Two CTAs ── */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4 w-full max-w-lg mx-auto">
           <Link to="/register-supabase"
-            className="w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold text-white inline-flex items-center justify-center gap-2 transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)', minWidth: 190 }}
+            className="w-full sm:w-auto px-12 py-4 rounded-xl text-base font-semibold text-white inline-flex items-center justify-center transition-all hover:brightness-110"
+            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)', minWidth: 200 }}
             data-testid="hero-cta">
             Try It For Free
           </Link>
           <Link to="/platform"
-            className="w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold inline-flex items-center justify-center gap-2 transition-all hover:bg-white/5"
-            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.25)', color: '#FFFFFF', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 190 }}
+            className="w-full sm:w-auto px-12 py-4 rounded-xl text-base font-semibold inline-flex items-center justify-center transition-all hover:bg-white/5"
+            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.25)', color: '#FFFFFF', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 200 }}
             data-testid="hero-learn-more">
             Learn More
           </Link>
@@ -81,74 +107,59 @@ const HomePage = () => (
 
         {/* Login link */}
         <Link to="/login-supabase"
-          className="text-sm hover:text-white transition-colors mb-6"
+          className="text-sm hover:text-white transition-colors mb-7"
           style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}
           data-testid="hero-login">
           Already have an account? <span className="font-semibold text-white">Log in</span>
         </Link>
 
-        {/* ── Protect / Stabilise / Strengthen + disclaimer ── */}
+        {/* ── Protect / Stabilise / Strengthen — larger ── */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
             {['Protect', 'Stabilise', 'Strengthen'].map(word => (
-              <div key={word} className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#FF7A18' }} />
-                <span className="text-sm font-medium" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
+              <div key={word} className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: '#FF7A18' }} />
+                <span className="text-base sm:text-lg font-semibold" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
               </div>
             ))}
           </div>
-          <p style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4, fontSize: '11px' }}>
+          <p style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4, fontSize: '12px' }}>
             No credit card required &middot; Australian owned &amp; operated
           </p>
         </div>
 
-        {/* ── AI Era Stats Section ── */}
-        <div className="w-full max-w-2xl mx-auto px-4 pb-12">
-          <p className="text-center text-xs mb-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-            Business leaders make hundreds of decisions every day, and research shows up to <span style={{ color: '#FF7A18' }}>40%</span> of those decisions are made without the right data.
-          </p>
-          <h2 className="text-center text-base sm:text-lg font-semibold mb-8" style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
-            What Businesses Are Achieving In The AI Era
-          </h2>
+        {/* ── Australian Shield Badge — 2× size, placed here ── */}
+        <div className="flex items-center justify-center gap-3 mb-10 px-5 py-3 rounded-full"
+          style={{ background: 'rgba(255,122,24,0.07)', border: '1px solid rgba(255,122,24,0.18)' }}>
+          <Shield className="w-8 h-8" style={{ color: '#FF7A18' }} />
+          <span className="text-base font-semibold tracking-widest uppercase"
+            style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>
+            Australian Owned &amp; Operated
+          </span>
+        </div>
 
-          <div className="space-y-0">
-            {[
-              {
-                stat: '90% of data is created every two years',
-                body: <>Yet most businesses use less than <span style={{ color: '#FFFFFF', fontWeight: 600 }}>10% of it.</span></>,
-                biqc: 'BIQc transforms scattered data into practical business intelligence.',
-              },
-              {
-                stat: '40% of business decisions lack the right data',
-                body: 'Leaders often rely on instinct instead of insight.',
-                biqc: 'BIQc highlights the signals that matter before decisions are made.',
-              },
-              {
-                stat: '75% of businesses are experimenting with AI',
-                body: <>But fewer than <span style={{ color: '#FFFFFF', fontWeight: 600 }}>5% see real operational value.</span></>,
-                biqc: 'BIQc delivers practical AI insights for everyday decisions.',
-              },
-              {
-                stat: 'Poor decisions can cost up to 3% of revenue',
-                body: 'Small mistakes add up quickly.',
-                biqc: 'BIQc helps identify risks and opportunities early.',
-              },
-              {
-                stat: 'Data-driven companies grow significantly faster',
-                body: 'Intelligence creates competitive advantage.',
-                biqc: 'BIQc provides the clarity leaders need to scale.',
-              },
-            ].map((item, i, arr) => (
-              <div key={i}>
-                <div className="py-6 text-left">
-                  <p className="text-sm sm:text-base font-bold mb-1" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{item.stat}</p>
-                  <p className="text-sm mb-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.body}</p>
-                  <p className="text-sm italic" style={{ color: '#FF7A18', fontFamily: fontFamily.body }}>{item.biqc}</p>
-                </div>
-                {i < arr.length - 1 && (
-                  <div style={{ height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                )}
-              </div>
+        {/* ════════════════════════════════════
+            AI ERA SECTION — sits at the fold
+        ════════════════════════════════════ */}
+
+        {/* Section heading — just at the fold */}
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 mt-4"
+          style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+          What Businesses Are Achieving In The AI Era
+        </h2>
+
+        {/* Intro paragraph — under heading */}
+        <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed"
+          style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          Business leaders make hundreds of decisions every day, and research shows up to{' '}
+          <span style={{ color: '#FF7A18', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
+        </p>
+
+        {/* ── Stat cards — 3-col grid with shadow/glow ── */}
+        <div className="w-full max-w-5xl mx-auto px-2 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {STATS.map((item, i) => (
+              <StatCard key={i} {...item} />
             ))}
           </div>
         </div>
