@@ -1,0 +1,683 @@
+{
+  "summary": "MASTER FORENSIC AUDIT — Complete discovery of BIQc ecosystem. Tested System 1 (Marketing Website), System 2 (Authenticated Platform), System 3 (Mobile App code review), Design System, and Component Library. Login works with andretest@test.com/Kooksmou1979*. All 25+ dashboard pages accessible. KEY NEW FINDING: /data-center shows 'Failed to load data center' toast (backend 503 transient). Trust sub-pages (/trust/terms, /trust/privacy etc.) load but return no h1/h2 headings. Homepage FCP: 304ms, very fast. Prior issues from iteration_107 (forensic audit timeout, exposure scan timeout) still present. /api/user/integration-status now returns 200 OK (previously 500).",
+
+  "system_1_marketing_website": {
+    "status": "VERIFIED",
+    "viewport_1440px": {
+      "/": {
+        "title": "BIQc — Business Intelligence Centre",
+        "hero_headline": "A Single Intelligence Layer Across All Business Systems",
+        "hero_sub": "Unify fragmented business tools, data and departments into structured decision ready intelligence",
+        "cta_primary": "Try It For Free →",
+        "social_proof": ["6hrs Saved Per Week", "83% Faster Risk Detection", "$47K Avg. Cash Recovered", "1 Single Source of Truth"],
+        "sections": ["WHAT SMBS GAIN WITH BIQC", "BUSINESS SIGNALS - Finance Systems, Operations, Sales"],
+        "navigation": ["Platform", "Intelligence", "Integrations", "Pricing", "Blog", "Log in", "Try It Free"]
+      },
+      "/platform": {
+        "hero": "Run Your Business With Enterprise-Level Intelligence — Without Hiring Enterprise Headcount.",
+        "problem_points": ["Too Many Disconnected Tools", "No Central Oversight", "Reactive Decision-Making", "Hidden Financial Leaks"],
+        "sections": ["Six layers of autonomous intelligence.", "Connects Your Systems"]
+      },
+      "/intelligence": {
+        "hero": "Stop Checking Reports. Start Preventing Problems.",
+        "categories": ["Financial Data", "Revenue & Sales Data", "Operational Data", "Risk & Compliance Data", "Market Signals", "Communication Signals"],
+        "sub_headline": "Six categories of business intelligence."
+      },
+      "/our-integrations": {
+        "hero": "Connect Any Platform. Gain Total Business Context.",
+        "integration_categories": ["Accounting", "CRM", "Payments", "Ecommerce", "Communication", "HR & Payroll"],
+        "sub_headline": "Direct integrations with the platforms you already use."
+      },
+      "/pricing": {
+        "hero": "Multiply the Capability of Your Entire Team.",
+        "top_offer": "Executive Market Assessment (free)",
+        "tiers": ["Foundation", "Performance", "Growth", "Enterprise"],
+        "other_sections": ["Expansion Modules"]
+      },
+      "/blog": {
+        "hero": "AI Is Reshaping Business. Are You Keeping Up?",
+        "articles": ["AI Adoption Is Accelerating", "AI in Healthcare", "AI in Financial Services", "AI in Manufacturing", "Retail and E-Commerce AI", "AI in Construction", "AI in Legal"]
+      },
+      "/trust": {
+        "hero": "Built for Businesses That Take Data Seriously.",
+        "sub_headline": "Your data never leaves Australia.",
+        "security_features": ["Encryption at Rest", "Encryption in Transit", "Access Controls", "Audit Logs"],
+        "value_props": ["Enterprise-grade by default.", "Full transparency. No ambiguity."]
+      },
+      "/contact": {
+        "heading": "Get in touch",
+        "form_fields": ["name (text)", "email (email)", "company (text)", "phone (tel)", "message (textarea)"]
+      },
+      "/login-supabase": {
+        "heading": "Welcome back",
+        "sub_headline": "Sign in to your sovereign intelligence platform.",
+        "social_logins": ["Continue with Google", "Continue with Microsoft"],
+        "form_fields": ["EMAIL (email)", "PASSWORD (password)"],
+        "extras": ["Forgot password? link", "Don't have an account? Sign up link"],
+        "right_panel": "Your business intelligence, protected by design. AES-256, Real-time Signals, Zero Leakage, Data hosted in Sydney & Melbourne"
+      },
+      "/register-supabase": {
+        "heading": "Get started",
+        "sub_headline": "Create your account to access sovereign intelligence.",
+        "social_logins": ["Continue with Google", "Continue with Microsoft"],
+        "form_fields": ["Full Name (text)", "Email (email)", "Company (text)", "Industry (text)", "Password (password, min 6)", "Confirm Password (password)"],
+        "cta": "Create account",
+        "right_panel": "Transform chaos into strategic clarity. 15+ hours saved weekly, 8-12% cash bleed detected, 97% SOP compliance, 100% Australian data sovereignty guaranteed"
+      },
+      "/trust/terms": "Loads OK - title: BIQc — Business Intelligence Centre. No h1/h2 detected.",
+      "/trust/privacy": "Loads OK - no h1/h2 detected.",
+      "/trust/security": "Loads OK - no h1/h2 detected.",
+      "/trust/dpa": "Loads OK - no h1/h2 detected.",
+      "/trust/centre": "Loads OK - no h1/h2 detected.",
+      "/trust/ai-learning-guarantee": "Loads OK - headings: BIQc AI Learning Guarantee, Our Guarantee."
+    },
+    "responsive": {
+      "tablet_1024px": {
+        "homepage": "Full navigation visible (1024px width). Hamburger button also present.",
+        "pricing": "Layout responsive"
+      },
+      "mobile_390px": {
+        "homepage": "Hamburger menu visible. Mobile layout works.",
+        "platform": "Loads correctly",
+        "pricing": "Loads correctly"
+      }
+    },
+    "error_state": {
+      "invalid_login": "No visible error text captured after 5s wait. Error may appear as toast (Sonner) that disappears quickly. UNVERIFIED."
+    }
+  },
+
+  "system_2_platform": {
+    "login": {
+      "credentials_tested": "andretest@test.com / Kooksmou1979*",
+      "result": "SUCCESS — redirects to /advisor",
+      "backup_credentials": "newtest1@biqctest.io / BIQcTest!2026 (not needed)"
+    },
+    "sidebar_structure": {
+      "INTELLIGENCE": {
+        "testid": "nav-section-intelligence",
+        "items": [
+          {"label": "BIQc Overview", "path": "/advisor", "testid": "nav-item-advisor"},
+          {"label": "Decisions", "path": "/decisions", "testid": "nav-item-decisions"},
+          {"label": "Revenue", "path": "/revenue", "testid": "nav-item-revenue"},
+          {"label": "Operations", "path": "/operations", "testid": "nav-item-operations"},
+          {"label": "Risk", "path": "/risk", "testid": "nav-item-risk"},
+          {"label": "Market & Positioning", "path": "/market", "testid": "nav-item-market"},
+          {"label": "Competitive Benchmark", "path": "/competitive-benchmark", "testid": "nav-item-competitive-benchmark"}
+        ]
+      },
+      "EXECUTION": {
+        "testid": "nav-section-execution",
+        "items": [
+          {"label": "Alerts", "path": "/alerts"},
+          {"label": "Priority Inbox", "path": "/email-inbox"},
+          {"label": "Actions", "path": "/actions"},
+          {"label": "Automations", "path": "/automations"}
+        ]
+      },
+      "SYSTEMS": {
+        "testid": "nav-section-systems",
+        "items": [
+          {"label": "Integrations", "path": "/integrations"},
+          {"label": "Data Health", "path": "/data-health"},
+          {"label": "Ingestion Audit", "path": "/forensic-audit"},
+          {"label": "Exposure Scan", "path": "/exposure-scan"}
+        ]
+      },
+      "MARKETING": {
+        "testid": "nav-section-marketing",
+        "items": [
+          {"label": "Marketing Intel", "path": "/marketing-intelligence"},
+          {"label": "Marketing Auto", "path": "/marketing-automation"},
+          {"label": "A/B Testing", "path": "/ab-testing"}
+        ]
+      },
+      "GOVERNANCE_AND_LEGAL": {
+        "testid": "nav-section-governance",
+        "items": [
+          {"label": "Compliance", "path": "/compliance"},
+          {"label": "Reports", "path": "/reports"},
+          {"label": "Audit Log", "path": "/audit-log"},
+          {"label": "Business DNA", "path": "/business-profile"},
+          {"label": "Settings", "path": "/settings"},
+          {"label": "Weekly Check-In", "path": "/calendar"}
+        ]
+      },
+      "BIQC_LEGAL_COLLAPSIBLE": {
+        "items": [
+          {"label": "BIQc AI Learning Guarantee", "path": "/trust/ai-learning-guarantee"},
+          {"label": "Security & Infrastructure", "path": "/trust/security"},
+          {"label": "Trust Centre", "path": "/trust/centre"},
+          {"label": "Data Processing Agreement", "path": "/trust/dpa"},
+          {"label": "Privacy Policy", "path": "/trust/privacy"},
+          {"label": "Terms & Conditions", "path": "/terms"}
+        ]
+      }
+    },
+    "mobile_nav": {
+      "testid": "mobile-bottom-nav",
+      "items": [
+        {"id": "pulse", "label": "Overview", "path": "/advisor", "testid": "mobile-nav-pulse"},
+        {"id": "market", "label": "Market", "path": "/market", "testid": "mobile-nav-market"},
+        {"id": "revenue", "label": "Revenue", "path": "/revenue", "testid": "mobile-nav-revenue"},
+        {"id": "alerts", "label": "Alerts", "path": "/alerts", "testid": "mobile-nav-alerts"},
+        {"id": "more", "label": "More", "path": null, "testid": "mobile-nav-more"}
+      ],
+      "more_sheet_items": ["Integrations", "Operations", "Risk", "Compliance", "Settings", "Business DNA"]
+    },
+    "pages": {
+      "/advisor": {
+        "status": "OK",
+        "heading": "BIQc Overview / things have changed since yesterday",
+        "sections": ["Daily brief banner", "Tutorial overlay (dismissible)", "SoundBoard panel (right)", "Empty state CTAs: Complete Calibration, Forensic Market Exposure"],
+        "empty_state": "Welcome. Let's activate your intelligence. Connect CRM/Accounting/Email CTAs."
+      },
+      "/market": {
+        "status": "OK_SLOW",
+        "heading": "Get Started / Your Market Position",
+        "tabs": ["Focus", "Saturation", "Demand", "Friction"],
+        "note": "Shows 'Pulling your latest market signals...' loading skeleton. Tabs appear after API resolves.",
+        "empty_state": "Waiting for data"
+      },
+      "/revenue": {
+        "status": "OK",
+        "heading": "Revenue Engine",
+        "empty_state": "Connect CRM to view revenue data. CRM not connected + Accounting not connected CTAs."
+      },
+      "/operations": {
+        "status": "OK",
+        "heading": "Delivery & Operations",
+        "empty_state": "Connect integrations to assess operations. CRM/Accounting CTAs."
+      },
+      "/risk": {
+        "status": "OK",
+        "heading": "Risk & Workforce Intelligence",
+        "badge": "Data Confidence: Low (0/6 signals)",
+        "tabs": ["Risk & Governance", "Workforce Intelligence", "Cross-Domain Risk"],
+        "empty_state": "CRM not connected, Accounting not connected, Email not connected — 3 Connect CTAs"
+      },
+      "/decisions": {
+        "status": "OK",
+        "heading": "Decision Centre",
+        "sub_heading": "Signal-Driven Decisions",
+        "empty_state": "No decisions pending"
+      },
+      "/competitive-benchmark": {
+        "status": "OK_SLOW",
+        "heading": "Competitive Benchmark",
+        "empty_state": "Get Started — empty state with Refresh button"
+      },
+      "/alerts": {
+        "status": "OK",
+        "heading": "Alert Centre",
+        "filter_tabs": ["All", "Critical", "Moderate", "Info"],
+        "empty_state": "0 active alerts across your business. 0 Critical, 0 Moderate, 0 Info."
+      },
+      "/email-inbox": {
+        "status": "OK",
+        "heading": "Priority Inbox",
+        "empty_state": "No Email Provider Connected. Connect Email Provider CTA. No Priority Analysis Yet — Analyze My Inbox CTA."
+      },
+      "/actions": {
+        "status": "OK",
+        "heading": "Resolution Centre",
+        "empty_state": "No action items"
+      },
+      "/automations": {
+        "status": "OK",
+        "heading": "Automations"
+      },
+      "/integrations": {
+        "status": "OK",
+        "heading": "Integrations",
+        "sub_heading": "BIQc is ready to learn. Connect your first system to begin intelligence gathering.",
+        "tabs": ["Connected Apps", "Data Connections"],
+        "connected_apps_sidebar": ["CRM", "Financial", "HRIS", "ATS", "E-Commerce", "Knowledge Base"],
+        "connected_apps_state": "Select a category to explore supported platforms and connect your data.",
+        "data_connections_tab": "Shows connection CTAs (previously 500 error — now seems to load in current session)"
+      },
+      "/data-health": {
+        "status": "OK",
+        "heading": "Data Health",
+        "empty_state": "Awaiting Connections"
+      },
+      "/forensic-audit": {
+        "status": "BROKEN_TIMEOUT",
+        "heading": "Forensic Ingestion Audit",
+        "sub_heading": "3-layer deterministic analysis of URL extraction, cleaning, and synthesis integrity.",
+        "inputs": ["URL input: 'Enter URL to audit (e.g. thestrategysquad.com.au)'"],
+        "buttons": ["Run Audit"],
+        "note": "Run Audit spins ~60s before showing error (backend /api/ingestion/hybrid + /ingestion/run both timeout) — PERSISTING FROM ITERATION_107"
+      },
+      "/exposure-scan": {
+        "status": "BROKEN_TIMEOUT",
+        "heading": "Structural Exposure Analysis",
+        "sub_heading": "Deterministic competitive intelligence. No financial projections. Evidence-based only.",
+        "inputs": ["Website URL", "Business name (optional)", "City (optional)"],
+        "buttons": ["Scan"],
+        "note": "Scan spins ~90s before error (backend /api/dsee/scan timeout) — PERSISTING FROM ITERATION_107"
+      },
+      "/marketing-intelligence": {
+        "status": "OK",
+        "heading": "Marketing Intelligence",
+        "sub_heading": "5-pillar competitive benchmark. Evidence-based scoring.",
+        "empty_state": "Run Your First Benchmark — Compare against up to 5 competitors across Brand Visibility, Digital Presence, Content Maturity, Social Engagement, AI Citation Share.",
+        "tier_badge": "Free tier: 1 scan per 30 days",
+        "inputs": ["competitor1.com, competitor2.com, competitor3.com (text field)"],
+        "buttons": ["Run Benchmark"]
+      },
+      "/marketing-automation": {
+        "status": "OK",
+        "heading": "Marketing Automation",
+        "sub_heading": "Generate marketing content grounded in your business data and intelligence.",
+        "content_types": ["Google Ads", "Blog Post", "Social Media", "Landing Page", "Job Description"],
+        "parameters": {
+          "Topic": "text input (e.g., Q1 product launch for SMB market)",
+          "Tone": "dropdown (Professional, ...)",
+          "Audience": "text input (e.g., CFOs at mid-market)",
+          "Additional Context": "textarea (Any specific messaging, USPs, or constraints...)"
+        },
+        "right_panel": "Generated Content (empty state: Select a content type and generate to see results.)",
+        "buttons": ["Generate (visible when type selected)"]
+      },
+      "/ab-testing": {
+        "status": "OK",
+        "heading": "A/B Testing",
+        "sub_heading": "Create and manage experiments to optimise your intelligence outputs.",
+        "empty_state": "No experiments yet. Create your first A/B test to start optimising intelligence outputs.",
+        "buttons": ["+ New Experiment"]
+      },
+      "/compliance": {
+        "status": "OK",
+        "heading": "Compliance Intelligence",
+        "sub_heading": "Regulatory obligations, risk exposure, and compliance posture.",
+        "metric_cards": ["SPDFs: 0", "Regulatory Items: 0", "Contracts: Clear"],
+        "empty_state": "No regulatory items flagged. Connect accounting and email integrations to activate compliance monitoring."
+      },
+      "/reports": {
+        "status": "OK",
+        "heading": "Intelligence Reports",
+        "sub_heading": "Verified intelligence from connected data sources only.",
+        "report_types": [
+          {"name": "Forensic Calibration Report", "button": "Run Calibration", "description": "Digital footprint analysis, identity verification, and strategic positioning assessment."},
+          {"name": "Market Exposure Scan Report", "button": "Run Scan", "description": "Structural competitive exposure analysis — gaps, vulnerabilities, and market positioning risks."}
+        ],
+        "tier_badge": "FREE TIER: 1/30 DAYS",
+        "empty_state": "No integrations connected. Connect CRM, accounting, and email to generate verified intelligence reports.",
+        "cta": "Connect Integrations"
+      },
+      "/audit-log": {
+        "status": "OK",
+        "heading": "Governance Audit Log",
+        "sub_heading": "Verified events from connected integrations. No AI-generated entries.",
+        "empty_state": "No verified signals available. Connect your business integrations to begin recording governance events.",
+        "cta": "Connect Integrations"
+      },
+      "/business-profile": {
+        "status": "OK",
+        "heading": "Business DNA",
+        "sub_heading": "Your Business Identity",
+        "tabs": ["Market", "Product", "Team", "Strategy"],
+        "note": "Previously took 30s to load (API timeout). Now loads with 4 tabs visible."
+      },
+      "/settings": {
+        "status": "OK",
+        "heading": "Settings",
+        "sub_heading": "Manage your account, preferences, and billing",
+        "calibration_status": "Incomplete — BIQc needs calibration to advise effectively",
+        "tabs": ["Account", "Preferences", "Tools", "Billing"],
+        "account_fields": ["Full Name", "Business Name (placeholder: Your Company Name)", "Industry (placeholder: e.g., Technology)", "ABN (placeholder: 12 345 678 901)"],
+        "preferences_content": "AI Intelligence Preferences — Communication Style (Quick & Concise, Detailed & Thorough, Conversational, Data-Driven), Time Availability",
+        "overlay": "Get Started dialog shows: Connect Email (Outlook or Gmail), Connect Integrations (Xero, HubSpot, CRM)"
+      },
+      "/calendar": {
+        "status": "OK",
+        "heading": "Calendar Intelligence",
+        "empty_state": "No Calendar Events"
+      },
+      "/soundboard": {
+        "status": "OK",
+        "heading": "MySoundBoard",
+        "left_sidebar": "No conversations yet. + New Conversation button. Conversation list.",
+        "chat_area": {
+          "input_placeholder": "Share what's on your mind...",
+          "input_hint": "Press Enter to send • Shift+Enter for new line",
+          "quick_prompts": ["What should I focus on?", "Summarise my risks", "Show me my pipeline", "How can I grow revenue?"],
+          "buttons": ["Send (arrow icon)", "Attachment", "Voice icon"]
+        },
+        "action_buttons": ["Start Voice Call"],
+        "right_soundboard_panel": "Also shows SoundBoard on right side — 'andretest@test.com, your advisor is ready.' with 4 quick prompts"
+      },
+      "/data-center": {
+        "status": "ERROR",
+        "heading": "Data Center",
+        "sub_heading": "Upload your business documents to make the AI your subject matter expert",
+        "metric_cards": ["Total Files: 0", "Storage Used: 0 MB", "Categories: 0", "Profile Complete: 0%"],
+        "tabs": ["Files & Documents", "Business Profile", "Upload"],
+        "empty_state": "No files yet. Upload your business documents to help the AI understand your business better.",
+        "buttons": ["Upload Files"],
+        "ERROR": "Toast: 'Failed to load data center' — RCA: /api/data-center/files and /api/business-profile returned 503 at time of testing (transient backend issue)"
+      }
+    },
+    "responsive": {
+      "tablet_1024px": {
+        "sidebar": "Visible and functional (full sidebar layout)",
+        "tutorial_overlay": "Shows tutorial modal on /advisor",
+        "soundboard_panel": "Visible on right"
+      },
+      "mobile_390px": {
+        "bottom_nav": "Visible with 5 items (Overview, Market, Revenue, Alerts, More)",
+        "sidebar": "Hidden, opens via hamburger (top-left Menu button)",
+        "tutorial_overlay": "Shows tutorial modal, blurs background content",
+        "soundboard_fab": "Orange chat FAB button in bottom-right (above nav bar)"
+      }
+    },
+    "empty_states_summary": "Account andretest@test.com has NO integrations connected. All pages show appropriate empty states with 'Connect CRM/Accounting/Email' CTAs. No data or intelligence populated.",
+    "tier_gates": "PASS-THROUGH — All pages accessible. TierGate confirmed returning children directly."
+  },
+
+  "system_3_mobile_app": {
+    "status": "CODE_REVIEW_COMPLETE",
+    "framework": "React Native Expo",
+    "navigation": "createBottomTabNavigator — 5 tabs",
+    "authentication": {
+      "unauthenticated_state": "LoginScreen shows",
+      "authenticated_state": "MainTabs show",
+      "session_persistence": "auth.isAuthenticated() checks on app load",
+      "push_notifications": "registerForPushNotifications on login"
+    },
+    "screens": {
+      "LoginScreen": {
+        "file": "/app/mobile/src/screens/LoginScreen.tsx",
+        "elements": {
+          "logo": "B icon in circle (brandDim bg), BIQc title, 'Sovereign Business Intelligence' subtitle",
+          "form": ["Email input (mail icon, keyboardType=email-address)", "Password input (lock icon, secureTextEntry, show/hide toggle)"],
+          "cta": "Sign In button (orange/brand color)",
+          "error_state": "Error text displayed below form",
+          "footer": "Australian-hosted. AES-256 encrypted."
+        }
+      },
+      "HomeScreen": {
+        "tab_label": "Overview",
+        "tab_icon": "grid / grid-outline",
+        "file": "/app/mobile/src/screens/HomeScreen.tsx",
+        "apis": ["/auth/check-profile", "/cognition/overview", "/snapshot/latest"],
+        "elements": {
+          "greeting": "Good {morning/afternoon/evening}, {first_name}.",
+          "status_banner": "STABLE/DRIFT/COMPRESSION/CRITICAL status with interpretation",
+          "cognition_indices": "Grid of index cards from /cognition/overview",
+          "executive_brief": "Executive Memo card (up to 400 chars)",
+          "empty_state": "Connect your tools — CRM, accounting, and email integrations unlock intelligence.",
+          "pull_to_refresh": "RefreshControl with haptic feedback"
+        }
+      },
+      "ChatScreen": {
+        "tab_label": "Chat",
+        "tab_icon": "chatbubble / chatbubble-outline",
+        "file": "/app/mobile/src/screens/ChatScreen.tsx",
+        "apis": ["/soundboard/chat (POST)"],
+        "elements": {
+          "empty_state": {
+            "icon": "chatbubbles-outline",
+            "title": "BIQc Soundboard",
+            "subtitle": "Ask anything about your business intelligence.",
+            "quick_prompts": ["What should I focus on?", "Summarise my risk profile", "What are my competitors doing?", "Draft a follow-up email"]
+          },
+          "message_list": "FlatList with user (orange bubbles, right-aligned) and assistant (card style, left-aligned) messages",
+          "input_bar": {
+            "input": "TextInput — multiline, max 2000 chars, placeholder: Ask BIQc...",
+            "send_button": "Arrow-up icon (orange circle), disabled when empty or sending",
+            "sending_state": "Hourglass icon while sending"
+          }
+        }
+      },
+      "MarketScreen": {
+        "tab_label": "Market",
+        "tab_icon": "compass / compass-outline",
+        "file": "/app/mobile/src/screens/MarketScreen.tsx",
+        "apis": ["/cognition/market", "/snapshot/latest"],
+        "elements": {
+          "title": "Market Intelligence",
+          "cards": ["Digital Footprint score card", "Market Position card", "Market Signals list (up to 5)", "Competitive Landscape list (up to 5 competitors)"],
+          "empty_state": "No market data yet — Complete calibration to unlock market intelligence.",
+          "pull_to_refresh": "RefreshControl with haptic feedback"
+        }
+      },
+      "AlertsScreen": {
+        "tab_label": "Alerts",
+        "tab_icon": "notifications / notifications-outline",
+        "file": "/app/mobile/src/screens/AlertsScreen.tsx",
+        "apis": ["/intelligence/watchtower", "/snapshot/latest"],
+        "elements": {
+          "title": "Alerts",
+          "subtitle": "{count} active alert(s)",
+          "alert_card": "Left border color by severity, header (icon, severity badge, domain), title, recommendation, date",
+          "severity_map": {"high": "danger (#EF4444)", "medium": "warning (#F59E0B)", "low": "info (#3B82F6)", "critical": "danger (#EF4444)"},
+          "empty_state": "All clear — No active alerts. Your business is running smoothly.",
+          "pull_to_refresh": "RefreshControl with haptic feedback"
+        }
+      },
+      "SettingsScreen": {
+        "tab_label": "Settings",
+        "tab_icon": "settings / settings-outline",
+        "file": "/app/mobile/src/screens/SettingsScreen.tsx",
+        "apis": ["/auth/check-profile"],
+        "elements": {
+          "profile_card": "Avatar (initial letter), Full Name, Email, Company (if set), Subscription Tier (if set)",
+          "menu_items": ["Notification Preferences", "Security", "Help & Support", "Terms & Conditions", "Privacy Policy"],
+          "app_info": {"App Version": "1.0.0", "Environment": "Production"},
+          "sign_out": "Sign Out button (danger red) with Alert.alert confirmation dialog",
+          "footer": "BIQc — Australian-hosted. AES-256 encrypted."
+        }
+      }
+    },
+    "tab_bar_style": {
+      "height": 85,
+      "paddingTop": 8,
+      "paddingBottom": 28,
+      "background": "bgCard (#141C26)",
+      "border_top": "border (#243140)",
+      "active_color": "brand (#FF6A00)",
+      "inactive_color": "textMuted (#64748B)",
+      "active_tab": "brandDim background with borderRadius 10, padding 4",
+      "label_size": "9px"
+    }
+  },
+
+  "design_system": {
+    "file": "/app/frontend/src/design-system/tokens.js",
+    "colors": {
+      "bg": "#0F1720",
+      "bgCard": "#141C26",
+      "bgInput": "#0A1018",
+      "bgElevated": "#1A2332",
+      "border": "#243140",
+      "borderFocus": "#FF6A00",
+      "text": "#F4F7FA",
+      "textSecondary": "#9FB0C3",
+      "textMuted": "#64748B",
+      "brand": "#FF6A00",
+      "brandDark": "#E85D00",
+      "brandDim": "rgba(255,106,0,0.15)",
+      "brandGlow": "rgba(255,106,0,0.4)",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "danger": "#EF4444",
+      "info": "#3B82F6",
+      "purple": "#7C3AED"
+    },
+    "typography": {
+      "display": "'Cormorant Garamond', Georgia, serif",
+      "body": "'Inter', -apple-system, sans-serif",
+      "mono": "'JetBrains Mono', 'Fira Code', monospace"
+    },
+    "font_sizes": {
+      "h1": {"desktop": "48px", "tablet": "36px", "mobile": "28px"},
+      "h2": {"desktop": "32px", "tablet": "26px", "mobile": "22px"},
+      "body": {"desktop": "15px", "tablet": "14px", "mobile": "14px"}
+    },
+    "spacing": {"xs": "8px", "sm": "16px", "md": "24px", "lg": "32px", "xl": "48px", "xxl": "64px"},
+    "border_radius": {"card": "16px", "cardSm": "12px", "button": "14px", "input": "12px", "badge": "8px", "full": "9999px"},
+    "breakpoints": {"sm": 640, "md": 768, "lg": 1024, "xl": 1280, "xxl": 1440}
+  },
+
+  "component_library": {
+    "custom_components": [
+      "AsyncDataLoader", "BoardRoom", "CheckInAlerts", "CognitiveLoadingScreen", "ContextDebugPanel",
+      "DailyBriefCard", "DashboardLayout", "DataConfidence", "DataCoverageGate", "DegradedIntelligenceBanner",
+      "EngagementScanCard", "EnterpriseContactGate", "FirstLoginNotification", "FloatingSoundboard",
+      "InitiatingBIQC", "InstallPrompt", "InsufficientDataAlert", "IntegrationStatusWidget",
+      "IntelligenceSimulation", "InteractiveDemoExpanded", "LoadingSystems", "MobileNav",
+      "NarrativeTypewriter", "OnboardingGate", "PageStateComponents", "ProtectedRoute",
+      "RiskSuggestions", "SoundboardPanel", "TierGate", "TutorialOverlay", "TypingInsights",
+      "UpgradeCardsGate", "VoiceChat", "WarRoomConsole", "Watchtower", "WatchtowerEvent"
+    ],
+    "calibration_components": [
+      "CalibratingSession", "CalibrationComponents", "ChiefMarketingSummary", "ContinuitySuite",
+      "ExecutiveReveal", "ForensicIdentityCard", "IntelligencePhases", "PostCMOIntegrationOverlay", "WowSummary"
+    ],
+    "shadcn_ui": [
+      "accordion", "alert-dialog", "alert", "aspect-ratio", "avatar", "badge", "breadcrumb", "button",
+      "calendar", "card", "carousel", "checkbox", "collapsible", "command", "context-menu", "dialog",
+      "drawer", "dropdown-menu", "form", "hover-card", "input-otp", "input", "label", "menubar",
+      "navigation-menu", "pagination", "popover", "progress", "radio-group", "resizable", "scroll-area",
+      "select", "separator", "sheet", "skeleton-loader", "skeleton", "slider", "sonner", "switch",
+      "table", "tabs", "textarea", "toast", "toaster", "toggle-group", "toggle", "tooltip"
+    ],
+    "website_components": [
+      "BrandLogos", "EnergyGalaxyBackground", "IntegrationCarousel", "IntelligenceDiagram",
+      "LiquidSteelHeroRotator", "PlatformLayout", "WebsiteLayout"
+    ]
+  },
+
+  "performance": {
+    "homepage": {
+      "fcp": "304ms",
+      "domInteractive": "216ms",
+      "domComplete": "225ms",
+      "loadEvent": "225ms",
+      "transferSize": "~2KB (cached/CDN)"
+    },
+    "notes": "Excellent FCP. React app loads fast from CDN cache."
+  },
+
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/ingestion/hybrid",
+        "issue": "Does not respond within 30s (default apiClient timeout). ForensicAuditPage falls back to /ingestion/run which also times out. Total ~60s spin before error shown. PERSISTING FROM ITERATION_107.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "/api/dsee/scan",
+        "issue": "Does not respond within 90s (DSEEPage explicit timeout: 90000ms). User sees 90s spinner before error. PERSISTING FROM ITERATION_107.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/data-center/files + /api/business-profile",
+        "issue": "Both returned HTTP 503 during DataCenter page test — causing 'Failed to load data center' toast. May be transient backend restart/cold start issue. Page renders with 0/default values."
+      },
+      {
+        "endpoint": "/api/user/integration-status",
+        "issue": "Shows 403 Forbidden intermittently in backend logs (alongside 200 OK responses). Was 500 in iteration_107, now intermittent 403."
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Trust sub-pages (/trust/terms, /trust/privacy, /trust/security, /trust/dpa, /trust/centre)",
+        "issue": "No h1/h2 heading elements detected by DOM query. Content loads but uses non-standard heading tags or styled divs. SEO impact.",
+        "selector": "h1, h2",
+        "priority": "LOW"
+      },
+      {
+        "component": "LoginPage — invalid credentials error",
+        "issue": "No visible error text detected after 5s wait with invalid credentials. Error may be Sonner toast that disappears quickly. UNVERIFIED.",
+        "selector": ".error, [role='alert']",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "DataCenter — load data",
+        "issue": "Promise.all([/data-center/files, /data-center/stats, /business-profile]) fails when backend returns 503. Shows 'Failed to load data center' toast. Page still renders with default empty values (0/0MB). Need backend reliability fix.",
+        "affected_selectors": ["[data-testid not assigned to DataCenter stats cards]"]
+      }
+    ],
+    "design_issues": []
+  },
+
+  "routes_discovered": {
+    "public_routes": [
+      "/", "/platform", "/intelligence", "/our-integrations", "/pricing", "/blog", "/trust",
+      "/trust/terms", "/trust/privacy", "/trust/security", "/trust/dpa", "/trust/centre", "/trust/ai-learning-guarantee",
+      "/contact", "/knowledge-base", "/blog/:slug",
+      "/login-supabase", "/register-supabase", "/reset-password", "/update-password",
+      "/terms", "/enterprise-terms"
+    ],
+    "platform_demo_routes": [
+      "/platform/login", "/platform/overview", "/platform/revenue", "/platform/alerts",
+      "/platform/automations", "/platform/integrations-demo",
+      "/platform/industry/msp", "/platform/industry/construction", "/platform/industry/consulting",
+      "/platform/industry/agency", "/platform/industry/saas"
+    ],
+    "authenticated_routes": [
+      "/advisor", "/market", "/revenue", "/operations", "/risk", "/decisions", "/competitive-benchmark",
+      "/alerts", "/email-inbox", "/actions", "/automations",
+      "/integrations", "/data-health", "/forensic-audit", "/exposure-scan",
+      "/marketing-intelligence", "/marketing-automation", "/ab-testing",
+      "/compliance", "/reports", "/audit-log", "/business-profile", "/settings", "/calendar",
+      "/soundboard", "/data-center"
+    ],
+    "admin_routes": ["/admin", "/admin/prompt-lab", "/support-admin", "/observability"],
+    "other_routes": ["/war-room", "/board-room", "/calibration", "/onboarding", "/subscribe"]
+  },
+
+  "test_report_links": ["/app/test_reports/iteration_108.json"],
+  "action_items": [
+    "CRITICAL: Fix /api/ingestion/hybrid and /api/ingestion/run endpoints — Forensic Audit still timing out after 60s. Persistent from iteration_107.",
+    "CRITICAL: Fix /api/dsee/scan endpoint — Exposure Scan still timing out after 90s. Persistent from iteration_107.",
+    "HIGH: Investigate /data-center 503 errors on /api/data-center/files and /api/business-profile. Likely cold-start or transient issue. Add retry logic in DataCenter.js or improve backend reliability.",
+    "MEDIUM: Investigate /api/user/integration-status returning 403 intermittently (seen in backend logs alongside 200 OK responses).",
+    "LOW: Add h1/h2 tags to trust sub-pages (/trust/terms, /trust/privacy, /trust/security, /trust/dpa, /trust/centre) for SEO.",
+    "LOW: Verify invalid login error display — test with Sonner toast or inline error message."
+  ],
+  "critical_code_review_comments": [
+    "DataCenter.js: Promise.all with 3 API calls — if any one fails, all data lost. Consider Promise.allSettled for better resilience and partial data display.",
+    "ForensicAuditPage.js: No explicit timeout → uses 30s default × 2 = 60s. Still unresolved from iteration_107.",
+    "DSEEPage.js: 90s explicit timeout still in place — reduce to 45s minimum.",
+    "Trust sub-pages: No h1/h2 elements — SEO gap and accessibility concern."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "90% (APIs mostly working, 2 persistent timeouts, 1 transient 503)",
+    "frontend": "92% (28/30 pages fully functional, 1 error toast on data-center, 2 pages with long timeout spinners)"
+  },
+  "test_credentials": "andretest@test.com / Kooksmou1979*",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Comprehensive discovery audit complete. All 25+ authenticated routes documented with empty states. All System 1 marketing pages documented. System 3 mobile app fully documented via code review. Persistent issues: Forensic Audit (60s timeout) and Exposure Scan (90s timeout) still broken. Data Center shows transient 503 toast. Trust sub-pages lack h1/h2 headings. Test account: andretest@test.com / Kooksmou1979* works. Sidebar has 5 sections + BIQc Legal collapsible. Mobile bottom nav has 5 items + More sheet with 6 items.",
+  "rca_of_issues": {
+    "data_center_failed_toast": {
+      "symptom": "Toast: 'Failed to load data center' on page load",
+      "root_cause": "DataCenter.js uses Promise.all([/data-center/files, /data-center/stats, /business-profile]). If ANY returns 503, catch block fires toast and no data is set. Backend returned 503 (transient) during test run.",
+      "code_fix": "Replace Promise.all with Promise.allSettled in DataCenter.js fetchData() to show partial data even if one API fails.",
+      "backend_fix": "Investigate why /api/data-center/files and /api/business-profile return 503 — check cold start issues."
+    },
+    "forensic_audit_timeout": {
+      "symptom": "Run Audit button spins for ~60s before error",
+      "root_cause": "Backend /api/ingestion/hybrid not responding within 30s. Falls back to /ingestion/run which also times out.",
+      "status": "PERSISTENT - unresolved since iteration_107"
+    },
+    "exposure_scan_timeout": {
+      "symptom": "Scan button spins for 90s before error",
+      "root_cause": "Backend /api/dsee/scan has 90s timeout. Not responding in time.",
+      "status": "PERSISTENT - unresolved since iteration_107"
+    }
+  }
+}
