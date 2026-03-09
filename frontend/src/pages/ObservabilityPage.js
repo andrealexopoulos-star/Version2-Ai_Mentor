@@ -65,7 +65,7 @@ const ObservabilityPage = () => {
             { label: 'Est Cost', value: `$${d.estCost || '0'}`, icon: DollarSign, color: '#F59E0B' },
             { label: 'Failures', value: d.failCount || 0, icon: AlertTriangle, color: '#EF4444' },
           ].map(m => (
-            <div key={m.label} className="rounded-xl p-3" style={{ background: '#141C26', border: '1px solid #243140' }}>
+            <div key={m.label} className="rounded-xl p-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
               <div className="flex items-center gap-1.5 mb-1">
                 <m.icon className="w-3 h-3" style={{ color: m.color }} />
                 <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
@@ -77,20 +77,20 @@ const ObservabilityPage = () => {
 
         {/* By Model + By Endpoint */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="rounded-xl p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>By Model</h3>
             {Object.entries(d.byModel || {}).map(([model, count]) => (
-              <div key={model} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid #243140' }}>
+              <div key={model} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                 <span className="text-xs text-[#9FB0C3]">{model}</span>
                 <span className="text-xs font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{count}</span>
               </div>
             ))}
             {Object.keys(d.byModel || {}).length === 0 && <p className="text-xs text-[#64748B]">No data yet. Enable observability_full_enabled flag.</p>}
           </div>
-          <div className="rounded-xl p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>By Endpoint</h3>
             {Object.entries(d.byEndpoint || {}).map(([ep, count]) => (
-              <div key={ep} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid #243140' }}>
+              <div key={ep} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                 <span className="text-xs text-[#9FB0C3]">{ep}</span>
                 <span className="text-xs font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{count}</span>
               </div>
@@ -99,11 +99,11 @@ const ObservabilityPage = () => {
         </div>
 
         {/* Recent Calls */}
-        <div className="rounded-xl p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+        <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
           <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Recent Calls</h3>
           <div className="space-y-1">
             {(d.recent || []).map((c, i) => (
-              <div key={i} className="flex items-center gap-2 py-1.5 text-xs" style={{ borderBottom: '1px solid #243140' }}>
+              <div key={i} className="flex items-center gap-2 py-1.5 text-xs" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.output_valid !== false ? '#10B981' : '#EF4444' }} />
                 <span className="text-[#9FB0C3] flex-1 truncate">{c.endpoint || c.model_name}</span>
                 <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{c.total_tokens || 0} tok</span>

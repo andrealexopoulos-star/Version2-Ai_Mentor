@@ -18,13 +18,13 @@ const RenderContent = ({ content }) => {
     const line = lines[i];
 
     if (line.startsWith('## ')) {
-      elements.push(<h2 key={i} className="text-xl font-semibold mt-8 mb-3" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{line.replace('## ', '')}</h2>);
+      elements.push(<h2 key={i} className="text-xl font-semibold mt-8 mb-3" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{line.replace('## ', '')}</h2>);
     } else if (line.startsWith('**Source:**')) {
       // Extract source citation
       const urlMatch = line.match(/https?:\/\/[^\s]+/);
       const sourceText = line.replace('**Source:**', '').replace(urlMatch?.[0] || '', '').trim();
       elements.push(
-        <div key={i} className="my-3 p-3 rounded-lg flex items-start gap-2" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+        <div key={i} className="my-3 p-3 rounded-lg flex items-start gap-2" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
           <ExternalLink className="w-3.5 h-3.5 text-[#FF6A00] shrink-0 mt-0.5" />
           <div>
             <span className="text-[10px] font-semibold tracking-wider uppercase block mb-0.5" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Source</span>
@@ -43,7 +43,7 @@ const RenderContent = ({ content }) => {
       // Regular paragraph - handle bold text
       const parts = line.split(/(\*\*[^*]+\*\*)/g);
       elements.push(
-        <p key={i} className="text-sm leading-relaxed mb-4" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        <p key={i} className="text-sm leading-relaxed mb-4" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
           {parts.map((part, j) => {
             if (part.startsWith('**') && part.endsWith('**')) {
               return <strong key={j} className="text-[#F4F7FA]">{part.replace(/\*\*/g, '')}</strong>;
@@ -70,7 +70,7 @@ const BlogArticlePage = () => {
 
   return (
     <WebsiteLayout>
-      <div style={{ background: '#0F1720', minHeight: '100vh', paddingTop: '64px' }} data-testid="blog-article-page">
+      <div style={{ background: 'var(--biqc-bg)', minHeight: '100vh', paddingTop: '64px' }} data-testid="blog-article-page">
         <article className="max-w-3xl mx-auto px-6 py-12">
           {/* Back */}
           <Link to="/blog" className="inline-flex items-center gap-2 mb-8 text-sm text-[#64748B] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="blog-back">
@@ -91,7 +91,7 @@ const BlogArticlePage = () => {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 leading-tight" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{article.title}</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 leading-tight" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{article.title}</h1>
           <p className="text-base text-[#9FB0C3] mb-8 leading-relaxed" style={{ fontFamily: fontFamily.body }}>{article.excerpt}</p>
 
           <div className="h-px mb-8" style={{ background: '#243140' }} />
@@ -104,8 +104,8 @@ const BlogArticlePage = () => {
           <div className="h-px my-8" style={{ background: '#243140' }} />
 
           {/* CTA */}
-          <div className="rounded-xl p-6 text-center mb-8" style={{ background: '#141C26', border: '1px solid #243140' }}>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>See these insights in action for your business</h3>
+          <div className="rounded-xl p-6 text-center mb-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>See these insights in action for your business</h3>
             <p className="text-sm text-[#9FB0C3] mb-4" style={{ fontFamily: fontFamily.body }}>BIQc surfaces real intelligence from your connected business systems.</p>
             <Link to="/register-supabase" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="article-cta">
               Try It Free <ArrowRight className="w-4 h-4" />
@@ -115,14 +115,14 @@ const BlogArticlePage = () => {
           {/* Related */}
           {relatedArticles.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Related Articles</h3>
+              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Related Articles</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {relatedArticles.map(ra => (
                   <Link key={ra.slug} to={`/blog/${ra.slug}`}
                     className="rounded-lg p-4 transition-all hover:bg-white/[0.02]"
-                    style={{ background: '#141C26', border: '1px solid #243140' }}>
+                    style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] px-2 py-0.5 rounded mb-2 inline-block" style={{ color: CAT_COLORS[ra.category] || '#FF6A00', background: (CAT_COLORS[ra.category] || '#FF6A00') + '15', fontFamily: fontFamily.mono }}>{ra.category}</span>
-                    <h4 className="text-sm font-semibold mb-1 line-clamp-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{ra.title}</h4>
+                    <h4 className="text-sm font-semibold mb-1 line-clamp-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{ra.title}</h4>
                     <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{ra.readTime}</span>
                   </Link>
                 ))}

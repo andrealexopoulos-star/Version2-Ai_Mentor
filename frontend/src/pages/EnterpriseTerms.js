@@ -286,7 +286,7 @@ const EnterpriseTerms = () => {
           <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#FF6A00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 2px 8px rgba(249,115,22,0.3)' }}>B</div>
           <span className="font-bold text-sm text-slate-900" style={{ fontFamily: 'var(--font-heading)' }}>BIQc</span>
         </div>
-        <button onClick={() => navigate('/register-supabase')} className="text-sm font-semibold text-white px-4 py-2 rounded-full" style={{ fontFamily: 'var(--font-heading)', background: '#0F1720', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+        <button onClick={() => navigate('/register-supabase')} className="text-sm font-semibold text-white px-4 py-2 rounded-full" style={{ fontFamily: 'var(--font-heading)', background: 'var(--biqc-bg)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
           Get started →
         </button>
       </nav>
@@ -382,7 +382,7 @@ const EnterpriseTerms = () => {
         </div>
 
         {/* Footer note */}
-        <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 rounded-2xl" style={{ background: '#0F1720' }}>
+        <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 rounded-2xl" style={{ background: 'var(--biqc-bg)' }}>
           <div>
             <p className="text-xs font-semibold text-white mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Questions about this Agreement?</p>
             <p className="text-xs text-slate-400">Contact The Strategy Squad at <span className="text-orange-400">legal@thestrategysquad.com.au</span></p>

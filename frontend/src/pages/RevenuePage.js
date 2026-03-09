@@ -12,7 +12,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const RevenuePage = () => {
@@ -156,7 +156,7 @@ const RevenuePage = () => {
           </Panel>
 
           {/* Tab Navigation */}
-          <div className="flex gap-1 p-1 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="revenue-tabs">
+          <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="revenue-tabs">
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
@@ -196,7 +196,7 @@ const RevenuePage = () => {
                       const stage = d.stage?.name || d.stage || 'Unknown';
                       const isStalled = d.last_modified_at && (Date.now() - new Date(d.last_modified_at).getTime()) > 7 * 86400000;
                       return (
-                        <div key={i} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div key={i} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <div className="w-2 h-2 rounded-full shrink-0" style={{ background: isStalled ? '#FF6A00' : '#10B981' }} />
                           <div className="flex-1 min-w-0">
                             <span className="text-xs text-[#F4F7FA] block truncate">{name}</span>
@@ -394,7 +394,7 @@ const RevenuePage = () => {
                       const pct = Math.round(val * 100);
                       const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
                       return (
-                        <div key={label} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div key={label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: fontFamily.mono }}>{label}</span>
                           <div className="text-2xl font-bold" style={{ color: ic, fontFamily: fontFamily.mono }}>{pct}%</div>
                           <span className="text-[9px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{title}</span>
@@ -422,7 +422,7 @@ const RevenuePage = () => {
                   </div>
                   <div className="space-y-3">
                     {unified.propagation_map.slice(0, 4).map((chain, i) => (
-                      <div key={i} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div key={i} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           {(chain.chain || [chain.source, chain.target]).filter(Boolean).map((node, ni, arr) => (
                             <React.Fragment key={ni}>
@@ -434,7 +434,7 @@ const RevenuePage = () => {
                             <span className="text-[9px] ml-auto" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(chain.probability * 100)}%</span>
                           )}
                         </div>
-                        {chain.description && <p className="text-[11px]" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>{chain.description}</p>}
+                        {chain.description && <p className="text-[11px]" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{chain.description}</p>}
                       </div>
                     ))}
                   </div>
@@ -461,7 +461,7 @@ const RevenuePage = () => {
                       </div>
                       <div className="space-y-2">
                         {unified.signals.overdue_invoices.map((inv, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div>
                               <span className="text-xs text-[#F4F7FA]">Invoice #{inv.number}</span>
                               <span className="text-[10px] text-[#EF4444] block" style={{ fontFamily: fontFamily.mono }}>{inv.days_overdue}d overdue</span>
@@ -485,7 +485,7 @@ const RevenuePage = () => {
                       </div>
                       <div className="space-y-2">
                         {unified.signals.at_risk.map((deal, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div>
                               <span className="text-xs text-[#F4F7FA]">{deal.name}</span>
                               <span className="text-[10px] text-[#F59E0B] block" style={{ fontFamily: fontFamily.mono }}>{deal.risk}</span>

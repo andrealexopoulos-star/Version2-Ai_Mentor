@@ -52,7 +52,7 @@ const ForensicCalibration = () => {
             <Lock className="w-12 h-12 text-[#64748B] mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Coming Soon</h1>
             <p className="text-sm text-[#9FB0C3] mb-6">Forensic Market Calibration will be available in the Pro plan.</p>
-            <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="forensic-back-btn">Back to Market</button>
+            <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-back-btn">Back to Market</button>
           </div>
         </div>
       </DashboardLayout>
@@ -96,7 +96,7 @@ const ForensicCalibration = () => {
           </div>
 
           {/* Composite Score */}
-          <div className="text-center mb-8 p-6 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="text-center mb-8 p-6 rounded-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Composite Score</span>
             <span className="text-5xl font-bold block mb-2" style={{ fontFamily: fontFamily.mono, color: displayResult.risk_color }}>{displayResult.composite_score}</span>
             <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{ color: displayResult.risk_color, background: displayResult.risk_color + '15', fontFamily: fontFamily.mono }}>{displayResult.risk_profile}</span>
@@ -105,7 +105,7 @@ const ForensicCalibration = () => {
           {/* Dimension Scores */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {Object.entries(dims).map(([key, dim]) => (
-              <div key={key} className="p-4 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <div key={key} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px] text-[#64748B] block mb-1 capitalize" style={{ fontFamily: fontFamily.mono }}>{key}</span>
                 <span className="text-lg font-bold text-[#F4F7FA] block" style={{ fontFamily: fontFamily.mono }}>{dim.label}</span>
                 <div className="h-1.5 rounded-full mt-2" style={{ background: '#243140' }}>
@@ -126,7 +126,7 @@ const ForensicCalibration = () => {
                 return (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: color + '08', border: `1px solid ${color}25` }}>
                     <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color }} />
-                    <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3' }}>{sig.text}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2)' }}>{sig.text}</p>
                   </div>
                 );
               })}
@@ -134,7 +134,7 @@ const ForensicCalibration = () => {
           )}
 
           <div className="flex gap-3 justify-center">
-            <button onClick={() => { setResult(null); setExistingResult(null); setStep(0); setAnswers({}); }} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="forensic-recalibrate-btn">
+            <button onClick={() => { setResult(null); setExistingResult(null); setStep(0); setAnswers({}); }} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-recalibrate-btn">
               Recalibrate
             </button>
             <button onClick={() => navigate('/market')} className="px-8 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="forensic-return-btn">
@@ -155,7 +155,7 @@ const ForensicCalibration = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5 text-[#FF6A00]" />
-            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>Forensic Calibration</h1>
+            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>Forensic Calibration</h1>
           </div>
           <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>{step + 1}/{QUESTIONS.length}</span>
         </div>
@@ -184,7 +184,7 @@ const ForensicCalibration = () => {
 
         <div className="flex justify-between">
           {step > 0 ? (
-            <button onClick={() => { setStep(step - 1); setSelected(answers[QUESTIONS[step - 1]?.id]?.answer || null); }} className="px-5 py-2.5 rounded-xl text-sm flex items-center gap-1" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="forensic-back-step">
+            <button onClick={() => { setStep(step - 1); setSelected(answers[QUESTIONS[step - 1]?.id]?.answer || null); }} className="px-5 py-2.5 rounded-xl text-sm flex items-center gap-1" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-back-step">
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
           ) : <div />}

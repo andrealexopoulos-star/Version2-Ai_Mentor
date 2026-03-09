@@ -114,7 +114,7 @@ export function parseIdentitySignals(extractedData, websiteUrl) {
 }
 
 const SignalBlock = ({ icon: Icon, label, value, sub, warning, hint }) => (
-  <div className="rounded-lg p-4" style={{ background: '#141C26', border: `1px solid ${warning ? '#F59E0B20' : '#243140'}` }}>
+  <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${warning ? '#F59E0B20' : '#243140'}` }}>
     <div className="flex items-center gap-2 mb-1.5">
       <Icon className="w-3.5 h-3.5 text-[#3B82F6]" />
       <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{label}</span>
@@ -172,7 +172,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
 
   if (mode === 'edit') {
     return (
-      <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="identity-edit-mode">
+      <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="identity-edit-mode">
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
             <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Edit Business Details</h1>
@@ -187,7 +187,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
               <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={f.val || ''} onChange={e => setEditFields(p => ({ ...p, [f.key]: e.target.value }))}
                 className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] outline-none focus:ring-1 focus:ring-[#FF6A00]"
-                style={{ background: '#141C26', border: '1px solid #243140' }} data-testid={`edit-${f.key}`} />
+                style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid={`edit-${f.key}`} />
             </div>
           ))}
           <div className="flex gap-3 pt-4">
@@ -198,7 +198,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
               {isRegenerating ? 'Scanning...' : 'Regenerate Scan'}
             </button>
             <button onClick={() => setMode('view')} className="px-6 py-3 rounded-xl text-sm transition-colors"
-              style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="edit-cancel-btn">Cancel</button>
+              style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="edit-cancel-btn">Cancel</button>
           </div>
         </div>
       </div>
@@ -207,7 +207,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
 
   if (mode === 'reject') {
     return (
-      <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="identity-reject-mode">
+      <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="identity-reject-mode">
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
             <h1 className="text-2xl font-semibold text-[#EF4444]" style={{ fontFamily: fontFamily.display }}>Not Your Business</h1>
@@ -222,7 +222,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
               <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={rejectFields[f.key]} onChange={e => setRejectFields(p => ({ ...p, [f.key]: e.target.value }))}
                 placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] placeholder:text-[#64748B] outline-none focus:ring-1 focus:ring-[#FF6A00]"
-                style={{ background: '#141C26', border: '1px solid #243140' }} data-testid={`reject-${f.key}`} />
+                style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid={`reject-${f.key}`} />
             </div>
           ))}
           <div className="flex gap-3 pt-4">
@@ -234,7 +234,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
               {isRegenerating ? 'Scanning...' : 'Search Again'}
             </button>
             <button onClick={() => setMode('view')} className="px-6 py-3 rounded-xl text-sm transition-colors"
-              style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="reject-cancel-btn">Back</button>
+              style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="reject-cancel-btn">Back</button>
           </div>
         </div>
       </div>
@@ -242,7 +242,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
   }
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="forensic-identity-card">
+    <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="forensic-identity-card">
       <style>{`@keyframes idFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
       <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-5">
         <div className="text-center" style={{ animation: 'idFade 0.5s ease-out' }}>
@@ -271,7 +271,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             value={signals.abn || 'Not found'} warning={!signals.abn}
             hint={!signals.abn ? 'You can enter ABN manually to improve accuracy' : null} />
 
-          <div className="rounded-lg p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <div className="flex items-center gap-2 mb-2">
               <Mail className="w-3.5 h-3.5 text-[#3B82F6]" />
               <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Contact Signals</span>
@@ -288,7 +288,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             </div>
           </div>
 
-          <div className="rounded-lg p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <div className="flex items-center gap-2 mb-2">
               <Link2 className="w-3.5 h-3.5 text-[#3B82F6]" />
               <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Social Links</span>
@@ -296,7 +296,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             {signals.socials?.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {signals.socials.map((s, i) => (
-                  <span key={i} className="text-xs px-2 py-1 rounded-full" style={{ color: '#9FB0C3', background: '#0F172050', border: '1px solid #243140', fontFamily: fontFamily.mono }}>
+                  <span key={i} className="text-xs px-2 py-1 rounded-full" style={{ color: 'var(--biqc-text-2)', background: '#0F172050', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>
                     {s.platform}
                   </span>
                 ))}
@@ -389,7 +389,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
                   Yes, continue anyway
                 </button>
                 <button onClick={() => setShowLowConfirmWarning(false)}
-                  className="flex-1 py-2 rounded-lg text-xs" style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="low-confirm-cancel-btn">
+                  className="flex-1 py-2 rounded-lg text-xs" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="low-confirm-cancel-btn">
                   Cancel
                 </button>
               </div>
@@ -402,12 +402,12 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           </button>
           <button onClick={() => setMode('edit')}
             className="w-full py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-            style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="identity-edit-btn">
+            style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="identity-edit-btn">
             <Pencil className="w-4 h-4" /> Edit details
           </button>
           <button onClick={handleRegenerate} disabled={isRegenerating}
             className="w-full py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
-            style={{ color: '#3B82F6', border: '1px solid #243140' }} data-testid="identity-regenerate-btn">
+            style={{ color: '#3B82F6', border: '1px solid var(--biqc-border)' }} data-testid="identity-regenerate-btn">
             <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
             {isRegenerating ? 'Scanning...' : 'Regenerate scan'}
           </button>

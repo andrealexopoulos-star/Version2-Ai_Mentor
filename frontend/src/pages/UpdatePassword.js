@@ -48,7 +48,7 @@ const UpdatePassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: '#0F1720' }}>
+    <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: 'var(--biqc-bg)' }}>
       <div className="max-w-sm w-full">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FF6A00' }}>
@@ -81,7 +81,7 @@ const UpdatePassword = () => {
                   <Input type={showPwd ? 'text' : 'password'} value={password}
                     onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" required minLength={8}
                     className="h-12 pr-12 text-sm rounded-xl"
-                    style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
+                    style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                     data-testid="new-password-input" />
                   <button type="button" onClick={() => setShowPwd(!showPwd)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B]">
@@ -94,7 +94,7 @@ const UpdatePassword = () => {
                 <Input type="password" value={confirm}
                   onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" required
                   className="h-12 text-sm rounded-xl"
-                  style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
+                  style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                   data-testid="confirm-password-input" />
               </div>
               <button type="submit" disabled={loading}

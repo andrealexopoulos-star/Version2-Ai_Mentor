@@ -20,7 +20,7 @@ export const PageLoadingState = ({ message = 'Loading…', compact = false }) =>
       <div className="flex items-center gap-2 py-4" data-testid="page-loading-compact">
         <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
           style={{ borderColor: '#FF6A00', borderTopColor: 'transparent' }} />
-        <span className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>{message}</span>
+        <span className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{message}</span>
       </div>
     );
   }
@@ -30,7 +30,7 @@ export const PageLoadingState = ({ message = 'Loading…', compact = false }) =>
       <div className="flex items-center gap-3 mb-2">
         <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin flex-shrink-0"
           style={{ borderColor: '#FF6A00', borderTopColor: 'transparent' }} />
-        <span className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>{message}</span>
+        <span className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{message}</span>
       </div>
       <SkeletonCard lines={3} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -53,10 +53,10 @@ export const PageErrorState = ({ error, onRetry, moduleName = 'this page' }) => 
     <div className="flex items-start gap-3 mb-4">
       <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-[#EF4444]" />
       <div>
-        <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
           Unable to load {moduleName}
         </p>
-        <p className="text-xs mb-2" style={{ color: '#9FB0C3' }}>
+        <p className="text-xs mb-2" style={{ color: 'var(--biqc-text-2)' }}>
           {error || 'An unexpected error occurred. Please check your connection and try again.'}
         </p>
       </div>
@@ -75,7 +75,7 @@ export const PageErrorState = ({ error, onRetry, moduleName = 'this page' }) => 
       <a
         href="mailto:support@biqc.com.au"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-        style={{ color: '#9FB0C3', background: '#141C26', border: '1px solid #243140' }}
+        style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
         data-testid="page-error-support-link"
       >
         <MessageSquare className="w-3.5 h-3.5" /> Contact support
@@ -83,7 +83,7 @@ export const PageErrorState = ({ error, onRetry, moduleName = 'this page' }) => 
       <a
         href="/knowledge-base"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-        style={{ color: '#9FB0C3', background: '#141C26', border: '1px solid #243140' }}
+        style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
         data-testid="page-error-troubleshoot-link"
       >
         Troubleshoot

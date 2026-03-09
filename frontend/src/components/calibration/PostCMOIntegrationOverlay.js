@@ -131,7 +131,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
           {/* Animated logo */}
           <div className="relative w-16 h-16 mx-auto mb-6">
             <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #FF6A00, #7C3AED)', animation: 'pulseRing 2.5s ease-in-out infinite' }} />
-            <div className="absolute inset-0.5 rounded-2xl flex items-center justify-center" style={{ background: '#0A1018' }}>
+            <div className="absolute inset-0.5 rounded-2xl flex items-center justify-center" style={{ background: 'var(--biqc-bg-input)' }}>
               <Link2 className="w-7 h-7" style={{ color: '#FF6A00' }} />
             </div>
           </div>
@@ -141,10 +141,10 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
             <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Unified Integrations Engine</span>
           </div>
 
-          <h1 className="text-2xl font-semibold mb-3" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+          <h1 className="text-2xl font-semibold mb-3" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
             Activate Your Intelligence{firstName ? `, ${firstName}` : ''}
           </h1>
-          <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
             Connect your email and calendar to unlock priority inbox intelligence, communication pattern analysis, and calendar density signals.
           </p>
         </div>
@@ -180,7 +180,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                 </div>
                 {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{intg.name}</p>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>{intg.name}</p>
                   <p className="text-[10px] leading-relaxed" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{intg.description}</p>
                 </div>
               </button>

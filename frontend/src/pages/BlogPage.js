@@ -19,7 +19,7 @@ const BlogPage = () => {
 
   return (
     <WebsiteLayout>
-      <div style={{ background: '#0F1720', minHeight: '100vh', paddingTop: '64px' }} data-testid="blog-page">
+      <div style={{ background: 'var(--biqc-bg)', minHeight: '100vh', paddingTop: '64px' }} data-testid="blog-page">
         {/* Hero */}
         <div className="max-w-5xl mx-auto px-6 py-16 text-center">
           <span className="text-[10px] font-semibold tracking-[0.2em] uppercase block mb-4" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Intelligence Blog</span>
@@ -37,7 +37,7 @@ const BlogPage = () => {
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search articles..."
               className="w-full h-12 pl-11 pr-4 rounded-xl text-sm outline-none"
-              style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA', fontFamily: fontFamily.body }}
+              style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.body }}
               data-testid="blog-search" />
           </div>
 
@@ -67,7 +67,7 @@ const BlogPage = () => {
               return (
                 <Link key={article.slug} to={`/blog/${article.slug}`}
                   className="group rounded-xl overflow-hidden transition-all hover:-translate-y-1"
-                  style={{ background: '#141C26', border: '1px solid #243140' }}
+                  style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
                   data-testid={`blog-card-${article.slug}`}>
                   <div className="h-2" style={{ background: catColor }} />
                   <div className="p-5">
@@ -75,7 +75,7 @@ const BlogPage = () => {
                       <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: catColor, background: catColor + '15', fontFamily: fontFamily.mono }}>{article.category}</span>
                       <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{article.industry}</span>
                     </div>
-                    <h3 className="text-base font-semibold mb-2 leading-snug group-hover:text-[#FF6A00] transition-colors" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{article.title}</h3>
+                    <h3 className="text-base font-semibold mb-2 leading-snug group-hover:text-[#FF6A00] transition-colors" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{article.title}</h3>
                     <p className="text-xs text-[#9FB0C3] mb-4 leading-relaxed line-clamp-3" style={{ fontFamily: fontFamily.body }}>{article.excerpt}</p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
@@ -99,8 +99,8 @@ const BlogPage = () => {
 
         {/* CTA */}
         <div className="max-w-5xl mx-auto px-6 pb-16">
-          <div className="rounded-xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
-            <h3 className="text-xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Ready to see AI intelligence in action?</h3>
+          <div className="rounded-xl p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+            <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Ready to see AI intelligence in action?</h3>
             <p className="text-sm text-[#9FB0C3] mb-4" style={{ fontFamily: fontFamily.body }}>Experience sovereign business intelligence for your company.</p>
             <Link to="/register-supabase" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="blog-cta">
               Try It Free <ArrowRight className="w-4 h-4" />

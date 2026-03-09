@@ -44,14 +44,14 @@ const DSEEPage = () => {
         </div>
 
         {/* Input */}
-        <div className="rounded-2xl p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
           <div className="flex flex-col sm:flex-row gap-2">
             <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && runScan()} placeholder="Website URL" disabled={running}
-              className="flex-1 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} data-testid="dsee-url" />
+              className="flex-1 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }} data-testid="dsee-url" />
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Business name (optional)" disabled={running}
-              className="sm:w-48 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} />
+              className="sm:w-48 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }} />
             <input value={location} onChange={e => setLocation(e.target.value)} placeholder="City (optional)" disabled={running}
-              className="sm:w-32 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} />
+              className="sm:w-32 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }} />
             <button onClick={runScan} disabled={running || !url.trim()} className="h-11 px-6 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-50 shrink-0" style={{ background: '#FF6A00' }} data-testid="dsee-run">
               {running ? <><Loader2 className="w-4 h-4 animate-spin" />Scanning...</> : <><Eye className="w-4 h-4" />Scan</>}
             </button>
@@ -60,7 +60,7 @@ const DSEEPage = () => {
         </div>
 
         {running && (
-          <div className="rounded-2xl p-10 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-2xl p-10 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <Loader2 className="w-8 h-8 text-[#FF6A00] mx-auto mb-3 animate-spin" />
             <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Running structural exposure analysis...</p>
             <p className="text-xs text-[#64748B] mt-1">Crawling domain, classifying structure, identifying competitors, computing density, detecting asymmetries.</p>
@@ -89,19 +89,19 @@ const DSEEPage = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-3 mt-3">
-              <div className="px-3 py-1.5 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+              <div className="px-3 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Asymmetries</span>
                 <span className="text-lg font-bold" style={{ fontFamily: fontFamily.mono, color: r.asymmetry_count >= 3 ? '#EF4444' : '#F59E0B' }}>{r.asymmetry_count}</span>
               </div>
-              <div className="px-3 py-1.5 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+              <div className="px-3 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Competitors</span>
                 <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{r.competitor_count}</span>
               </div>
-              <div className="px-3 py-1.5 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+              <div className="px-3 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Reviews</span>
                 <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{r.reviews?.google_reviews || 0}</span>
               </div>
-              <div className="px-3 py-1.5 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+              <div className="px-3 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Search</span>
                 <span className="text-lg font-bold" style={{ fontFamily: fontFamily.mono, color: r.search?.dominance === 'present' ? '#10B981' : '#EF4444' }}>{r.search?.dominance}</span>
               </div>
@@ -109,7 +109,7 @@ const DSEEPage = () => {
           </div>
 
           {/* ═══ ASYMMETRIES ═══ */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="dsee-asymmetries">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="dsee-asymmetries">
             <button onClick={() => toggle('asym')} className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
@@ -129,11 +129,11 @@ const DSEEPage = () => {
                         <span className="text-[10px] ml-auto" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{Math.round((a.confidence || 0) * 100)}%</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div className="p-2 rounded" style={{ background: '#0F1720' }}>
+                        <div className="p-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>You</span>
                           <span className="text-[#9FB0C3]">{a.subject_metric}</span>
                         </div>
-                        <div className="p-2 rounded" style={{ background: '#0F1720' }}>
+                        <div className="p-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>Competitor</span>
                           <span className="text-[#F4F7FA]">{a.competitor_metric}</span>
                         </div>
@@ -151,7 +151,7 @@ const DSEEPage = () => {
 
           {/* ═══ SEARCH DOMINANCE DENSITY ═══ */}
           {sdd.sdd_score && (
-            <div className="rounded-2xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="dsee-sdd">
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="dsee-sdd">
               <button onClick={() => toggle('sdd')} className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02]">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-[#3B82F6]" />
@@ -164,14 +164,14 @@ const DSEEPage = () => {
                 <div className="px-4 pb-4 space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {Object.entries(sdd.sdd_score?.ratios || {}).map(([k, v]) => (
-                      <div key={k} className="p-3 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div key={k} className="p-3 rounded-lg text-center" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>{k.replace(/_/g, ' ')}</span>
                         <span className="text-lg font-bold" style={{ fontFamily: fontFamily.mono, color: v < 0.5 ? '#EF4444' : v < 1 ? '#F59E0B' : '#10B981' }}>{v}x</span>
                       </div>
                     ))}
                   </div>
                   {sdd.normalization && (
-                    <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Normalization</span>
                       <span className="text-xs text-[#9FB0C3]">Volume factor: {sdd.normalization.volume_adjustment_factor} | Pages: {sdd.normalization.pages_crawled_subject} vs avg {sdd.normalization.pages_crawled_competitor_avg} | Cap: {sdd.normalization.per_page_cap}/page | Boilerplate: suppressed</span>
                     </div>
@@ -182,7 +182,7 @@ const DSEEPage = () => {
           )}
 
           {/* ═══ CONFIDENCE BREAKDOWN ═══ */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="dsee-confidence">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="dsee-confidence">
             <button onClick={() => toggle('conf')} className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-[#10B981]" />
@@ -211,7 +211,7 @@ const DSEEPage = () => {
                     ))}
                   </div>
                 )}
-                <div className="p-2 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Scope: {conf.scope_coverage?.pages_crawled}/{conf.scope_coverage?.estimated_total_pages} pages ({Math.round((conf.scope_coverage?.coverage_ratio || 0) * 100)}%) | Fallback: {conf.fallback_used ? 'yes' : 'no'} | Cap: {conf.confidence_cap_applied ? '70% applied' : 'not applied'}</span>
                 </div>
               </div>
@@ -219,7 +219,7 @@ const DSEEPage = () => {
           </div>
 
           {/* ═══ COMPETITORS ═══ */}
-          <div className="rounded-2xl p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Competitors Identified</span>
             {(r.competitors || []).map((c, i) => (
               <div key={i} className="flex items-center gap-2 py-1.5" style={{ borderBottom: i < r.competitors.length - 1 ? '1px solid #243140' : 'none' }}>

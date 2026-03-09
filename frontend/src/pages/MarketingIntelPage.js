@@ -98,7 +98,7 @@ const MarketingIntelPage = () => {
             <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Marketing Intelligence</h1>
             <p className="text-sm text-[#9FB0C3]">5-pillar competitive benchmark. Evidence-based scoring.</p>
           </div>
-          {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#F4F7FA] disabled:opacity-50" style={{ border: '1px solid #243140', color: canRun ? '#9FB0C3' : '#64748B' }}>
+          {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#F4F7FA] disabled:opacity-50" style={{ border: '1px solid var(--biqc-border)', color: canRun ? '#9FB0C3' : '#64748B' }}>
             {!isPaid && !canRun ? (
               <><Clock className="w-3 h-3" /> Next scan in {daysLeft}d</>
             ) : (
@@ -110,7 +110,7 @@ const MarketingIntelPage = () => {
         {loading && <div className="text-center py-12"><Loader2 className="w-6 h-6 text-[#FF6A00] mx-auto animate-spin" /></div>}
 
         {!loading && !benchmark && (
-          <div className="rounded-2xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <BarChart3 className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
             <h2 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Run Your First Benchmark</h2>
             <p className="text-sm text-[#64748B] mb-4 max-w-md mx-auto">Compare your marketing presence against up to 5 competitors across Brand Visibility, Digital Presence, Content Maturity, Social Engagement, and AI Citation Share.</p>
@@ -120,7 +120,7 @@ const MarketingIntelPage = () => {
                 <span className="text-[11px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Free tier: 1 scan per 30 days</span>
               </div>
             )}
-            <input value={competitors} onChange={e => setCompetitors(e.target.value)} placeholder="competitor1.com, competitor2.com, competitor3.com" className="w-full h-11 px-4 rounded-xl text-sm mb-3 outline-none" style={{ background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }} />
+            <input value={competitors} onChange={e => setCompetitors(e.target.value)} placeholder="competitor1.com, competitor2.com, competitor3.com" className="w-full h-11 px-4 rounded-xl text-sm mb-3 outline-none" style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }} />
             <button onClick={runBenchmark} disabled={running || !canRun} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50" style={{ background: '#FF6A00' }}>
               {running ? 'Benchmarking...' : 'Run Benchmark'}
             </button>
@@ -134,7 +134,7 @@ const MarketingIntelPage = () => {
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 shrink-0" style={{ color: '#F59E0B' }} />
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Next free scan available in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Next free scan available in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</p>
                   <p className="text-xs mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Free tier includes 1 benchmark scan per 30 days. Upgrade for unlimited scans.</p>
                 </div>
               </div>
@@ -158,7 +158,7 @@ const MarketingIntelPage = () => {
 
             {/* Radar + Pillars */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-2xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <div className="rounded-2xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Competitive Radar</h3>
                 <RadarChart data={benchmark.radar || benchmark.radar_data} />
                 <div className="flex justify-center gap-4 mt-3">
@@ -171,7 +171,7 @@ const MarketingIntelPage = () => {
                 {Object.entries(PILLAR_LABELS).map(([key, { label, color, icon: Icon }]) => {
                   const score = benchmark.scores?.[key] || 0;
                   return (
-                    <div key={key} className="rounded-xl p-4 flex items-center gap-3" style={{ background: '#141C26', border: '1px solid #243140' }}>
+                    <div key={key} className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: color + '15' }}>
                         <Icon className="w-4 h-4" style={{ color }} />
                       </div>
@@ -192,7 +192,7 @@ const MarketingIntelPage = () => {
 
             {/* Competitors */}
             {(benchmark.competitors || []).length > 0 && (
-              <div className="rounded-2xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <div className="rounded-2xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Competitors Benchmarked</h3>
                 {benchmark.competitors.map((c, i) => (
                   <div key={i} className="flex items-center gap-2 py-2" style={{ borderBottom: i < benchmark.competitors.length - 1 ? '1px solid #243140' : 'none' }}>

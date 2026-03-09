@@ -14,8 +14,10 @@
     /* ── BIQc Dark Theme (Primary) ── */
     --biqc-bg:          #0F1720;
     --biqc-bg-card:     #141C26;
+    --biqc-bg-panel:    #141C26;   /* alias for panel backgrounds */
     --biqc-bg-input:    #0A1018;
     --biqc-bg-elevated: #1A2332;
+    --biqc-sidebar-bg:  #0A1018;   /* sidebar and header bg */
     --biqc-border:      #243140;
     --biqc-border-focus:#FF6A00;
     --biqc-text:        #F4F7FA;
@@ -64,8 +66,10 @@
 [data-theme="light"] {
     --biqc-bg:          #F0F4F8;
     --biqc-bg-card:     #FFFFFF;
+    --biqc-bg-panel:    #FFFFFF;
     --biqc-bg-input:    #F8FAFC;
     --biqc-bg-elevated: #EDF2F7;
+    --biqc-sidebar-bg:  #F8FAFC;
     --biqc-border:      #CBD5E0;
     --biqc-border-focus:#FF6A00;
     --biqc-text:        #0F172A;
@@ -102,6 +106,44 @@
     --shadow-lg: 0 8px 30px rgba(0,0,0,0.14);
     --shadow-focus: 0 0 0 3px rgba(255,106,0,0.2);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT MODE — Tailwind class overrides
+   Since inline React styles can't be overridden via CSS,
+   Tailwind utility classes CAN be overridden with specificity.
+   These rules ensure text on light backgrounds remains readable.
+═══════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+    /* Primary text colors */
+    color-scheme: light;
+}
+
+/* Text overrides: dark-theme white/grey text → dark text in light mode */
+[data-theme="light"] .text-\[#F4F7FA\]  { color: #0F172A !important; }
+[data-theme="light"] .text-\[#E6EEF7\]  { color: #0F172A !important; }
+[data-theme="light"] .text-\[#9FB0C3\]  { color: #475569 !important; }
+[data-theme="light"] .text-\[#64748B\]  { color: #64748B !important; }  /* already good */
+[data-theme="light"] .text-\[#8B9DB5\]  { color: #64748B !important; }
+
+/* Mono/label text */
+[data-theme="light"] .text-\[#9FB0C3\][style*="JetBrains"] { color: #475569 !important; }
+
+/* Border overrides */
+[data-theme="light"] .border-\[#243140\] { border-color: #CBD5E0 !important; }
+[data-theme="light"] .border-b .border-\[#243140\] { border-color: #CBD5E0 !important; }
+
+/* Background overrides for Tailwind bg classes */
+[data-theme="light"] .bg-\[#0F1720\]  { background-color: #F0F4F8 !important; }
+[data-theme="light"] .bg-\[#141C26\]  { background-color: #FFFFFF !important; }
+[data-theme="light"] .bg-\[#0A1018\]  { background-color: #F8FAFC !important; }
+[data-theme="light"] .bg-\[#1A2332\]  { background-color: #EDF2F7 !important; }
+[data-theme="light"] .bg-\[#243140\]  { background-color: #E2E8F0 !important; }
+
+/* Hover state backgrounds */
+[data-theme="light"] .hover\:bg-white\/5:hover { background-color: rgba(0,0,0,0.04) !important; }
+[data-theme="light"] .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.06) !important; }
+
+
 
 /* ── Font stacks ── */
 :root {

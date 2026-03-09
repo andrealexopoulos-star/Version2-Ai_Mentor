@@ -51,7 +51,7 @@ const VerificationBadge = ({ navigate }) => {
         <span className="text-[11px] font-semibold" style={{ color, fontFamily: fontFamily.mono }}>{score}%</span>
       </button>
       {showTooltip && (
-        <div className="absolute right-0 top-10 w-64 rounded-xl p-4 shadow-xl z-50" style={{ background: '#141C26', border: '1px solid #243140' }}>
+        <div className="absolute right-0 top-10 w-64 rounded-xl p-4 shadow-xl z-50" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Snapshot Confidence</span>
             <span className="text-xs font-bold" style={{ color, fontFamily: fontFamily.mono }}>{score}%</span>
@@ -298,7 +298,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
           {/* Notifications */}
           <div className="relative">
-            <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-lg hover:bg-white/5 transition-colors relative" style={{ color: '#9FB0C3' }} aria-label="Notifications">
+            <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-lg hover:bg-white/5 transition-colors relative" style={{ color: 'var(--biqc-text-2)' }} aria-label="Notifications">
               <Bell className="w-5 h-5" />
               {notifications.total > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full" style={{ background: notifications.high > 0 ? '#EF4444' : '#F59E0B' }}>
@@ -307,8 +307,8 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
               )}
             </button>
             {showNotifications && (
-              <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl z-50" style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid #243140', background: '#141C26' }}>
+              <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl z-50" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+                <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
                   <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
                   <div className="flex items-center gap-2">
                     {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
@@ -324,7 +324,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                 ) : (
                   <div>
                     {notificationsList.map((notif, idx) => (
-                      <div key={notif.id || idx} className="p-3" style={{ borderBottom: '1px solid #243140', background: notif.severity === 'high' ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
+                      <div key={notif.id || idx} className="p-3" style={{ borderBottom: '1px solid var(--biqc-border)', background: notif.severity === 'high' ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
                         <div className="flex items-start gap-3">
                           <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: notif.severity === 'high' ? '#EF444415' : '#F59E0B15' }}>
                             <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? '#EF4444' : '#F59E0B' }} />
@@ -366,7 +366,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
             )}
           </div>
 
-          <button className="p-2 rounded-lg hover:bg-white/5 hidden md:flex" style={{ color: '#9FB0C3' }} aria-label="Help"><HelpCircle className="w-5 h-5" /></button>
+          <button className="p-2 rounded-lg hover:bg-white/5 hidden md:flex" style={{ color: 'var(--biqc-text-2)' }} aria-label="Help"><HelpCircle className="w-5 h-5" /></button>
 
           <div className="w-px h-6 mx-1 hidden md:block" style={{ background: '#243140' }} />
 
@@ -381,7 +381,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                 <ChevronDown className="w-3.5 h-3.5 hidden sm:block text-[#64748B]" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56" style={{ background: '#141C26', border: '1px solid #243140', borderRadius: '12px' }}>
+            <DropdownMenuContent align="end" className="w-56" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderRadius: '12px' }}>
               <div className="px-3 py-2.5">
                 <p className="font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{user?.full_name}</p>
                 <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{user?.email}</p>
@@ -404,7 +404,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
       {/* ═══ SIDEBAR ═══ */}
       <aside className={`fixed left-0 transition-all duration-300 ${sidebarWidth} ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-14 h-[calc(100vh-3.5rem)]`}
-        style={{ zIndex: 999, background: 'var(--biqc-bg-input, #0A1018)', borderRight: '1px solid var(--biqc-border, #243140)' }}
+        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, #243140)' }}
         role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -530,7 +530,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           <>
             <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
             <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
-              <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid #243140' }}>
+              <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                 <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
                 <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
               </div>

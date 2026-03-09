@@ -7,7 +7,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const CALIB_REPORT_KEY = 'biqc_calibration_report_date';
@@ -37,7 +37,7 @@ const ForensicReportCard = () => {
       </p>
       <div className="space-y-3">
         {/* Forensic Calibration Report */}
-        <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+        <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -64,7 +64,7 @@ const ForensicReportCard = () => {
         </div>
 
         {/* Market Exposure Scan Report */}
-        <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+        <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -184,7 +184,7 @@ const ReportsPage = () => {
           {hasEvents && (
             <button onClick={handleExportPDF} disabled={generating}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-white/5 disabled:opacity-50"
-              style={{ color: '#9FB0C3', border: '1px solid #243140', fontFamily: fontFamily.mono }}
+              style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}
               data-testid="export-pdf-btn">
               <Download className="w-3.5 h-3.5" />
               {generating ? 'Generating...' : 'Export PDF'}
@@ -250,22 +250,22 @@ const ReportsPage = () => {
               <Panel>
                 <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Signal Summary</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                  <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Total Events</span>
                     <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{events.length}</span>
                   </div>
-                  <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Avg Confidence</span>
                     <span className="text-xl font-bold" style={{ fontFamily: fontFamily.mono, color: avgConfidence > 70 ? '#10B981' : '#F59E0B' }}>{avgConfidence}%</span>
                   </div>
-                  <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Data Sources</span>
                     <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{integrations.length}</span>
                   </div>
                 </div>
                 <div className="space-y-1">
                   {events.slice(0, 10).map(ev => (
-                    <div key={ev.id} className="flex items-center gap-2 px-3 py-2 rounded" style={{ background: '#0F1720' }}>
+                    <div key={ev.id} className="flex items-center gap-2 px-3 py-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: ev.confidence_score >= 0.7 ? '#10B981' : '#F59E0B' }} />
                       <span className="text-xs text-[#9FB0C3] flex-1 truncate">{ev.event_type}</span>
                       <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{ev.source_system}</span>

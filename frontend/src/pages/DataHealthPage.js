@@ -6,7 +6,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const SYSTEM_COLORS = {
@@ -150,7 +150,7 @@ const DataHealthPage = () => {
               { label: 'Sources', value: String(dqSources), color: '#3B82F6' },
               { label: 'Consistency', value: '91%', color: '#F59E0B' },
             ].map(m => (
-              <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+              <div key={m.label} className="p-3 rounded-lg text-center" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-xl font-bold block" style={{ fontFamily: fontFamily.mono, color: m.color }}>{m.value}</span>
                 <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
               </div>

@@ -25,7 +25,7 @@ const InitiatingBIQC = ({ onReady }) => {
   }, [onReady]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0F1720' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }}>
       <style>{`
         @keyframes initPulse{0%,100%{opacity:0.4;transform:scale(0.95)}50%{opacity:1;transform:scale(1.05)}}
         @keyframes initBar{0%{width:0}100%{width:100%}}

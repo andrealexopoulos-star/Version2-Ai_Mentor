@@ -106,7 +106,7 @@ const SupportConsolePage = () => {
         </div>
 
         {/* Feature Flags */}
-        <div className="rounded-xl p-4" style={{ background: '#141C26', border: '1px solid #243140' }}>
+        <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
           <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Feature Flags</span>
           <div className="flex flex-wrap gap-2">
             {Object.entries(admin.feature_flags || {}).map(([k, v]) => (
@@ -116,7 +116,7 @@ const SupportConsolePage = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
         {[{ id: 'users', label: 'Users & Access', icon: Users }, { id: 'contacts', label: 'Enterprise Leads', icon: Eye }, { id: 'audit', label: 'Audit Log', icon: AlertTriangle }].map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); if (t.id === 'audit') loadAudit(); if (t.id === 'contacts') loadContacts(); }}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium ${tab === t.id ? 'text-[#F4F7FA]' : 'text-[#64748B]'}`}
@@ -128,11 +128,11 @@ const SupportConsolePage = () => {
 
         {/* Users Tab */}
         {tab === 'users' && (
-          <div className="rounded-xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #243140' }}>
+                  <tr style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                     {['Email', 'Name', 'Business', 'Tier', 'Status', 'Actions'].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{h}</th>
                     ))}
@@ -142,7 +142,7 @@ const SupportConsolePage = () => {
                   {users.map(u => {
                     const tc = TIER_COLORS[u.subscription_tier] || '#64748B';
                     return (
-                      <tr key={u.id} style={{ borderBottom: '1px solid #243140' }} className={u.is_disabled ? 'opacity-50' : ''}>
+                      <tr key={u.id} style={{ borderBottom: '1px solid var(--biqc-border)' }} className={u.is_disabled ? 'opacity-50' : ''}>
                         <td className="px-3 py-2 text-[#F4F7FA]">{u.email}</td>
                         <td className="px-3 py-2 text-[#9FB0C3]">{u.full_name || '—'}</td>
                         <td className="px-3 py-2 text-[#9FB0C3]">{u.business_name || '—'}</td>
@@ -189,8 +189,8 @@ const SupportConsolePage = () => {
 
         {/* Enterprise Leads Tab */}
         {tab === 'contacts' && (
-          <div className="rounded-xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }}>
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid #243140' }}>
+          <div className="rounded-xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
               <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>Enterprise Contact Requests ({contacts.length})</span>
               <p className="text-[10px] text-[#64748B] mt-0.5">Users requesting access to Growth/Enterprise features. Route to HubSpot when configured.</p>
             </div>
@@ -198,7 +198,7 @@ const SupportConsolePage = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #243140' }}>
+                  <tr style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                     {['Name', 'Business', 'Email', 'Phone', 'Feature', 'Callback', 'Description', 'Date'].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{h}</th>
                     ))}
@@ -206,7 +206,7 @@ const SupportConsolePage = () => {
                 </thead>
                 <tbody>
                   {contacts.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #243140' }}>
+                    <tr key={c.id} style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                       <td className="px-3 py-2 text-[#F4F7FA]">{c.name}</td>
                       <td className="px-3 py-2 text-[#9FB0C3]">{c.business_name || '—'}</td>
                       <td className="px-3 py-2 text-[#9FB0C3]">{c.email}</td>
@@ -225,10 +225,10 @@ const SupportConsolePage = () => {
 
         {/* Audit Tab */}
         {tab === 'audit' && (
-          <div className="rounded-xl p-4 space-y-1" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-xl p-4 space-y-1" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             {auditLog.length === 0 && <p className="text-xs text-[#64748B]">No admin actions recorded yet.</p>}
             {auditLog.map(a => (
-              <div key={a.id} className="flex items-center gap-2 py-2 text-xs" style={{ borderBottom: '1px solid #243140' }}>
+              <div key={a.id} className="flex items-center gap-2 py-2 text-xs" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: a.action_type?.includes('disable') ? '#EF4444' : '#10B981' }} />
                 <span className="text-[#F4F7FA] flex-1">{a.action_type}</span>
                 <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{a.target_user_id?.substring(0, 8)}</span>

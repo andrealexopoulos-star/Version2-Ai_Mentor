@@ -19,7 +19,7 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
   }, []);
 
   return (
-    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6 relative overflow-hidden" style={{ background: '#0F1720' }} data-testid="cognitive-ignition">
+    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6 relative overflow-hidden" style={{ background: 'var(--biqc-bg)' }} data-testid="cognitive-ignition">
       <style>{`
         @keyframes ignSmoke{0%{opacity:0;transform:scale(0.8) translateY(20px)}50%{opacity:0.06}100%{opacity:0;transform:scale(1.4) translateY(-40px)}}
         @keyframes ignPulse{0%,100%{box-shadow:0 0 30px rgba(255,106,0,0.15)}50%{box-shadow:0 0 80px rgba(255,106,0,0.4)}}
@@ -126,7 +126,7 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
   const visibleSteps = pack.steps.filter((_, i) => progress > (i / pack.steps.length) * 80);
 
   return (
-    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6" style={{ background: '#0F1720' }} data-testid="cognitive-loading">
+    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6" style={{ background: 'var(--biqc-bg)' }} data-testid="cognitive-loading">
       <style>{`
         @keyframes cogFadeUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
         @keyframes cogPulseGlow{0%,100%{box-shadow:0 0 20px rgba(255,106,0,0.2)}50%{box-shadow:0 0 40px rgba(255,106,0,0.5)}}

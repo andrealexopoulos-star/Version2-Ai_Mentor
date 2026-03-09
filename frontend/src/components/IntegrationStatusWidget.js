@@ -102,10 +102,10 @@ const IntegrationStatusRow = ({ category, integrationData, compact, navigate }) 
       >
         <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: col.text }} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
             {meta.label} not connected
           </p>
-          <p className="text-xs mt-0.5" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
             {meta.missingMsg}
           </p>
         </div>
@@ -139,7 +139,7 @@ const IntegrationStatusRow = ({ category, integrationData, compact, navigate }) 
       >
         <CheckCircle2 className="w-3.5 h-3.5" />
         {providerName}
-        {hasData && <span style={{ color: '#9FB0C3' }}>· {count} {meta.recordLabel}</span>}
+        {hasData && <span style={{ color: 'var(--biqc-text-2)' }}>· {count} {meta.recordLabel}</span>}
       </div>
     );
   }
@@ -152,15 +152,15 @@ const IntegrationStatusRow = ({ category, integrationData, compact, navigate }) 
     >
       <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: col.text }} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
           {providerName} connected
           {hasData && (
-            <span className="font-normal ml-1" style={{ color: '#9FB0C3' }}>
+            <span className="font-normal ml-1" style={{ color: 'var(--biqc-text-2)' }}>
               — {count} {meta.recordLabel} {count === 1 ? 'imported' : 'imported'}
             </span>
           )}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
           {hasData
             ? (syncedAt ? `Last synced ${syncedAt}` : `Syncing automatically`)
             : meta.emptyMsg
@@ -191,7 +191,7 @@ const IntegrationStatusWidget = ({
     return (
       <div className="flex items-center gap-2 py-2" data-testid="integration-status-loading">
         <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#FF6A00' }} />
-        <span className="text-xs" style={{ color: '#9FB0C3' }}>Checking integrations...</span>
+        <span className="text-xs" style={{ color: 'var(--biqc-text-2)' }}>Checking integrations...</span>
       </div>
     );
   }
@@ -219,7 +219,7 @@ const IntegrationStatusWidget = ({
             disabled={syncing}
             data-testid="integration-status-refresh-compact"
             className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all hover:brightness-110"
-            style={{ color: '#64748B', background: 'transparent', border: '1px solid #243140' }}
+            style={{ color: '#64748B', background: 'transparent', border: '1px solid var(--biqc-border)' }}
           >
             <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
           </button>
@@ -246,7 +246,7 @@ const IntegrationStatusWidget = ({
             disabled={syncing}
             data-testid="integration-status-refresh-btn"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-            style={{ color: '#9FB0C3', background: '#141C26', border: '1px solid #243140' }}
+            style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = '#FF6A00'}
             onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
           >

@@ -49,7 +49,7 @@ const ST = { STABLE: { c: '#10B981', bg: '#10B98108', b: '#10B98125', d: '#10B98
 const ST_LABELS = { STABLE: 'On Track', DRIFT: 'Market Shift', COMPRESSION: 'Under Pressure', CRITICAL: 'At Risk' };
 const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
 
-const Card = ({ children, className = '', ...props }) => (<div className={`rounded-2xl ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }} {...props}>{children}</div>);
+const Card = ({ children, className = '', ...props }) => (<div className={`rounded-2xl ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} {...props}>{children}</div>);
 
 /* Integration-aware empty state — uses granular IntegrationStatusWidget */
 const GROUP_CATEGORY_MAP = {
@@ -66,7 +66,7 @@ const IntegrationRequired = ({ groupId, color, integrationStatus, integrationLoa
     return (
       <Card className="p-8 text-center">
         <Radar className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-        <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Market Data Unavailable</p>
+        <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Market Data Unavailable</p>
         <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Complete calibration to enable market positioning analysis.</p>
         <a href="/calibration" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: color }}>Start Calibration</a>
       </Card>
@@ -94,8 +94,8 @@ const WelcomeBanner = ({ owner }) => (
         <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
       </div>
       <div className="flex-1">
-        <h3 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Welcome{owner ? `, ${owner}` : ''}. Let's activate your intelligence.</h3>
-        <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Welcome{owner ? `, ${owner}` : ''}. Let's activate your intelligence.</h3>
+        <p className="text-sm mb-4" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
           BIQc needs to connect to your business tools to surface real intelligence. Connect at least one tool to get started.
         </p>
         <div className="flex flex-wrap gap-2">
@@ -133,11 +133,11 @@ const DailySummary = ({ cognitive }) => {
         <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>What changed in 24h</span>
       </div>
       {newAlerts.length > 0 && (
-        <p className="text-xs mb-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-          <span className="font-semibold" style={{ color: '#F4F7FA' }}>{newAlerts.length} new signal{newAlerts.length > 1 ? 's' : ''}</span> detected across your systems.
+        <p className="text-xs mb-2" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
+          <span className="font-semibold" style={{ color: 'var(--biqc-text)' }}>{newAlerts.length} new signal{newAlerts.length > 1 ? 's' : ''}</span> detected across your systems.
         </p>
       )}
-      {memo && <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{memo.substring(0, 200)}{memo.length > 200 ? '...' : ''}</p>}
+      {memo && <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{memo.substring(0, 200)}{memo.length > 200 ? '...' : ''}</p>}
     </Card>
   );
 };
@@ -325,8 +325,8 @@ const StabilityScoreCard = ({ score, status, velocity, interpretation, cognition
               <span className="text-sm font-semibold" style={{ color: cfg.color, fontFamily: fontFamily.mono }}>{cfg.label}</span>
               {velocity && <span className="text-xs" style={{ color: cfg.color }}>{velIcon} {velocity}</span>}
             </div>
-            <h2 className="text-base font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Business Stability</h2>
-            {interpretation && <p className="text-xs max-w-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{interpretation.substring(0, 120)}{interpretation.length > 120 ? '...' : ''}</p>}
+            <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Business Stability</h2>
+            {interpretation && <p className="text-xs max-w-xs leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{interpretation.substring(0, 120)}{interpretation.length > 120 ? '...' : ''}</p>}
             {!interpretation && <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Overall operational health across all connected systems.</p>}
           </div>
         </div>
@@ -345,7 +345,7 @@ const StabilityScoreCard = ({ score, status, velocity, interpretation, cognition
               const pct = Math.round(val * 100);
               const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
               return (
-                <div key={key} className="p-2 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140', minWidth: 80 }}>
+                <div key={key} className="p-2 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', minWidth: 80 }}>
                   <span className="text-[9px] font-bold tracking-widest uppercase block" style={{ color: ic, fontFamily: fontFamily.mono }}>{label}</span>
                   <span className="text-base font-bold" style={{ color: ic, fontFamily: fontFamily.mono }}>{pct}%</span>
                   <span className="text-[9px] block" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{title}</span>
@@ -439,7 +439,7 @@ const AdvisorWatchtower = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
+      <div className="min-h-[calc(100vh-56px)]" style={{ background: 'var(--biqc-bg)', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
 
         {/* LOADING — Animated cognitive screen with progress bar */}
         {loading && (
@@ -449,7 +449,7 @@ const AdvisorWatchtower = () => {
               ownerName={owner}
             />
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6" data-testid="advisor-progress-bar">
-              <div className="rounded-xl p-4" style={{ background: '#141C26', border: '1px solid #243140', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+              <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
                 <StageProgressBar stage={stage} progress={progress} startedAt={startedAt} />
               </div>
             </div>
@@ -491,7 +491,7 @@ const AdvisorWatchtower = () => {
 
             <div className="max-w-5xl mx-auto px-6 py-8">
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+                <h1 className="text-3xl font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
                   Good {timeOfDay || 'morning'}, {owner || 'there'}.
                 </h1>
                 <DataConfidence cognitive={cognitive} />
@@ -551,7 +551,7 @@ const AdvisorWatchtower = () => {
                     <group.icon className="w-4 h-4" style={{ color: group.color }} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{group.label}</h2>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{group.label}</h2>
                     <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{group.description}</p>
                   </div>
                   {gd.score > 0 && (
@@ -575,7 +575,7 @@ const AdvisorWatchtower = () => {
                   <>
                     {/* AI Insight */}
                     {gd.insight ? (
-                      <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{gd.insight}</p></Card>
+                      <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{gd.insight}</p></Card>
                     ) : (
                       <Card className="p-5"><p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
                         {gd.hasData ? 'Insufficient data to generate insight.' : 'No active signals detected. Connect relevant integrations to activate monitoring.'}
@@ -679,8 +679,8 @@ const AdvisorWatchtower = () => {
                                 <div className="flex items-start gap-3">
                                   <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                                   <div className="flex-1">
-                                    <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{item.title}</p>
-                                    {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.detail}</p>}
+                                    <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{item.title}</p>
+                                    {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{item.detail}</p>}
                                     <ActionBar actions={item.actions || ["hand-off", "dismiss"]} />
                                   </div>
                                 </div>
@@ -699,7 +699,7 @@ const AdvisorWatchtower = () => {
                 {isTabConnected && (alignment || contradictions.length > 0) && (
                   <div>
                     <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Alignment</h3>
-                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{alignment}</p></Card>}
+                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{alignment}</p></Card>}
                     {contradictions.map((ct, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}><p className="text-xs" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>&#x26A0; {ct}</p></div>))}
                   </div>
                 )}
@@ -721,7 +721,7 @@ const AdvisorWatchtower = () => {
                           ))}
                           {chain.probability && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(chain.probability * 100)}% likelihood</span>}
                         </div>
-                        {chain.description && <p className="text-xs mt-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{chain.description}</p>}
+                        {chain.description && <p className="text-xs mt-2" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{chain.description}</p>}
                       </Card>
                     ))}
                   </div>
@@ -742,9 +742,9 @@ const AdvisorWatchtower = () => {
                       {briefOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
                     </button>
                     {briefOpen && (
-                      <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid #243140' }}>
-                        {wb.cashflow_recovered && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>}
-                        {wb.hours_saved && <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>}
+                      <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid var(--biqc-border)' }}>
+                        {wb.cashflow_recovered && <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>}
+                        {wb.hours_saved && <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>}
                       </div>
                     )}
                   </Card>
@@ -772,15 +772,15 @@ const AdvisorWatchtower = () => {
                     <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Executive Memo</h3>
                     {memoOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
                   </button>
-                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{memo}</p></Card>}
+                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{memo}</p></Card>}
                 </div>
               )}
 
               {/* Sources */}
               {sources && sources.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid #243140' }}>
+                <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                   <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
-                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: '#141C26', fontFamily: fontFamily.mono }}>{s}</span>))}
+                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', fontFamily: fontFamily.mono }}>{s}</span>))}
                 </div>
               )}
             </div>

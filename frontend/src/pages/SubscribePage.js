@@ -79,7 +79,7 @@ const SubscribePage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12" style={{ background: '#0F1720' }} data-testid="subscribe-page">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12" style={{ background: 'var(--biqc-bg)' }} data-testid="subscribe-page">
       {/* Payment Result Banner */}
       {paymentResult && (
         <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{
@@ -112,7 +112,7 @@ const SubscribePage = () => {
           const isCurrent = plan.id === currentTier;
           return (
             <div key={plan.id} className="rounded-xl p-6 relative" style={{
-              background: '#141C26',
+              background: 'var(--biqc-bg-card)',
               border: `2px solid ${plan.recommended ? plan.color : '#243140'}`,
               boxShadow: plan.recommended ? `0 8px 32px ${plan.color}20` : 'none',
             }} data-testid={`plan-${plan.id}`}>

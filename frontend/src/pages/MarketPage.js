@@ -17,7 +17,7 @@ import {
 
 
 const Panel = ({ children, className = '', ...props }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }} {...props}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} {...props}>{children}</div>
 );
 
 const STATUS_MAP = {
@@ -30,7 +30,7 @@ const STATUS_MAP = {
 const GaugeMeter = ({ value, label, suffix = '%', thresholds = [30, 60, 80] }) => {
   const color = value >= thresholds[2] ? '#10B981' : value >= thresholds[1] ? '#F59E0B' : value >= thresholds[0] ? '#FF6A00' : '#EF4444';
   return (
-    <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+    <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>{label}</span>
       <div className="flex items-end gap-1">
         <span className="text-2xl font-bold" style={{ color, fontFamily: fontFamily.mono }}>{value != null ? value : '—'}</span>
@@ -183,7 +183,7 @@ const MarketPage = () => {
         </div>
 
         {/* ═══ TAB NAVIGATION ═══ */}
-        <div className="flex gap-1 p-1 rounded-lg overflow-x-auto" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="market-tabs">
+        <div className="flex gap-1 p-1 rounded-lg overflow-x-auto" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="market-tabs">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors shrink-0 ${activeTab === tab.id ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
@@ -207,7 +207,7 @@ const MarketPage = () => {
                 <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>MARKET INTELLIGENCE</span>
               </div>
               <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
-              <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid #243140' }}>
+              <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Full reports available under Governance → Reports</span>
                 <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
                   View Reports <ArrowRight className="w-3 h-3" />
@@ -220,7 +220,7 @@ const MarketPage = () => {
               <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>What To Focus On Next</h2>
               <div className="space-y-3">
                 {filteredMoves.map((m, i) => (
-                  <div key={i} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
+                  <div key={i} className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                     <div className="flex items-start gap-3">
                       <span className="text-sm font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
                       <div className="flex-1">
@@ -330,7 +330,7 @@ const MarketPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <GaugeMeter value={saturationScore} label="Market Position Score" suffix="/100" thresholds={[25, 50, 75]} />
                   <GaugeMeter value={demandCapture} label="Demand Capture Rate" suffix="%" thresholds={[30, 50, 70]} />
-                  <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                  <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Position Verdict</span>
                     <span className="text-xl font-bold" style={{ color: positionVerdict === 'STABLE' ? '#10B981' : positionVerdict === 'DRIFT' ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
                       {positionVerdict || '—'}
@@ -347,7 +347,7 @@ const MarketPage = () => {
                   {competitors.length > 0 ? (
                     <div className="space-y-2">
                       {competitors.map((comp, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
                           <div className="flex-1 min-w-0">
                             <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: fontFamily.display }}>{comp.name}</span>
@@ -373,7 +373,7 @@ const MarketPage = () => {
                       {Object.entries(watchtower.positions).map(([domain, pos]) => {
                         const posColor = pos.position === 'CRITICAL' ? '#EF4444' : pos.position === 'COMPRESSION' ? '#FF6A00' : pos.position === 'DRIFT' ? '#F59E0B' : '#10B981';
                         return (
-                          <div key={domain} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <div key={domain} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
                               <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: posColor, background: posColor + '15', fontFamily: fontFamily.mono }}>{pos.position}</span>
@@ -417,7 +417,7 @@ const MarketPage = () => {
                   <GaugeMeter value={demandCapture} label="Goal Achievement Probability" suffix="%" thresholds={[30, 50, 70]} />
                   <GaugeMeter value={mi.misalignment_index != null ? mi.misalignment_index : null} label="Misalignment Index" suffix="/100" thresholds={[60, 40, 20]} />
                   {pipeline != null && (
-                    <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Active Pipeline</span>
                       <span className="text-2xl font-bold text-[#3B82F6]" style={{ fontFamily: fontFamily.mono }}>${Math.round(pipeline / 1000)}K</span>
                     </div>
@@ -491,7 +491,7 @@ const MarketPage = () => {
                       {Object.entries(freshness.freshness).filter(([, f]) => f.status !== 'no_data').map(([domain, f]) => {
                         const fColor = f.status === 'fresh' ? '#10B981' : f.status === 'recent' ? '#3B82F6' : f.status === 'aging' ? '#F59E0B' : '#EF4444';
                         return (
-                          <div key={domain} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <div key={domain} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
                               <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: fColor, background: fColor + '15', fontFamily: fontFamily.mono }}>{f.status}</span>
@@ -516,7 +516,7 @@ const MarketPage = () => {
                       {c.data_gaps.map((gap, i) => {
                         const impactColor = gap.impact_on_confidence === 'high' ? '#EF4444' : gap.impact_on_confidence === 'medium' ? '#F59E0B' : '#10B981';
                         return (
-                          <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                          <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: impactColor }} />
                             <div className="flex-1">
                               <span className="text-xs font-semibold text-[#F4F7FA]">{gap.area}</span>
@@ -546,14 +546,14 @@ const MarketPage = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {goalProb != null && (
-                        <div className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="p-4 rounded-lg text-center" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Goal Achievement</span>
                           <span className="text-3xl font-bold" style={{ color: goalProb > 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{goalProb}%</span>
                           <span className="text-[10px] text-[#64748B] block mt-1">probability at current pace</span>
                         </div>
                       )}
                       {mi.misalignment_index != null && (
-                        <div className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="p-4 rounded-lg text-center" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Strategy-Execution Gap</span>
                           <span className="text-3xl font-bold" style={{ color: mi.misalignment_index > 50 ? '#EF4444' : mi.misalignment_index > 25 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{mi.misalignment_index}</span>
                           <span className="text-[10px] text-[#64748B] block mt-1">misalignment index (lower is better)</span>
@@ -572,13 +572,13 @@ const MarketPage = () => {
           <div className="space-y-4" data-testid="reports-tab">
             <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Intelligence Reports</h2>
             {reports.length === 0 && (
-              <div className="rounded-xl p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <div className="rounded-xl p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <FileText className="w-8 h-8 mx-auto mb-3 text-[#64748B]/30" />
                 <p className="text-sm text-[#64748B]">Reports will appear here after your first cognitive snapshot.</p>
               </div>
             )}
             {reports.map((r, i) => (
-              <div key={i} className="rounded-xl p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: '#141C26', border: '1px solid #243140' }}
+              <div key={i} className="rounded-xl p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
                 onClick={() => sendToChat(`Summarise my ${r.type}`)}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-[#FF6A00]" /><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{r.type}</span></div>
@@ -600,7 +600,7 @@ const MarketPage = () => {
 const FrictionItem = ({ label, detail, impact }) => {
   const color = impact === 'high' ? '#EF4444' : impact === 'medium' ? '#F59E0B' : '#10B981';
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+    <div className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
       <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: color }} />
       <div>
         <span className="text-xs font-semibold text-[#F4F7FA]">{label}</span>
@@ -613,7 +613,7 @@ const FrictionItem = ({ label, detail, impact }) => {
 // ═══ Gaps Section Component ═══
 const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, navigate }) => (
   <div data-testid="gaps-section">
-    <button onClick={() => setGapsOpen(!gapsOpen)} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors hover:bg-white/[0.02]" style={{ background: '#141C26', border: '1px solid #243140' }}>
+    <button onClick={() => setGapsOpen(!gapsOpen)} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors hover:bg-white/[0.02]" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
       <div className="flex items-center gap-3">
         <Link2 className="w-4 h-4 text-[#3B82F6]" />
         <div className="text-left">
@@ -637,7 +637,7 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
           { key: 'analytics', name: 'Analytics', color: '#E37400', status: 'not_connected', available: false },
           { key: 'email_platform', name: 'Email', color: '#FFE01B', status: 'not_connected', available: false },
         ]).map(ch => (
-          <div key={ch.key} className="p-3 rounded-lg flex items-center gap-3" style={{ background: '#0F1720', border: `1px solid ${ch.status === 'connected' ? '#10B98130' : '#243140'}` }}>
+          <div key={ch.key} className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--biqc-bg)', border: `1px solid ${ch.status === 'connected' ? '#10B98130' : '#243140'}` }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-xs" style={{ background: ch.color }}>{ch.name[0]}</div>
             <span className="text-sm text-[#F4F7FA] flex-1">{ch.name}</span>
             {ch.status === 'connected' ? (
@@ -661,7 +661,7 @@ const ForensicCalibrationCard = ({ isSuperAdmin, navigate }) => {
     apiClient.get('/forensic/calibration').then(res => { if (res.data?.exists) setForensicResult(res.data); }).catch(() => {});
   }, []);
   return (
-    <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="forensic-section">
+    <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-section">
       <div className="flex items-start gap-3">
         <Eye className="w-4 h-4 text-[#FF6A00] mt-0.5 shrink-0" />
         <div className="flex-1">

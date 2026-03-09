@@ -94,7 +94,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
   const showLever = lever.lever && (hasCRMSource || !containsCRMClaim(lever.lever));
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="cmo-snapshot">
+    <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="cmo-snapshot">
       <style>{`
         @keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
         @keyframes pulseGlow{0%,100%{opacity:0.3}50%{opacity:1}}
@@ -152,7 +152,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* ═══ SECTION 2 — 90-Day Trajectory Projection ═══ */}
         {(trajectory.projected_state || trajectory.best_case) && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 0.9s ease-out' }} data-testid="snapshot-trajectory">
+          <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'snapFade 0.9s ease-out' }} data-testid="snapshot-trajectory">
             <div className="flex items-center gap-2 mb-3">
               <Activity className="w-4 h-4 text-[#3B82F6]" />
               <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>90-Day Trajectory</h3>
@@ -186,11 +186,11 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* ═══ SECTION 3 — Strategic Moves (with impact bands) ═══ */}
         {filteredMoves.length > 0 && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 1s ease-out' }} data-testid="snapshot-moves">
+          <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'snapFade 1s ease-out' }} data-testid="snapshot-moves">
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Strategic Moves</h3>
             <div className="space-y-3">
               {filteredMoves.map((m, i) => (
-                <div key={i} className="p-4 rounded-lg" style={{ background: '#0F1720', border: '1px solid #24314080' }}>
+                <div key={i} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #24314080' }}>
                   <div className="flex items-start gap-2">
                     <span className="text-xs font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
                     <div className="flex-1">
@@ -256,7 +256,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* ═══ SECTION 6 — Data Gaps Limiting Confidence ═══ */}
         {dataGaps.length > 0 && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #F59E0B20', animation: 'snapFade 1.3s ease-out' }} data-testid="snapshot-data-gaps">
+          <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #F59E0B20', animation: 'snapFade 1.3s ease-out' }} data-testid="snapshot-data-gaps">
             <div className="flex items-center gap-2 mb-3">
               <Link2 className="w-4 h-4 text-[#F59E0B]" />
               <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Data Gaps Limiting Confidence</h3>
@@ -287,7 +287,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* ═══ SECTION 7 — Snapshot Confidence (Insight Performance Preview) ═══ */}
         {snapshotConfidence != null && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 1.4s ease-out' }} data-testid="snapshot-confidence">
+          <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'snapFade 1.4s ease-out' }} data-testid="snapshot-confidence">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="w-4 h-4 text-[#3B82F6]" />
               <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Snapshot Confidence</h3>
@@ -311,7 +311,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* Executive Memo */}
         {memo && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #243140', animation: 'snapFade 1.5s ease-out' }}>
+          <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'snapFade 1.5s ease-out' }}>
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>AI Advisory</h3>
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{memo.substring(0, 500)}</p>
           </div>
@@ -319,7 +319,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* Alignment */}
         {(alignment || contradictions.length > 0) && (
-          <div className="rounded-xl p-5 mb-6" style={{ background: '#141C26', border: '1px solid #F59E0B25', animation: 'snapFade 1.6s ease-out' }}>
+          <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #F59E0B25', animation: 'snapFade 1.6s ease-out' }}>
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Alignment Check</h3>
             {alignment && <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3" style={{ fontFamily: fontFamily.body }}>{alignment}</p>}
             {contradictions.map((ct, i) => (
@@ -332,7 +332,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 
         {/* No data — ANALYZING state — show stage progress bar */}
         {!isReady && (
-          <div className="rounded-xl p-6 mb-6" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="snapshot-analyzing-state">
+          <div className="rounded-xl p-6 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="snapshot-analyzing-state">
             <div className="mb-4">
               <StageProgressBar stage={snapshotStage} startedAt={startedAt} />
             </div>
@@ -347,7 +347,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           <div className="flex flex-wrap gap-2 mb-8" style={{ animation: 'snapFade 1.7s ease-out' }}>
             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Sources:</span>
             {sources.map((s, i) => (
-              <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: '#141C26', fontFamily: fontFamily.mono }}>{s}</span>
+              <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', fontFamily: fontFamily.mono }}>{s}</span>
             ))}
           </div>
         )}
@@ -387,7 +387,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
 };
 
 export const ForensicCalibrationUI = ({ onSkip }) => (
-  <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="forensic-calibration">
+  <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="forensic-calibration">
     <div className="max-w-2xl mx-auto px-6 py-10">
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ background: '#FF6A0015', border: '1px solid #FF6A0030' }}>

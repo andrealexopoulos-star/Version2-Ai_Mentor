@@ -71,8 +71,10 @@ export const spacingClass = {
 export const colors = {
   bg: '#0F1720',
   bgCard: '#141C26',
+  bgPanel: '#141C26',     // panels, cards — use var(--biqc-bg-panel) in JSX
   bgInput: '#0A1018',
   bgElevated: '#1A2332',
+  bgSidebar: '#0A1018',   // sidebar, header — use var(--biqc-sidebar-bg) in JSX
   border: '#243140',
   borderFocus: '#FF6A00',
   text: '#F4F7FA',

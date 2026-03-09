@@ -107,8 +107,8 @@ export const CheckInAlerts = () => {
             {alert.type === 'recalibration' ? <RefreshCw className="w-4 h-4" style={{ color: '#FF6A00' }} /> : <Video className="w-4 h-4" style={{ color: '#7C3AED' }} />}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{alert.title}</p>
-            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{alert.message}</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{alert.title}</p>
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{alert.message}</p>
             <div className="flex gap-2 mt-3">
               <button onClick={() => {
                 if (alert.type === 'recalibration') {
@@ -124,8 +124,8 @@ export const CheckInAlerts = () => {
                 {alert.type === 'recalibration' ? 'Recalibrate Now' : 'Schedule Check-In'}
               </button>
               <button onClick={() => setShowScheduler(alert.type)} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:-translate-y-0.5" style={{
-                color: '#9FB0C3',
-                borderColor: '#243140',
+                color: 'var(--biqc-text-2)',
+                borderColor: 'var(--biqc-border)',
                 fontFamily: fontFamily.mono,
               }} data-testid={`checkin-schedule-${alert.type}`}>
                 <Calendar className="w-3 h-3 inline mr-1" />
@@ -143,9 +143,9 @@ export const CheckInAlerts = () => {
       {showScheduler && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center" data-testid="scheduler-modal">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowScheduler(null)} />
-          <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl p-6" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl p-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold" style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+              <h3 className="text-lg font-bold" style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text)' }}>
                 {showScheduler === 'recalibration' ? 'Schedule Recalibration' : 'Schedule Video Check-In'}
               </h3>
               <button onClick={() => setShowScheduler(null)} className="p-1 rounded-lg hover:bg-white/5">
@@ -153,7 +153,7 @@ export const CheckInAlerts = () => {
               </button>
             </div>
 
-            <p className="text-sm mb-4" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+            <p className="text-sm mb-4" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
               {showScheduler === 'recalibration'
                 ? 'Choose a date and time to update your business profile and recalibrate BIQc.'
                 : 'Choose a date and time for a video check-in with your BIQc advisor.'}

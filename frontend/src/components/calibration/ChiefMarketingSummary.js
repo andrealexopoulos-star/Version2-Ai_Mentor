@@ -134,7 +134,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const growth = full.growth_strategy || wowSummary?.growth_opportunity || '';
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: '#0F1720' }} data-testid="chief-marketing-summary">
+    <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="chief-marketing-summary">
       <style>{`@keyframes cmsFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8 space-y-8">
@@ -153,7 +153,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         </div>
 
         {/* ── SECTION 1: BUSINESS SUMMARY ── */}
-        <div className="rounded-xl p-6 space-y-4" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 0.6s ease-out' }} data-testid="business-summary">
+        <div className="rounded-xl p-6 space-y-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 0.6s ease-out' }} data-testid="business-summary">
           <div className="flex items-center gap-2 mb-1">
             <Target className="w-4 h-4" style={{ color: '#FF6A00' }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Business Intelligence Summary</h2>
@@ -161,7 +161,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
           {whatYouDo ? (
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              <strong style={{ color: '#F4F7FA' }}>{bizName}</strong>
+              <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong>
               {industry ? ` operates in the ${industry} sector` : ''}.
               {whatYouDo ? ` ${whatYouDo}.` : ''}
             </p>
@@ -169,13 +169,13 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
           {whoYouServe ? (
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              Their primary market is <strong style={{ color: '#F4F7FA' }}>{whoYouServe}</strong>{model ? `, operating on a ${model} model` : ''}.
+              Their primary market is <strong style={{ color: 'var(--biqc-text)' }}>{whoYouServe}</strong>{model ? `, operating on a ${model} model` : ''}.
             </p>
           ) : null}
 
           {uvp ? (
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              Their stated competitive position: <em style={{ color: '#F4F7FA' }}>"{uvp.substring(0, 180)}{uvp.length > 180 ? '...' : ''}"</em>
+              Their stated competitive position: <em style={{ color: 'var(--biqc-text)' }}>"{uvp.substring(0, 180)}{uvp.length > 180 ? '...' : ''}"</em>
             </p>
           ) : null}
 
@@ -197,7 +197,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         </div>
 
         {/* ── SECTION 2: MARKET PRESENCE SCORE ── */}
-        <div className="rounded-xl p-6 text-center" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 0.8s ease-out' }} data-testid="presence-score">
+        <div className="rounded-xl p-6 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 0.8s ease-out' }} data-testid="presence-score">
           <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Digital Market Presence Score</span>
           <span className="text-5xl font-bold block mb-2" style={{ color: scoreColor, fontFamily: fontFamily.mono }}>{overall}</span>
           <span className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>/100</span>
@@ -236,7 +236,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
           <div className="space-y-2">
             {audit.checks.map((c, i) => (
-              <div key={i} className="rounded-xl overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <div key={i} className="rounded-xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <button onClick={() => setOpenAudit(openAudit === i ? null : i)}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors">
                   <div className="flex-1">
@@ -248,7 +248,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </div>
                 </button>
                 {openAudit === i && (
-                  <div className="px-4 pb-4 space-y-2" style={{ borderTop: '1px solid #243140' }}>
+                  <div className="px-4 pb-4 space-y-2" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                     <p className="text-[11px] mt-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{c.evidence}</p>
                     <div className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
                       <Zap className="w-3.5 h-3.5 text-[#10B981] shrink-0 mt-0.5" />
@@ -262,7 +262,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         </div>
 
         {/* ── SECTION 4: GEOGRAPHIC MARKET PRESENCE ── */}
-        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 1.2s ease-out' }} data-testid="geographic-presence">
+        <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.2s ease-out' }} data-testid="geographic-presence">
           <div className="flex items-center gap-2 mb-3">
             <Globe className="w-4 h-4" style={{ color: '#7C3AED' }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Geographic Market Presence</h2>
@@ -270,7 +270,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           {geo.loc ? (
             <>
               <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-                Based on publicly detectable signals, <strong style={{ color: '#F4F7FA' }}>{bizName}</strong> would most likely attract clients in and around <strong style={{ color: '#F4F7FA' }}>{geo.loc}</strong>.
+                Based on publicly detectable signals, <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong> would most likely attract clients in and around <strong style={{ color: 'var(--biqc-text)' }}>{geo.loc}</strong>.
               </p>
               {geo.hasSocialPresence ? (
                 <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
@@ -292,7 +292,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         </div>
 
         {/* ── SECTION 5: COMPETITIVE INTELLIGENCE ── */}
-        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140', animation: 'cmsFade 1.4s ease-out' }} data-testid="competitor-intelligence">
+        <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.4s ease-out' }} data-testid="competitor-intelligence">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4" style={{ color: '#EF4444' }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Competitive Intelligence</h2>
@@ -329,7 +329,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         </div>
 
         {/* ── SECTION 6: STRATEGIC RECOMMENDATIONS ── */}
-        <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
+        <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#10B981]" />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Immediate Strategic Recommendations</h2>
@@ -376,7 +376,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         </div>
 
         {/* ── NO DATA DISCLAIMER ── */}
-        <div className="rounded-xl p-4" style={{ background: '#0F1720', border: '1px solid #24314050', animation: 'cmsFade 1.8s ease-out' }}>
+        <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg)', border: '1px solid #24314050', animation: 'cmsFade 1.8s ease-out' }}>
           <p className="text-xs text-[#64748B] leading-relaxed" style={{ fontFamily: fontFamily.mono }}>
             All analysis above is based on publicly available digital signals only. No internal revenue, lead, or performance data has been assumed. Connect your integrations to unlock verified internal intelligence.
           </p>

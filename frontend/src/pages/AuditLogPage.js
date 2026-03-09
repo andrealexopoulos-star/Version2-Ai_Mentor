@@ -6,7 +6,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const AuditLogPage = () => {
@@ -66,7 +66,7 @@ const AuditLogPage = () => {
     <Panel className="text-center py-12">
       <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
       <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded yet.</p>
-      <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#9FB0C3' }}>
+      <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: 'var(--biqc-text-2)' }}>
         The audit log records every verified intelligence event from your connected systems — deal changes, invoice movements, compliance flags. Connect CRM or accounting to start building your governance trail.
       </p>
       <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="audit-connect-cta">
@@ -111,13 +111,13 @@ const AuditLogPage = () => {
               {events.map((ev) => {
                 const color = ev.confidence_score >= 0.8 ? '#10B981' : ev.confidence_score >= 0.5 ? '#F59E0B' : '#EF4444';
                 return (
-                  <div key={ev.id} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }} data-testid={`audit-event-${ev.id}`}>
+                  <div key={ev.id} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }} data-testid={`audit-event-${ev.id}`}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: fontFamily.body }}>{ev.event_type}</span>
                       {ev.signal_reference && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>ref: {ev.signal_reference}</span>}
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: '#9FB0C3', background: '#24314050', fontFamily: fontFamily.mono }}>{ev.source_system}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: 'var(--biqc-text-2)', background: '#24314050', fontFamily: fontFamily.mono }}>{ev.source_system}</span>
                     {ev.confidence_score != null && (
                       <span className="text-[10px] shrink-0" style={{ color, fontFamily: fontFamily.mono }}>{Math.round(ev.confidence_score * 100)}%</span>
                     )}

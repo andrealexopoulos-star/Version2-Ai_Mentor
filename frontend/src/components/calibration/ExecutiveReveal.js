@@ -12,7 +12,7 @@ const REVEAL_PHASES = [
 ];
 
 const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
-  <div className="flex-1 flex flex-col items-center justify-center px-6" style={{ animation: 'fadeIn 0.8s ease', background: '#0F1720' }} data-testid="executive-reveal">
+  <div className="flex-1 flex flex-col items-center justify-center px-6" style={{ animation: 'fadeIn 0.8s ease', background: 'var(--biqc-bg)' }} data-testid="executive-reveal">
     <style>{`
       @keyframes revealPulse{0%,100%{box-shadow:0 0 20px rgba(255,106,0,0.2)}50%{box-shadow:0 0 40px rgba(255,106,0,0.5)}}
     `}</style>
@@ -38,7 +38,7 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
             { icon: Users, label: 'Communication', value: 'Direct & concise', color: '#10B981' },
             { icon: TrendingUp, label: 'Focus Area', value: 'Revenue growth', color: '#FF6A00' },
           ].map(item => (
-            <div key={item.label} className="p-3 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }}>
+            <div key={item.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
                 <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.label}</span>
@@ -80,7 +80,7 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
         </div>
 
         <p className="text-base text-center leading-relaxed transition-opacity duration-700"
-          style={{ fontFamily: fontFamily.display, color: '#F4F7FA', maxWidth: 400, margin: '0 auto' }}>
+          style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text)', maxWidth: 400, margin: '0 auto' }}>
           {REVEAL_PHASES[revealPhase]}
         </p>
 

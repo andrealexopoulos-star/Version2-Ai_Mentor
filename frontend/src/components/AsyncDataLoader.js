@@ -40,7 +40,7 @@ const STAGE_CONFIG = {
 
 // ── Skeleton pulse card ───────────────────────────────────────
 export const SkeletonCard = ({ lines = 3, className = '' }) => (
-  <div className={`rounded-xl p-5 animate-pulse ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>
+  <div className={`rounded-xl p-5 animate-pulse ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
     <div className="h-2 rounded mb-3 w-1/3" style={{ background: '#243140' }} />
     {Array.from({ length: lines }).map((_, i) => (
       <div key={i} className="h-2 rounded mb-2" style={{ background: '#1E2A38', width: `${100 - i * 15}%` }} />
@@ -100,7 +100,7 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
                   style={{
                     background: '#1E2A38',
                     border: '1px solid #2D3E50',
-                    color: '#9FB0C3',
+                    color: 'var(--biqc-text-2)',
                     fontFamily: fontFamily.body,
                     width: '160px',
                     boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
@@ -143,10 +143,10 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
 const TierGateBanner = ({ feature = 'this feature' }) => (
   <div className="rounded-xl p-6 text-center" style={{ background: '#FF6A0006', border: '1px solid #FF6A0025' }} data-testid="tier-gate-banner">
     <Lock className="w-8 h-8 mx-auto mb-3" style={{ color: '#FF6A00' }} />
-    <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+    <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
       Upgrade to unlock {feature}
     </p>
-    <p className="text-xs mb-4" style={{ color: '#9FB0C3' }}>
+    <p className="text-xs mb-4" style={{ color: 'var(--biqc-text-2)' }}>
       This feature is included in the Professional plan.
     </p>
     <a
@@ -173,10 +173,10 @@ const IntegrationGateBanner = ({ category = 'crm' }) => {
       <div className="flex items-start gap-3">
         <Plug className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#F59E0B' }} />
         <div className="flex-1">
-          <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+          <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
             {m.label} not connected — analysis limited
           </p>
-          <p className="text-xs mb-3" style={{ color: '#9FB0C3' }}>
+          <p className="text-xs mb-3" style={{ color: 'var(--biqc-text-2)' }}>
             Connect your {m.label} to unlock full analysis. Current results are based on available signals only.
           </p>
           <a href="/integrations" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: '#F59E0B' }}>
@@ -194,10 +194,10 @@ const ErrorPanel = ({ error, onRetry, moduleName = 'this module' }) => (
     <div className="flex items-start gap-3 mb-4">
       <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-[#EF4444]" />
       <div>
-        <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
           Failed to load {moduleName}
         </p>
-        <p className="text-xs mb-2" style={{ color: '#9FB0C3' }}>
+        <p className="text-xs mb-2" style={{ color: 'var(--biqc-text-2)' }}>
           {error || 'An unexpected error occurred. Check your connection and try again.'}
         </p>
         <div className="text-xs space-y-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
@@ -219,7 +219,7 @@ const ErrorPanel = ({ error, onRetry, moduleName = 'this module' }) => (
       <a
         href="mailto:support@biqc.com.au"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-        style={{ color: '#9FB0C3', background: '#141C26', border: '1px solid #243140' }}
+        style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
         data-testid="async-support-link"
       >
         <MessageSquare className="w-3.5 h-3.5" /> Contact support
@@ -227,7 +227,7 @@ const ErrorPanel = ({ error, onRetry, moduleName = 'this module' }) => (
       <a
         href="/knowledge-base"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-        style={{ color: '#9FB0C3', background: '#141C26', border: '1px solid #243140' }}
+        style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
         data-testid="async-troubleshoot-link"
       >
         View troubleshooting guide
@@ -275,7 +275,7 @@ const AsyncDataLoader = ({
     return (
       <div className="space-y-4" data-testid="async-loading-state">
         {showProgressBar && (
-          <div className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <StageProgressBar stage={stage} progress={progress} startedAt={startedAt} />
           </div>
         )}
@@ -290,10 +290,10 @@ const AsyncDataLoader = ({
         {/* Timeout fallback CTA */}
         {ctaVisible && onContinue && (
           <div className="rounded-xl p-5 text-center" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }} data-testid="timeout-fallback-cta">
-            <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+            <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
               Taking longer than expected
             </p>
-            <p className="text-xs mb-4" style={{ color: '#9FB0C3' }}>
+            <p className="text-xs mb-4" style={{ color: 'var(--biqc-text-2)' }}>
               Analysis continues in the background. You'll be notified when it's ready.
             </p>
             <button

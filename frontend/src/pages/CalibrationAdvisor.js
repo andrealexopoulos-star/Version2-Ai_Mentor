@@ -69,7 +69,7 @@ const CalibrationAdvisor = () => {
               <>
                 {cal.entry !== 'welcome' && cal.entry !== 'loading' && (
                   <button onClick={() => cal.setEntry('welcome')} className="text-xs px-3 py-1 rounded-full flex items-center gap-1 transition-colors"
-                    style={{ color: '#9FB0C3', border: '1px solid #243140' }} data-testid="admin-back-btn">
+                    style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="admin-back-btn">
                     <ArrowLeft className="w-3 h-3" /> Back
                   </button>
                 )}

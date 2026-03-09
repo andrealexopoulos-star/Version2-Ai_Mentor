@@ -70,7 +70,7 @@ export const CognitiveMesh = ({ message, compact = false }) => {
         <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A00', animation: prefersReduced ? 'none' : 'meshGlow 3s ease-in-out infinite' }}>
           <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
         </div>
-        <p className="text-xs transition-opacity duration-400" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, opacity: fade ? 1 : 0 }}>
+        <p className="text-xs transition-opacity duration-400" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono, opacity: fade ? 1 : 0 }}>
           {message || MESH_MESSAGES[msgIdx]}
         </p>
       </div>
@@ -163,7 +163,7 @@ export const RadarSweep = ({ message, compact = false }) => {
 
       {/* Microcopy */}
       <div className="relative z-10 text-center mt-auto mb-6">
-        <p className="text-xs transition-opacity duration-400" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono, opacity: fade ? 1 : 0 }}>
+        <p className="text-xs transition-opacity duration-400" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono, opacity: fade ? 1 : 0 }}>
           {message || RADAR_MESSAGES[msgIdx]}
         </p>
       </div>

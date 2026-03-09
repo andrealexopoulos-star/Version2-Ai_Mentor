@@ -11,7 +11,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const StatusBadge = ({ status }) => {
@@ -112,7 +112,7 @@ const ABTestingPage = () => {
                   placeholder="e.g., SoundBoard prompt tone test"
                   data-testid="ab-name-input"
                   className="w-full px-3 py-2.5 rounded-md text-sm"
-                  style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                  style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                 />
               </div>
               <div>
@@ -124,7 +124,7 @@ const ABTestingPage = () => {
                   rows={2}
                   data-testid="ab-desc-input"
                   className="w-full px-3 py-2.5 rounded-md text-sm resize-none"
-                  style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                  style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                 />
               </div>
               <div>
@@ -134,7 +134,7 @@ const ABTestingPage = () => {
                   onChange={e => setForm(f => ({ ...f, metric: e.target.value }))}
                   data-testid="ab-metric-select"
                   className="w-full px-3 py-2.5 rounded-md text-sm"
-                  style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                  style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                 >
                   <option value="conversion_rate">Conversion Rate</option>
                   <option value="engagement">Engagement Score</option>
@@ -210,23 +210,23 @@ const ABTestingPage = () => {
 
                 {/* Expanded Details */}
                 {selected === exp.id && (
-                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid #243140' }}>
+                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Metric</span>
                         <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{(exp.metric || 'conversion_rate').replace(/_/g, ' ')}</span>
                       </div>
-                      <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Variants</span>
                         <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{exp.variants?.length || 2}</span>
                       </div>
-                      <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Created</span>
                         <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
                           {exp.created_at ? new Date(exp.created_at).toLocaleDateString() : '—'}
                         </span>
                       </div>
-                      <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Impressions</span>
                         <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{exp.total_impressions || 0}</span>
                       </div>
