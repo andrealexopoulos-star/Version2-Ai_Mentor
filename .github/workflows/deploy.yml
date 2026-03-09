@@ -10,6 +10,7 @@ env:
   BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-api
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
+  AZURE_RESOURCE_GROUP: biqc-production
 
 jobs:
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
@@ -72,7 +73,7 @@ jobs:
         run: |
           az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
-            --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_FRONTEND }} --query resourceGroup -o tsv) \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:${{ needs.build-frontend.outputs.image-tag }} \
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
@@ -82,7 +83,7 @@ jobs:
 
       - name: Restart frontend
         run: |
-          az webapp restart --name ${{ env.AZURE_WEBAPP_FRONTEND }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_FRONTEND }} --query resourceGroup -o tsv)
+          az webapp restart --name ${{ env.AZURE_WEBAPP_FRONTEND }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
 
       # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
       # This prevents the beta.thestrategysquad.com redirect loop from ever
