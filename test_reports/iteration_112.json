@@ -1,0 +1,105 @@
+{
+  "summary": "Phase 5 Full Regression Suite — ALL PASS. Zero regressions from Phases 1-4. Pricing routing bug (from iteration_111) is FIXED. All 20 platform routes load in dark mode. All 8 tested light-mode pages show correct colors. Font strategy verified: section H2s use Cormorant Garamond, body uses Inter, stats/data labels use JetBrains Mono. Mobile theme tokens verified via code review. FCP 1820ms (under 2s). No app-level console errors.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "Calibration routing check",
+        "issue": "[CALIBRATION ROUTING] Fetch failed: Failed to fetch → fail-open to READY (non-critical warning, graceful fallback)"
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Pricing page trust badges",
+        "issues": [
+          "Trust badge 3 shows 'Zero Data Leakage' (🛡️) — previous spec mentioned 'Privacy Act Compliant'. Minor content discrepancy, carried from iteration_111. Low priority."
+        ]
+      }
+    ]
+  },
+
+  "test_results": {
+    "login_success": "PASS — newtest1@biqctest.io / BIQcTest!2026 logs in and redirects to /advisor",
+    "regression_p1_login_error": "PASS — data-testid=login-error-message shows '⚠ Invalid email or password. Please check your credentials.'",
+    "regression_p2_theme_toggle": "PASS — data-testid=theme-toggle found, toggles dark→light→dark correctly",
+    "regression_p3_sidebar_multiexpand": "PASS — Intelligence (7 items), Execution (4 items), Systems (4 items), Governance (9 items) all open simultaneously",
+    "regression_p4_mobile_risk_tab": "PASS — mobile-nav-risk found at index 2 (position 3): Overview|Revenue|Risk|Alerts|More",
+    "regression_p5_pricing_toggle": "PASS — billing-toggle, toggle-annual, toggle-monthly all found at /pricing",
+    "regression_p5_comparison_table": "PASS — comparison table expands with 13 rows",
+    "regression_p6_homepage_trust_badges": "PASS — [data-testid='trust-badges'] with Australian Hosted, AES-256, Privacy Act, 14-Day Guarantee",
+    "regression_p6_homepage_testimonials": "PASS — [data-testid='testimonials-section'] found",
+    "pricing_routing_fix": "PASS — /pricing now routes to new Pricing.js (the critical bug from iteration_111 is FIXED)",
+    "pricing_monthly_prices": "PASS — $49/$99/$199 shown on monthly tab",
+    "pricing_annual_prices": "PASS — $39/$79/$159 shown after clicking annual toggle",
+    "dark_theme_all_routes": "PASS — All 20 routes loaded without errors: /advisor /revenue /operations /risk /market /decisions /alerts /integrations /settings /calendar /reports /compliance /audit-log /business-profile /data-health /soundboard /marketing-intelligence /competitive-benchmark /forensic-audit /exposure-scan",
+    "light_theme_css_vars": "PASS — --biqc-bg=#F0F4F8, --biqc-bg-card=#FFFFFF, --biqc-text=#0F172A",
+    "light_theme_advisor_bg": "PASS — rgb(240, 244, 248)",
+    "light_theme_revenue_bg": "PASS — rgb(240, 244, 248)",
+    "light_theme_risk_bg": "PASS — rgb(240, 244, 248)",
+    "light_theme_market_bg": "PASS — rgb(240, 244, 248)",
+    "light_theme_integrations_bg": "PASS — rgb(240, 244, 248)",
+    "light_theme_settings_bg": "PASS — rgb(240, 244, 248)",
+    "light_theme_soundboard_bg": "PASS — rgb(240, 244, 248) — no dark artifacts",
+    "light_theme_decisions_bg": "PASS — rgb(240, 244, 248) — cards are light",
+    "light_theme_toggle_back_dark": "PASS — data-theme=dark, bg restored to #0F1720",
+    "font_homepage_section_h2": "PASS — Section H2s ('Enterprise-grade intelligence.', 'Built for operators...', 'Stop reacting...') use 'Cormorant Garamond', Georgia, serif",
+    "font_homepage_hero_h1_h2": "INFO — Hero H1/H2 uses Inter by design (editorial subtitle, not section heading — intentional per LiquidSteelHeroRotator)",
+    "font_platform_body": "PASS — Body/UI text uses Inter (via fontFamily.body from design-system/tokens.js)",
+    "font_stats_mono": "PASS — Stats/data labels use 'JetBrains Mono', 'Fira Code', 'Courier New' (verified on homepage stats section)",
+    "font_platform_mono": "PASS — Platform uses JetBrains Mono for data labels",
+    "font_display_optional": "PASS — index.html line 106: display=optional applied to Google Fonts link",
+    "mobile_theme_textMuted": "PASS (code review) — textMuted: '#8B9DB5' (not old #64748B)",
+    "mobile_theme_bgPanel": "PASS (code review) — bgPanel: '#141C26' exists in theme.colors",
+    "mobile_theme_bgSidebar": "PASS (code review) — bgSidebar: '#0A1018' exists in theme.colors",
+    "mobile_theme_tabInactive": "PASS (code review) — tabInactive: '#8B9DB5' (updated from #64748B)",
+    "performance_fcp": "PASS — FCP = 1820ms (under 2000ms threshold)",
+    "console_errors": "PASS — No app-level JS errors. Only network warnings: ERR_NAME_NOT_RESOLVED (Google Fonts + external resources — sandbox environment limitation). One non-critical calibration routing warning (fail-open to READY)."
+  },
+
+  "test_report_links": [
+    "/app/test_reports/iteration_112.json"
+  ],
+
+  "action_items": [
+    "MINOR: Pricing trust badge 3 label is 'Zero Data Leakage' — review if it should be 'Privacy Act Compliant' per original spec",
+    "INFO: FCP 1820ms is close to 2s limit — monitor in production. Edge Function cold starts could push it over 2s on first load. Consider preloading critical fonts more aggressively.",
+    "INFO: Calibration routing check fails silently (fail-open to READY) — not blocking but should be monitored"
+  ],
+
+  "critical_code_review_comments": [
+    "POSITIVE: Pricing.js routing fix from iteration_111 is confirmed working — /pricing now serves new Pricing component with billing toggle, annual/monthly prices, comparison table",
+    "POSITIVE: Mobile theme index.ts is fully aligned with web design system: textMuted #8B9DB5, bgPanel, bgSidebar, tabInactive all correctly updated",
+    "POSITIVE: font-display:optional is applied to Google Fonts link — correct approach for preventing FOUT",
+    "POSITIVE: tailwind.config.js correctly defines font-heading/font-display as 'Cormorant Garamond' and font-sans as 'Inter'",
+    "NOTE: LiquidSteelHeroRotator uses Inter for h1/h2 subtitle (fontFamily.body) — this is correct by design. Section headings below hero correctly use fontFamily.displayING = Cormorant Garamond",
+    "NOTE: Platform H3 headings (e.g., 'Welcome. Let's activate your intelligence.') use Cormorant Garamond — this is intentional for editorial heading style in the platform"
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "frontend": "100% (33/33 tests pass — 0 failures)"
+  },
+
+  "test_credentials": "newtest1@biqctest.io / BIQcTest!2026",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+
+  "main_agent_can_self_test": true,
+
+  "context_for_next_testing_agent": "Phase 5 regression complete — ALL PASS. Iteration_111 critical bug (Pricing.js routing) is fixed. All 20 dark routes pass. Light mode CSS vars (#F0F4F8/#FFFFFF/#0F172A) verified. Font strategy: Section H2s use Cormorant Garamond (homepage + platform), Inter for hero/body/UI text, JetBrains Mono for stats/data. Mobile theme index.ts has all required tokens. FCP 1820ms. No regressions. Platform session loads slowly (~10s) due to Supabase Edge Function warm-up — use longer waits in future tests.",
+
+  "rca_of_issues": {
+    "platform_slow_load": {
+      "symptom": "Platform takes 10-15 seconds to load after login, showing 'Establishing secure connection...' screen",
+      "cause": "Supabase Edge Function cold start — biqc-insights-cognitive and warm-cognitive-engine functions warm up on app load (App.js useEffect). In test environment, functions may be cold.",
+      "impact": "Test scripts need longer wait times (10-15s) after login. Not a user-visible bug in production (functions stay warm via 4-minute interval warmup)."
+    }
+  }
+}

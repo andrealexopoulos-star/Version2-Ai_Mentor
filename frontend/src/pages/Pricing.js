@@ -132,7 +132,7 @@ const FAQS = [
 const TRUST_BADGES = [
   { label: 'Australian Hosted', sub: 'Sydney & Melbourne', icon: '🇦🇺' },
   { label: 'AES-256 Encrypted', sub: 'Defence-grade', icon: '🔒' },
-  { label: 'Zero Data Leakage', sub: 'Siloed per client', icon: '🛡️' },
+  { label: 'Privacy Act Compliant', sub: 'Australian Privacy Principles', icon: '🛡️' },
   { label: '14-Day Guarantee', sub: 'No questions asked', icon: '✅' },
 ];
 
