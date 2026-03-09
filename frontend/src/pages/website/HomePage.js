@@ -61,6 +61,11 @@ const STATS = [
     body: 'Intelligence creates competitive advantage.',
     biqc: 'BIQc provides the clarity leaders need to scale.',
   },
+  {
+    stat: 'Business leaders spend up to 40% of their time gathering information',
+    body: 'Making decisions consumes far more time than it should.',
+    biqc: 'BIQc brings the most important signals from across your business into one place, helping you understand what matters faster.',
+  },
 ];
 
 const HomePage = () => (
