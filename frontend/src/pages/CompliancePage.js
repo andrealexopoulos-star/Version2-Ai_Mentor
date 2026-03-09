@@ -7,7 +7,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const CompliancePage = () => {
@@ -68,7 +68,7 @@ const CompliancePage = () => {
                 <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Regulatory Obligations</h3>
                 <div className="space-y-2">
                   {regulatory.map((r, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <Clock className="w-4 h-4 shrink-0" style={{ color: r.sev === 'med' ? '#F59E0B' : '#10B981' }} />
                       <span className="text-sm text-[#F4F7FA] flex-1">{r.item}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: r.sev === 'med' ? '#F59E0B' : '#10B981', background: (r.sev === 'med' ? '#F59E0B' : '#10B981') + '15', fontFamily: fontFamily.mono }}>{r.sev}</span>

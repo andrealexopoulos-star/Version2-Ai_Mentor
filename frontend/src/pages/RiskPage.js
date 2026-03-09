@@ -11,13 +11,13 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const RiskMeter = ({ value, label, thresholds = [30, 60] }) => {
   const color = value > thresholds[1] ? '#EF4444' : value > thresholds[0] ? '#F59E0B' : '#10B981';
   return (
-    <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+    <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>{label}</span>
       <div className="flex items-end gap-2">
         <span className="text-xl font-bold" style={{ color, fontFamily: fontFamily.mono }}>{value != null ? value : '—'}{value != null ? '%' : ''}</span>
@@ -98,7 +98,7 @@ const RiskPage = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-1 p-1 rounded-lg" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="risk-tabs">
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="risk-tabs">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
@@ -149,13 +149,13 @@ const RiskPage = () => {
                         <RiskMeter value={runway < 3 ? 90 : runway < 6 ? 60 : runway < 12 ? 30 : 10} label={`Cash Runway: ${runway}mo`} />
                       )}
                       {concentration && (
-                        <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Revenue Concentration</span>
                           <p className="text-xs text-[#9FB0C3]">{concentration}</p>
                         </div>
                       )}
                       {cap.margin && (
-                        <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Margin</span>
                           <p className="text-xs text-[#9FB0C3]">{cap.margin}</p>
                         </div>
@@ -177,7 +177,7 @@ const RiskPage = () => {
                       <AlertTriangle className="w-4 h-4" style={{ color: slaBreaches > 0 ? '#F59E0B' : '#10B981' }} />
                       <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Operational Risk</h3>
                     </div>
-                    <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <p className="text-xs font-semibold text-[#F4F7FA]">SLA Breaches: {slaBreaches}</p>
                       <p className="text-[11px] text-[#64748B] mt-0.5">{slaBreaches === 0 ? 'No breaches detected.' : `${slaBreaches} breach${slaBreaches > 1 ? 'es' : ''} detected.`}</p>
                     </div>
@@ -257,14 +257,14 @@ const RiskPage = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <RiskMeter value={fv.capacity_index} label="Capacity Utilisation" thresholds={[80, 100]} />
-                    <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Fatigue Level</span>
                       <span className="text-xl font-bold" style={{ color: fv.fatigue === 'high' ? '#EF4444' : fv.fatigue === 'medium' ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>
                         {fv.fatigue || '—'}
                       </span>
                     </div>
                     {fv.decisions != null && (
-                      <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Pending Decisions</span>
                         <span className="text-xl font-bold" style={{ color: fv.decisions > 5 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{fv.decisions}</span>
                       </div>
@@ -281,13 +281,13 @@ const RiskPage = () => {
                     </div>
                     <div className="space-y-3">
                       {fv.calendar && (
-                        <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Calendar Density</span>
                           <p className="text-xs text-[#9FB0C3]">{fv.calendar}</p>
                         </div>
                       )}
                       {fv.email_stress && (
-                        <div className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                        <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Email Stress</span>
                           <p className="text-xs text-[#9FB0C3]">{fv.email_stress}</p>
                         </div>
@@ -359,7 +359,7 @@ const RiskPage = () => {
                     const circumference2 = 2 * Math.PI * 18;
                     const off2 = circumference2 * (1 - pct / 100);
                     return (
-                      <div key={key} className="p-4 rounded-lg text-center" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div key={key} className="p-4 rounded-lg text-center" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <div className="relative w-12 h-12 mx-auto mb-2">
                           <svg className="w-12 h-12 -rotate-90" viewBox="0 0 40 40">
                             <circle cx="20" cy="20" r="18" fill="none" stroke="#243140" strokeWidth="3.5" />
@@ -377,8 +377,8 @@ const RiskPage = () => {
                   }).filter(Boolean)}
                 </div>
                 {unifiedRisk.composite_risk_score != null && (
-                  <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
-                    <span className="text-xs" style={{ color: '#9FB0C3', fontFamily: fontFamily.display }}>Composite Risk Score</span>
+                  <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                    <span className="text-xs" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.display }}>Composite Risk Score</span>
                     <span className="text-2xl font-bold" style={{ 
                       color: unifiedRisk.composite_risk_score > 0.6 ? '#EF4444' : unifiedRisk.composite_risk_score > 0.3 ? '#F59E0B' : '#10B981', 
                       fontFamily: fontFamily.mono 
@@ -409,7 +409,7 @@ const RiskPage = () => {
                           <span className="text-[9px] ml-auto" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(chain.probability * 100)}% likelihood</span>
                         )}
                       </div>
-                      {chain.description && <p className="text-[11px]" style={{ color: '#9FB0C3' }}>{chain.description}</p>}
+                      {chain.description && <p className="text-[11px]" style={{ color: 'var(--biqc-text-2)' }}>{chain.description}</p>}
                       {chain.window && <p className="text-[9px] mt-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Time window: {chain.window}</p>}
                     </div>
                   ))}

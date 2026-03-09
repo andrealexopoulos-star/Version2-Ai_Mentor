@@ -7,7 +7,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const StatusBadge = ({ status }) => {
@@ -67,7 +67,7 @@ const CollapsibleSection = ({ title, icon: Icon, color, status, children, defaul
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
       </button>
-      {open && <div className="mt-4 pt-4" style={{ borderTop: '1px solid #243140' }}>{children}</div>}
+      {open && <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--biqc-border)' }}>{children}</div>}
     </Panel>
   );
 };
@@ -141,7 +141,7 @@ const ForensicAuditPage = () => {
                 onKeyDown={(e) => e.key === 'Enter' && runAudit()}
                 placeholder="Enter URL to audit (e.g. thestrategysquad.com.au)"
                 className="w-full h-11 pl-10 pr-4 rounded-lg text-sm outline-none"
-                style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA', fontFamily: fontFamily.body }}
+                style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.body }}
                 disabled={running}
                 data-testid="audit-url-input"
               />
@@ -211,34 +211,34 @@ const ForensicAuditPage = () => {
                 {/* Layer Scores */}
                 {result.scores && (
                   <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div className="p-3 rounded text-center" style={{ background: '#0F1720' }}>
+                    <div className="p-3 rounded text-center" style={{ background: 'var(--biqc-bg)' }}>
                       <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Extraction</span>
                       <span className="text-lg font-bold" style={{ color: result.scores.extraction_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{result.scores.extraction_score}</span>
                     </div>
-                    <div className="p-3 rounded text-center" style={{ background: '#0F1720' }}>
+                    <div className="p-3 rounded text-center" style={{ background: 'var(--biqc-bg)' }}>
                       <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Cleaning</span>
                       <span className="text-lg font-bold" style={{ color: result.scores.cleaning_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{result.scores.cleaning_score}</span>
                     </div>
-                    <div className="p-3 rounded text-center" style={{ background: '#0F1720' }}>
+                    <div className="p-3 rounded text-center" style={{ background: 'var(--biqc-bg)' }}>
                       <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Synthesis</span>
                       <span className="text-lg font-bold" style={{ color: result.scores.synthesis_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{result.scores.synthesis_score}</span>
                     </div>
                   </div>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                  <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Pages Crawled</span>
                     <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{result.pages_crawled}/7</span>
                   </div>
-                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                  <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Noise Ratio</span>
                     <span className="text-lg font-bold" style={{ color: result.noise_ratio > 0.35 ? '#EF4444' : '#10B981', fontFamily: fontFamily.mono }}>{result.noise_ratio}</span>
                   </div>
-                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                  <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Hallucination</span>
                     <span className="text-lg font-bold" style={{ color: result.hallucination_score > 0.05 ? '#EF4444' : '#10B981', fontFamily: fontFamily.mono }}>{result.hallucination_score}</span>
                   </div>
-                  <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                  <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Fields Found</span>
                     <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{Object.keys(result.dna_trace || {}).length}</span>
                   </div>
@@ -256,7 +256,7 @@ const ForensicAuditPage = () => {
               <CollapsibleSection title="Pages Crawled" icon={Layers} color="#3B82F6" status={result.extraction_status || 'pass'} defaultOpen>
                 <div className="space-y-2">
                   {result.pages.map((p, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <div key={i} className="flex items-center gap-3 p-3 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-[10px] w-6 text-center font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>P{p.priority}</span>
                       <span className="text-xs text-[#F4F7FA] flex-1 truncate">{p.url}</span>
                       <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{(p.html_length || 0).toLocaleString()} chars</span>
@@ -277,7 +277,7 @@ const ForensicAuditPage = () => {
               <CollapsibleSection title="Business DNA Trace" icon={Brain} color="#7C3AED" status="pass" defaultOpen>
                 <div className="space-y-2">
                   {Object.entries(result.dna_trace).map(([field, trace]) => (
-                    <div key={field} className="p-3 rounded" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                    <div key={field} className="p-3 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold text-[#F4F7FA] capitalize">{field.replace(/_/g, ' ')}</span>
                         <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: trace.confidence >= 0.8 ? '#10B981' : '#F59E0B', background: (trace.confidence >= 0.8 ? '#10B981' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{Math.round(trace.confidence * 100)}%</span>
@@ -378,19 +378,19 @@ const ForensicAuditPage = () => {
             {/* Layer 1: Extraction */}
             <CollapsibleSection title="Layer 1 — Extraction" icon={Layers} color="#3B82F6" status={ext.status} defaultOpen>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>HTTP Status</span>
                   <span className="text-lg font-bold" style={{ color: ext.http_status === 200 ? '#10B981' : '#EF4444', fontFamily: fontFamily.mono }}>{ext.http_status}</span>
                 </div>
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>HTML Length</span>
                   <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{(ext.raw_html_length || 0).toLocaleString()}</span>
                 </div>
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Noise Ratio</span>
                   <span className="text-lg font-bold" style={{ color: ext.noise_ratio > 0.35 ? '#EF4444' : ext.noise_ratio > 0.2 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{ext.noise_ratio}</span>
                 </div>
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Fetch Time</span>
                   <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{ext.fetch_time_ms}ms</span>
                 </div>
@@ -410,19 +410,19 @@ const ForensicAuditPage = () => {
             {/* Layer 2: Cleaning */}
             <CollapsibleSection title="Layer 2 — Semantic Cleaning" icon={Filter} color="#10B981" status={cln.status}>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Unique Sentences</span>
                   <span className="text-lg font-bold" style={{ color: cln.unique_sentence_ratio > 0.7 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round((cln.unique_sentence_ratio || 0) * 100)}%</span>
                 </div>
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Core Weight</span>
                   <span className="text-lg font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{cln.core_content_weight}</span>
                 </div>
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Nav Removed</span>
                   <span style={{ color: cln.nav_removed ? '#10B981' : '#64748B' }}>{cln.nav_removed ? 'Yes' : 'No'}</span>
                 </div>
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Footer Removed</span>
                   <span style={{ color: cln.footer_removed ? '#10B981' : '#64748B' }}>{cln.footer_removed ? 'Yes' : 'No'}</span>
                 </div>
@@ -432,7 +432,7 @@ const ForensicAuditPage = () => {
                   <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Detected Sections</span>
                   <div className="flex flex-wrap gap-2">
                     {cln.sections.map((s, i) => (
-                      <span key={i} className="text-[10px] px-2 py-1 rounded" style={{ background: '#0F1720', color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                      <span key={i} className="text-[10px] px-2 py-1 rounded" style={{ background: 'var(--biqc-bg)', color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>
                         {s.name} (w:{s.weight}, {s.length} chars)
                       </span>
                     ))}
@@ -447,11 +447,11 @@ const ForensicAuditPage = () => {
             {/* Layer 3: Synthesis */}
             <CollapsibleSection title="Layer 3 — Cognitive Synthesis" icon={Brain} color="#7C3AED" status={syn.status}>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Hallucinations</span>
                   <span className="text-lg font-bold" style={{ color: (syn.hallucinations?.length || 0) > 0 ? '#EF4444' : '#10B981', fontFamily: fontFamily.mono }}>{syn.hallucinations?.length || 0}</span>
                 </div>
-                <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+                <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Lost Signals</span>
                   <span className="text-lg font-bold" style={{ color: (syn.lost_signals?.length || 0) > 0 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{syn.lost_signals?.length || 0}</span>
                 </div>
@@ -521,7 +521,7 @@ const ForensicAuditPage = () => {
                   {verdict.remediation.map((r, i) => {
                     const prColor = r.priority === 'high' ? '#EF4444' : r.priority === 'medium' ? '#F59E0B' : '#10B981';
                     return (
-                      <div key={i} className="flex items-start gap-3 p-3 rounded" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                      <div key={i} className="flex items-start gap-3 p-3 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] px-2 py-0.5 rounded shrink-0 mt-0.5" style={{ color: prColor, background: prColor + '15', fontFamily: fontFamily.mono }}>{r.priority}</span>
                         <div>
                           <span className="text-xs font-semibold text-[#9FB0C3] capitalize">{r.layer}</span>
@@ -546,7 +546,7 @@ const ForensicAuditPage = () => {
                 const qScore = a.quality_score;
                 const verdictColor = qScore != null ? (qScore >= 70 ? '#10B981' : qScore >= 50 ? '#F59E0B' : '#EF4444') : (a.primary_failure_layer === 'none' ? '#10B981' : '#EF4444');
                 return (
-                  <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/[0.02]" style={{ background: '#0F1720', border: '1px solid #243140' }}
+                  <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/[0.02]" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                     onClick={() => { setUrl(a.target_url); }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: verdictColor }} />
                     <div className="flex-1 min-w-0">

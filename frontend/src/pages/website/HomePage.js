@@ -93,6 +93,31 @@ const HomePage = () => (
       <IntegrationCarousel />
     </div>
 
+    {/* TRUST & COMPLIANCE BADGES */}
+    <section className="py-10" style={{ background: '#07121E', borderTop: '1px solid rgba(255,122,24,0.1)', borderBottom: '1px solid rgba(255,122,24,0.1)' }} data-testid="trust-badges">
+      <div className="max-w-5xl mx-auto px-6">
+        <p className="text-center text-xs font-semibold tracking-widest uppercase mb-6" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>
+          Security &amp; Compliance
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { icon: '🇦🇺', label: 'Australian Hosted', sub: 'Sydney & Melbourne data centres' },
+            { icon: '🔒', label: 'AES-256 Encrypted', sub: 'Defence-grade at rest & in transit' },
+            { icon: '🛡️', label: 'Privacy Act Compliant', sub: 'Australian Privacy Principles' },
+            { icon: '✅', label: '14-Day Guarantee', sub: 'No questions asked refund' },
+          ].map(b => (
+            <div key={b.label} className="flex items-start gap-3 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,122,24,0.12)' }}>
+              <span className="text-2xl">{b.icon}</span>
+              <div>
+                <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: fontFamily.mono }}>{b.label}</p>
+                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: '#6B7B8D', fontFamily: fontFamily.body }}>{b.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
     {/* WHAT COGNITION DELIVERS */}
     <section className="py-14 sm:py-20" style={{ background: '#07121E' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
@@ -122,6 +147,61 @@ const HomePage = () => (
               </div>
               <h3 className="text-base font-semibold mb-2" style={{ fontFamily: fontFamily.displayING, color: '#E6EEF7' }}>{item.title}</h3>
               <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>{item.desc}</p>
+            </GlassCard>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* SOCIAL PROOF — Testimonials */}
+    <section className="py-14 sm:py-20" style={{ background: '#060E18' }} data-testid="testimonials-section">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
+            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>What Australian SMBs Say</span>
+            <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-medium" style={{ fontFamily: fontFamily.displayING, color: '#E6EEF7' }}>
+            Built for operators, not analysts.
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {[
+            {
+              quote: "BIQc flagged a cash flow issue two weeks before it would have hit. We were able to collect early and avoid a painful overdraft.",
+              author: "Operations Director",
+              company: "Manufacturing SMB, NSW",
+              metric: "$47K recovered",
+            },
+            {
+              quote: "I used to spend 6 hours a week pulling together reports for our board. Now I walk in with the BIQc brief and it's done.",
+              author: "Founder & CEO",
+              company: "Professional Services, VIC",
+              metric: "6hrs saved weekly",
+            },
+            {
+              quote: "The competitive benchmark showed us we were invisible online while our competitors had 4× more review presence. We fixed it in 30 days.",
+              author: "Marketing Manager",
+              company: "Retail Group, QLD",
+              metric: "83% faster detection",
+            },
+          ].map((t, i) => (
+            <GlassCard key={i} className="flex flex-col">
+              <div className="flex-1">
+                <p className="text-sm leading-relaxed mb-4" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+                  "{t.quote}"
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid rgba(255,122,24,0.15)' }}>
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: fontFamily.display }}>{t.author}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#6B7B8D', fontFamily: fontFamily.body }}>{t.company}</p>
+                </div>
+                <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(255,122,24,0.12)', color: '#FF7A18', fontFamily: fontFamily.mono }}>
+                  {t.metric}
+                </span>
+              </div>
             </GlassCard>
           ))}
         </div>

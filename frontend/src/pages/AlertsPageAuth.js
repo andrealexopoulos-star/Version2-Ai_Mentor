@@ -21,7 +21,7 @@ const AlertItem = ({ alert, onAction }) => {
 
   if (actioned === 'complete' || actioned === 'ignore') {
     return (
-      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: '#141C26', border: '1px solid #24314050', opacity: 0.5 }}>
+      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #24314050', opacity: 0.5 }}>
         {actioned === 'complete' ? <CheckCircle2 className="w-4 h-4 text-[#10B981]" /> : <XCircle className="w-4 h-4 text-[#64748B]" />}
         <span className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>{alert.title}</span>
         <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: actioned === 'complete' ? '#10B981' : '#64748B', background: actioned === 'complete' ? '#10B98115' : '#64748B15', fontFamily: fontFamily.mono }}>{actioned}</span>
@@ -30,7 +30,7 @@ const AlertItem = ({ alert, onAction }) => {
   }
 
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: '#141C26', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
+    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' || alert.severity === 'high' ? `0 0 10px ${s.color}40` : 'none' }} />
         <div className="flex-1 min-w-0">
@@ -41,7 +41,7 @@ const AlertItem = ({ alert, onAction }) => {
         {open ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
       </button>
       {open && (
-        <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid #243140' }}>
+        <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Business Impact</span>
             <p className="text-sm text-[#9FB0C3]">{alert.impact}</p>
@@ -71,7 +71,7 @@ const AlertsPageAuth = () => {
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        const res = await apiClient.get('/intelligence/watchtower');
+        const res = await apiClient.get('/intelligence/watchtower', { timeout: 8000 });
         if (res.data?.events?.length > 0) {
           const mapped = res.data.events.map((e, i) => ({
             id: e.id || i + 1,
@@ -117,7 +117,7 @@ const AlertsPageAuth = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
-            <div key={l} className="rounded-lg p-4 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
+            <div key={l} className="rounded-lg p-4 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
               <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: c }}>{v}</span>
               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{l}</span>
             </div>
@@ -128,10 +128,10 @@ const AlertsPageAuth = () => {
           {filtered.length > 0 ? (
             filtered.map(a => <AlertItem key={a.id} alert={a} />)
           ) : !loading ? (
-            <div className="rounded-lg p-8 text-center" style={{ background: '#141C26', border: '1px solid #243140' }}>
-              <Bell className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-              <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>No alerts detected.</p>
-              <p className="text-xs text-[#64748B] mt-1">Alerts generate automatically as BIQc processes signals from connected integrations.</p>
+            <div className="rounded-lg p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+              <Bell className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
+              <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>All systems normal — no alerts.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--biqc-text-2)' }}>BIQc monitors your connected data 24/7. You'll be notified here the moment something requires your attention.</p>
             </div>
           ) : null}
         </div>

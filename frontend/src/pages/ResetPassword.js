@@ -32,7 +32,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: '#0F1720' }}>
+    <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: 'var(--biqc-bg)' }}>
       <div className="max-w-sm w-full">
         <Link to="/login-supabase" className="inline-flex items-center gap-2 mb-8 text-sm transition-colors hover:text-[#FF6A00]" style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="reset-back-link">
           <ArrowLeft className="w-4 h-4" /> Back to sign in
@@ -70,7 +70,7 @@ const ResetPassword = () => {
                 <Input type="email" inputMode="email" autoComplete="email" value={email}
                   onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required
                   className="h-12 text-sm rounded-xl"
-                  style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
+                  style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                   data-testid="reset-email-input" />
               </div>
               <button type="submit" disabled={loading}

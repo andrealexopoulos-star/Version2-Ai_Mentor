@@ -46,11 +46,11 @@ const DataCoverageGate = ({ guardrail, coveragePct = 0, missingFields = [], comp
         <div className="flex items-start gap-3">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#EF4444]" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+            <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
               More context needed before I can advise
             </p>
             <CoverageBar pct={coveragePct} />
-            <p className="text-xs mt-2 mb-3" style={{ color: '#9FB0C3' }}>
+            <p className="text-xs mt-2 mb-3" style={{ color: 'var(--biqc-text-2)' }}>
               I'm working with {coveragePct}% data coverage. Complete your business profile to unlock personalised guidance.
             </p>
             {criticalMissing.length > 0 && (
@@ -84,7 +84,7 @@ const DataCoverageGate = ({ guardrail, coveragePct = 0, missingFields = [], comp
           data-testid="coverage-gate-degraded-compact"
         >
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#F59E0B' }} />
-          <span style={{ color: '#9FB0C3' }}>
+          <span style={{ color: 'var(--biqc-text-2)' }}>
             Advice based on {coveragePct}% data coverage — connecting
             {criticalMissing[0] ? ` ${criticalMissing[0].label}` : ' more systems'} would sharpen results.
           </span>
@@ -107,10 +107,10 @@ const DataCoverageGate = ({ guardrail, coveragePct = 0, missingFields = [], comp
         >
           <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#F59E0B' }} />
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-medium" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+            <span className="text-xs font-medium" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
               Advice based on limited data ({coveragePct}% coverage)
             </span>
-            <span className="block text-[10px] mt-0.5" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+            <span className="block text-[10px] mt-0.5" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>
               {criticalMissing.length > 0 ? `${criticalMissing.length} key fields missing — tap to see` : 'Connect integrations to improve accuracy'}
             </span>
           </div>
@@ -152,7 +152,7 @@ const DataCoverageGate = ({ guardrail, coveragePct = 0, missingFields = [], comp
                       key={f.key}
                       href={f.path}
                       className="px-2.5 py-1 rounded-md text-[10px] transition-all"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #243140', color: '#64748B' }}
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border)', color: '#64748B' }}
                     >
                       {f.label}
                     </a>

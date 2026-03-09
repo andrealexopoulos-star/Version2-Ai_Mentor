@@ -186,7 +186,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center" data-testid="tutorial-overlay">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onDismissForNow} />
       <div className="relative w-[90%] max-w-md rounded-2xl shadow-2xl mx-4"
-        style={{ background: '#141C26', border: '1px solid #243140' }}>
+        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
@@ -213,8 +213,8 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
 
         {/* Body */}
         <div className="px-6 py-4" style={{ minHeight: 100 }}>
-          <h3 className="text-base font-semibold mb-2" style={{ color: '#F4F7FA' }}>{current.title}</h3>
-          <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{current.body}</p>
+          <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--biqc-text)' }}>{current.title}</h3>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)' }}>{current.body}</p>
         </div>
 
         {/* Footer */}
@@ -228,7 +228,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
             {step > 0 && (
               <button onClick={() => setStep(s => s - 1)}
                 className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-white/5"
-                style={{ color: '#9FB0C3' }} data-testid="tutorial-prev-btn">
+                style={{ color: 'var(--biqc-text-2)' }} data-testid="tutorial-prev-btn">
                 <ChevronLeft className="w-3.5 h-3.5" /> Back
               </button>
             )}

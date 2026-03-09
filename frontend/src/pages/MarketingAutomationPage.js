@@ -11,7 +11,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const CONTENT_TYPES = [
@@ -73,7 +73,7 @@ const MarketingAutomationPage = () => {
     return (
       <div className="space-y-4">
         {Object.entries(content).map(([key, value]) => (
-          <div key={key} className="p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+          <div key={key} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1.5" style={{ fontFamily: fontFamily.mono }}>{key.replace(/_/g, ' ')}</span>
             {Array.isArray(value) ? (
               <div className="space-y-2">
@@ -144,7 +144,7 @@ const MarketingAutomationPage = () => {
                     placeholder="e.g., Q1 product launch for SMB market"
                     data-testid="marketing-topic-input"
                     className="w-full px-3 py-2.5 rounded-md text-sm"
-                    style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                    style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -156,7 +156,7 @@ const MarketingAutomationPage = () => {
                         onChange={e => setTone(e.target.value)}
                         data-testid="marketing-tone-select"
                         className="w-full px-3 py-2.5 rounded-md text-sm appearance-none"
-                        style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                        style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                       >
                         <option value="professional">Professional</option>
                         <option value="casual">Casual</option>
@@ -174,7 +174,7 @@ const MarketingAutomationPage = () => {
                       placeholder="e.g., CFOs at mid-market SaaS"
                       data-testid="marketing-audience-input"
                       className="w-full px-3 py-2.5 rounded-md text-sm"
-                      style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                      style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                     />
                   </div>
                 </div>
@@ -187,7 +187,7 @@ const MarketingAutomationPage = () => {
                     rows={3}
                     data-testid="marketing-context-input"
                     className="w-full px-3 py-2.5 rounded-md text-sm resize-none"
-                    style={{ background: '#0F1720', border: '1px solid #243140', color: '#F4F7FA' }}
+                    style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                   />
                 </div>
               </div>
@@ -212,7 +212,7 @@ const MarketingAutomationPage = () => {
                 {result?.content && (
                   <button onClick={handleCopy} data-testid="marketing-copy-btn"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors"
-                    style={{ background: '#0F1720', border: '1px solid #243140', color: '#9FB0C3' }}>
+                    style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text-2)' }}>
                     {copied ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? 'Copied' : 'Copy'}
                   </button>

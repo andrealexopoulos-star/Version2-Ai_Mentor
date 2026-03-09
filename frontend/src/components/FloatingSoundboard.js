@@ -305,11 +305,11 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       <div className="fixed inset-0 bg-black/60 z-[1200] lg:hidden" onClick={() => setOpen(false)} />
       <div
         className="fixed z-[1201] lg:bottom-6 lg:right-6 lg:w-[380px] lg:rounded-2xl inset-0 lg:inset-auto flex flex-col shadow-2xl overflow-hidden"
-        style={{ background: '#0A1018', border: '1px solid #243140', height: window.innerWidth < 1024 ? viewportHeight : 'auto' }}
+        style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', height: window.innerWidth < 1024 ? viewportHeight : 'auto' }}
         data-testid="soundboard-panel"
       >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #243140' }}>
+      <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#FF6A0020' }}>
             <Lightbulb className="w-4 h-4 text-[#FF6A00]" />
@@ -332,7 +332,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
             <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>Ask a question about your data or brainstorm ideas.</p>
             <div className="flex flex-wrap gap-2 mt-4 justify-center">
               {['What should I focus on?', 'Show me my pipeline', 'How can I grow revenue?'].map(q => (
-                <button key={q} onClick={() => { setInput(q); }} className="text-[11px] px-3 py-1.5 rounded-lg" style={{ background: '#141C26', color: '#9FB0C3', border: '1px solid #243140', fontFamily: fontFamily.mono }}>
+                <button key={q} onClick={() => { setInput(q); }} className="text-[11px] px-3 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>
                   {q}
                 </button>
               ))}
@@ -397,7 +397,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
 
         {loading && (
           <div className="flex justify-start">
-            <div className="px-3.5 py-2.5 rounded-xl text-sm" style={{ background: '#141C26', border: '1px solid #243140', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+            <div className="px-3.5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
               thinking...
             </div>
           </div>
@@ -405,12 +405,12 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       </div>
 
       {/* Input */}
-      <div className="px-4 pb-4 pt-2" style={{ borderTop: '1px solid #243140' }}>
+      <div className="px-4 pb-4 pt-2" style={{ borderTop: '1px solid var(--biqc-border)' }}>
         {/* File attachment preview */}
         {attachedFile && (
-          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: '#141C26', border: '1px solid #FF6A0030' }}>
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #FF6A0030' }}>
             <FileText className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
-            <span className="flex-1 text-[11px] truncate" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
+            <span className="flex-1 text-[11px] truncate" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
             {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
             {attachedFile.hint && <span className="text-[9px] max-w-[100px] truncate" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{attachedFile.hint}</span>}
             <button onClick={removeAttachment} className="p-0.5 rounded hover:bg-white/10" style={{ color: '#64748B' }}>
@@ -436,7 +436,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
             onKeyDown={e => e.key === 'Enter' && sendMessage()}
             placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything about your business..."}
             className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none"
-            style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA', fontFamily: fontFamily.body }}
+            style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.body }}
             data-testid="soundboard-input"
           />
           <button onClick={sendMessage} disabled={(!input.trim() && !attachedFile) || loading}

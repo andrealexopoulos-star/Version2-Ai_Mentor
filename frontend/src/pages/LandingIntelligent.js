@@ -395,7 +395,7 @@ const LandingIntelligent = () => {
 
         <div className="flex items-center gap-2">
           <button onClick={() => nav('/login-supabase')} className="hidden sm:flex text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-heading)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
-          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: '#0F1720', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
+          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: 'var(--biqc-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
           {/* Mobile hamburger */}
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-0.5 transition-all" style={{ background: mobileMenuOpen ? '#0F1720' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
             {mobileMenuOpen ? <X className="w-4 h-4 text-white" /> : <Menu className="w-4 h-4 text-slate-700" />}
@@ -447,7 +447,7 @@ const LandingIntelligent = () => {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-4">
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a chatbot.</span>
-          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: '#0F1720', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
+          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: 'var(--biqc-bg)', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
             <Shield className="w-4 h-4" strokeWidth={1.5} /> Try It For Free
           </button>
           <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a dashboard.</span>
@@ -625,7 +625,7 @@ const LandingIntelligent = () => {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="relative z-10 py-20 sm:py-32 px-6 sm:px-8 lg:px-12 overflow-hidden" style={{ background: '#0F1720' }}>
+      <section className="relative z-10 py-20 sm:py-32 px-6 sm:px-8 lg:px-12 overflow-hidden" style={{ background: 'var(--biqc-bg)' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%,rgba(249,115,22,0.07),transparent)' }} />
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
         <div className="relative z-10 max-w-2xl mx-auto">

@@ -98,11 +98,11 @@ export const DailyBriefCard = () => {
           <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
             Today's Priority
           </p>
-          <p className="text-sm leading-relaxed" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>
             {brief.priority_message}
           </p>
           {brief.suggested_action && (
-            <p className="text-xs mt-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+            <p className="text-xs mt-2" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
               Suggested: {brief.suggested_action}
             </p>
           )}
@@ -119,7 +119,7 @@ export const DailyBriefCard = () => {
 
       {/* Metadata row */}
       {(brief.alerts_count > 0 || brief.priority_domain) && (
-        <div className="flex items-center gap-4 mt-4 pt-3" style={{ borderTop: '1px solid #243140' }}>
+        <div className="flex items-center gap-4 mt-4 pt-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
           {brief.priority_domain && (
             <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#FF6A0010', color: '#FF6A00', fontFamily: fontFamily.mono }}>
               {brief.priority_domain}
@@ -163,7 +163,7 @@ export const DailyBriefBanner = ({ onOpen }) => {
     >
       <div className="flex items-center gap-3 max-w-xl">
         <Zap className="w-4 h-4 shrink-0" style={{ color: '#FF6A00' }} />
-        <p className="text-sm" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
+        <p className="text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>
           Your Business Brief is ready.
         </p>
         <button

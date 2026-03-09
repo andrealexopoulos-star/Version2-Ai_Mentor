@@ -8,10 +8,12 @@ module.exports = {
   theme: {
         extend: {
                 fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-                        heading: ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                        body: ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                        // ── Unified BIQc Typography (aligned with design-system/tokens.js) ──
+                        sans:    ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+                        heading: ['Cormorant Garamond', 'Georgia', 'serif'],
+                        display: ['Cormorant Garamond', 'Georgia', 'serif'],
+                        body:    ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        mono:    ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
                 },
                 borderRadius: {
                         lg: 'var(--radius)',

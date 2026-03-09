@@ -15,11 +15,13 @@ const LoginSupabase = () => {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoginError('');
     if (!formData.email || !formData.password) {
-      toast.error('Please enter both email and password');
+      setLoginError('Please enter both email and password');
       return;
     }
     setLoading(true);
@@ -28,10 +30,14 @@ const LoginSupabase = () => {
       toast.success('Welcome back!');
     } catch (error) {
       const msg = (error.message || '').toLowerCase();
-      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('not found')) {
-        toast.error("Invalid email or password. Don't have an account? Sign up below.");
+      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('not found') ||
+          msg.includes('body stream') || msg.includes('json') || msg.includes('failed to fetch') ||
+          msg.includes('unable to') || msg.includes('email') || msg.includes('password')) {
+        setLoginError("Invalid email or password. Please check your credentials.");
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        setLoginError('Network error. Please check your connection and try again.');
       } else {
-        toast.error(error.message || 'Login failed. Please check your credentials.');
+        setLoginError('Login failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -53,9 +59,9 @@ const LoginSupabase = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#0F1720' }}>
+    <div className="min-h-screen flex" style={{ background: 'var(--biqc-bg)' }}>
       {/* Left: Login Form */}
-      <div className="flex-1 flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: '#0F1720' }}>
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12" style={{ background: 'var(--biqc-bg)' }}>
         <div className="max-w-sm w-full mx-auto">
           <Link to="/" className="inline-flex items-center gap-2 mb-10 text-sm transition-colors hover:text-[#FF6A00]" style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="login-back-to-home-link">
             <ArrowLeft className="w-4 h-4" /> Back to home
@@ -79,7 +85,7 @@ const LoginSupabase = () => {
           <div className="space-y-3 mb-6">
             <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={oauthLoading || loading}
               className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#F4F7FA', background: '#141C26', border: '1px solid #243140' }}
+              style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
               data-testid="login-google-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "\x27JetBrains Mono\x27, monospace" }}>connecting...</span> : (
                 <>
@@ -90,7 +96,7 @@ const LoginSupabase = () => {
             </button>
             <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={oauthLoading || loading}
               className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#F4F7FA', background: '#141C26', border: '1px solid #243140' }}
+              style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
               data-testid="login-microsoft-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "\x27JetBrains Mono\x27, monospace" }}>connecting...</span> : (
                 <>
@@ -116,7 +122,7 @@ const LoginSupabase = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="you@company.com" required
                 className="h-12 text-sm rounded-xl"
-                style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA' }}
+                style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                 data-testid="login-email-input" />
             </div>
             <div>
@@ -126,7 +132,7 @@ const LoginSupabase = () => {
                   value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="Enter password" required
                   className="h-12 pr-12 text-sm rounded-xl"
-                  style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid #243140', color: '#F4F7FA', WebkitTextSecurity: showPassword ? 'none' : 'disc' }}
+                  style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', WebkitTextSecurity: showPassword ? 'none' : 'disc' }}
                   data-testid="login-password-input" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#9FB0C3] transition-colors"
@@ -143,9 +149,24 @@ const LoginSupabase = () => {
               </Link>
             </div>
 
+            {/* Inline error message — WCAG compliant, persistent */}
+            {loginError && (
+              <div
+                role="alert"
+                aria-live="polite"
+                data-testid="login-error-message"
+                className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#EF4444', fontFamily: fontFamily.body }}
+              >
+                <span className="text-base leading-none mt-0.5">⚠</span>
+                <span>{loginError}</span>
+              </div>
+            )}
+
             <div style={{ width: '100%' }}>
               <button type="submit" disabled={loading || oauthLoading}
                 style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                aria-busy={loading}
                 data-testid="login-submit-btn">
                 {loading ? "Signing in..." : "Sign in"}
               </button>
@@ -162,7 +183,7 @@ const LoginSupabase = () => {
       </div>
 
       {/* Right: Trust Panel */}
-      <div className="hidden lg:flex flex-1 items-center justify-center px-12" style={{ background: '#0A1018', borderLeft: '1px solid #243140' }}>
+      <div className="hidden lg:flex flex-1 items-center justify-center px-12" style={{ background: 'var(--biqc-bg-input)', borderLeft: '1px solid var(--biqc-border)' }}>
         <div className="max-w-sm">
           <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#FF6A00] block mb-5" style={{ fontFamily: fontFamily.mono }}>Sovereign Intelligence</span>
           <h2 className="text-3xl font-normal text-[#F4F7FA] mb-3 leading-snug" style={{ fontFamily: DISPLAY }}>
@@ -172,11 +193,12 @@ const LoginSupabase = () => {
 
           <div className="space-y-3">
             {[
-              { icon: Lock, label: 'AES-256 Encryption', desc: 'Defence-grade protection' },
+              { icon: Lock, label: 'AES-256 Encryption', desc: 'Defence-grade protection at rest & in transit' },
               { icon: Zap, label: 'Real-time Signals', desc: 'Business intelligence on autopilot' },
               { icon: Eye, label: 'Zero Leakage', desc: 'Siloed AI instances per client' },
+              { icon: Shield, label: 'Australian Hosted', desc: 'Sydney & Melbourne — zero offshore processing' },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <item.icon className="w-4 h-4 text-[#FF6A00] shrink-0" />
                 <div>
                   <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: fontFamily.body }}>{item.label}</span>

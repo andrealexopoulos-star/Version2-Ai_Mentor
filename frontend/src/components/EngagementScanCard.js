@@ -5,7 +5,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const EngagementScanCard = ({ url, businessName, location }) => {
@@ -76,19 +76,19 @@ const EngagementScanCard = ({ url, businessName, location }) => {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+          <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
             <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Structure</span>
             <span className="text-sm font-bold text-[#F4F7FA] capitalize" style={{ fontFamily: fontFamily.mono }}>{r.structure?.structure?.replace(/_/g, ' ')}</span>
           </div>
-          <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+          <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
             <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Asymmetries</span>
             <span className="text-sm font-bold" style={{ color: asymCount >= 3 ? '#EF4444' : '#F59E0B', fontFamily: fontFamily.mono }}>{asymCount}</span>
           </div>
-          <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+          <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
             <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Reviews</span>
             <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{r.reviews?.total_reviews || 0}</span>
           </div>
-          <div className="p-3 rounded" style={{ background: '#0F1720' }}>
+          <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
             <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Competitors</span>
             <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{r.competitors?.length || 0}</span>
           </div>
@@ -143,7 +143,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
         {expanded.reviews && (
           <div className="mt-4 space-y-2">
             {r.reviews?.google_maps ? (
-              <div className="flex items-center justify-between p-3 rounded" style={{ background: '#0F1720' }}>
+              <div className="flex items-center justify-between p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                 <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-[#10B981]" /><span className="text-xs text-[#F4F7FA]">Google Maps</span></div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>{r.reviews.google_maps.rating}/5</span>
@@ -159,7 +159,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
               </div>
             ))}
             {r.reviews?.platforms_absent?.map(p => (
-              <div key={p} className="flex items-center gap-2 p-2 rounded" style={{ background: '#0F1720' }}>
+              <div key={p} className="flex items-center gap-2 p-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                 <span className="w-3 h-3 rounded-full border border-[#64748B]" /><span className="text-xs text-[#64748B]">{p} — not found</span>
               </div>
             ))}
@@ -191,7 +191,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
                 <p className="text-xs text-[#EF4444] mb-2">You do not appear in top 10 results</p>
               )}
               {r.search_dominance.top_competitors?.slice(0, 3).map((c, i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded mb-1" style={{ background: '#0F1720' }}>
+                <div key={i} className="flex items-center justify-between p-2 rounded mb-1" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-xs text-[#9FB0C3] truncate flex-1">{c.name}</span>
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Position {c.position}</span>
                 </div>
@@ -211,7 +211,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
               <span className="text-xs font-bold" style={{ fontFamily: fontFamily.mono, color: '#FF6A00' }}>{r.reviews?.google_maps?.reviews || 0} reviews</span>
             </div>
             {r.competitor_reviews.filter(c => c.reviews > 0).map((c, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded" style={{ background: '#0F1720' }}>
+              <div key={i} className="flex items-center justify-between p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
                 <span className="text-xs text-[#9FB0C3] truncate">{c.name}</span>
                 <div className="flex items-center gap-2">
                   {c.rating && <span className="text-xs text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>{c.rating}/5</span>}

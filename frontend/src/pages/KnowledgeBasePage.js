@@ -8,7 +8,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#141C26', border: '1px solid #243140' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
 
 const GUIDES = [
@@ -179,13 +179,13 @@ const FAQS = [
 const FAQItem = ({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: '#141C26', border: '1px solid #243140' }}>
+    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors" data-testid={`faq-${q.substring(0,20).replace(/\s/g,'-').toLowerCase()}`}>
         <span className="text-sm font-medium text-[#F4F7FA] pr-4" style={{ fontFamily: fontFamily.body }}>{q}</span>
         {open ? <ChevronUp className="w-4 h-4 text-[#64748B] shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#64748B] shrink-0" />}
       </button>
       {open && (
-        <div className="px-5 pb-4" style={{ borderTop: '1px solid #243140' }}>
+        <div className="px-5 pb-4" style={{ borderTop: '1px solid var(--biqc-border)' }}>
           <p className="text-sm text-[#9FB0C3] leading-relaxed pt-3" style={{ fontFamily: fontFamily.body }}>{a}</p>
         </div>
       )}
@@ -230,11 +230,11 @@ const KnowledgeBaseContent = () => {
             </div>
 
             {guide.unlocks && (
-              <div className="mb-5 p-3 rounded-lg" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+              <div className="mb-5 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: guide.color, fontFamily: fontFamily.mono }}>What This Unlocks</span>
                 <div className="flex flex-wrap gap-2">
                   {guide.unlocks.map(u => (
-                    <span key={u} className="text-[10px] px-2 py-1 rounded" style={{ color: '#9FB0C3', background: '#141C26', border: '1px solid #243140', fontFamily: fontFamily.mono }}>{u}</span>
+                    <span key={u} className="text-[10px] px-2 py-1 rounded" style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>{u}</span>
                   ))}
                 </div>
               </div>
@@ -255,7 +255,7 @@ const KnowledgeBaseContent = () => {
             </div>
 
             {guide.path && (
-              <div className="mt-5 pt-4" style={{ borderTop: '1px solid #243140' }}>
+              <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                 <Link to={guide.path} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: guide.color }}>
                   Get Started <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -302,7 +302,7 @@ const KnowledgeBasePage = () => {
 
   return (
     <WebsiteLayout>
-      <div style={{ background: '#0F1720', minHeight: '100vh', paddingTop: '64px' }}>
+      <div style={{ background: 'var(--biqc-bg)', minHeight: '100vh', paddingTop: '64px' }}>
         <KnowledgeBaseContent />
       </div>
     </WebsiteLayout>

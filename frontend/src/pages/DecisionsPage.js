@@ -32,16 +32,14 @@ export default function DecisionsPage() {
   const fetchDecisionPrompts = async () => {
     try {
       // Build decision prompts from observation_events
-      const res = await apiClient.get('/integrations/merge/connected');
+      const res = await apiClient.get('/integrations/merge/connected', { timeout: 8000 });
       const signalCount = res.data?.canonical_truth?.live_signal_count || 0;
 
       if (signalCount > 0) {
-        // Ask the backend for signal summary
-        const snapRes = await apiClient.get('/snapshot/latest');
+        const snapRes = await apiClient.get('/snapshot/latest', { timeout: 8000 });
         const rq = snapRes.data?.cognitive?.resolution_queue || [];
 
-        // Also get observation event summary from cognition
-        const cogRes = await apiClient.get('/cognition/overview');
+        const cogRes = await apiClient.get('/cognition/overview', { timeout: 8000 });
         const cogData = cogRes.data || {};
 
         // Build decision prompts from real signals
@@ -181,9 +179,9 @@ export default function DecisionsPage() {
           <Card className="mb-8" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }} data-testid="no-decisions">
             <CardContent className="text-center py-10">
               <CheckCircle2 className="w-10 h-10 mx-auto mb-3" style={{ color: colors.success }} />
-              <p className="text-lg font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }}>No decisions pending</p>
-              <p className="text-sm mt-1" style={{ color: colors.textMuted, fontFamily: fontFamily.body }}>
-                BIQc is monitoring your systems. When a signal requires a leadership decision, it will appear here.
+              <p className="text-lg font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }}>No decisions pending right now</p>
+              <p className="text-sm mt-1 max-w-sm mx-auto" style={{ color: colors.textMuted, fontFamily: fontFamily.body }}>
+                BIQc monitors your connected systems continuously. Decisions surface automatically when deal stalls, cash burn, or operational signals require leadership action.
               </p>
             </CardContent>
           </Card>

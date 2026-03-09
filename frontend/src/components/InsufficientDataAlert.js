@@ -51,7 +51,7 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
           {alerts.map(a => (
             <button key={a.id} onClick={() => navigate(`/knowledge-base#${a.kb}`)}
               className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all hover:bg-white/[0.03]"
-              style={{ background: '#0F1720', border: '1px solid #243140' }}
+              style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
               data-testid={`data-alert-${a.id}`}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#F59E0B15' }}>
                 <BookOpen className="w-4 h-4 text-[#F59E0B]" />

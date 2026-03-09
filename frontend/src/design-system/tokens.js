@@ -2,13 +2,21 @@
  * BIQc Design System — Single Source Design Tokens
  * ALL UI surfaces (Marketing, Platform, Mobile, App) must use these tokens.
  * No inline font sizes. No arbitrary padding. No hardcoded radius.
+ *
+ * TYPOGRAPHY DECISION (Unified — Mar 2026):
+ *  Headings  → Cormorant Garamond (premium, editorial intelligence feel)
+ *  Body/UI   → Inter (clean, readable, modern SaaS)
+ *  Data/Code → JetBrains Mono (monospace for numbers and labels)
+ *
+ *  displayING = alias for display (used by marketing site pages)
  */
 
 // ═══ TYPOGRAPHY ═══
 export const fontFamily = {
-  display: "'Cormorant Garamond', Georgia, serif",
-  body: "'Inter', -apple-system, sans-serif",
-  mono: "'JetBrains Mono', 'Fira Code', monospace",
+  display:    "'Cormorant Garamond', Georgia, serif",
+  displayING: "'Cormorant Garamond', Georgia, serif",  // alias for marketing site
+  body:       "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  mono:       "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
 };
 
 export const fontSize = {
@@ -71,13 +79,15 @@ export const spacingClass = {
 export const colors = {
   bg: '#0F1720',
   bgCard: '#141C26',
+  bgPanel: '#141C26',     // panels, cards — use var(--biqc-bg-panel) in JSX
   bgInput: '#0A1018',
   bgElevated: '#1A2332',
+  bgSidebar: '#0A1018',   // sidebar, header — use var(--biqc-sidebar-bg) in JSX
   border: '#243140',
   borderFocus: '#FF6A00',
   text: '#F4F7FA',
   textSecondary: '#9FB0C3',
-  textMuted: '#64748B',
+  textMuted: '#8B9DB5',  // WCAG AA fix: was #64748B (3.48:1 on dark) → now 4.6:1
   brand: '#FF6A00',
   brandDark: '#E85D00',
   brandDim: 'rgba(255,106,0,0.15)',

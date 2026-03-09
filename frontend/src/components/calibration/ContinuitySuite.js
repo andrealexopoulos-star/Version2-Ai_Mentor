@@ -13,7 +13,7 @@ const ContinuitySuite = ({ firstName, calStep, error, onResume }) => {
   const ringOffset = ringCirc - (progressPercent / 100) * ringCirc;
 
   return (
-    <div className="flex-1 flex items-center justify-center px-6" style={{ background: '#0F1720' }} data-testid="continuity-suite">
+    <div className="flex-1 flex items-center justify-center px-6" style={{ background: 'var(--biqc-bg)' }} data-testid="continuity-suite">
       <div className="max-w-lg w-full text-center">
         <div className="mx-auto mb-8" style={{ width: 120, height: 120 }}>
           <svg width="120" height="120" viewBox="0 0 120 120">

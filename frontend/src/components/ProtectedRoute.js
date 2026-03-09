@@ -10,7 +10,7 @@ const LoadingScreen = () => {
   const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0F1720' }} data-testid="auth-loading-screen">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }} data-testid="auth-loading-screen">
       <style>{`
         @keyframes biqcPulse{0%,100%{opacity:0.4;transform:scale(0.95)}50%{opacity:1;transform:scale(1.05)}}
         @keyframes biqcFade{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}

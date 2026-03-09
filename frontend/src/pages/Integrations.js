@@ -336,10 +336,10 @@ export default function Integrations() {
 
   return (
     <DashboardLayout>
-      <div className="flex min-h-[calc(100vh-56px)]" style={{ background: '#0F1720', fontFamily: fontFamily.body }}>
+      <div className="flex min-h-[calc(100vh-56px)]" style={{ background: 'var(--biqc-bg)', fontFamily: fontFamily.body }}>
 
         {/* ── Desktop Sidebar ── */}
-        <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r py-6 px-3" style={{ borderColor: '#243140', background: '#0F1720' }}>
+        <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r py-6 px-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }}>
           <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Categories</p>
           {CATEGORIES.map(cat => {
             const Icon = cat.icon;
@@ -369,7 +369,7 @@ export default function Integrations() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-semibold mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Integrations</h1>
+              <h1 className="text-2xl font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Integrations</h1>
               <p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                 {connectedCount > 0
                   ? <span><span style={{ color: '#10B981' }}>{connectedCount} connected</span> · {ALL_INTEGRATIONS.length} total available</span>
@@ -384,7 +384,7 @@ export default function Integrations() {
                 onChange={e => setSearchTerm(e.target.value)}
                 placeholder="Search integrations..."
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
-                style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA' }}
+                style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                 data-testid="integrations-search"
               />
               {searchTerm && (
@@ -399,13 +399,13 @@ export default function Integrations() {
           <div className="lg:hidden mb-4 relative">
             <button onClick={() => setMobileOpen(!mobileOpen)}
               className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm"
-              style={{ background: '#141C26', border: '1px solid #243140', color: '#F4F7FA' }}>
+              style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}>
               <span>{catLabel}</span>
               <ChevronDown className={`w-4 h-4 transition-transform ${mobileOpen ? 'rotate-180' : ''}`} style={{ color: '#64748B' }} />
             </button>
             {mobileOpen && (
               <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-20 shadow-2xl"
-                style={{ background: '#141C26', border: '1px solid #243140' }}>
+                style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 {CATEGORIES.map(cat => {
                   const Icon = cat.icon;
                   return (
@@ -451,7 +451,7 @@ export default function Integrations() {
                   <div key={integration.id}
                     className="group relative flex flex-col rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5"
                     style={{
-                      background: '#141C26',
+                      background: 'var(--biqc-bg-card)',
                       border: `1px solid ${connected ? 'rgba(16,185,129,0.3)' : '#243140'}`,
                       boxShadow: connected ? '0 0 16px rgba(16,185,129,0.08)' : 'none',
                     }}
@@ -468,7 +468,7 @@ export default function Integrations() {
                     <div className="flex items-center gap-3 mb-3">
                       <Logo domain={integration.domain} name={integration.name} size={44} />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{integration.name}</p>
+                        <p className="font-semibold text-sm truncate" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{integration.name}</p>
                         {connected && (
                           <div className="flex items-center gap-1 mt-0.5">
                             <CheckCircle2 className="w-3 h-3" style={{ color: '#10B981' }} />

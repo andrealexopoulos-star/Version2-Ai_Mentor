@@ -1,0 +1,99 @@
+{
+  "summary": "Phase 2 (Light Mode Full Coverage) + Phase 3 (Trust & Conversion) testing. Light mode fully verified across all platform surfaces. Homepage trust badges + testimonials confirmed. Login page Australian Hosted badge confirmed. All regression tests pass. CRITICAL: New Pricing.js component with annual/monthly toggle, comparison table, and trust badges was created but the /pricing route was NOT updated — old SitePricingPage still serves at /pricing. All Pricing Phase 3 features are unreachable.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Pricing.js (new) — App.js routing",
+        "issue": "Pricing.js (with billing-toggle, annual/monthly toggle, comparison table, trust badges) is imported in App.js but NOT routed to any URL. /pricing route still serves old SitePricingPage (PricingPage.js). All Phase 3 Pricing features are completely unreachable.",
+        "selector": "[data-testid='billing-toggle'], [data-testid='toggle-annual'], [data-testid='toggle-comparison']",
+        "priority": "CRITICAL — 1-line fix: change <Route path='/pricing' element={<SitePricingPage />} /> to <Route path='/pricing' element={<Pricing />} /> in App.js"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Pricing.js (new)",
+        "issues": [
+          "Pricing.js uses hardcoded dark colors (e.g., background: '#0A0F18', '#141C26', '#243140') — NOT CSS vars. Will NOT support light mode if routed. May be intentional for public marketing page."
+        ]
+      },
+      {
+        "screen": "Pricing.js trust badges vs review spec",
+        "issues": [
+          "Pricing.js TRUST_BADGES[2].label = 'Zero Data Leakage' but review request expects '🛡️ Privacy Act'. Minor content discrepancy from the spec."
+        ]
+      }
+    ]
+  },
+
+  "test_results": {
+    "login_success": "PASS — newtest1@biqctest.io / BIQcTest!2026 logs in and redirects to /advisor",
+    "light_mode_toggle": "PASS — data-theme toggles dark→light, --biqc-bg becomes #F0F4F8",
+    "light_mode_advisor_main_bg": "PASS — rgb(240, 244, 248) in light mode",
+    "light_mode_advisor_cards": "PASS — card bg = rgb(255, 255, 255) = white in light mode",
+    "light_mode_sidebar": "PASS — aside bg = rgb(248, 250, 252) = #F8FAFC in light mode",
+    "light_mode_text_readable": "PASS — --biqc-text = #0F172A (dark) in light mode",
+    "light_mode_revenue": "PASS — main bg rgb(240, 244, 248) in light mode",
+    "light_mode_risk": "PASS — main bg rgb(240, 244, 248) in light mode",
+    "light_mode_market": "PASS — main bg rgb(240, 244, 248) in light mode",
+    "light_mode_operations": "PASS — main bg rgb(240, 244, 248) in light mode",
+    "light_mode_integrations": "PASS — main bg rgb(240, 244, 248) in light mode",
+    "light_mode_settings": "PASS — main bg rgb(240, 244, 248) in light mode",
+    "dark_mode_toggle_back": "PASS — data-theme=dark, main bg rgb(15, 23, 32) after toggling back",
+    "pricing_billing_toggle": "FAIL — billing-toggle NOT found at /pricing. Old SitePricingPage served instead of new Pricing.js",
+    "pricing_annual_toggle": "FAIL — toggle-annual NOT found at /pricing",
+    "pricing_annual_prices": "FAIL — $39/$79/$159 annual prices not shown (old page shows $750/$1,950)",
+    "pricing_comparison_table": "FAIL — toggle-comparison NOT found at /pricing",
+    "pricing_trust_badges": "FAIL — trust badges row not on /pricing (old pricing page)",
+    "homepage_trust_badges": "PASS — [data-testid='trust-badges'] exists with 🇦🇺 Australian Hosted, 🔒 AES-256, 🛡️ Privacy Act Compliant, ✅ 14-Day Guarantee",
+    "homepage_testimonials": "PASS — [data-testid='testimonials-section'] exists with 3 quote cards",
+    "login_australian_hosted": "PASS — Right panel has 4 trust items: AES-256 Encryption, Real-time Signals, Zero Leakage, Australian Hosted (with Sydney & Melbourne)",
+    "login_sydney_mention": "PASS — 'Sydney & Melbourne — zero offshore processing' in Australian Hosted item",
+    "regression_login_error_banner": "PASS — 'Invalid email or password. Please check your credentials.' shown on wrong password",
+    "regression_mobile_nav_risk_position3": "PASS — Risk tab at index 3 (Overview | Revenue | Risk | Alerts | More)"
+  },
+
+  "test_report_links": ["/app/test_reports/iteration_111.json"],
+
+  "action_items": [
+    "CRITICAL: In /app/frontend/src/App.js, change route from '<Route path=\"/pricing\" element={<SitePricingPage />} />' to '<Route path=\"/pricing\" element={<Pricing />} />'. The new Pricing.js component (with annual/monthly toggle, comparison table, trust badges) is imported but has NO route — it's dead code.",
+    "MINOR: Pricing.js TRUST_BADGES[2].label is 'Zero Data Leakage' (🛡️) but review spec expected 'Privacy Act'. Align if needed.",
+    "MINOR: Pricing.js uses hardcoded dark colors (not CSS vars) — will NOT support light mode. Intentional for public marketing page or needs to be updated like other 63 files.",
+    "NOTE: Once routing is fixed, verify Pricing.js features: billing-toggle, annual prices ($39/$79/$159), comparison table (5 columns, 12 rows), savings badges"
+  ],
+
+  "critical_code_review_comments": [
+    "App.js line 169: '<Route path=\"/pricing\" element={<SitePricingPage />} />' — New Pricing component (imported on line 32) was never routed. All Phase 3 pricing features are unreachable. This is the only blocker.",
+    "Pricing.js uses hardcoded inline style dark colors: background '#0A0F18', '#141C26', border '#243140' — NOT CSS vars. These will NOT respond to [data-theme='light']. Consistent with other website pages (HomePage.js also uses #07121E) which appear to be dark-only by design.",
+    "Light mode CSS var approach is working correctly. All 743-replacement effects are verified on the app platform surfaces (sidebar, main content, cards). CSS overrides in index.css are effective."
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "frontend": "72% (13/18 tests pass; 5 fail due to single routing bug in App.js)"
+  },
+
+  "test_credentials": "newtest1@biqctest.io / BIQcTest!2026",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+
+  "main_agent_can_self_test": true,
+
+  "context_for_next_testing_agent": "Phase 2 light mode: ALL PASS (advisor/revenue/risk/market/operations/integrations/settings all light, sidebar light, cards white, text dark). Phase 3: Homepage trust badges + testimonials PASS, Login Australian Hosted PASS, all regressions PASS. Only blocker: Pricing.js (new annual/monthly toggle) has NO route — /pricing still shows old SitePricingPage. After main agent fixes route (1-line change in App.js), retest: billing-toggle, annual prices ($49→$39, $99→$79, $199→$159), comparison table expand (5 cols, 12 rows), trust badges on pricing page.",
+
+  "rca_of_issue": {
+    "pricing_routing_bug": {
+      "symptom": "Navigating to /pricing shows old 'Multiply the Capability of Your Entire Team' page with $750/$1,950 prices, no billing toggle, no comparison table",
+      "root_cause": "In App.js, line 32 imports new Pricing component ('import Pricing from \"./pages/Pricing\"') but line 169 routes '/pricing' to SitePricingPage ('from pages/website/PricingPage.js'). The import on line 32 is unused dead code.",
+      "fix": "App.js line 169: Change element={<SitePricingPage />} to element={<Pricing />}",
+      "impact": "All Phase 3 pricing features (annual/monthly toggle, comparison table, 5-plan grid with $39/$79/$159 prices, trust badges) are completely unreachable"
+    }
+  }
+}

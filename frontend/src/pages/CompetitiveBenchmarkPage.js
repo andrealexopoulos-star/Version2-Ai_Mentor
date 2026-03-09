@@ -30,7 +30,7 @@ const ScoreGauge = ({ score, maxScore = 100, label, color }) => {
           / {maxScore}
         </text>
       </svg>
-      {label && <p className="text-xs mt-2 font-medium" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>{label}</p>}
+      {label && <p className="text-xs mt-2 font-medium" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{label}</p>}
     </div>
   );
 };
@@ -40,13 +40,13 @@ const PillarBar = ({ label, score, maxScore = 100, icon: Icon }) => {
   const color = pct >= 70 ? '#10B981' : pct >= 40 ? '#F59E0B' : '#EF4444';
 
   return (
-    <div className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid #243140' }}>
+    <div className="flex items-center gap-3 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: color + '15' }}>
         <Icon className="w-4 h-4" style={{ color }} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{label}</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>{label}</span>
           <span className="text-sm font-bold" style={{ color, fontFamily: fontFamily.mono }}>{score}</span>
         </div>
         <div className="h-1.5 rounded-full" style={{ background: '#243140' }}>
@@ -113,15 +113,15 @@ export default function CompetitiveBenchmarkPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }} data-testid="benchmark-title">
+            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="benchmark-title">
               Competitive Benchmark
             </h1>
-            <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
               Weekly Digital Footprint score & industry percentile ranking
             </p>
           </div>
           <Button onClick={handleRefresh} disabled={refreshing} variant="outline" className="gap-2"
-            style={{ borderColor: '#243140', color: '#9FB0C3' }} data-testid="refresh-benchmark">
+            style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text-2)' }} data-testid="refresh-benchmark">
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
           </Button>
         </div>
@@ -133,7 +133,7 @@ export default function CompetitiveBenchmarkPage() {
         ) : data ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Score Card */}
-            <Card style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="score-card">
+            <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="score-card">
               <CardContent className="pt-6 flex flex-col items-center">
                 <ScoreGauge score={data.overallScore} label="Digital Footprint" color="#FF6A00" />
                 <div className="flex items-center gap-2 mt-4">
@@ -153,7 +153,7 @@ export default function CompetitiveBenchmarkPage() {
             </Card>
 
             {/* Percentile Card */}
-            <Card style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="percentile-card">
+            <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="percentile-card">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Award className="w-5 h-5" style={{ color: '#FF6A00' }} />
@@ -162,15 +162,15 @@ export default function CompetitiveBenchmarkPage() {
                   </span>
                 </div>
                 <div className="text-center py-4">
-                  <p className="text-5xl font-bold" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }} data-testid="percentile-value">
+                  <p className="text-5xl font-bold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }} data-testid="percentile-value">
                     {data.percentile}<span className="text-lg" style={{ color: '#64748B' }}>th</span>
                   </p>
-                  <p className="text-sm mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>percentile in your industry</p>
+                  <p className="text-sm mt-1" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>percentile in your industry</p>
                 </div>
-                <div className="mt-4 p-3 rounded-lg" style={{ background: '#0A1018', border: '1px solid #243140' }}>
+                <div className="mt-4 p-3 rounded-lg" style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex justify-between items-center">
                     <span className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Industry Average</span>
-                    <span className="text-sm font-bold" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>{data.industryAvg}/100</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{data.industryAvg}/100</span>
                   </div>
                   <div className="h-1.5 rounded-full mt-2" style={{ background: '#243140' }}>
                     <div className="h-full rounded-full relative" style={{ background: '#64748B', width: `${data.industryAvg}%` }}>
@@ -186,9 +186,9 @@ export default function CompetitiveBenchmarkPage() {
             </Card>
 
             {/* 5-Pillar Breakdown */}
-            <Card className="md:col-span-2" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="pillars-card">
+            <Card className="md:col-span-2" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="pillars-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
                   <BarChart3 className="w-5 h-5" style={{ color: '#FF6A00' }} />
                   5-Pillar Digital Footprint
                 </CardTitle>
@@ -204,9 +204,9 @@ export default function CompetitiveBenchmarkPage() {
 
             {/* Competitors */}
             {data.competitors.length > 0 && (
-              <Card className="md:col-span-2" style={{ background: '#141C26', border: '1px solid #243140' }} data-testid="competitors-card">
+              <Card className="md:col-span-2" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="competitors-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+                  <CardTitle className="flex items-center gap-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
                     <Users className="w-5 h-5" style={{ color: '#FF6A00' }} />
                     Competitive Landscape
                   </CardTitle>
@@ -214,7 +214,7 @@ export default function CompetitiveBenchmarkPage() {
                 <CardContent>
                   {data.competitors.slice(0, 5).map((comp, i) => (
                     <div key={i} className="flex items-center justify-between py-3" style={{ borderBottom: i < data.competitors.length - 1 ? '1px solid #243140' : 'none' }}>
-                      <span className="text-sm" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{comp.name || comp}</span>
+                      <span className="text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>{comp.name || comp}</span>
                       {comp.threat_level && (
                         <span className="text-xs px-2 py-0.5 rounded" style={{
                           background: comp.threat_level === 'high' ? '#EF444415' : '#F59E0B15',
@@ -231,9 +231,9 @@ export default function CompetitiveBenchmarkPage() {
             )}
           </div>
         ) : (
-          <div className="text-center py-16 rounded-xl" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div className="text-center py-16 rounded-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <Globe className="w-10 h-10 mx-auto mb-3" style={{ color: '#243140' }} />
-            <p className="text-lg font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>No benchmark data yet</p>
+            <p className="text-lg font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>No benchmark data yet</p>
             <p className="text-sm mt-1" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Complete calibration to unlock competitive benchmarking.</p>
           </div>
         )}

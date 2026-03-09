@@ -5,7 +5,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const AILearningGuarantee = () => (
-  <div className="min-h-screen" style={{ background: '#0F1720' }}>
+  <div className="min-h-screen" style={{ background: 'var(--biqc-bg)' }}>
     <div className="max-w-3xl mx-auto px-6 py-16">
       <Link to="/trust" className="inline-flex items-center gap-2 mb-10 text-sm transition-colors hover:text-[#FF6A00]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
         <ArrowLeft className="w-4 h-4" /> Back to Trust Centre
@@ -26,7 +26,7 @@ const AILearningGuarantee = () => (
       </div>
 
       {/* Core Guarantee */}
-      <div className="rounded-xl p-6 mb-8" style={{ background: '#141C26', border: '1px solid #243140' }}>
+      <div className="rounded-xl p-6 mb-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
         <h2 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Our Guarantee</h2>
         <div className="space-y-4">
           {[
@@ -45,7 +45,7 @@ const AILearningGuarantee = () => (
       </div>
 
       {/* Processing Explanation */}
-      <div className="rounded-xl p-6 mb-8" style={{ background: '#141C26', border: '1px solid #243140' }}>
+      <div className="rounded-xl p-6 mb-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
         <div className="flex items-center gap-2 mb-4">
           <Server className="w-4 h-4 text-[#3B82F6]" />
           <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>How BIQc Processes Your Data</h2>
@@ -62,7 +62,7 @@ const AILearningGuarantee = () => (
           { label: 'Mid-Market', items: ['Role-based access', 'Audit-ready logs', 'Zero-retention architecture'] },
           { label: 'Enterprise', items: ['Optional VPC deployment', 'Contractual zero-training assurance', 'Custom data residency'] },
         ].map(seg => (
-          <div key={seg.label} className="rounded-xl p-5" style={{ background: '#141C26', border: '1px solid #243140' }}>
+          <div key={seg.label} className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{seg.label}</span>
             <div className="space-y-2">
               {seg.items.map((item, i) => (
@@ -74,7 +74,7 @@ const AILearningGuarantee = () => (
       </div>
 
       {/* Legal Alignment */}
-      <div className="pt-6" style={{ borderTop: '1px solid #243140' }}>
+      <div className="pt-6" style={{ borderTop: '1px solid var(--biqc-border)' }}>
         <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           Our <Link to="/terms" className="text-[#FF6A00] hover:underline">Terms of Service</Link> explicitly state that you own your inputs and your outputs.
         </p>

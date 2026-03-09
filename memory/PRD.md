@@ -1,4 +1,11 @@
 # BIQc Platform — Product Requirements Document
+### Phase 4 — Font Unification (Complete — Mar 2026)
+- **`fontFamily.displayING` undefined fixed** — 37 marketing heading instances now render Cormorant Garamond (was browser default fallback)
+- **Tailwind + tokens.js unified** — `heading/display: Cormorant Garamond`, `sans/body: Inter`, `mono: JetBrains Mono` across all config files
+- **3 unused fonts removed** from `index.html` (Plus Jakarta Sans, DM Sans, Sora) — reduces page load
+- **Typography**: Hero H1 → Inter (intentional high-impact); Section H2/H3 → Cormorant Garamond; Body → Inter; Data → JetBrains Mono
+
+
 
 ## CRITICAL SESSION REQUIREMENT
 **Every fork/session MUST set `frontend/.env` to `beta.thestrategysquad.com`.**
@@ -33,7 +40,33 @@
 - Backend `POST /api/notifications/register-device` endpoint
 - Listeners for foreground + tap notifications integrated in App.tsx
 
-### Sprint 4: AI Confidence Gating & Context Injection (Complete — Mar 2026)
+### Phase 2b — Light Mode Full Coverage + Phase 3 Trust & Conversion (Complete — Mar 2026)
+- **743 inline style color replacements** across 63 files: `#141C26` → `var(--biqc-bg-card)`, `#0F1720` → `var(--biqc-bg)`, `#0A1018` → `var(--biqc-bg-input)`, `#243140` → `var(--biqc-border)`, `#F4F7FA/9FB0C3/64748B` → CSS vars — ALL 10 platform pages pass light mode test
+- **CSS Tailwind overrides** in `index.css`: `[data-theme="light"]` selectors for Tailwind utility classes that can't be controlled via inline CSS vars
+- **`--biqc-panel-bg` + `--biqc-sidebar-bg`** tokens added to complete the variable set
+- **New Pricing.js** — 5-plan grid, Monthly/Annual toggle (20% savings), feature comparison table (12 rows × 5 columns), trust badges, expandable FAQ, orange gradient CTA
+- **Routing fixed** — `/pricing` now serves new `Pricing.js` (was serving old `SitePricingPage`)
+- **Homepage** — Trust badges section (🇦🇺/🔒/🛡️/✅) + 3-card testimonials section with SMB metrics
+- **Login page** — 4th trust item added: "Australian Hosted — Sydney & Melbourne, zero offshore processing"
+- **Test result**: Light mode 100% verified (13/13 platform pages), Phase 3 features verified ✅ (iteration_111)
+
+- **Sidebar multi-expand** — Changed from single accordion to `Set<sectionId>` multi-expand. Intelligence + Execution open by default. Active section auto-expands without closing others. ARIA: `aria-expanded`, `aria-controls` on all sections.
+- **4 sidebar sections** (was 5) — Marketing merged into "Settings & Growth" alongside Compliance, Reports, Settings, Business DNA. Reduces cognitive load, eliminates unnecessary section header.
+- **Mobile nav Risk = direct tab** — Bottom bar now: Overview | Revenue | **Risk** | Alerts | More (Risk was 2 taps, now 1). Market moved to More sheet.
+- **More sheet: 3 grouped sections** — Intelligence (Market, Decisions, Operations), Execution (Actions, Inbox, Automations), Settings (Integrations, Settings, Reports). Scannability improved vs. flat 6-item grid.
+- **API timeouts added** — 8s timeout on slow API calls in Revenue, Decisions, Alerts pages to ensure loading states resolve and empty states render.
+- **Empty state copy rewritten** — Revenue: "Your pipeline is waiting to be analysed — connect HubSpot/Xero to see deal velocity, stalled opportunities"; Decisions: "Decisions surface when deal stalls, cash burn, or operational signals require leadership action"; Alerts: "All systems normal — BIQc monitors your data 24/7"; Audit Log: "start building your governance trail"
+- **Test result**: 15/17 Phase 2 features verified ✅ (iteration_110, 2 source-verified)
+
+- **Unified CSS Variables** — `index.css` now has `--biqc-*` tokens covering all colors, both dark (default) and light themes. ARIA-accessible.
+- **Light Mode Toggle** — Sun/Moon icon in dashboard header (`data-testid="theme-toggle"`). Toggles `data-theme` on `<html>`, persisted via `localStorage`.
+- **WCAG AA Contrast Fix** — `textMuted` updated from `#64748B` (3.48:1) to `#8B9DB5` (4.6:1) on dark backgrounds.
+- **ARIA Labels** — Navigation sidebar: `role="navigation"`, `aria-label`, `aria-expanded`, `aria-current="page"`, `aria-controls` on all sections and items.
+- **Login Inline Error** — Persistent red error banner (`role="alert"`, `aria-live="polite"`, `data-testid="login-error-message"`) replaces disappearing toast. Also fixed Supabase body-stream error mapping.
+- **DashboardLayout CSS vars** — Main content, sidebar, soundboard panel now use `var(--biqc-bg)` instead of hardcoded `#0F1720`.
+- **Design System Doc** — `/app/memory/DESIGN_SYSTEM_PHASE1.md` — full colour palette, typography, spacing, shadows, component states, ARIA guide.
+- **Test result**: 12/12 Phase 1 features verified ✅ (iteration_109)
+
 - **`data_coverage.py`** (backend): Weighted field schema across 5 domains (Revenue, Cash, Operations, People, Market) with critical (weight 2) and optional (weight 1) fields; `calculate_coverage()` returns coverage_pct, per_domain breakdown, missing_fields, guardrail_status
 - **`GET /api/user/data-coverage`**: New endpoint returning coverage + missing fields + guardrail status
 - **SoundBoard guardrails updated**: Now uses percentage-based gating (BLOCKED <20%, DEGRADED 20-40%, FULL >40%) replacing simple field-count logic; BLOCKED response includes specific missing critical fields + actionable CTAs

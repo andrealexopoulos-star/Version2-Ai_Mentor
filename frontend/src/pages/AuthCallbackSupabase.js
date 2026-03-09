@@ -92,7 +92,7 @@ const AuthCallbackSupabase = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0F1720' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }}>
       <style>{`
         @keyframes biqcPulse{0%,100%{opacity:0.4;transform:scale(0.95)}50%{opacity:1;transform:scale(1.05)}}
         @keyframes biqcBar{0%{width:0}100%{width:100%}}
@@ -104,7 +104,7 @@ const AuthCallbackSupabase = () => {
         >
           <span className="text-white font-bold text-xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
         </div>
-        <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: "'Inter', sans-serif" }}>{status}</p>
+        <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: "'Inter', sans-serif" }}>{status}</p>
         <div className="w-40 mx-auto">
           <div className="h-0.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
             <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg,#FF6A00,#FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
