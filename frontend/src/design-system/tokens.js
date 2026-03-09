@@ -77,7 +77,7 @@ export const colors = {
   borderFocus: '#FF6A00',
   text: '#F4F7FA',
   textSecondary: '#9FB0C3',
-  textMuted: '#64748B',
+  textMuted: '#8B9DB5',  // WCAG AA fix: was #64748B (3.48:1 on dark) → now 4.6:1
   brand: '#FF6A00',
   brandDark: '#E85D00',
   brandDim: 'rgba(255,106,0,0.15)',

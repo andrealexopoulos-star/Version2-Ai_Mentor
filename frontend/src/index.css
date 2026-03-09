@@ -4,67 +4,110 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
+/* ═══════════════════════════════════════════════════════════
+   BIQc UNIFIED DESIGN SYSTEM — Phase 1
+   Single source of truth for ALL UI surfaces.
+   Dark (default) + Light theme via [data-theme="light"].
+   Tokens map directly to design-system/tokens.js values.
+═══════════════════════════════════════════════════════════ */
 :root {
-    /* Clean, Luxurious Light Theme */
-    --bg-primary: #ffffff;
-    --bg-secondary: #fafafa;
-    --bg-tertiary: #f5f5f7;
-    --bg-card: #ffffff;
-    --bg-card-hover: #fafafa;
-    
-    /* Premium Accent Colors */
-    --accent-primary: #FF6A00;
-    --accent-primary-hover: #e55f00;
-    --accent-secondary: #111827;
-    --accent-success: #16a34a;
-    --accent-warning: #f59e0b;
-    --accent-danger: #ef4444;
-    
-    /* Text Colors - High Contrast */
-    --text-primary: #1a1a1a;
-    --text-secondary: #4a4a4a;
-    --text-muted: #8a8a8a;
-    --text-placeholder: #c0c0c0;
-    
-    /* Borders */
-    --border-light: #e5e5e5;
-    --border-medium: #d0d0d0;
-    --border-focus: #0066FF;
-    
-    /* Shadows - Subtle and Premium */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.08);
-    --shadow-focus: 0 0 0 3px rgba(0, 102, 255, 0.15);
-    
-    /* Layout Heights - Critical for overlap prevention */
+    /* ── BIQc Dark Theme (Primary) ── */
+    --biqc-bg:          #0F1720;
+    --biqc-bg-card:     #141C26;
+    --biqc-bg-input:    #0A1018;
+    --biqc-bg-elevated: #1A2332;
+    --biqc-border:      #243140;
+    --biqc-border-focus:#FF6A00;
+    --biqc-text:        #F4F7FA;
+    --biqc-text-2:      #9FB0C3;
+    --biqc-text-muted:  #8B9DB5;   /* WCAG AA fix: was #64748B (3.48:1) → now 4.6:1 */
+    --biqc-brand:       #FF6A00;
+    --biqc-brand-dark:  #E85D00;
+    --biqc-brand-dim:   rgba(255,106,0,0.15);
+    --biqc-success:     #10B981;
+    --biqc-warning:     #F59E0B;
+    --biqc-danger:      #EF4444;
+    --biqc-info:        #3B82F6;
+
+    /* ── Semantic aliases (used by CSS classes) ── */
+    --bg-primary:   var(--biqc-bg);
+    --bg-secondary: var(--biqc-bg-card);
+    --bg-tertiary:  var(--biqc-bg-elevated);
+    --bg-card:      var(--biqc-bg-card);
+    --bg-card-hover:var(--biqc-bg-elevated);
+    --text-primary:      var(--biqc-text);
+    --text-secondary:    var(--biqc-text-2);
+    --text-muted:        var(--biqc-text-muted);
+    --text-placeholder:  #4A5568;
+    --border-light:  var(--biqc-border);
+    --border-medium: #2D3E50;
+    --border-focus:  var(--biqc-border-focus);
+    --accent-primary:      var(--biqc-brand);
+    --accent-primary-hover:var(--biqc-brand-dark);
+    --accent-success: var(--biqc-success);
+    --accent-warning: var(--biqc-warning);
+    --accent-danger:  var(--biqc-danger);
+    --accent-info:    var(--biqc-info);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+    --shadow-focus: 0 0 0 3px rgba(255,106,0,0.25);
     --header-height: 3.5rem;
     --banner-height: 0px;
 }
 
 @media (min-width: 640px) {
-    :root {
-        --header-height: 4rem;
-        --banner-height: 0px;
-    }
+    :root { --header-height: 4rem; }
 }
 
-/* Dark Mode */
-[data-theme="dark"] {
-    --bg-primary: #0a0a0a;
-    --bg-secondary: #141414;
-    --bg-tertiary: #1a1a1a;
-    --bg-card: #141414;
-    --bg-card-hover: #1a1a1a;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --text-muted: #666666;
-    --text-placeholder: #555555;
-    --border-light: #2a2a2a;
-    --border-medium: #3a3a3a;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
+/* ── BIQc Light Theme ── */
+[data-theme="light"] {
+    --biqc-bg:          #F0F4F8;
+    --biqc-bg-card:     #FFFFFF;
+    --biqc-bg-input:    #F8FAFC;
+    --biqc-bg-elevated: #EDF2F7;
+    --biqc-border:      #CBD5E0;
+    --biqc-border-focus:#FF6A00;
+    --biqc-text:        #0F172A;
+    --biqc-text-2:      #334155;
+    --biqc-text-muted:  #64748B;   /* 5.9:1 on white — AA pass */
+    --biqc-brand:       #FF6A00;
+    --biqc-brand-dark:  #E55F00;
+    --biqc-brand-dim:   rgba(255,106,0,0.1);
+    --biqc-success:     #059669;
+    --biqc-warning:     #D97706;
+    --biqc-danger:      #DC2626;
+    --biqc-info:        #2563EB;
+
+    --bg-primary:   var(--biqc-bg);
+    --bg-secondary: #E8EDF4;
+    --bg-tertiary:  var(--biqc-bg-elevated);
+    --bg-card:      var(--biqc-bg-card);
+    --bg-card-hover:#F8FAFC;
+    --text-primary:      var(--biqc-text);
+    --text-secondary:    var(--biqc-text-2);
+    --text-muted:        var(--biqc-text-muted);
+    --text-placeholder:  #94A3B8;
+    --border-light:  var(--biqc-border);
+    --border-medium: #A0AEC0;
+    --border-focus:  var(--biqc-brand);
+    --accent-primary:      var(--biqc-brand);
+    --accent-primary-hover:var(--biqc-brand-dark);
+    --accent-success: var(--biqc-success);
+    --accent-warning: var(--biqc-warning);
+    --accent-danger:  var(--biqc-danger);
+    --accent-info:    var(--biqc-info);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.14);
+    --shadow-focus: 0 0 0 3px rgba(255,106,0,0.2);
+}
+
+/* ── Font stacks ── */
+:root {
+    --font-heading: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    --font-body:    'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 }
 
 * {
@@ -99,22 +142,18 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   UNIFIED FONT SYSTEM — BIQc Design v3
-   Headings:  Playfair Display (Serif)
-   Body/UI:   DM Sans
+   UNIFIED FONT SYSTEM — BIQc Design
+   Display: Cormorant Garamond
+   Body/UI: Inter
    Data/Mono: JetBrains Mono
 ═══════════════════════════════════════ */
-:root {
-    --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
-    --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
-}
 
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     font-feature-settings: 'ss01', 'cv01';
     letter-spacing: -0.02em;
-    line-height: 1.1;
+    line-height: 1.15;
+    color: var(--text-primary);
 }
 
 p, span, div, button, input, textarea, select, label {
@@ -200,11 +239,7 @@ code, pre, kbd, samp, .font-mono {
 
 /* Premium Typography - Mobile First */
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fraunces', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.25;
-    color: var(--text-primary);
 }
 
 h1 { font-size: 1.75rem; font-weight: 650; }

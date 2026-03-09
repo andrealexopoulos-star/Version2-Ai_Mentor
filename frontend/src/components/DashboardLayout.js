@@ -16,7 +16,7 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
   ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
-  BookOpen, Scale, Gavel, Target
+  BookOpen, Scale, Gavel, Target, Sun, Moon
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 import { fontFamily } from '../design-system/tokens';
@@ -130,11 +130,19 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isNavOpen, closeAll]);
 
-  // Force dark mode for Liquid Steel
+  // Theme management — dark (default) or light, persisted to localStorage
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('biqc_theme');
+    return saved ? saved === 'dark' : true; // default dark
+  });
+
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'dark');
-    localStorage.setItem('theme', 'dark');
-  }, []);
+    const theme = isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('biqc_theme', theme);
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark(prev => !prev);
 
   // Notifications — Supabase Realtime (replaces polling)
   useEffect(() => {
@@ -243,21 +251,33 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: '#0F1720', color: '#F4F7FA' }}>
       {/* ═══ TOP BAR ═══ */}
-      <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: '#0A1018', borderBottom: '1px solid #243140', zIndex: 1000 }}>
+      <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-bg-input, #0A1018)', borderBottom: '1px solid var(--biqc-border, #243140)', zIndex: 1000 }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#9FB0C3' }} aria-label={isNavOpen ? 'Close menu' : 'Open menu'}>
+          <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
               <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
-            <span className="font-semibold text-sm hidden sm:block text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Strategy Squad</span>
+            <span className="font-semibold text-sm hidden sm:block" style={{ fontFamily: DISPLAY, color: 'var(--biqc-text)' }}>Strategy Squad</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {tutorial && <HelpButton onClick={openTutorial} />}
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg transition-colors hover:bg-white/5"
+            style={{ color: 'var(--biqc-text-2)' }}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={isDark ? 'Light mode' : 'Dark mode'}
+            data-testid="theme-toggle"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
 
           {/* Business Verification Score Badge */}
           <VerificationBadge navigate={navigate} />
@@ -370,16 +390,17 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
       {/* ═══ SIDEBAR ═══ */}
       <aside className={`fixed left-0 transition-all duration-300 ${sidebarWidth} ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-14 h-[calc(100vh-3.5rem)]`}
-        style={{ zIndex: 999, background: '#0A1018', borderRight: '1px solid #243140' }}>
+        style={{ zIndex: 999, background: 'var(--biqc-bg-input, #0A1018)', borderRight: '1px solid var(--biqc-border, #243140)' }}
+        role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 rounded-full items-center justify-center hover:bg-white/10 transition-colors"
-          style={{ background: '#141C26', border: '1px solid #243140' }}
+          style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)' }}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          {sidebarCollapsed ? <ChevronRight className="w-4 h-4 text-[#64748B]" /> : <ChevronRight className="w-4 h-4 text-[#64748B] rotate-180" />}
+          {sidebarCollapsed ? <ChevronRight className="w-4 h-4" style={{ color: 'var(--biqc-text-muted)' }} /> : <ChevronRight className="w-4 h-4 rotate-180" style={{ color: 'var(--biqc-text-muted)' }} />}
         </button>
 
-        <nav className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }}>
+        <nav className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
           {visibleSections.map((section) => {
             const isExpanded = expandedSection === section.id;
             const hasActiveChild = section.items.some(i => isActive(i.path));
@@ -388,24 +409,27 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
               <div key={section.id} className="mb-1">
                 <button onClick={() => setExpandedSection(isExpanded ? null : section.id)}
                   className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-3'} py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.1em] transition-all`}
-                  style={{ color: hasActiveChild ? '#FF6A00' : '#64748B', fontFamily: fontFamily.mono, minHeight: '40px' }}
+                  style={{ color: hasActiveChild ? '#FF6A00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
                   title={sidebarCollapsed ? section.label : undefined}
+                  aria-expanded={isExpanded}
+                  aria-controls={`nav-section-items-${section.id}`}
                   data-testid={`nav-section-${section.id}`}>
                   {!sidebarCollapsed && <span>{section.label}</span>}
-                  {!sidebarCollapsed && <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} style={{ color: '#64748B' }} />}
+                  {!sidebarCollapsed && <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} style={{ color: 'var(--biqc-text-muted)' }} />}
                 </button>
 
                 {isExpanded && !sidebarCollapsed && (
-                  <div className="space-y-0.5 mb-2">
+                  <div id={`nav-section-items-${section.id}`} className="space-y-0.5 mb-2">
                     {section.items.map((item) => {
                       const active = isActive(item.path);
                       const showBadge = item.showBadge && notifications.total > 0;
                       return (
                         <button key={item.path} onClick={() => { navigate(item.path); closeAll(); }}
                           className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
+                          aria-current={active ? 'page' : undefined}
                           style={{
                             fontFamily: fontFamily.body,
-                            color: active ? '#F4F7FA' : '#9FB0C3',
+                            color: active ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
                             background: active ? '#FF6A00' + '15' : 'transparent',
                             borderLeft: active ? '2px solid #FF6A00' : '2px solid transparent',
                           }}

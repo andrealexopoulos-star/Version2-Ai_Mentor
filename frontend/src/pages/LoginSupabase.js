@@ -15,11 +15,13 @@ const LoginSupabase = () => {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoginError('');
     if (!formData.email || !formData.password) {
-      toast.error('Please enter both email and password');
+      setLoginError('Please enter both email and password');
       return;
     }
     setLoading(true);
@@ -28,10 +30,14 @@ const LoginSupabase = () => {
       toast.success('Welcome back!');
     } catch (error) {
       const msg = (error.message || '').toLowerCase();
-      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('not found')) {
-        toast.error("Invalid email or password. Don't have an account? Sign up below.");
+      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('not found') ||
+          msg.includes('body stream') || msg.includes('json') || msg.includes('failed to fetch') ||
+          msg.includes('unable to') || msg.includes('email') || msg.includes('password')) {
+        setLoginError("Invalid email or password. Please check your credentials.");
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        setLoginError('Network error. Please check your connection and try again.');
       } else {
-        toast.error(error.message || 'Login failed. Please check your credentials.');
+        setLoginError('Login failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -143,9 +149,24 @@ const LoginSupabase = () => {
               </Link>
             </div>
 
+            {/* Inline error message — WCAG compliant, persistent */}
+            {loginError && (
+              <div
+                role="alert"
+                aria-live="polite"
+                data-testid="login-error-message"
+                className="flex items-start gap-2 px-4 py-3 rounded-xl text-sm"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#EF4444', fontFamily: fontFamily.body }}
+              >
+                <span className="text-base leading-none mt-0.5">⚠</span>
+                <span>{loginError}</span>
+              </div>
+            )}
+
             <div style={{ width: '100%' }}>
               <button type="submit" disabled={loading || oauthLoading}
                 style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                aria-busy={loading}
                 data-testid="login-submit-btn">
                 {loading ? "Signing in..." : "Sign in"}
               </button>
