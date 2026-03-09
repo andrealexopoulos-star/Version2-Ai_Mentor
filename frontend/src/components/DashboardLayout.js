@@ -249,7 +249,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: '#0F1720', color: '#F4F7FA' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--biqc-bg, #0F1720)', color: 'var(--biqc-text, #F4F7FA)' }}>
       {/* ═══ TOP BAR ═══ */}
       <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-bg-input, #0A1018)', borderBottom: '1px solid var(--biqc-border, #243140)', zIndex: 1000 }}>
         <div className="flex items-center gap-3">
@@ -492,12 +492,12 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
       {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD PANEL ═══ */}
       <div className={`${sidebarMargin} pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex`} style={{ minHeight: '100dvh' }}>
-        <main className="flex-1" style={{ background: '#0F1720', overflowY: 'visible' }}>
+        <main className="flex-1" style={{ background: 'var(--biqc-bg, #0F1720)', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
         </main>
 
         {/* Desktop Soundboard Panel — always visible on lg+ */}
-        <aside className="hidden lg:flex w-[380px] shrink-0 flex-col" style={{ background: '#0A1018', borderLeft: '1px solid #243140', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
+        <aside className="hidden lg:flex w-[380px] shrink-0 flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
           <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
         </aside>
       </div>
@@ -514,7 +514,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
         ) : (
           <>
             <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
-            <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: '#0A1018' }}>
+            <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
               <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid #243140' }}>
                 <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
                 <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>

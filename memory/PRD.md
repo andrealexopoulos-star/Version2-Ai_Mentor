@@ -33,7 +33,16 @@
 - Backend `POST /api/notifications/register-device` endpoint
 - Listeners for foreground + tap notifications integrated in App.tsx
 
-### Sprint 4: AI Confidence Gating & Context Injection (Complete — Mar 2026)
+### Phase 1 — Foundation: Design System, Components, Accessibility (Complete — Mar 2026)
+- **Unified CSS Variables** — `index.css` now has `--biqc-*` tokens covering all colors, both dark (default) and light themes. ARIA-accessible.
+- **Light Mode Toggle** — Sun/Moon icon in dashboard header (`data-testid="theme-toggle"`). Toggles `data-theme` on `<html>`, persisted via `localStorage`.
+- **WCAG AA Contrast Fix** — `textMuted` updated from `#64748B` (3.48:1) to `#8B9DB5` (4.6:1) on dark backgrounds.
+- **ARIA Labels** — Navigation sidebar: `role="navigation"`, `aria-label`, `aria-expanded`, `aria-current="page"`, `aria-controls` on all sections and items.
+- **Login Inline Error** — Persistent red error banner (`role="alert"`, `aria-live="polite"`, `data-testid="login-error-message"`) replaces disappearing toast. Also fixed Supabase body-stream error mapping.
+- **DashboardLayout CSS vars** — Main content, sidebar, soundboard panel now use `var(--biqc-bg)` instead of hardcoded `#0F1720`.
+- **Design System Doc** — `/app/memory/DESIGN_SYSTEM_PHASE1.md` — full colour palette, typography, spacing, shadows, component states, ARIA guide.
+- **Test result**: 12/12 Phase 1 features verified ✅ (iteration_109)
+
 - **`data_coverage.py`** (backend): Weighted field schema across 5 domains (Revenue, Cash, Operations, People, Market) with critical (weight 2) and optional (weight 1) fields; `calculate_coverage()` returns coverage_pct, per_domain breakdown, missing_fields, guardrail_status
 - **`GET /api/user/data-coverage`**: New endpoint returning coverage + missing fields + guardrail status
 - **SoundBoard guardrails updated**: Now uses percentage-based gating (BLOCKED <20%, DEGRADED 20-40%, FULL >40%) replacing simple field-count logic; BLOCKED response includes specific missing critical fields + actionable CTAs
