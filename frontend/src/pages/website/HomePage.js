@@ -4,8 +4,7 @@ import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import EnergyGalaxyBackground from '../../components/website/EnergyGalaxyBackground';
-import { ArrowRight, Shield, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Shield, AlertTriangle, DollarSign, Database, CheckCircle2, Zap, Eye, BarChart3, Lock, Users } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 
@@ -16,71 +15,109 @@ const GlassCard = ({ children, className = '' }) => (
   </div>
 );
 
-const StatBlock = ({ value, label }) => (
-  <div className="text-center px-2">
-    <div className="text-3xl sm:text-[42px] font-bold mb-1.5" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>{value}</div>
-    <div className="tracking-wider uppercase leading-tight" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.6, fontSize: '10px' }}>{label}</div>
+/* ── Diamond/hex grid background pattern ─────────────────── */
+const DIAMOND_PATTERN = `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cpath d='M40 4L76 40L40 76L4 40z' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E")`;
+
+/* ── Stat item matching reference image style ─────────────── */
+const StatItem = ({ icon: Icon, value, label, iconColor = '#FF7A18' }) => (
+  <div className="flex items-center gap-3">
+    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+      style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.15)' }}>
+      <Icon className="w-6 h-6" style={{ color: iconColor }} />
+    </div>
+    <div>
+      <div className="text-2xl sm:text-3xl font-bold leading-none" style={{ fontFamily: fontFamily.mono, color: '#FFFFFF' }}>{value}</div>
+      <div className="text-xs mt-0.5 leading-tight" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>{label}</div>
+    </div>
   </div>
 );
 
 const HomePage = () => (
   <WebsiteLayout>
-    {/* HERO */}
-    <section className="relative overflow-hidden" style={{ minHeight: '60vh', position: 'relative' }} data-testid="hero-section">
-      <div className="absolute inset-0" style={{ background: '#07121E', zIndex: 0 }} />
+    {/* ── HERO ─────────────────────────────────────────────── */}
+    <section className="relative overflow-hidden" style={{ minHeight: '100vh', background: '#070E18' }} data-testid="hero-section">
 
-      <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', padding: '0 20px' }} className="pt-4 sm:pt-20">
-          {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 sm:mb-8" style={{ background: 'rgba(255,122,24,0.08)', border: '1px solid rgba(255,122,24,0.2)' }}>
-            <Shield className="w-3.5 h-3.5" style={{ color: '#FF7A18' }} />
-            <span className="font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', fontSize: '12px' }}>Australian Owned &amp; Operated</span>
-          </div>
+      {/* Diamond grid pattern */}
+      <div className="absolute inset-0" style={{ backgroundImage: DIAMOND_PATTERN, backgroundSize: '80px 80px', zIndex: 1 }} />
 
-          {/* Rotating headline */}
+      {/* Radial spotlight glow from center-top */}
+      <div className="absolute inset-0" style={{
+        background: 'radial-gradient(ellipse 80% 60% at 50% 10%, rgba(30,50,80,0.6) 0%, transparent 70%)',
+        zIndex: 2,
+      }} />
+
+      {/* Subtle orange brand glow at very center */}
+      <div className="absolute" style={{
+        top: '30%', left: '50%', transform: 'translate(-50%,-50%)',
+        width: 600, height: 300,
+        background: 'radial-gradient(ellipse, rgba(255,122,24,0.04) 0%, transparent 70%)',
+        zIndex: 2,
+      }} />
+
+      {/* Content */}
+      <div className="relative flex flex-col items-center justify-center text-center px-4 sm:px-6"
+        style={{ minHeight: '100vh', zIndex: 3, paddingTop: 80, paddingBottom: 60 }}>
+
+        {/* Rotating headline */}
+        <div className="w-full max-w-4xl mx-auto mb-6">
           <LiquidSteelHeroRotator />
+        </div>
 
-          {/* CTA block — compact */}
-          <div style={{ paddingTop: 28, position: 'relative', zIndex: 10 }}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3" style={{ marginBottom: 12 }}>
-              <Link to="/register-supabase" className="px-10 py-4 rounded-xl text-base font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110 hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)' }} data-testid="hero-cta">
-                Try It For Free <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <Link to="/login-supabase" className="block text-center text-xs hover:text-white transition-colors" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', marginBottom: 20 }} data-testid="hero-login">Already have an account? Log in</Link>
+        {/* CTA buttons — two side-by-side like reference */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4 w-full max-w-md mx-auto">
+          <Link to="/register-supabase"
+            className="w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold text-white inline-flex items-center justify-center gap-2 transition-all hover:brightness-110"
+            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.3)', minWidth: 190 }}
+            data-testid="hero-cta">
+            Try It For Free
+          </Link>
+          <Link to="/platform"
+            className="w-full sm:w-auto px-10 py-4 rounded-xl text-base font-semibold inline-flex items-center justify-center gap-2 transition-all hover:bg-white/5"
+            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.25)', color: '#FFFFFF', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 190 }}
+            data-testid="hero-learn-more">
+            Learn More
+          </Link>
+        </div>
 
-            {/* Protect / Stabilise / Strengthen */}
-            <div className="flex flex-col items-center gap-2">
-              <span style={{ fontFamily: fontFamily.body, color: '#9FB0C3', opacity: 0.4, fontSize: '13px' }}>Continuously Learning &amp; Designed to</span>
-              <div className="flex items-center gap-5 sm:gap-8">
-                {['Protect', 'Stabilise', 'Strengthen'].map((word) => (
-                  <div key={word} className="flex items-center gap-1.5">
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 16 16" fill="none"><path d="M13.3 4.3L6.5 11.1 2.7 7.3" stroke="#FF7A18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span className="text-[14px] sm:text-[16px] font-medium" style={{ fontFamily: fontFamily.body, color: '#FF7A18' }}>{word}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Login link */}
+        <Link to="/login-supabase"
+          className="text-sm hover:text-white transition-colors mb-12"
+          style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}
+          data-testid="hero-login">
+          Already have an account? <span className="font-semibold text-white">Log in</span>
+        </Link>
 
-            <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.25, fontSize: '11px' }}>No credit card required &middot; Australian owned & operated</p>
-
-            {/* SMB Impact Stats */}
-            <div className="mt-6 sm:mt-10" data-testid="stats-section">
-              <p className="font-medium tracking-widest uppercase mb-4" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', fontSize: '11px' }}>What SMBs Gain With BIQc</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-3xl mx-auto">
-                <StatBlock value="6hrs" label="Saved Per Week" />
-                <StatBlock value="83%" label="Faster Risk Detection" />
-                <StatBlock value="$47K" label="Avg. Cash Recovered" />
-                <StatBlock value="1" label="Single Source of Truth" />
-              </div>
-              <p className="mt-3" style={{ fontFamily: fontFamily.body, color: '#9FB0C3', opacity: 0.3, fontSize: '11px' }}>Based on pilot data from Australian SMBs using BIQc intelligence systems</p>
-            </div>
+        {/* ── Stats row — icon + number + label ── */}
+        <div className="w-full max-w-3xl mx-auto mb-10 px-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-4" data-testid="stats-section">
+            <StatItem icon={Shield}        value="6 hrs"    label="Saved per Week"       />
+            <StatItem icon={AlertTriangle} value="83%"      label="Faster Risk Detection" />
+            <StatItem icon={DollarSign}    value="$47K"     label="Cash Recovered"        />
+            <StatItem icon={Database}      value="1 Single" label="Source of Truth"       />
           </div>
+        </div>
+
+        {/* ── Divider ── */}
+        <div className="w-full max-w-2xl mx-auto mb-8" style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }} />
+
+        {/* ── Protect / Stabilise / Strengthen + disclaimer ── */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+            {['Protect', 'Stabilise', 'Strengthen'].map(word => (
+              <div key={word} className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#FF7A18' }} />
+                <span className="text-sm font-medium" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4, fontSize: '11px' }}>
+            No credit card required &middot; Australian owned &amp; operated
+          </p>
         </div>
       </div>
     </section>
 
-    {/* gap: hero → platform diagram */}
+    {/* gap */}
     <div style={{ background: '#07121E', height: 20 }} />
 
     {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
