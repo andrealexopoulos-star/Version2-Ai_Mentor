@@ -4,7 +4,7 @@ import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import { ArrowRight, Shield, AlertTriangle, DollarSign, Database, CheckCircle2, Zap, Eye, BarChart3, Lock, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 
@@ -81,27 +81,14 @@ const HomePage = () => (
 
         {/* Login link */}
         <Link to="/login-supabase"
-          className="text-sm hover:text-white transition-colors mb-12"
+          className="text-sm hover:text-white transition-colors mb-6"
           style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}
           data-testid="hero-login">
           Already have an account? <span className="font-semibold text-white">Log in</span>
         </Link>
 
-        {/* ── Stats row — icon + number + label ── */}
-        <div className="w-full max-w-3xl mx-auto mb-10 px-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-4" data-testid="stats-section">
-            <StatItem icon={Shield}        value="6 hrs"    label="Saved per Week"       />
-            <StatItem icon={AlertTriangle} value="83%"      label="Faster Risk Detection" />
-            <StatItem icon={DollarSign}    value="$47K"     label="Cash Recovered"        />
-            <StatItem icon={Database}      value="1 Single" label="Source of Truth"       />
-          </div>
-        </div>
-
-        {/* ── Divider ── */}
-        <div className="w-full max-w-2xl mx-auto mb-8" style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)' }} />
-
         {/* ── Protect / Stabilise / Strengthen + disclaimer ── */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 mb-8">
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
             {['Protect', 'Stabilise', 'Strengthen'].map(word => (
               <div key={word} className="flex items-center gap-2">
@@ -114,6 +101,58 @@ const HomePage = () => (
             No credit card required &middot; Australian owned &amp; operated
           </p>
         </div>
+
+        {/* ── AI Era Stats Section ── */}
+        <div className="w-full max-w-2xl mx-auto px-4 pb-12">
+          <p className="text-center text-xs mb-2" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+            Business leaders make hundreds of decisions every day, and research shows up to <span style={{ color: '#FF7A18' }}>40%</span> of those decisions are made without the right data.
+          </p>
+          <h2 className="text-center text-base sm:text-lg font-semibold mb-8" style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+            What Businesses Are Achieving In The AI Era
+          </h2>
+
+          <div className="space-y-0">
+            {[
+              {
+                stat: '90% of data is created every two years',
+                body: <>Yet most businesses use less than <span style={{ color: '#FFFFFF', fontWeight: 600 }}>10% of it.</span></>,
+                biqc: 'BIQc transforms scattered data into practical business intelligence.',
+              },
+              {
+                stat: '40% of business decisions lack the right data',
+                body: 'Leaders often rely on instinct instead of insight.',
+                biqc: 'BIQc highlights the signals that matter before decisions are made.',
+              },
+              {
+                stat: '75% of businesses are experimenting with AI',
+                body: <>But fewer than <span style={{ color: '#FFFFFF', fontWeight: 600 }}>5% see real operational value.</span></>,
+                biqc: 'BIQc delivers practical AI insights for everyday decisions.',
+              },
+              {
+                stat: 'Poor decisions can cost up to 3% of revenue',
+                body: 'Small mistakes add up quickly.',
+                biqc: 'BIQc helps identify risks and opportunities early.',
+              },
+              {
+                stat: 'Data-driven companies grow significantly faster',
+                body: 'Intelligence creates competitive advantage.',
+                biqc: 'BIQc provides the clarity leaders need to scale.',
+              },
+            ].map((item, i, arr) => (
+              <div key={i}>
+                <div className="py-6 text-left">
+                  <p className="text-sm sm:text-base font-bold mb-1" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{item.stat}</p>
+                  <p className="text-sm mb-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.body}</p>
+                  <p className="text-sm italic" style={{ color: '#FF7A18', fontFamily: fontFamily.body }}>{item.biqc}</p>
+                </div>
+                {i < arr.length - 1 && (
+                  <div style={{ height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </section>
 
