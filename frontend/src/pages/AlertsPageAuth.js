@@ -71,7 +71,7 @@ const AlertsPageAuth = () => {
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        const res = await apiClient.get('/intelligence/watchtower');
+        const res = await apiClient.get('/intelligence/watchtower', { timeout: 8000 });
         if (res.data?.events?.length > 0) {
           const mapped = res.data.events.map((e, i) => ({
             id: e.id || i + 1,

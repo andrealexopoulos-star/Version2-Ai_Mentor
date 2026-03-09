@@ -33,7 +33,15 @@
 - Backend `POST /api/notifications/register-device` endpoint
 - Listeners for foreground + tap notifications integrated in App.tsx
 
-### Phase 1 — Foundation: Design System, Components, Accessibility (Complete — Mar 2026)
+### Phase 2 — Navigation & UX (Complete — Mar 2026)
+- **Sidebar multi-expand** — Changed from single accordion to `Set<sectionId>` multi-expand. Intelligence + Execution open by default. Active section auto-expands without closing others. ARIA: `aria-expanded`, `aria-controls` on all sections.
+- **4 sidebar sections** (was 5) — Marketing merged into "Settings & Growth" alongside Compliance, Reports, Settings, Business DNA. Reduces cognitive load, eliminates unnecessary section header.
+- **Mobile nav Risk = direct tab** — Bottom bar now: Overview | Revenue | **Risk** | Alerts | More (Risk was 2 taps, now 1). Market moved to More sheet.
+- **More sheet: 3 grouped sections** — Intelligence (Market, Decisions, Operations), Execution (Actions, Inbox, Automations), Settings (Integrations, Settings, Reports). Scannability improved vs. flat 6-item grid.
+- **API timeouts added** — 8s timeout on slow API calls in Revenue, Decisions, Alerts pages to ensure loading states resolve and empty states render.
+- **Empty state copy rewritten** — Revenue: "Your pipeline is waiting to be analysed — connect HubSpot/Xero to see deal velocity, stalled opportunities"; Decisions: "Decisions surface when deal stalls, cash burn, or operational signals require leadership action"; Alerts: "All systems normal — BIQc monitors your data 24/7"; Audit Log: "start building your governance trail"
+- **Test result**: 15/17 Phase 2 features verified ✅ (iteration_110, 2 source-verified)
+
 - **Unified CSS Variables** — `index.css` now has `--biqc-*` tokens covering all colors, both dark (default) and light themes. ARIA-accessible.
 - **Light Mode Toggle** — Sun/Moon icon in dashboard header (`data-testid="theme-toggle"`). Toggles `data-theme` on `<html>`, persisted via `localStorage`.
 - **WCAG AA Contrast Fix** — `textMuted` updated from `#64748B` (3.48:1) to `#8B9DB5` (4.6:1) on dark backgrounds.

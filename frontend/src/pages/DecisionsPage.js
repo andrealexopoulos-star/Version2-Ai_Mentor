@@ -32,16 +32,14 @@ export default function DecisionsPage() {
   const fetchDecisionPrompts = async () => {
     try {
       // Build decision prompts from observation_events
-      const res = await apiClient.get('/integrations/merge/connected');
+      const res = await apiClient.get('/integrations/merge/connected', { timeout: 8000 });
       const signalCount = res.data?.canonical_truth?.live_signal_count || 0;
 
       if (signalCount > 0) {
-        // Ask the backend for signal summary
-        const snapRes = await apiClient.get('/snapshot/latest');
+        const snapRes = await apiClient.get('/snapshot/latest', { timeout: 8000 });
         const rq = snapRes.data?.cognitive?.resolution_queue || [];
 
-        // Also get observation event summary from cognition
-        const cogRes = await apiClient.get('/cognition/overview');
+        const cogRes = await apiClient.get('/cognition/overview', { timeout: 8000 });
         const cogData = cogRes.data || {};
 
         // Build decision prompts from real signals

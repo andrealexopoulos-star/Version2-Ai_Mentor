@@ -30,11 +30,11 @@ const RevenuePage = () => {
     const fetchData = async () => {
       try {
         const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
-          apiClient.get('/integrations/crm/deals'),
-          apiClient.get('/integrations/accounting/summary'),
-          apiClient.get('/intelligence/scenarios'),
-          apiClient.get('/unified/revenue'),
-          apiClient.get('/cognition/revenue'),
+          apiClient.get('/integrations/crm/deals', { timeout: 8000 }),
+          apiClient.get('/integrations/accounting/summary', { timeout: 8000 }),
+          apiClient.get('/intelligence/scenarios', { timeout: 8000 }),
+          apiClient.get('/unified/revenue', { timeout: 8000 }),
+          apiClient.get('/cognition/revenue', { timeout: 8000 }),
         ]);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
           setDeals(dealsRes.value.data.results);
