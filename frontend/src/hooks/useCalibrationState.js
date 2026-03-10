@@ -261,6 +261,30 @@ export const useCalibrationState = () => {
 
       const token = session?.access_token;
       let auditData = null;
+
+      // FAST PRE-FILL: scrape-business-profile runs instantly (no LLM, pure HTML)
+      // Gives users immediate feedback while AI analysis runs
+      if (token) {
+        try {
+          const scrapeRes = await fetch(`${SUPABASE_URL}/functions/v1/scrape-business-profile`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+            body: JSON.stringify({ url }),
+          });
+          if (scrapeRes.ok) {
+            const scrapeData = await scrapeRes.json();
+            if (scrapeData?.business_name || scrapeData?.description) {
+              // Instantly pre-fill what we have from HTML
+              setIdentitySignals({
+                domain: url,
+                businessName: scrapeData.business_name || '',
+                whatYouDo: scrapeData.description || scrapeData.meta_description || '',
+              });
+            }
+          }
+        } catch { /* non-fatal — AI analysis continues below */ }
+      }
+
       if (token) {
         try {
           const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
