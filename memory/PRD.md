@@ -1,5 +1,13 @@
 # BIQc Platform — Product Requirements Document
-### Sprint 7 — Integrations Page Redesign + Calendar Sidebar (Complete — Mar 2026)
+### Sprint 8 — Priority Inbox Full Build (Complete — Mar 2026)
+- **`email_priority` edge function** — Full v2: Gmail (REST API) + Outlook (Graph API), AI classification via GPT-4o-mini (high/medium/low + reason + suggested_action + action_item + due_date), writes to `priority_inbox` + `email_tasks` Supabase tables, idempotent upsert
+- **`gmail_prod` edge function** — Built: returns `{ok, connected, email}` for single provider; supports `?provider=all` for multi-provider status check simultaneously
+- **`refresh_tokens` edge function** — Built: refreshes expiring Gmail (Google OAuth) and Outlook (Azure AD) tokens, marks `sync_status=token_expired` when refresh fails
+- **SQL migrations 051+052** — New tables: `priority_inbox`, `email_tasks`, `email_intelligence_runs`, `icloud_connections`, `imap_connections`; cron job every 10 min; `get_priority_inbox` helper SQL function
+- **`EmailInbox.js` frontend** — Fixed: calls edge function with correct POST body; loads from `priority_inbox` cache immediately then refreshes; reclassification buttons (H/M/L override stored in `user_override` column); field name normalization (`from_address` → `from`, `received_date` → `received`); "Cached results · Refresh now" indicator
+- **iCloud/IMAP** — Schema tables created, placeholder functions with PROVIDER_UNAVAILABLE error (Deno TCP limitation noted; backend Python job path documented)
+
+
 - **Integrations page full redesign** — Premium dark command-centre layout replacing dated codespace grid: section labels, horizontal category tabs, 65+ integration cards with Clearbit logos, connected state glow, "Browse all 220+" CTA
 - **Email & Calendar pinned section** — Gmail, Outlook, Google Calendar shown at top with "Supabase OAuth" badge, separate from Merge-powered integrations
 - **Marketing platforms section** — Google Ads, Meta Ads, LinkedIn Ads added as "Coming Soon" with notify-me CTA
