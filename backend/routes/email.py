@@ -531,33 +531,46 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
 
 @router.get("/gmail/status")
 async def gmail_status(current_user: dict = Depends(get_current_user)):
-    """Get Gmail connection status"""
+    """Get Gmail connection status — validates token existence and expiry"""
     try:
         user_id = current_user["id"]
-        
-        # Check if user has Gmail connection
-        result = get_sb().table("gmail_connections").select("*").eq("user_id", user_id).execute()
-        
-        if not result.data or len(result.data) == 0:
-            return {
-                "connected": False,
-                "labels_count": 0,
-                "inbox_type": None,
-                "connected_email": None
-            }
-        
+        result = get_sb().table("gmail_connections").select(
+            "email, access_token, refresh_token, token_expiry"
+        ).eq("user_id", user_id).execute()
+
+        if not result.data:
+            return {"connected": False, "connected_email": None}
+
         connection = result.data[0]
-        
+        access_token = connection.get("access_token")
+
+        if not access_token:
+            return {"connected": False, "connected_email": None, "message": "No access token stored"}
+
+        # Check token expiry
+        token_expiry = connection.get("token_expiry")
+        needs_refresh = False
+        if token_expiry:
+            try:
+                from datetime import datetime, timezone
+                expiry_dt = datetime.fromisoformat(token_expiry.replace("Z", "+00:00"))
+                if expiry_dt <= datetime.now(timezone.utc):
+                    return {"connected": False, "connected_email": connection.get("email"), "needs_reconnect": True, "message": "Gmail token expired. Please reconnect."}
+                from datetime import timedelta
+                if expiry_dt <= datetime.now(timezone.utc) + timedelta(minutes=5):
+                    needs_refresh = True
+            except Exception:
+                pass
+
         return {
             "connected": True,
-            "labels_count": 0,  # Will be updated by Edge Function test
-            "inbox_type": None,  # Will be updated by Edge Function test
-            "connected_email": connection.get("email")
+            "connected_email": connection.get("email"),
+            "needs_refresh": needs_refresh,
+            "labels_count": 0,
         }
-        
     except Exception as e:
         logger.error(f"Error checking Gmail status: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"connected": False, "connected_email": None, "error": str(e)}
 
 
 @router.post("/gmail/disconnect")
