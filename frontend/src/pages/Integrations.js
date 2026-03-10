@@ -249,14 +249,25 @@ export default function Integrations() {
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast.error(`Failed to initialise connection: ${err.detail || 'Server error'}`);
+        const msg = res.status === 503
+          ? 'Integration service is not yet configured on this environment. Works on production.'
+          : err.detail || 'Server error';
+        toast.error(msg);
         setOpeningMerge(false);
         return;
       }
       const { link_token } = await res.json();
       if (!link_token) { toast.error('Invalid response from server'); setOpeningMerge(false); return; }
       setMergeLinkToken(link_token);
-      setTimeout(() => { if (mergeLinkReady) openMergeLinkModal(); setOpeningMerge(false); }, 150);
+      // Wait for Merge SDK to become ready before opening
+      let attempts = 0;
+      const tryOpen = () => {
+        attempts++;
+        if (mergeLinkReady) { openMergeLinkModal(); setOpeningMerge(false); }
+        else if (attempts < 20) setTimeout(tryOpen, 200);
+        else { toast.error('Connection modal failed to load. Please refresh and try again.'); setOpeningMerge(false); }
+      };
+      setTimeout(tryOpen, 150);
     } catch (e) {
       toast.error('Failed to open connection modal');
       setOpeningMerge(false);
