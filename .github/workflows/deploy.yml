@@ -17,16 +17,10 @@ jobs:
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
-    outputs:
-      image-tag: ${{ steps.tag.outputs.tag }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set image tag
-        id: tag
-        run: echo "tag=sha-$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_OUTPUT
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -53,16 +47,10 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
-    outputs:
-      image-tag: ${{ steps.tag.outputs.tag }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set image tag
-        id: tag
-        run: echo "tag=sha-$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_OUTPUT
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -70,6 +58,21 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Create Dockerfile.backend
+        run: |
+          cat > Dockerfile.backend << 'EOF'
+          FROM python:3.11-slim
+          WORKDIR /app
+          RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+          COPY backend/requirements.txt .
+          RUN pip install --no-cache-dir emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ || echo "emergentintegrations skipped"
+          RUN pip install --no-cache-dir -r requirements.txt
+          COPY backend/ .
+          EXPOSE 8001
+          HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD curl -f http://localhost:8001/api/health || exit 1
+          CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]
+          EOF
 
       - name: Build & push backend image
         uses: docker/build-push-action@v5
