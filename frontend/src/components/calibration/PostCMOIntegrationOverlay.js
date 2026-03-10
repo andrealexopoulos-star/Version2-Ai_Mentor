@@ -142,11 +142,18 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
           </div>
 
           <h1 className="text-2xl font-semibold mb-3" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-            Activate Your Intelligence{firstName ? `, ${firstName}` : ''}
+            Your intelligence foundation is ready.{firstName ? ` Hi ${firstName}!` : ''}
           </h1>
-          <p className="text-sm max-w-sm mx-auto leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
-            Connect your email and calendar to unlock priority inbox intelligence, communication pattern analysis, and calendar density signals.
+          <p className="text-sm max-w-sm mx-auto leading-relaxed mb-3" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
+            Elevate your intelligence by connecting your systems. Start with email or CRM — it takes under 30 seconds.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-[10px]" style={{ fontFamily: fontFamily.mono, color: '#64748B' }}>
+            {['30 seconds to connect', 'Read-only access', 'Revoke anytime'].map(t => (
+              <span key={t} className="flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" style={{ color: '#10B981' }} /> {t}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Integration grid */}
