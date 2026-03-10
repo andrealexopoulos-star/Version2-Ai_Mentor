@@ -8,21 +8,21 @@ import {
 import { fontFamily } from '../../design-system/tokens';
 
 
-// ── Clearbit logo with graceful fallback ─────────────────────────────────────
+// ── Clearbit logo with graceful dark fallback (no orange bg) ─────────────────
 const Logo = ({ domain, name, size = 44 }) => {
   const [err, setErr] = useState(false);
-  const initials = name.slice(0, 2).toUpperCase();
-  const bgColors = { A:'#FF6A00', B:'#3B82F6', C:'#10B981', D:'#8B5CF6', E:'#EF4444',
-    F:'#F59E0B', G:'#06B6D4', H:'#EC4899', I:'#14B8A6', J:'#F97316',
-    K:'#6366F1', L:'#84CC16', M:'#0EA5E9', N:'#A78BFA', O:'#FB923C',
-    P:'#34D399', Q:'#4ADE80', R:'#60A5FA', S:'#F472B6', T:'#38BDF8',
-    U:'#A3E635', V:'#C084FC', W:'#FB7185', X:'#FCD34D', Y:'#67E8F9', Z:'#E879F9' };
-  const fallbackBg = bgColors[initials[0]] || '#FF6A00';
   if (err) {
     return (
-      <div className="rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-        style={{ width: size, height: size, background: fallbackBg, fontFamily: fontFamily.mono }}>
-        {initials}
+      <div className="rounded-xl flex items-center justify-center font-bold"
+        style={{
+          width: size, height: size,
+          background: '#1A2332',
+          border: '1px solid #243140',
+          color: '#9FB0C3',
+          fontSize: size * 0.28,
+          fontFamily: fontFamily.mono,
+        }}>
+        {name.slice(0, 2).toUpperCase()}
       </div>
     );
   }
@@ -134,7 +134,7 @@ const IntegrationCard = ({ integration, index }) => (
     <p className="text-xs leading-relaxed flex-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
       {integration.benefit}
     </p>
-    <Link to="/register-supabase"
+    <Link to={`/register-supabase?integration=${integration.id}`}
       className="w-full py-2.5 rounded-xl text-xs font-semibold text-center transition-all"
       style={{ border: '1px solid rgba(255,106,0,0.35)', color: '#FF6A00', background: 'transparent', fontFamily: fontFamily.body }}
       onMouseEnter={e => { e.currentTarget.style.background = '#FF6A00'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#FF6A00'; }}
@@ -309,7 +309,7 @@ const IntegrationsPage = () => {
           <p className="text-sm mb-6" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
             Connect your first system in under 30 seconds. No credit card required.
           </p>
-          <Link to="/register-supabase"
+          <Link to="/register-supabase?source=integrations-page"
             className="inline-flex items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
             style={{ background: 'linear-gradient(135deg, #FF6A00, #E55F00)', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.28)' }}
             data-testid="integrations-final-cta">

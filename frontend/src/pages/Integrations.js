@@ -13,13 +13,20 @@ import { toast } from 'sonner';
 import { useMergeLink } from '@mergeapi/react-merge-link';
 import { fontFamily } from '../design-system/tokens';
 
-// ── Clearbit logo helper ─────────────────────────────────────────────────────
+// ── Clearbit logo helper (graceful dark fallback — no orange) ────────────────
 const Logo = ({ domain, name, size = 48 }) => {
   const [err, setErr] = useState(false);
   if (err) {
     return (
-      <div className="flex items-center justify-center rounded-xl text-white font-bold text-sm"
-        style={{ width: size, height: size, background: '#FF6A00', fontFamily: fontFamily.mono }}>
+      <div className="flex items-center justify-center rounded-xl font-bold"
+        style={{
+          width: size, height: size,
+          background: 'var(--biqc-bg-elevated, #1A2332)',
+          border: '1px solid var(--biqc-border, #243140)',
+          color: '#9FB0C3',
+          fontSize: size * 0.28,
+          fontFamily: fontFamily.mono,
+        }}>
         {name.slice(0, 2).toUpperCase()}
       </div>
     );
