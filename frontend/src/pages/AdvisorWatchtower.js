@@ -13,6 +13,7 @@ import { RiskSuggestions } from '../components/RiskSuggestions';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { PageErrorState } from '../components/PageStateComponents';
 import { StageProgressBar } from '../components/AsyncDataLoader';
+import IntelligenceCoverageBar from '../components/IntelligenceCoverageBar';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
@@ -456,6 +457,13 @@ const AdvisorWatchtower = () => {
           </>
         )}
 
+        {/* INTELLIGENCE COVERAGE BAR — always visible once integration status loads */}
+        {!integrationLoading && integrationStatus && (
+          <div className="max-w-5xl mx-auto px-6 pt-4 flex justify-end">
+            <IntelligenceCoverageBar integrationStatus={integrationStatus} loading={integrationLoading} />
+          </div>
+        )}
+
         {/* ERROR */}
         {error && !loading && !cognitive && (
           <div className="max-w-3xl mx-auto px-6 py-16">
@@ -490,11 +498,13 @@ const AdvisorWatchtower = () => {
             </div>
 
             <div className="max-w-5xl mx-auto px-6 py-8">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <h1 className="text-3xl font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
                   Good {timeOfDay || 'morning'}, {owner || 'there'}.
                 </h1>
-                <DataConfidence cognitive={cognitive} />
+                <div className="flex items-center gap-3">
+                  <DataConfidence cognitive={cognitive} />
+                </div>
               </div>
 
               {/* CHECK-IN ALERTS */}

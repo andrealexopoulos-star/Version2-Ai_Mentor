@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
@@ -8,8 +8,20 @@ import { fontFamily } from '../design-system/tokens';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
+// Friendly label mapping for integration names
+const INTEGRATION_LABELS = {
+  gmail: 'Gmail', outlook: 'Microsoft Outlook', hubspot: 'HubSpot',
+  salesforce: 'Salesforce', xero: 'Xero', quickbooks: 'QuickBooks',
+  bamboohr: 'BambooHR', 'google-drive': 'Google Drive', notion: 'Notion',
+  pipedrive: 'Pipedrive', crm: 'your CRM', accounting: 'your accounting system',
+  email: 'your email', hris: 'your HR system', ats: 'your ATS',
+};
+
 const RegisterSupabase = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const pendingIntegration = searchParams.get('integration');
+  const integrationLabel = pendingIntegration ? (INTEGRATION_LABELS[pendingIntegration] || pendingIntegration) : null;
   const { signUp, signInWithOAuth } = useSupabaseAuth();
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
@@ -88,7 +100,18 @@ const RegisterSupabase = () => {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY, textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #F4F7FA' }}>Get started</h1>
-          <p className="text-sm text-[#9FB0C3] mb-6" style={{ fontFamily: fontFamily.body }}>Create your account to access sovereign intelligence.</p>
+          <p className="text-sm text-[#9FB0C3] mb-4" style={{ fontFamily: fontFamily.body }}>Create your account to access sovereign intelligence.</p>
+
+          {/* Contextual integration hint — shown when arriving from the integrations page */}
+          {integrationLabel && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4"
+              style={{ background: 'rgba(255,106,0,0.07)', border: '1px solid rgba(255,106,0,0.2)' }}>
+              <Zap className="w-4 h-4 flex-shrink-0" style={{ color: '#FF6A00' }} />
+              <p className="text-xs" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+                After setup you'll connect <span style={{ color: '#FF6A00' }}>{integrationLabel}</span> to power your AI intelligence.
+              </p>
+            </div>
+          )}
 
           {/* OAuth */}
           <div className="space-y-3 mb-5">

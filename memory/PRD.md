@@ -1,4 +1,12 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 6 — Integration Page Rebuild & Process (Complete — Mar 2026)
+- **Public /our-integrations page** — full enterprise rebuild: left-aligned hero, 7 horizontal filter chips with (i) tooltips, 24 integration cards (Clearbit logos, ghost Connect CTAs, category badges, benefit statements), data-usage hint bar, security section (AES-256/AU Residency/Revoke), bottom CTA — 94% test pass (17/18)
+- **`IntelligenceCoverageBar.js`** — compact header pill showing % coverage based on connected integrations. Renders immediately from `useIntegrationStatus` (not gated by slow cognitive snapshot). Tooltip shows per-category status. Navigates to /integrations on click.
+- **AdvisorWatchtower** — coverage bar rendered in persistent header section, visible immediately on page load without waiting for cognitive snapshot
+- **PostCMOIntegrationOverlay** — enhanced headline "Your intelligence foundation is ready." + 3 trust signals (30 seconds · Read-only · Revoke anytime)
+- **Backend fix** — removed non-existent `status` column from `email_connections` query in `/api/user/integration-status`
+
+
 ### Phase 5 — React Native Token Alignment + Full Regression (Complete — Mar 2026)
 - **Mobile theme fully aligned** — textMuted/tabInactive #8B9DB5 (WCAG AA), bgPanel, bgSidebar, helper exports
 - **font-display:optional** — eliminates FOUT on slow connections
