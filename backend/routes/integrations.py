@@ -213,17 +213,17 @@ async def exchange_merge_account_token(
         try:
             result = get_sb().table("integration_accounts").upsert(
                 integration_data,
-                on_conflict="account_id,category"
+                on_conflict="user_id,category"
             ).execute()
         except Exception:
             pass
         
         if not result or not result.data:
-            # Fallback: upsert on user_id,category
+            # Fallback: try account_id,category (if that constraint exists)
             try:
                 result = get_sb().table("integration_accounts").upsert(
                     integration_data,
-                    on_conflict="user_id,category"
+                    on_conflict="account_id,category"
                 ).execute()
             except Exception:
                 result = get_sb().table("integration_accounts").insert(integration_data).execute()
@@ -391,16 +391,18 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
                         "merge_account_id": record.get("merge_account_id"),
                     }
         
-        # PATH 3: Check email connections separately (no status column — existence = connected)
+        # PATH 3: Check email connections using 'connected' boolean column
         try:
-            email_result = get_sb().table("email_connections").select("provider").eq("user_id", user_id).execute()
+            email_result = get_sb().table("email_connections").select("provider, connected, connected_email").eq("user_id", user_id).execute()
             for record in (email_result.data or []):
-                provider = record.get("provider", "email")
-                integrations[f"email_{provider}"] = {
-                    "provider": provider,
-                    "category": "email",
-                    "connected": True,
-                }
+                if record.get("connected") is not False:  # connected=True or connected=None (legacy rows)
+                    provider = record.get("provider", "email")
+                    integrations[f"email_{provider}"] = {
+                        "provider": provider,
+                        "category": "email",
+                        "connected": True,
+                        "connected_email": record.get("connected_email"),
+                    }
         except Exception:
             pass
         
