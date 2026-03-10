@@ -219,18 +219,26 @@ export default function Integrations() {
 
   const loadGmailStatus = useCallback(async () => {
     try {
+      // Primary: use backend API — validates token expiry properly
+      const res = await apiClient.get('/gmail/status');
+      const data = res.data;
+      if (data?.connected) {
+        setGmailStatus({ connected: true, connected_email: data.connected_email || null });
+        return;
+      }
+    } catch { /* fall through to Supabase direct */ }
+    // Fallback: Supabase direct query
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      // Query email_connections directly — gmail_prod edge function not deployed
-      const { data: rows, error } = await supabase
+      const { data: rows } = await supabase
         .from('email_connections')
         .select('provider, connected_email, connected')
         .eq('user_id', session.user.id)
         .eq('provider', 'gmail');
-      if (error || !rows?.length) return;
-      const gmail = rows[0];
-      if (gmail.connected !== false) {
-        setGmailStatus({ connected: true, connected_email: gmail.connected_email || session.user.email });
+      const gmail = rows?.[0];
+      if (gmail?.connected !== false) {
+        setGmailStatus({ connected: !!gmail, connected_email: gmail?.connected_email || null });
       }
     } catch {}
   }, []);
