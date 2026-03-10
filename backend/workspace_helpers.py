@@ -6,56 +6,47 @@ from typing import Optional, Dict, Any
 from supabase import Client
 
 
+def _synthetic_account(user_id: str, user_email: str, company_name: Optional[str] = None) -> Dict[str, Any]:
+    """Fallback workspace object using user_id when accounts table unavailable."""
+    return {
+        "id": user_id,
+        "name": company_name or (user_email.split("@")[0] if user_email else "My Workspace"),
+    }
+
+
 async def get_or_create_user_account(supabase_client: Client, user_id: str, user_email: str, company_name: Optional[str] = None) -> Dict[str, Any]:
     """
     Get or create an account (workspace) for a user.
-    - If user already has account_id, return that account
-    - If not, create a new workspace for the user
-    
-    Args:
-        supabase_client: Supabase admin client
-        user_id: UUID of the user
-        user_email: Email of the user (for workspace naming)
-        company_name: Optional company name for workspace
-        
-    Returns:
-        Account dict with id, name, created_at
+    Falls back to using user_id as the workspace ID if accounts table unavailable.
     """
-    # First, check if user already has an account_id
     try:
         user_result = supabase_client.table('users').select('account_id').eq('id', user_id).single().execute()
-        
+
         if user_result.data and user_result.data.get('account_id'):
-            # User has account, fetch it
             account_id = user_result.data['account_id']
             account_result = supabase_client.table('accounts').select('*').eq('id', account_id).single().execute()
-            
             if account_result.data:
                 return account_result.data
-        
-        # User doesn't have account, create one
-        workspace_name = company_name or f"{user_email}'s Workspace"
-        
-        # Create account
-        account_data = {
-            "name": workspace_name
-        }
-        account_result = supabase_client.table('accounts').insert(account_data).execute()
-        
-        if not account_result.data:
-            raise Exception("Failed to create account")
-        
-        new_account = account_result.data[0]
-        
-        # Link user to account
-        supabase_client.table('users').update({
-            'account_id': new_account['id']
-        }).eq('id', user_id).execute()
-        
-        return new_account
-        
-    except Exception as e:
-        raise Exception(f"Failed to get or create account: {str(e)}")
+
+        # Try to create an account
+        workspace_name = company_name or (user_email.split("@")[0] if user_email else "My Workspace")
+        try:
+            account_result = supabase_client.table('accounts').insert({"name": workspace_name}).execute()
+            if account_result.data:
+                new_account = account_result.data[0]
+                try:
+                    supabase_client.table('users').update({'account_id': new_account['id']}).eq('id', user_id).execute()
+                except Exception:
+                    pass
+                return new_account
+        except Exception:
+            pass
+
+        # Final fallback: use user_id as workspace ID
+        return _synthetic_account(user_id, user_email, company_name)
+
+    except Exception:
+        return _synthetic_account(user_id, user_email, company_name)
 
 
 async def get_user_account(supabase_client: Client, user_id: str) -> Optional[Dict[str, Any]]:

@@ -16,7 +16,7 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
   ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
-  BookOpen, Scale, Gavel, Target, Sun, Moon
+  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar
 } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 import { fontFamily } from '../design-system/tokens';
@@ -205,6 +205,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     { id: 'execution', label: 'Execution', items: [
       { icon: Bell, label: 'Alerts', path: '/alerts' },
       { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
+      { icon: Calendar, label: 'Calendar', path: '/calendar' },
       { icon: Zap, label: 'Actions', path: '/actions' },
       { icon: Workflow, label: 'Automations', path: '/automations' },
     ]},
@@ -223,7 +224,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
       { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
       { icon: Settings, label: 'Settings', path: '/settings' },
-      { icon: Bell, label: 'Weekly Check-In', path: '/calendar' },
     ]},
   ];
 

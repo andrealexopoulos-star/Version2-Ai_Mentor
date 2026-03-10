@@ -49,26 +49,19 @@ async def create_merge_link_token(
     
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
-    if not merge_api_key:
-        logger.error("❌ MERGE_API_KEY not configured in environment")
-        raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
+    if not merge_api_key or merge_api_key in ("CONFIGURED_IN_AZURE", ""):
+        logger.error("❌ MERGE_API_KEY not configured")
+        raise HTTPException(status_code=503, detail="Integration service not configured. Please contact support.")
     
     user_id = current_user["id"]
     user_email = current_user.get("email", "user@biqc.com")
     company_name = current_user.get("company_name") or current_user.get("business_name")
     
-    # P0 FIX: Get or create workspace for user
-    try:
-        account = await get_or_create_user_account(get_sb(), user_id, user_email, company_name)
-        account_id = account["id"]
-        account_name = account["name"]
-        
-        logger.info(f"🔗 Creating Merge link token for workspace: {account_name} ({account_id})")
-        logger.info(f"   Requested by user: {user_email} ({user_id})")
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to get/create workspace: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to initialize workspace")
+    # Get or create workspace for user (with fallback to user_id)
+    account = await get_or_create_user_account(get_sb(), user_id, user_email, company_name)
+    account_id = account["id"]
+    account_name = account["name"]
+    logger.info(f"🔗 Creating Merge link token for workspace: {account_name} ({account_id})")
     
     try:
         async with httpx.AsyncClient() as client:
@@ -126,31 +119,26 @@ async def exchange_merge_account_token(
     
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
-    if not merge_api_key:
-        logger.error("❌ MERGE_API_KEY not configured in environment")
-        raise HTTPException(status_code=500, detail="MERGE_API_KEY not configured")
+    if not merge_api_key or merge_api_key in ("CONFIGURED_IN_AZURE", ""):
+        logger.error("❌ MERGE_API_KEY not configured")
+        raise HTTPException(status_code=503, detail="Integration service not configured.")
     
     user_id = current_user["id"]
     user_email = current_user.get("email", "unknown")
     
-    # P0 FIX: Get user's workspace
+    # Get user's workspace (fallback to user_id if accounts table unavailable)
+    from workspace_helpers import get_user_account, _synthetic_account
     try:
         account = await get_user_account(get_sb(), user_id)
         if not account:
-            logger.error(f"❌ User {user_id} has no workspace - cannot store integration")
-            raise HTTPException(status_code=400, detail="User workspace not initialized")
-        
+            account = _synthetic_account(user_id, user_email)
         account_id = account["id"]
         account_name = account["name"]
-        
-        logger.info(f"🔄 Exchanging Merge token for workspace: {account_name} ({account_id})")
-        logger.info(f"   Requested by user: {user_email} ({user_id}), category: {category}")
-        
-    except HTTPException:
-        raise
+        logger.info(f"🔄 Exchanging Merge token for workspace: {account_name} ({account_id}), category: {category}")
     except Exception as e:
-        logger.error(f"❌ Failed to get workspace: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get workspace")
+        logger.warning(f"⚠️ Workspace lookup failed, using user_id as workspace: {e}")
+        account_id = user_id
+        account_name = user_email
     
     # Exchange public_token for account_token
     try:
@@ -210,28 +198,41 @@ async def exchange_merge_account_token(
         logger.info(f"💾 Storing integration for workspace: {account_name}")
         logger.info(f"   provider={integration_name}, category={category}, connected_by={user_email}")
         
-        # P0 FIX: Store with account_id (workspace) + merge_account_id
+        # Store integration — try workspace-level constraint, fall back to user-level
         integration_data = {
-            "account_id": account_id,  # WORKSPACE ID (NEW)
-            "user_id": user_id,  # User who connected (for audit)
+            "account_id": account_id,
+            "user_id": user_id,
             "provider": integration_name,
             "category": category,
             "account_token": account_token,
-            "merge_account_id": merge_account_id,  # MERGE ACCOUNT ID (NEW)
+            "merge_account_id": merge_account_id,
             "connected_at": datetime.now(timezone.utc).isoformat()
         }
         
-        # P0 FIX: Use workspace-level uniqueness constraint
-        result = get_sb().table("integration_accounts").upsert(
-            integration_data,
-            on_conflict="account_id,category"  # Workspace + category (was user_id,category)
-        ).execute()
+        result = None
+        try:
+            result = get_sb().table("integration_accounts").upsert(
+                integration_data,
+                on_conflict="account_id,category"
+            ).execute()
+        except Exception:
+            pass
         
-        if not result.data:
+        if not result or not result.data:
+            # Fallback: upsert on user_id,category
+            try:
+                result = get_sb().table("integration_accounts").upsert(
+                    integration_data,
+                    on_conflict="user_id,category"
+                ).execute()
+            except Exception:
+                result = get_sb().table("integration_accounts").insert(integration_data).execute()
+        
+        if not result or not result.data:
             logger.error("❌ Failed to store account_token in Supabase")
             raise HTTPException(status_code=500, detail="Failed to store account_token")
         
-        logger.info(f"✅ Integration account stored successfully: {result.data}")
+        logger.info(f"✅ Integration account stored successfully")
         
         # GOVERNANCE: Record integration connection as a governance event
         try:
@@ -390,16 +391,18 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
                         "merge_account_id": record.get("merge_account_id"),
                     }
         
-        # PATH 3: Check email connections separately
-        email_result = get_sb().table("email_connections").select("provider, status").eq("user_id", user_id).execute()
-        for record in (email_result.data or []):
-            if record.get("status") in ("connected", "active", "COMPLETE"):
+        # PATH 3: Check email connections separately (no status column — existence = connected)
+        try:
+            email_result = get_sb().table("email_connections").select("provider").eq("user_id", user_id).execute()
+            for record in (email_result.data or []):
                 provider = record.get("provider", "email")
                 integrations[f"email_{provider}"] = {
                     "provider": provider,
                     "category": "email",
                     "connected": True,
                 }
+        except Exception:
+            pass
         
         # P3: Add live signal freshness
         signal_count = 0

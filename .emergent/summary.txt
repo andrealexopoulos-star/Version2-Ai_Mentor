@@ -1,343 +1,144 @@
 <analysis>**original_problem_statement:**
-The user's primary objective is to transform their BIQc platform into a high-performance, enterprise-grade AI Cognition-as-a-Platform for SMBs. This involves stabilizing the production environment, fixing critical authentication and UI/UX bugs, and systematically enhancing the platform's features and AI intelligence based on a detailed forensic audit. The immediate critical task was to resolve a production authentication loop that was incorrectly redirecting  to a non-existent  URL.
+The user's primary objective is to transform their BIQc platform into a high-performance, enterprise-grade AI Cognition-as-a-Platform for SMBs. This has evolved into a comprehensive UX/UI redesign of the marketing website, web application, and mobile apps, guided by a forensic audit. The most recent task is to perform another major redesign of the homepage and public integrations page based on user-provided reference images, making them more modern and aligned with a specific aesthetic. A critical, recurring production issue is an authentication redirect loop that needs a permanent fix via a stable CI/CD pipeline.
 
 **PRODUCT REQUIREMENTS:**
--   The production environment must run on  pointing to the new Supabase Pro project ().
--   The platform must be stable and reliable for the first paying clients.
--   All features must be fully functional, with no placeholder data or broken user journeys.
--   The deployment process should be automated to prevent configuration drift.
+-   The production environment  must be stable, with no authentication loops.
+-   The platform's UI/UX must be unified, modern, and trustworthy, adhering to a new design system with both light and dark themes.
+-   The homepage and public integrations page must be redesigned to match the user's latest visual specifications.
+-   The deployment process must be fully automated via a single, reliable GitHub Actions workflow to prevent configuration drift and manual errors.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack platform with a React frontend and a FastAPI backend, using Supabase for database and authentication. The user's production environment is deployed on Azure App Service using Docker containers for both frontend and backend. The agent has recently resolved a critical authentication redirect loop by directly updating the new Supabase project's configuration via API. Code has been written for several key improvements (persistent tutorials, pricing tier alignment, AI hardening) but these changes have not been deployed yet. A GitHub Actions workflow has been created to automate the Docker build and deployment process, but it requires the user to configure secrets in their GitHub repository.
+The application is a full-stack platform (React frontend, FastAPI backend, Supabase DB). The agent has just completed a massive, five-phase redesign which included:
+-   **Phase 1 (Foundation):** A unified design system with CSS variables for dark/light modes, a theme toggle, and accessibility (WCAG AA) fixes.
+-   **Phase 2 (Navigation):** Simplified sidebar and mobile navigation, with improved empty-state copy.
+-   **Phase 3 (Trust):** Redesigned pricing page and added trust badges/testimonials to marketing pages.
+-   **Phase 4 (Typography):** Unified all fonts across the platform to a consistent set (Cormorant Garamond, Inter, JetBrains Mono).
+-   **Phase 5 (Mobile & QA):** Aligned the React Native app with the new design tokens and passed a full regression suite.
+
+The agent has also prepared detailed mockups and a plan for the next major homepage and integrations page redesign but has not yet started the implementation.
 
 **Last working item**:
--   **Last item agent was working:** Fixing a critical production authentication loop where  was redirecting to . The agent diagnosed this as a misconfiguration in the new Supabase project's () settings.
--   **Status:** USER VERIFICATION PENDING
+-   **Last item agent was working:** Planning and creating visual mockups for a complete redesign of the public homepage () and integrations page (). This involves fixing typography, adding new How BIQc Works and Business Signals sections, and overhauling the integrations page layout to use category containers with text-only buttons, as per user-provided reference images.
+-   **Status:** NOT STARTED
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Manual testing by the user. The agent has used the user's Supabase access token to fix the configuration via API and instructed the user to run an  CLI command to update the Microsoft App Registration. The user needs to test the login flows (Microsoft, Google, email/password) on  to confirm the fix.
+-   **Which testing method agent to use?** After implementation, use the  to verify the new designs against the mockups. Then, run the  to perform a full regression test on the homepage and integrations page to ensure all links and interactive elements remain functional.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Production Authentication Flow Verification (P0)**
-    -   **Description:** The primary fix for the redirect loop to  is complete, but it needs to be verified by the user across all authentication methods (Microsoft, Google, Email/Password) on the live production site.
-    -   **Next debug checklist:** User needs to navigate to  and attempt to log in using all available methods.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical blocker that prevents any user from logging into the platform. Fixing it makes the application usable.
-    -   **Status:** USER VERIFICATION PENDING
-    -   **Is recurring issue?** Y (Authentication loops have been a recurring theme with different root causes).
-    -   **Should Test frontend/backend/both after fix?** frontend
-    -   **Blocked on other issue:** None. Blocked on user action.
-
--   **Issue 2: Email Connection Card Not Updating (P1)**
-    -   **Description:** The user reported that after connecting an email account, the corresponding card on the integrations page does not turn green to reflect the successful connection.
-    -   **Attempted fixes:** The agent diagnosed this as a likely missing  table or a restrictive RLS policy on the new Supabase Pro DB. A SQL script to create the table and policies was provided.
-    -   **Next debug checklist:** The user needs to run the provided SQL script in the Supabase SQL editor for the  project.
-    -   **Why fix this issue and what will be achieved with the fix?** Provides correct visual feedback to the user, confirming that their email integration is active.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** frontend
-
--   **Issue 3: BIQc Overview Page Refresh Failed (P1)**
-    -   **Description:** The BIQc Overview page shows a Refresh Failed error.
-    -   **Attempted fixes:** The agent diagnosed this as the Azure  backend running an old Docker image that lacks the required  endpoint.
-    -   **Next debug checklist:** The user needs to build and deploy a new Docker image for the backend service ().
-    -   **Why fix this issue and what will be achieved with the fix?** This will make a key dashboard component functional, showing the user their cognitive overview.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** backend
-
--   **Issue 4: Calibration Completion State Not Saving Reliably (RESOLVED - PENDING DEPLOYMENT)**
-    -   **Description:** A race condition caused the calibration completion status to not be saved before the user was redirected, forcing them into a loop.
-    -   **Attempted fixes:** The agent has written code to  the save operation and added a redundant direct-to-Supabase write from the frontend as a fallback. This fix is in the  Docker image tag.
-    -   **Status:** RESOLVED (Code complete, awaiting user deployment).
+-   **Issue 1: Production Authentication Redirect Loop (P0)**
+    -   **Description:** A critical, recurring issue where users are redirected to  after authenticating on . This completely blocks production access.
+    -   **Attempted fixes:** The agent has repeatedly fixed this by correcting the Supabase , updating Azure AD App redirect URIs, and manually rebuilding/deploying Docker images with correct build arguments. A step was added to the  GitHub workflow to auto-correct the Supabase , but the issue persists, pointing to a fundamental problem in the deployment process itself. The root cause is likely competing deployment workflows (the custom GitHub Action vs. an Azure-native one) or incorrectly configured GitHub secrets, which causes images to be built with the wrong .
+    -   **Next debug checklist:**
+        1.  In the Azure portal, find and **disable** any automatic Build and deploy CI/CD actions that are not the custom .
+        2.  Guide the user to manually verify and/or re-enter the  and  secrets in the GitHub repository settings, as previous CLI attempts were unreliable.
+        3.  Trigger a deployment solely through the custom GitHub Action (by merging to ) and verify it succeeds and resolves the issue.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a production-down blocker. Fixing it makes the application usable and stabilizes the deployment process.
+    -   **Status:** BLOCKED
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** frontend
+    -   **Should Test frontend/backend/both after fix?** Frontend (login flow).
+    -   **Blocked on other issue:** Blocked on stabilizing the CI/CD pipeline.
 
 **In progress Task List**:
--   **Task 1: Platform Enhancement Sprints (P1)**
-    -   **Where to resume:** The code for Sprint 1 (Persistent Tutorials) and Sprint 2 (Pricing Tier Alignment) is complete. The next step is to guide the user to deploy these changes (which involves running a SQL migration and rebuilding the Docker images) and then begin Sprint 3 (Snapshot Failure State).
-    -   **What will be achieved with this?** Systematically improves the platform's UI/UX, stability, and AI intelligence based on a detailed forensic audit, making it ready for paying customers.
+-   **Task 1: Homepage & Integrations Page Redesign (P0)**
+    -   **Description:** Implement the full redesign of the homepage and public integrations page based on the approved mockups.
+    -   **Where to resume:** The plan is complete. The next agent should start implementing the following:
+        1.  In , fix the italic BIQc by changing  to .
+        2.  In , add the new Business Signals and How BIQc Works sections with their respective animations and content.
+        3.  In , completely replace the existing layout with the new design featuring category containers, glowing borders, and text-only buttons.
+    -   **What will be achieved with this?** This will align the primary marketing pages with the user's latest design vision.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on something:** User deployment of the completed sprint code.
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** None. The agent has approval to proceed.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) Sprint 3: Implement Snapshot Failure State:** Add a proper error UI with a retry option when the intelligence snapshot fails to generate, preventing users from getting stuck on a blank screen.
-    -   **(P2) Implement GitHub Actions Workflow:** Guide the user to set up the 7 required repository secrets in GitHub to enable the automated CI/CD workflow, which will eliminate manual Docker build steps.
-    -   **(P2) Implement AI Confidence Threshold Gates:** Add logic to degrade or block AI advisory responses based on the percentage of available data, providing clearer feedback to the user.
-
+    -   **(P1) Finalize and Educate on CI/CD Workflow:** Once the pipeline is stable, walk the user through the correct process: Save to GitHub in Emergent (pushes to ), then create a Pull Request from  to , and merge. This will trigger the one true automated deployment.
+    -   **(P2) Resolve  Deployment Error:** The Emergent deployment process consistently fails at a  step. Since the app uses Supabase, this is a platform-level issue. Contact Emergent support to have this unnecessary step disabled for the project.
 -   **Future Tasks:**
-    -   Integrate Retrieval-Augmented Generation (RAG) using the existing  setup to provide context-aware, data-driven AI responses.
-    -   Implement the backend cron job to generate the Daily Brief at 8 AM.
-    -   Implement the backend worker logic to trigger push notifications for critical business alerts.
-    -   Build UI for Citations/Fact Cards for AI responses.
+    -   **(P2) Enhancement: Recently Visited Section:** Add a Recently Visited list to the mobile app's More sheet to speed up navigation.
+    -   **(P2) Enhancement: Presentation Mode:** Create a simplified view for client demos that hides technical jargon.
+    -   **(P2) RAG Integration:** Implement Retrieval-Augmented Generation with  for smarter AI responses.
+    -   **(P3) Backend Jobs:** Implement cron job for Daily Brief and worker logic for push notifications.
+    -   **(P3) UI for Citations:** Build UI for AI response fact-checking/citations.
 
 **Completed work in this session**
--   **Critical Auth Redirect Fix:** Diagnosed and resolved the  ->  redirect loop by correcting the new Supabase project's configuration via API.
--   **Calibration State Persistence Fix:** Fixed a race condition where calibration status was not saved correctly, ensuring all future users will have their progress persisted.
--   **AI Hardening:** Lowered LLM temperature for more deterministic outputs, improved messaging for degraded AI states, and implemented actual token tracking.
--   **Sprint Implementation (Code Complete):**
-    -   **Sprint 1:** Re-architected the tutorial system to use a Supabase table for cross-device persistence.
-    -   **Sprint 2:** Refactored and unified pricing tier logic across the frontend and backend to eliminate inconsistencies.
--   **CI/CD Automation:** Created a complete GitHub Actions workflow file to automate future Docker builds and deployments.
+-   **Multi-Phase Redesign (Phases 1-5):** Executed a complete redesign of the platform's foundation, navigation, trust signals, typography, and mobile app alignment.
+-   **Light & Dark Theme Implementation:** Rolled out a unified design system with CSS variables, enabling a fully functional theme toggle across the platform.
+-   **Font Unification:** Resolved conflicting font definitions, unifying the entire app on a consistent set of three fonts (Cormorant Garamond, Inter, JetBrains Mono) and optimizing font loading.
+-   **Feature Gate Removal:** Removed all tier-based gates, making all platform features accessible to every user.
+-   **CI/CD Hardening:** Troubleshooted and improved the GitHub Actions workflow (), including adding a step to auto-fix Supabase configuration on deployment.
+-   **Integration Flow UX:** Separated the in-app and public integrations pages and added logic to the registration page to handle contextual signups (e.g., ).
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** Authentication loops.
--   **Recurrence count:** 3+ times.
--   **Status:** USER VERIFICATION PENDING. The latest instance (redirect to  URL) was just fixed by correcting the Supabase project configuration. The recurring nature highlights the fragility of the environment configuration.
+-   **Issue recurrence in previous fork:** Authentication redirect loop to .
+-   **Recurrence count:** 5+
+-   **Status:** BLOCKED (High risk of recurrence until the CI/CD pipeline is the sole, stable deployment method).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Docker Build Arguments:** Understanding that frontend environment variables () must be baked in at build time using  is critical for this project. Changing them in Azure App Service configuration post-deployment has no effect on the frontend container.
--   **Supabase Project Configuration:** The  and provider settings in the Supabase Dashboard are the source of truth for OAuth redirects. Misconfiguration here was the root cause of the most recent critical auth loop.
--   **Asynchronous Race Conditions:** Failure to  state-saving API calls before a page redirect can lead to data loss and inconsistent application state, as seen with the calibration completion bug.
--   **CI/CD with GitHub Actions:** The proposed solution to prevent configuration drift by automating the Docker build and deployment process, ensuring build arguments are always correctly applied.
+-   **Azure Docker Deployments & Build Arguments:** The root of many problems. Frontend env vars () must be passed as  at build time. Manual builds or incorrect CI/CD setups cause the auth loop.
+-   **GitHub Actions CI/CD:** The intended permanent solution is the custom  workflow. It must be the only workflow deploying the app, and all its secrets must be correctly configured in the GitHub repo settings.
+-   **Configuration Drift:** The core problem. The  URL is re-introduced because of inconsistencies between different deployment environments (manual vs. automated, Azure-native vs. custom).
+-   **Unified Design System:** All new UI work must use the established CSS variables ( in ) and JS tokens () for colors, fonts, and spacing to maintain consistency across light and dark themes.
 
 **key DB schema**
--   **tutorial_progress:** 
--   **users:** added column  (boolean)
+-   **users:** 
+-   **workspace_integrations:** 
+-   **email_connections:**  (Note:  column does not exist).
 
 **All files of reference**
--    (New CI/CD workflow)
--    (Contains fix for calibration state persistence)
--    (Contains fix for Supabase v2 PKCE flow)
--    (New API for managing tutorial state)
--    (Contains new SQL migration for  table)
--    (Checklist for all required Azure environment variables)
+-   : Primary file for the homepage redesign.
+-   : Primary file for the public integrations page redesign.
+-   : Contains the  italic text to be fixed.
+-   : The CI/CD workflow file. Critical to stabilizing the deployment process.
+-   : The source of truth for the unified design system's CSS variables.
+-   : The source of truth for JS design tokens.
+-   : The distinct, in-app integrations management page.
 
 **Critical Info for New Agent**
--   The user's production environment runs on **Azure App Service using Docker containers**. Frontend  environment variables **MUST** be passed as s during the . Simply changing them in the Azure portal is not sufficient.
--   The user performs manual Docker builds from their local machine. A  GitHub Actions workflow has been created to automate this, but the user must configure the required secrets in their GitHub repository settings before it will work.
--   The application must use the **new Supabase Pro project ()**. The agent has recently fixed the configuration to enforce this, but double-check if auth issues reappear.
--   Several bug fixes and features (Sprints 1 & 2) have been coded but not yet deployed. The user will need to run the SQL migration for tutorials and then build/deploy new frontend and backend images.
+-   **PRIORITY 1 is the homepage/integrations redesign.** The user is waiting for this. Implement the plan based on the mockups generated in the last session.
+-   **PRIORITY 2 is permanently fixing the production auth loop.** This requires ensuring the custom  is the *only* workflow deploying the app and that all its secrets are correctly configured in GitHub. Guide the user to disable any competing Azure-native CI/CD.
+-   Build all new UI using the established CSS variable system in  to support both light and dark themes. Do not use hardcoded colors.
+-   The recurring  error during Emergent deployments is a known platform issue and can likely be ignored unless it causes a hard failure, at which point Emergent support must be contacted.
+
+**documents and test reports created in this job**
+-    (Continuously updated)
+-   
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Reports the  redirect is happening again.
-2.  **Agent:** Diagnoses the issue is likely an automated Azure build that used incorrect build args. Proposes a manual Docker rebuild and a permanent fix with a GitHub Actions workflow.
-3.  **User:** yes do that now (approves creating the workflow).
-4.  **Agent:** Creates the workflow file and provides instructions for the user to set up 7 required secrets in GitHub.
-5.  **User:** Posts a screenshot showing the  redirect is still happening.
-6.  **Agent:** Identifies the root cause is now the Supabase project configuration itself, not the Docker build. Provides instructions to fix via Supabase dashboard.
-7.  **User:** can any of this be done in terminal
-8.  **Agent:** Provides  and  commands to perform the configuration changes.
-9.  **User:** Posts a screenshot of a JWT error from the  command.
-10. **Agent:** Explains the user needs to replace the placeholder with a real Supabase access token.
-11. **User:** Provides the Supabase access token.
-12. **Agent:** Uses the token to fix the Supabase configuration via API and confirms success. Asks user to run one final  command and then test.
-13. **User:** Posts a screenshot of the  command succeeding.
-14. **User:** what next
-15. **Agent:** Confirms all fixes are in place and asks the user to test all login flows on the live site.
+1.  **User:** Provides reference images for a new homepage and integrations page design. Asks for a redesign, including animations, and a visual mockup before implementation.
+2.  **Agent:** Analyzes references and generates mockups and a detailed implementation plan.
+3.  **User:** where is the mock up
+4.  **Agent:** Regenerates higher-quality mockups with viewable links and presents the plan again for confirmation.
+5.  **User:** Generate the summary now (Implicit approval to proceed with the plan).
 
 **Project Health Check:**
 -   **Broken**:
-    -   **Outlook/Gmail Connections:** The backend () is likely running an old Docker image and is missing critical environment variables in Azure for these OAuth flows to function.
-    -   **BIQc Overview Page:** Shows Refresh Failed because the backend API container is outdated and missing the required endpoint.
+    -   **Deployment Process:** The CI/CD pipeline is fragile due to competing workflows (Azure-native vs. custom GitHub Action) and potential secret misconfiguration, leading to the critical recurring authentication loop.
 -   **Mocked**:
     -   None.
 
 **3rd Party Integrations**
--   **OpenAI:** Used directly via . Requires .
--   **Stripe:** Used directly via  SDK. Requires .
--   **Supabase:** Primary database and auth.
--   **Merge.dev:** For CRM/accounting integrations. Requires .
--   **Google OAuth:** For user login.
--   **Microsoft OAuth:** For user login.
--   **Serper:** For Google Search API used in competitive intelligence features. Requires .
+-   **Supabase:** Primary database and authentication.
+-   **Merge.dev:** Unified API for CRM, accounting, HRIS, and other integrations. Requires .
+-   **OpenAI:** For AI/LLM features.
+-   **Stripe:** For payments.
+-   **Google OAuth & Microsoft OAuth:** For user login.
+-   **Serper:** For Google Search API.
+-   **Clearbit:** Used for fetching company logos on integration cards.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES, a forensic audit was performed, leading to the current sprint-based work plan.
--   **Troubleshoot agent used after agent stuck in loop:** YES, the troubleshoot agent helped identify the Docker build issue.
--   **Test files created:** None in this session.
--   **Known regressions:** The authentication redirect loop to  reappeared after a new deployment, likely due to Azure's auto-build process not using the correct build arguments. This has been a recurring theme.
+-   **Testing agent used after significant changes:** YES, extensively. Multiple reports are available.
+-   **Troubleshoot agent used after agent stuck in loop:** YES.
+-   **Test files created:** .
+-   **Known regressions:** The production authentication redirect loop.
 
 **What agent forgot to execute**
--   The agent initially missed that the user's deployment was via Docker containers, leading to incorrect advice about setting environment variables in the Azure portal. This was later corrected.
--   The agent also initially forgot to instruct the user to  before a Docker build, causing confusion. This was also corrected.</analysis>
-The agent, during the extensive SQL migration debugging, initially missed that PostgreSQL does not support  for , and that overloaded functions require special handling when using . This caused several cycles of failed migrations before the correct, fully idempotent scripts were created.</analysis>
-<analysis>
-**original_problem_statement:**
-The user's primary objective is to transform their BIQc platform into a high-performance, AI-driven Cognition-as-a-Platform for SMBs. This involves a complete visual and architectural overhaul to a Liquid Steel dark theme, migrating backend logic to be vendor-agnostic, and building out numerous features while squashing critical bugs. The core focus is on trust, data integrity (no fake data), and a seamless, intelligent user experience, with a recent pivot to high-ticket, executive-grade positioning.
-
-A major recent directive was to evolve the platform into a Unified Intelligence Surface, where every page intelligently synthesizes data from all connected integrations. This was followed by a massive, user-directed visual overhaul of the homepage to achieve a premium AI infrastructure platform aesthetic.
-
-Most recently, the user has demanded a complete, end-to-end forensic audit of every single component on the live production website to verify what has and has not been completed, expressing concern that claimed work is not actually done.
-
-**User's preferred language**: English
-**what currently exists?**
-The application is a full-stack platform with a React frontend and a FastAPI backend using a Supabase (PostgreSQL) database.
-- **Backend**: A performant, SQL-first Cognition Core is complete. Python serves as a thin API gateway. A sophisticated scraping and intelligence gathering architecture exists using Supabase Edge Functions that leverage Perplexity, Firecrawl, and OpenAI to build a business profile during calibration.
-- **Frontend (Web)**:
-    - The homepage has been completely rebuilt with a complex, multi-layered animated canvas background (intelligent energy field), a redesigned hero, an animated intelligence diagram, and an integration carousel with real SVG logos.
-    - All 11 legacy mobile CSS files have been deleted and consolidated into a single, surgical  file, providing a clean, commercially acceptable responsive experience for all pages.
-    - An initial fix for the broken onboarding journey has been implemented: users are now redirected to  after setup, and the Advisor page shows a  to guide them. The  route has been restored.
-    - Internal pages (, , etc.) have had  calls added for the new cognition endpoint, but the UI has not been updated to display this data.
-- **Frontend (Mobile App)**: A skeleton Expo (React Native) app exists at . Its basic auth flow, navigation, and configuration have been fixed, but it is not connected to any APIs and has no functional screens beyond placeholders.
-
-**Last working item**:
-- **Last item agent was working:** The agent was executing a user-mandated, comprehensive forensic audit of the entire live production platform (). The goal is to test every single page, link, and feature to provide an intricate report on what each component is, what it does, how it does it, and its data sources, verifying all previously claimed work.
-- **Status:** IN PROGRESS
-- **Agent Testing Done:** N (The task itself is the test)
-- **Which testing method agent to use?** Manual testing using  and documenting findings in a markdown report. The complexity and specificity of the audit make it unsuitable for automated testing agents.
-- **User Testing Done:** N
-
-**All Pending/In progress Issue list**:
-- **Issue 1: Complete the Forensic Audit (P0)**
-  - **Description:** The agent successfully logged into the production environment and began the calibration flow, documenting the initial screen. The audit must continue systematically through every step of calibration, onboarding, and every clickable element on every internal page (Advisor, Dashboard, Settings, etc.).
-  - **Next debug checklist:**
-    1. Continue from the Calibration welcome screen ().
-    2. Use a test website (e.g., ) to proceed through the Begin Strategic Audit flow.
-    3. Document every screen, modal, and user interaction with screenshots and detailed descriptions for the forensic report.
-    4. Test every link in the navigation, sidebars, and footers.
-    5. Specifically audit the SoundBoard feature and its components (file attachment, camera, replies).
-    6. Differentiate findings based on the user's Free Tier vs. Paid Subscription features.
-  - **Why fix this issue and what will be achieved with the fix?** This is a direct, critical command from the user to build trust and create a definitive source of truth on the platform's current state before any new development continues.
-  - **Status:** IN PROGRESS
-  - **Is recurring issue?** N
-  - **Should Test frontend/backend/both after fix?** both
-
-- **Issue 2: Broken User Onboarding Journey (P0)**
-  - **Description:** The original issue was a 12-32 minute setup leading to an empty dashboard. An attempted fix now redirects users to  and shows a welcome banner. The effectiveness of this fix is unverified.
-  - **Attempted fixes:** Redirected to  after wizard; added  to ; restored  route.
-  - **Next debug checklist:** The ongoing Forensic Audit (Issue 1) will serve as the verification for this fix. The agent must assess if the new flow effectively solves the empty state problem for a first-time user.
-  - **Status:** USER VERIFICATION PENDING
-  - **Is recurring issue?** Y
-  - **Should Test frontend/backend/both after fix?** both
-
-**In progress Task List**:
-- **Task 1: Forensic Audit Report Generation (P0)**
-  - **Where to resume:** Continue appending findings to .
-  - **What will be achieved with this?** A complete, user-verifiable document detailing the full functionality of the platform.
-  - **Status:** IN PROGRESS
-  - **Blocked on something:** The completion of the manual audit itself.
-
-**Upcoming and Future Tasks**
-- **Upcoming Tasks:**
-  - **(P0) Phase B: Frontend Cognition Integration:** The highest priority development task. While  calls have been added to , , and , the UI has not been refactored to actually display the data from the  endpoint. This involves rendering instability scores, propagation maps, confidence scores, etc.
-  - **(P1) Complete Expo Mobile App Build-out:** The user wants this done in parallel. The skeleton is fixed. Next steps are to connect all screens to the backend API, implement real data display instead of placeholders, and ensure full functionality for Home, Chat, Market, Alerts, and Settings tabs.
-
-- **Future Tasks:**
-  - **(P1) Admin/Legal Nav Restructure Verification:** The agent implemented the nav changes in , but the audit needs to confirm it matches the user's specification.
-  - **(P1) Weekly Check-in Calendar:** Make the  feature operational by wiring it into the sidebar and connecting it to the backend.
-  - **(P2) A/B Testing & Marketing Automation UIs:** Build the frontend for these features.
-
-**Completed work in this session**
-- **Homepage Visual System Rebuild:**
-  - Implemented a complex, multi-layered, animated intelligent energy field background using the Canvas API with Simplex/Perlin noise for particles and neural threads ().
-  - Corrected the integration carousel to use real SVG brand logos within styled cards ().
-  - Iteratively refined all homepage visuals and animations based on strict, detailed user feedback, including fixing layout, component layering, and aesthetic details (e.g., removing lines through the CTA, shrinking particles).
-  - Moved the Industry Benchmarks section into the hero container as requested.
-- **Mobile CSS Overhaul:**
-  - Forensically removed 11 redundant and conflicting mobile CSS files.
-  - Created a single, surgical  file to provide a clean, commercially acceptable responsive experience for the entire application (Homepage, Login, Calibration, Advisor).
-  - Fixed multiple mobile-specific layout bugs reported by the user (oversized CTA, content alignment, footer formatting).
-- **Onboarding Flow & Core UX Initial Fixes:**
-  - Modified the onboarding wizard to redirect users to  after completion.
-  - Added a  and  component to the Advisor page to guide first-time users.
-  - Removed the hard redirect from  to , making the setup checklist accessible again.
-- **Expo (React Native) App Scaffolding:**
-  - Repaired the skeleton Expo app by fixing the auth flow, implementing correct navigation, setting the API URL, and resolving font loading issues to make it a viable base for future development.
-- **Admin & Configuration Updates:**
-  - Restructured the admin navigation menu in  per user requirements.
-  - Removed incorrect admin user emails and standardized on .
-
-**Earlier issues found/mentioned but not fixed**
-- The core issue of whether the **Broken User Onboarding Journey** is truly fixed remains. The implemented changes are logical but their effectiveness in solving the user's core complaint (long setup -> empty state) must be verified by the ongoing forensic audit.
-
-**Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork**: Production authentication errors due to misconfigured environment variables.
-- **Recurrence count**: 2+
-- **Status**: RESOLVED (User confirmed that was fixed).
-
-**Code Architecture**
-
-
-**Key Technical Concepts**
-- **Forensic Auditing:** Manually testing a live production application feature by feature to verify functionality against claimed work.
-- **Canvas API Animation:** Extensive use of HTML Canvas for performant, multi-layered background animations, driven by Simplex/Perlin noise for organic movement.
-- **Surgical CSS Refactoring:** Deleting a large number of conflicting, broadly-scoped CSS files and replacing them with a single, highly specific stylesheet that works with the existing utility-class framework (Tailwind) without conflicts.
-- **React Native (Expo):** Scaffolding and repairing a separate native mobile application codebase.
-- **SQL-First Backend:** Core logic resides in PostgreSQL, with Python/FastAPI as a thin API layer.
-- **Multi-Source Intelligence Gathering:** Using multiple APIs (Perplexity, Firecrawl, ABR) in parallel within a Supabase Edge Function to build a comprehensive business profile.
-
-**key DB schema**
-- No new schema changes in this session. Key tables remain , , and the numerous  tables.
-
-**changes in tech stack**
-- No new technologies were added. Heavy implementation of the **Canvas API** for animations.
-
-**All files of reference**
--  (Major overhaul)
--  (New consolidated stylesheet)
--  (New canvas animation)
--  (Modified redirect logic)
--  (Added new user components)
--  (Modified routing)
--  (Entire directory for the Expo app was restructured and fixed)
--  (Core intelligence function, verified)
--  (Report being generated)
-
-**key api endpoints**
-- : Remains the primary un-integrated endpoint for all internal dashboard pages.
-- Supabase Edge Functions: , .
-
-**Critical Info for New Agent**
-- **Priority #1 is the Forensic Audit:** You MUST continue the systematic, end-to-end testing of the production site () as the last agent was doing. The user's trust depends on this. Do not guess or infer functionality; verify every click.
-- **User is Extremely Detail-Oriented:** The user provides MASTER PROMPT directives that are not suggestions; they are deterministic build instructions. Adhere to them with extreme precision. Deviation is considered failure.
-- **Production Credentials:** Use  and password  to log into  for the audit.
-- **Parallel Development:** The user expects parallel progress on the web app (finishing the audit, then Phase B) and the Expo mobile app (building out functional screens).
-- **Aesthetic Matters:** The user has a strong vision for a premium, AI infrastructure aesthetic. Avoid generic SaaS designs. The homepage animation is the benchmark for visual quality.
-
-**documents and test reports created in this job**
-- 
-- Multiple test reports in  from the homepage redesign validation.
-
-**Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests a complete, end-to-end forensic audit of every single component on the website and platform, stating concerns that claimed work is not actually done. Specifies the report must be highly intricate.
-2.  **Agent:** Acknowledges and begins writing a report based on code analysis.
-3.  **User:** Stops the agent, stating it's impossible to have tested everything and that the agent must *actually test* every component, not guess from code. Demands the audit be segregated by Free vs. Paid tiers.
-4.  **Agent:** Acknowledges the mistake and prepares to run a proper test.
-5.  **User:** Confirms the plan and provides the production URL () and user credentials () for testing.
-6.  **Agent:** Reports that the provided credentials failed on production.
-7.  **User:** Provides new credentials ( / ) and asks for 10 different end-to-end tests with different websites, including Shopify integration.
-8.  **User:** Provides a corrected password ().
-9.  **Agent:** Confirms login success and starts the comprehensive audit, beginning with the calibration flow.
-10. **Agent:** Provides a detailed status update on the first screen of the calibration flow and notes that the audit is massive and will require careful context management.
-
-**Project Health Check:**
-- **Broken**:
-  - The first-time user onboarding journey is still considered broken until the ongoing forensic audit can verify that the recent fixes provide a good user experience and solve the empty dashboard problem.
-- **Mocked**:
-  - The Expo native mobile app is a non-functional skeleton. All screens are placeholders without real data.
-  - All internal dashboard pages (, , , etc.) are using mocked or old data sources. They are not connected to the new backend Cognition Core.
-
-**3rd Party Integrations**
-- **pgvector:** For RAG pipeline in Supabase.
-- **React Native (Expo):** For the separate mobile app.
-- **Clearbit Logo API:** For real-time company logos.
-- **Perplexity API:** Primary intelligence source for calibration ( model).
-- **Firecrawl API:** Secondary website scraping source.
-- **Serper.dev:** Google search API for profile enrichment.
-- **OpenAI:** For structured data extraction ().
-- **Australian Business Register (ABR):** For ABN/ACN lookup.
-
-**Testing status**
-- **Testing agent used after significant changes**: YES (extensively for the homepage visual rebuild and mobile CSS refactor).
-- **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: []
-- **Known regressions**: None.
-
-**Credentials to test flow:**
-- **Production Site ():**
-  - **User**: 
-  - **Password**: 
-- **Preview Environment:**
-  - **User**: 
-  - **Password**: 
-
-**What agent forgot to execute**
-- The previous agent initially failed the user's audit request by generating a report from code analysis instead of performing actual, interactive testing. The user caught this and corrected the agent. The next agent must not repeat this mistake and must proceed with the real, manual audit.
-</analysis>
+-   The agent initially created a confusing, single integrations page for both the public website and the in-app experience before correcting it to be two distinct pages as per user feedback.
+-   The agent's attempts to have the user fix GitHub secrets via CLI were repeatedly hampered by the user's terminal environment (CMD vs. PowerShell). A manual browser-based approach was more successful and should be preferred in the future.</analysis>

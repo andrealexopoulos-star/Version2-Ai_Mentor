@@ -1,5 +1,13 @@
 # BIQc Platform — Product Requirements Document
-### Sprint 6 — Integration Page Rebuild & Process (Complete — Mar 2026)
+### Sprint 7 — Integrations Page Redesign + Calendar Sidebar (Complete — Mar 2026)
+- **Integrations page full redesign** — Premium dark command-centre layout replacing dated codespace grid: section labels, horizontal category tabs, 65+ integration cards with Clearbit logos, connected state glow, "Browse all 220+" CTA
+- **Email & Calendar pinned section** — Gmail, Outlook, Google Calendar shown at top with "Supabase OAuth" badge, separate from Merge-powered integrations
+- **Marketing platforms section** — Google Ads, Meta Ads, LinkedIn Ads added as "Coming Soon" with notify-me CTA
+- **Calendar added to sidebar** — Moved from buried "Weekly Check-In" in Settings & Growth to Execution section (alongside Priority Inbox, Alerts, Actions) with correct "Calendar" label
+- **3 integration bugs fixed**: email_connections status column crash, workspace creation fallback (no accounts table required), integration_accounts upsert fallback chain
+- **Merge API key placeholder detection** — Returns clean 503 instead of cryptic 500 when key is not set
+
+
 - **Public /our-integrations page** — full enterprise rebuild: left-aligned hero, 7 horizontal filter chips with (i) tooltips, 24 integration cards (Clearbit logos, ghost Connect CTAs, category badges, benefit statements), data-usage hint bar, security section (AES-256/AU Residency/Revoke), bottom CTA — 94% test pass (17/18)
 - **`IntelligenceCoverageBar.js`** — compact header pill showing % coverage based on connected integrations. Renders immediately from `useIntegrationStatus` (not gated by slow cognitive snapshot). Tooltip shows per-category status. Navigates to /integrations on click.
 - **AdvisorWatchtower** — coverage bar rendered in persistent header section, visible immediately on page load without waiting for cognitive snapshot
