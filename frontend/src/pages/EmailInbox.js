@@ -607,7 +607,7 @@ const EmailInbox = () => {
     );
   };
 
-  const analysis = priorityAnalysis?.analysis || {};
+  const analysis = priorityAnalysis || {};
 
   return (
     <DashboardLayout>
