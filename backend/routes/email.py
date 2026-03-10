@@ -476,44 +476,48 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         
         # Calculate token expiration
         expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
-        
-        # Proxy to Edge Function for token storage
-        logger.info("📡 Proxying tokens to gmail_prod Edge Function...")
+
+        # DIRECT SUPABASE STORAGE — no edge function required
+        logger.info("💾 Storing Gmail tokens directly in Supabase...")
         try:
-            async with httpx.AsyncClient() as client:
-                edge_response = await client.post(
-                    f"{os.environ['SUPABASE_URL']}/functions/v1/gmail_prod",
-                    json={
-                        "action": "store_tokens",
-                        "user_id": user_id,
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "expires_at": expires_at,
-                        "account_email": google_email,
-                        "account_name": google_name
-                    },
-                    headers={
-                        "Authorization": f"Bearer {os.environ['SUPABASE_SERVICE_ROLE_KEY']}",
-                        "Content-Type": "application/json"
-                    },
-                    timeout=30.0
-                )
-                
-                if edge_response.status_code != 200:
-                    logger.error(f"Edge Function failed: {edge_response.text}")
-                    return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=processing_failed")
-                
-                edge_result = edge_response.json()
-                logger.info(f"✅ Edge Function stored Gmail tokens successfully: {edge_result}")
+            get_sb().table("gmail_connections").upsert(
+                {
+                    "user_id": user_id,
+                    "email": google_email,
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "token_expiry": expires_at,
+                    "scopes": "https://www.googleapis.com/auth/gmail.readonly",
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+                on_conflict="user_id"
+            ).execute()
+            logger.info(f"✅ Gmail tokens stored for {google_email}")
+
+            # Update canonical email_connections table
+            get_sb().table("email_connections").upsert(
+                {
+                    "user_id": user_id,
+                    "provider": "gmail",
+                    "connected": True,
+                    "connected_email": google_email,
+                    "inbox_type": "standard",
+                    "connected_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "sync_status": "active",
+                },
+                on_conflict="user_id,provider"
+            ).execute()
+            logger.info("✅ email_connections updated for Gmail")
         except Exception as e:
-            logger.error(f"Failed to call Edge Function: {e}")
-            return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error=edge_function_failed")
-        
-        # Redirect back to specified path (or integrations) with success
+            logger.error(f"❌ Failed to store Gmail tokens: {e}")
+            return RedirectResponse(url=f"{frontend_url}{return_to}?gmail_error=storage_failed")
+
+        # Redirect back with success
         redirect_url = f"{frontend_url}{return_to}?gmail_connected=true"
         if google_email:
             redirect_url += f"&connected_email={quote(google_email)}"
-        
+
         logger.info(f"✅ Gmail OAuth complete, redirecting to: {redirect_url}")
         return RedirectResponse(url=redirect_url)
 
@@ -697,69 +701,51 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     # Calculate token expiration
     expires_in = token_data.get("expires_in", 3600)
     expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
-    
-    # Proxy to Edge Function for token storage
-    logger.info("📡 Proxying tokens to outlook-auth Edge Function...")
+
+    # DIRECT SUPABASE STORAGE — no edge function required
+    logger.info("💾 Storing Outlook tokens directly in Supabase...")
     try:
-        async with httpx.AsyncClient() as client:
-            edge_response = await client.post(
-                f"{os.environ['SUPABASE_URL']}/functions/v1/outlook-auth",
-                json={
-                    "action": "store_tokens",
-                    "user_id": user_id,
-                    "access_token": token_data.get("access_token"),
-                    "refresh_token": token_data.get("refresh_token"),
-                    "expires_at": expires_at,
-                    "account_email": microsoft_email,
-                    "account_name": microsoft_name
-                },
-                headers={
-                    "Authorization": f"Bearer {os.environ['SUPABASE_SERVICE_ROLE_KEY']}",
-                    "Content-Type": "application/json"
-                },
-                timeout=30.0
-            )
-            
-            if edge_response.status_code != 200:
-                logger.error(f"Edge Function failed: {edge_response.text}")
-                return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=processing_failed")
-            
-            edge_result = edge_response.json()
-            logger.info(f"✅ Edge Function stored Outlook tokens successfully: {edge_result}")
-    except Exception as e:
-        logger.error(f"Failed to call Edge Function: {e}")
-        return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error=edge_function_failed")
-    
-    # TASK 1: Persist canonical integration state (workspace-scoped)
-    from workspace_helpers import get_user_account
-    
-    try:
-        # Get user's workspace/account
-        account = await get_user_account(get_sb(), user_id)
-        
-        if account:
-            account_id = account["id"]
-            get_sb().table("integration_accounts").upsert({
+        get_sb().table("outlook_oauth_tokens").upsert(
+            {
                 "user_id": user_id,
-                "account_id": account_id,
+                "access_token": token_data.get("access_token"),
+                "refresh_token": token_data.get("refresh_token"),
+                "expires_at": expires_at,
+                "account_email": microsoft_email,
+                "account_name": microsoft_name,
+                "provider": "microsoft",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+            on_conflict="user_id"
+        ).execute()
+        logger.info(f"✅ Outlook tokens stored for {microsoft_email}")
+
+        # Update canonical email_connections table
+        get_sb().table("email_connections").upsert(
+            {
+                "user_id": user_id,
                 "provider": "outlook",
-                "category": "email",
-                "account_token": "connected",  # Token stored separately in outlook_oauth_tokens
-                "connected_at": datetime.now(timezone.utc).isoformat()
-            }, on_conflict="account_id,category").execute()
-            logger.info(f"✅ Outlook integration state persisted for workspace {account_id}")
-        else:
-            logger.warning(f"⚠️ No workspace found for user {user_id} - skipping integration state persistence")
+                "connected": True,
+                "connected_email": microsoft_email,
+                "inbox_type": "standard",
+                "connected_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "sync_status": "active",
+            },
+            on_conflict="user_id,provider"
+        ).execute()
+        logger.info("✅ email_connections updated for Outlook")
     except Exception as e:
-        logger.error(f"❌ Failed to persist integration state: {e}")
-    
+        logger.error(f"❌ Failed to store Outlook tokens: {e}")
+        return RedirectResponse(url=f"{frontend_url}{return_to}?outlook_error=storage_failed")
+
     logger.info(f"✅ Outlook integration successful for user {user_id}")
-    
-    # Redirect back to specified path (or integrations) with success
+
+    # Redirect back with success
     redirect_url = f"{frontend_url}{return_to}?outlook_connected=true"
     if microsoft_email:
         redirect_url += f"&connected_email={quote(microsoft_email)}"
-    
+
     logger.info(f"✅ Outlook OAuth complete, redirecting to: {redirect_url}")
     return RedirectResponse(url=redirect_url)
 
