@@ -4,6 +4,7 @@ import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
 import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
+import { HowItWorks } from '../../components/website/HowItWorks';
 import { CheckCircle2, Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
@@ -172,6 +173,9 @@ const HomePage = () => (
 
     {/* gap */}
     <div style={{ background: '#07121E', height: 20 }} />
+
+    {/* HOW IT WORKS — consolidated from /platform + /intelligence */}
+    <HowItWorks />
 
     {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
     <div style={{ background: '#07121E' }}>
