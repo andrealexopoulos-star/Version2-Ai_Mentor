@@ -221,13 +221,17 @@ export default function Integrations() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/gmail_prod`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.ok && data.connected) setGmailStatus({ connected: true, connected_email: session.user?.email });
+      // Query email_connections directly — gmail_prod edge function not deployed
+      const { data: rows, error } = await supabase
+        .from('email_connections')
+        .select('provider, connected_email, connected')
+        .eq('user_id', session.user.id)
+        .eq('provider', 'gmail');
+      if (error || !rows?.length) return;
+      const gmail = rows[0];
+      if (gmail.connected !== false) {
+        setGmailStatus({ connected: true, connected_email: gmail.connected_email || session.user.email });
+      }
     } catch {}
   }, []);
 
