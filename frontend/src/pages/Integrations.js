@@ -155,9 +155,10 @@ export default function Integrations() {
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
   const [disconnecting, setDisconnecting] = useState(null);
   const [openingMerge, setOpeningMerge] = useState(null);
-  const [mergeLinkToken, setMergeLinkToken] = useState(null);
+  const [mergeLinkToken, setMergeLinkToken] = useState('');
+  const [pendingOpen, setPendingOpen] = useState(false);
 
-  // Merge Link hook
+  // Merge Link hook — token starts as '' so SDK initialises cleanly
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
     linkToken: mergeLinkToken,
     onSuccess: async (public_token, metadata) => {
@@ -165,7 +166,7 @@ export default function Integrations() {
       const provider = metadata?.integration?.name || 'Unknown';
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) { toast.error('Session expired. Please log in again.'); setMergeLinkToken(null); return; }
+        if (!session?.access_token) { toast.error('Session expired. Please log in again.'); setMergeLinkToken(''); return; }
         const response = await fetch(`${getBackendUrl()}/api/integrations/merge/exchange-account-token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${session.access_token}` },
@@ -181,11 +182,26 @@ export default function Integrations() {
       } catch (e) {
         toast.error(`Failed to connect ${provider}: ${e.message}`);
       }
-      setMergeLinkToken(null);
+      setMergeLinkToken('');
       setOpeningMerge(null);
+      setPendingOpen(false);
     },
-    onExit: () => { setTimeout(() => loadMergeIntegrations(), 1500); setMergeLinkToken(null); setOpeningMerge(null); },
+    onExit: () => {
+      setMergeLinkToken('');
+      setOpeningMerge(null);
+      setPendingOpen(false);
+      setTimeout(() => loadMergeIntegrations(), 1500);
+    },
   });
+
+  // KEY FIX: use useEffect to open modal — avoids stale closure on mergeLinkReady/openMergeLinkModal
+  // When both token is set AND SDK is ready, open the modal
+  useEffect(() => {
+    if (pendingOpen && mergeLinkToken && mergeLinkReady) {
+      openMergeLinkModal();
+      setPendingOpen(false);
+    }
+  }, [pendingOpen, mergeLinkToken, mergeLinkReady, openMergeLinkModal]);
 
   const loadMergeIntegrations = useCallback(async () => {
     try {
@@ -235,7 +251,11 @@ export default function Integrations() {
     setOpeningMerge(integrationId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { toast.error('Please log in to connect integrations'); setOpeningMerge(null); return; }
+      if (!session?.access_token) {
+        toast.error('Please log in to connect integrations');
+        setOpeningMerge(null);
+        return;
+      }
       const res = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
@@ -243,22 +263,29 @@ export default function Integrations() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const msg = res.status === 503 ? 'Integration service not yet configured on this environment.' : err.detail || 'Server error';
+        const msg = res.status === 503
+          ? 'Integration service not configured. Please contact support.'
+          : err.detail || 'Failed to connect — please try again';
         toast.error(msg);
         setOpeningMerge(null);
         return;
       }
-      const { link_token } = await res.json();
-      if (!link_token) { toast.error('Invalid response from server'); setOpeningMerge(null); return; }
+      const body = await res.json();
+      const link_token = body?.link_token;
+      if (!link_token) {
+        toast.error('No link token returned — please try again');
+        setOpeningMerge(null);
+        return;
+      }
+      // Set token then signal intent to open — useEffect handles the actual open
+      // once the SDK re-initialises with the new token and calls onReady
       setMergeLinkToken(link_token);
-      let attempts = 0;
-      const tryOpen = () => { attempts++; if (mergeLinkReady) { openMergeLinkModal(); } else if (attempts < 20) setTimeout(tryOpen, 200); else { toast.error('Connection modal failed to load — please refresh'); setOpeningMerge(null); } };
-      setTimeout(tryOpen, 150);
+      setPendingOpen(true);
     } catch (e) {
-      toast.error('Failed to open connection modal');
+      toast.error('Failed to open connection modal — please try again');
       setOpeningMerge(null);
     }
-  }, [mergeLinkReady, openMergeLinkModal]);
+  }, []);
 
   const handleConnect = useCallback(async (integration) => {
     if (integration.type === 'outlook') {
