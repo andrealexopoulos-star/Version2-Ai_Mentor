@@ -202,6 +202,10 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Radar, label: 'Market & Positioning', path: '/market' },
       { icon: BarChart3, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
     ]},
+    { id: 'strategy', label: 'Strategy', items: [
+      { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
+      { icon: Target, label: 'War Room', path: '/war-room' },
+    ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Bell, label: 'Alerts', path: '/alerts' },
       { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },

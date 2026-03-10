@@ -37,14 +37,15 @@ const Logo = ({ domain, name, size = 36 }) => {
 
 // ── Categories ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { id: 'all',       label: 'All',            icon: LayoutGrid },
-  { id: 'crm',       label: 'CRM',            icon: Users      },
-  { id: 'financial', label: 'Financial',      icon: DollarSign },
-  { id: 'hris',      label: 'HR & Payroll',   icon: Briefcase  },
-  { id: 'ats',       label: 'ATS',            icon: UserPlus   },
-  { id: 'ticketing', label: 'Ticketing',      icon: Ticket     },
-  { id: 'storage',   label: 'File Storage',   icon: HardDrive  },
-  { id: 'knowledge', label: 'Knowledge',      icon: BookOpen   },
+  { id: 'all',        label: 'All',            icon: LayoutGrid },
+  { id: 'crm',        label: 'CRM',            icon: Users      },
+  { id: 'financial',  label: 'Financial',      icon: DollarSign },
+  { id: 'ecommerce',  label: 'E-Commerce',     icon: TrendingUp },
+  { id: 'hris',       label: 'HR & Payroll',   icon: Briefcase  },
+  { id: 'ats',        label: 'ATS',            icon: UserPlus   },
+  { id: 'ticketing',  label: 'Ticketing',      icon: Ticket     },
+  { id: 'storage',    label: 'File Storage',   icon: HardDrive  },
+  { id: 'knowledge',  label: 'Knowledge',      icon: BookOpen   },
 ];
 
 // ── Integration registry ──────────────────────────────────────────────────────
@@ -89,6 +90,9 @@ const ALL_INTEGRATIONS = [
   { id:'freeagent',      name:'FreeAgent',            domain:'freeagent.com',        category:'financial', desc:'Accounting for freelancers and project-based businesses', type:'merge' },
   { id:'stripe',         name:'Stripe',               domain:'stripe.com',           category:'financial', desc:'Revenue, MRR, churn and payment analytics',              type:'merge' },
   { id:'reckon',         name:'Reckon',               domain:'reckon.com',           category:'financial', desc:'Australian accounting and payroll software',             type:'merge' },
+  { id:'shopify',        name:'Shopify',              domain:'shopify.com',          category:'ecommerce', desc:'E-commerce revenue, orders and customer analytics',      type:'merge' },
+  { id:'woocommerce',    name:'WooCommerce',          domain:'woocommerce.com',      category:'ecommerce', desc:'WordPress e-commerce orders and revenue data',           type:'merge' },
+  { id:'bigcommerce',    name:'BigCommerce',          domain:'bigcommerce.com',      category:'ecommerce', desc:'Enterprise e-commerce platform analytics',               type:'merge' },
   // HRIS
   { id:'bamboohr',       name:'BambooHR',             domain:'bamboohr.com',         category:'hris',      desc:'People analytics — headcount, leave, capacity',          type:'merge' },
   { id:'employment-hero',name:'Employment Hero',      domain:'employmenthero.com',   category:'hris',      desc:'HR, payroll and benefits for Australian teams',           type:'merge' },
@@ -138,6 +142,7 @@ const ALL_INTEGRATIONS = [
 const MERGE_CATEGORY_MAP = {
   crm: ['crm'],
   financial: ['accounting'],
+  ecommerce: ['accounting'],
   hris: ['hris'],
   ats: ['ats'],
   ticketing: ['ticketing'],

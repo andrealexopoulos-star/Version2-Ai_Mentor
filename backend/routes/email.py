@@ -167,13 +167,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
-    
-    # VALIDATION: Provider must be explicit
-    if not provider or provider != "outlook":
-        logger.error(f"❌ Invalid provider for Outlook endpoint: {provider}")
-        raise HTTPException(status_code=400, detail="Provider must be 'outlook' for this endpoint")
-    
-    logger.info(f"📧 Email connect provider: {provider}")
+    # provider param is optional — endpoint URL already defines this as outlook
     
     # Manual token validation (browser redirects can't send Authorization header)
     current_user = None
@@ -282,12 +276,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
-    
-    if not provider or provider != "gmail":
-        logger.error(f"❌ Invalid provider for Gmail endpoint: {provider}")
-        raise HTTPException(status_code=400, detail="Provider must be 'gmail' for this endpoint")
-    
-    logger.info(f"📧 Email connect provider: {provider}")
+    # provider param is optional — endpoint URL already defines this as gmail
     
     current_user = None
     if token:
