@@ -38,6 +38,7 @@ const Logo = ({ domain, name, size = 36 }) => {
 // ── Categories ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: 'all',        label: 'All',            icon: LayoutGrid },
+  { id: 'connected',  label: 'Connected',      icon: CheckCircle2 },
   { id: 'crm',        label: 'CRM',            icon: Users      },
   { id: 'financial',  label: 'Financial',      icon: DollarSign },
   { id: 'ecommerce',  label: 'E-Commerce',     icon: TrendingUp },
@@ -50,9 +51,10 @@ const CATEGORIES = [
 
 // ── Integration registry ──────────────────────────────────────────────────────
 const EMAIL_CALENDAR = [
-  { id: 'gmail',    name: 'Gmail',             domain: 'gmail.com',    category: 'email',    desc: 'Inbox intelligence — priority triage, reply drafting, client signals', type: 'gmail'   },
-  { id: 'outlook',  name: 'Microsoft Outlook', domain: 'microsoft.com',category: 'email',    desc: 'Email + Calendar sync via Microsoft 365 OAuth',                       type: 'outlook' },
-  { id: 'calendar', name: 'Google Calendar',   domain: 'google.com',   category: 'calendar', desc: 'Meeting intelligence, schedule analysis and prep briefs',              type: 'gcal'    },
+  { id: 'gmail',            name: 'Gmail',              domain: 'gmail.com',     category: 'email',    desc: 'Inbox intelligence — priority triage, reply drafting, client signals', type: 'gmail'    },
+  { id: 'outlook',          name: 'Microsoft Outlook',  domain: 'microsoft.com', category: 'email',    desc: 'Email + Calendar sync via Microsoft 365 OAuth',                       type: 'outlook'  },
+  { id: 'outlook-calendar', name: 'Outlook Calendar',   domain: 'microsoft.com', category: 'calendar', desc: 'Meeting intelligence, schedule prep briefs and availability insights',  type: 'outlook_cal' },
+  { id: 'google-calendar',  name: 'Google Calendar',    domain: 'google.com',    category: 'calendar', desc: 'Meeting intelligence, schedule analysis and prep briefs',              type: 'gcal'     },
 ];
 
 const MARKETING_PLATFORMS = [
@@ -365,9 +367,8 @@ export default function Integrations() {
   }, [mergeIntegrations]);
 
   const isConnected = useCallback((integration) => {
-    if (integration.type === 'outlook') return outlookStatus.connected;
-    if (integration.type === 'gmail') return gmailStatus.connected;
-    if (integration.type === 'gcal') return gmailStatus.connected;
+    if (integration.type === 'outlook' || integration.type === 'outlook_cal') return outlookStatus.connected;
+    if (integration.type === 'gmail' || integration.type === 'gcal') return gmailStatus.connected;
     if (integration.type === 'coming_soon') return false;
     return Object.keys(mergeIntegrations).some(k =>
       k.toLowerCase() === integration.id || k.toLowerCase() === integration.name.toLowerCase() || k.toLowerCase().includes(integration.id)
@@ -381,6 +382,7 @@ export default function Integrations() {
   };
 
   const filtered = ALL_INTEGRATIONS.filter(i => {
+    if (selectedCategory === 'connected') return isConnected(i);
     const matchCat = selectedCategory === 'all' || i.category === selectedCategory;
     const matchSearch = !searchTerm || i.name.toLowerCase().includes(searchTerm.toLowerCase()) || i.desc.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCat && matchSearch;
@@ -436,7 +438,11 @@ export default function Integrations() {
               {CATEGORIES.map(cat => {
                 const active = selectedCategory === cat.id;
                 const Icon = cat.icon;
-                const count = cat.id === 'all' ? ALL_INTEGRATIONS.length : ALL_INTEGRATIONS.filter(i => i.category === cat.id).length;
+                const count = cat.id === 'all' 
+                  ? ALL_INTEGRATIONS.length 
+                  : cat.id === 'connected' 
+                  ? connectedCount
+                  : ALL_INTEGRATIONS.filter(i => i.category === cat.id).length;
                 return (
                   <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
@@ -459,12 +465,14 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
-          {/* ── EMAIL & CALENDAR — always visible, not filterable ── */}
-          {!searchTerm && selectedCategory === 'all' && (
+          {/* ── EMAIL & CALENDAR — visible on All and Connected tabs ── */}
+          {!searchTerm && (selectedCategory === 'all' || selectedCategory === 'connected') && (
             <div>
               <SectionLabel icon={Mail} label="Email & Calendar" badge="Supabase OAuth" badgeColor="#3B82F6" />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
-                {EMAIL_CALENDAR.map((item, i) => (
+                {EMAIL_CALENDAR
+                  .filter(item => selectedCategory !== 'connected' || isConnected(item))
+                  .map((item, i) => (
                   <IntCard key={item.id} integration={item} index={i}
                     connected={isConnected(item)} connectedLabel={getConnectedLabel(item)}
                     disconnecting={disconnecting === item.id} openingMerge={openingMerge === item.id}
