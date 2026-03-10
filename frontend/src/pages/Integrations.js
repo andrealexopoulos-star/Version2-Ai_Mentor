@@ -266,7 +266,7 @@ export default function Integrations() {
     if (err) { toast.error(`Connection error: ${err}`); setSearchParams({}); }
   }, [searchParams, setSearchParams, loadOutlookStatus, loadGmailStatus]);
 
-  const openMergeLink = useCallback(async (integrationId, categories) => {
+  const openMergeLink = useCallback(async (integrationId, categories, integrationName = null) => {
     setOpeningMerge(integrationId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -275,10 +275,14 @@ export default function Integrations() {
         setOpeningMerge(null);
         return;
       }
+      // Pass integration name to pre-select in Merge modal (bypasses category picker)
+      const body = { categories };
+      if (integrationName) body.integration = integrationName;
+
       const res = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ categories }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -289,15 +293,13 @@ export default function Integrations() {
         setOpeningMerge(null);
         return;
       }
-      const body = await res.json();
-      const link_token = body?.link_token;
+      const resBody = await res.json();
+      const link_token = resBody?.link_token;
       if (!link_token) {
         toast.error('No link token returned — please try again');
         setOpeningMerge(null);
         return;
       }
-      // Set token then signal intent to open — useEffect handles the actual open
-      // once the SDK re-initialises with the new token and calls onReady
       setMergeLinkToken(link_token);
       setPendingOpen(true);
     } catch (e) {
@@ -329,11 +331,11 @@ export default function Integrations() {
     }
     if (integration.type === 'merge') {
       const cats = MERGE_CATEGORY_MAP[integration.category] || ['crm'];
-      await openMergeLink(integration.id, cats);
+      await openMergeLink(integration.id, cats, integration.name);
       return;
     }
     if (integration.type === 'merge_storage') {
-      await openMergeLink(integration.id, ['file_storage']);
+      await openMergeLink(integration.id, ['file_storage'], integration.name);
       return;
     }
   }, [openMergeLink]);
@@ -656,10 +658,34 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
           <button
             onClick={() => onConnect(integration)}
             disabled={openingMerge}
-            className="w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-white"
-            style={{ background: openingMerge ? '#E55F00' : '#FF6A00', fontFamily: fontFamily.body }}
-            onMouseEnter={e => { if (!openingMerge) e.currentTarget.style.background = '#E55F00'; }}
-            onMouseLeave={e => { if (!openingMerge) e.currentTarget.style.background = '#FF6A00'; }}
+            className="w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+            style={{
+              background: openingMerge
+                ? 'rgba(255,106,0,0.15)'
+                : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
+              border: '1px solid #FF6A00',
+              color: openingMerge ? '#FF6A00' : '#E8F0F8',
+              fontFamily: fontFamily.body,
+              boxShadow: hovered && !openingMerge
+                ? '0 0 12px rgba(255,106,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)'
+                : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+              textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(4px)',
+            }}
+            onMouseEnter={e => {
+              if (!openingMerge) {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,106,0,0.18) 0%, rgba(200,160,100,0.12) 100%)';
+                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.boxShadow = '0 0 16px rgba(255,106,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)';
+              }
+            }}
+            onMouseLeave={e => {
+              if (!openingMerge) {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)';
+                e.currentTarget.style.color = '#E8F0F8';
+                e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08)';
+              }
+            }}
             data-testid={`connect-${integration.id}`}>
             {openingMerge ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plug className="w-3 h-3" />}
             {openingMerge ? 'Opening...' : 'Connect'}

@@ -35,6 +35,7 @@ router = APIRouter()
 
 class MergeLinkTokenRequest(BaseModel):
     categories: Optional[List[str]] = None
+    integration: Optional[str] = None  # Pre-select specific integration (e.g. "Stripe", "HubSpot")
 
 
 # ==================== MERGE.DEV INTEGRATION ====================
@@ -67,20 +68,25 @@ async def create_merge_link_token(
         async with httpx.AsyncClient() as client:
             requested_categories = payload.categories if payload and payload.categories else None
             categories = requested_categories or ["accounting", "crm", "hris", "ats"]
-            # P0 FIX: Send workspace_id as end_user_origin_id (NOT user_id)
-            # P0 FIX: Send workspace name as end_user_organization_name (NOT hardcoded)
+            # Build Merge API body
+            merge_body = {
+                "end_user_origin_id": account_id,
+                "end_user_organization_name": account_name,
+                "end_user_email_address": user_email,
+                "categories": categories
+            }
+            # Pass specific integration name to pre-select in Merge modal
+            if payload and payload.integration:
+                merge_body["integration"] = payload.integration
+                logger.info(f"🎯 Pre-selecting integration: {payload.integration}")
+
             response = await client.post(
                 "https://api.merge.dev/api/integrations/create-link-token",
                 headers={
                     "Authorization": f"Bearer {merge_api_key}",
                     "Content-Type": "application/json"
                 },
-                json={
-                    "end_user_origin_id": account_id,  # WORKSPACE ID (was user_id)
-                    "end_user_organization_name": account_name,  # WORKSPACE NAME (was hardcoded)
-                    "end_user_email_address": user_email,
-                    "categories": categories
-                }
+                json=merge_body
             )
             
             logger.info(f"📊 Merge create-link-token response status: {response.status_code}")
