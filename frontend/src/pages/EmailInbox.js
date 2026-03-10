@@ -15,7 +15,7 @@ import DashboardLayout from '../components/DashboardLayout';
 
 const EmailInbox = () => {
   const navigate = useNavigate();
-  const [activeProvider, setActiveProvider] = useState(null); // 'gmail' or 'outlook' or null
+  const [activeProvider, setActiveProvider] = useState(null);
   const [gmailConnected, setGmailConnected] = useState(false);
   const [outlookConnected, setOutlookConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
@@ -27,6 +27,7 @@ const EmailInbox = () => {
   const [replySuggestions, setReplySuggestions] = useState(null);
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [expandedSection, setExpandedSection] = useState('high');
+  const [reclassifying, setReclassifying] = useState(null); // email_id being reclassified
 
   useEffect(() => {
     checkConnections();
@@ -117,91 +118,123 @@ const EmailInbox = () => {
   const fetchPriorityInbox = async (provider) => {
     try {
       setLoading(true);
-      
-      if (provider === 'gmail') {
-        // Call Gmail Edge Function
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          setLoading(false);
-          return;
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
 
-        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        const priorityUrl = `${supabaseUrl}/functions/v1/email_priority?provider=gmail`;
-        
-        const response = await fetch(priorityUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      // 1. Load from cache first (priority_inbox table) for instant display
+      const { data: cached } = await supabase
+        .from('priority_inbox')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('provider', provider)
+        .order('received_date', { ascending: false })
+        .limit(50);
 
-        if (!response.ok) {
-          console.error('Gmail priority analysis failed:', response.status);
-          setLoading(false);
-          return;
-        }
+      if (cached?.length) {
+        const normalized = normalizePriorityRows(cached);
+        setPriorityAnalysis({ ...normalized, analyzed_at: cached[0].analyzed_at, from_cache: true });
+        setLoading(false);
+      }
 
-        const data = await response.json();
-        
-        if (data.ok) {
-          setPriorityAnalysis({
-            analysis: {
-              high_priority: data.high_priority || [],
-              medium_priority: data.medium_priority || [],
-              low_priority: data.low_priority || [],
-              strategic_insights: data.strategic_insights || ''
-            },
-            analyzed_at: new Date().toISOString()
-          });
-        }
-      } else if (provider === 'outlook') {
-        // Call Outlook Edge Function
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          setLoading(false);
-          return;
-        }
+      // 2. Refresh from edge function in background
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const res = await fetch(`${supabaseUrl}/functions/v1/email_priority`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ provider }),
+      });
 
-        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        const priorityUrl = `${supabaseUrl}/functions/v1/email_priority?provider=outlook`;
-        
-        const response = await fetch(priorityUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          console.error('Outlook priority analysis failed:', response.status);
-          setLoading(false);
-          return;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (!cached?.length) {
+          console.error('Priority inbox fetch failed:', err);
         }
+        setLoading(false);
+        return;
+      }
 
-        const data = await response.json();
-        
-        if (data.ok) {
-          setPriorityAnalysis({
-            analysis: {
-              high_priority: data.high_priority || [],
-              medium_priority: data.medium_priority || [],
-              low_priority: data.low_priority || [],
-              strategic_insights: data.strategic_insights || ''
-            },
-            analyzed_at: new Date().toISOString()
-          });
-        }
+      const data = await res.json();
+      if (data.ok) {
+        // Normalize field names from edge function response
+        const normalized = {
+          high_priority:   (data.high_priority || []).map(normalizeEmailFields),
+          medium_priority: (data.medium_priority || []).map(normalizeEmailFields),
+          low_priority:    (data.low_priority || []).map(normalizeEmailFields),
+          strategic_insights: data.strategic_insights || '',
+          total_analyzed: data.total_analyzed || 0,
+          analyzed_at: new Date().toISOString(),
+        };
+        setPriorityAnalysis(normalized);
       }
     } catch (error) {
       console.error('Priority inbox fetch error:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Normalize edge function email fields to UI-expected format
+  const normalizeEmailFields = (e) => ({
+    email_id:        e.email_id || e.id,
+    from:            e.from_address || e.from || 'Unknown',
+    subject:         e.subject || '(no subject)',
+    snippet:         e.snippet || '',
+    received:        e.received_date || e.received || '',
+    reason:          e.reason || '',
+    suggested_action: e.suggested_action || '',
+    thread_id:       e.thread_id,
+    priority_level:  e.priority_level || e.priority,
+    user_override:   e.user_override || null,
+  });
+
+  // Normalize cached priority_inbox rows to UI format
+  const normalizePriorityRows = (rows) => {
+    const bucket = (level) => rows
+      .filter(r => (r.user_override || r.priority_level) === level)
+      .map(normalizeEmailFields);
+    const latest = rows[0];
+    return {
+      high_priority: bucket('high'),
+      medium_priority: bucket('medium'),
+      low_priority: bucket('low'),
+      strategic_insights: '',
+      analyzed_at: latest?.analyzed_at,
+    };
+  };
+
+  // Reclassify an email (updates user_override in priority_inbox)
+  const reclassifyEmail = async (emailId, newLevel) => {
+    setReclassifying(emailId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await supabase.from('priority_inbox')
+        .update({ user_override: newLevel })
+        .eq('user_id', session.user.id)
+        .eq('email_id', emailId);
+      // Optimistically update UI
+      setPriorityAnalysis(prev => {
+        if (!prev) return prev;
+        const allEmails = [
+          ...(prev.high_priority || []),
+          ...(prev.medium_priority || []),
+          ...(prev.low_priority || []),
+        ].map(e => e.email_id === emailId ? { ...e, user_override: newLevel } : e);
+        return {
+          ...prev,
+          high_priority:   allEmails.filter(e => (e.user_override || e.priority_level) === 'high'),
+          medium_priority: allEmails.filter(e => (e.user_override || e.priority_level) === 'medium'),
+          low_priority:    allEmails.filter(e => (e.user_override || e.priority_level) === 'low'),
+        };
+      });
+      toast.success(`Moved to ${newLevel} priority`);
+    } catch {
+      toast.error('Failed to reclassify email');
+    }
+    setReclassifying(null);
   };
 
   const runPriorityAnalysis = async () => {
@@ -258,57 +291,77 @@ const EmailInbox = () => {
   };
 
   const EmailCard = ({ email, priority }) => {
+    const effectivePriority = email.user_override || priority;
     const isSelected = selectedEmail === email.email_id;
-    
+    const LEVELS = ['high', 'medium', 'low'];
+
     return (
-      <div 
-        className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'}`}
-        style={{ 
-          background: 'var(--bg-card)', 
-          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)'
+      <div
+        className={`p-4 rounded-xl border transition-all ${isSelected ? 'ring-1 ring-[#FF6A00]' : ''}`}
+        style={{
+          background: 'var(--biqc-bg-card, #141C26)',
+          borderColor: isSelected ? '#FF6A00' : 'var(--biqc-border, #1E2D3D)',
         }}
-        onClick={() => fetchReplySuggestions(email.email_id)}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-                style={{ background: 'var(--accent-primary)' }}
-              >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                style={{ background: '#FF6A00' }}>
                 {(email.from || 'U')[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                <p className="font-medium text-sm truncate" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
                   {email.from || 'Unknown Sender'}
                 </p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {email.received ? new Date(email.received).toLocaleDateString() : ''}
+                <p className="text-xs" style={{ color: '#64748B' }}>
+                  {email.received ? new Date(email.received).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
                 </p>
               </div>
             </div>
-            <h4 className="font-medium mb-1 line-clamp-1" style={{ color: 'var(--text-primary)' }}>
+            <h4 className="text-sm font-semibold mb-1 line-clamp-1" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
               {email.subject || 'No Subject'}
             </h4>
-            <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
-              {email.reason}
-            </p>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              <span className="font-medium">Action:</span> {email.suggested_action}
-            </p>
+            {email.snippet && (
+              <p className="text-xs mb-1.5 line-clamp-1" style={{ color: '#64748B' }}>{email.snippet}</p>
+            )}
+            {email.reason && (
+              <p className="text-xs mb-1" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                <span className="font-medium">Why:</span> {email.reason}
+              </p>
+            )}
+            {email.suggested_action && (
+              <p className="text-xs" style={{ color: '#FF6A00' }}>
+                <span className="font-medium">Action:</span> {email.suggested_action}
+              </p>
+            )}
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <PriorityBadge level={priority} />
-            <Button
-              size="sm"
-              className="btn-secondary text-xs"
-              onClick={(e) => {
-                e.stopPropagation();
-                fetchReplySuggestions(email.email_id);
-              }}
-            >
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+            <PriorityBadge level={effectivePriority} />
+            {/* Reclassify buttons */}
+            <div className="flex gap-1">
+              {LEVELS.filter(l => l !== effectivePriority).map(l => (
+                <button
+                  key={l}
+                  disabled={reclassifying === email.email_id}
+                  onClick={() => reclassifyEmail(email.email_id, l)}
+                  className="text-[10px] px-2 py-0.5 rounded-md transition-all"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#64748B',
+                    cursor: 'pointer',
+                  }}
+                  title={`Move to ${l} priority`}>
+                  {reclassifying === email.email_id ? '...' : l[0].toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <Button size="sm" className="text-xs"
+              style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', padding: '4px 10px' }}
+              onClick={(e) => { e.stopPropagation(); fetchReplySuggestions(email.email_id); }}>
               <Sparkles className="w-3 h-3 mr-1" />
-              Suggest Reply
+              Reply
             </Button>
           </div>
         </div>
@@ -554,7 +607,7 @@ const EmailInbox = () => {
     );
   };
 
-  const analysis = priorityAnalysis?.analysis || {};
+  const analysis = priorityAnalysis || {};
 
   return (
     <DashboardLayout>
@@ -701,23 +754,28 @@ const EmailInbox = () => {
         ) : (
           /* Priority Sections */
           <div className="space-y-4">
-            <PrioritySection 
-              title="High Priority" 
-              emails={analysis.high_priority || []}
+            {priorityAnalysis?.from_cache && (
+              <p className="text-xs text-center" style={{ color: '#64748B' }}>
+                Showing cached results · <button className="underline" style={{ color: '#FF6A00' }} onClick={runPriorityAnalysis}>Refresh now</button>
+              </p>
+            )}
+            <PrioritySection
+              title="High Priority"
+              emails={priorityAnalysis.high_priority || []}
               priority="high"
               icon={AlertCircle}
               color="#EF4444"
             />
-            <PrioritySection 
-              title="Medium Priority" 
-              emails={analysis.medium_priority || []}
+            <PrioritySection
+              title="Medium Priority"
+              emails={priorityAnalysis.medium_priority || []}
               priority="medium"
               icon={Clock}
               color="#F59E0B"
             />
-            <PrioritySection 
-              title="Low Priority" 
-              emails={analysis.low_priority || []}
+            <PrioritySection
+              title="Low Priority"
+              emails={priorityAnalysis.low_priority || []}
               priority="low"
               icon={CheckCircle2}
               color="#10B981"
