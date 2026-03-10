@@ -7,7 +7,7 @@ on:
 env:
   REGISTRY: biqcregistry.azurecr.io
   FRONTEND_IMAGE: biqcregistry.azurecr.io/biqc-frontend
-  BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-api
+  BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
@@ -42,7 +42,6 @@ jobs:
           file: Dockerfile.frontend
           push: true
           tags: |
-            ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.tag }}
             ${{ env.FRONTEND_IMAGE }}:latest
           build-args: |
             REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
@@ -79,7 +78,6 @@ jobs:
           file: Dockerfile.backend
           push: true
           tags: |
-            ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.tag }}
             ${{ env.BACKEND_IMAGE }}:latest
 
   # ─── DEPLOY TO AZURE ─────────────────────────────────────────────────────
@@ -99,7 +97,7 @@ jobs:
           az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:${{ needs.build-frontend.outputs.image-tag }} \
+            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:latest \
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
@@ -109,7 +107,7 @@ jobs:
           az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:${{ needs.build-backend.outputs.image-tag }} \
+            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:latest \
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
