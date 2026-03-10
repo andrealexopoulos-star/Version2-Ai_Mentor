@@ -1,265 +1,107 @@
 {
-  "identity": {
-    "persona": "E1",
-    "mission": "Create a high-performance, aesthetically unique SaaS integrations marketplace.",
-    "principles": [
-      "Fusion over Imitation: Mix Notion's clean utility with Linear's dark elegance.",
-      "Emotion First: The page should feel 'powerful' and 'connected'.",
-      "Content is King: Logos and status are the heroes.",
-      "Contrast: High contrast between the dark slate background and the vibrant orange accent."
-    ]
+  "project_name": "BIQc Integrations",
+  "design_philosophy": {
+    "archetype": "The Performance Pro",
+    "vibe": "Command Center, Technical, High-Precision",
+    "core_principle": "Density without clutter. Information is beautiful."
   },
-  "visual_system": {
+  "theme": {
+    "mode": "dark",
     "colors": {
-      "page_background": "#0F1720",
-      "card_background": "#141C26",
-      "card_border": "#243140",
-      "accent_primary": "#FF6A00",
-      "accent_hover": "#E55F00",
-      "text_primary": "#FFFFFF",
-      "text_secondary": "#94A3B8",
-      "success_glow": "rgba(34, 197, 94, 0.5)",
-      "status_connected": "#22C55E",
-      "status_available": "#94A3B8"
+      "background": "#070E18",
+      "card_bg": "#0B121C",
+      "card_hover": "#111925",
+      "border": "rgba(255, 255, 255, 0.08)",
+      "border_active": "#FF6A00",
+      "primary": "#FF6A00",
+      "success": "#10B981",
+      "text_primary": "#F4F7FA",
+      "text_secondary": "#9FB0C3",
+      "text_muted": "#5A6B80"
     },
     "typography": {
-      "font_family_sans": "var(--font-body)",
-      "font_family_heading": "var(--font-heading)",
-      "font_family_mono": "var(--font-mono)"
-    },
-    "spacing": {
-      "container_padding": "p-6 md:p-8 lg:p-12",
-      "grid_gap": "gap-4 md:gap-6",
-      "card_padding": "p-5"
-    },
-    "effects": {
-      "hover_lift": "hover:-translate-y-1 transition-transform duration-200 ease-out",
-      "card_shadow": "shadow-lg hover:shadow-xl",
-      "border_glow": "ring-1 ring-white/10 hover:ring-[#FF6A00]/50"
+      "heading": "Cormorant Garamond",
+      "body": "Inter",
+      "mono": "JetBrains Mono"
     }
   },
-  "layout_structure": {
-    "type": "Sidebar-Grid",
-    "mobile_behavior": "Stack with Dropdown Navigation",
-    "grid_columns": "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+  "layout_strategy": {
+    "type": "Bento Grid / High Density",
+    "grid_columns": "grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
+    "gap": "gap-5",
+    "padding": "p-8"
   },
   "components": {
-    "PageContainer": {
-      "description": "Full-screen dark container with specific background color.",
-      "classes": "min-h-screen bg-[#0F1720] text-white flex flex-col md:flex-row"
+    "page_container": {
+      "classes": "min-h-screen bg-[#070E18] text-[#F4F7FA] w-full"
     },
-    "Sidebar": {
-      "description": "Left navigation for categories. Fixed on desktop, hidden on mobile (replaced by dropdown).",
-      "width": "w-64",
-      "styling": "border-r border-[#243140] bg-[#0F1720] p-6 hidden md:block",
-      "item_styling": "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-[#94A3B8] hover:text-white hover:bg-[#141C26]",
-      "active_styling": "bg-[#141C26] text-[#FF6A00] border-l-2 border-[#FF6A00]"
+    "header": {
+      "style": "Clean, minimal, editorial",
+      "title_classes": "text-4xl font-display font-medium tracking-tight text-[#F4F7FA]",
+      "subtitle_classes": "text-[#9FB0C3] mt-2 font-body text-lg font-light max-w-2xl"
     },
-    "MobileNav": {
-      "description": "Dropdown or horizontal scroll for categories on mobile.",
-      "styling": "md:hidden p-4 border-b border-[#243140] bg-[#0F1720] sticky top-0 z-20"
+    "hero_cta": {
+      "style": "The 'Merge Link' Trigger",
+      "description": "A prominent but sleek banner/button area to trigger the global connection flow",
+      "classes": "w-full border border-[#FF6A00]/20 bg-[#FF6A00]/5 rounded-xl p-6 flex items-center justify-between hover:bg-[#FF6A00]/10 transition-all duration-300 group cursor-pointer"
     },
-    "MainContent": {
-      "description": "Right side area containing search and grid.",
-      "styling": "flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto"
+    "category_tabs": {
+      "style": "Sticky, Glassmorphism",
+      "wrapper_classes": "sticky top-0 z-40 bg-[#070E18]/80 backdrop-blur-xl border-b border-white/5 py-4 mb-8",
+      "list_classes": "flex gap-2 overflow-x-auto no-scrollbar pb-1",
+      "item_active": "bg-white/10 text-white border-white/20",
+      "item_inactive": "text-[#9FB0C3] hover:text-white hover:bg-white/5 border-transparent"
     },
-    "Header": {
-      "description": "Contains Page Title, Total Count, and Search Bar.",
-      "styling": "flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4"
+    "integration_card": {
+      "style": "Technical Grid Border",
+      "base_classes": "group relative flex flex-col p-5 rounded-lg border border-white/5 bg-[#0B121C] transition-all duration-200 hover:-translate-y-1 hover:border-[#FF6A00]/30 hover:shadow-[0_4px_20px_-10px_rgba(255,106,0,0.2)]",
+      "connected_classes": "border-[#10B981]/30 bg-[#10B981]/5 hover:border-[#10B981]/50",
+      "logo_size": "h-10 w-10 rounded-md object-contain bg-white p-1"
     },
-    "SearchBar": {
-      "description": "Input field with search icon.",
-      "styling": "bg-[#141C26] border border-[#243140] text-white rounded-lg px-4 py-2 w-full md:w-80 focus:ring-1 focus:ring-[#FF6A00] focus:border-[#FF6A00] placeholder-gray-500"
-    },
-    "IntegrationCard": {
-      "description": "The main unit of the grid.",
-      "styling": "group bg-[#141C26] border border-[#243140] rounded-xl p-6 flex flex-col items-start gap-4 hover:border-[#FF6A00] transition-all duration-300 relative overflow-hidden",
-      "connected_styling": "border-[#22C55E]/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
-    },
-    "LogoContainer": {
-      "description": "White rounded square for Clearbit logos to ensure visibility on dark bg.",
-      "styling": "w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0"
-    },
-    "StatusBadge": {
-      "description": "Small pill showing connection status.",
-      "styling": "text-xs font-semibold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5",
-      "variants": {
-        "connected": "bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20",
-        "available": "bg-[#243140] text-[#94A3B8] border border-[#243140]",
-        "coming_soon": "bg-[#141C26] text-gray-600 border border-[#243140] border-dashed"
-      }
-    },
-    "ConnectButton": {
-      "description": "Primary action button.",
-      "styling": "mt-auto w-full py-2 px-4 bg-[#FF6A00] hover:bg-[#E55F00] text-white text-sm font-bold rounded-full transition-colors flex items-center justify-center gap-2",
-      "connected_styling": "bg-[#141C26] border border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E]/10"
+    "status_badge": {
+      "font": "JetBrains Mono",
+      "classes": "text-[10px] uppercase tracking-wider font-medium px-2 py-1 rounded-sm",
+      "connected": "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20",
+      "disconnected": "hidden",
+      "coming_soon": "bg-white/5 text-[#9FB0C3] border border-white/10"
     }
   },
-  "data_resources": {
+  "data_structure": {
     "categories": [
-      {"id": "all", "label": "All Apps", "icon": "LayoutGrid"},
-      {"id": "email", "label": "Email", "icon": "Mail"},
-      {"id": "crm", "label": "CRM", "icon": "Users"},
-      {"id": "financial", "label": "Financial", "icon": "DollarSign"},
-      {"id": "hris", "label": "HRIS", "icon": "Briefcase"},
-      {"id": "ats", "label": "ATS", "icon": "UserPlus"},
-      {"id": "ticketing", "label": "Ticketing", "icon": "Ticket"},
-      {"id": "storage", "label": "File Storage", "icon": "HardDrive"},
-      {"id": "wiki", "label": "Knowledge Base", "icon": "Book"}
+      "All", "Email", "CRM", "Financial", "HR & Payroll", "ATS", "Ticketing", "File Storage", "Knowledge Base", "Marketing"
     ],
-    "integrations": [
-      {
-        "name": "Gmail",
-        "domain": "google.com",
-        "category": "email",
-        "description": "Sync emails and calendar events directly.",
-        "status": "available"
-      },
-      {
-        "name": "Outlook",
-        "domain": "outlook.com",
-        "category": "email",
-        "description": "Connect your Microsoft 365 Outlook account.",
-        "status": "available"
-      },
-      {
-        "name": "HubSpot",
-        "domain": "hubspot.com",
-        "category": "crm",
-        "description": "Sync contacts, companies, and deals.",
-        "status": "connected"
-      },
-      {
-        "name": "Salesforce",
-        "domain": "salesforce.com",
-        "category": "crm",
-        "description": "Enterprise CRM synchronization.",
-        "status": "available"
-      },
-      {
-        "name": "Pipedrive",
-        "domain": "pipedrive.com",
-        "category": "crm",
-        "description": "Sales pipeline management tool.",
-        "status": "available"
-      },
-      {
-        "name": "QuickBooks",
-        "domain": "quickbooks.intuit.com",
-        "category": "financial",
-        "description": "Accounting software integration.",
-        "status": "available"
-      },
-      {
-        "name": "Xero",
-        "domain": "xero.com",
-        "category": "financial",
-        "description": "Online accounting for small businesses.",
-        "status": "available"
-      },
-      {
-        "name": "Stripe",
-        "domain": "stripe.com",
-        "category": "financial",
-        "description": "Payment processing integration.",
-        "status": "available"
-      },
-      {
-        "name": "BambooHR",
-        "domain": "bamboohr.com",
-        "category": "hris",
-        "description": "HR software for small and medium businesses.",
-        "status": "available"
-      },
-      {
-        "name": "Workday",
-        "domain": "workday.com",
-        "category": "hris",
-        "description": "Finance, HR, and planning system.",
-        "status": "coming_soon"
-      },
-      {
-        "name": "Gusto",
-        "domain": "gusto.com",
-        "category": "hris",
-        "description": "Payroll, benefits, and HR platform.",
-        "status": "available"
-      },
-      {
-        "name": "Greenhouse",
-        "domain": "greenhouse.io",
-        "category": "ats",
-        "description": "Recruiting and onboarding software.",
-        "status": "available"
-      },
-      {
-        "name": "Lever",
-        "domain": "lever.co",
-        "category": "ats",
-        "description": "Talent acquisition suite.",
-        "status": "available"
-      },
-      {
-        "name": "Jira",
-        "domain": "atlassian.com",
-        "category": "ticketing",
-        "description": "Issue and project tracking.",
-        "status": "connected"
-      },
-      {
-        "name": "Zendesk",
-        "domain": "zendesk.com",
-        "category": "ticketing",
-        "description": "Customer service software.",
-        "status": "available"
-      },
-      {
-        "name": "Dropbox",
-        "domain": "dropbox.com",
-        "category": "storage",
-        "description": "File hosting service integration.",
-        "status": "available"
-      },
-      {
-        "name": "Google Drive",
-        "domain": "google.com",
-        "category": "storage",
-        "description": "Cloud file storage and synchronization.",
-        "status": "available"
-      },
-      {
-        "name": "Box",
-        "domain": "box.com",
-        "category": "storage",
-        "description": "Cloud content management.",
-        "status": "available"
-      },
-      {
-        "name": "Notion",
-        "domain": "notion.so",
-        "category": "wiki",
-        "description": "All-in-one workspace for notes and docs.",
-        "status": "available"
-      }
+    "integrations_sample": [
+      { "id": "gmail", "name": "Gmail", "domain": "google.com", "category": "Email", "desc": "Sync emails and calendar events." },
+      { "id": "outlook", "name": "Outlook", "domain": "microsoft.com", "category": "Email", "desc": "Enterprise email and scheduling." },
+      { "id": "salesforce", "name": "Salesforce", "domain": "salesforce.com", "category": "CRM", "desc": "The world's #1 CRM platform." },
+      { "id": "hubspot", "name": "HubSpot", "domain": "hubspot.com", "category": "CRM", "desc": "Inbound marketing, sales, and service." },
+      { "id": "xero", "name": "Xero", "domain": "xero.com", "category": "Financial", "desc": "Beautiful business and accounting software." },
+      { "id": "quickbooks", "name": "QuickBooks", "domain": "quickbooks.intuit.com", "category": "Financial", "desc": "Smart accounting software for small business." },
+      { "id": "slack", "name": "Slack", "domain": "slack.com", "category": "Communication", "desc": "Team communication and collaboration." },
+      { "id": "jira", "name": "Jira", "domain": "atlassian.com", "category": "Ticketing", "desc": "Issue and project tracking software." },
+      { "id": "notion", "name": "Notion", "domain": "notion.so", "category": "Knowledge Base", "desc": "All-in-one workspace for notes and docs." },
+      { "id": "linear", "name": "Linear", "domain": "linear.app", "category": "Ticketing", "desc": "Issue tracking built for speed." },
+      { "id": "google-ads", "name": "Google Ads", "domain": "ads.google.com", "category": "Marketing", "desc": "Reach customers across Google's network." },
+      { "id": "meta-ads", "name": "Meta Ads", "domain": "facebook.com", "category": "Marketing", "desc": "Advertise on Facebook and Instagram." },
+      { "id": "linkedin-ads", "name": "LinkedIn Ads", "domain": "linkedin.com", "category": "Marketing", "desc": "Target professionals on LinkedIn." }
     ]
   },
-  "instructions_to_main_agent": [
-    "Use 'lucide-react' for all icons.",
-    "Implement the 'Clearbit Logo' URL pattern: https://logo.clearbit.com/{domain}",
-    "CRITICAL: Maintain the existing 'openMergeLink()' function for the connection action. Do not break existing business logic.",
-    "CRITICAL: Preserve OAuth flows for Gmail and Outlook.",
-    "Use the exact hex codes provided for the dark theme. Do not use generic Tailwind 'gray-900'.",
-    "Ensure the layout is responsive: Sidebar on desktop, Dropdown on mobile.",
-    "Add a 'connected' state visual: Green border glow + 'Connected' badge.",
-    "The search bar should filter the integrations list in real-time.",
-    "Display a 'Total Connected' count in the header area.",
-    "Ensure all interactive elements have data-testid attributes (e.g., 'integration-card-hubspot', 'connect-btn-hubspot').",
-    "CODEBASE IS JS: Write code in .js and .jsx files. Do not use TypeScript types."
+  "image_strategy": {
+    "source": "Clearbit Logo API",
+    "pattern": "https://logo.clearbit.com/{domain}",
+    "fallback": "UI Avatar with initials"
+  },
+  "implementation_steps": [
+    "1. Create /app/frontend/src/pages/IntegrationsPage.js",
+    "2. Implement the 'Email & Calendar' sovereign section at the top (Gmail/Outlook special handling).",
+    "3. Implement the Category Tabs with horizontal scroll.",
+    "4. Implement the Grid of Cards using the sample data.",
+    "5. Add the 'Coming Soon' Marketing section with reduced opacity.",
+    "6. Ensure all interactions (hover, click) have the 'Technical' feel (sharp transitions, mono fonts)."
   ],
-  "UNIVERSAL_GUIDELINES": [
-    "Do not use gradients for the main background; use the solid #0F1720.",
-    "Use 'Inter' or 'Plus Jakarta Sans' for the body text if available in tokens.",
-    "Ensure accessibility: Text contrast on the #141C26 card background must be high.",
-    "Motion: Add subtle hover effects to cards (translate-y, border color change)."
-  ]
+  "universal_guidelines": {
+    "font_rendering": "antialiased subpixel-antialiased",
+    "border_radius": "rounded-lg",
+    "animation": "transition-all duration-200 ease-out"
+  }
 }
