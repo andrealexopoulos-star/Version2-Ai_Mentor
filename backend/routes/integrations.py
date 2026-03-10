@@ -1748,7 +1748,7 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     # ── 2. Email connections ──
     try:
         email_result = get_sb().table("email_connections").select(
-            "provider, status, connected_at, emails_synced"
+            "provider, connected_at, emails_synced"
         ).eq("user_id", user_id).execute()
 
         for row in (email_result.data or []):

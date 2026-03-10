@@ -457,6 +457,13 @@ const AdvisorWatchtower = () => {
           </>
         )}
 
+        {/* INTELLIGENCE COVERAGE BAR — always visible once integration status loads */}
+        {!integrationLoading && integrationStatus && (
+          <div className="max-w-5xl mx-auto px-6 pt-4 flex justify-end">
+            <IntelligenceCoverageBar integrationStatus={integrationStatus} loading={integrationLoading} />
+          </div>
+        )}
+
         {/* ERROR */}
         {error && !loading && !cognitive && (
           <div className="max-w-3xl mx-auto px-6 py-16">
@@ -496,7 +503,6 @@ const AdvisorWatchtower = () => {
                   Good {timeOfDay || 'morning'}, {owner || 'there'}.
                 </h1>
                 <div className="flex items-center gap-3">
-                  <IntelligenceCoverageBar integrationStatus={integrationStatus} loading={integrationLoading} />
                   <DataConfidence cognitive={cognitive} />
                 </div>
               </div>
