@@ -19,6 +19,18 @@ const ANALYZE_PHASES = [
   'Preparing your Executive Audit Brief...',
 ];
 
+/** Loading — branded pulse, no spinner */
+export const CalibrationLoading = () => (
+  <div className="flex-1 flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }} data-testid="calibration-loading">
+    <div className="text-center">
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: '#FF6A00', animation: 'pulse 2s ease-in-out infinite' }}>
+        <span className="text-white font-bold text-lg" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
+      </div>
+      <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }}>Loading calibration...</p>
+    </div>
+  </div>
+);
+
 // ── Privacy Commitment Modal ──────────────────────────────────────────────────
 const PrivacyModal = ({ onClose }) => (
   <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4"
