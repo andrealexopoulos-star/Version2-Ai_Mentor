@@ -511,11 +511,18 @@ export const useCalibrationState = () => {
       autoSave(3);
       setTransitioning(false);
 
-      // Show integration overlay after CMO summary (new phase)
+      // Go to agent calibration chat (builds personalised AI agent prompt)
+      // This happens AFTER the CMO report, BEFORE "Here's What BIQc Found"
       fetchIntelligence();
-      setEntry("integration_connect");
+      setEntry("agent_calibration");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
+  };
+
+  // ═══ PHASE 4c: Agent Calibration Complete → Show Intelligence Snapshot ═══
+  const handleAgentCalibrationComplete = () => {
+    autoSave(4);
+    setEntry("intelligence-first");
   };
 
   // ═══ PHASE 5: Snapshot → Dashboard ═══
@@ -652,6 +659,7 @@ export const useCalibrationState = () => {
     handleConfirmIdentity, handleRegenerateIdentity, handleRejectIdentity, handleAbnLookup,
     handleSignOut, handleAuditSubmit, handleManualSummary,
     handleConfirmWow,
+    handleAgentCalibrationComplete, callEdge,
     startEdit, commitEdit,
     startCalibration, handleWizardContinue, handleChatSubmit,
   };

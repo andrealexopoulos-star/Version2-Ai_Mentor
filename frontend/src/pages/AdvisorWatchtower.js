@@ -17,6 +17,7 @@ import IntelligenceCoverageBar from '../components/IntelligenceCoverageBar';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
+import FirstTimeOnboarding, { useFirstTimeOnboarding } from '../components/FirstTimeOnboarding';
 
 
 /* ═══ ACTION BUTTONS ═══ */
@@ -373,6 +374,7 @@ const AdvisorWatchtower = () => {
   const c = useMemo(() => cognitive || {}, [cognitive]);
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
   const [cognitionData, setCognitionData] = useState(null);
+  const { show: showOnboarding, dismiss: dismissOnboarding, emailConnectedProvider } = useFirstTimeOnboarding();
 
   // Derive connectedIntegrations from unified status for parseToGroups compatibility
   const connectedIntegrations = useMemo(() => {
@@ -440,6 +442,14 @@ const AdvisorWatchtower = () => {
 
   return (
     <DashboardLayout>
+      {/* First-time onboarding modal — shows once after calibration */}
+      {showOnboarding && (
+        <FirstTimeOnboarding
+          onClose={dismissOnboarding}
+          initialEmailProvider={emailConnectedProvider}
+        />
+      )}
+
       <div className="min-h-[calc(100vh-56px)]" style={{ background: 'var(--biqc-bg)', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
 
         {/* LOADING — Animated cognitive screen with progress bar */}

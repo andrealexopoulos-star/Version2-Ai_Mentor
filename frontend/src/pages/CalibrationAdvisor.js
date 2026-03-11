@@ -10,6 +10,7 @@ import {
 import { WowSummary, DissolveTransition } from "../components/calibration/WowSummary";
 import ChiefMarketingSummary from "../components/calibration/ChiefMarketingSummary";
 import PostCMOIntegrationOverlay from "../components/calibration/PostCMOIntegrationOverlay";
+import AgentCalibrationChat from "../components/calibration/AgentCalibrationChat";
 import ForensicIdentityCard from "../components/calibration/ForensicIdentityCard";
 import { ExecutiveReveal } from "../components/calibration/ExecutiveReveal";
 import { ContinuitySuite } from "../components/calibration/ContinuitySuite";
@@ -134,28 +135,40 @@ const CalibrationAdvisor = () => {
         />
       )}
 
-      {/* ═══ PHASE 4: Chief Marketing Summary (footprint report) — BLOCKED until identity confirmed ═══ */}
-      {cal.entry === "wow_summary" && cal.wowSummary && cal.identityConfirmed && !cal.transitioning && (
-        <ChiefMarketingSummary
-          wowSummary={cal.wowSummary}
-          onConfirm={cal.handleConfirmWow}
-          isSubmitting={cal.isSubmitting}
-          identityConfidence={cal.identityConfidence}
-        />
+      {/* ═══ PHASE 4: Chief Marketing Summary (CMO Report) ═══ */}
+      {cal.entry === "wow_summary" && cal.identityConfirmed && !cal.transitioning && (
+        cal.wowSummary ? (
+          <ChiefMarketingSummary
+            wowSummary={cal.wowSummary}
+            onConfirm={cal.handleConfirmWow}
+            isSubmitting={cal.isSubmitting}
+            identityConfidence={cal.identityConfidence}
+          />
+        ) : (
+          /* Fallback: scan returned no data — use manual summary then proceed */
+          <ManualSummaryFallback
+            firstName={cal.firstName}
+            onSubmit={async (summary) => {
+              await cal.handleManualSummary(summary);
+              cal.setEntry("wow_summary");
+            }}
+            isSubmitting={cal.isSubmitting}
+          />
+        )
       )}
 
-      {/* ═══ PHASE 4b: Post-CMO Integration Overlay ═══ */}
-      {cal.entry === "integration_connect" && (
-        <PostCMOIntegrationOverlay
+      {/* ═══ PHASE 4b: Agent Calibration Chat (builds personalised AI agent) ═══ */}
+      {cal.entry === "agent_calibration" && (
+        <AgentCalibrationChat
+          callEdge={cal.callEdge}
           firstName={cal.firstName}
-          onSkip={() => cal.setEntry("intelligence-first")}
-          onComplete={() => cal.setEntry("intelligence-first")}
+          onComplete={cal.handleAgentCalibrationComplete}
         />
       )}
 
       {cal.transitioning && <DissolveTransition firstName={cal.firstName} />}
 
-      {/* ═══ PHASE 5: Executive CMO Snapshot ═══ */}
+      {/* ═══ PHASE 5: Executive CMO Snapshot — "Here's What BIQc Found" ═══ */}
       {cal.entry === "intelligence-first" && (
         <ExecutiveCMOSnapshot intelligenceData={cal.intelligenceData} onContinue={cal.proceedFromIntelligence} />
       )}
