@@ -182,6 +182,42 @@ const MarketPage = () => {
           {!snapshot && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
         </div>
 
+        {/* ═══ MARKETING METRICS KPI STRIP (Req 1) ═══ */}
+        {(() => {
+          const footprint = c?.digital_footprint || {};
+          const hasFootprint = footprint.score != null;
+          const hasMarketing = channelsData?.channels?.some(ch => ch.status === 'connected');
+          return (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Digital Footprint', value: footprint.score, unit: '/100', color: '#FF6A00', icon: BarChart3, desc: 'Overall digital presence score' },
+                { label: 'Social Engagement', value: footprint.social_score, unit: '/100', color: '#3B82F6', icon: MessageSquare, desc: 'Social media activity and reach' },
+                { label: 'SEO Visibility', value: footprint.seo_score, unit: '/100', color: '#10B981', icon: Eye, desc: 'How easily customers find you via search' },
+                { label: 'Content Authority', value: footprint.content_score, unit: '/100', color: '#8B5CF6', icon: FileText, desc: 'Quality and volume of published content' },
+              ].map(metric => (
+                <div key={metric.label} className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{metric.label}</span>
+                    <metric.icon className="w-3.5 h-3.5" style={{ color: metric.color }} />
+                  </div>
+                  {hasFootprint && metric.value != null
+                    ? <>
+                        <span className="text-2xl font-bold" style={{ color: metric.color, fontFamily: fontFamily.mono }}>{metric.value}</span>
+                        <span className="text-xs ml-0.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{metric.unit}</span>
+                        <div className="h-1 rounded-full mt-2" style={{ background: metric.color + '20' }}>
+                          <div style={{ width: `${metric.value}%`, height: '100%', borderRadius: 4, background: metric.color, transition: 'width 1s ease' }} />
+                        </div>
+                      </>
+                    : <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
+                        {hasMarketing ? 'Syncing…' : 'Connect marketing tools'}
+                      </span>
+                  }
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* ═══ TAB NAVIGATION ═══ */}
         <div className="flex gap-1 p-1 rounded-lg overflow-x-auto" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="market-tabs">
           {TABS.map(tab => (
