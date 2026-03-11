@@ -69,40 +69,65 @@ const AlertsPageAuth = () => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('severity'); // severity | date
+  const [dateRange, setDateRange] = useState('all'); // all | today | week | month
   const { status: integrationStatus, loading: integrationLoading } = useIntegrationStatus();
 
-  // Derive what's connected
   const connectedIntegrations = (integrationStatus?.integrations || []).filter(i => i.connected);
   const totalConnected = integrationStatus?.total_connected || connectedIntegrations.length;
   const hasCRM = connectedIntegrations.some(i => (i.category || '').toLowerCase().includes('crm'));
   const hasEmail = connectedIntegrations.some(i => ['email', 'gmail', 'outlook'].some(k => (i.category || '').toLowerCase().includes(k) || (i.provider || '').toLowerCase().includes(k)));
   const hasAnyData = totalConnected > 0;
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const res = await apiClient.get('/intelligence/watchtower', { timeout: 8000 });
-        if (res.data?.events?.length > 0) {
-          const mapped = res.data.events.map((e, i) => ({
-            id: e.id || i + 1,
-            severity: e.severity || 'moderate',
-            title: e.title || e.signal || e.event,
-            impact: e.impact || e.detail || e.description || '',
-            action: e.recommendation || e.action || 'Review and take appropriate action.',
-            time: e.created_at ? timeAgo(e.created_at) : 'Recent',
-            actions: e.severity === 'critical' || e.severity === 'high' ? ['email', 'handoff'] : ['handoff'],
-          }));
-          setAlerts(mapped);
-        }
-      } catch {} finally { setLoading(false); }
-    };
-    fetchAlerts();
-  }, []);
+  const fetchAlerts = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get('/intelligence/watchtower', { timeout: 10000 });
+      if (res.data?.events?.length > 0) {
+        const mapped = res.data.events.map((e, i) => ({
+          id: e.id || i + 1,
+          severity: e.severity || 'moderate',
+          title: e.title || e.signal || e.event,
+          impact: e.impact || e.detail || e.description || '',
+          action: e.recommendation || e.action || 'Review and take appropriate action.',
+          time: e.created_at ? timeAgo(e.created_at) : 'Recent',
+          created_at: e.created_at || new Date().toISOString(),
+          actions: e.severity === 'critical' || e.severity === 'high' ? ['email', 'handoff'] : ['handoff'],
+        }));
+        setAlerts(mapped);
+      }
+    } catch {} finally { setLoading(false); }
+  };
 
-  const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter || (filter === 'critical' && a.severity === 'high'));
-  const critCount = alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
-  const modCount = alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
-  const infoCount = alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
+  useEffect(() => { fetchAlerts(); }, []);
+
+
+  // Date range filter helper
+  const isInRange = (dateStr) => {
+    if (dateRange === 'all') return true;
+    const d = new Date(dateStr);
+    const now = new Date();
+    if (dateRange === 'today') return d.toDateString() === now.toDateString();
+    if (dateRange === 'week') return (now - d) < 7 * 86400000;
+    if (dateRange === 'month') return (now - d) < 30 * 86400000;
+    return true;
+  };
+
+  // Severity sort weight
+  const sevWeight = { critical: 4, high: 3, moderate: 2, medium: 2, info: 1, low: 1 };
+
+  const filtered = alerts
+    .filter(a => filter === 'all' || a.severity === filter || (filter === 'critical' && a.severity === 'high'))
+    .filter(a => isInRange(a.created_at))
+    .sort((a, b) => {
+      if (sortBy === 'severity') return (sevWeight[b.severity] || 0) - (sevWeight[a.severity] || 0);
+      if (sortBy === 'date') return new Date(b.created_at) - new Date(a.created_at);
+      return 0;
+    });
+
+  const critCount = loading ? null : alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
+  const modCount = loading ? null : alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
+  const infoCount = loading ? null : alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
 
   return (
     <DashboardLayout>
@@ -121,23 +146,54 @@ const AlertsPageAuth = () => {
               {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>syncing...</span>}
             </p>
           </div>
-          <div className="flex gap-2">
-            {[['all', 'All'], ['critical', 'Critical'], ['moderate', 'Moderate'], ['info', 'Info']].map(([val, label]) => (
-              <button key={val} onClick={() => setFilter(val)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}>
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
             <div key={l} className="rounded-lg p-4 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-              <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: c }}>{v}</span>
+              {loading
+                ? <Loader2 className="w-6 h-6 animate-spin mx-auto mb-1" style={{ color: c }} />
+                : <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: c }}>{v}</span>
+              }
               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{l}</span>
             </div>
           ))}
+        </div>
+
+        {/* Filter + Sort toolbar */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1.5 flex-wrap">
+            {[['all','All'],['critical','Critical'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
+              <button key={val} onClick={() => setFilter(val)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="h-4 w-px bg-[#243140] hidden sm:block" />
+          <div className="flex gap-1.5 flex-wrap">
+            {[['all','All time'],['today','Today'],['week','This week'],['month','This month']].map(([val,label]) => (
+              <button key={val} onClick={() => setDateRange(val)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{ background: dateRange === val ? '#243140' : 'transparent', color: dateRange === val ? '#F4F7FA' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Sort:</span>
+            {[['severity','Severity'],['date','Date']].map(([val,label]) => (
+              <button key={val} onClick={() => setSortBy(val)}
+                className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-all"
+                style={{ background: sortBy === val ? '#FF6A0015' : 'transparent', color: sortBy === val ? '#FF6A00' : '#64748B', border: `1px solid ${sortBy === val ? '#FF6A0030' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                {label}
+              </button>
+            ))}
+            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#FF6A00' : '#64748B' }}>
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-3">
