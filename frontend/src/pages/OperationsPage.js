@@ -45,7 +45,8 @@ const OperationsPage = () => {
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
   const exec = snapshot?.execution || {};
-  const hasRealOpsData = (hasCRM || hasAccounting) && (exec.sla_breaches != null || exec.bottleneck);
+  // Show ops content if integration is connected (even if exec data hasn't loaded yet)
+  const hasRealOpsData = hasCRM || hasAccounting;
 
   return (
     <DashboardLayout>
@@ -55,7 +56,7 @@ const OperationsPage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Delivery & Operations</h1>
             <p className="text-sm text-[#9FB0C3]">
-              {hasRealOpsData ? 'Operational signals from connected data.' : 'Connect integrations to assess operations.'}
+              {(exec.sla_breaches != null || exec.bottleneck) ? 'Operational signals from connected data.' : hasCRM || hasAccounting ? 'HubSpot connected — syncing operational data...' : 'Connect integrations to assess operations.'}
               {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>syncing...</span>}
             </p>
           </div>

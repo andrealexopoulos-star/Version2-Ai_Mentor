@@ -56,6 +56,10 @@ const RevenuePage = () => {
     fetchData();
   }, []);
 
+  // Check if CRM is ACTUALLY connected (even if no deal data yet)
+  const crmConnected = (integrationStatus?.integrations || []).some(i => i.connected && (i.category || '').toLowerCase() === 'crm');
+  const accountingConnected = (integrationStatus?.integrations || []).some(i => i.connected && (i.category || '').toLowerCase() === 'accounting');
+
   // Use ONLY real data — no demo fallback
   const hasDeals = deals && deals.length > 0;
   const hasFinancials = financials && financials.connected;
@@ -112,7 +116,7 @@ const RevenuePage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
             <p className="text-sm text-[#9FB0C3]">
-              {hasDeals ? 'Live data from CRM.' : 'Connect CRM to view revenue data.'}
+              {hasDeals ? 'Live data from HubSpot CRM.' : crmConnected ? 'HubSpot connected — syncing pipeline data...' : 'Connect CRM to view revenue data.'}
               {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>syncing...</span>}
             </p>
           </div>
@@ -123,15 +127,27 @@ const RevenuePage = () => {
 
         {!loading && !hasDeals && !hasFinancials && (
           <Panel className="py-10">
-            <IntegrationStatusWidget
-              categories={['crm', 'accounting']}
-              status={integrationStatus}
-              loading={integrationLoading}
-              syncing={integrationSyncing}
-              onRefresh={refreshIntegrations}
-              emptyStateTitle="Your pipeline is waiting to be analysed"
-              emptyStateDesc="Connect HubSpot, Salesforce or Xero to see deal velocity, stalled opportunities, cash flow and revenue concentration risk — updated automatically."
-            />
+            {crmConnected || accountingConnected ? (
+              <div className="text-center py-4">
+                <div className="w-10 h-10 rounded-full bg-[#FF6A00]/10 flex items-center justify-center mx-auto mb-4">
+                  <Loader2 className="w-5 h-5 text-[#FF6A00] animate-spin" />
+                </div>
+                <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>
+                  {crmConnected ? 'HubSpot Connected — Pulling Pipeline Data' : 'Accounting Connected — Loading Financial Data'}
+                </p>
+                <p className="text-xs text-[#64748B]">First sync in progress. This takes 1-2 minutes. Refresh to check.</p>
+              </div>
+            ) : (
+              <IntegrationStatusWidget
+                categories={['crm', 'accounting']}
+                status={integrationStatus}
+                loading={integrationLoading}
+                syncing={integrationSyncing}
+                onRefresh={refreshIntegrations}
+                emptyStateTitle="Your pipeline is waiting to be analysed"
+                emptyStateDesc="Connect HubSpot, Salesforce or Xero to see deal velocity, stalled opportunities, cash flow and revenue concentration risk — updated automatically."
+              />
+            )}
           </Panel>
         )}
 
