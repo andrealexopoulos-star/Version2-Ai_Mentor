@@ -17,7 +17,9 @@ const CalendarView = () => {
 
   useEffect(() => {
     fetchCalendarData();
-  }, []);
+    // Auto-sync on mount to ensure fresh Outlook events
+    syncCalendar(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCalendarData = async () => {
     try {
@@ -26,9 +28,7 @@ const CalendarView = () => {
         apiClient.get('/outlook/calendar/events').catch(() => ({ data: { events: [] } })),
         apiClient.get('/outlook/intelligence').catch(() => ({ data: {} }))
       ]);
-      
       setEvents(eventsRes.data?.events || []);
-      // Calendar intel might be stored separately or with email intel
     } catch (error) {
       console.error('Failed to fetch calendar data');
     } finally {
@@ -36,18 +36,20 @@ const CalendarView = () => {
     }
   };
 
-  const syncCalendar = async () => {
+  const syncCalendar = async (silent = false) => {
     try {
       setSyncing(true);
-      toast.info('Syncing calendar...');
+      if (!silent) toast.info('Syncing calendar...');
       const response = await apiClient.post('/outlook/calendar/sync');
-      toast.success(`Calendar synced: ${response.data.events_synced} events`);
+      if (!silent) toast.success(`Calendar synced: ${response.data.events_synced} events`);
       await fetchCalendarData();
     } catch (error) {
-      if (error.response?.data?.detail?.includes('not connected')) {
-        toast.error('Please connect your Outlook account first in Integrations');
-      } else {
-        toast.error('Failed to sync calendar: ' + (error.response?.data?.detail || error.message));
+      if (!silent) {
+        if (error.response?.data?.detail?.includes('not connected')) {
+          toast.error('Please connect your Outlook account first in Integrations');
+        } else {
+          toast.error('Failed to sync calendar: ' + (error.response?.data?.detail || error.message));
+        }
       }
     } finally {
       setSyncing(false);

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import { Link } from 'react-router-dom';
 
 
 const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
@@ -67,32 +69,65 @@ const AlertsPageAuth = () => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('severity'); // severity | date
+  const [dateRange, setDateRange] = useState('all'); // all | today | week | month
+  const { status: integrationStatus, loading: integrationLoading } = useIntegrationStatus();
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const res = await apiClient.get('/intelligence/watchtower', { timeout: 8000 });
-        if (res.data?.events?.length > 0) {
-          const mapped = res.data.events.map((e, i) => ({
-            id: e.id || i + 1,
-            severity: e.severity || 'moderate',
-            title: e.title || e.signal || e.event,
-            impact: e.impact || e.detail || e.description || '',
-            action: e.recommendation || e.action || 'Review and take appropriate action.',
-            time: e.created_at ? timeAgo(e.created_at) : 'Recent',
-            actions: e.severity === 'critical' || e.severity === 'high' ? ['email', 'handoff'] : ['handoff'],
-          }));
-          setAlerts(mapped);
-        }
-      } catch {} finally { setLoading(false); }
-    };
-    fetchAlerts();
-  }, []);
+  const connectedIntegrations = (integrationStatus?.integrations || []).filter(i => i.connected);
+  const totalConnected = integrationStatus?.total_connected || connectedIntegrations.length;
+  const hasCRM = connectedIntegrations.some(i => (i.category || '').toLowerCase().includes('crm'));
+  const hasEmail = connectedIntegrations.some(i => ['email', 'gmail', 'outlook'].some(k => (i.category || '').toLowerCase().includes(k) || (i.provider || '').toLowerCase().includes(k)));
+  const hasAnyData = totalConnected > 0;
 
-  const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter || (filter === 'critical' && a.severity === 'high'));
-  const critCount = alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
-  const modCount = alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
-  const infoCount = alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
+  const fetchAlerts = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get('/intelligence/watchtower', { timeout: 10000 });
+      if (res.data?.events?.length > 0) {
+        const mapped = res.data.events.map((e, i) => ({
+          id: e.id || i + 1,
+          severity: e.severity || 'moderate',
+          title: e.title || e.signal || e.event,
+          impact: e.impact || e.detail || e.description || '',
+          action: e.recommendation || e.action || 'Review and take appropriate action.',
+          time: e.created_at ? timeAgo(e.created_at) : 'Recent',
+          created_at: e.created_at || new Date().toISOString(),
+          actions: e.severity === 'critical' || e.severity === 'high' ? ['email', 'handoff'] : ['handoff'],
+        }));
+        setAlerts(mapped);
+      }
+    } catch {} finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchAlerts(); }, []);
+
+
+  // Date range filter helper
+  const isInRange = (dateStr) => {
+    if (dateRange === 'all') return true;
+    const d = new Date(dateStr);
+    const now = new Date();
+    if (dateRange === 'today') return d.toDateString() === now.toDateString();
+    if (dateRange === 'week') return (now - d) < 7 * 86400000;
+    if (dateRange === 'month') return (now - d) < 30 * 86400000;
+    return true;
+  };
+
+  // Severity sort weight
+  const sevWeight = { critical: 4, high: 3, moderate: 2, medium: 2, info: 1, low: 1 };
+
+  const filtered = alerts
+    .filter(a => filter === 'all' || a.severity === filter || (filter === 'critical' && a.severity === 'high'))
+    .filter(a => isInRange(a.created_at))
+    .sort((a, b) => {
+      if (sortBy === 'severity') return (sevWeight[b.severity] || 0) - (sevWeight[a.severity] || 0);
+      if (sortBy === 'date') return new Date(b.created_at) - new Date(a.created_at);
+      return 0;
+    });
+
+  const critCount = loading ? null : alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
+  const modCount = loading ? null : alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
+  const infoCount = loading ? null : alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
 
   return (
     <DashboardLayout>
@@ -101,38 +136,128 @@ const AlertsPageAuth = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Alert Centre</h1>
             <p className="text-sm text-[#9FB0C3]">
-              {alerts.length} active alerts across your business.
-              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "\x27JetBrains Mono\x27, monospace" }}>syncing...</span>}
+              {loading || integrationLoading
+                ? 'Scanning connected data sources...'
+                : alerts.length > 0
+                  ? `${alerts.length} active alert${alerts.length !== 1 ? 's' : ''} requiring your attention.`
+                  : hasAnyData
+                    ? `All ${totalConnected} connected system${totalConnected !== 1 ? 's' : ''} are healthy — no issues detected.`
+                    : 'No data sources connected — connect your tools to activate monitoring.'}
+              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>syncing...</span>}
             </p>
-          </div>
-          <div className="flex gap-2">
-            {[['all', 'All'], ['critical', 'Critical'], ['moderate', 'Moderate'], ['info', 'Info']].map(([val, label]) => (
-              <button key={val} onClick={() => setFilter(val)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}>
-                {label}
-              </button>
-            ))}
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
             <div key={l} className="rounded-lg p-4 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-              <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: c }}>{v}</span>
+              {loading
+                ? <Loader2 className="w-6 h-6 animate-spin mx-auto mb-1" style={{ color: c }} />
+                : <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: c }}>{v}</span>
+              }
               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{l}</span>
             </div>
           ))}
+        </div>
+
+        {/* Filter + Sort toolbar */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1.5 flex-wrap">
+            {[['all','All'],['critical','Critical'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
+              <button key={val} onClick={() => setFilter(val)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="h-4 w-px bg-[#243140] hidden sm:block" />
+          <div className="flex gap-1.5 flex-wrap">
+            {[['all','All time'],['today','Today'],['week','This week'],['month','This month']].map(([val,label]) => (
+              <button key={val} onClick={() => setDateRange(val)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{ background: dateRange === val ? '#243140' : 'transparent', color: dateRange === val ? '#F4F7FA' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Sort:</span>
+            {[['severity','Severity'],['date','Date']].map(([val,label]) => (
+              <button key={val} onClick={() => setSortBy(val)}
+                className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-all"
+                style={{ background: sortBy === val ? '#FF6A0015' : 'transparent', color: sortBy === val ? '#FF6A00' : '#64748B', border: `1px solid ${sortBy === val ? '#FF6A0030' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                {label}
+              </button>
+            ))}
+            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#FF6A00' : '#64748B' }}>
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-3">
           {filtered.length > 0 ? (
             filtered.map(a => <AlertItem key={a.id} alert={a} />)
           ) : !loading ? (
-            <div className="rounded-lg p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-              <Bell className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
-              <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>All systems normal — no alerts.</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--biqc-text-2)' }}>BIQc monitors your connected data 24/7. You'll be notified here the moment something requires your attention.</p>
-            </div>
+            hasAnyData ? (
+              /* Connected but no alerts — genuinely all clear */
+              <div className="rounded-xl p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.1)' }}>
+                  <Shield className="w-7 h-7 text-[#10B981]" />
+                </div>
+                <p className="text-base font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>
+                  All clear — no issues detected.
+                </p>
+                <p className="text-sm text-[#9FB0C3] max-w-md mx-auto mb-1" style={{ fontFamily: fontFamily.body }}>
+                  BIQc is actively monitoring {totalConnected} connected system{totalConnected !== 1 ? 's' : ''} in real time.
+                  {hasCRM && ' Your HubSpot pipeline, deals and contacts are being watched.'}
+                  {hasEmail && ' Your Outlook emails and calendar signals are being analysed.'}
+                </p>
+                <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>
+                  Alerts will appear here instantly when BIQc detects a risk, anomaly or action required.
+                </p>
+              </div>
+            ) : (
+              /* No integrations connected — explain WHY there are no alerts */
+              <div className="rounded-xl p-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(255,106,0,0.2)' }}>
+                <div className="flex items-start gap-4 mb-5">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,106,0,0.1)' }}>
+                    <Bell className="w-6 h-6 text-[#FF6A00]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>
+                      No alerts — because no data is being monitored yet.
+                    </p>
+                    <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      The Alert Centre can only surface issues from data it can see.
+                      Without connected integrations, BIQc has nothing to watch — so zero alerts simply means zero visibility, not zero risk.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                  {[
+                    { label: 'Connect CRM', desc: 'Watch for stalled deals, lead delays, churn signals', color: '#3B82F6', example: '"Zanda Health — 70h response delay"' },
+                    { label: 'Connect Accounting', desc: 'Monitor cash flow gaps, overdue invoices, margin compression', color: '#10B981', example: '"Invoice $4,200 overdue 14 days"' },
+                    { label: 'Connect Email', desc: 'Detect client disengagement, escalation patterns', color: '#8B5CF6', example: '"3 unanswered client emails this week"' },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-lg p-4" style={{ background: '#0A1018', border: `1px solid ${item.color}20` }}>
+                      <p className="text-xs font-semibold mb-1" style={{ color: item.color, fontFamily: fontFamily.mono }}>{item.label}</p>
+                      <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
+                      <p className="text-[10px] italic" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>e.g. {item.example}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <Link to="/integrations"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
+                  style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.body }}
+                  data-testid="alerts-connect-integrations">
+                  <Plug className="w-4 h-4" /> Connect Integrations to Activate Alerts <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            )
           ) : null}
         </div>
       </div>

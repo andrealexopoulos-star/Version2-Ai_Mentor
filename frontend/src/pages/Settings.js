@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard, RefreshCw, BookOpen } from 'lucide-react';
+import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard, RefreshCw, BookOpen, AlertTriangle, Info, Lock, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ const Settings = () => {
   const [resettingCalibration, setResettingCalibration] = useState(false);
   const [tutorialPrefs, setTutorialPrefs] = useState({ tutorials_disabled: false });
   const [tutorialAction, setTutorialAction] = useState(null); // 'resetting' | 'toggling'
+  const [tutorialConfirm, setTutorialConfirm] = useState(null); // 'reset' | 'disable' | null
   const [syncing, setSyncing] = useState(false);
   const [accountData, setAccountData] = useState({
     name: user?.name || '',
@@ -389,10 +390,11 @@ const Settings = () => {
                       <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)' }}>
                         <div>
                           <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Account Type</p>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your current role</p>
+                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your current role and access level</p>
                         </div>
-                        <span className="badge badge-primary">
-                          {user?.role || 'user'}
+                        <span className="badge badge-primary text-xs px-3 py-1 rounded-full"
+                          style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)' }}>
+                          {user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'Business Owner'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)' }}>
@@ -400,9 +402,40 @@ const Settings = () => {
                           <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Member Since</p>
                           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Account creation date</p>
                         </div>
-                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                          {user?.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
+                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {user?.created_at
+                            ? new Date(user.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+                            : <span style={{ color: '#64748B', fontStyle: 'italic' }}>Not available</span>
+                          }
                         </span>
+                      </div>
+
+                      {/* Email lock explanation */}
+                      <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Lock className="w-4 h-4" style={{ color: '#64748B' }} />
+                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Email Address</p>
+                        </div>
+                        <p className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
+                        <p className="text-xs" style={{ color: '#64748B' }}>
+                          Your email is managed by your authentication provider (Google or Microsoft) and cannot be changed here.
+                          To change it, update your email in Google or Microsoft account settings, then sign in again.
+                        </p>
+                      </div>
+
+                      {/* Calibration review link */}
+                      <div className="p-4 rounded-lg flex items-center justify-between"
+                        style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.15)' }}>
+                        <div>
+                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>AI Calibration Answers</p>
+                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Review or update your calibration to refine your AI agent's behaviour</p>
+                        </div>
+                        <Button variant="outline" onClick={() => navigate('/calibration')}
+                          className="flex items-center gap-2 text-sm"
+                          style={{ borderColor: '#FF6A00', color: '#FF6A00' }}
+                          data-testid="recalibrate-btn">
+                          Review Calibration <ArrowRight className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -529,33 +562,46 @@ const Settings = () => {
                       Page guides appear once on your first visit to each section. You can reset or disable them here.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={handleResetTutorials}
-                        disabled={tutorialAction !== null}
-                        data-testid="reset-tutorials-btn"
-                        className="flex items-center gap-2"
-                      >
-                        {tutorialAction === 'resetting'
-                          ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : <RefreshCw className="w-4 h-4" />}
-                        Reset all tutorials
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleToggleTutorials(!tutorialPrefs.tutorials_disabled)}
-                        disabled={tutorialAction !== null}
-                        data-testid="toggle-tutorials-btn"
-                        className="flex items-center gap-2"
-                        style={tutorialPrefs.tutorials_disabled
-                          ? { borderColor: '#10B981', color: '#10B981' }
-                          : { borderColor: '#64748B', color: '#64748B' }}
-                      >
-                        {tutorialAction === 'toggling'
-                          ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : null}
-                        {tutorialPrefs.tutorials_disabled ? 'Re-enable tutorials' : 'Disable all tutorials'}
-                      </Button>
+                      {/* Tutorial Reset — with confirmation */}
+                      {tutorialConfirm === 'reset' ? (
+                        <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                          <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
+                          <span className="text-xs" style={{ color: '#F59E0B' }}>Reset all tutorial progress?</span>
+                          <Button size="sm" onClick={() => { setTutorialConfirm(null); handleResetTutorials(); }}
+                            className="text-xs h-7 px-3" style={{ background: '#F59E0B', color: 'white' }}>Confirm</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setTutorialConfirm(null)}
+                            className="text-xs h-7 px-3" style={{ color: '#64748B' }}>Cancel</Button>
+                        </div>
+                      ) : (
+                        <Button variant="outline" onClick={() => setTutorialConfirm('reset')}
+                          disabled={tutorialAction !== null} data-testid="reset-tutorials-btn"
+                          className="flex items-center gap-2">
+                          {tutorialAction === 'resetting' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          Reset all tutorials
+                        </Button>
+                      )}
+
+                      {/* Tutorial Disable — with confirmation */}
+                      {tutorialConfirm === 'disable' ? (
+                        <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                          <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" />
+                          <span className="text-xs" style={{ color: '#EF4444' }}>
+                            {tutorialPrefs.tutorials_disabled ? 'Re-enable all tutorials?' : 'Disable all tutorials? You won\'t see guides again.'}
+                          </span>
+                          <Button size="sm" onClick={() => { setTutorialConfirm(null); handleToggleTutorials(!tutorialPrefs.tutorials_disabled); }}
+                            className="text-xs h-7 px-3" style={{ background: '#EF4444', color: 'white' }}>Confirm</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setTutorialConfirm(null)}
+                            className="text-xs h-7 px-3" style={{ color: '#64748B' }}>Cancel</Button>
+                        </div>
+                      ) : (
+                        <Button variant="outline" onClick={() => setTutorialConfirm('disable')}
+                          disabled={tutorialAction !== null} data-testid="toggle-tutorials-btn"
+                          className="flex items-center gap-2"
+                          style={tutorialPrefs.tutorials_disabled ? { borderColor: '#10B981', color: '#10B981' } : { borderColor: '#64748B', color: '#64748B' }}>
+                          {tutorialAction === 'toggling' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                          {tutorialPrefs.tutorials_disabled ? 'Re-enable tutorials' : 'Disable all tutorials'}
+                        </Button>
+                      )}
                     </div>
                     {tutorialPrefs.tutorials_disabled && (
                       <p className="text-xs mt-2" style={{ color: '#F59E0B' }}>
@@ -695,39 +741,31 @@ const Settings = () => {
             <TabsContent value="billing">
               <Card>
                 <CardHeader>
-                  <CardTitle>Billing & Subscription</CardTitle>
-                  <CardDescription>Manage your subscription and payment methods</CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                    Billing & Subscription
+                  </CardTitle>
+                  <CardDescription>Your plan details and payment history</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
-                    <div className="p-6 rounded-lg" style={{ borderColor: 'var(--biqc-border)', border: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Current Plan</h3>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Free Tier</p>
-                        </div>
-                        <span className="badge badge-primary">Active</span>
-                      </div>
-                      <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                        You&apos;re currently on the free plan. Upgrade to unlock advanced features and unlimited access.
-                      </p>
-                      <Button className="btn-primary">
-                        Upgrade Plan
-                      </Button>
+                  <div className="text-center py-10 space-y-4">
+                    <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
+                      style={{ background: 'rgba(255,106,0,0.1)' }}>
+                      <CreditCard className="w-8 h-8" style={{ color: '#FF6A00' }} />
                     </div>
-
-                    <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                      <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Payment Method</h3>
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        No payment method on file
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                        Billing management coming soon
+                      </h3>
+                      <p className="text-sm max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
+                        Plan upgrades, invoice history and payment method management will be available here shortly.
+                        For billing enquiries, contact <span style={{ color: '#FF6A00' }}>billing@biqc.com.au</span>
                       </p>
                     </div>
-
-                    <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                      <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Billing History</h3>
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        No invoices available
-                      </p>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+                      style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />
+                      Beta Plan — All features active
                     </div>
                   </div>
                 </CardContent>

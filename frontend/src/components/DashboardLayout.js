@@ -418,7 +418,18 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" style={{ color: 'var(--biqc-text-muted)' }} /> : <ChevronRight className="w-4 h-4 rotate-180" style={{ color: 'var(--biqc-text-muted)' }} />}
         </button>
 
-        <nav className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
+        <nav
+          ref={(el) => {
+            if (!el) return;
+            // Restore scroll position on mount
+            const saved = sessionStorage.getItem('sidebar-scroll');
+            if (saved) el.scrollTop = parseInt(saved, 10);
+            // Save scroll position on scroll
+            const handler = () => sessionStorage.setItem('sidebar-scroll', el.scrollTop);
+            el.addEventListener('scroll', handler, { passive: true });
+            return () => el.removeEventListener('scroll', handler);
+          }}
+          className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
           {visibleSections.map((section) => {
             const isExpanded = expandedSections.has(section.id);
             const hasActiveChild = section.items.some(i => isActive(i.path));
