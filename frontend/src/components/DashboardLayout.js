@@ -207,6 +207,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
           { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
           { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
+          { icon: Workflow, label: 'Automations', path: '/automations' },
         ],
       },
     ]},
@@ -219,7 +220,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
       { icon: Calendar, label: 'Calendar', path: '/calendar' },
       { icon: Zap, label: 'Actions', path: '/actions' },
-      { icon: Workflow, label: 'Automations', path: '/automations' },
     ]},
     { id: 'systems', label: 'Systems', items: [
       { icon: Link2, label: 'Integrations', path: '/integrations' },
