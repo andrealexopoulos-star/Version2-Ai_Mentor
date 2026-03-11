@@ -223,14 +223,14 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     ]},
     { id: 'systems', label: 'Systems', items: [
       { icon: Link2, label: 'Integrations', path: '/integrations' },
-      { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
     ]},
     { id: 'governance', label: 'Settings & Growth', items: [
-      { icon: Shield, label: 'Compliance', path: '/compliance' },
-      { icon: FileText, label: 'Reports', path: '/reports' },
-      { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
+      { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
+      { icon: FileText, label: 'Reports', path: '/reports' },
+      { icon: Shield, label: 'Compliance', path: '/compliance' },
+      { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
       { icon: Settings, label: 'Settings', path: '/settings' },
     ]},
   ];
