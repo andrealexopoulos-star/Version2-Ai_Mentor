@@ -201,7 +201,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           { icon: Target, label: 'War Room', path: '/war-room' },
         ],
       },
-      { icon: Target, label: 'Decisions', path: '/decisions' },
       {
         icon: Radar, label: 'Market & Positioning', path: '/market',
         children: [
@@ -220,6 +219,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
         children: [
           { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
           { icon: Shield, label: 'Compliance', path: '/compliance' },
+          { icon: Target, label: 'Decisions', path: '/decisions' },
           { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
         ],
       },
