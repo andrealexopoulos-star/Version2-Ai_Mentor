@@ -124,7 +124,7 @@ const ConsultingView            = lazy(() => import('./pages/website/platform/in
 const AgencyView                = lazy(() => import('./pages/website/platform/industries/AgencyView'));
 const SaaSView                  = lazy(() => import('./pages/website/platform/industries/SaaSView'));
 const DecisionsPage             = lazy(() => import('./pages/DecisionsPage'));
-const OnboardingWizard          = lazy(() => import('./pages/OnboardingWizard'));
+const UpgradePage               = lazy(() => import('./pages/UpgradePage'));
 const OnboardingDecision        = lazy(() => import('./pages/OnboardingDecision'));
 
 // Public Route — redirect authenticated users to BIQC Insights
@@ -241,6 +241,8 @@ function AppRoutes() {
 
       {/* Subscribe */}
       <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
+      <Route path="/upgrade" element={<ProtectedRoute><UpgradePage /></ProtectedRoute>} />
+      <Route path="/upgrade/success" element={<ProtectedRoute><UpgradePage success /></ProtectedRoute>} />
 
       {/* Free Tier Routes */}
       <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
-"""BIQc Stripe Subscription Routes — Direct stripe SDK. Zero emergentintegrations.
+"""BIQc Stripe Subscription Routes — Updated for new tier pricing.
 
-Checkout, Status, Webhook — all via official stripe-python.
+Plans: Free ($0) | Foundation ($99/mo AUD) | Growth ($249/mo AUD) | Enterprise (custom)
 """
 import os
 import logging
@@ -8,6 +8,7 @@ import stripe
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -17,54 +18,80 @@ from routes.auth import get_current_user
 STRIPE_KEY = os.environ.get("STRIPE_API_KEY", "")
 stripe.api_key = STRIPE_KEY
 
-PACKAGES = {
-    "starter": {"amount": 75000, "currency": "aud", "name": "Foundation", "tier": "starter"},
-    "professional": {"amount": 195000, "currency": "aud", "name": "Performance", "tier": "professional"},
-    "enterprise": {"amount": 390000, "currency": "aud", "name": "Growth", "tier": "enterprise"},
+PLANS = {
+    "foundation": {
+        "amount": 9900,          # $99.00 AUD
+        "currency": "aud",
+        "name": "BIQc Foundation",
+        "tier": "foundation",
+        "interval": "month",
+    },
+    "growth": {
+        "amount": 24900,         # $249.00 AUD
+        "currency": "aud",
+        "name": "BIQc Growth",
+        "tier": "growth",
+        "interval": "month",
+    },
 }
+
+# Legacy mapping (keeps old package IDs working)
+PACKAGES = PLANS
 
 
 class CheckoutRequest(BaseModel):
-    package_id: str
-    origin_url: str
+    tier: Optional[str] = None
+    package_id: Optional[str] = None   # legacy support
+    success_url: Optional[str] = None
+    cancel_url: Optional[str] = None
+    origin_url: Optional[str] = None   # legacy support
 
 
-@router.post("/payments/checkout")
+@router.post("/stripe/create-checkout-session")
+@router.post("/payments/checkout")  # legacy route
 async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get_current_user)):
-    """Create Stripe checkout session for a subscription package."""
-    if req.package_id not in PACKAGES:
-        raise HTTPException(status_code=400, detail=f"Invalid package. Choose from: {list(PACKAGES.keys())}")
+    """Create Stripe checkout session for a subscription plan."""
+    plan_id = req.tier or req.package_id or ''
+    if plan_id not in PLANS:
+        raise HTTPException(status_code=400, detail=f"Invalid plan. Choose from: {list(PLANS.keys())}")
 
-    pkg = PACKAGES[req.package_id]
+    plan = PLANS[plan_id]
     user_id = current_user["id"]
     user_email = current_user.get("email", "")
 
-    success_url = f"{req.origin_url}/subscribe?session_id={{CHECKOUT_SESSION_ID}}&status=success"
-    cancel_url = f"{req.origin_url}/subscribe?status=cancelled"
+    # URL resolution
+    base = req.origin_url or req.success_url or "https://biqc.thestrategysquad.com"
+    if base.endswith('/upgrade/success') or base.endswith('/upgrade'):
+        base = base.split('/upgrade')[0]
+
+    success_url = req.success_url or f"{base}/upgrade/success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url  = req.cancel_url  or f"{base}/upgrade"
 
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{
                 "price_data": {
-                    "currency": pkg["currency"],
-                    "unit_amount": pkg["amount"],
-                    "product_data": {"name": f"BIQc {pkg['name']}"},
+                    "currency": plan["currency"],
+                    "unit_amount": plan["amount"],
+                    "recurring": {"interval": plan["interval"]},
+                    "product_data": {"name": plan["name"], "description": f"BIQc {plan['name']} — Monthly subscription"},
                 },
                 "quantity": 1,
             }],
-            mode="payment",
+            mode="subscription",
             success_url=success_url,
             cancel_url=cancel_url,
             customer_email=user_email,
             metadata={
                 "user_id": user_id,
                 "user_email": user_email,
-                "package_id": req.package_id,
-                "tier": pkg["tier"],
-                "source": "biqc_subscribe",
+                "tier": plan["tier"],
+                "source": "biqc_upgrade",
             },
         )
+        logger.info(f"✅ Stripe checkout created for {user_email} → {plan['name']}")
+        return {"url": session.url, "session_id": session.id}
 
         try:
             from supabase_client import get_supabase_client
