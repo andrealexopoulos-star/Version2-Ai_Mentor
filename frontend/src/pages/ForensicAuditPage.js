@@ -126,7 +126,16 @@ const ForensicAuditPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body }} data-testid="forensic-audit-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Forensic Ingestion Audit</h1>
-          <p className="text-sm text-[#9FB0C3]">3-layer deterministic analysis of URL extraction, cleaning, and synthesis integrity.</p>
+          <p className="text-sm text-[#9FB0C3] mb-2">3-layer deterministic analysis of a public URL — tests data extraction quality, DOM cleaning, and synthesis integrity.</p>
+          <div className="p-3 rounded-lg" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
+            <p className="text-[11px] font-semibold mb-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>WHAT THIS DOES</p>
+            <p className="text-xs text-[#9FB0C3] mb-2">
+              Enter any public business URL and BIQc will analyse how cleanly data can be extracted from it. Use this to verify your own website or a competitor's page before connecting it as a data source.
+            </p>
+            <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+              Example valid URLs: thestrategysquad.com.au • hubspot.com/about • xero.com/au
+            </p>
+          </div>
         </div>
 
         {/* URL Input */}
@@ -139,7 +148,7 @@ const ForensicAuditPage = () => {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && runAudit()}
-                placeholder="Enter URL to audit (e.g. thestrategysquad.com.au)"
+                placeholder="Enter public URL to audit e.g. yourwebsite.com.au *"
                 className="w-full h-11 pl-10 pr-4 rounded-lg text-sm outline-none"
                 style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.body }}
                 disabled={running}
@@ -157,6 +166,7 @@ const ForensicAuditPage = () => {
             </button>
           </div>
           {error && <p className="text-xs text-[#EF4444] mt-2">{error}</p>}
+          <p className="text-[10px] mt-2" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>* URL must be publicly accessible. HTTPS preferred. No login-protected pages.</p>
         </Panel>
 
         {/* Loading */}
@@ -164,7 +174,7 @@ const ForensicAuditPage = () => {
           <Panel className="text-center py-10">
             <Loader2 className="w-8 h-8 text-[#FF6A00] mx-auto mb-3 animate-spin" />
             <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Running forensic audit...</p>
-            <p className="text-xs text-[#64748B]">Fetching URL, cleaning DOM, analysing synthesis integrity.</p>
+            <p className="text-xs text-[#64748B]">Fetching URL, cleaning DOM, analysing synthesis integrity. This takes 15–30 seconds.</p>
           </Panel>
         )}
 

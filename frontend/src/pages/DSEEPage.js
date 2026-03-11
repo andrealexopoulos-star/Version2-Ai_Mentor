@@ -40,14 +40,29 @@ const DSEEPage = () => {
       <div className="space-y-4 max-w-[900px]" style={{ fontFamily: fontFamily.body }} data-testid="dsee-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display, WebkitTextStroke: '0.2px #F4F7FA' }}>Structural Exposure Analysis</h1>
-          <p className="text-xs text-[#64748B]">Deterministic competitive intelligence. No financial projections. Evidence-based only.</p>
+          <p className="text-sm text-[#9FB0C3] mb-3">
+            Deterministic competitive intelligence — no financial projections. Analyses your digital structure, competitors and strategic vulnerabilities from public data.
+          </p>
+          <div className="p-3 rounded-lg" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
+            <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+              Enter your business website URL to run a structural scan. Example: <span style={{ color: '#FF6A00' }}>thestrategysquad.com.au</span>
+              &nbsp;•&nbsp; Results include: business classification, competitor mapping, digital density, and strategic exposure points.
+            </p>
+          </div>
         </div>
 
         {/* Input */}
         <div className="rounded-2xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+          <label className="text-xs font-semibold mb-2 block" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+            Website URL <span style={{ color: '#EF4444' }}>*</span> <span style={{ color: '#4A5568' }}>(required)</span>
+          </label>
           <div className="flex flex-col sm:flex-row gap-2">
-            <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && runScan()} placeholder="Website URL" disabled={running}
-              className="flex-1 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }} data-testid="dsee-url" />
+            <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && runScan()}
+              placeholder="yourwebsite.com.au *"
+              disabled={running}
+              className="flex-1 h-11 px-4 rounded-xl text-sm outline-none"
+              style={{ background: 'var(--biqc-bg-input)', border: `1px solid ${!url.trim() && error ? '#EF4444' : 'var(--biqc-border)'}`, color: 'var(--biqc-text)' }}
+              data-testid="dsee-url" />
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Business name (optional)" disabled={running}
               className="sm:w-48 h-11 px-4 rounded-xl text-sm outline-none" style={{ background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }} />
             <input value={location} onChange={e => setLocation(e.target.value)} placeholder="City (optional)" disabled={running}
@@ -60,10 +75,24 @@ const DSEEPage = () => {
         </div>
 
         {running && (
-          <div className="rounded-2xl p-10 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-            <Loader2 className="w-8 h-8 text-[#FF6A00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Running structural exposure analysis...</p>
-            <p className="text-xs text-[#64748B] mt-1">Crawling domain, classifying structure, identifying competitors, computing density, detecting asymmetries.</p>
+          <div className="rounded-2xl p-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+            <div className="flex items-center gap-3 mb-3">
+              <Loader2 className="w-5 h-5 text-[#FF6A00] animate-spin shrink-0" />
+              <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Running structural exposure analysis…</p>
+            </div>
+            {/* Progress stages */}
+            {[
+              { label: 'Resolving domain & crawling URL', done: true },
+              { label: 'Classifying business structure', done: true },
+              { label: 'Mapping competitors via SERP', done: false },
+              { label: 'Computing digital density & exposure', done: false },
+              { label: 'Generating strategic report', done: false },
+            ].map((stage, i) => (
+              <div key={i} className="flex items-center gap-2 mt-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full ${stage.done ? 'bg-green-500' : 'bg-[#FF6A00] animate-pulse'}`} />
+                <p className="text-xs" style={{ color: stage.done ? '#10B981' : '#9FB0C3', fontFamily: fontFamily.mono }}>{stage.label}</p>
+              </div>
+            ))}
           </div>
         )}
 
