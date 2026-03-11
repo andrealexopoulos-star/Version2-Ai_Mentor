@@ -179,10 +179,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   // Multi-expand sections — all relevant sections stay open simultaneously
-  const [expandedSections, setExpandedSections] = useState(() => {
-    // Default: expand Intelligence + Execution (most-used) on first load
-    return new Set(['intelligence', 'execution']);
-  });
+  const [expandedSections, setExpandedSections] = useState(() => new Set()); // all closed on login
 
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => {
@@ -256,7 +253,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   // Track which parent items with children are expanded (e.g. Market & Positioning)
   const [expandedParents, setExpandedParents] = useState(() => new Set());
 
-  // Auto-expand parent item if child is active
+  // Auto-expand parent item if its child route is active (only expand the parent, not the section)
   useEffect(() => {
     navSections.forEach(section => {
       section.items.forEach(item => {
@@ -265,14 +262,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
         }
       });
     });
-    // Auto-expand the section containing the active route
-    const active = navSections.find(s => s.items.some(i => isActive(i.path) || i.children?.some(c => isActive(c.path))));
-    if (active) {
-      setExpandedSections(prev => {
-        if (prev.has(active.id)) return prev;
-        return new Set([...prev, active.id]);
-      });
-    }
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const visibleSections = useMemo(() => {
