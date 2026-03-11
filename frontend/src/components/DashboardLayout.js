@@ -194,7 +194,13 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
   const navSections = [
     { id: 'intelligence', label: 'Intelligence', items: [
-      { icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true },
+      {
+        icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true,
+        children: [
+          { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
+          { icon: Target, label: 'War Room', path: '/war-room' },
+        ],
+      },
       { icon: Target, label: 'Decisions', path: '/decisions' },
       {
         icon: Radar, label: 'Market & Positioning', path: '/market',
@@ -217,10 +223,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
         ],
       },
-    ]},
-    { id: 'strategy', label: 'Strategy', items: [
-      { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
-      { icon: Target, label: 'War Room', path: '/war-room' },
     ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Zap, label: 'Actions', path: '/actions' },
