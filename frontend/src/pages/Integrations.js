@@ -579,7 +579,6 @@ function SectionLabel({ icon: Icon, label, badge, badgeColor }) {
           {badge}
         </span>
       )}
-      <div className="flex-1 h-px" style={{ background: 'var(--biqc-border, #1E2D3D)' }} />
     </div>
   );
 }

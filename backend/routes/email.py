@@ -514,7 +514,9 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
             return RedirectResponse(url=f"{frontend_url}{return_to}?gmail_error=storage_failed")
 
         # Redirect back with success
-        redirect_url = f"{frontend_url}{return_to}?gmail_connected=true"
+        # Build redirect URL — use & if return_to already has query params
+        sep = '&' if '?' in return_to else '?'
+        redirect_url = f"{frontend_url}{return_to}{sep}gmail_connected=true"
         if google_email:
             redirect_url += f"&connected_email={quote(google_email)}"
 
@@ -742,7 +744,9 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     logger.info(f"✅ Outlook integration successful for user {user_id}")
 
     # Redirect back with success
-    redirect_url = f"{frontend_url}{return_to}?outlook_connected=true"
+    # Build redirect URL — use & if return_to already has query params
+    sep = '&' if '?' in return_to else '?'
+    redirect_url = f"{frontend_url}{return_to}{sep}outlook_connected=true"
     if microsoft_email:
         redirect_url += f"&connected_email={quote(microsoft_email)}"
 

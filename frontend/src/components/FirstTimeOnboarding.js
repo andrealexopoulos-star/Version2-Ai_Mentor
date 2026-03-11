@@ -471,7 +471,7 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null }) => {
   const handleIntegrationDone = () => setStep(4);
 
   const handleFinish = () => {
-    localStorage.setItem(STORAGE_KEY, '1');
+    sessionStorage.setItem(SESSION_KEY, '1');
     onClose();
   };
 
