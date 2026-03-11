@@ -201,7 +201,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       {
         icon: Radar, label: 'Market & Positioning', path: '/market',
         children: [
-          { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
           { icon: Workflow, label: 'Automations', path: '/automations' },
           { icon: Target, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
           { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
@@ -231,21 +230,21 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
       { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: Link2, label: 'Integrations', path: '/integrations' },
-      { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
       { icon: FileText, label: 'Reports', path: '/reports' },
       { icon: Settings, label: 'Settings', path: '/settings' },
     ]},
   ];
 
-  // Super Admin section (visible only for super_admin role)
-  const isSA = user?.role === 'superadmin' || user?.role === 'super_admin' || user?.email === 'andre@thestrategysquad.com.au';
+  // Admin section — ONLY visible to andre@thestrategysquad.com.au (hardcoded)
+  const isSA = user?.email === 'andre@thestrategysquad.com.au';
   if (isSA) {
     navSections.push({
       id: 'admin', label: 'Admin', items: [
-        { icon: Shield, label: 'Support Console', path: '/support-admin' },
-        { icon: Activity, label: 'Observability', path: '/observability' },
+        { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
         { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
         { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
+        { icon: Activity, label: 'Observability', path: '/observability' },
+        { icon: Shield, label: 'Support Console', path: '/support-admin' },
       ],
     });
   }
