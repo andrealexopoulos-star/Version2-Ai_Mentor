@@ -254,7 +254,13 @@ export default function Integrations() {
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
-  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus]);
+    // Handle deep-link from Revenue/Operations pages: ?category=crm
+    const urlCategory = searchParams.get('category');
+    if (urlCategory && CATEGORIES.some(c => c.id === urlCategory)) {
+      setSelectedCategory(urlCategory);
+      setSearchParams({});
+    }
+  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');

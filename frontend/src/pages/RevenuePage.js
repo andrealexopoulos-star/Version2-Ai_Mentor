@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import EnterpriseContactGate from '../components/EnterpriseContactGate';
-import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight, FileWarning, Receipt } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, Plug, Loader2, Target, Zap, ArrowUpRight, FileWarning, Receipt, CheckCircle2, RefreshCw, ArrowRight } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
+import { Link, useNavigate } from 'react-router-dom';
 
 
 const Panel = ({ children, className = '' }) => (
@@ -18,9 +19,11 @@ const Panel = ({ children, className = '' }) => (
 const RevenuePage = () => {
   const { cognitive } = useSnapshot();
   const c = cognitive || {};
+  const navigate = useNavigate();
   const [deals, setDeals] = useState(null);
   const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [syncProgress, setSyncProgress] = useState(0);
   const [activeTab, setActiveTab] = useState('pipeline');
   const [sqlScenarios, setSqlScenarios] = useState(null);
   const [unified, setUnified] = useState(null);
@@ -28,7 +31,9 @@ const RevenuePage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setSyncProgress(10);
       try {
+        setSyncProgress(30);
         const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/integrations/crm/deals', { timeout: 8000 }),
           apiClient.get('/integrations/accounting/summary', { timeout: 8000 }),
@@ -36,6 +41,7 @@ const RevenuePage = () => {
           apiClient.get('/unified/revenue', { timeout: 8000 }),
           apiClient.get('/cognition/revenue', { timeout: 8000 }),
         ]);
+        setSyncProgress(80);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
           setDeals(dealsRes.value.data.results);
         }
@@ -51,16 +57,28 @@ const RevenuePage = () => {
         if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
           setUnified(prev => ({ ...prev, ...cognitionRes.value.data }));
         }
-      } catch {} finally { setLoading(false); }
+        setSyncProgress(100);
+      } catch {} finally { setLoading(false); setSyncProgress(100); }
     };
     fetchData();
   }, []);
 
-  // Check if CRM is ACTUALLY connected (even if no deal data yet)
-  const crmConnected = (integrationStatus?.integrations || []).some(i => i.connected && (i.category || '').toLowerCase() === 'crm');
-  const accountingConnected = (integrationStatus?.integrations || []).some(i => i.connected && (i.category || '').toLowerCase() === 'accounting');
+  // Get integration timestamps
+  const crmIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'crm');
+  const accountingIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'accounting');
+  const crmConnectedAt = crmIntegration?.connected_at || crmIntegration?.last_sync_at;
+  const accountingConnectedAt = accountingIntegration?.connected_at || accountingIntegration?.last_sync_at;
 
-  // Use ONLY real data — no demo fallback
+  const timeAgoShort = (isoStr) => {
+    if (!isoStr) return null;
+    const diff = Date.now() - new Date(isoStr).getTime();
+    if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+    return new Date(isoStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  };
+
+  const crmConnected = !!crmIntegration;
+  const accountingConnected = !!accountingIntegration;
   const hasDeals = deals && deals.length > 0;
   const hasFinancials = financials && financials.connected;
   const totalPipeline = hasDeals ? deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) : null;
@@ -112,18 +130,65 @@ const RevenuePage = () => {
     <DashboardLayout>
       <EnterpriseContactGate featureName="Revenue Engine">
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="revenue-page">
-        <div className="flex items-center justify-between">
+
+        {/* Header with connection status badges */}
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
-            <p className="text-sm text-[#9FB0C3]">
-              {hasDeals ? 'Live data from HubSpot CRM.' : crmConnected ? 'HubSpot connected — syncing pipeline data...' : 'Connect CRM to view revenue data.'}
-              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>syncing...</span>}
-            </p>
+            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              {crmConnected ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+                  <CheckCircle2 className="w-3 h-3" />
+                  {crmIntegration?.provider || 'CRM'} Connected
+                  {crmConnectedAt && <span className="text-[10px] opacity-70">• Last synced {timeAgoShort(crmConnectedAt)}</span>}
+                </span>
+              ) : (
+                <button onClick={() => navigate('/integrations?category=crm')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+              {accountingConnected ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+                  <CheckCircle2 className="w-3 h-3" />
+                  {accountingIntegration?.provider || 'Accounting'} Connected
+                  {accountingConnectedAt && <span className="text-[10px] opacity-70">• Last synced {timeAgoShort(accountingConnectedAt)}</span>}
+                </span>
+              ) : (
+                <button onClick={() => navigate('/integrations?category=financial')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
           <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} />
         </div>
 
-        {loading && <PageLoadingState message="Loading revenue data…" />}
+        {/* Sync progress bar */}
+        {(loading || syncProgress < 100) && (
+          <div className="rounded-xl p-4" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>
+                {syncProgress < 50 ? 'Connecting to data sources…' : syncProgress < 90 ? 'Importing pipeline data…' : 'Finalising…'}
+              </span>
+              <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full" style={{ background: '#1E2D3D' }}>
+              <div className="h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${syncProgress}%`, background: 'linear-gradient(90deg, #FF7A18, #E56A08)' }} />
+            </div>
+            {crmConnected && syncProgress < 100 && (
+              <p className="text-[10px] text-[#64748B] mt-1.5" style={{ fontFamily: fontFamily.mono }}>
+                First sync may take 1–3 minutes. The page will update automatically once your HubSpot data is ready.
+              </p>
+            )}
+          </div>
+        )}
 
         {!loading && !hasDeals && !hasFinancials && (
           <Panel className="py-10">

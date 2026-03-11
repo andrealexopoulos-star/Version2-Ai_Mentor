@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import EnterpriseContactGate from '../components/EnterpriseContactGate';
-import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap } from 'lucide-react';
+import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap, ArrowRight, TrendingUp, BarChart3 } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
-import { PageLoadingState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
-
+import { useNavigate } from 'react-router-dom';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -17,17 +16,22 @@ const Panel = ({ children, className = '' }) => (
 const OperationsPage = () => {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [syncProgress, setSyncProgress] = useState(0);
   const [unifiedOps, setUnifiedOps] = useState(null);
+  const navigate = useNavigate();
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
 
   useEffect(() => {
     const load = async () => {
+      setSyncProgress(20);
       try {
+        setSyncProgress(50);
         const [snapRes, unifiedRes, cognitionRes] = await Promise.allSettled([
           apiClient.get('/snapshot/latest'),
           apiClient.get('/unified/operations'),
           apiClient.get('/cognition/operations'),
         ]);
+        setSyncProgress(85);
         if (snapRes.status === 'fulfilled' && snapRes.value.data?.cognitive) {
           setSnapshot(snapRes.value.data.cognitive);
         }
@@ -37,36 +41,106 @@ const OperationsPage = () => {
         if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
           setUnifiedOps(prev => ({ ...prev, ...cognitionRes.value.data }));
         }
-      } catch {} finally { setLoading(false); }
+        setSyncProgress(100);
+      } catch {} finally { setLoading(false); setSyncProgress(100); }
     };
     load();
   }, []);
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
+  const crmIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'crm');
+  const acctIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'accounting');
   const exec = snapshot?.execution || {};
-  // Show ops content if integration is connected (even if exec data hasn't loaded yet)
+  const vitals = snapshot?.founder_vitals || {};
   const hasRealOpsData = hasCRM || hasAccounting;
+
+  const timeAgoShort = (iso) => {
+    if (!iso) return null;
+    const diff = Date.now() - new Date(iso).getTime();
+    if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+    return new Date(iso).toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+  };
+
+  // Operational KPIs — distinct from Revenue
+  const OPS_KPIS = [
+    exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), unit: 'this week', color: exec.sla_breaches > 0 ? '#FF6A00' : '#10B981', icon: AlertTriangle, desc: 'Commitments missed against agreed service levels' },
+    exec.task_aging != null && { label: 'Task Aging', value: exec.task_aging + '%', unit: 'overdue >7d', color: exec.task_aging > 30 ? '#F59E0B' : '#10B981', icon: Clock, desc: 'Percentage of open tasks sitting stale beyond threshold' },
+    exec.active_tasks != null && { label: 'Tasks Active', value: String(exec.active_tasks), unit: 'in progress', color: '#3B82F6', icon: Workflow, desc: 'Current open tasks across all connected systems' },
+    exec.sop_compliance != null && { label: 'SOP Compliance', value: exec.sop_compliance + '%', unit: 'processes on-track', color: exec.sop_compliance > 85 ? '#10B981' : '#F59E0B', icon: CheckCircle2, desc: 'Standard operating procedures being followed correctly' },
+    vitals.calendar && { label: 'Meeting Load', value: vitals.calendar.match(/(\d+)\s+meeting/)?.[1] || '—', unit: 'this week', color: '#8B5CF6', icon: Users, desc: vitals.calendar },
+    exec.bottleneck && { label: 'Active Bottleneck', value: '1', unit: 'detected', color: '#F59E0B', icon: Zap, desc: exec.bottleneck.slice(0, 60) },
+  ].filter(Boolean);
 
   return (
     <DashboardLayout>
       <EnterpriseContactGate featureName="Delivery & Operations">
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="operations-page">
-        <div className="flex items-center justify-between">
+
+        {/* Header — operations-specific copy + connection badges */}
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Delivery & Operations</h1>
-            <p className="text-sm text-[#9FB0C3]">
-              {(exec.sla_breaches != null || exec.bottleneck) ? 'Operational signals from connected data.' : hasCRM || hasAccounting ? 'HubSpot connected — syncing operational data...' : 'Connect integrations to assess operations.'}
-              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>syncing...</span>}
+            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>Delivery & Operations</h1>
+            <p className="text-sm text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
+              Track fulfilment timelines, task throughput, SOP compliance and resource utilisation — updated from your connected systems.
             </p>
+            <div className="flex flex-wrap items-center gap-2">
+              {hasCRM ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+                  <CheckCircle2 className="w-3 h-3" /> {crmIntegration?.provider || 'CRM'} Connected
+                  {crmIntegration?.connected_at && <span className="opacity-70">• {timeAgoShort(crmIntegration.connected_at)}</span>}
+                </span>
+              ) : (
+                <button onClick={() => navigate('/integrations?category=crm')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+              {hasAccounting ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+                  <CheckCircle2 className="w-3 h-3" /> {acctIntegration?.provider || 'Accounting'} Connected
+                </span>
+              ) : (
+                <button onClick={() => navigate('/integrations?category=financial')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
           <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} />
         </div>
 
-        {loading && <PageLoadingState message="Loading operational data…" />}
+        {/* Sync progress bar */}
+        {(loading || syncProgress < 100) && (
+          <div className="rounded-xl p-4" style={{ background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.12)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-[#3B82F6]" style={{ fontFamily: fontFamily.mono }}>
+                {syncProgress < 50 ? 'Loading operational data…' : 'Analysing workflows and SLA status…'}
+              </span>
+              <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full" style={{ background: '#1E2D3D' }}>
+              <div className="h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${syncProgress}%`, background: 'linear-gradient(90deg, #3B82F6, #60A5FA)' }} />
+            </div>
+          </div>
+        )}
 
         {!loading && !hasRealOpsData && (
           <Panel className="py-10">
+            <div className="text-center mb-5">
+              <Settings className="w-10 h-10 text-[#FF6A00] mx-auto mb-3 opacity-60" />
+              <h3 className="text-base font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Activate Operations Intelligence</h3>
+              <p className="text-sm text-[#9FB0C3] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
+                Connect your CRM to monitor task delivery, SLA performance and workflow bottlenecks. Connect accounting to track project profitability and resource costs.
+              </p>
+            </div>
             <IntegrationStatusWidget
               categories={['crm', 'accounting']}
               status={integrationStatus}
@@ -74,32 +148,47 @@ const OperationsPage = () => {
               syncing={integrationSyncing}
               onRefresh={refreshIntegrations}
               emptyStateTitle="Operations intelligence activates with your data"
-              emptyStateDesc="Connect CRM or accounting tools to see SLA compliance, task bottlenecks, delivery health and workload analysis — continuously monitored in real time."
+              emptyStateDesc="Connect CRM or accounting tools to monitor SLA compliance, task bottlenecks, delivery health and workload analysis."
             />
           </Panel>
         )}
 
         {!loading && hasRealOpsData && (
           <>
-            {/* KPI Strip — real data only */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), color: exec.sla_breaches > 0 ? '#FF6A00' : '#10B981', icon: AlertTriangle },
-                exec.task_aging != null && { label: 'Task Aging', value: exec.task_aging + '%', color: exec.task_aging > 30 ? '#F59E0B' : '#10B981', icon: Clock },
-                exec.active_tasks != null && { label: 'Tasks Active', value: String(exec.active_tasks), color: '#3B82F6', icon: Workflow },
-                exec.sop_compliance != null && { label: 'SOP Compliance', value: exec.sop_compliance + '%', color: exec.sop_compliance > 85 ? '#10B981' : '#F59E0B', icon: CheckCircle2 },
-              ].filter(Boolean).map(m => (
-                <Panel key={m.label}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: m.color + '15' }}>
-                      <m.icon className="w-3.5 h-3.5" style={{ color: m.color }} />
+            {/* Operations KPI strip — distinct from Revenue */}
+            {OPS_KPIS.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {OPS_KPIS.map(m => (
+                  <Panel key={m.label}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: m.color + '15' }}>
+                        <m.icon className="w-3.5 h-3.5" style={{ color: m.color }} />
+                      </div>
+                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
                     </div>
-                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
+                    <span className="text-2xl font-bold text-[#F4F7FA] block" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
+                    <span className="text-[10px] text-[#4A5568]" style={{ fontFamily: fontFamily.mono }}>{m.unit}</span>
+                    {m.desc && <p className="text-[10px] text-[#64748B] mt-1.5 leading-snug">{m.desc}</p>}
+                  </Panel>
+                ))}
+              </div>
+            )}
+
+            {OPS_KPIS.length === 0 && (
+              <Panel>
+                <div className="flex items-start gap-3">
+                  <Loader2 className="w-5 h-5 text-[#FF6A00] animate-spin flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>
+                      {hasCRM ? 'HubSpot connected — pulling operational metrics…' : 'Accounting connected — loading financial operations data…'}
+                    </p>
+                    <p className="text-xs text-[#64748B]">First sync may take 1–3 minutes. Task aging, SLA and bottleneck data will appear once imported.</p>
                   </div>
-                  <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
-                </Panel>
-              ))}
-            </div>
+                </div>
+              </Panel>
+            )}
+          </>
+        )}
 
             {/* Bottleneck */}
             {exec.bottleneck && (
@@ -210,9 +299,7 @@ const OperationsPage = () => {
                 )}
               </>
             )}
-          </>
-        )}
-      </div>
+        </div>
       </EnterpriseContactGate>
     </DashboardLayout>
   );
