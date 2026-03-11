@@ -175,7 +175,7 @@ export function HowItWorks() {
 
       {/* ── Sticky tab bar ── */}
       <div className="sticky top-14 z-40 mt-8"
-        style={{ background: 'var(--biqc-bg, #070E18)', borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
+        style={{ background: 'var(--biqc-bg, #070E18)' }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex overflow-x-auto no-scrollbar" role="tablist" aria-label="How It Works sections">
             {TABS.map(tab => (

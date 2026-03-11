@@ -173,15 +173,14 @@ const IntegrationsPage = () => {
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cpath d='M30 3L57 30L30 57L3 30z' stroke='%23ffffff' stroke-opacity='0.025' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '60px 60px' }} />
         <div className="max-w-5xl mx-auto px-6 pt-20 pb-16 relative z-10">
           <div className="max-w-2xl">
-            <span className="text-xs font-semibold tracking-widest uppercase mb-5 block"
-              style={{ fontFamily: fontFamily.mono, color: '#FF6A00' }}>
-              500+ Integrations · Merge Unified API
-            </span>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5"
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4"
               style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
-              Unify Your Systems to Unlock<br />
-              <span style={{ color: '#FF6A00' }}>Sovereign Intelligence</span>
+              500+ Integrations
             </h1>
+            <p className="text-xl sm:text-2xl font-medium mb-6"
+              style={{ fontFamily: fontFamily.display, color: '#FF6A00' }}>
+              Connects to the tools your business already uses.
+            </p>
             <p className="text-base sm:text-lg mb-8 leading-relaxed max-w-xl"
               style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
               Connect your CRM, accounting, email and HR tools to give BIQc the full picture. All data is Australian-hosted, encrypted at rest, and read-only — you can revoke access at any time.
