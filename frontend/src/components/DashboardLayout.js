@@ -199,8 +199,16 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
       { icon: Settings, label: 'Operations', path: '/operations' },
       { icon: AlertTriangle, label: 'Risk', path: '/risk' },
-      { icon: Radar, label: 'Market & Positioning', path: '/market' },
-      { icon: BarChart3, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
+      {
+        icon: Radar, label: 'Market & Positioning', path: '/market',
+        children: [
+          { icon: Target, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
+          { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
+          { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
+          { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
+          { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
+        ],
+      },
     ]},
     { id: 'strategy', label: 'Strategy', items: [
       { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
@@ -217,12 +225,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Link2, label: 'Integrations', path: '/integrations' },
       { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
-      { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
     ]},
     { id: 'governance', label: 'Settings & Growth', items: [
-      { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
-      { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
-      { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
       { icon: Shield, label: 'Compliance', path: '/compliance' },
       { icon: FileText, label: 'Reports', path: '/reports' },
       { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
@@ -244,9 +248,20 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     });
   }
 
+  // Track which parent items with children are expanded (e.g. Market & Positioning)
+  const [expandedParents, setExpandedParents] = useState(() => new Set());
+
+  // Auto-expand parent item if child is active
   useEffect(() => {
+    navSections.forEach(section => {
+      section.items.forEach(item => {
+        if (item.children?.some(c => isActive(c.path))) {
+          setExpandedParents(prev => new Set([...prev, item.path]));
+        }
+      });
+    });
     // Auto-expand the section containing the active route
-    const active = navSections.find(s => s.items.some(i => isActive(i.path)));
+    const active = navSections.find(s => s.items.some(i => isActive(i.path) || i.children?.some(c => isActive(c.path))));
     if (active) {
       setExpandedSections(prev => {
         if (prev.has(active.id)) return prev;
@@ -452,21 +467,77 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                     {section.items.map((item) => {
                       const active = isActive(item.path);
                       const showBadge = item.showBadge && notifications.total > 0;
+                      const hasChildren = item.children?.length > 0;
+                      const childActive = hasChildren && item.children.some(c => isActive(c.path));
+                      const parentExpanded = expandedParents.has(item.path);
+
                       return (
-                        <button key={item.path} onClick={() => { navigate(item.path); closeAll(); }}
-                          className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
-                          aria-current={active ? 'page' : undefined}
-                          style={{
-                            fontFamily: fontFamily.body,
-                            color: active ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                            background: active ? '#FF6A00' + '15' : 'transparent',
-                            borderLeft: active ? '2px solid #FF6A00' : '2px solid transparent',
-                          }}
-                          data-testid={`nav-item-${item.path.replace('/', '')}`}>
-                          <item.icon className="w-4 h-4" style={{ color: active ? '#FF6A00' : '#64748B' }} />
-                          <span className="flex-1 text-left">{item.label}</span>
-                          {showBadge && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
-                        </button>
+                        <div key={item.path}>
+                          {/* Parent nav item */}
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              onClick={() => { navigate(item.path); if (!hasChildren) closeAll(); }}
+                              className="flex items-center gap-2.5 flex-1 px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
+                              aria-current={active ? 'page' : undefined}
+                              style={{
+                                fontFamily: fontFamily.body,
+                                color: active || childActive ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
+                                background: active ? '#FF6A00' + '15' : childActive ? '#FF6A0008' : 'transparent',
+                                borderLeft: active ? '2px solid #FF6A00' : childActive ? '2px solid rgba(255,106,0,0.3)' : '2px solid transparent',
+                              }}
+                              data-testid={`nav-item-${item.path.replace('/', '')}`}>
+                              <item.icon className="w-4 h-4 shrink-0" style={{ color: active || childActive ? '#FF6A00' : '#64748B' }} />
+                              <span className="flex-1 text-left">{item.label}</span>
+                              {showBadge && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
+                            </button>
+                            {/* Expand/collapse chevron for items with children */}
+                            {hasChildren && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedParents(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(item.path)) next.delete(item.path);
+                                    else next.add(item.path);
+                                    return next;
+                                  });
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+                                style={{ color: childActive ? '#FF6A00' : '#64748B' }}
+                                aria-label={parentExpanded ? 'Collapse sub-menu' : 'Expand sub-menu'}
+                                data-testid={`nav-expand-${item.path.replace('/', '')}`}>
+                                <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${parentExpanded ? 'rotate-90' : ''}`} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Child items — collapsible sub-menu */}
+                          {hasChildren && parentExpanded && (
+                            <div className="ml-3 mt-0.5 mb-1 pl-3 space-y-0.5"
+                              style={{ borderLeft: '1px solid rgba(255,106,0,0.2)' }}>
+                              {item.children.map((child) => {
+                                const childIsActive = isActive(child.path);
+                                return (
+                                  <button key={child.path}
+                                    onClick={() => { navigate(child.path); closeAll(); }}
+                                    className="flex items-center gap-2 w-full px-2.5 py-2 min-h-[36px] rounded-lg text-sm transition-all"
+                                    aria-current={childIsActive ? 'page' : undefined}
+                                    style={{
+                                      fontFamily: fontFamily.body,
+                                      fontSize: '0.8125rem',
+                                      color: childIsActive ? '#F4F7FA' : '#9FB0C3',
+                                      background: childIsActive ? '#FF6A0015' : 'transparent',
+                                      borderLeft: childIsActive ? '2px solid #FF6A00' : '2px solid transparent',
+                                    }}
+                                    data-testid={`nav-child-${child.path.replace('/', '')}`}>
+                                    <child.icon className="w-3.5 h-3.5 shrink-0" style={{ color: childIsActive ? '#FF6A00' : '#4A5568' }} />
+                                    <span className="flex-1 text-left">{child.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
