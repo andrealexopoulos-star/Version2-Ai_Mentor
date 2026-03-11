@@ -31,11 +31,25 @@ const ActionsPage = () => {
 
   const rq = rawRq.filter(item => {
     const title = (item.title || item.issue || '').toLowerCase();
-    if (hasEmail && (title.includes('email') && (title.includes('missing') || title.includes('not connected')))) return false;
-    if (hasCRM && (title.includes('crm') && (title.includes('missing') || title.includes('not connected')))) return false;
-    if (hasAccounting && (title.includes('accounting') || title.includes('financial')) && (title.includes('missing') || title.includes('not connected'))) return false;
+    const isIntegrationPrompt = title.includes('integration required') || title.includes('integration missing') || title.includes('not connected') || title.includes('no email') || title.includes('no crm') || title.includes('no accounting');
+    if (!isIntegrationPrompt) return true;
+    if (hasEmail && (title.includes('email'))) return false;
+    if (hasCRM && (title.includes('crm'))) return false;
+    if (hasAccounting && (title.includes('accounting') || title.includes('financial'))) return false;
     return true;
   });
+
+  // Also filter the priority focus if it's just asking to integrate tools we already have
+  const priorityPrimary = (priority.primary || '').toLowerCase();
+  const isStaleIntegrationPriority = 
+    (priorityPrimary.includes('integrate email') && hasEmail) ||
+    (priorityPrimary.includes('connect email') && hasEmail) ||
+    (priorityPrimary.includes('integrate crm') && hasCRM) ||
+    (priorityPrimary.includes('connect crm') && hasCRM) ||
+    (priorityPrimary.includes('integrate accounting') && hasAccounting) ||
+    (priorityPrimary.includes('connect accounting') && hasAccounting) ||
+    (priorityPrimary.includes('integrate email, crm') && hasEmail && hasCRM);
+  const cleanPriority = isStaleIntegrationPriority ? {} : priority;
 
   return (
     <DashboardLayout>
@@ -49,23 +63,23 @@ const ActionsPage = () => {
 
         {!loading && (
           <>
-            {/* Priority Focus */}
-            {(priority.primary || priority.secondary) && (
+            {/* Priority Focus — filtered to remove stale integration prompts */}
+            {(cleanPriority.primary || cleanPriority.secondary) && (
               <div className="rounded-xl p-5" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
                 <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Priority Focus</h3>
-                {priority.primary && (
+                {cleanPriority.primary && (
                   <div className="mb-3">
-                    <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{priority.primary}</span>
-                    {priority.primary_hrs && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>{priority.primary_hrs}</span>}
+                    <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
+                    {cleanPriority.primary_hrs && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>{cleanPriority.primary_hrs}</span>}
                   </div>
                 )}
-                {priority.secondary && (
+                {cleanPriority.secondary && (
                   <div className="mb-2">
-                    <span className="text-sm text-[#9FB0C3]">{priority.secondary}</span>
-                    {priority.delegate && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>Delegate: {priority.delegate}</span>}
+                    <span className="text-sm text-[#9FB0C3]">{cleanPriority.secondary}</span>
+                    {cleanPriority.delegate && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>Delegate: {cleanPriority.delegate}</span>}
                   </div>
                 )}
-                {priority.noise && <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Ignore: {priority.noise}</p>}
+                {cleanPriority.noise && <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Ignore: {cleanPriority.noise}</p>}
               </div>
             )}
 

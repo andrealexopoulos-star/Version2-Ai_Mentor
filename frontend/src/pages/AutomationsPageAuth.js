@@ -2,6 +2,7 @@ import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import UpgradeCardsGate from '../components/UpgradeCardsGate';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { Workflow, Zap, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
@@ -13,11 +14,28 @@ const Panel = ({ children, className = '' }) => (
 
 const AutomationsPageAuth = () => {
   const { cognitive, loading } = useSnapshot();
+  const { status: integrationStatus } = useIntegrationStatus();
   const c = cognitive || {};
   const exec = c.execution || {};
   const recs = exec.recs || [];
-  const rq = c.resolution_queue || [];
-  const automatable = rq.filter(r => (r.actions || []).some(a => a === 'auto-email' || a === 'quick-sms'));
+
+  // Check what is ACTUALLY connected right now
+  const connected = (integrationStatus?.integrations || []).filter(i => i.connected).map(i => (i.category || '').toLowerCase());
+  const hasEmail = connected.includes('email') || connected.some(cat => cat.includes('outlook') || cat.includes('gmail'));
+  const hasCRM = connected.includes('crm');
+  const hasAccounting = connected.includes('accounting');
+
+  const rawRq = c.resolution_queue || [];
+  // Filter out stale "X Integration Required" items for integrations that ARE connected
+  const automatable = rawRq
+    .filter(r => (r.actions || []).some(a => a === 'auto-email' || a === 'quick-sms'))
+    .filter(item => {
+      const title = (item.title || '').toLowerCase();
+      if (hasEmail && title.includes('email') && (title.includes('required') || title.includes('not connected') || title.includes('missing'))) return false;
+      if (hasCRM && title.includes('crm') && (title.includes('required') || title.includes('not connected') || title.includes('missing'))) return false;
+      if (hasAccounting && (title.includes('accounting') || title.includes('financial')) && (title.includes('required') || title.includes('not connected') || title.includes('missing'))) return false;
+      return true;
+    });
 
   return (
     <DashboardLayout>

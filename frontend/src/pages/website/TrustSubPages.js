@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
+const HEADING = fontFamily.display;
+const BODY = fontFamily.body;
+
 
 const TrustPageShell = ({ title, lastUpdated, children }) => (
   <WebsiteLayout>

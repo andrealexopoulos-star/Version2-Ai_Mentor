@@ -377,12 +377,13 @@ const AdvisorWatchtower = () => {
   const [cognitionData, setCognitionData] = useState(null);
   const { show: showOnboarding, dismiss: dismissOnboarding, emailConnectedProvider } = useFirstTimeOnboarding();
 
-  // Resolve display name with fallbacks
+  // Resolve display name with fallbacks + capitalize first letter
   const { user } = useSupabaseAuth();
-  const displayName = owner ||
+  const rawName = owner ||
     user?.user_metadata?.full_name?.split(' ')[0] ||
     user?.email?.split('@')[0] ||
     'there';
+  const displayName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'there';
   const displayTimeOfDay = timeOfDay || (() => {
     const h = new Date().getHours();
     return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
