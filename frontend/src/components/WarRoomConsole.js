@@ -23,11 +23,12 @@ const WarRoomConsole = () => {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Resolve display name: snapshot owner → user metadata → email prefix
-  const displayName = owner ||
+  // Resolve display name: snapshot owner → user metadata → email prefix → capitalize
+  const rawName = owner ||
     user?.user_metadata?.full_name?.split(' ')[0] ||
     user?.email?.split('@')[0] ||
     'there';
+  const displayName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'there';
 
   const displayTimeOfDay = timeOfDay || (() => {
     const h = new Date().getHours();
