@@ -1,0 +1,546 @@
+/**
+ * FirstTimeOnboarding — Multi-step integration onboarding modal
+ * Shown ONCE after calibration completes, when user first lands on the platform.
+ *
+ * Flow:
+ *  Step 0: Welcome (what BIQc does, security, why integrations matter)
+ *  Step 1: Connect Email (Gmail / Outlook)
+ *  Step 2: Email connected → "Connect more business tools?" (Yes / No)
+ *  Step 3: Integration category picker → specific integration → Merge connect loop
+ *  Step 4: "No I'm done" → Final confirmation before dashboard
+ */
+
+import React, { useState, useCallback } from 'react';
+import { X, Shield, ArrowRight, CheckCircle2, Zap, Database, Lock, RefreshCw, Loader2, ChevronRight } from 'lucide-react';
+import { supabase } from '../context/SupabaseAuthContext';
+import { getBackendUrl } from '../config/urls';
+import { useMergeLink } from '@mergeapi/react-merge-link';
+import { fontFamily } from '../design-system/tokens';
+import { toast } from 'sonner';
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const INTEGRATION_CATEGORIES = [
+  {
+    id: 'crm', label: 'CRM', desc: 'HubSpot, Salesforce, Pipedrive', color: '#FF7A59',
+    mergeCategories: ['crm'],
+  },
+  {
+    id: 'financial', label: 'Financial & Accounting', desc: 'Xero, MYOB, QuickBooks', color: '#10B981',
+    mergeCategories: ['accounting'],
+  },
+  {
+    id: 'hris', label: 'HR & Payroll', desc: 'BambooHR, Employment Hero, Gusto', color: '#3B82F6',
+    mergeCategories: ['hris'],
+  },
+  {
+    id: 'ats', label: 'Recruitment', desc: 'Greenhouse, Lever, Workable', color: '#8B5CF6',
+    mergeCategories: ['ats'],
+  },
+  {
+    id: 'ticketing', label: 'Project & Support', desc: 'Jira, Asana, Zendesk', color: '#F59E0B',
+    mergeCategories: ['ticketing'],
+  },
+  {
+    id: 'storage', label: 'File Storage', desc: 'Google Drive, OneDrive, Dropbox', color: '#06B6D4',
+    mergeCategories: ['file_storage'],
+  },
+];
+
+const SECURITY_POINTS = [
+  { icon: Lock, text: 'AES-256 encryption at rest and in transit' },
+  { icon: Shield, text: 'Australian hosted — Sydney & Melbourne, zero offshore' },
+  { icon: Database, text: 'Read-only access — BIQc never modifies your data' },
+  { icon: RefreshCw, text: 'Revoke access instantly at any time' },
+];
+
+// ── Step 0: Welcome ───────────────────────────────────────────────────────────
+
+const WelcomeStep = ({ firstName, onConnect, onSkip }) => (
+  <div className="space-y-6">
+    <div className="text-center">
+      <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 40px rgba(255,106,0,0.3)' }}>
+        <Zap className="w-8 h-8 text-white" />
+      </div>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        Welcome to BIQc{firstName ? `, ${firstName}` : ''}.
+      </h2>
+      <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        This is your autonomous intelligence system. It monitors your business 24/7, detects risks before they compound, and delivers executive-level briefings — without you having to ask.
+      </p>
+    </div>
+
+    {/* What BIQc does */}
+    <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>How BIQc Works</p>
+      {[
+        'Connects to your business systems (email, CRM, accounting, HR)',
+        'Reads signals across financial, revenue, risk and market data',
+        'Surfaces what matters — before it becomes a problem',
+        'Delivers daily executive briefs, alerts and recommended actions',
+      ].map((item, i) => (
+        <div key={i} className="flex items-start gap-2.5">
+          <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: '#FF7A18' }} />
+          <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item}</p>
+        </div>
+      ))}
+    </div>
+
+    {/* Security */}
+    <div className="rounded-xl p-4" style={{ background: '#0A1018', border: '1px solid #1E2D3D' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Your Data Security</p>
+      <div className="grid grid-cols-2 gap-2">
+        {SECURITY_POINTS.map((pt, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <pt.icon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#10B981' }} />
+            <p className="text-[10px] leading-snug" style={{ color: '#6B7B8D', fontFamily: fontFamily.body }}>{pt.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <p className="text-xs text-center" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+      The more systems you connect, the more accurate and specific your intelligence becomes.
+      BIQc needs full context to deliver real insight — not guesswork.
+    </p>
+
+    <div className="flex flex-col gap-3">
+      <button onClick={onConnect}
+        className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
+        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.28)' }}
+        data-testid="onboarding-connect-email">
+        Connect Email to Get Started <ArrowRight className="w-4 h-4" />
+      </button>
+      <button onClick={onSkip}
+        className="w-full py-2.5 text-xs transition-colors"
+        style={{ color: '#4A5568', fontFamily: fontFamily.mono }}
+        data-testid="onboarding-skip">
+        Skip for now — I'll connect later from Integrations
+      </button>
+    </div>
+  </div>
+);
+
+// ── Step 1: Email provider ────────────────────────────────────────────────────
+
+const EMAIL_PROVIDERS = [
+  { id: 'outlook', name: 'Microsoft Outlook', desc: 'Email, calendar, Teams', color: '#0078D4', authType: 'outlook' },
+  { id: 'gmail',   name: 'Gmail',             desc: 'Inbox intelligence, priority triage', color: '#EF4444', authType: 'gmail' },
+];
+
+const EmailStep = ({ onSkip }) => {
+  const [connecting, setConnecting] = useState(null);
+
+  const connect = async (provider) => {
+    setConnecting(provider.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { toast.error('Session expired. Please refresh.'); setConnecting(null); return; }
+      const backendUrl = getBackendUrl();
+      const returnTo = encodeURIComponent('/advisor?onboarding=email_connected');
+      if (provider.authType === 'outlook') {
+        window.location.href = `${backendUrl}/api/auth/outlook/login?token=${session.access_token}&returnTo=${returnTo}`;
+      } else {
+        window.location.href = `${backendUrl}/api/auth/gmail/login?token=${session.access_token}&returnTo=${returnTo}`;
+      }
+    } catch { toast.error('Failed to connect. Please try again.'); setConnecting(null); }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+          Connect Your Email
+        </h2>
+        <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          Email is the foundation of client intelligence. Priority inbox, meeting signals and communication patterns all start here.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {EMAIL_PROVIDERS.map(p => (
+          <button key={p.id} onClick={() => connect(p)} disabled={!!connecting}
+            className="w-full flex items-center gap-4 p-4 rounded-xl text-left transition-all"
+            style={{ background: '#141C26', border: '1px solid #243140' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = p.color + '60'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
+            data-testid={`connect-email-${p.id}`}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: p.color + '15' }}>
+              {connecting === p.id
+                ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: p.color }} />
+                : <span className="text-sm font-bold" style={{ color: p.color }}>{p.name.slice(0,2)}</span>
+              }
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{p.name}</p>
+              <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{p.desc}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: '#64748B' }} />
+          </button>
+        ))}
+      </div>
+
+      <button onClick={onSkip} className="w-full py-2 text-xs text-center"
+        style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
+        Skip email — connect business tools instead
+      </button>
+    </div>
+  );
+};
+
+// ── Step 2: "Connect more?" prompt ───────────────────────────────────────────
+
+const ConnectMoreStep = ({ emailProvider, onYes, onNo }) => (
+  <div className="space-y-5">
+    <div className="text-center">
+      <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
+        style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)' }}>
+        <CheckCircle2 className="w-6 h-6" style={{ color: '#10B981' }} />
+      </div>
+      <h2 className="text-xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        {emailProvider ? `${emailProvider} Connected` : 'Email Connected'}
+      </h2>
+      <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        BIQc will start analysing your inbox immediately. Do you have other business tools we can connect for deeper intelligence?
+      </p>
+    </div>
+
+    <div className="rounded-xl p-4" style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
+      <p className="text-xs mb-2 font-semibold" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>MORE CONNECTIONS = BETTER INTELLIGENCE</p>
+      <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        Connect your CRM to see deal risks. Accounting for cash flow signals. HR for capacity and compliance. Each integration adds a new layer of intelligence BIQc can act on.
+      </p>
+    </div>
+
+    <div className="space-y-3">
+      <button onClick={onYes}
+        className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
+        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.25)' }}
+        data-testid="connect-more-yes">
+        Yes, Connect More Business Tools <ArrowRight className="w-4 h-4" />
+      </button>
+      <button onClick={onNo}
+        className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
+        style={{ background: 'transparent', border: '1px solid #243140', color: '#9FB0C3', fontFamily: fontFamily.body }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = '#334155'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
+        data-testid="connect-more-no">
+        No, I'm Done for Now
+      </button>
+    </div>
+  </div>
+);
+
+// ── Step 3: Integration category + Merge connect ──────────────────────────────
+
+const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, setMergeLinkToken }) => {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [openingMerge, setOpeningMerge] = useState(false);
+  const [pendingOpen, setPendingOpen] = useState(false);
+
+  const { open: openMergeModal, isReady: mergeReady } = useMergeLink({
+    linkToken: mergeLinkToken || '',
+    onSuccess: async (public_token, metadata) => {
+      const provider = metadata?.integration?.name || 'Integration';
+      const category = metadata?.integration?.categories?.[0] || selectedCategory?.id || 'crm';
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        const res = await fetch(`${getBackendUrl()}/api/integrations/merge/exchange-account-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Bearer ${session.access_token}` },
+          body: new URLSearchParams({ public_token, category }),
+        });
+        if (res.ok) {
+          toast.success(`${provider} connected!`);
+          onConnected(provider);
+        } else {
+          toast.error(`Failed to connect ${provider}`);
+        }
+      } catch { toast.error('Connection failed'); }
+      setMergeLinkToken('');
+      setOpeningMerge(false);
+      setPendingOpen(false);
+    },
+    onExit: () => { setMergeLinkToken(''); setOpeningMerge(false); setPendingOpen(false); },
+  });
+
+  // Open modal when token + SDK both ready
+  React.useEffect(() => {
+    if (pendingOpen && mergeLinkToken && mergeReady) {
+      openMergeModal();
+      setPendingOpen(false);
+    }
+  }, [pendingOpen, mergeLinkToken, mergeReady, openMergeModal]);
+
+  const connectCategory = async (cat) => {
+    setSelectedCategory(cat);
+    setOpeningMerge(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { toast.error('Please log in'); setOpeningMerge(false); return; }
+      const res = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ categories: cat.mergeCategories }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.detail || 'Failed to open connection modal');
+        setOpeningMerge(false);
+        return;
+      }
+      const { link_token } = await res.json();
+      setMergeLinkToken(link_token);
+      setPendingOpen(true);
+    } catch { toast.error('Connection failed'); setOpeningMerge(false); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+          Connect Business Tools
+        </h2>
+        <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          Select a category to connect your systems.
+        </p>
+        {connectedList.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-2 mt-2">
+            {connectedList.map(c => (
+              <span key={c} className="text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1"
+                style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+                <CheckCircle2 className="w-3 h-3" /> {c}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        {INTEGRATION_CATEGORIES.map(cat => (
+          <button key={cat.id}
+            onClick={() => connectCategory(cat)}
+            disabled={openingMerge}
+            className="flex flex-col gap-2 p-3.5 rounded-xl text-left transition-all"
+            style={{ background: '#141C26', border: '1px solid #243140' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = cat.color + '60'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
+            data-testid={`integration-cat-${cat.id}`}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: cat.color + '15' }}>
+              {openingMerge && selectedCategory?.id === cat.id
+                ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: cat.color }} />
+                : <Zap className="w-4 h-4" style={{ color: cat.color }} />
+              }
+            </div>
+            <div>
+              <p className="text-xs font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{cat.label}</p>
+              <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{cat.desc}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-2 pt-1">
+        <button onClick={onDone}
+          className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
+          style={{ background: 'transparent', border: '1px solid #243140', color: '#9FB0C3', fontFamily: fontFamily.body }}
+          data-testid="integration-done">
+          No, I'm Done for Now
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Step 4: All done ──────────────────────────────────────────────────────────
+
+const AllDoneStep = ({ connectedList, onFinish }) => (
+  <div className="space-y-5 text-center">
+    <div>
+      <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 40px rgba(255,106,0,0.3)' }}>
+        <Zap className="w-8 h-8 text-white" />
+      </div>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        BIQc Is Active
+      </h2>
+      <p className="text-sm max-w-xs mx-auto leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        Your intelligence engine is now running. BIQc will monitor your connected systems and surface what matters.
+      </p>
+    </div>
+
+    {connectedList.length > 0 && (
+      <div className="rounded-xl p-4" style={{ background: '#0A1018', border: '1px solid #1E2D3D' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>Connected Systems</p>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {connectedList.map(c => (
+            <span key={c} className="text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1"
+              style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+              <CheckCircle2 className="w-3 h-3" /> {c}
+            </span>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+      You can connect more systems at any time from <span style={{ color: '#FF7A18' }}>Integrations</span> in the sidebar.
+    </p>
+
+    <button onClick={onFinish}
+      className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
+      style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.25)' }}
+      data-testid="onboarding-finish">
+      Enter BIQc <ArrowRight className="w-4 h-4" />
+    </button>
+  </div>
+);
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'biqc_onboarding_done';
+
+export const useFirstTimeOnboarding = () => {
+  const [show, setShow] = useState(false);
+  const [emailConnectedProvider, setEmailConnectedProvider] = useState(null);
+
+  React.useEffect(() => {
+    // Check URL for email OAuth return
+    const params = new URLSearchParams(window.location.search);
+    const onboarding = params.get('onboarding');
+    const outlookConnected = params.get('outlook_connected');
+    const gmailConnected = params.get('gmail_connected');
+
+    if (onboarding === 'email_connected') {
+      const provider = outlookConnected === 'true' ? 'Outlook' : gmailConnected === 'true' ? 'Gmail' : null;
+      setEmailConnectedProvider(provider);
+      // Clean URL
+      window.history.replaceState({}, '', '/advisor');
+      setShow(true);
+      return;
+    }
+
+    // Show on first visit (not done before)
+    const done = localStorage.getItem(STORAGE_KEY);
+    if (!done) setShow(true);
+  }, []);
+
+  const dismiss = useCallback(() => {
+    localStorage.setItem(STORAGE_KEY, '1');
+    setShow(false);
+  }, []);
+
+  return { show, dismiss, emailConnectedProvider };
+};
+
+const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null }) => {
+  // Start at step 2 if returning from email OAuth
+  const [step, setStep] = useState(initialEmailProvider ? 2 : 0);
+  const [connectedList, setConnectedList] = useState(initialEmailProvider ? [initialEmailProvider] : []);
+  const [mergeLinkToken, setMergeLinkToken] = useState('');
+
+  const handleEmailConnected = (provider) => {
+    setConnectedList(prev => [...prev, provider]);
+    setStep(2);
+  };
+
+  const handleMoreYes = () => setStep(3);
+
+  const handleMoreNo = () => setStep(4);
+
+  const handleIntegrationConnected = (provider) => {
+    setConnectedList(prev => [...prev, provider]);
+    // Stay on step 3 — show "connect more?" options again by staying in loop
+  };
+
+  const handleIntegrationDone = () => setStep(4);
+
+  const handleFinish = () => {
+    localStorage.setItem(STORAGE_KEY, '1');
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4"
+      style={{ background: 'rgba(7,14,24,0.92)', backdropFilter: 'blur(16px)' }}
+      data-testid="first-time-onboarding">
+
+      <div className="w-full max-w-md rounded-2xl overflow-hidden"
+        style={{ background: '#0F1720', border: '1px solid #1E2D3D', boxShadow: '0 24px 80px rgba(0,0,0,0.7)', maxHeight: '90vh', overflowY: 'auto' }}>
+
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-5 py-3.5"
+          style={{ borderBottom: '1px solid #1E2D3D' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF7A18' }}>
+              <span className="text-white font-bold text-[10px]">B</span>
+            </div>
+            <span className="text-xs font-semibold" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+              {step === 0 ? 'Getting Started' : step === 1 ? 'Connect Email' : step === 2 ? 'Build Intelligence' : step === 3 ? 'Connect Tools' : 'Ready'}
+            </span>
+          </div>
+          {step !== 0 && (
+            <button onClick={handleFinish} className="p-1 rounded-lg hover:bg-white/5"
+              style={{ color: '#4A5568' }} data-testid="onboarding-close">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Step content */}
+        <div className="p-5">
+          {step === 0 && (
+            <WelcomeStep
+              onConnect={() => setStep(1)}
+              onSkip={handleFinish}
+            />
+          )}
+          {step === 1 && (
+            <EmailStep
+              onSkip={() => setStep(3)}
+              onConnected={handleEmailConnected}
+            />
+          )}
+          {step === 2 && (
+            <ConnectMoreStep
+              emailProvider={connectedList[connectedList.length - 1]}
+              onYes={handleMoreYes}
+              onNo={handleMoreNo}
+            />
+          )}
+          {step === 3 && (
+            <IntegrationStep
+              connectedList={connectedList}
+              onConnected={handleIntegrationConnected}
+              onDone={handleIntegrationDone}
+              mergeLinkToken={mergeLinkToken}
+              setMergeLinkToken={setMergeLinkToken}
+            />
+          )}
+          {step === 4 && (
+            <AllDoneStep
+              connectedList={connectedList}
+              onFinish={handleFinish}
+            />
+          )}
+        </div>
+
+        {/* Progress dots */}
+        {step < 4 && (
+          <div className="flex justify-center gap-1.5 pb-4">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full transition-all"
+                style={{ background: i === step ? '#FF7A18' : '#243140', width: i === step ? 20 : 6 }} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FirstTimeOnboarding;

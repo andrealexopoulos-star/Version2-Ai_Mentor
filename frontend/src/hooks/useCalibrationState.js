@@ -511,9 +511,10 @@ export const useCalibrationState = () => {
       autoSave(3);
       setTransitioning(false);
 
-      // Show integration overlay after CMO summary (new phase)
+      // Skip integration overlay — go straight to "Here's What BIQc Found"
+      // Integration onboarding happens after user first lands on the dashboard
       fetchIntelligence();
-      setEntry("integration_connect");
+      setEntry("intelligence-first");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
   };
