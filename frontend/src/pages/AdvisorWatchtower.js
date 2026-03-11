@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSnapshotProgress } from '../hooks/useSnapshotProgress';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import DashboardLayout from '../components/DashboardLayout';
 import { CheckInAlerts } from '../components/CheckInAlerts';
@@ -376,6 +377,17 @@ const AdvisorWatchtower = () => {
   const [cognitionData, setCognitionData] = useState(null);
   const { show: showOnboarding, dismiss: dismissOnboarding, emailConnectedProvider } = useFirstTimeOnboarding();
 
+  // Resolve display name with fallbacks
+  const { user } = useSupabaseAuth();
+  const displayName = owner ||
+    user?.user_metadata?.full_name?.split(' ')[0] ||
+    user?.email?.split('@')[0] ||
+    'there';
+  const displayTimeOfDay = timeOfDay || (() => {
+    const h = new Date().getHours();
+    return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  })();
+
   // Derive connectedIntegrations from unified status for parseToGroups compatibility
   const connectedIntegrations = useMemo(() => {
     if (!integrationStatus?.integrations) return [];
@@ -481,10 +493,10 @@ const AdvisorWatchtower = () => {
           </div>
         )}
 
-        {/* EMPTY STATE — no data yet, no error */}
-        {!loading && !cognitive && !error && (
+        {/* EMPTY STATE — no data yet, no error — hide if any integration connected including email */}
+        {!loading && !cognitive && !error && integrationStatus?.total_connected === 0 && (
           <div className="max-w-5xl mx-auto px-6 py-12">
-            <WelcomeBanner owner={owner} />
+            <WelcomeBanner owner={displayName} />
           </div>
         )}
 
@@ -510,7 +522,7 @@ const AdvisorWatchtower = () => {
             <div className="max-w-5xl mx-auto px-6 py-8">
               <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <h1 className="text-3xl font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-                  Good {timeOfDay || 'morning'}, {owner || 'there'}.
+                  Good {displayTimeOfDay}, {displayName}.
                 </h1>
                 <div className="flex items-center gap-3">
                   <DataConfidence cognitive={cognitive} />
@@ -537,7 +549,11 @@ const AdvisorWatchtower = () => {
               <RiskSuggestions />
 
               {/* WELCOME BANNER — shown when no integrations connected AND cognition says none */}
-              {connectedIntegrations.length === 0 && (!cognitionData || !cognitionData.integrations || (!cognitionData.integrations.crm && !cognitionData.integrations.email && !cognitionData.integrations.accounting)) && <WelcomeBanner owner={owner} />}
+              {/* Welcome banner — only show if truly no integrations at all */}
+              {connectedIntegrations.length === 0 &&
+               integrationStatus?.total_connected === 0 &&
+               (!cognitionData?.integrations?.crm && !cognitionData?.integrations?.email && !cognitionData?.integrations?.accounting) &&
+               <WelcomeBanner owner={displayName} />}
 
               {/* DAILY SUMMARY — "What changed in 24h" */}
               {(connectedIntegrations.length > 0 || (cognitionData?.integrations && (cognitionData.integrations.crm || cognitionData.integrations.email || cognitionData.integrations.accounting))) && <DailySummary cognitive={cognitive} />}

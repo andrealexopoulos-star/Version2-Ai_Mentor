@@ -402,46 +402,57 @@ const AllDoneStep = ({ connectedList, onFinish }) => (
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'biqc_onboarding_done';
+// sessionStorage key — resets on every new browser session (every login)
+const SESSION_KEY = 'biqc_onboarding_shown';
 
 export const useFirstTimeOnboarding = () => {
-  const [show, setShow] = useState(false);
-  const [emailConnectedProvider, setEmailConnectedProvider] = useState(null);
+  // Read URL params synchronously BEFORE setting initial state
+  const params = new URLSearchParams(window.location.search);
+  const isOAuthReturn = params.get('onboarding') === 'email_connected';
+  const returnProvider = isOAuthReturn
+    ? (params.get('outlook_connected') === 'true' ? 'Outlook' : params.get('gmail_connected') === 'true' ? 'Gmail' : null)
+    : null;
+
+  const [show, setShow] = useState(() => {
+    // Always show on OAuth return
+    if (isOAuthReturn) return true;
+    // Show on every login (session-scoped, not permanent)
+    return true; // Always show — dismissed state tracked per-session below
+  });
+  const [emailConnectedProvider, setEmailConnectedProvider] = useState(returnProvider);
+  const [dismissed, setDismissed] = useState(() => {
+    // Check if already dismissed this session
+    return sessionStorage.getItem(SESSION_KEY) === '1';
+  });
 
   React.useEffect(() => {
-    // Check URL for email OAuth return
-    const params = new URLSearchParams(window.location.search);
-    const onboarding = params.get('onboarding');
-    const outlookConnected = params.get('outlook_connected');
-    const gmailConnected = params.get('gmail_connected');
-
-    if (onboarding === 'email_connected') {
-      const provider = outlookConnected === 'true' ? 'Outlook' : gmailConnected === 'true' ? 'Gmail' : null;
-      setEmailConnectedProvider(provider);
-      // Clean URL
+    if (isOAuthReturn) {
+      // Clean URL params
       window.history.replaceState({}, '', '/advisor');
-      setShow(true);
-      return;
     }
-
-    // Show on first visit (not done before)
-    const done = localStorage.getItem(STORAGE_KEY);
-    if (!done) setShow(true);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismiss = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, '1');
+    sessionStorage.setItem(SESSION_KEY, '1');
+    setDismissed(true);
     setShow(false);
   }, []);
 
-  return { show, dismiss, emailConnectedProvider };
+  return { show: show && !dismissed, dismiss, emailConnectedProvider };
 };
 
 const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null }) => {
-  // Start at step 2 if returning from email OAuth
   const [step, setStep] = useState(initialEmailProvider ? 2 : 0);
   const [connectedList, setConnectedList] = useState(initialEmailProvider ? [initialEmailProvider] : []);
   const [mergeLinkToken, setMergeLinkToken] = useState('');
+
+  // Jump to Step 2 if initialEmailProvider arrives after mount (OAuth return race)
+  React.useEffect(() => {
+    if (initialEmailProvider && step === 0) {
+      setStep(2);
+      setConnectedList([initialEmailProvider]);
+    }
+  }, [initialEmailProvider]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEmailConnected = (provider) => {
     setConnectedList(prev => [...prev, provider]);
