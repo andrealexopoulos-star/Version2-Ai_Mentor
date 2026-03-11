@@ -158,7 +158,10 @@ function parseToGroups(c, connectedIntegrations) {
 
   const hasCRM = connectedIntegrations.includes('crm') || connectedIntegrations.includes('hubspot') || connectedIntegrations.includes('salesforce') || connectedIntegrations.includes('pipedrive');
   const hasAccounting = connectedIntegrations.includes('accounting') || connectedIntegrations.includes('xero') || connectedIntegrations.includes('quickbooks') || connectedIntegrations.includes('myob');
-  const hasEmail = connectedIntegrations.includes('email') || connectedIntegrations.includes('gmail') || connectedIntegrations.includes('outlook');
+  // hasEmail: check integration status OR snapshot founder_vitals (Outlook calendar data = email connected)
+  const hasEmailFromStatus = connectedIntegrations.includes('email') || connectedIntegrations.includes('gmail') || connectedIntegrations.includes('outlook');
+  const hasEmailFromSnapshot = !!(c.founder_vitals?.calendar && c.founder_vitals.calendar !== 'No calendar data available.' && !c.founder_vitals.calendar.includes('not available')) || !!(c.founder_vitals?.email_stress && !c.founder_vitals.email_stress.includes('No email'));
+  const hasEmail = hasEmailFromStatus || hasEmailFromSnapshot;
 
   // Map resolution_queue items to groups — only if integration available
   const rq = c.resolution_queue || [];
@@ -427,7 +430,9 @@ const AdvisorWatchtower = () => {
   const group = GROUPS[activeId];
 
   // Check if the active tab's required integration is connected
-  const isTabConnected = !group.requires || connectedIntegrations.some(i => i.includes(group.requires));
+  // For email: check both integration status AND snapshot founder_vitals (Outlook data)
+  const isTabConnected = !group.requires ||
+    (group.requires === 'email' ? hasEmail : connectedIntegrations.some(i => i.includes(group.requires)));
 
   const [briefOpen, setBriefOpen] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
