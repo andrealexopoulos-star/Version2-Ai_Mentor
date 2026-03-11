@@ -1,17 +1,35 @@
 /**
  * AgentCalibrationChat
  *
- * 9-step operator psychology profiling that builds the personalised BIQc
- * Intelligence Agent for this user. Uses the calibration-psych Supabase
- * edge function (OpenAI structured outputs).
- *
- * Placed in the calibration flow AFTER the CMO Report and BEFORE
- * "Here's What BIQc Found" (ExecutiveCMOSnapshot).
+ * 9-step operator psychology profiling with multiple choice options.
+ * Uses calibration-psych Supabase edge function.
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ArrowRight, Loader2, Brain, ChevronRight } from 'lucide-react';
+import { Send, ArrowRight, Loader2, Brain } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
+
+// ── Pre-defined multiple choice options for each step ────────────────────────
+const STEP_OPTIONS = [
+  // Step 1: communication_style
+  ['Bullet points — fast and structured', 'Narrative — give me the story', 'Data first — numbers, then words', 'Conversational — like a colleague'],
+  // Step 2: verbosity
+  ['Minimal — key points only', 'Moderate — enough context to act', 'Comprehensive — full depth always'],
+  // Step 3: bluntness
+  ['Very direct — don\'t soften it', 'Balanced — direct but considerate', 'Diplomatic — careful framing'],
+  // Step 4: risk_posture
+  ['Conservative — protect what we have', 'Moderate — calculated moves', 'Aggressive — growth over stability'],
+  // Step 5: decision_style
+  ['Gut instinct — I trust my read', 'Data-driven — show me the numbers', 'Consensus — I like team input first', 'Hybrid — data + gut together'],
+  // Step 6: accountability_cadence
+  ['Daily check-ins', 'Weekly reviews', 'Monthly reviews', 'Milestone-based only'],
+  // Step 7: time_constraints
+  ['Always time-poor — be brief', 'Moderate — some breathing room', 'Flexible — I have time for depth'],
+  // Step 8: challenge_tolerance
+  ['Challenge me — push back hard', 'Balanced — challenge when warranted', 'Support me — help me execute my vision'],
+  // Step 9: boundaries
+  ['No limits — tell me everything', 'Only actionable insights — skip theories', 'No bad news without a solution', "Other (I'll type below)"],
+];
 
 const STEPS_LABELS = [
   'Communication style',
@@ -24,8 +42,6 @@ const STEPS_LABELS = [
   'Challenge tolerance',
   'Boundaries & tone',
 ];
-
-// ── Intro screen before chat starts ──────────────────────────────────────────
 const IntroScreen = ({ firstName, onStart }) => (
   <div className="h-screen flex flex-col items-center justify-center px-6 text-center"
     style={{ background: '#070E18' }}>
@@ -114,9 +130,9 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
     setSending(false);
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || sending) return;
-    const userMsg = input.trim();
+  const sendMessage = async (overrideText = null) => {
+    const userMsg = (overrideText || input).trim();
+    if (!userMsg || sending) return;
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setSending(true);
@@ -240,14 +256,40 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Multiple choice options for current step */}
+      {!sending && step >= 1 && step <= 9 && (
+        <div className="flex-shrink-0 px-4 pt-3" style={{ borderTop: '1px solid #1E2D3D' }}>
+          <p className="text-[10px] mb-2" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
+            Choose an option or type your own answer below
+          </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {(STEP_OPTIONS[step - 1] || []).map((opt, i) => (
+              <button key={i} onClick={() => sendMessage(opt)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{
+                  background: 'rgba(255,122,24,0.08)',
+                  border: '1px solid rgba(255,122,24,0.2)',
+                  color: '#F4F7FA',
+                  fontFamily: fontFamily.body,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,122,24,0.16)'; e.currentTarget.style.borderColor = 'rgba(255,122,24,0.4)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,122,24,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,122,24,0.2)'; }}
+                data-testid={`choice-${i}`}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Input */}
-      <div className="flex-shrink-0 px-4 pb-5 pt-3" style={{ borderTop: '1px solid #1E2D3D' }}>
+      <div className="flex-shrink-0 px-4 pb-5 pt-2">
         <div className="flex items-end gap-2">
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder="Type your answer…"
+            placeholder="Or type your own answer…"
             rows={1}
             className="flex-1 resize-none rounded-xl px-4 py-3 text-sm outline-none"
             style={{
@@ -272,9 +314,6 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
-        <p className="text-center text-[10px] mt-2" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
-          Press Enter to send · Shift+Enter for new line
-        </p>
       </div>
     </div>
   );
