@@ -212,6 +212,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       {
         icon: AlertTriangle, label: 'Risk', path: '/risk',
         children: [
+          { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
+          { icon: Shield, label: 'Compliance', path: '/compliance' },
           { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
         ],
       },
@@ -227,11 +229,10 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
     ]},
     { id: 'governance', label: 'Settings & Growth', items: [
-      { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
       { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
-      { icon: Shield, label: 'Compliance', path: '/compliance' },
       { icon: Activity, label: 'Data Health', path: '/data-health' },
       { icon: Link2, label: 'Integrations', path: '/integrations' },
+      { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
       { icon: FileText, label: 'Reports', path: '/reports' },
       { icon: Settings, label: 'Settings', path: '/settings' },
     ]},
