@@ -109,15 +109,28 @@ const BusinessProfile = () => {
   };
 
   const [saving, setSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
   const handleSave = async () => {
+    // Validate required fields
+    const errors = {};
+    if (!profile.unique_value_proposition?.trim()) errors.unique_value_proposition = 'Value proposition is required — this powers your AI recommendations';
+    if (!profile.business_stage) errors.business_stage = 'Please select your business stage';
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      toast.error('Please fill in the required fields before saving');
+      if (errors.unique_value_proposition) setActiveTab('product');
+      else if (errors.business_stage) setActiveTab('strategy');
+      return;
+    }
+    setValidationErrors({});
     setSaving(true);
     try {
       await apiClient.put('/business-profile', profile);
-      toast.success('Profile saved');
+      toast.success('Business DNA saved — your AI agent has been updated with the latest profile.');
       fetchScores();
     } catch (e) {
-      toast.error('Failed to save profile');
+      toast.error('Failed to save profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -275,14 +288,18 @@ const BusinessProfile = () => {
                   </div>
 
                   <div>
-                    <Label>Unique Value Proposition</Label>
+                    <Label>Unique Value Proposition <span style={{ color: '#EF4444' }}>*</span></Label>
                     <Textarea
                       value={profile.unique_value_proposition || ''}
-                      onChange={(e) => updateProfile('unique_value_proposition', e.target.value)}
-                      placeholder="What makes your offering unique? Why should customers choose you over alternatives?"
+                      onChange={(e) => { updateProfile('unique_value_proposition', e.target.value); if (validationErrors.unique_value_proposition) setValidationErrors(v => ({...v, unique_value_proposition: null})); }}
+                      placeholder="What makes your offering unique? Why should customers choose you over alternatives? e.g. 'We are the only HR firm in Victoria that specialises in construction SMBs.'"
                       rows={4}
                       className="mt-2"
+                      style={validationErrors.unique_value_proposition ? { borderColor: '#EF4444' } : {}}
                     />
+                    {validationErrors.unique_value_proposition && (
+                      <p className="text-xs mt-1" style={{ color: '#EF4444' }}>{validationErrors.unique_value_proposition}</p>
+                    )}
                   </div>
 
                   <div>
@@ -405,9 +422,52 @@ const BusinessProfile = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Strategy & Vision</CardTitle>
-                  <CardDescription>Where you're going and how you'll get there</CardDescription>
+                  <CardDescription>Where you're going and how you'll get there — used to personalise your AI agent's recommendations</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+
+                  {/* Business Stage, Growth Goals, Risk Profile — implemented dropdowns */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Business Stage <span style={{ color: '#EF4444' }}>*</span></Label>
+                      <Select value={profile.business_stage || ''} onValueChange={(val) => updateProfile('business_stage', val)}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select stage" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['Pre-revenue / Idea', 'Startup (0-2 years)', 'Early Growth (2-5 years)', 'Growth (5-10 years)', 'Established (10+ years)', 'Scaling / Expansion', 'Mature / Optimising', 'Exit / Succession'].map(s => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Primary Growth Goal <span style={{ color: '#EF4444' }}>*</span></Label>
+                      <Select value={profile.growth_goal || ''} onValueChange={(val) => updateProfile('growth_goal', val)}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select goal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['Revenue growth', 'Market expansion', 'New product launch', 'Geographic expansion', 'Client retention', 'Team growth', 'Profit margin improvement', 'Acquisition preparation', 'Digital transformation', 'Operational efficiency'].map(g => (
+                            <SelectItem key={g} value={g}>{g}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Risk Profile <span style={{ color: '#EF4444' }}>*</span></Label>
+                      <Select value={profile.risk_profile || ''} onValueChange={(val) => updateProfile('risk_profile', val)}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select profile" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['Very conservative — protect what we have', 'Conservative — small calculated risks', 'Moderate — balanced growth and protection', 'Growth-focused — accept higher risk for growth', 'Aggressive — maximum growth over stability'].map(r => (
+                            <SelectItem key={r} value={r}>{r}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div>
                     <Label>Mission Statement</Label>
                     <Textarea

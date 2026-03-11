@@ -7,10 +7,10 @@ import { fontFamily } from '../design-system/tokens';
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
 const STATE_CONFIG = {
-  STABLE:      { label: 'Stable',      color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
-  DRIFT:       { label: 'Drift',       color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
-  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#FF6A00' },
-  CRITICAL:    { label: 'Critical',    color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
+  STABLE:      { label: 'Stable',      color: '#10B981', bg: '#10B98110', border: '#10B98130', dot: '#10B981' },
+  DRIFT:       { label: 'Drift',       color: '#F59E0B', bg: '#F59E0B10', border: '#F59E0B30', dot: '#F59E0B' },
+  COMPRESSION: { label: 'Compression', color: '#FF6A00', bg: '#FF6A0010', border: '#FF6A0030', dot: '#FF6A00' },
+  CRITICAL:    { label: 'Critical',    color: '#EF4444', bg: '#EF444410', border: '#EF444430', dot: '#EF4444' },
 };
 
 const DIAGNOSIS_AREAS = [
@@ -62,16 +62,18 @@ const BoardRoom = () => {
   const activeArea = DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis);
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: fontFamily.display }}>
+    <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
 
-      {/* ═══ HEADER — Liquid Silver ═══ */}
-      <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      {/* ═══ HEADER — Dark themed ═══ */}
+      <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
+        style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
         <div className="flex items-center gap-5">
-          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#64748B', textDecoration: 'none', fontFamily: fontFamily.display }} data-testid="boardroom-home">
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-white/5"
+            style={{ color: '#64748B', textDecoration: 'none', fontFamily: fontFamily.display }} data-testid="boardroom-home">
             ← Dashboard
           </a>
-          <div className="h-4 w-px" style={{ background: '#E5E7EB' }} />
-          <span className="text-sm font-semibold" style={{ color: '#111827' }}>Board Room</span>
+          <div className="h-4 w-px" style={{ background: '#1E2D3D' }} />
+          <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Board Room</span>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
             <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
@@ -81,7 +83,7 @@ const BoardRoom = () => {
       </header>
 
       {/* ═══ PRESSURE BAR ═══ */}
-      <div className="h-[2px] shrink-0" style={{ background: '#E5E7EB' }}>
+      <div className="h-[2px] shrink-0" style={{ background: '#1E2D3D' }}>
         <div className="h-full transition-all duration-1000 rounded-r-full" style={{ width: `${dpi}%`, background: st.dot }} />
       </div>
 
@@ -99,23 +101,25 @@ const BoardRoom = () => {
                 ) : (
                   <div className="space-y-5">
                     {hasBrief && (
-                      <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                        <p className="text-[15px] leading-relaxed" style={{ color: '#1F2937' }}>
+                      <div className="p-7 rounded-2xl"
+                        style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                        <p className="text-[15px] leading-relaxed" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
                           {typeof narrative === 'string' ? narrative : narrative.primary_tension}
                         </p>
                         {narrative.force_summary && (
-                          <p className="text-sm mt-3 leading-relaxed" style={{ color: '#64748B' }}>{narrative.force_summary}</p>
+                          <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{narrative.force_summary}</p>
                         )}
                         {narrative.strategic_direction && (
-                          <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#16A34A', fontFamily: fontFamily.mono }}>Direction</span>
-                            <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#243140' }}>{narrative.strategic_direction}</p>
+                          <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Direction</span>
+                            <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{narrative.strategic_direction}</p>
                           </div>
                         )}
                       </div>
                     )}
                     {!hasBrief && (
-                      <div className="p-7 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}>
+                      <div className="p-7 rounded-2xl text-center"
+                        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                         <p className="text-sm" style={{ color: '#64748B' }}>Executive briefing will appear here once intelligence is generated.</p>
                       </div>
                     )}
@@ -123,8 +127,8 @@ const BoardRoom = () => {
                     {forces.length > 0 && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {forces.map((f, i) => (
-                          <div key={i} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.05)' }}>
-                            <span className="text-xs font-semibold" style={{ color: '#243140' }}>{f.domain}</span>
+                          <div key={i} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{f.domain}</span>
                             {f.detail && <p className="text-[11px] mt-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.detail}</p>}
                           </div>
                         ))}
@@ -144,13 +148,14 @@ const BoardRoom = () => {
                     <button
                       key={area.id}
                       onClick={() => runDiagnosis(area)}
-                      className="text-left p-5 rounded-xl transition-all hover:shadow-md hover:-translate-y-0.5 group"
-                      style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}
-                      data-testid={`diagnosis-${area.id}`}
-                    >
+                      className="text-left p-5 rounded-xl transition-all hover:-translate-y-0.5 group"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)', cursor: 'pointer' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = area.color + '40'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--biqc-border, #1E2D3D)'}
+                      data-testid={`diagnosis-${area.id}`}>
                       <div className="flex items-center gap-3 mb-2.5">
-                        <span className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-medium" style={{ background: `${area.color}10`, color: area.color }}>{area.icon}</span>
-                        <span className="text-sm font-semibold" style={{ color: '#1F2937' }}>{area.label}</span>
+                        <span className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-medium" style={{ background: `${area.color}15`, color: area.color }}>{area.icon}</span>
+                        <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{area.label}</span>
                       </div>
                       <p className="text-[12px] leading-relaxed" style={{ color: '#64748B' }}>{area.desc}</p>
                       <div className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -213,24 +218,22 @@ const BoardRoom = () => {
                   {diagnosisResult.what_to_watch && (
                     <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
                       <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>What to Watch</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#78350F' }}>{diagnosisResult.what_to_watch}</p>
+                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
                     </div>
                   )}
 
-                  {/* If Ignored */}
                   {diagnosisResult.if_ignored && (
-                    <div className="p-6 rounded-2xl" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
-                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#991B1B', fontFamily: fontFamily.mono }}>If Ignored</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#7F1D1D' }}>{diagnosisResult.if_ignored}</p>
+                    <div className="p-6 rounded-2xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>If Ignored</span>
+                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
                     </div>
                   )}
 
-                  {/* Sources */}
                   {diagnosisResult.data_sources_used?.length > 0 && (
                     <div className="flex items-center gap-3 pt-2">
                       <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
                       {diagnosisResult.data_sources_used.map((s, i) => (
-                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ color: '#64748B', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>
+                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ color: '#9FB0C3', background: 'rgba(255,255,255,0.06)', fontFamily: fontFamily.mono }}>{s}</span>
                       ))}
                     </div>
                   )}

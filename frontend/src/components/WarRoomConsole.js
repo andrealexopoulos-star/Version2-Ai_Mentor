@@ -62,12 +62,13 @@ const WarRoomConsole = () => {
   var st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F9FA 0%, #EFF1F3 40%, #E8EAED 100%)', fontFamily: fontFamily.display }}>
-      <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+    <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
+      <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
+        style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
         <div className="flex items-center gap-5">
-          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#64748B', textDecoration: 'none' }} data-testid="console-home-btn">← Dashboard</a>
-          <div className="h-4 w-px" style={{ background: '#E5E7EB' }} />
-          <span className="text-sm font-semibold" style={{ color: '#111827' }}>Strategic Console</span>
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/5" style={{ color: '#64748B', textDecoration: 'none' }} data-testid="console-home-btn">← Dashboard</a>
+          <div className="h-4 w-px" style={{ background: '#1E2D3D' }} />
+          <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Strategic Console</span>
           {!loading && cognitive && (
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: '1px solid ' + st.border }}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
@@ -75,7 +76,7 @@ const WarRoomConsole = () => {
             </div>
           )}
         </div>
-        <button onClick={refresh} disabled={refreshing || loading} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-black/5" style={{ color: '#64748B' }} data-testid="refresh-btn">
+        <button onClick={refresh} disabled={refreshing || loading} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/5" style={{ color: '#64748B' }} data-testid="refresh-btn">
           <RefreshCw className="w-3.5 h-3.5" />
           {cacheAge !== null && cacheAge > 0 ? cacheAge + 'm ago' : 'Refresh'}
         </button>
@@ -85,59 +86,62 @@ const WarRoomConsole = () => {
           {loading && (
             <div className="flex flex-col items-center justify-center py-20">
               <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>analyzing...</span>
-              <p className="text-sm font-medium" style={{ color: '#243140' }}>Loading strategic brief...</p>
+              <p className="text-sm font-medium mt-2" style={{ color: '#9FB0C3' }}>Loading strategic brief...</p>
             </div>
           )}
           {error && !loading && (
-            <div className="p-6 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.06)' }}>
-              <p className="text-sm" style={{ color: '#D97706' }}>{error}</p>
+            <div className="p-6 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+              <p className="text-sm" style={{ color: '#F59E0B' }}>{error}</p>
             </div>
           )}
           {cognitive && !loading && (
             <>
-              <h1 className="text-2xl font-semibold" style={{ color: '#111827' }}>Good {displayTimeOfDay}, {displayName}.</h1>
-              {c.system_state_interpretation && <p className="text-sm" style={{ color: '#64748B' }}>{c.system_state_interpretation}</p>}
+              <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Good {displayTimeOfDay}, {displayName}.</h1>
+              {c.system_state_interpretation && <p className="text-sm" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{c.system_state_interpretation}</p>}
               {c.executive_memo && (
-                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)' }}>
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#111827', fontFamily: fontFamily.mono }}>Executive Brief</span>
-                  <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: '#1F2937' }}>{c.executive_memo}</p>
+                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
+                  <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{c.executive_memo}</p>
                 </div>
               )}
               {c.market_position && (
-                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.04)' }}>
+                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                   <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Context</span>
-                  <p className="text-sm leading-relaxed" style={{ color: '#243140' }}>{c.market_position}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{c.market_position}</p>
                 </div>
               )}
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
-                  {sources.map(function(s, i) { return <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#64748B', background: 'rgba(0,0,0,0.04)', fontFamily: fontFamily.mono }}>{s}</span>; })}
+                  {sources.map(function(s, i) { return <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: 'rgba(255,255,255,0.06)', fontFamily: fontFamily.mono }}>{s}</span>; })}
                 </div>
               )}
             </>
           )}
           {conversation.length > 0 && (
-            <div className="space-y-4 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+            <div className="space-y-4 pt-4" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
               {conversation.map(function(msg, i) { return (
                 <div key={i} className={'flex ' + (msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                  <div className="max-w-[85%] p-4 rounded-2xl" style={msg.role === 'user' ? { background: '#111827', color: '#F9FAFB' } : { background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.06)', color: '#1F2937' }}>
+                  <div className="max-w-[85%] p-4 rounded-2xl"
+                    style={msg.role === 'user'
+                      ? { background: 'rgba(255,106,0,0.12)', color: '#F4F7FA', border: '1px solid rgba(255,106,0,0.2)' }
+                      : { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)', color: 'var(--biqc-text,#F4F7FA)' }}>
                     <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
                   </div>
                 </div>
               ); })}
-              {asking && (<div className="flex justify-start"><div className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.06)' }}><div className="flex items-center gap-2"><div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse" /><div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} /><div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} /></div></div></div>)}
+              {asking && (<div className="flex justify-start"><div className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)' }}><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#FF6A00'}} /><div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#FF6A00',animationDelay:'0.2s'}} /><div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#FF6A00',animationDelay:'0.4s'}} /></div></div></div>)}
               <div ref={scrollRef} />
             </div>
           )}
         </div>
       </div>
       {!loading && cognitive && (
-        <div className="shrink-0 px-6 md:px-10 py-4" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <div className="shrink-0 px-6 md:px-10 py-4" style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
           <form onSubmit={function(e) { e.preventDefault(); askQuestion(); }} className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: '#FFF', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <input ref={inputRef} type="text" value={question} onChange={function(e) { setQuestion(e.target.value); }} placeholder="Ask about your business..." disabled={asking} className="flex-1 text-sm outline-none bg-transparent" style={{ color: '#1F2937', fontFamily: fontFamily.display }} data-testid="ask-input" />
-              <button type="submit" disabled={asking || !question.trim()} className="p-2 rounded-lg" style={{ color: question.trim() ? '#111827' : '#D1D5DB' }} data-testid="ask-submit"><Send className="w-4 h-4" /></button>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+              <input ref={inputRef} type="text" value={question} onChange={function(e) { setQuestion(e.target.value); }} placeholder="Ask about your business..." disabled={asking} className="flex-1 text-sm outline-none bg-transparent" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }} data-testid="ask-input" />
+              <button type="submit" disabled={asking || !question.trim()} className="p-2 rounded-lg transition-colors" style={{ color: question.trim() ? '#FF6A00' : '#4A5568' }} data-testid="ask-submit"><Send className="w-4 h-4" /></button>
             </div>
           </form>
         </div>
