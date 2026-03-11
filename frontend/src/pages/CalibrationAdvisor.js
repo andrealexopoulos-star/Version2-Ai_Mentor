@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useCalibrationState } from "../hooks/useCalibrationState";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
+import { useSearchParams } from "react-router-dom";
 import { apiClient } from "../lib/api";
 import {
   CalibrationLoading, WelcomeHandshake, ManualSummaryFallback,
@@ -17,6 +18,7 @@ import { CalibrationTutorial } from "../components/TutorialOverlay";
 import { CognitiveIgnitionScreen } from "../components/CognitiveLoadingScreen";
 import { ExecutiveCMOSnapshot, ForensicCalibrationUI } from "../components/calibration/IntelligencePhases";
 import { SkipForward, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CREAM = '#0F1720';
 const CHARCOAL = '#F4F7FA';
@@ -26,9 +28,24 @@ const CARD_BORDER = '#243140';
 const CalibrationAdvisor = () => {
   const cal = useCalibrationState();
   const { user, clearBootstrapCache } = useSupabaseAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [skipping, setSkipping] = useState(false);
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
+
+  // Handle OAuth return from email connect — resume at integration_connect step
+  useEffect(() => {
+    const step = searchParams.get('step');
+    const outlookConnected = searchParams.get('outlook_connected');
+    const gmailConnected = searchParams.get('gmail_connected');
+
+    if (step === 'integration_connect' && cal.entry !== 'integration_connect' && cal.entry !== 'loading') {
+      if (outlookConnected === 'true') toast.success('Outlook connected! Continue to your intelligence.');
+      if (gmailConnected === 'true') toast.success('Gmail connected! Continue to your intelligence.');
+      setSearchParams({});
+      cal.setEntry('integration_connect');
+    }
+  }, [searchParams, cal.entry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSkipCalibration = async () => {
     setSkipping(true);

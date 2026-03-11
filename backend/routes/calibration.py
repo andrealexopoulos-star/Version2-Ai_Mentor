@@ -134,8 +134,8 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
         try:
             scs = get_sb().table("strategic_console_state").select(
                 "status, current_step, is_complete"
-            ).eq("user_id", user_id).maybe_single().execute()
-            if scs.data and scs.data.get("is_complete"):
+            ).eq("user_id", user_id).order("updated_at", desc=True).limit(1).execute()
+            if scs.data and scs.data[0].get("is_complete"):
                 logger.info(f"[calibration/status] User {user_id} COMPLETE via strategic_console_state")
                 return JSONResponse(status_code=200, content={
                     "status": "COMPLETE", "user_name": user_name
@@ -337,12 +337,12 @@ async def get_lifecycle_state(request: Request):
         try:
             scs = get_sb().table("strategic_console_state").select(
                 "status, current_step, is_complete"
-            ).eq("user_id", user_id).maybe_single().execute()
-            if scs.data and scs.data.get("is_complete"):
+            ).eq("user_id", user_id).order("updated_at", desc=True).limit(1).execute()
+            if scs.data and scs.data[0].get("is_complete"):
                 calibration_complete = True
                 calibration_status = "complete"
-                console_status = scs.data.get("status", "COMPLETED")
-                console_step = scs.data.get("current_step", 17)
+                console_status = scs.data[0].get("status", "COMPLETED")
+                console_step = scs.data[0].get("current_step", 17)
                 logger.info(f"[lifecycle/state] User {user_id} resolved via strategic_console_state")
         except Exception:
             pass

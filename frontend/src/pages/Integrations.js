@@ -38,6 +38,7 @@ const Logo = ({ domain, name, size = 36 }) => {
 // ── Categories ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: 'all',        label: 'All',            icon: LayoutGrid },
+  { id: 'connected',  label: 'Connected',      icon: CheckCircle2 },
   { id: 'crm',        label: 'CRM',            icon: Users      },
   { id: 'financial',  label: 'Financial',      icon: DollarSign },
   { id: 'ecommerce',  label: 'E-Commerce',     icon: TrendingUp },
@@ -50,9 +51,10 @@ const CATEGORIES = [
 
 // ── Integration registry ──────────────────────────────────────────────────────
 const EMAIL_CALENDAR = [
-  { id: 'gmail',    name: 'Gmail',             domain: 'gmail.com',    category: 'email',    desc: 'Inbox intelligence — priority triage, reply drafting, client signals', type: 'gmail'   },
-  { id: 'outlook',  name: 'Microsoft Outlook', domain: 'microsoft.com',category: 'email',    desc: 'Email + Calendar sync via Microsoft 365 OAuth',                       type: 'outlook' },
-  { id: 'calendar', name: 'Google Calendar',   domain: 'google.com',   category: 'calendar', desc: 'Meeting intelligence, schedule analysis and prep briefs',              type: 'gcal'    },
+  { id: 'gmail',            name: 'Gmail',              domain: 'gmail.com',     category: 'email',    desc: 'Inbox intelligence — priority triage, reply drafting, client signals', type: 'gmail'    },
+  { id: 'outlook',          name: 'Microsoft Outlook',  domain: 'microsoft.com', category: 'email',    desc: 'Email + Calendar sync via Microsoft 365 OAuth',                       type: 'outlook'  },
+  { id: 'outlook-calendar', name: 'Outlook Calendar',   domain: 'microsoft.com', category: 'calendar', desc: 'Meeting intelligence, schedule prep briefs and availability insights',  type: 'outlook_cal' },
+  { id: 'google-calendar',  name: 'Google Calendar',    domain: 'google.com',    category: 'calendar', desc: 'Meeting intelligence, schedule analysis and prep briefs',              type: 'gcal'     },
 ];
 
 const MARKETING_PLATFORMS = [
@@ -264,7 +266,7 @@ export default function Integrations() {
     if (err) { toast.error(`Connection error: ${err}`); setSearchParams({}); }
   }, [searchParams, setSearchParams, loadOutlookStatus, loadGmailStatus]);
 
-  const openMergeLink = useCallback(async (integrationId, categories) => {
+  const openMergeLink = useCallback(async (integrationId, categories, integrationName = null) => {
     setOpeningMerge(integrationId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -273,10 +275,14 @@ export default function Integrations() {
         setOpeningMerge(null);
         return;
       }
+      // Pass integration name to pre-select in Merge modal (bypasses category picker)
+      const body = { categories };
+      if (integrationName) body.integration = integrationName;
+
       const res = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ categories }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -287,15 +293,13 @@ export default function Integrations() {
         setOpeningMerge(null);
         return;
       }
-      const body = await res.json();
-      const link_token = body?.link_token;
+      const resBody = await res.json();
+      const link_token = resBody?.link_token;
       if (!link_token) {
         toast.error('No link token returned — please try again');
         setOpeningMerge(null);
         return;
       }
-      // Set token then signal intent to open — useEffect handles the actual open
-      // once the SDK re-initialises with the new token and calls onReady
       setMergeLinkToken(link_token);
       setPendingOpen(true);
     } catch (e) {
@@ -327,11 +331,11 @@ export default function Integrations() {
     }
     if (integration.type === 'merge') {
       const cats = MERGE_CATEGORY_MAP[integration.category] || ['crm'];
-      await openMergeLink(integration.id, cats);
+      await openMergeLink(integration.id, cats, integration.name);
       return;
     }
     if (integration.type === 'merge_storage') {
-      await openMergeLink(integration.id, ['file_storage']);
+      await openMergeLink(integration.id, ['file_storage'], integration.name);
       return;
     }
   }, [openMergeLink]);
@@ -365,9 +369,8 @@ export default function Integrations() {
   }, [mergeIntegrations]);
 
   const isConnected = useCallback((integration) => {
-    if (integration.type === 'outlook') return outlookStatus.connected;
-    if (integration.type === 'gmail') return gmailStatus.connected;
-    if (integration.type === 'gcal') return gmailStatus.connected;
+    if (integration.type === 'outlook' || integration.type === 'outlook_cal') return outlookStatus.connected;
+    if (integration.type === 'gmail' || integration.type === 'gcal') return gmailStatus.connected;
     if (integration.type === 'coming_soon') return false;
     return Object.keys(mergeIntegrations).some(k =>
       k.toLowerCase() === integration.id || k.toLowerCase() === integration.name.toLowerCase() || k.toLowerCase().includes(integration.id)
@@ -381,6 +384,7 @@ export default function Integrations() {
   };
 
   const filtered = ALL_INTEGRATIONS.filter(i => {
+    if (selectedCategory === 'connected') return isConnected(i);
     const matchCat = selectedCategory === 'all' || i.category === selectedCategory;
     const matchSearch = !searchTerm || i.name.toLowerCase().includes(searchTerm.toLowerCase()) || i.desc.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCat && matchSearch;
@@ -436,7 +440,11 @@ export default function Integrations() {
               {CATEGORIES.map(cat => {
                 const active = selectedCategory === cat.id;
                 const Icon = cat.icon;
-                const count = cat.id === 'all' ? ALL_INTEGRATIONS.length : ALL_INTEGRATIONS.filter(i => i.category === cat.id).length;
+                const count = cat.id === 'all' 
+                  ? ALL_INTEGRATIONS.length 
+                  : cat.id === 'connected' 
+                  ? connectedCount
+                  : ALL_INTEGRATIONS.filter(i => i.category === cat.id).length;
                 return (
                   <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
@@ -459,12 +467,14 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
-          {/* ── EMAIL & CALENDAR — always visible, not filterable ── */}
-          {!searchTerm && selectedCategory === 'all' && (
+          {/* ── EMAIL & CALENDAR — visible on All and Connected tabs ── */}
+          {!searchTerm && (selectedCategory === 'all' || selectedCategory === 'connected') && (
             <div>
               <SectionLabel icon={Mail} label="Email & Calendar" badge="Supabase OAuth" badgeColor="#3B82F6" />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
-                {EMAIL_CALENDAR.map((item, i) => (
+                {EMAIL_CALENDAR
+                  .filter(item => selectedCategory !== 'connected' || isConnected(item))
+                  .map((item, i) => (
                   <IntCard key={item.id} integration={item} index={i}
                     connected={isConnected(item)} connectedLabel={getConnectedLabel(item)}
                     disconnecting={disconnecting === item.id} openingMerge={openingMerge === item.id}
@@ -648,10 +658,34 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
           <button
             onClick={() => onConnect(integration)}
             disabled={openingMerge}
-            className="w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-white"
-            style={{ background: openingMerge ? '#E55F00' : '#FF6A00', fontFamily: fontFamily.body }}
-            onMouseEnter={e => { if (!openingMerge) e.currentTarget.style.background = '#E55F00'; }}
-            onMouseLeave={e => { if (!openingMerge) e.currentTarget.style.background = '#FF6A00'; }}
+            className="w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+            style={{
+              background: openingMerge
+                ? 'rgba(255,106,0,0.15)'
+                : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
+              border: '1px solid #FF6A00',
+              color: openingMerge ? '#FF6A00' : '#E8F0F8',
+              fontFamily: fontFamily.body,
+              boxShadow: hovered && !openingMerge
+                ? '0 0 12px rgba(255,106,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)'
+                : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+              textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(4px)',
+            }}
+            onMouseEnter={e => {
+              if (!openingMerge) {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,106,0,0.18) 0%, rgba(200,160,100,0.12) 100%)';
+                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.boxShadow = '0 0 16px rgba(255,106,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)';
+              }
+            }}
+            onMouseLeave={e => {
+              if (!openingMerge) {
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)';
+                e.currentTarget.style.color = '#E8F0F8';
+                e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08)';
+              }
+            }}
             data-testid={`connect-${integration.id}`}>
             {openingMerge ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plug className="w-3 h-3" />}
             {openingMerge ? 'Opening...' : 'Connect'}
