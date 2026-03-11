@@ -138,10 +138,12 @@ const EmailInbox = () => {
 
       // 2. Refresh from edge function in background
       const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
       const res = await fetch(`${supabaseUrl}/functions/v1/email_priority`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
+          'apikey': supabaseAnonKey,              // required by Supabase edge functions
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ provider }),

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { supabase } from '../context/SupabaseAuthContext';
+import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { Send, RefreshCw } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
@@ -16,11 +16,23 @@ const STATE_CFG = {
 
 const WarRoomConsole = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
+  const { user } = useSupabaseAuth();
   const [question, setQuestion] = useState('');
   const [asking, setAsking] = useState(false);
   const [conversation, setConversation] = useState([]);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Resolve display name: snapshot owner → user metadata → email prefix
+  const displayName = owner ||
+    user?.user_metadata?.full_name?.split(' ')[0] ||
+    user?.email?.split('@')[0] ||
+    'there';
+
+  const displayTimeOfDay = timeOfDay || (() => {
+    const h = new Date().getHours();
+    return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  })();
 
   const askQuestion = async () => {
     if (!question.trim() || asking) return;
@@ -82,7 +94,7 @@ const WarRoomConsole = () => {
           )}
           {cognitive && !loading && (
             <>
-              <h1 className="text-2xl font-semibold" style={{ color: '#111827' }}>Good {timeOfDay}, {owner}.</h1>
+              <h1 className="text-2xl font-semibold" style={{ color: '#111827' }}>Good {displayTimeOfDay}, {displayName}.</h1>
               {c.system_state_interpretation && <p className="text-sm" style={{ color: '#64748B' }}>{c.system_state_interpretation}</p>}
               {c.executive_memo && (
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)' }}>

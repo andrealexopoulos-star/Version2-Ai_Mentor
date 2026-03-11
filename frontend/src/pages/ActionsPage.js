@@ -1,6 +1,7 @@
 import React from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { Zap, Mail, MessageSquare, Users, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
@@ -14,10 +15,27 @@ const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: {
 
 const ActionsPage = () => {
   const { cognitive, loading } = useSnapshot();
+  const { status: integrationStatus } = useIntegrationStatus();
   const c = cognitive || {};
-  const rq = c.resolution_queue || [];
+  const rawRq = c.resolution_queue || [];
   const reallocation = c.reallocation || [];
   const priority = c.priority || {};
+
+  // Filter out resolution items that are no longer relevant based on current connections
+  const connectedCategories = (integrationStatus?.integrations || [])
+    .filter(i => i.connected)
+    .map(i => i.category?.toLowerCase());
+  const hasEmail = connectedCategories.includes('email') || connectedCategories.some(c => c?.includes('outlook') || c?.includes('gmail'));
+  const hasCRM = connectedCategories.includes('crm');
+  const hasAccounting = connectedCategories.includes('accounting');
+
+  const rq = rawRq.filter(item => {
+    const title = (item.title || item.issue || '').toLowerCase();
+    if (hasEmail && (title.includes('email') && (title.includes('missing') || title.includes('not connected')))) return false;
+    if (hasCRM && (title.includes('crm') && (title.includes('missing') || title.includes('not connected')))) return false;
+    if (hasAccounting && (title.includes('accounting') || title.includes('financial')) && (title.includes('missing') || title.includes('not connected'))) return false;
+    return true;
+  });
 
   return (
     <DashboardLayout>
