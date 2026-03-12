@@ -333,7 +333,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
               )}
             </button>
             {showNotifications && (
-              <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl z-50" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+              <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', zIndex: 9999, position: 'fixed', right: 16, top: 64 }}>
                 <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
                   <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
                   <div className="flex items-center gap-2">

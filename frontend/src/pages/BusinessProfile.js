@@ -53,18 +53,38 @@ const BusinessProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await apiClient.get('/business-profile/context');
-      const ctx = response.data || {};
-      // Merge resolved facts into profile for display
-      const resolvedFields = ctx.resolved_fields || {};
+      // Pull from all sources: business_profiles + resolved facts + integration data
+      const [profileRes, intRes] = await Promise.allSettled([
+        apiClient.get('/business-profile/context'),
+        apiClient.get('/integrations/merge/connected'),
+      ]);
+
+      const ctx = profileRes.status === 'fulfilled' ? (profileRes.value.data || {}) : {};
+      const intData = intRes.status === 'fulfilled' ? (intRes.value.data || {}) : {};
+
       const rawProfile = ctx.profile || {};
-      // Apply resolved facts as base, raw profile on top
+      const resolvedFields = ctx.resolved_fields || {};
+
+      // Merge: raw profile takes precedence, then resolved facts
       const merged = { ...rawProfile };
       for (const [field, factData] of Object.entries(resolvedFields)) {
-        if (factData.value && !merged[field]) {
+        if (factData?.value && !merged[field]) {
           merged[field] = factData.value;
         }
       }
+
+      // Enrich from CRM integration data (HubSpot company info)
+      const integrations = intData?.integrations || {};
+      if (integrations.hubspot || integrations.salesforce) {
+        try {
+          const crmRes = await apiClient.get('/integrations/crm/company');
+          if (crmRes.data?.name && !merged.business_name) merged.business_name = crmRes.data.name;
+          if (crmRes.data?.industry && !merged.industry) merged.industry = crmRes.data.industry;
+          if (crmRes.data?.website && !merged.website) merged.website = crmRes.data.website;
+          if (crmRes.data?.city && !merged.location) merged.location = crmRes.data.city;
+        } catch { /* non-fatal */ }
+      }
+
       setProfile(merged);
     } catch (error) {
       console.error('Failed to load profile:', error);

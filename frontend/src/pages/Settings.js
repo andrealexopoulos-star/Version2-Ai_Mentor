@@ -41,22 +41,38 @@ const Settings = () => {
   const syncFromCalibration = async () => {
     setSyncing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Not authenticated'); return; }
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-sync`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: '{}',
-      });
-      const data = await res.json();
-      if (data.ok) {
-        toast.success(`Synced ${data.fields_updated} fields from calibration`);
-        fetchProfile(); // Reload
+      // Pull enriched profile from backend (business_profiles + operator_profile + integrations)
+      const res = await apiClient.get('/business-profile/context');
+      const ctx = res.data || {};
+      const profile = ctx.profile || {};
+      const resolved = ctx.resolved_fields || {};
+
+      // Build enriched profile from all available sources
+      const enriched = { ...profile };
+      for (const [field, factData] of Object.entries(resolved)) {
+        if (factData?.value && !enriched[field]) {
+          enriched[field] = factData.value;
+        }
+      }
+
+      // Also pull from operator profile (agent persona = communication preferences)
+      if (ctx.calibration_status === 'complete') {
+        enriched._calibration_complete = true;
+      }
+
+      const fieldsUpdated = Object.values(enriched).filter(v => v).length;
+
+      if (fieldsUpdated > 0) {
+        // Save enriched profile back
+        await apiClient.put('/business-profile', enriched);
+        setProfile(prev => ({ ...prev, ...enriched }));
+        toast.success(`Profile synced — ${fieldsUpdated} fields updated from calibration`);
+        fetchProfile();
       } else {
-        toast.error(data.error || 'Sync failed');
+        toast.info('Complete calibration first to populate your profile automatically.');
       }
     } catch (e) {
-      toast.error('Failed to sync from calibration');
+      toast.error('Sync failed — please try again');
     } finally { setSyncing(false); }
   };
 
