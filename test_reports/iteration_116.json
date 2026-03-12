@@ -1,0 +1,79 @@
+{
+  "summary": "Calibration loop regression fix verified and enhanced. The QA user (cal-loop-416d7f85@biqctest.io) was seeded as fully calibrated. Backend APIs correctly return COMPLETE status. Frontend ProtectedRoute.js was enhanced with synchronous sessionStorage cache check to prevent completed users from getting stuck on /calibration loading screen during auth bootstrap.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "test_results": {
+    "backend_tests": {
+      "test_01_calibration_status_returns_complete": "PASS - Returns {status: 'COMPLETE', user_name: 'Cal Loop'}",
+      "test_02_onboarding_status_returns_completed": "PASS - Returns {completed: true, current_step: 14}",
+      "test_03_lifecycle_state_shows_calibration_complete": "PASS - Returns calibration.complete=true, onboarding.complete=true, console.status='COMPLETED'",
+      "test_04_auth_me_returns_user_data": "PASS - Returns user with correct email and role"
+    },
+    "frontend_tests": {
+      "login_no_calibration_loop": "PASS - User lands on /advisor after login, not /calibration",
+      "manual_calibration_nav_redirects": "PASS - Navigating to /calibration redirects to /advisor within 1 second"
+    }
+  },
+
+  "fix_applied": {
+    "file": "/app/frontend/src/components/ProtectedRoute.js",
+    "description": "Added synchronous sessionStorage cache check for auth state during LOADING. When a user with session navigates to /calibration during auth bootstrap, the code now checks the cached auth state: if READY, redirect to /advisor immediately; if NEEDS_CALIBRATION, allow calibration page; if no cache, redirect to /advisor as safe default.",
+    "code_change": "Added getCachedAuthState() helper function and updated LOADING state handling for calibration route"
+  },
+
+  "test_report_links": [
+    "/app/backend/tests/test_calibration_loop_regression.py",
+    "/app/test_reports/pytest/pytest_results_iteration116.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "FIXED: ProtectedRoute.js LOADING state was showing LoadingScreen indefinitely for calibration route. Now uses sessionStorage cache to determine user state synchronously.",
+    "Backend APIs all return correct status for completed QA user - no backend changes needed",
+    "The 'Getting Started' modal on /advisor page is expected behavior for users without integrations connected"
+  ],
+
+  "updated_files": [
+    "/app/frontend/src/components/ProtectedRoute.js"
+  ],
+
+  "success_rate": {
+    "backend": "100% (4/4 tests passed)",
+    "frontend": "100% (calibration loop fix verified)"
+  },
+
+  "test_credentials": {
+    "email": "cal-loop-416d7f85@biqctest.io",
+    "password": "BIQcTest!2026Z",
+    "user_id": "7ed0108b-3ed5-4013-a075-3f7f7db76c4c",
+    "status": "Fully calibrated/onboarded QA user"
+  },
+
+  "seed_data_creation": "QA user seeded by main agent with calibration=COMPLETE, onboarding=completed",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+
+  "context_for_next_testing_agent": "Calibration loop regression fix verified. The issue was that ProtectedRoute.js showed LoadingScreen indefinitely when a completed user navigated to /calibration during auth bootstrap. The fix adds a synchronous sessionStorage cache check to determine user state immediately, redirecting completed users to /advisor without waiting for full auth bootstrap.",
+
+  "rca_of_issue": {
+    "root_cause": "ProtectedRoute.js had a bug where during AUTH_STATE.LOADING, if user/session existed and path was /calibration, it returned <LoadingScreen /> indefinitely. The auth bootstrap in SupabaseAuthContext takes several seconds to complete API calls. Meanwhile, the loading screen blocked any redirect logic from executing.",
+    "reproduction_steps": [
+      "1. Login as completed user (cal-loop-416d7f85@biqctest.io)",
+      "2. Navigate directly to /calibration",
+      "3. User gets stuck on 'Establishing secure connection...' loading screen",
+      "4. User never redirects to /advisor even though backend returns COMPLETE status"
+    ],
+    "fix_applied": "Added getCachedAuthState() function to synchronously read sessionStorage cache. During LOADING state, if on /calibration route, check cache: if READY, redirect to /advisor; if NEEDS_CALIBRATION, show calibration page; if no cache, redirect to /advisor as safe default."
+  }
+}
