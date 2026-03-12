@@ -1294,7 +1294,7 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
         raw_response = await llm_chat(
             system_message=system_with_facts,
             user_message=full_message,
-            model="gpt-4o",
+            model="gpt-5.3",
             api_key=OPENAI_KEY,
         )
 

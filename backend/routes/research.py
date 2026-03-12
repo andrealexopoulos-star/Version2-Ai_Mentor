@@ -332,7 +332,7 @@ HEADINGS: {'; '.join(content['headings'])}
 BODY CONTENT:
 {content['body_text'][:6000]}"""
 
-        response = await llm_chat(system_message=LLM_PROMPT, user_message=content_block, model="gpt-4o", api_key=OPENAI_KEY)
+        response = await llm_chat(system_message=LLM_PROMPT, user_message=content_block, model="gpt-5.3", api_key=OPENAI_KEY)
         raw = response.strip()
 
         # Strip markdown code fences if present

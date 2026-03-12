@@ -108,7 +108,7 @@ async def rerank_results(query: str, results: List[dict], current_user: dict = D
     prompt = f"Query: {query}\n\nDocuments:\n{docs_text}\n\nReturn relevance scores as JSON array:"
 
     start = time.time()
-    response = await llm_chat(system_message="You are a relevance scorer. Rate each document's relevance 0-10. Return ONLY a JSON array.", user_message=prompt, model="gpt-4o-mini", api_key=key)
+    response = await llm_chat(system_message="You are a relevance scorer. Rate each document's relevance 0-10. Return ONLY a JSON array.", user_message=prompt, model="gpt-5.3", api_key=key)
     elapsed = int((time.time() - start) * 1000)
 
     import json
@@ -121,7 +121,7 @@ async def rerank_results(query: str, results: List[dict], current_user: dict = D
         pass
 
     from guardrails import log_llm_call_to_db
-    log_llm_call_to_db(tenant_id=current_user['id'], model_name='gpt-4o-mini', endpoint='rag/rerank', latency_ms=elapsed, total_tokens=(len(prompt) + len(response)) // 4)
+    log_llm_call_to_db(tenant_id=current_user['id'], model_name="gpt-5.3", endpoint='rag/rerank', latency_ms=elapsed, total_tokens=(len(prompt) + len(response)) // 4)
 
     return {'results': results}
 

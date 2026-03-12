@@ -97,11 +97,11 @@ Generate {content_type.replace('_', ' ')} content. Return ONLY valid JSON."""
         from core.llm_router import llm_chat
 
         start = time.time()
-        response = await llm_chat(system_message=template['system'], user_message=prompt, model="gpt-4o", api_key=OPENAI_KEY)
+        response = await llm_chat(system_message=template['system'], user_message=prompt, model="gpt-5.3", api_key=OPENAI_KEY)
         elapsed = int((time.time() - start) * 1000)
 
         response = sanitise_output(response)
-        log_llm_call_to_db(tenant_id=tenant_id, model_name='gpt-4o', endpoint=f'automation/{content_type}', latency_ms=elapsed, total_tokens=(len(prompt) + len(response)) // 4)
+        log_llm_call_to_db(tenant_id=tenant_id, model_name="gpt-5.3", endpoint=f'automation/{content_type}', latency_ms=elapsed, total_tokens=(len(prompt) + len(response)) // 4)
 
         import json
         try:
