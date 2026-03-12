@@ -210,6 +210,18 @@ frontend:
         agent: "testing"
         comment: "✅ CALIBRATION LOOP REGRESSION FIX VERIFIED - Test account (cal-loop-416d7f85@biqctest.io) successfully logged in and landed on /advisor (NOT /calibration). Manual navigation to /calibration correctly redirected back to /advisor. Fix in ProtectedRoute.js working as expected: (1) During LOADING state on /calibration route, shows LoadingScreen (prevents flash of calibration content), (2) When authState is READY and user on /calibration, redirects to /advisor. No calibration loop detected. User cannot access /calibration page manually. Fail-open logic in SupabaseAuthContext properly handles 404 from calibration status endpoint."
 
+  - task: "Production Platform Audit - Critical Routes (/revenue, /operations, /risk, /business-profile, /settings)"
+    implemented: true
+    working: false
+    file: "Production routes + backend API integration"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL PRODUCTION ISSUE - All 5 routes LOAD (UI renders) but are STUCK IN LOADING STATES. ALL backend API calls fail with ERR_ABORTED. Details: (1) /revenue: Shows 'Connecting to data sources...' at 30% progress bar, API calls /api/cognition/revenue, /api/unified/revenue FAIL. (2) /operations: Shows skeleton loaders (gray placeholder boxes), API calls /api/unified/operations, /api/cognition/operations FAIL. (3) /risk: Shows 'Scanning risk signals...' spinner + 'Data Confidence: Low (0/6 signals)', API calls /api/unified/risk, /api/cognition/risk, /api/intelligence/workforce, /api/intelligence/scores FAIL. (4) /business-profile: Shows skeleton loaders, API calls /api/business-profile/context, /api/business-profile/scores FAIL. (5) /settings: Shows skeleton loaders, API calls /api/calibration/status, /api/business-profile/context FAIL. COMMON FAILURES across all routes: /api/auth/supabase/me, /api/snapshot/latest, /api/soundboard/conversations, /api/soundboard/scan-usage, /api/notifications/alerts, /api/integrations/merge/connected, /api/user/integration-status, https://vwwandhoydemcybltoxz.supabase.co/functions/v1/warm-cognitive-engine - ALL ERR_ABORTED. ROOT CAUSE: Network/CORS/Auth/Backend deployment issue preventing ANY data fetching. IMPACT: Users see empty loading states forever, NO actual business intelligence data loads. This is PRODUCTION-BLOCKING. Authentication works (magic link successful), but all data endpoints fail. SEVERITY: P0 - Platform is non-functional for these routes."
+
 
 metadata:
   created_by: "testing_agent"
@@ -218,10 +230,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Production Platform Audit - Partial Completion"
-  stuck_tasks: []
+    - "Production Platform Audit - Backend API Integration Fix Required"
+  stuck_tasks:
+    - "Production Platform Audit - Critical Routes (/revenue, /operations, /risk, /business-profile, /settings)"
   test_all: false
-  test_priority: "sequential"
+  test_priority: "critical_first"
 
 agent_communication:
   - agent: "testing"
@@ -240,3 +253,5 @@ agent_communication:
     message: "PRODUCTION AUDIT BLOCKED - MAGIC LINK EXPIRED. Attempted to access production BIQc platform (https://biqc.thestrategysquad.com) using provided magic link. Authentication failed with error_code=otp_expired. URL fragment shows: #error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired. Magic links are single-use and time-limited. The link has either: (1) Already been used, (2) Expired due to time limit, or (3) Been invalidated. System correctly redirected to public landing page when authentication failed. CANNOT PROCEED with route audit (/advisor, /war-room, /board-room, /soundboard, /integrations, /revenue, /operations, /risk, /business-profile, /settings) without valid authentication. RECOMMENDATION: Generate fresh magic link or provide alternative authentication credentials (email/password) to complete production platform audit."
   - agent: "testing"
     message: "PRODUCTION AUDIT PARTIAL SUCCESS - Magic link worked on first use. Successfully tested 5 core routes before link expiration: ✅ /advisor (loaded, shows empty/connect state with navigation), ✅ /war-room (loaded with War Room content, not placeholder), ✅ /board-room (loaded with Board Room content, not placeholder), ✅ /soundboard (loaded with input field visible, interactive), ⚠️ /integrations (page functional but timed out on networkidle due to external logo loading failures from logo.clearbit.com in test environment - NOT a production issue). Screenshot evidence captured. UNABLE TO TEST: /revenue, /operations, /risk, /business-profile, /settings due to session expiration between test runs. NO calibration loops or auth loops detected. Console logs show only external resource loading errors (clearbit.com logo failures), no JavaScript runtime errors. LIMITATION: Magic links are single-use; subsequent test attempts failed with otp_expired error (expected behavior). RECOMMENDATION: Production platform is functional for tested routes. To complete audit of remaining routes (/revenue, /operations, /risk, /business-profile, /settings), provide fresh authentication or test credentials."
+  - agent: "testing"
+    message: "❌ P0 PRODUCTION FAILURE - COMPLETE API BREAKDOWN. Fresh magic link authentication successful, all 5 remaining routes tested (/revenue, /operations, /risk, /business-profile, /settings). CRITICAL FINDING: ALL routes load UI correctly but are COMPLETELY NON-FUNCTIONAL due to 100% backend API failure rate. Every single API call returns ERR_ABORTED - zero successful data requests. Users stuck seeing infinite loading states with no actual business intelligence. Routes show: /revenue (30% progress bar stuck), /operations (skeleton loaders), /risk ('Scanning signals' forever + 0/6 data confidence), /business-profile (skeleton loaders), /settings (skeleton loaders). FAILED ENDPOINTS (81 total failures logged): All /api/cognition/* endpoints, all /api/unified/* endpoints, /api/auth/supabase/me, /api/snapshot/latest, /api/soundboard/*, /api/notifications/alerts, /api/integrations/*, /api/intelligence/*, /api/business-profile/*, Supabase Edge Functions. ROOT CAUSE UNKNOWN: Could be CORS misconfiguration, backend not deployed, network routing failure, or authentication middleware blocking all requests. BUSINESS IMPACT: Platform appears functional but delivers ZERO intelligence - complete product failure for these routes. REQUIRES IMMEDIATE: Backend logs analysis, network inspection, CORS headers check, deployment verification. NOTE: Soundboard query test not completed (session expired, expected behavior for time-limited magic links). This is a production showstopper."
