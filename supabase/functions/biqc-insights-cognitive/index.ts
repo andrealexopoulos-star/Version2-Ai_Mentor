@@ -517,9 +517,9 @@ serve(async (req) => {
             method: "POST",
             headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "gpt-4o-mini",
+              model: "gpt-5.2",
               messages: [{ role: "system", content: COGNITIVE_SYSTEM_PROMPT }, { role: "user", content: `Precompute snapshot.\n${buildPrioritizedContext(ctx)}` }],
-              temperature: 0.3, max_tokens: 3000, response_format: { type: "json_object" },
+              temperature: 0.3, max_tokens: 4000, response_format: { type: "json_object" },
             }),
           });
           if (aiRes.ok) {
@@ -702,21 +702,43 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
 - Every move must reference SPECIFIC signals from the operational context.
 - The action_plan must feel inevitable, specific, and consequence-modelled.`;
 
-    // Call GPT-4o
+    // ── Cognition generation — GPT-5.2 (main) + Gemini 2.5 Pro (market intelligence)
+    // GPT-5.2: Deep structured analysis, financial logic, risk propagation
+    // Gemini 2.5 Pro: Market context, competitive intelligence, external factors
+
+    // Step 1: Gemini 2.5 Pro for market intelligence layer (run in parallel)
+    const EMERGENT_KEY = Deno.env.get("EMERGENT_LLM_KEY") || OPENAI_API_KEY;
+    const marketIntelPromise = fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${EMERGENT_KEY}`, "Content-Type": "application/json", "X-Provider": "gemini" },
+      body: JSON.stringify({
+        model: "gemini-2.5-pro",
+        messages: [
+          { role: "system", content: "You are a market intelligence analyst. Given this business context, provide 3 specific market insights: (1) competitive positioning, (2) industry benchmark comparison, (3) market opportunity or threat. Be specific to this exact business. Return JSON: {market_position: str, benchmark: str, opportunity_or_threat: str}" },
+          { role: "user", content: buildPrioritizedContext(ctx).slice(0, 3000) },
+        ],
+        temperature: 0.5, max_tokens: 800, response_format: { type: "json_object" },
+      }),
+    }).then(r => r.json()).catch(() => null);
+
+    // Step 2: GPT-5.2 for main cognitive analysis
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.2",
         messages: [
           { role: "system", content: COGNITIVE_SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.3,
-        max_tokens: 6000,
+        max_tokens: 8000,
         response_format: { type: "json_object" },
       }),
     });
+
+    // Merge market intelligence when both are ready
+    const marketData = await marketIntelPromise;
 
     if (!aiRes.ok) {
       const err = await aiRes.text();
@@ -737,10 +759,10 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
         user_id: user.id,
         function_name: "biqc-insights-cognitive",
         api_provider: "openai",
-        model: "gpt-4o-mini",
+        model: "gpt-5.2",
         tokens_in: usage.prompt_tokens || 0,
         tokens_out: usage.completion_tokens || 0,
-        cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
+        cost_estimate: ((usage.prompt_tokens || 0) * 0.0008 + (usage.completion_tokens || 0) * 0.003) / 1000,
         called_at: new Date().toISOString(),
       });
     } catch (e) { console.error("[usage] tracking failed:", e); }
@@ -752,7 +774,31 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
       cognitive = { memo: raw, system_state: { status: "STABLE", confidence: 50, interpretation: "Unable to parse cognitive output." } };
     }
 
+    // Merge Gemini market intelligence into cognitive output
+    if (marketData?.choices?.[0]?.message?.content) {
+      try {
+        const mkt = JSON.parse(marketData.choices[0].message.content);
+        if (!cognitive.market_position) cognitive.market_position = mkt.market_position || "";
+        if (!cognitive.benchmark_vs_industry) cognitive.benchmark_vs_industry = mkt.benchmark || "";
+        if (mkt.opportunity_or_threat && cognitive.priority) {
+          cognitive.priority.market_signal = mkt.opportunity_or_threat;
+        }
+        console.log("[cognition] Gemini market intelligence merged ✅");
+      } catch (e) { console.log("[cognition] Gemini merge failed (non-fatal):", e); }
+    }
+
     // Merge blind spots from data gathering into AI output
+    if (marketData?.choices?.[0]?.message?.content) {
+      try {
+        const mkt = JSON.parse(marketData.choices[0].message.content);
+        if (!cognitive.market_position) cognitive.market_position = mkt.market_position || "";
+        if (!cognitive.benchmark_vs_industry) cognitive.benchmark_vs_industry = mkt.benchmark || "";
+        if (mkt.opportunity_or_threat && cognitive.priority) {
+          cognitive.priority.market_signal = mkt.opportunity_or_threat;
+        }
+        console.log("[cognition] Gemini market intelligence merged ✅");
+      } catch (e) { console.log("[cognition] Gemini merge failed (non-fatal):", e); }
+    }
     if (blind_spots.length > 0 && cognitive.blind_spots) {
       cognitive.blind_spots.missing = [...(cognitive.blind_spots.missing || []), ...blind_spots];
     }
