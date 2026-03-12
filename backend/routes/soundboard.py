@@ -723,7 +723,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             logger.warning(f"File generation in SoundBoard failed: {e}")
             # Fall through to normal chat response
 
-    # ═══ HYBRID MODEL ROUTING — Thinking Pro (o3-pro) + Instant (gpt-5.2) + Gemini 2.5 ═══
+    # ═══ RATE LIMITING per subscription tier ═══
+    from routes.deps import check_rate_limit, AI_MODELS
+    mode = getattr(req, 'mode', 'auto')
+    feature = 'trinity_daily' if mode == 'trinity' else 'soundboard_daily'
+    await check_rate_limit(user_id, feature, get_sb())
+
+    # ═══ HYBRID MODEL ROUTING — gpt-5.4-pro (Thinking Pro) + gpt-5.3 (Instant) + Gemini 3 ═══
     from emergentintegrations.llm.chat import LlmChat, UserMessage
 
     EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
@@ -758,19 +764,19 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # │ GEMINI FLASH  → gemini-2.5-flash  Quick queries, greetings               │
     # └──────────────────────────────────────────────────────────────────────────┘
     if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
-        provider, model_name, mode_label = "openai", "o3-pro", "Thinking Pro"
+        provider, model_name, mode_label = "openai", "gpt-5.4-pro", "Pro Thinking"
         routing_reason = "Deep reasoning — financial/risk/strategic analysis"
     elif intent_domain == "marketing" and complexity != "low":
-        provider, model_name, mode_label = "gemini", "gemini-3.1-pro-preview", "Gemini 3.1 Pro"
+        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
         routing_reason = "Gemini 3.1 — market intelligence & competitive research (1M context)"
     elif intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
-        provider, model_name, mode_label = "openai", "gpt-5.2", "Instant"
+        provider, model_name, mode_label = "openai", "gpt-5.3", "Instant"
         routing_reason = "Fast structured response for operational query"
     elif complexity == "low" or intent_domain == "general":
         provider, model_name, mode_label = "gemini", "gemini-3-flash-preview", "Instant Flash"
         routing_reason = "Quick query — Gemini 3 Flash"
     else:
-        provider, model_name, mode_label = "gemini", "gemini-3.1-pro-preview", "Gemini 3.1 Pro"
+        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
         routing_reason = "Advanced reasoning and intelligence"
 
     logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_name} — {routing_reason}")

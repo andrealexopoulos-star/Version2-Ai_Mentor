@@ -78,7 +78,7 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<str
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-5.3",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -153,7 +153,7 @@ serve(async (req) => {
         user_id: user.id,
         function_name: "sop-generator",
         api_provider: "openai",
-        model: "gpt-4o-mini",
+        model: "gpt-5.3",
         tokens_in: fullPrompt.length,
         tokens_out: content.length,
         cost_estimate: 0.002,

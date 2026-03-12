@@ -13,21 +13,131 @@ import os
 logger = logging.getLogger("server")
 security = HTTPBearer()
 
-# ─── Globals injected by server.py at startup ───
+# ─── AI Model Configuration (your own API keys) ──────────────────────────────
+# Set OPENAI_API_KEY and GOOGLE_API_KEY in Azure App Service environment variables
+
+OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")  # Your own OpenAI key
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")  # Your own Google API key
+
+# Model routing per task type — updated to gpt-5.4-pro + gemini-3-pro
+AI_MODELS = {
+    # Intelligence snapshot — parallel GPT-5.4 Pro + Gemini 3 Pro
+    "snapshot_primary":    "gpt-5.4-pro",        # Deep financial/risk analysis
+    "snapshot_market":     "gemini-3-pro-preview", # Market intelligence layer
+    "snapshot_fast":       "gemini-3-flash-preview", # Quick pre-compute
+
+    # Soundboard
+    "soundboard_thinking": "gpt-5.4",            # Thinking mode (reasoning.effort=high)
+    "soundboard_pro":      "gpt-5.4-pro",        # Pro mode
+    "soundboard_instant":  "gpt-5.3",            # Instant mode (fast)
+    "soundboard_fast":     "gemini-3-flash-preview", # Gemini fast
+
+    # Platform insights
+    "platform_insights":   "gpt-5.3",            # Platform-wide insights
+    "market_intelligence": "gemini-3-pro-preview", # Market analysis
+
+    # Calibration (critical first impression — use good models)
+    "calibration":         "gpt-5.3",
+    "calibration_psych":   "gpt-5.3",
+
+    # Boardroom / War Room
+    "boardroom":           "gpt-5.4-pro",
+    "war_room":            "gpt-5.4-pro",
+
+    # SOPs, Documents, Email
+    "generation":          "gpt-5.3",
+    "email_priority":      "gemini-3-flash-preview",
+
+    # Legacy fallback
+    "default":             "gpt-5.3",
+}
+
+# Keep backward-compatible AI_MODEL variable
+AI_MODEL = AI_MODELS["default"]
+AI_MODEL_ADVANCED = AI_MODELS["snapshot_primary"]
+
+# ─── Rate Limits per subscription tier ────────────────────────────────────────
+TIER_LIMITS = {
+    "free": {
+        "soundboard_daily":    10,    # 10 AI queries/day
+        "snapshots_daily":     1,     # 1 intelligence snapshot/day
+        "sop_monthly":         2,     # 2 SOPs/month
+        "reports_monthly":     3,     # 3 reports/month
+        "trinity_daily":       0,     # Trinity not available
+    },
+    "foundation": {
+        "soundboard_daily":    50,
+        "snapshots_daily":     10,
+        "sop_monthly":         5,
+        "reports_monthly":     10,
+        "trinity_daily":       5,
+    },
+    "growth": {
+        "soundboard_daily":    -1,    # Unlimited (-1)
+        "snapshots_daily":     -1,
+        "sop_monthly":         -1,
+        "reports_monthly":     -1,
+        "trinity_daily":       -1,
+    },
+    "custom": {
+        "soundboard_daily":    -1,
+        "snapshots_daily":     -1,
+        "sop_monthly":         -1,
+        "reports_monthly":     -1,
+        "trinity_daily":       -1,
+    },
+}
+
+async def check_rate_limit(user_id: str, feature: str, sb=None) -> bool:
+    """Returns True if allowed, raises HTTPException if rate limited."""
+    if not sb:
+        return True  # Skip if no DB connection
+    try:
+        from datetime import date
+        # Get user's subscription tier
+        user = sb.table("users").select("subscription_tier").eq("id", user_id).maybe_single().execute()
+        tier = (user.data or {}).get("subscription_tier", "free")
+        limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
+        limit = limits.get(feature, 10)
+        if limit == -1:
+            return True  # Unlimited
+
+        # Check today's usage
+        today = str(date.today())
+        key = f"{user_id}:{feature}:{today}"
+        usage_row = sb.table("ai_usage_log").select("count").eq("key", key).maybe_single().execute()
+        current = int((usage_row.data or {}).get("count", 0))
+
+        if current >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily limit of {limit} {feature.replace('_', ' ')} reached. Upgrade your plan at /upgrade to continue.",
+                headers={"X-RateLimit-Limit": str(limit), "X-RateLimit-Reset": "tomorrow"},
+            )
+
+        # Increment usage
+        sb.table("ai_usage_log").upsert(
+            {"key": key, "user_id": user_id, "feature": feature, "date": today, "count": current + 1},
+            on_conflict="key"
+        ).execute()
+        return True
+    except HTTPException:
+        raise
+    except Exception:
+        return True  # Fail open — don't break the app if usage tracking fails
+
+
 supabase_admin = None
-OPENAI_KEY = None
 cognitive_core = None
-AI_MODEL = "gpt-4o"
-AI_MODEL_ADVANCED = "gpt-4o"
 
 
-def init_route_deps(sb_admin, openai_key, cog_core=None):
+def init_route_deps(sb_admin, openai_key=None, cog_core=None):
     """Called once by server.py after initialization."""
-    global supabase_admin, OPENAI_KEY, cognitive_core
+    global supabase_admin, cognitive_core
     supabase_admin = sb_admin
-    OPENAI_KEY = openai_key
     if cog_core is not None:
         cognitive_core = cog_core
+
 
 
 def get_sb():

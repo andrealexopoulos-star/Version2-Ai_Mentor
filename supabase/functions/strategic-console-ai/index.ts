@@ -258,7 +258,7 @@ ${JSON.stringify(ctx, null, 2)}`;
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -287,7 +287,7 @@ ${JSON.stringify(ctx, null, 2)}`;
         user_id: user.id,
         function_name: "strategic-console-ai",
         api_provider: "openai",
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-pro",
         tokens_in: usage.prompt_tokens || 0,
         tokens_out: usage.completion_tokens || 0,
         cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,

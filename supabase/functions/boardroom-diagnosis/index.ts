@@ -264,7 +264,7 @@ Generate a diagnosis briefing. Return ONLY valid JSON with this exact structure:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -302,7 +302,7 @@ Generate a diagnosis briefing. Return ONLY valid JSON with this exact structure:
         user_id: user.id,
         function_name: "boardroom-diagnosis",
         api_provider: "openai",
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-pro",
         tokens_in: usage.prompt_tokens || 0,
         tokens_out: usage.completion_tokens || 0,
         cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
