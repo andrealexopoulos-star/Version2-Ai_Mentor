@@ -736,7 +736,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     import openai as _openai
     OPENAI_DIRECT_KEY = os.environ.get("OPENAI_API_KEY", "")
     GOOGLE_DIRECT_KEY = os.environ.get("GOOGLE_API_KEY", "")
-    EMERGENT_FALLBACK  = os.environ.get("EMERGENT_LLM_KEY", "")
 
     # Step 1: Intent classification with o4-mini (fast thinking, direct OpenAI key)
     intent_domain = "general"
@@ -833,15 +832,18 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     gemini_data = gemini_r.json()
                     response = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Gemini unavailable")
             else:
-                # Fallback to Emergent for Gemini (until GOOGLE_API_KEY is set)
-                from emergentintegrations.llm.chat import LlmChat, UserMessage
-                _chat = LlmChat(
-                    api_key=EMERGENT_FALLBACK,
-                    session_id=f"sb-g-{user_id}-{uuid.uuid4()}",
-                    system_message=system_message,
-                ).with_model("gemini", model_name)
-                _resp = await _chat.send_message(UserMessage(text=clean_message))
-                response = _resp if isinstance(_resp, str) else str(_resp)
+                # Direct Google Gemini API using GOOGLE_API_KEY
+                import httpx as _httpx
+                gemini_model_direct = model_name.replace("-preview", "")
+                async with _httpx.AsyncClient() as _hclient:
+                    gemini_r = await _hclient.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model_direct}:generateContent",
+                        params={"key": GOOGLE_DIRECT_KEY},
+                        json={"contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}], "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7}},
+                        timeout=30,
+                    )
+                    gemini_data = gemini_r.json()
+                    response = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Gemini unavailable")
 
         _elapsed = int((_time.time() - _start) * 1000)
         logger.info(f"[SOUNDBOARD] {mode_label} {provider}/{model_name} in {_elapsed}ms ({len(response)} chars)")

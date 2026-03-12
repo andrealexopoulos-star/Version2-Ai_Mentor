@@ -26,10 +26,11 @@ AZURE_TENANT_URL = os.environ.get("AZURE_TENANT_URL", "https://login.microsofton
 AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
 AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
 JWT_SECRET = os.environ['JWT_SECRET_KEY']
-EMERGENT_KEY = os.environ.get('EMERGENT_LLM_KEY')
 OPENAI_KEY = os.environ.get('OPENAI_API_KEY')
-AI_MODEL = "gpt-4o"
-AI_MODEL_ADVANCED = "gpt-4o"
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+AI_MODEL = "gpt-5.3"
+AI_MODEL_ADVANCED = "gpt-5.4-pro"
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 

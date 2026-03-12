@@ -9,7 +9,7 @@
 //   Gemini 2.5    → Market intelligence, breadth, competitive context
 //   Synthesizer   → Merges all three into one coherent executive response
 //
-// Secrets: EMERGENT_LLM_KEY
+// Secrets: OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, SUPABASE_SERVICE_ROLE_KEY
 // ═══════════════════════════════════════════════════════════════
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -21,37 +21,51 @@ const corsHeaders = {
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const EMERGENT_KEY  = Deno.env.get("EMERGENT_LLM_KEY")!;
+const OPENAI_KEY    = Deno.env.get("OPENAI_API_KEY")!;
+const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
+const GOOGLE_KEY    = Deno.env.get("GOOGLE_API_KEY")!;
 
-const EMERGENT_API = "https://api.emergentai.co/v1/chat/completions";
 
 // ── Call a model via Emergent universal API ────────────────────────────────────
 async function callModel(provider: string, model: string, systemMsg: string, userMsg: string, temperature = 0.7): Promise<string> {
-  const res = await fetch(EMERGENT_API, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${EMERGENT_KEY}`,
-      "Content-Type": "application/json",
-      "X-Provider": provider,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemMsg },
-        { role: "user", content: userMsg }
-      ],
-      temperature,
-      max_tokens: 1200,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`${provider}/${model} error ${res.status}: ${err.slice(0, 200)}`);
+  if (provider === "openai") {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model, messages: [{ role: "system", content: systemMsg }, { role: "user", content: userMsg }], temperature, max_tokens: 1200 }),
+    });
+    if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
+    const d = await res.json();
+    return d.choices?.[0]?.message?.content || "";
   }
 
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || "";
+  if (provider === "anthropic") {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      body: JSON.stringify({ model, system: systemMsg, messages: [{ role: "user", content: userMsg }], max_tokens: 1200 }),
+    });
+    if (!res.ok) throw new Error(`Anthropic error ${res.status}`);
+    const d = await res.json();
+    return d.content?.[0]?.text || "";
+  }
+
+  if (provider === "gemini") {
+    const geminiModel = model.replace("-preview", "");
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${GOOGLE_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: `${systemMsg}\n\n${userMsg}` }] }], generationConfig: { maxOutputTokens: 1200, temperature } }),
+      }
+    );
+    if (!res.ok) throw new Error(`Gemini error ${res.status}`);
+    const d = await res.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  }
+
+  throw new Error(`Unknown provider: ${provider}`);
 }
 
 // ── System prompts — each model gets specialised instructions ─────────────────
