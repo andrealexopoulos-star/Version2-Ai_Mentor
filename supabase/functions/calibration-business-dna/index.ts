@@ -53,7 +53,7 @@ async function deepSearch(query: string, maxTokens = 800): Promise<string> {
       method: "POST",
       headers: { "Authorization": `Bearer ${PERPLEXITY_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "sonar",
+        model: "sonar-pro",
         messages: [{ role: "user", content: query }],
         max_tokens: maxTokens,
       }),

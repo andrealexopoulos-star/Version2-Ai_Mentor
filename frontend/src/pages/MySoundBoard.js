@@ -41,12 +41,23 @@ const MySoundBoard = () => {
 
   // BIQc AI Modes — branded like Gemini's Fast/Thinking/Pro
   const BIQC_MODES = [
-    { id: 'auto',     label: 'BIQc Auto',     desc: 'Automatically selects the best AI for your query', icon: '⚡', backend_mode: 'auto' },
-    { id: 'fast',     label: 'Fast',           desc: 'Quick answers using Gemini 3 Flash',               icon: '🚀', backend_mode: 'fast' },
-    { id: 'thinking', label: 'Pro Thinking',   desc: 'Deep reasoning with o3-pro — solves complex problems', icon: '🧠', backend_mode: 'thinking' },
-    { id: 'pro',      label: 'Pro',            desc: 'Advanced analysis with Gemini 3.1 Pro (1M context)', icon: '✦', backend_mode: 'pro' },
-    { id: 'trinity',  label: 'Trinity',        desc: 'ChatGPT + Claude + Gemini in parallel — most powerful', icon: '◈', backend_mode: 'trinity' },
+    { id: 'auto',     label: 'BIQc Auto',     desc: 'Automatically selects the best AI for your query', icon: '⚡', backend_mode: 'auto',     minTier: 'free' },
+    { id: 'fast',     label: 'Fast',           desc: 'Quick answers using Gemini 3 Flash',               icon: '🚀', backend_mode: 'fast',     minTier: 'free' },
+    { id: 'thinking', label: 'Pro Thinking',   desc: 'Deep reasoning with gpt-5.4 — solves complex problems', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
+    { id: 'pro',      label: 'Pro',            desc: 'Advanced analysis with Gemini 3.1 Pro (1M context)', icon: '✦', backend_mode: 'pro',      minTier: 'foundation' },
+    { id: 'trinity',  label: 'Trinity',        desc: 'ChatGPT 5.4 + Claude + Gemini in parallel — most powerful', icon: '◈', backend_mode: 'trinity',  minTier: 'foundation' },
   ];
+
+  // Filter modes by user's subscription tier
+  const userTier = (user?.subscription_tier || 'free');
+  const tierOrder = ['free', 'foundation', 'growth', 'custom'];
+  const userTierIdx = tierOrder.indexOf(userTier);
+  const isAndre = user?.email === 'andre@thestrategysquad.com.au';
+  const availableModes = BIQC_MODES.filter(m => {
+    if (isAndre) return true; // Andre has all modes
+    const minIdx = tierOrder.indexOf(m.minTier);
+    return userTierIdx >= minIdx;
+  });
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
@@ -654,7 +665,7 @@ const MySoundBoard = () => {
                 {showModeMenu && (
                   <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
                     style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                    {BIQC_MODES.map(mode => (
+                {availableModes.map(mode => (
                       <button key={mode.id}
                         onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
                         className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
@@ -664,11 +675,27 @@ const MySoundBoard = () => {
                           <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
                             {mode.label}
                             {selectedMode === mode.id && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>Active</span>}
+                            {mode.minTier !== 'free' && !isAndre && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(59,130,246,0.15)', color: '#3B82F6' }}>{mode.minTier}</span>}
                           </p>
                           <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
                         </div>
                       </button>
                     ))}
+                    {/* Show locked Trinity for free users */}
+                    {!isAndre && userTierIdx < 1 && (
+                      <a href="/upgrade"
+                        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
+                        style={{ textDecoration: 'none' }}>
+                        <span className="text-lg shrink-0 opacity-40">◈</span>
+                        <div>
+                          <p className="text-sm font-semibold flex items-center gap-2" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>
+                            Trinity
+                            <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00' }}>Foundation+</span>
+                          </p>
+                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Upgrade to unlock ChatGPT 5.4 + Claude + Gemini</p>
+                        </div>
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
