@@ -242,7 +242,7 @@ Respond with JSON ONLY:
           Authorization: `Bearer ${OPENAI_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o",
+          model: "gpt-5.3",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
