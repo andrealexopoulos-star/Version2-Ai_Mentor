@@ -77,7 +77,10 @@ const TIER_ORDER = ['free', 'foundation', 'growth', 'custom', 'admin'];
 /**
  * Check if a user's tier allows access to a path.
  */
-export function canAccess(userTier, path) {
+export function canAccess(userTier, path, userEmail = '') {
+  // ALWAYS grant full access to platform owner
+  if (userEmail === 'andre@thestrategysquad.com.au') return true;
+
   const required = PATH_TIERS[path] || 'free';
   if (required === 'admin') return false; // Admin handled separately
   const userIdx = TIER_ORDER.indexOf(userTier || 'free');
