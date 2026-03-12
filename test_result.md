@@ -214,11 +214,11 @@ frontend:
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 4
+  test_sequence: 5
 
 test_plan:
   current_focus:
-    - "Calibration Loop Regression Fix"
+    - "Production Platform Audit (Blocked - Magic Link Expired)"
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"
@@ -236,3 +236,5 @@ agent_communication:
     message: "BACKEND SOUNDBOARD API TESTING COMPLETE - All 7 backend tests PASSED. Critical bug fixes verified: (1) Health endpoint returns 200 ✅ (2) Fresh user signup working ✅ (3) Soundboard chat API no longer crashes from missing mode field - SoundboardChatRequest properly supports optional mode parameter ✅ (4) Provider/model fallback logic working with graceful 503 responses for missing AI keys ✅ (5) Conversation management using conversation_id instead of session_id ✅ (6) Structured JSON responses with proper guardrail system blocking low-coverage users ✅ (7) GET /soundboard/conversations endpoint functional ✅. All critical fixes from /app/backend/routes/soundboard.py and /app/backend/supabase_intelligence_helpers.py are working correctly in preview environment."
   - agent: "testing"
     message: "CALIBRATION LOOP REGRESSION TEST COMPLETE - ✅ FIX VERIFIED. Test account (cal-loop-416d7f85@biqctest.io) successfully tested. Results: (1) Login redirected to /advisor NOT /calibration ✅ (2) Manual navigation to /calibration correctly blocked and redirected to /advisor ✅ (3) No calibration loop detected ✅ (4) ProtectedRoute.js fix working: LoadingScreen shown during auth bootstrap on /calibration route, READY users redirected from /calibration to /advisor ✅ (5) Fail-open logic in SupabaseAuthContext properly handles API errors. The historical calibration loop bug has been successfully resolved. Users cannot get stuck in calibration flow after completing it."
+  - agent: "testing"
+    message: "PRODUCTION AUDIT BLOCKED - MAGIC LINK EXPIRED. Attempted to access production BIQc platform (https://biqc.thestrategysquad.com) using provided magic link. Authentication failed with error_code=otp_expired. URL fragment shows: #error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired. Magic links are single-use and time-limited. The link has either: (1) Already been used, (2) Expired due to time limit, or (3) Been invalidated. System correctly redirected to public landing page when authentication failed. CANNOT PROCEED with route audit (/advisor, /war-room, /board-room, /soundboard, /integrations, /revenue, /operations, /risk, /business-profile, /settings) without valid authentication. RECOMMENDATION: Generate fresh magic link or provide alternative authentication credentials (email/password) to complete production platform audit."
