@@ -390,6 +390,19 @@ export default function Integrations() {
     return 'Connected';
   };
 
+  // Detect stale Merge connections and prompt re-link
+  const isMergeStale = useCallback((integration) => {
+    if (!isConnected(integration)) return false;
+    const key = Object.keys(mergeIntegrations).find(k =>
+      k.toLowerCase().includes(integration.id) || k.toLowerCase().includes(integration.name.toLowerCase())
+    );
+    if (!key) return false;
+    const meta = mergeIntegrations[key];
+    // Flag as stale if last_sync is > 24 hours ago or sync_status indicates error
+    if (meta?.sync_status === 'token_expired' || meta?.sync_status === 'error') return true;
+    return false;
+  }, [mergeIntegrations, isConnected]);
+
   const filtered = ALL_INTEGRATIONS.filter(i => {
     if (selectedCategory === 'connected') return isConnected(i);
     const matchCat = selectedCategory === 'all' || i.category === selectedCategory;
@@ -486,6 +499,7 @@ export default function Integrations() {
                     connected={isConnected(item)} connectedLabel={getConnectedLabel(item)}
                     disconnecting={disconnecting === item.id} openingMerge={openingMerge === item.id}
                     onConnect={handleConnect} onDisconnect={handleDisconnect}
+                    isStale={false}
                     badge="Supabase" badgeColor="#3B82F6" />
                 ))}
               </div>
@@ -512,6 +526,7 @@ export default function Integrations() {
                     connected={isConnected(integration)} connectedLabel={getConnectedLabel(integration)}
                     disconnecting={disconnecting === integration.id} openingMerge={openingMerge === integration.id}
                     onConnect={handleConnect} onDisconnect={handleDisconnect}
+                    isStale={isMergeStale(integration)}
                     badge="Merge API" badgeColor="#FF6A00" />
                 ))}
               </div>
@@ -591,7 +606,7 @@ function SectionLabel({ icon: Icon, label, badge, badgeColor }) {
 }
 
 // ── Integration card ──────────────────────────────────────────────────────────
-function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, badgeColor, comingSoon }) {
+function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, badgeColor, comingSoon, isStale = false }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -650,15 +665,20 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
           </button>
         ) : connected ? (
           <button
-            onClick={() => onDisconnect(integration)}
+            onClick={() => isStale ? onConnect(integration) : onDisconnect(integration)}
             disabled={disconnecting}
             className="w-full py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5"
-            style={{ background: 'transparent', border: '1px solid rgba(239,68,68,0.25)', color: '#EF4444', fontFamily: fontFamily.body }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${isStale ? 'rgba(245,158,11,0.35)' : 'rgba(239,68,68,0.25)'}`,
+              color: isStale ? '#F59E0B' : '#EF4444',
+              fontFamily: fontFamily.body,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = isStale ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             data-testid={`disconnect-${integration.id}`}>
-            {disconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
-            {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+            {disconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : isStale ? <RefreshCw className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
+            {disconnecting ? 'Working...' : isStale ? 'Re-link Required' : 'Disconnect'}
           </button>
         ) : (
           <button

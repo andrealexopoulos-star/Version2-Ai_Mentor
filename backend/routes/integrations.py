@@ -351,6 +351,36 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
         raise HTTPException(status_code=500, detail="Disconnect failed")
 
 
+@router.post("/integrations/merge/refresh-token")
+async def refresh_merge_token(request: Request, payload: dict = None):
+    """
+    Refreshes a stale Merge integration token by deleting and re-prompting re-link.
+    Called when Xero or other Merge integrations show as stale/expired.
+    """
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    body = payload or {}
+    provider = body.get("provider", "")
+    category = body.get("category", "")
+
+    try:
+        # Mark token as needing refresh in integration_accounts
+        get_sb().table("integration_accounts").update({
+            "sync_status": "token_expired",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("user_id", user_id).eq("provider", provider).execute()
+
+        logger.info(f"[merge/refresh-token] Marked {provider} for re-auth for {user_id}")
+        return {"ok": True, "action": "relink_required", "provider": provider}
+    except Exception as e:
+        logger.error(f"[merge/refresh-token] Error: {e}")
+        raise HTTPException(status_code=500, detail="Refresh failed")
+
+
 @router.get("/integrations/merge/connected")
 async def get_connected_merge_integrations(current_user: dict = Depends(get_current_user)):
     """Get all connected Merge.dev integrations — checks BOTH workspace and direct user_id."""

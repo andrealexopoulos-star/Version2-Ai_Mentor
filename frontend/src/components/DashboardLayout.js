@@ -478,7 +478,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                       const childActive = hasChildren && item.children.some(c => isActive(c.path));
                       const parentExpanded = expandedParents.has(item.path);
                       const userTier = user?.subscription_tier || 'free';
-                      const locked = !canAccess(userTier, item.path);
+                      const locked = !canAccess(userTier, item.path, user?.email || '');
 
                       const handleNavClick = () => {
                         if (locked) { navigate('/upgrade'); return; }
@@ -530,7 +530,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
                               style={{ borderLeft: '1px solid rgba(255,106,0,0.2)' }}>
                               {item.children.map((child) => {
                                 const childIsActive = isActive(child.path);
-                                const childLocked = !canAccess(userTier, child.path);
+                                const childLocked = !canAccess(userTier, child.path, user?.email || '');
                                 return (
                                   <button key={child.path}
                                     onClick={() => {

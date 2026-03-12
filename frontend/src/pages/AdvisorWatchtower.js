@@ -559,6 +559,32 @@ const AdvisorWatchtower = () => {
               {/* DAILY BRIEF CARD — Proactive intelligence */}
               <DailyBriefCard />
 
+              {/* PRIORITY INBOX SUMMARY — Quick view of high-priority emails */}
+              {hasEmail && (
+                <div className="rounded-xl p-4 flex items-center justify-between"
+                  style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                      style={{ background: 'rgba(255,106,0,0.1)' }}>
+                      <Mail className="w-4 h-4" style={{ color: '#FF6A00' }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
+                        Priority Inbox
+                      </p>
+                      <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+                        AI-triaged inbox — high, medium, low priority
+                      </p>
+                    </div>
+                  </div>
+                  <a href="/email-inbox"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-110"
+                    style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030', textDecoration: 'none', fontFamily: fontFamily.body }}>
+                    Open <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
+
               {/* RISK SUGGESTIONS — Signal-driven actionable risks */}
               <RiskSuggestions />
 
