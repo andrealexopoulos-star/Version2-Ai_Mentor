@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
 import os
 import logging
-from supabase_client import init_supabase
+from supabase_client import get_supabase_client, init_supabase
 
 supabase_admin = init_supabase()
 from datetime import datetime
@@ -16,6 +16,11 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
+
+
+def get_supabase_auth_client():
+    """Use a fresh anon/auth client so auth calls never mutate the global service-role client."""
+    return get_supabase_client()
 
 # Pydantic Models
 class SignUpRequest(BaseModel):
@@ -188,7 +193,7 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
             raise HTTPException(status_code=401, detail="Malformed token")
 
         # Get user from Supabase Auth using the access token
-        user_response = supabase_admin.auth.get_user(token)
+        user_response = get_supabase_auth_client().auth.get_user(token)
 
         if not user_response or not user_response.user:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -254,7 +259,7 @@ async def signup_with_email(request: SignUpRequest):
             raise HTTPException(status_code=400, detail="User with this email already exists")
         
         # Create user in Supabase Auth
-        auth_response = supabase_admin.auth.sign_up({
+        auth_response = get_supabase_auth_client().auth.sign_up({
             "email": request.email,
             "password": request.password,
             "options": {
@@ -309,7 +314,7 @@ async def signin_with_email(request: SignInRequest):
     """
     try:
         # Authenticate with Supabase
-        auth_response = supabase_admin.auth.sign_in_with_password({
+        auth_response = get_supabase_auth_client().auth.sign_in_with_password({
             "email": request.email,
             "password": request.password
         })

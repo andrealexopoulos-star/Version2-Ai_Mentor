@@ -240,8 +240,10 @@ async def get_user_analyses_supabase(supabase_client, user_id: str, limit: int =
 async def get_business_profile_supabase(supabase_client, user_id: str) -> Optional[Dict[str, Any]]:
     """Get business profile for user"""
     try:
-        result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).single().execute()
-        return result.data if result.data else None
+        result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).limit(1).execute()
+        if result and result.data:
+            return result.data[0]
+        return None
     except Exception as e:
         if "PGRST116" in str(e):
             return None
