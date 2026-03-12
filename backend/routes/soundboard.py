@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 import uuid
 import logging
+import os
 
 from core.llm_router import llm_chat, llm_chat_with_usage
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
@@ -208,6 +209,205 @@ class SoundboardChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
     intelligence_context: Optional[Dict[str, Any]] = None
+    mode: Optional[str] = "auto"
+
+
+def _has_configured_key(value: Optional[str]) -> bool:
+    return bool(value and str(value).strip() and str(value).strip() not in {"CONFIGURED_IN_AZURE", "None", "null"})
+
+
+def _infer_intent_heuristic(message: str) -> tuple[str, str, str]:
+    text = (message or "").lower()
+    domain = "general"
+    if any(word in text for word in ("invoice", "cash", "margin", "profit", "revenue", "xero", "budget", "burn")):
+        domain = "finance"
+    elif any(word in text for word in ("deal", "pipeline", "lead", "hubspot", "close rate", "prospect")):
+        domain = "sales"
+    elif any(word in text for word in ("campaign", "seo", "ads", "social", "brand", "linkedin", "market")):
+        domain = "marketing"
+    elif any(word in text for word in ("risk", "compliance", "incident", "exposure", "audit")):
+        domain = "risk"
+    elif any(word in text for word in ("ops", "process", "workflow", "delivery", "capacity", "sop")):
+        domain = "operations"
+    elif any(word in text for word in ("team", "staff", "hiring", "people", "culture", "workforce")):
+        domain = "hr"
+    elif any(word in text for word in ("plan", "strategy", "forecast", "next quarter", "scenario")):
+        domain = "planning"
+
+    action = "recommend"
+    if any(word in text for word in ("forecast", "predict", "runway", "projection")):
+        action = "forecast"
+    elif any(word in text for word in ("create", "write", "draft", "generate")):
+        action = "create"
+    elif any(word in text for word in ("update", "change", "revise")):
+        action = "update"
+    elif any(word in text for word in ("compare", "versus", "vs", "benchmark")):
+        action = "compare"
+    elif any(word in text for word in ("why", "explain", "what happened")):
+        action = "explain"
+    elif any(word in text for word in ("diagnose", "debug", "issue", "problem", "stuck")):
+        action = "diagnose"
+    elif any(word in text for word in ("summarise", "summarize", "recap")):
+        action = "summarise"
+
+    complexity = "medium"
+    if len(text) < 50 or any(word in text for word in ("hi", "hello", "thanks", "invoice?", "quick")):
+        complexity = "low"
+    if len(text) > 220 or any(word in text for word in ("forecast", "scenario", "diagnose", "root cause", "board", "strategy")):
+        complexity = "high"
+
+    return domain, action, complexity
+
+
+def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, complexity: str, has_openai: bool, has_google: bool) -> tuple[str, List[str], str, str]:
+    if not has_openai and not has_google:
+        raise RuntimeError("AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment to restore Soundboard replies.")
+
+    mode = (mode or "auto").lower()
+    openai_pro = ["gpt-5.4-pro", "gpt-5.2", "o3-pro", "gpt-4o"]
+    openai_thinking = ["gpt-5.4", "gpt-5.2", "o3", "gpt-4o"]
+    openai_fast = ["gpt-5.3", "gpt-5.2", "gpt-4o-mini", "gpt-4o"]
+    gemini_pro = ["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"]
+    gemini_fast = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
+
+    if mode == "thinking":
+        return "openai", openai_thinking if has_openai else gemini_pro, "Pro Thinking", "User-selected deep reasoning mode"
+    if mode == "pro":
+        if has_google:
+            return "gemini", gemini_pro, "Pro", "User-selected long-context analysis mode"
+        return "openai", openai_pro, "Pro", "User-selected pro mode routed to OpenAI fallback"
+    if mode == "fast":
+        if has_google:
+            return "gemini", gemini_fast, "Fast", "User-selected fast mode"
+        return "openai", openai_fast, "Fast", "User-selected fast mode routed to OpenAI fallback"
+
+    if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
+        if has_openai:
+            return "openai", openai_pro, "Pro Thinking", "Deep reasoning — financial/risk/strategic analysis"
+        return "gemini", gemini_pro, "Pro", "Deep reasoning routed to Gemini due to OpenAI availability"
+
+    if intent_domain == "marketing" and complexity != "low":
+        if has_google:
+            return "gemini", gemini_pro, "Pro", "Market intelligence & competitive research"
+        return "openai", openai_fast, "Fast", "Marketing query routed to OpenAI fallback"
+
+    if intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
+        if has_openai:
+            return "openai", openai_fast, "Instant", "Fast structured response for operational query"
+        return "gemini", gemini_fast, "Fast", "Operational query routed to Gemini fallback"
+
+    if has_google and (complexity == "low" or intent_domain == "general"):
+        return "gemini", gemini_fast, "Fast", "Quick query — Gemini Flash"
+    if has_openai:
+        return "openai", openai_fast, "Instant", "General query — OpenAI fast path"
+    return "gemini", gemini_pro, "Pro", "Fallback to available Gemini provider"
+
+
+def _is_auth_error(error_text: str) -> bool:
+    text = error_text.lower()
+    return any(token in text for token in (
+        "incorrect api key", "invalid api key", "authentication", "unauthorized", "401", "permission denied", "api key not valid"
+    ))
+
+
+def _is_model_error(error_text: str) -> bool:
+    text = error_text.lower()
+    return any(token in text for token in (
+        "model", "not found", "does not exist", "unsupported", "not available", "access", "permission", "404"
+    ))
+
+
+async def _call_openai_with_fallback(api_key: str, system_message: str, clean_message: str, messages_history: List[Dict[str, Any]], model_candidates: List[str], reasoning: bool = False) -> tuple[str, str]:
+    import openai as _openai
+
+    if not _has_configured_key(api_key):
+        raise RuntimeError("OPENAI_API_KEY is not configured. Add a valid OpenAI key to restore Soundboard replies.")
+
+    client = _openai.AsyncOpenAI(api_key=api_key)
+    formatted_messages = [{"role": "system", "content": system_message}]
+    for message in (messages_history or [])[-12:]:
+        formatted_messages.append({"role": message.get("role", "user"), "content": message.get("content", "")})
+    formatted_messages.append({"role": "user", "content": clean_message})
+
+    last_error = None
+    for candidate in model_candidates:
+        try:
+            request_kwargs = {
+                "model": candidate,
+                "messages": formatted_messages,
+                "max_tokens": 2000,
+            }
+            if not any(candidate.startswith(prefix) for prefix in ("gpt-5", "o3", "o4")):
+                request_kwargs["temperature"] = 0.7
+            if reasoning and any(candidate.startswith(prefix) for prefix in ("gpt-5", "o3", "o4")):
+                request_kwargs["reasoning_effort"] = "high"
+
+            completion = await client.chat.completions.create(**request_kwargs)
+            reply = completion.choices[0].message.content or ""
+            if reply:
+                return reply, candidate
+            last_error = RuntimeError(f"OpenAI returned an empty response for {candidate}")
+        except Exception as exc:
+            last_error = exc
+            error_text = str(exc)
+            if _is_auth_error(error_text):
+                raise RuntimeError("OpenAI rejected the configured API key. Please verify OPENAI_API_KEY in the backend environment.") from exc
+            if _is_model_error(error_text):
+                logger.warning(f"[SOUNDBOARD] OpenAI model fallback from {candidate}: {exc}")
+                continue
+            logger.warning(f"[SOUNDBOARD] OpenAI attempt failed for {candidate}: {exc}")
+            continue
+
+    raise RuntimeError(f"OpenAI chat failed across fallback models: {last_error}")
+
+
+async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_message: str, model_candidates: List[str]) -> tuple[str, str]:
+    import httpx as _httpx
+
+    if not _has_configured_key(api_key):
+        raise RuntimeError("GOOGLE_API_KEY is not configured. Add a valid Google AI key to restore Gemini-powered Soundboard replies.")
+
+    last_error = None
+    async with _httpx.AsyncClient(timeout=30) as client:
+        for candidate in model_candidates:
+            try:
+                gemini_model = candidate.replace("-preview", "")
+                response = await client.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
+                    params={"key": api_key},
+                    json={
+                        "contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}],
+                        "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7},
+                    },
+                )
+                if response.status_code == 200:
+                    payload = response.json()
+                    reply = payload.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    if reply:
+                        return reply, candidate
+                    last_error = RuntimeError(f"Gemini returned an empty response for {candidate}")
+                    continue
+
+                error_text = response.text
+                last_error = RuntimeError(f"Gemini {candidate} failed with {response.status_code}: {error_text[:500]}")
+                if response.status_code in (401, 403) or _is_auth_error(error_text):
+                    raise RuntimeError("Google AI rejected the configured API key. Please verify GOOGLE_API_KEY in the backend environment.")
+                if response.status_code in (400, 404) and _is_model_error(error_text):
+                    logger.warning(f"[SOUNDBOARD] Gemini model fallback from {candidate}: {error_text[:200]}")
+                    continue
+                logger.warning(f"[SOUNDBOARD] Gemini attempt failed for {candidate}: {error_text[:200]}")
+            except Exception as exc:
+                last_error = exc
+                error_text = str(exc)
+                if _is_auth_error(error_text):
+                    raise RuntimeError("Google AI rejected the configured API key. Please verify GOOGLE_API_KEY in the backend environment.") from exc
+                if _is_model_error(error_text):
+                    logger.warning(f"[SOUNDBOARD] Gemini model fallback from {candidate}: {exc}")
+                    continue
+                logger.warning(f"[SOUNDBOARD] Gemini attempt failed for {candidate}: {exc}")
+                continue
+
+    raise RuntimeError(f"Gemini chat failed across fallback models: {last_error}")
 
 
 class ConversationRename(BaseModel):
@@ -450,12 +650,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 days_stalled = metric.get('days_in_stage', entity.get('days_stalled', ''))
 
                 line = f"SIGNAL: {sig} | severity={severity}"
-                if name: line += f" | deal='{name}'"
+                if name:
+                    line += f" | deal='{name}'"
                 if amount:
-                    try: line += f" | amount=${float(amount):,.0f}"
-                    except: line += f" | amount={amount}"
-                if stage: line += f" | stage={stage}"
-                if days_stalled: line += f" | stalled={days_stalled} days"
+                    try:
+                        line += f" | amount=${float(amount):,.0f}"
+                    except Exception:
+                        line += f" | amount={amount}"
+                if stage:
+                    line += f" | stage={stage}"
+                if days_stalled:
+                    line += f" | stalled={days_stalled} days"
                 integration_context += line + "\n"
 
             logger.info(f"[soundboard] Injected {len(obs_events)} observation_events for user {user_id[:8]}")
@@ -733,120 +938,75 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # OpenAI: Uses your OPENAI_API_KEY directly (already in Azure/Supabase/GitHub)
     # Gemini:  Uses GOOGLE_API_KEY when set, falls back to Emergent key otherwise
 
-    import openai as _openai
     OPENAI_DIRECT_KEY = os.environ.get("OPENAI_API_KEY", "")
     GOOGLE_DIRECT_KEY = os.environ.get("GOOGLE_API_KEY", "")
+    has_openai_key = _has_configured_key(OPENAI_DIRECT_KEY)
+    has_google_key = _has_configured_key(GOOGLE_DIRECT_KEY)
 
     # Step 1: Intent classification with o4-mini (fast thinking, direct OpenAI key)
-    intent_domain = "general"
-    intent_action = "recommend"
-    complexity = "medium"
-    try:
-        clf_client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
-        clf_r = await clf_client.chat.completions.create(
-            model="o4-mini",
-            messages=[
-                {"role": "system", "content": 'Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}'},
-                {"role": "user", "content": req.message[:400]},
-            ],
-            max_tokens=80,
-        )
-        import json as _json
-        clf_str = clf_r.choices[0].message.content or "{}"
-        clf = _json.loads(clf_str)
-        intent_domain = clf.get("domain", "general")
-        intent_action = clf.get("action", "recommend")
-        complexity = clf.get("complexity", "medium")
-        logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
-    except Exception as e:
-        logger.warning(f"Intent classification failed: {e}")
+    intent_domain, intent_action, complexity = _infer_intent_heuristic(req.message)
+    if has_openai_key:
+        try:
+            import json as _json
+            reply, _ = await _call_openai_with_fallback(
+                api_key=OPENAI_DIRECT_KEY,
+                system_message='Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}',
+                clean_message=req.message[:400],
+                messages_history=[],
+                model_candidates=["o4-mini", "gpt-4o-mini"],
+                reasoning=False,
+            )
+            clf = _json.loads(reply or "{}")
+            intent_domain = clf.get("domain", intent_domain)
+            intent_action = clf.get("action", intent_action)
+            complexity = clf.get("complexity", complexity)
+        except Exception as e:
+            logger.warning(f"Intent classification failed, using heuristic fallback: {e}")
+    logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
 
     # Step 2: Route to best model
-    # ┌──────────────────────────────────────────────────────────────────────────┐
-    # │ THINKING PRO  → o3-pro     Deep reasoning: finance, risk, strategy       │
-    # │ INSTANT       → gpt-5.2    Sales, operations, fast structured responses  │
-    # │ GEMINI PRO    → gemini-2.5-pro  Market intel, competitive research       │
-    # │ GEMINI FLASH  → gemini-2.5-flash  Quick queries, greetings               │
-    # └──────────────────────────────────────────────────────────────────────────┘
-    if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
-        provider, model_name, mode_label = "openai", "gpt-5.4-pro", "Pro Thinking"
-        routing_reason = "Deep reasoning — financial/risk/strategic analysis"
-    elif intent_domain == "marketing" and complexity != "low":
-        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
-        routing_reason = "Gemini 3.1 — market intelligence & competitive research (1M context)"
-    elif intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
-        provider, model_name, mode_label = "openai", "gpt-5.3", "Instant"
-        routing_reason = "Fast structured response for operational query"
-    elif complexity == "low" or intent_domain == "general":
-        provider, model_name, mode_label = "gemini", "gemini-3-flash-preview", "Instant Flash"
-        routing_reason = "Quick query — Gemini 3 Flash"
-    else:
-        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
-        routing_reason = "Advanced reasoning and intelligence"
+    try:
+        provider, model_candidates, mode_label, routing_reason = _resolve_model_route(
+            mode=mode,
+            intent_domain=intent_domain,
+            intent_action=intent_action,
+            complexity=complexity,
+            has_openai=has_openai_key,
+            has_google=has_google_key,
+        )
+    except RuntimeError as e:
+        logger.error(f"Soundboard route selection error: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
 
-    logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_name} — {routing_reason}")
-    contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_name})\n"
+    logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_candidates[0]} — {routing_reason}")
+    contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_candidates[0]})\n"
 
     # Step 3: Generate response — Direct APIs
     try:
         import time as _time
         _start = _time.time()
 
+        reasoning_mode = mode == "thinking" or intent_action in ("forecast", "diagnose") or complexity == "high"
         if provider == "openai":
-            # Direct OpenAI API call — your own key
-            client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
-            
-            # Build messages for OpenAI
-            _msgs = [{"role": "system", "content": system_message}]
-            for m in (messages_history or [])[-12:]:
-                _msgs.append({"role": m.get("role", "user"), "content": m.get("content", "")})
-            _msgs.append({"role": "user", "content": clean_message})
-
-            # gpt-5.4 thinking mode uses reasoning_effort
-            extra_params = {}
-            if model_name in ("gpt-5.4", "o3", "o3-pro", "o4"):
-                extra_params["reasoning_effort"] = "high"
-            
-            completion = await client.chat.completions.create(
-                model=model_name,
-                messages=_msgs,
-                temperature=0.7 if "gpt-5.4" not in model_name else None,
-                max_tokens=2000,
-                **extra_params,
+            response, resolved_model = await _call_openai_with_fallback(
+                api_key=OPENAI_DIRECT_KEY,
+                system_message=system_message,
+                clean_message=clean_message,
+                messages_history=messages_history,
+                model_candidates=model_candidates,
+                reasoning=reasoning_mode,
             )
-            response = completion.choices[0].message.content or ""
-
         else:
-            # Gemini — use GOOGLE_API_KEY if set, otherwise Emergent
-            if GOOGLE_DIRECT_KEY and GOOGLE_DIRECT_KEY not in ("CONFIGURED_IN_AZURE", ""):
-                # Direct Google Gemini API
-                import httpx as _httpx
-                gemini_model = model_name.replace("-preview", "")
-                async with _httpx.AsyncClient() as _hclient:
-                    gemini_r = await _hclient.post(
-                        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
-                        params={"key": GOOGLE_DIRECT_KEY},
-                        json={"contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}], "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7}},
-                        timeout=30,
-                    )
-                    gemini_data = gemini_r.json()
-                    response = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Gemini unavailable")
-            else:
-                # Direct Google Gemini API using GOOGLE_API_KEY
-                import httpx as _httpx
-                gemini_model_direct = model_name.replace("-preview", "")
-                async with _httpx.AsyncClient() as _hclient:
-                    gemini_r = await _hclient.post(
-                        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model_direct}:generateContent",
-                        params={"key": GOOGLE_DIRECT_KEY},
-                        json={"contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}], "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7}},
-                        timeout=30,
-                    )
-                    gemini_data = gemini_r.json()
-                    response = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Gemini unavailable")
+            response, resolved_model = await _call_gemini_with_fallback(
+                api_key=GOOGLE_DIRECT_KEY,
+                system_message=system_message,
+                clean_message=clean_message,
+                model_candidates=model_candidates,
+            )
+        response_model = f"{provider}/{resolved_model}"
 
         _elapsed = int((_time.time() - _start) * 1000)
-        logger.info(f"[SOUNDBOARD] {mode_label} {provider}/{model_name} in {_elapsed}ms ({len(response)} chars)")
+        logger.info(f"[SOUNDBOARD] {mode_label} {response_model} in {_elapsed}ms ({len(response)} chars)")
 
         if isinstance(response, str):
             response = _polish_response(response)
@@ -856,7 +1016,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
-            tenant_id=user_id, model_name=f"{provider}/{model_name}", endpoint='soundboard/chat',
+            tenant_id=user_id, model_name=response_model, endpoint='soundboard/chat',
             total_tokens=_actual_tokens, latency_ms=_elapsed, feature_flag='soundboard',
         )
 
@@ -957,6 +1117,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
         }
 
+    except RuntimeError as e:
+        logger.error(f"Soundboard provider error: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Soundboard chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1013,8 +1176,10 @@ async def proactive_signal_check(current_user: dict = Depends(get_current_user))
         summary = snap.data[0].get("summary", {})
         if isinstance(summary, str):
             import json as _j
-            try: summary = _j.loads(summary)
-            except: summary = {}
+            try:
+                summary = _j.loads(summary)
+            except Exception:
+                summary = {}
         
         snap_age_mins = (now - datetime.fromisoformat(
             snap.data[0]["generated_at"].replace("Z", "+00:00")

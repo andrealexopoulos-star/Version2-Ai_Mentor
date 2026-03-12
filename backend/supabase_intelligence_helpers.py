@@ -149,11 +149,11 @@ async def get_soundboard_conversation_supabase(supabase_client, session_id: str)
         return None
 
 
-async def update_soundboard_conversation_supabase(supabase_client, session_id: str, updates: Dict[str, Any]) -> bool:
+async def update_soundboard_conversation_supabase(supabase_client, conversation_id: str, updates: Dict[str, Any]) -> bool:
     """Update soundboard conversation"""
     try:
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-        result = supabase_client.table("soundboard_conversations").update(updates).eq("session_id", session_id).execute()
+        result = supabase_client.table("soundboard_conversations").update(updates).eq("id", conversation_id).execute()
         return bool(result.data)
     except Exception as e:
         logger.error(f"Error updating soundboard conversation: {e}")

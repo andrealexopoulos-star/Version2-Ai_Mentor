@@ -15,6 +15,14 @@ import {
   Paperclip, FileText, Download, Zap, Eye, Clock
 } from 'lucide-react';
 
+const getSoundboardErrorMessage = (error) => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  const reply = error?.response?.data?.reply;
+  if (typeof reply === 'string' && reply.trim()) return reply;
+  return 'Failed to send message';
+};
+
 
 const MySoundBoard = () => {
   const { user } = useSupabaseAuth();
@@ -208,7 +216,7 @@ const MySoundBoard = () => {
         ));
       }
     } catch (error) {
-      toast.error('Failed to send message');
+      toast.error(getSoundboardErrorMessage(error));
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
