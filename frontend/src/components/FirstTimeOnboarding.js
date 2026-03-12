@@ -470,8 +470,9 @@ const WelcomeBackStep = ({ firstName, connectedCount, connectedNames, onConnectM
 
 // sessionStorage key — resets on every new browser session (every login)
 const SESSION_KEY = 'biqc_onboarding_shown';
+const PERSISTENT_KEY = 'biqc_onboarding_shown_persist';
 
-export const useFirstTimeOnboarding = () => {
+export const useFirstTimeOnboarding = ({ enabled = false } = {}) => {
   // Read URL params synchronously BEFORE setting initial state
   const params = new URLSearchParams(window.location.search);
   const isOAuthReturn = params.get('onboarding') === 'email_connected';
@@ -479,13 +480,10 @@ export const useFirstTimeOnboarding = () => {
     ? (params.get('outlook_connected') === 'true' ? 'Outlook' : params.get('gmail_connected') === 'true' ? 'Gmail' : null)
     : null;
 
-  const [show, setShow] = useState(() => {
-    if (isOAuthReturn) return true;
-    return true;
-  });
+  const [show, setShow] = useState(() => isOAuthReturn);
   const [emailConnectedProvider, setEmailConnectedProvider] = useState(returnProvider);
   const [dismissed, setDismissed] = useState(() => {
-    return sessionStorage.getItem(SESSION_KEY) === '1';
+    return sessionStorage.getItem(SESSION_KEY) === '1' || localStorage.getItem(PERSISTENT_KEY) === '1';
   });
 
   React.useEffect(() => {
@@ -494,8 +492,17 @@ export const useFirstTimeOnboarding = () => {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  React.useEffect(() => {
+    if (isOAuthReturn) {
+      setShow(true);
+      return;
+    }
+    setShow(Boolean(enabled) && !dismissed);
+  }, [enabled, dismissed, isOAuthReturn]);
+
   const dismiss = useCallback(() => {
     sessionStorage.setItem(SESSION_KEY, '1');
+    localStorage.setItem(PERSISTENT_KEY, '1');
     setDismissed(true);
     setShow(false);
   }, []);
@@ -538,6 +545,7 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null, hasConnecti
 
   const handleFinish = () => {
     sessionStorage.setItem(SESSION_KEY, '1');
+    localStorage.setItem(PERSISTENT_KEY, '1');
     onClose();
   };
 

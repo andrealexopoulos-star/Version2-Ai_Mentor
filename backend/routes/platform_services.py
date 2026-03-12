@@ -183,7 +183,7 @@ async def service_health(current_user: dict = Depends(get_current_user)):
         results['vector_store'] = f'error: {str(e)[:50]}'
 
     results['auth'] = 'supabase'
-    results['llm'] = 'openai_via_emergent'
+    results['llm'] = 'openai_direct_router'
     results['storage'] = 'supabase_storage'
 
     return {'services': results, 'vendor_agnostic': True}

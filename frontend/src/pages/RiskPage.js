@@ -258,7 +258,7 @@ const RiskPage = () => {
               {hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
             </p>
           </div>
-          <DataConfidence cognitive={cognitive} />
+          <DataConfidence cognitive={cognitive} channelsData={integrationStatus} />
         </div>
 
         {/* Tab Navigation */}

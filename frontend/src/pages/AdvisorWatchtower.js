@@ -378,7 +378,6 @@ const AdvisorWatchtower = () => {
   const c = useMemo(() => cognitive || {}, [cognitive]);
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
   const [cognitionData, setCognitionData] = useState(null);
-  const { show: showOnboarding, dismiss: dismissOnboarding, emailConnectedProvider } = useFirstTimeOnboarding();
 
   // Resolve display name with fallbacks + capitalize first letter
   const { user } = useSupabaseAuth();
@@ -399,6 +398,12 @@ const AdvisorWatchtower = () => {
       .filter(i => i.connected)
       .map(i => i.category.toLowerCase());
   }, [integrationStatus]);
+
+  const shouldShowOnboarding = !integrationLoading
+    && connectedIntegrations.length === 0
+    && !(cognitionData?.integrations_connected > 0)
+    && !(c?.live_signal_count > 0);
+  const { show: showOnboarding, dismiss: dismissOnboarding, emailConnectedProvider } = useFirstTimeOnboarding({ enabled: shouldShowOnboarding });
 
   useEffect(() => {
     // Cognition core (Phase B)
