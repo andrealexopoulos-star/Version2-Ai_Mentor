@@ -1,144 +1,487 @@
 <analysis>**original_problem_statement:**
-The user's primary objective is to transform their BIQc platform into a high-performance, enterprise-grade AI Cognition-as-a-Platform for SMBs. This has evolved into a comprehensive UX/UI redesign of the marketing website, web application, and mobile apps, guided by a forensic audit. The most recent task is to perform another major redesign of the homepage and public integrations page based on user-provided reference images, making them more modern and aligned with a specific aesthetic. A critical, recurring production issue is an authentication redirect loop that needs a permanent fix via a stable CI/CD pipeline.
+The user's primary goal is to build a high-performance, enterprise-grade AI Cognition-as-a-Platform called BIQc. This involves extensive UX/UI redesigns, implementing a robust and stable CI/CD pipeline, and enhancing the platform's intelligence capabilities. Key requirements include fixing a recurring production authentication loop, redesigning marketing pages, and ensuring all AI-driven insights are specific, data-driven, and valuable to SMB owners. Most recently, the user has requested a complete overhaul of the AI engine to use the latest models (GPT-5.4, Gemini 3.1) with their own API keys, implement subscription tiers with feature gating, and fix numerous data-consistency and UX bugs across the platform.
 
 **PRODUCT REQUIREMENTS:**
--   The production environment  must be stable, with no authentication loops.
--   The platform's UI/UX must be unified, modern, and trustworthy, adhering to a new design system with both light and dark themes.
--   The homepage and public integrations page must be redesigned to match the user's latest visual specifications.
--   The deployment process must be fully automated via a single, reliable GitHub Actions workflow to prevent configuration drift and manual errors.
+-   The production environment  must be stable, with no crashes or authentication loops.
+-   The platform must use the user's own API keys for OpenAI, Google, and Anthropic, completely removing any dependency on Emergent's keys or libraries.
+-   Implement a tiered subscription model (Free, Foundation, Growth) with feature gating and a Stripe-powered upgrade path. The user  must have permanent, hardcoded access to all features, bypassing all gates.
+-   AI-generated insights across the entire platform (Advisor, Soundboard, Risk, etc.) must be specific, actionable, and directly reference data from connected integrations (HubSpot, Outlook, etc.), avoiding all generic or placeholder content.
+-   The UI/UX must be consistent across all pages, adhering to a unified dark theme, with no placeholder content, and all interactive elements must be fully functional.
+-   The sidebar navigation must be restructured according to the user's detailed specifications, with collapsible, alphabetized sections.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack platform (React frontend, FastAPI backend, Supabase DB). The agent has just completed a massive, five-phase redesign which included:
--   **Phase 1 (Foundation):** A unified design system with CSS variables for dark/light modes, a theme toggle, and accessibility (WCAG AA) fixes.
--   **Phase 2 (Navigation):** Simplified sidebar and mobile navigation, with improved empty-state copy.
--   **Phase 3 (Trust):** Redesigned pricing page and added trust badges/testimonials to marketing pages.
--   **Phase 4 (Typography):** Unified all fonts across the platform to a consistent set (Cormorant Garamond, Inter, JetBrains Mono).
--   **Phase 5 (Mobile & QA):** Aligned the React Native app with the new design tokens and passed a full regression suite.
+The application is a full-stack platform with a React frontend, FastAPI backend, and Supabase for the database and edge functions.
 
-The agent has also prepared detailed mockups and a plan for the next major homepage and integrations page redesign but has not yet started the implementation.
+The agent has just completed a massive refactoring to remove all dependencies on the Emergent LLM key, migrating the entire platform to use the user's direct API keys for OpenAI (GPT-5.4), Google (Gemini 3.1), and Anthropic (Claude). A hybrid AI routing system has been implemented in the Soundboard to use the best model for each query type.
+
+A subscription model with feature gating and a Stripe checkout flow has been built. The user's account () is hardcoded to bypass all restrictions.
+
+The UI has been significantly improved, fixing theme inconsistencies (all cards are now dark), and the entire sidebar navigation has been restructured with collapsible, alphabetized sections as per user requests.
+
+Numerous bugs have been fixed, including a production-crashing , and UI/UX issues on the Data Health, Risk, and Marketing pages to show contextual empty states instead of fake data. A proactive alerting system was added to the Soundboard to surface insights automatically.
 
 **Last working item**:
--   **Last item agent was working:** Planning and creating visual mockups for a complete redesign of the public homepage () and integrations page (). This involves fixing typography, adding new How BIQc Works and Business Signals sections, and overhauling the integrations page layout to use category containers with text-only buttons, as per user-provided reference images.
--   **Status:** NOT STARTED
+-   **Last item agent was working:** Diagnosing and fixing a Connection issue in the Soundboard. This error appeared immediately after the major refactoring to use direct API keys instead of the Emergent LLM Key.
+-   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** After implementation, use the  to verify the new designs against the mockups. Then, run the  to perform a full regression test on the homepage and integrations page to ensure all links and interactive elements remain functional.
--   **User Testing Done:** N
+-   **Which testing method agent to use?** Use  to directly test the  endpoint. This will show the raw error from the newly integrated OpenAI/Google APIs and confirm if the issue is due to model availability on the user's account, an invalid API key, or a code error in the new direct-API-call implementation.
+-   **User Testing Done:** Y (user reported the issue)
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Production Authentication Redirect Loop (P0)**
-    -   **Description:** A critical, recurring issue where users are redirected to  after authenticating on . This completely blocks production access.
-    -   **Attempted fixes:** The agent has repeatedly fixed this by correcting the Supabase , updating Azure AD App redirect URIs, and manually rebuilding/deploying Docker images with correct build arguments. A step was added to the  GitHub workflow to auto-correct the Supabase , but the issue persists, pointing to a fundamental problem in the deployment process itself. The root cause is likely competing deployment workflows (the custom GitHub Action vs. an Azure-native one) or incorrectly configured GitHub secrets, which causes images to be built with the wrong .
+-   **Issue 1: Soundboard Connection issue (P0)**
+    -   **Description:** After refactoring to use direct API keys, the Soundboard shows a Connection issue toast. This is a critical failure of a core feature.
+    -   **Attempted fixes:** The agent identified that this is likely due to the new models (, ) not being available on the user's production OpenAI account and was about to add fallback mechanisms.
     -   **Next debug checklist:**
-        1.  In the Azure portal, find and **disable** any automatic Build and deploy CI/CD actions that are not the custom .
-        2.  Guide the user to manually verify and/or re-enter the  and  secrets in the GitHub repository settings, as previous CLI attempts were unreliable.
-        3.  Trigger a deployment solely through the custom GitHub Action (by merging to ) and verify it succeeds and resolves the issue.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a production-down blocker. Fixing it makes the application usable and stabilizes the deployment process.
-    -   **Status:** BLOCKED
+        1.  Use  to send a request to .
+        2.  Examine the backend logs (==> /var/log/supervisor/backend.err.log <==
+INFO:core.config:Escalation Memory initialized
+INFO:contradiction_engine:[contradiction] Engine initialized
+INFO:core.config:Contradiction Engine initialized
+INFO:snapshot_agent:[snapshot] Agent initialized
+INFO:core.config:Snapshot Agent initialized
+INFO:pressure_calibration:[pressure] Calibration initialized
+INFO:core.config:Pressure Calibration initialized
+INFO:intelligence_baseline:[baseline] Intelligence Baseline initialized
+INFO:core.config:Intelligence Baseline initialized
+INFO:evidence_freshness:[freshness] Evidence Freshness initialized
+INFO:core.config:Evidence Freshness initialized
+INFO:server:Voice chat initialized (direct OpenAI — no emergentintegrations)
+INFO:     Started server process [4466]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'routes/soundboard.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4466]
+INFO:cognitive_core_supabase:Cognitive Core initialized with Supabase PostgreSQL
+INFO:cognitive_core_supabase:🧠 Cognitive Core initialized - Supabase PostgreSQL backend active
+INFO:core.config:Cognitive Core initialized with Supabase
+INFO:core.config:Watchtower Store initialized
+INFO:watchtower_engine:[watchtower] Engine initialized
+INFO:core.config:Watchtower Engine initialized
+INFO:merge_emission_layer:[emission] Merge Emission Layer initialized
+INFO:core.config:Merge Emission Layer initialized
+INFO:escalation_memory:[escalation_memory] Initialized
+INFO:core.config:Escalation Memory initialized
+INFO:contradiction_engine:[contradiction] Engine initialized
+INFO:core.config:Contradiction Engine initialized
+INFO:snapshot_agent:[snapshot] Agent initialized
+INFO:core.config:Snapshot Agent initialized
+INFO:pressure_calibration:[pressure] Calibration initialized
+INFO:core.config:Pressure Calibration initialized
+INFO:intelligence_baseline:[baseline] Intelligence Baseline initialized
+INFO:core.config:Intelligence Baseline initialized
+INFO:evidence_freshness:[freshness] Evidence Freshness initialized
+INFO:core.config:Evidence Freshness initialized
+INFO:server:Voice chat initialized (direct OpenAI — no emergentintegrations)
+INFO:     Started server process [4521]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'routes/soundboard.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4521]
+INFO:cognitive_core_supabase:Cognitive Core initialized with Supabase PostgreSQL
+INFO:cognitive_core_supabase:🧠 Cognitive Core initialized - Supabase PostgreSQL backend active
+INFO:core.config:Cognitive Core initialized with Supabase
+INFO:core.config:Watchtower Store initialized
+INFO:watchtower_engine:[watchtower] Engine initialized
+INFO:core.config:Watchtower Engine initialized
+INFO:merge_emission_layer:[emission] Merge Emission Layer initialized
+INFO:core.config:Merge Emission Layer initialized
+INFO:escalation_memory:[escalation_memory] Initialized
+INFO:core.config:Escalation Memory initialized
+INFO:contradiction_engine:[contradiction] Engine initialized
+INFO:core.config:Contradiction Engine initialized
+INFO:snapshot_agent:[snapshot] Agent initialized
+INFO:core.config:Snapshot Agent initialized
+INFO:pressure_calibration:[pressure] Calibration initialized
+INFO:core.config:Pressure Calibration initialized
+INFO:intelligence_baseline:[baseline] Intelligence Baseline initialized
+INFO:core.config:Intelligence Baseline initialized
+INFO:evidence_freshness:[freshness] Evidence Freshness initialized
+INFO:core.config:Evidence Freshness initialized
+INFO:server:Voice chat initialized (direct OpenAI — no emergentintegrations)
+INFO:     Started server process [4552]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [46] using WatchFiles
+INFO:cognitive_core_supabase:Cognitive Core initialized with Supabase PostgreSQL
+INFO:cognitive_core_supabase:🧠 Cognitive Core initialized - Supabase PostgreSQL backend active
+INFO:core.config:Cognitive Core initialized with Supabase
+INFO:core.config:Watchtower Store initialized
+INFO:watchtower_engine:[watchtower] Engine initialized
+INFO:core.config:Watchtower Engine initialized
+INFO:merge_emission_layer:[emission] Merge Emission Layer initialized
+INFO:core.config:Merge Emission Layer initialized
+INFO:escalation_memory:[escalation_memory] Initialized
+INFO:core.config:Escalation Memory initialized
+INFO:contradiction_engine:[contradiction] Engine initialized
+INFO:core.config:Contradiction Engine initialized
+INFO:snapshot_agent:[snapshot] Agent initialized
+INFO:core.config:Snapshot Agent initialized
+INFO:pressure_calibration:[pressure] Calibration initialized
+INFO:core.config:Pressure Calibration initialized
+INFO:intelligence_baseline:[baseline] Intelligence Baseline initialized
+INFO:core.config:Intelligence Baseline initialized
+INFO:evidence_freshness:[freshness] Evidence Freshness initialized
+INFO:core.config:Evidence Freshness initialized
+INFO:server:Voice chat initialized (direct OpenAI — no emergentintegrations)
+INFO:     Started server process [86]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+==> /var/log/supervisor/backend.out.log <==
+INFO:     10.64.129.70:60806 - "POST /api/integrations/merge/link-token HTTP/1.1" 403 Forbidden
+INFO:     10.208.138.71:44610 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.208.138.66:59144 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.208.138.66:57202 - "POST /api/integrations/merge/link-token HTTP/1.1" 403 Forbidden
+INFO:     10.208.138.71:59440 - "GET /api/integrations/merge/connected HTTP/1.1" 403 Forbidden
+INFO:     10.208.138.71:57848 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.208.138.71:53026 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.208.138.66:34708 - "GET /api/ HTTP/1.1" 200 OK
+INFO:     10.208.138.71:53026 - "GET /api/integrations/merge/connected HTTP/1.1" 403 Forbidden
+INFO:     10.208.138.66:34708 - "GET /api/outlook/status HTTP/1.1" 403 Forbidden
+INFO:     10.208.138.66:36626 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.208.138.71:34588 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.208.138.71:60328 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.66:50396 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.71:37634 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.66:50396 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.66:50396 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.66:50396 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.66:58346 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.71:58026 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.71:58026 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.71:58026 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.71:58026 - "GET /api/calibration/status HTTP/1.1" 200 OK
+INFO:     10.208.138.71:43678 - "GET /api/integrations/status HTTP/1.1" 404 Not Found
+INFO:     10.208.138.66:41380 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     10.208.138.66:48908 - "POST /api/snapshot/generate HTTP/1.1" 403 Forbidden
+INFO:     10.208.138.76:47438 - "GET /api/business-profile/context HTTP/1.1" 403 Forbidden) for the exact error message from the OpenAI/Google API client.
+        3.  If it's a model not found error, implement a try/except block in  to fall back to a known-working model like  or .
+        4.  If it's an authentication error, confirm with the user that the  and  in Azure App Service are correct and have the necessary permissions.
+    -   **Why fix this issue and what will be achieved with the fix?** The Soundboard is a central feature of the platform. Fixing this will restore core AI chat functionality.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on other issue:** None
+
+-   **Issue 2: Production Deployment Instability (P1)**
+    -   **Description:** The user has repeatedly faced issues deploying the application, including usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
+           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
+           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
+           <command> [<args>]
+
+These are common Git commands used in various situations:
+
+start a working area (see also: git help tutorial)
+   clone     Clone a repository into a new directory
+   init      Create an empty Git repository or reinitialize an existing one
+
+work on the current change (see also: git help everyday)
+   add       Add file contents to the index
+   mv        Move or rename a file, a directory, or a symlink
+   restore   Restore working tree files
+   rm        Remove files from the working tree and from the index
+
+examine the history and state (see also: git help revisions)
+   bisect    Use binary search to find the commit that introduced a bug
+   diff      Show changes between commits, commit and working tree, etc
+   grep      Print lines matching a pattern
+   log       Show commit logs
+   show      Show various types of objects
+   status    Show the working tree status
+
+grow, mark and tweak your common history
+   branch    List, create, or delete branches
+   commit    Record changes to the repository
+   merge     Join two or more development histories together
+   rebase    Reapply commits on top of another base tip
+   reset     Reset current HEAD to the specified state
+   switch    Switch branches
+   tag       Create, list, delete or verify a tag object signed with GPG
+
+collaborate (see also: git help workflows)
+   fetch     Download objects and refs from another repository
+   pull      Fetch from and integrate with another repository or a local branch
+   push      Update remote refs along with associated objects
+
+'git help -a' and 'git help -g' list available subcommands and some
+concept guides. See 'git help <command>' or 'git help <concept>'
+to read about a specific subcommand or concept.
+See 'git help git' for an overview of the system. merge conflicts, branches being out of sync, and failed GitHub Actions runs. The agent has made several fixes to the  workflow, but the process remains fragile and a significant point of user frustration.
+    -   **Attempted fixes:** The agent corrected Dockerfile names, switched image tags to  to prevent sync issues with Azure, and embedded the  content inline in the workflow to prevent file not found errors. The user has also been guided multiple times on how to resolve git conflicts.
+    -   **Next debug checklist:**
+        1.  After the next successful push, closely monitor the GitHub Actions run.
+        2.  If it fails, analyze the logs to pinpoint the exact failure step (e.g., build, push to ACR, deploy to Azure).
+        3.  Guide the user through a clean  and merge process to ensure their local branch is not causing issues.
+    -   **Why fix this issue and what will be achieved with the fix?** A stable deployment pipeline is essential for the platform's health and for delivering fixes to production.
+    -   **Status:** IN PROGRESS
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend (login flow).
-    -   **Blocked on other issue:** Blocked on stabilizing the CI/CD pipeline.
+    -   **Should Test frontend/backend/both after fix?** N/A
+    -   **Blocked on other issue:** None
+
+-   **Issue 3: Xero Integration Re-linking (P2)**
+    -   **Description:** The Xero integration requires frequent re-linking because its OAuth tokens expire after 30 minutes and Merge.dev does not always auto-refresh them successfully.
+    -   **Attempted fixes:** The agent implemented a Re-link Required button that appears when the token is stale, allowing the user to manually trigger a fresh OAuth flow.
+    -   **Next debug checklist:**
+        1.  Investigate Merge.dev's documentation for a more robust server-side token refresh mechanism.
+        2.  Consider implementing a scheduled backend job that periodically checks the health of all Merge tokens and attempts to refresh them proactively before they expire.
+    -   **Why fix this issue and what will be achieved with the fix?** This will improve the user experience by reducing the need for manual intervention to keep the Xero integration active.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1: Homepage & Integrations Page Redesign (P0)**
-    -   **Description:** Implement the full redesign of the homepage and public integrations page based on the approved mockups.
-    -   **Where to resume:** The plan is complete. The next agent should start implementing the following:
-        1.  In , fix the italic BIQc by changing  to .
-        2.  In , add the new Business Signals and How BIQc Works sections with their respective animations and content.
-        3.  In , completely replace the existing layout with the new design featuring category containers, glowing borders, and text-only buttons.
-    -   **What will be achieved with this?** This will align the primary marketing pages with the user's latest design vision.
+-   **Task 1: Complete the switch to user's direct API keys (P1)**
+    -   **Description:** While the code has been refactored, the user still needs to add their  to Azure and Supabase secrets to fully transition Gemini calls off the Emergent key.
+    -   **Where to resume:** Guide the user one last time to add the  to Azure App Service configuration and Supabase secrets.
+    -   **What will be achieved with this?** The platform will be 100% free of any Emergent LLM dependencies, with all AI costs billed directly to the user's own accounts.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on something:** None. The agent has approval to proceed.
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on something:** User action required to provide the key.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) Finalize and Educate on CI/CD Workflow:** Once the pipeline is stable, walk the user through the correct process: Save to GitHub in Emergent (pushes to ), then create a Pull Request from  to , and merge. This will trigger the one true automated deployment.
-    -   **(P2) Resolve  Deployment Error:** The Emergent deployment process consistently fails at a  step. Since the app uses Supabase, this is a platform-level issue. Contact Emergent support to have this unnecessary step disabled for the project.
+    -   (P1) Run SQL migration  in the Supabase SQL Editor to activate the newly built rate-limiting feature.
+    -   (P1) Deploy the remaining upgraded Supabase edge functions (, , etc.) to production.
+    -   (P2) Implement a Forgot Password flow via Supabase Auth.
+    -   (P2) Add reCAPTCHA to the sign-in and sign-up forms for security.
+    -   (P2) Build out the Coming Soon marketing integrations (Google Ads, Instagram, Facebook, LinkedIn).
+
 -   **Future Tasks:**
-    -   **(P2) Enhancement: Recently Visited Section:** Add a Recently Visited list to the mobile app's More sheet to speed up navigation.
-    -   **(P2) Enhancement: Presentation Mode:** Create a simplified view for client demos that hides technical jargon.
-    -   **(P2) RAG Integration:** Implement Retrieval-Augmented Generation with  for smarter AI responses.
-    -   **(P3) Backend Jobs:** Implement cron job for Daily Brief and worker logic for push notifications.
-    -   **(P3) UI for Citations:** Build UI for AI response fact-checking/citations.
+    -   (P2) Build out E-commerce integrations (Shopify, Netsuite).
+    -   (P3) Create a customer-exposed API for data access.
+    -   (P3) Add a Recently Visited section to the mobile app.
+    -   (P3) Build a Presentation Mode for client demos.
 
 **Completed work in this session**
--   **Multi-Phase Redesign (Phases 1-5):** Executed a complete redesign of the platform's foundation, navigation, trust signals, typography, and mobile app alignment.
--   **Light & Dark Theme Implementation:** Rolled out a unified design system with CSS variables, enabling a fully functional theme toggle across the platform.
--   **Font Unification:** Resolved conflicting font definitions, unifying the entire app on a consistent set of three fonts (Cormorant Garamond, Inter, JetBrains Mono) and optimizing font loading.
--   **Feature Gate Removal:** Removed all tier-based gates, making all platform features accessible to every user.
--   **CI/CD Hardening:** Troubleshooted and improved the GitHub Actions workflow (), including adding a step to auto-fix Supabase configuration on deployment.
--   **Integration Flow UX:** Separated the in-app and public integrations pages and added logic to the registration page to handle contextual signups (e.g., ).
-
-**Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** Authentication redirect loop to .
--   **Recurrence count:** 5+
--   **Status:** BLOCKED (High risk of recurrence until the CI/CD pipeline is the sole, stable deployment method).
+-   **AI Engine Overhaul:** Migrated the entire platform from the Emergent LLM key to the user's direct OpenAI, Google, and Anthropic API keys. Upgraded all AI models to , , and .
+-   **Hybrid AI Soundboard:** Implemented a sophisticated Soundboard with a mode selector (Auto, Fast, Pro Thinking, Trinity) that routes queries to the optimal model (GPT-5.4, Gemini 3.1, Claude Opus).
+-   **Proactive Soundboard Alerts:** Built a system where the Soundboard proactively surfaces critical insights (e.g., stalled HubSpot deals) to the user via a floating bubble.
+-   **Subscription & Tier Gating:** Created a full subscription model (Free, Foundation, Growth) with feature gating (lock icons, upgrade redirects) and a Stripe-powered checkout flow.
+-   **Admin Bypass:** Hardcoded the user's account () to have permanent, unrestricted access to all features, bypassing any subscription gates.
+-   **Sidebar Navigation Restructuring:** Completely reorganized the sidebar menu into collapsible, alphabetized sections as requested by the user, moving dozens of pages.
+-   **Production Crash Fixes:** Resolved multiple critical production outages, including a blank screen crash caused by faulty lazy-loading logic and another by overly aggressive CSS overrides. Implemented a global React Error Boundary for graceful failure handling.
+-   **UI/UX Consistency:** Fixed widespread theme issues, ensuring all cards and components adhere to the dark theme. Replaced placeholder content on pages like Data Health, Risk, and Marketing with context-aware empty states and real data displays.
+-   **Integration & Calibration Flow Fixes:** Resolved bugs in the Merge.dev integration flow, the Outlook OAuth callback, and a looping issue in the user calibration process.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Azure Docker Deployments & Build Arguments:** The root of many problems. Frontend env vars () must be passed as  at build time. Manual builds or incorrect CI/CD setups cause the auth loop.
--   **GitHub Actions CI/CD:** The intended permanent solution is the custom  workflow. It must be the only workflow deploying the app, and all its secrets must be correctly configured in the GitHub repo settings.
--   **Configuration Drift:** The core problem. The  URL is re-introduced because of inconsistencies between different deployment environments (manual vs. automated, Azure-native vs. custom).
--   **Unified Design System:** All new UI work must use the established CSS variables ( in ) and JS tokens () for colors, fonts, and spacing to maintain consistency across light and dark themes.
+-   **Full Stack:** React frontend, FastAPI (Python) backend.
+-   **Database:** Supabase (PostgreSQL) for data storage, authentication, and cron jobs.
+-   **Serverless:** Supabase Edge Functions (Deno/TypeScript) for running isolated AI and data processing tasks.
+-   **Integrations:**
+    -   **Merge.dev:** Unified API for third-party service connections (CRM, Accounting).
+    -   **Stripe:** For handling subscription payments.
+    -   **Direct AI APIs:** Direct integration with usage: openai [-h] [-v] [-b API_BASE] [-k API_KEY] [-p PROXY [PROXY ...]]
+              [-o ORGANIZATION] [-t {openai,azure}]
+              [--api-version API_VERSION] [--azure-endpoint AZURE_ENDPOINT]
+              [--azure-ad-token AZURE_AD_TOKEN] [-V]
+              {api,tools,migrate,grit} ...
+
+positional arguments:
+  {api,tools,migrate,grit}
+    api                 Direct API calls
+    tools               Client side tools for convenience
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         Set verbosity.
+  -b API_BASE, --api-base API_BASE
+                        What API base url to use.
+  -k API_KEY, --api-key API_KEY
+                        What API key to use.
+  -p PROXY [PROXY ...], --proxy PROXY [PROXY ...]
+                        What proxy to use.
+  -o ORGANIZATION, --organization ORGANIZATION
+                        Which organization to run as (will use your default
+                        organization if not specified)
+  -t {openai,azure}, --api-type {openai,azure}
+                        The backend API to call, must be `openai` or `azure`
+  --api-version API_VERSION
+                        The Azure API version, e.g.
+                        'https://learn.microsoft.com/en-us/azure/ai-
+                        services/openai/reference#rest-api-versioning'
+  --azure-endpoint AZURE_ENDPOINT
+                        The Azure endpoint, e.g.
+                        'https://endpoint.openai.azure.com'
+  --azure-ad-token AZURE_AD_TOKEN
+                        A token from Azure Active Directory,
+                        https://www.microsoft.com/en-
+                        us/security/business/identity-access/microsoft-entra-
+                        id
+  -V, --version         show program's version number and exit, , and  Python libraries using user-provided keys.
+-   **CI/CD:** GitHub Actions for building Docker images and deploying to Azure App Service.
+-   **UI:** Shadcn/UI components, Tailwind CSS.
 
 **key DB schema**
--   **users:** 
--   **workspace_integrations:** 
--   **email_connections:**  (Note:  column does not exist).
+-   **users:**  (added subscription info).
+-   **ai_usage_log:**  (new table for rate limiting).
+-   **strategic_console_state:**  (added unique constraint on  to fix calibration loop).
+-   **email_connections:**  (added unique constraint on ).
+-   **soundboard_conversations:** Stores all chat history for the Soundboard.
+-   **observation_events:** Stores signals and data points ingested from integrations.
+
+**changes in tech stack**
+-   **Complete removal of  library and the Emergent LLM Key.** The platform now uses direct API calls via official usage: openai [-h] [-v] [-b API_BASE] [-k API_KEY] [-p PROXY [PROXY ...]]
+              [-o ORGANIZATION] [-t {openai,azure}]
+              [--api-version API_VERSION] [--azure-endpoint AZURE_ENDPOINT]
+              [--azure-ad-token AZURE_AD_TOKEN] [-V]
+              {api,tools,migrate,grit} ...
+
+positional arguments:
+  {api,tools,migrate,grit}
+    api                 Direct API calls
+    tools               Client side tools for convenience
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         Set verbosity.
+  -b API_BASE, --api-base API_BASE
+                        What API base url to use.
+  -k API_KEY, --api-key API_KEY
+                        What API key to use.
+  -p PROXY [PROXY ...], --proxy PROXY [PROXY ...]
+                        What proxy to use.
+  -o ORGANIZATION, --organization ORGANIZATION
+                        Which organization to run as (will use your default
+                        organization if not specified)
+  -t {openai,azure}, --api-type {openai,azure}
+                        The backend API to call, must be `openai` or `azure`
+  --api-version API_VERSION
+                        The Azure API version, e.g.
+                        'https://learn.microsoft.com/en-us/azure/ai-
+                        services/openai/reference#rest-api-versioning'
+  --azure-endpoint AZURE_ENDPOINT
+                        The Azure endpoint, e.g.
+                        'https://endpoint.openai.azure.com'
+  --azure-ad-token AZURE_AD_TOKEN
+                        A token from Azure Active Directory,
+                        https://www.microsoft.com/en-
+                        us/security/business/identity-access/microsoft-entra-
+                        id
+  -V, --version         show program's version number and exit, , and  client libraries, relying entirely on user-provided API keys.
 
 **All files of reference**
--   : Primary file for the homepage redesign.
--   : Primary file for the public integrations page redesign.
--   : Contains the  italic text to be fixed.
--   : The CI/CD workflow file. Critical to stabilizing the deployment process.
--   : The source of truth for the unified design system's CSS variables.
--   : The source of truth for JS design tokens.
--   : The distinct, in-app integrations management page.
+-   : Rewritten to support hybrid model routing and direct API calls.
+-   : Central configuration for AI models and API keys, refactored to remove Emergent keys.
+-   : Heavily modified to implement the new sidebar structure and subscription gating logic.
+-   : Modified to include the Priority Inbox card and proactive alert bubble.
+-   : Logic for showing the welcome/onboarding modal.
+-   : Repeatedly modified to stabilize the production deployment process.
+-   : Upgraded to use  and .
+-   : New function for the Trinity Soundboard mode.
+-   : New migration file for implementing usage limits.
 
 **Critical Info for New Agent**
--   **PRIORITY 1 is the homepage/integrations redesign.** The user is waiting for this. Implement the plan based on the mockups generated in the last session.
--   **PRIORITY 2 is permanently fixing the production auth loop.** This requires ensuring the custom  is the *only* workflow deploying the app and that all its secrets are correctly configured in GitHub. Guide the user to disable any competing Azure-native CI/CD.
--   Build all new UI using the established CSS variable system in  to support both light and dark themes. Do not use hardcoded colors.
--   The recurring  error during Emergent deployments is a known platform issue and can likely be ignored unless it causes a hard failure, at which point Emergent support must be contacted.
+-   **The platform is no longer using any Emergent LLM services.** All AI calls go directly to OpenAI, Google, and Anthropic using the user's own API keys stored in Azure/Supabase secrets. This is a fundamental architectural shift.
+-   **The user's account () is a super-user.** It has a hardcoded bypass for all subscription feature gates. Do not be confused if features are unlocked for you during testing with this account but gated for others.
+-   **Production deployment is fragile.** The user struggles with usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
+           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
+           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
+           <command> [<args>]
+
+These are common Git commands used in various situations:
+
+start a working area (see also: git help tutorial)
+   clone     Clone a repository into a new directory
+   init      Create an empty Git repository or reinitialize an existing one
+
+work on the current change (see also: git help everyday)
+   add       Add file contents to the index
+   mv        Move or rename a file, a directory, or a symlink
+   restore   Restore working tree files
+   rm        Remove files from the working tree and from the index
+
+examine the history and state (see also: git help revisions)
+   bisect    Use binary search to find the commit that introduced a bug
+   diff      Show changes between commits, commit and working tree, etc
+   grep      Print lines matching a pattern
+   log       Show commit logs
+   show      Show various types of objects
+   status    Show the working tree status
+
+grow, mark and tweak your common history
+   branch    List, create, or delete branches
+   commit    Record changes to the repository
+   merge     Join two or more development histories together
+   rebase    Reapply commits on top of another base tip
+   reset     Reset current HEAD to the specified state
+   switch    Switch branches
+   tag       Create, list, delete or verify a tag object signed with GPG
+
+collaborate (see also: git help workflows)
+   fetch     Download objects and refs from another repository
+   pull      Fetch from and integrate with another repository or a local branch
+   push      Update remote refs along with associated objects
+
+'git help -a' and 'git help -g' list available subcommands and some
+concept guides. See 'git help <command>' or 'git help <concept>'
+to read about a specific subcommand or concept.
+See 'git help git' for an overview of the system., and the GitHub Actions workflow has a history of failures. Be extremely cautious and clear when providing deployment instructions. Always advise the user to  before pushing.
+-   **The immediate priority is fixing the Soundboard.** It's a core feature that broke after the API key refactor. The likely cause is a model specified in the code (e.g., ) not being available on the user's OpenAI account. Adding a fallback is the next logical step.
+-   **User is highly sensitive to generic content.** Ensure all AI outputs are specific and data-driven. The agent has done significant work on prompt engineering to achieve this, which should be maintained.
 
 **documents and test reports created in this job**
--    (Continuously updated)
+-   
 -   
 -   
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Provides reference images for a new homepage and integrations page design. Asks for a redesign, including animations, and a visual mockup before implementation.
-2.  **Agent:** Analyzes references and generates mockups and a detailed implementation plan.
-3.  **User:** where is the mock up
-4.  **Agent:** Regenerates higher-quality mockups with viewable links and presents the plan again for confirmation.
-5.  **User:** Generate the summary now (Implicit approval to proceed with the plan).
+1.  **User:** Asks for confirmation if specific SQL migrations are still pending.
+2.  **User:** Reports pervasive data inconsistencies and placeholder content across the platform.
+3.  **User:** Reports the Alert Centre always shows 0 alerts and is not actionable.
+4.  **User:** Reports that Revenue & Operations pages misreport connection status and lack specific metrics.
+5.  **User:** Reports that Risk & Workforce pages have generic labels, missing data, and non-functional elements.
+6.  **User:** Reports that the Integrations page is still having connection issues.
+7.  **User:** Requests a major sidebar navigation restructuring with nested sub-pages.
+8.  **User:** Requests performance improvements as pages are loading slowly.
+9.  **User:** Reports a critical production outage (blank screen).
+10. **User:** Reports that the Priority Inbox isn't on the dashboard, their admin account is gated, Xero requires re-linking, and theme is inconsistent.
 
 **Project Health Check:**
 -   **Broken**:
-    -   **Deployment Process:** The CI/CD pipeline is fragile due to competing workflows (Azure-native vs. custom GitHub Action) and potential secret misconfiguration, leading to the critical recurring authentication loop.
+    -   **Soundboard:** The core chat functionality is down, showing a Connection issue after the migration to direct API keys.
+    -   **Deployment Process:** Historically unstable and a major source of user friction and production downtime.
+
 -   **Mocked**:
-    -   None.
+    -   None. The agent has actively worked to remove all mocked/placeholder data, replacing it with contextual empty states.
 
 **3rd Party Integrations**
--   **Supabase:** Primary database and authentication.
--   **Merge.dev:** Unified API for CRM, accounting, HRIS, and other integrations. Requires .
--   **OpenAI:** For AI/LLM features.
--   **Stripe:** For payments.
+-   **Supabase:** Primary database, authentication, and serverless functions.
+-   **Merge.dev:** Unified API for CRM, accounting, etc. integrations. Requires user .
+-   **Stripe:** For subscription payments. Requires user  and price IDs.
+-   **OpenAI:** Uses user's  for GPT-5.4, GPT-5.3 models.
+-   **Google:** Uses user's  for Gemini 3.1 models.
+-   **Anthropic:** Uses user's  for Claude Opus (in Trinity mode).
 -   **Google OAuth & Microsoft OAuth:** For user login.
--   **Serper:** For Google Search API.
--   **Clearbit:** Used for fetching company logos on integration cards.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES, extensively. Multiple reports are available.
+-   **Testing agent used after significant changes:** YES, but with mixed results and timeouts.
 -   **Troubleshoot agent used after agent stuck in loop:** YES.
--   **Test files created:** .
--   **Known regressions:** The production authentication redirect loop.
+-   **Test files created:** No new persistent test files were created.
+-   **Known regressions:** The recent platform refactors have introduced several critical bugs, including production crashes (now fixed) and the current Soundboard failure.
+
+**Credentials to test flow:**
+The user's primary account for testing on production is . The agent has generated magic links for this account. Note that test credentials provided for the preview environment often fail.
 
 **What agent forgot to execute**
--   The agent initially created a confusing, single integrations page for both the public website and the in-app experience before correcting it to be two distinct pages as per user feedback.
--   The agent's attempts to have the user fix GitHub secrets via CLI were repeatedly hampered by the user's terminal environment (CMD vs. PowerShell). A manual browser-based approach was more successful and should be preferred in the future.</analysis>
+-   The agent has not yet implemented the user's request for a **forgot password** function or **reCAPTCHA** on the sign-in page.
+-   The user must be reminded to run **migration 055** to enable AI rate limiting.
+-   The user still needs to provide their **** to fully move Gemini calls off the Emergent fallback.</analysis>
