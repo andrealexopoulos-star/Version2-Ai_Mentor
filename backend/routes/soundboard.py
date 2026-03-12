@@ -729,25 +729,31 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     feature = 'trinity_daily' if mode == 'trinity' else 'soundboard_daily'
     await check_rate_limit(user_id, feature, get_sb())
 
-    # ═══ HYBRID MODEL ROUTING — gpt-5.4-pro (Thinking Pro) + gpt-5.3 (Instant) + Gemini 3 ═══
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    # ═══ HYBRID MODEL ROUTING — Direct OpenAI API + Emergent for Gemini ═══
+    # OpenAI: Uses your OPENAI_API_KEY directly (already in Azure/Supabase/GitHub)
+    # Gemini:  Uses GOOGLE_API_KEY when set, falls back to Emergent key otherwise
 
-    EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
+    import openai as _openai
+    OPENAI_DIRECT_KEY = os.environ.get("OPENAI_API_KEY", "")
+    GOOGLE_DIRECT_KEY = os.environ.get("GOOGLE_API_KEY", "")
+    EMERGENT_FALLBACK  = os.environ.get("EMERGENT_LLM_KEY", "")
 
-    # Step 1: Intent classification with o4-mini (fast thinking model)
+    # Step 1: Intent classification with o4-mini (fast thinking, direct OpenAI key)
     intent_domain = "general"
     intent_action = "recommend"
     complexity = "medium"
     try:
-        clf_chat = LlmChat(
-            api_key=EMERGENT_KEY,
-            session_id=f"clf-{user_id}-{uuid.uuid4()}",
-            system_message='Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}'
-        ).with_model("openai", "o4-mini")
-        clf_resp = await clf_chat.send_message(UserMessage(text=req.message[:400]))
+        clf_client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
+        clf_r = await clf_client.chat.completions.create(
+            model="o4-mini",
+            messages=[
+                {"role": "system", "content": 'Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}'},
+                {"role": "user", "content": req.message[:400]},
+            ],
+            max_tokens=80,
+        )
         import json as _json
-        clf_str = clf_resp.strip()
-        if clf_str.startswith("```"): clf_str = clf_str.strip("`").strip("json").strip()
+        clf_str = clf_r.choices[0].message.content or "{}"
         clf = _json.loads(clf_str)
         intent_domain = clf.get("domain", "general")
         intent_action = clf.get("action", "recommend")
@@ -782,22 +788,63 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_name} — {routing_reason}")
     contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_name})\n"
 
-    # Step 3: Generate response
+    # Step 3: Generate response — Direct APIs
     try:
         import time as _time
         _start = _time.time()
 
-        response_chat = LlmChat(
-            api_key=EMERGENT_KEY,
-            session_id=f"sb-{user_id}-{req.conversation_id or uuid.uuid4()}",
-            system_message=system_message,
-        ).with_model(provider, model_name)
+        if provider == "openai":
+            # Direct OpenAI API call — your own key
+            client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
+            
+            # Build messages for OpenAI
+            _msgs = [{"role": "system", "content": system_message}]
+            for m in (messages_history or [])[-12:]:
+                _msgs.append({"role": m.get("role", "user"), "content": m.get("content", "")})
+            _msgs.append({"role": "user", "content": clean_message})
 
-        ai_response = await response_chat.send_message(UserMessage(text=clean_message))
-        response = ai_response if isinstance(ai_response, str) else str(ai_response)
+            # gpt-5.4 thinking mode uses reasoning_effort
+            extra_params = {}
+            if model_name in ("gpt-5.4", "o3", "o3-pro", "o4"):
+                extra_params["reasoning_effort"] = "high"
+            
+            completion = await client.chat.completions.create(
+                model=model_name,
+                messages=_msgs,
+                temperature=0.7 if "gpt-5.4" not in model_name else None,
+                max_tokens=2000,
+                **extra_params,
+            )
+            response = completion.choices[0].message.content or ""
+
+        else:
+            # Gemini — use GOOGLE_API_KEY if set, otherwise Emergent
+            if GOOGLE_DIRECT_KEY and GOOGLE_DIRECT_KEY not in ("CONFIGURED_IN_AZURE", ""):
+                # Direct Google Gemini API
+                import httpx as _httpx
+                gemini_model = model_name.replace("-preview", "")
+                async with _httpx.AsyncClient() as _hclient:
+                    gemini_r = await _hclient.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
+                        params={"key": GOOGLE_DIRECT_KEY},
+                        json={"contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}], "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7}},
+                        timeout=30,
+                    )
+                    gemini_data = gemini_r.json()
+                    response = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Gemini unavailable")
+            else:
+                # Fallback to Emergent for Gemini (until GOOGLE_API_KEY is set)
+                from emergentintegrations.llm.chat import LlmChat, UserMessage
+                _chat = LlmChat(
+                    api_key=EMERGENT_FALLBACK,
+                    session_id=f"sb-g-{user_id}-{uuid.uuid4()}",
+                    system_message=system_message,
+                ).with_model("gemini", model_name)
+                _resp = await _chat.send_message(UserMessage(text=clean_message))
+                response = _resp if isinstance(_resp, str) else str(_resp)
 
         _elapsed = int((_time.time() - _start) * 1000)
-        logger.info(f"[SOUNDBOARD] {mode_label} {provider}/{model_name} responded in {_elapsed}ms ({len(response)} chars)")
+        logger.info(f"[SOUNDBOARD] {mode_label} {provider}/{model_name} in {_elapsed}ms ({len(response)} chars)")
 
         if isinstance(response, str):
             response = _polish_response(response)
@@ -806,7 +853,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             response = sanitise_output(_polish_response(str(response)))
 
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
-
         log_llm_call_to_db(
             tenant_id=user_id, model_name=f"{provider}/{model_name}", endpoint='soundboard/chat',
             total_tokens=_actual_tokens, latency_ms=_elapsed, feature_flag='soundboard',
