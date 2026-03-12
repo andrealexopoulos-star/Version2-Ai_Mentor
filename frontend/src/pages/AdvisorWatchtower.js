@@ -465,8 +465,8 @@ const AdvisorWatchtower = () => {
         <FirstTimeOnboarding
           onClose={dismissOnboarding}
           initialEmailProvider={emailConnectedProvider}
-          hasConnections={connectedCount > 0}
-          connectedCount={connectedCount}
+          hasConnections={connectedIntegrations.length > 0}
+          connectedCount={connectedIntegrations.length}
           connectedNames={connectedIntegrations.slice(0, 3).join(', ')}
           firstName={displayName !== 'there' ? displayName : ''}
         />
