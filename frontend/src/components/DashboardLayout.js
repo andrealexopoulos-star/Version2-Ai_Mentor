@@ -214,6 +214,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Settings, label: 'Operations', path: '/operations',
         children: [
           { icon: Activity, label: 'Ops Advisory', path: '/ops-advisory' },
+          { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
         ],
       },
       { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
@@ -242,7 +243,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       { icon: Link2, label: 'Integrations', path: '/integrations' },
       { icon: FileText, label: 'Reports', path: '/reports' },
       { icon: Settings, label: 'Settings', path: '/settings' },
-      { icon: Zap, label: 'SOP Generator', path: '/sop-generator' },
     ]},
   ];
 

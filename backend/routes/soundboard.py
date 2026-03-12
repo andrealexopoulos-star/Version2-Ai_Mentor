@@ -985,6 +985,139 @@ async def delete_soundboard_conversation(conversation_id: str, current_user: dic
     return {"status": "deleted"}
 
 
+@router.get("/soundboard/proactive-check")
+async def proactive_signal_check(current_user: dict = Depends(get_current_user)):
+    """
+    Polls for new high-priority signals since last check.
+    Called by frontend every 3 minutes while user is online.
+    Returns proactive insights that Soundboard 'surfaces' unprompted.
+    """
+    from datetime import timedelta
+    sb = get_sb()
+    user_id = current_user["id"]
+    now = datetime.now(timezone.utc)
+    
+    insights = []
+    
+    try:
+        # Get latest intelligence snapshot
+        snap = sb.table("intelligence_snapshots").select("summary,generated_at").eq(
+            "user_id", user_id
+        ).order("generated_at", desc=True).limit(1).execute()
+        
+        if not snap.data:
+            return {"has_insight": False, "insights": []}
+        
+        summary = snap.data[0].get("summary", {})
+        if isinstance(summary, str):
+            import json as _j
+            try: summary = _j.loads(summary)
+            except: summary = {}
+        
+        snap_age_mins = (now - datetime.fromisoformat(
+            snap.data[0]["generated_at"].replace("Z", "+00:00")
+        )).total_seconds() / 60
+        
+        # ── Signal detection rules ──────────────────────────────────────────
+        
+        # Rule 1: Risk score jumped > 20% from previous check
+        resolution_q = summary.get("resolution_queue", [])
+        high_priority = [r for r in resolution_q if r.get("severity") in ("critical", "high")]
+        if high_priority:
+            for item in high_priority[:2]:
+                insights.append({
+                    "type": "risk",
+                    "priority": "high",
+                    "title": item.get("title", "Risk detected"),
+                    "message": item.get("detail", item.get("recommendation", "")),
+                    "action": item.get("recommendation", "Review in Risk Intelligence"),
+                    "source": item.get("domain", "BIQc Engine"),
+                    "icon": "alert",
+                })
+        
+        # Rule 2: Revenue — stalled deals from HubSpot
+        revenue = summary.get("revenue", {})
+        deals = revenue.get("deals", [])
+        stalled = [d for d in deals if d.get("stall", 0) > 30]
+        if stalled:
+            deal_names = ", ".join([d.get("name", "Deal") for d in stalled[:2]])
+            total_value = sum(float(d.get("value", 0)) for d in stalled)
+            insights.append({
+                "type": "sales",
+                "priority": "high",
+                "title": f"{len(stalled)} deal{'s' if len(stalled)>1 else ''} stalled 30+ days",
+                "message": f"{deal_names} — total pipeline at risk: ${total_value:.0f}K. No activity in 30+ days.",
+                "action": "Review these deals now and send follow-up",
+                "source": "HubSpot CRM",
+                "icon": "deal",
+            })
+        
+        # Rule 3: Calendar — overloaded this week
+        vitals = summary.get("founder_vitals", {})
+        calendar = vitals.get("calendar", "")
+        if calendar and "above average" in calendar.lower():
+            insights.append({
+                "type": "people",
+                "priority": "medium",
+                "title": "Meeting load above average this week",
+                "message": calendar,
+                "action": "Consider blocking focus time tomorrow morning",
+                "source": "Outlook Calendar",
+                "icon": "calendar",
+            })
+        
+        # Rule 4: Email stress
+        email_stress = vitals.get("email_stress", "")
+        if email_stress and "high" in email_stress.lower():
+            insights.append({
+                "type": "communication",
+                "priority": "medium",
+                "title": "High email volume detected",
+                "message": email_stress,
+                "action": "Open Priority Inbox to triage",
+                "source": "Outlook",
+                "icon": "email",
+            })
+        
+        # Rule 5: Cash / Financial risk
+        capital = summary.get("capital", {})
+        runway = capital.get("runway")
+        if runway and isinstance(runway, (int, float)) and runway < 6:
+            insights.append({
+                "type": "finance",
+                "priority": "critical",
+                "title": f"Cash runway below 6 months ({runway} months remaining)",
+                "message": capital.get("worst", "Immediate cash flow action required."),
+                "action": "Review cash position and accelerate collections",
+                "source": "Financial Analysis",
+                "icon": "cash",
+            })
+        
+        # Store last check time to avoid surfacing same alerts repeatedly
+        sb.table("ai_usage_log").upsert({
+            "key": f"{user_id}:proactive_check:last",
+            "user_id": user_id,
+            "feature": "proactive_check",
+            "date": str(now.date()),
+            "count": 1,
+        }, on_conflict="key").execute()
+        
+        # Return top 2 most urgent insights
+        priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+        insights_sorted = sorted(insights, key=lambda x: priority_order.get(x["priority"], 9))
+        
+        return {
+            "has_insight": len(insights_sorted) > 0,
+            "insights": insights_sorted[:2],
+            "snapshot_age_mins": round(snap_age_mins),
+            "total_signals": len(insights),
+        }
+        
+    except Exception as e:
+        logger.error(f"[PROACTIVE_CHECK] Error: {e}")
+        return {"has_insight": False, "insights": [], "error": str(e)}
+
+
 def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> str:
     """Build cognitive context string from intelligence state + core context."""
     parts = []

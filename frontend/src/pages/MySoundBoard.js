@@ -23,7 +23,12 @@ const MySoundBoard = () => {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(() => {
+    // Check if user arrived from a proactive insight bubble
+    const prefill = sessionStorage.getItem('biqc_soundboard_prefill');
+    if (prefill) { sessionStorage.removeItem('biqc_soundboard_prefill'); return prefill; }
+    return '';
+  });
   const [loading, setLoading] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [editingId, setEditingId] = useState(null);
