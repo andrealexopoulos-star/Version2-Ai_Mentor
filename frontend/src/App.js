@@ -7,108 +7,125 @@ import TierGate from "./components/TierGate";
 import { MobileDrawerProvider } from "./context/MobileDrawerContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import InstallPrompt from './components/InstallPrompt';
 
-// Pages - removed legacy Landing and Advisor imports
-import LandingIntelligent from "./pages/LandingIntelligent";
-import TrustPage from "./pages/TrustPage";
+// ── Critical pages loaded eagerly (always needed on first load) ───────────────
 import LoginSupabase from "./pages/LoginSupabase";
 import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
-import Dashboard from "./pages/Dashboard";
-import AdvisorWatchtower from "./pages/AdvisorWatchtower";
-import Analysis from "./pages/Analysis";
-import SOPGenerator from "./pages/SOPGenerator";
-import MarketAnalysis from "./pages/MarketAnalysis";
-import Documents from "./pages/Documents";
-import DocumentView from "./pages/DocumentView";
-import AdminDashboard from "./pages/AdminDashboard";
-import Settings from "./pages/Settings";
-import Diagnosis from "./pages/Diagnosis";
-import DataCenter from "./pages/DataCenter";
-import BusinessProfile from "./pages/BusinessProfile";
-import OpsAdvisoryCentre from "./pages/OpsAdvisoryCentre";
-import Pricing from "./pages/Pricing";
-import Integrations from "./pages/Integrations";
-import ConnectEmail from "./pages/ConnectEmail";
-import TermsAndConditions from "./pages/TermsAndConditions";
-import EnterpriseTerms from "./pages/EnterpriseTerms";
-import OnboardingWizard from "./pages/OnboardingWizard";
-import OnboardingDecision from "./pages/OnboardingDecision";
-import CalibrationAdvisor from "./pages/CalibrationAdvisor";
-import IntelCentre from "./pages/IntelCentre";
-import ProfileImport from "./pages/ProfileImport";
-import OutlookTest from "./pages/OutlookTest";
-import EmailInbox from "./pages/EmailInbox";
-import CalendarView from "./pages/CalendarView";
-import MySoundBoard from "./pages/MySoundBoard";
-import AuthDebug from "./pages/AuthDebug";
-import GmailTest from "./pages/GmailTest";
-import Watchtower from './components/Watchtower';
-import WarRoomConsole from './components/WarRoomConsole';
-import BoardRoom from './components/BoardRoom';
-import IntelligenceBaseline from './pages/IntelligenceBaseline';
-import OperatorDashboard from './pages/OperatorDashboard';
-import PromptLab from './pages/PromptLab';
-import ContactPage from './pages/ContactPage';
-import CognitiveV2Mockup from './pages/CognitiveV2Mockup';
-import LoadingPreview from './pages/LoadingPreview';
-import CalibrationPreview from './pages/CalibrationPreview';
-
-// New Intelligence Pages
-import RevenuePage from './pages/RevenuePage';
-import OperationsPage from './pages/OperationsPage';
-import RiskPage from './pages/RiskPage';
-import CompliancePage from './pages/CompliancePage';
-import MarketPage from './pages/MarketPage';
-import AlertsPageAuth from './pages/AlertsPageAuth';
-import ActionsPage from './pages/ActionsPage';
-import AutomationsPageAuth from './pages/AutomationsPageAuth';
-import DataHealthPage from './pages/DataHealthPage';
-import ReportsPage from './pages/ReportsPage';
-import AuditLogPage from './pages/AuditLogPage';
-import ForensicCalibration from './pages/ForensicCalibration';
-import ForensicAuditPage from './pages/ForensicAuditPage';
-import DSEEPage from './pages/DSEEPage';
-import MarketingIntelPage from './pages/MarketingIntelPage';
-import ObservabilityPage from './pages/ObservabilityPage';
-import SupportConsolePage from './pages/SupportConsolePage';
-import SubscribePage from './pages/SubscribePage';
-import KnowledgeBasePage from './pages/KnowledgeBasePage';
-import MarketingAutomationPage from './pages/MarketingAutomationPage';
-import ABTestingPage from './pages/ABTestingPage';
 import ResetPassword from './pages/ResetPassword';
 import UpdatePassword from './pages/UpdatePassword';
 
-// Website (Liquid Steel) pages
-import SiteHomePage from './pages/website/HomePage';
-import SitePlatformPage from './pages/website/PlatformPage';
-import SiteIntelligencePage from './pages/website/IntelligencePage';
-import SiteIntegrationsPage from './pages/website/IntegrationsPage';
-import SitePricingPage from './pages/website/PricingPage';
-import AILearningGuarantee from './pages/AILearningGuarantee';
-import BlogPage from './pages/BlogPage';
-import BlogArticlePage from './pages/BlogArticlePage';
-import SiteTrustLandingPage from './pages/website/TrustLandingPage';
-import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
+// ── Public website pages — lazy (most users won't need these from the app) ────
+const SiteHomePage              = lazy(() => import('./pages/website/HomePage'));
+const SitePlatformPage          = lazy(() => import('./pages/website/PlatformPage'));
+const SiteIntelligencePage      = lazy(() => import('./pages/website/IntelligencePage'));
+const SiteIntegrationsPage      = lazy(() => import('./pages/website/IntegrationsPage'));
+const SitePricingPage           = lazy(() => import('./pages/website/PricingPage'));
+const SiteTrustLandingPage      = lazy(() => import('./pages/website/TrustLandingPage'));
+const AILearningGuarantee       = lazy(() => import('./pages/AILearningGuarantee'));
+const BlogPage                  = lazy(() => import('./pages/BlogPage'));
+const BlogArticlePage           = lazy(() => import('./pages/BlogArticlePage'));
+const ContactPage               = lazy(() => import('./pages/ContactPage'));
+const TrustPage                 = lazy(() => import('./pages/TrustPage'));
+const Pricing                   = lazy(() => import('./pages/Pricing'));
+const SubscribePage             = lazy(() => import('./pages/SubscribePage'));
+const TermsAndConditions        = lazy(() => import('./pages/TermsAndConditions'));
+const EnterpriseTerms           = lazy(() => import('./pages/EnterpriseTerms'));
+const LandingIntelligent        = lazy(() => import('./pages/LandingIntelligent'));
 
-// Platform mockup pages
-import PlatformLogin from './pages/website/platform/PlatformLogin';
-import ExecOverview from './pages/website/platform/ExecOverview';
-import RevenueModule from './pages/website/platform/RevenueModule';
-import AlertsPage from './pages/website/platform/AlertsPage';
+// ── Trust sub-pages ───────────────────────────────────────────────────────────
+const SiteTrustSubPages         = lazy(() => import('./pages/website/TrustSubPages'));
+
+// ── Core app pages — lazy (only load when user navigates there) ───────────────
+const AdvisorWatchtower         = lazy(() => import('./pages/AdvisorWatchtower'));
+const Settings                  = lazy(() => import('./pages/Settings'));
+const BusinessProfile           = lazy(() => import('./pages/BusinessProfile'));
+const Integrations              = lazy(() => import('./pages/Integrations'));
+const EmailInbox                = lazy(() => import('./pages/EmailInbox'));
+const CalendarView              = lazy(() => import('./pages/CalendarView'));
+const CalibrationAdvisor        = lazy(() => import('./pages/CalibrationAdvisor'));
+const ForensicCalibration       = lazy(() => import('./pages/ForensicCalibration'));
+
+// ── Intelligence pages ────────────────────────────────────────────────────────
+const RevenuePage               = lazy(() => import('./pages/RevenuePage'));
+const OperationsPage            = lazy(() => import('./pages/OperationsPage'));
+const RiskPage                  = lazy(() => import('./pages/RiskPage'));
+const CompliancePage            = lazy(() => import('./pages/CompliancePage'));
+const MarketPage                = lazy(() => import('./pages/MarketPage'));
+const AlertsPageAuth            = lazy(() => import('./pages/AlertsPageAuth'));
+const ActionsPage               = lazy(() => import('./pages/ActionsPage'));
+const AutomationsPageAuth       = lazy(() => import('./pages/AutomationsPageAuth'));
+const DataHealthPage            = lazy(() => import('./pages/DataHealthPage'));
+const ReportsPage               = lazy(() => import('./pages/ReportsPage'));
+const AuditLogPage              = lazy(() => import('./pages/AuditLogPage'));
+const ForensicAuditPage         = lazy(() => import('./pages/ForensicAuditPage'));
+const DSEEPage                  = lazy(() => import('./pages/DSEEPage'));
+const MarketingIntelPage        = lazy(() => import('./pages/MarketingIntelPage'));
+const MarketingAutomationPage   = lazy(() => import('./pages/MarketingAutomationPage'));
+const ABTestingPage             = lazy(() => import('./pages/ABTestingPage'));
+const KnowledgeBasePage         = lazy(() => import('./pages/KnowledgeBasePage'));
+const CompetitiveBenchmarkPage  = lazy(() => import('./pages/CompetitiveBenchmarkPage'));
+const ObservabilityPage         = lazy(() => import('./pages/ObservabilityPage'));
+
+// ── Board/War room ────────────────────────────────────────────────────────────
+const WarRoomConsole            = lazy(() => import('./components/WarRoomConsole'));
+const BoardRoom                 = lazy(() => import('./components/BoardRoom'));
+
+// ── Admin / dev pages (rarely visited — big savings lazifying these) ──────────
+const AdminDashboard            = lazy(() => import('./pages/AdminDashboard'));
+const Dashboard                 = lazy(() => import('./pages/Dashboard'));
+const Analysis                  = lazy(() => import('./pages/Analysis'));
+const SOPGenerator              = lazy(() => import('./pages/SOPGenerator'));
+const MarketAnalysis            = lazy(() => import('./pages/MarketAnalysis'));
+const Documents                 = lazy(() => import('./pages/Documents'));
+const DocumentView              = lazy(() => import('./pages/DocumentView'));
+const Diagnosis                 = lazy(() => import('./pages/Diagnosis'));
+const DataCenter                = lazy(() => import('./pages/DataCenter'));
+const OpsAdvisoryCentre         = lazy(() => import('./pages/OpsAdvisoryCentre'));
+const ConnectEmail              = lazy(() => import('./pages/ConnectEmail'));
+const IntelCentre               = lazy(() => import('./pages/IntelCentre'));
+const MySoundBoard              = lazy(() => import('./pages/MySoundBoard'));
+const IntelligenceBaseline      = lazy(() => import('./pages/IntelligenceBaseline'));
+const OperatorDashboard         = lazy(() => import('./pages/OperatorDashboard'));
+const PromptLab                 = lazy(() => import('./pages/PromptLab'));
+const SupportConsolePage        = lazy(() => import('./pages/SupportConsolePage'));
+const Watchtower                = lazy(() => import('./components/Watchtower'));
+
+// ── Platform mockup pages ─────────────────────────────────────────────────────
+const PlatformLogin             = lazy(() => import('./pages/website/platform/PlatformLogin'));
+const ExecOverview              = lazy(() => import('./pages/website/platform/ExecOverview'));
+const RevenueModule             = lazy(() => import('./pages/website/platform/RevenueModule'));
+const AlertsPage                = lazy(() => import('./pages/website/platform/AlertsPage'));
+
+const CognitiveV2Mockup         = lazy(() => import('./pages/CognitiveV2Mockup'));
+const LoadingPreview            = lazy(() => import('./pages/LoadingPreview'));
+const CalibrationPreview        = lazy(() => import('./pages/CalibrationPreview'));
+const AuthDebug                 = lazy(() => import('./pages/AuthDebug'));
+const GmailTest                 = lazy(() => import('./pages/GmailTest'));
+const OutlookTest               = lazy(() => import('./pages/OutlookTest'));
+const ProfileImport             = lazy(() => import('./pages/ProfileImport'));
+
+// ── Thin loading fallback shown while a lazy page loads ───────────────────────
+const PageFallback = () => (
+  <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: 32, height: 32, border: '2px solid #FF6A0040', borderTopColor: '#FF6A00', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  </div>
+);
 import AutomationsPage from './pages/website/platform/AutomationsPage';
 import IntegrationsPlatform from './pages/website/platform/IntegrationsPlatform';
 
 // Industry mockup pages
 import MSPView from './pages/website/platform/industries/MSPView';
 import ConstructionView from './pages/website/platform/industries/ConstructionView';
-import ConsultingView from './pages/website/platform/industries/ConsultingView';
-import AgencyView from './pages/website/platform/industries/AgencyView';
-import SaaSView from './pages/website/platform/industries/SaaSView';
-import DecisionsPage from './pages/DecisionsPage';
-import CompetitiveBenchmarkPage from './pages/CompetitiveBenchmarkPage';
+const ConsultingView            = lazy(() => import('./pages/website/platform/industries/ConsultingView'));
+const AgencyView                = lazy(() => import('./pages/website/platform/industries/AgencyView'));
+const SaaSView                  = lazy(() => import('./pages/website/platform/industries/SaaSView'));
+const DecisionsPage             = lazy(() => import('./pages/DecisionsPage'));
+const UpgradePage               = lazy(() => import('./pages/UpgradePage'));
+const OnboardingDecision        = lazy(() => import('./pages/OnboardingDecision'));
 
 // Public Route — redirect authenticated users to BIQC Insights
 const PublicRoute = ({ children }) => {
@@ -160,6 +177,7 @@ function AppRoutes() {
   }, []);
 
   return (
+    <Suspense fallback={<PageFallback />}>
     <Routes>
       {/* Public Routes — Liquid Steel Theme (PRIMARY) */}
       <Route path="/" element={<SiteHomePage />} />
@@ -169,11 +187,11 @@ function AppRoutes() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/trust" element={<SiteTrustLandingPage />} />
       <Route path="/trust/ai-learning-guarantee" element={<AILearningGuarantee />} />
-      <Route path="/trust/terms" element={<SiteTermsPage />} />
-      <Route path="/trust/privacy" element={<SitePrivacyPage />} />
-      <Route path="/trust/dpa" element={<SiteDPAPage />} />
-      <Route path="/trust/security" element={<SiteSecurityPage />} />
-      <Route path="/trust/centre" element={<SiteTrustCentrePage />} />
+      <Route path="/trust/terms" element={<SiteTrustSubPages page="terms" />} />
+      <Route path="/trust/privacy" element={<SiteTrustSubPages page="privacy" />} />
+      <Route path="/trust/dpa" element={<SiteTrustSubPages page="dpa" />} />
+      <Route path="/trust/security" element={<SiteTrustSubPages page="security" />} />
+      <Route path="/trust/centre" element={<SiteTrustSubPages page="centre" />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
       <Route path="/blog" element={<BlogPage />} />
@@ -223,6 +241,8 @@ function AppRoutes() {
 
       {/* Subscribe */}
       <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
+      <Route path="/upgrade" element={<ProtectedRoute><UpgradePage /></ProtectedRoute>} />
+      <Route path="/upgrade/success" element={<ProtectedRoute><UpgradePage success /></ProtectedRoute>} />
 
       {/* Free Tier Routes */}
       <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
@@ -285,6 +305,7 @@ function AppRoutes() {
       {/* Catch all - redirect to dashboard or landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 

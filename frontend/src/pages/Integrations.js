@@ -30,6 +30,7 @@ const Logo = ({ domain, name, size = 36 }) => {
       style={{ width: size, height: size, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
       <img src={`https://logo.clearbit.com/${domain}`} alt={name}
         style={{ width: size - 8, height: size - 8, objectFit: 'contain' }}
+        loading="lazy"
         onError={() => setErr(true)} />
     </div>
   );

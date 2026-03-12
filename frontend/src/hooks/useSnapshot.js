@@ -82,6 +82,12 @@ export function useSnapshot() {
     if (cached?.cognitive) {
       applyData(cached);
       setLoading(false); // Show cached instantly
+
+      // Skip background refresh if cache is < 5 minutes old
+      if (cached._age && cached._age < 5 * 60 * 1000) {
+        setRefreshing(false);
+        return;
+      }
     }
     setRefreshing(true);
 
