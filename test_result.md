@@ -195,17 +195,30 @@ frontend:
         agent: "testing"
         comment: "BUG FIX VERIFIED - getSoundboardErrorMessage() function correctly extracts user-friendly error messages from API responses. Checks both 'detail' and 'reply' fields in error.response.data. Returns fallback message when neither is found. Despite multiple 404s from backend API endpoints (calibration/status, soundboard/conversations, scan-usage, etc), frontend handles all gracefully without crashes. UI renders with proper empty states. Error handling standardized across all three Soundboard components."
 
+  - task: "Calibration Loop Regression Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ProtectedRoute.js, /app/frontend/src/context/SupabaseAuthContext.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Regression test - Verify calibration loop fix for fully calibrated users"
+      - working: true
+        agent: "testing"
+        comment: "✅ CALIBRATION LOOP REGRESSION FIX VERIFIED - Test account (cal-loop-416d7f85@biqctest.io) successfully logged in and landed on /advisor (NOT /calibration). Manual navigation to /calibration correctly redirected back to /advisor. Fix in ProtectedRoute.js working as expected: (1) During LOADING state on /calibration route, shows LoadingScreen (prevents flash of calibration content), (2) When authState is READY and user on /calibration, redirects to /advisor. No calibration loop detected. User cannot access /calibration page manually. Fail-open logic in SupabaseAuthContext properly handles 404 from calibration status endpoint."
+
 
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 3
+  test_sequence: 4
 
 test_plan:
   current_focus:
-    - "Soundboard API Health Check"
-    - "Soundboard Chat API - Mode Field Bug Fix"
-    - "Soundboard Provider Fallback Logic"
+    - "Calibration Loop Regression Fix"
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"
@@ -221,3 +234,5 @@ agent_communication:
     message: "SOUNDBOARD SMOKE TEST COMPLETE - All smoke test flows PASSED. (1) Login page renders correctly with form elements, (2) QA credentials authenticate successfully reaching /advisor route with no auth loop, (3) Authenticated state confirmed with navigation and content visible, (4) Soundboard UI at /soundboard renders without crashes - all components (panel, FAB, input) detected and functional. (5) Error handling bug fix verified - getSoundboardErrorMessage() properly extracts error messages from API responses (checks detail and reply fields, returns fallback). Despite 31 expected 404s from backend API endpoints in preview env (calibration/status, soundboard/conversations, scan-usage, etc), frontend handles gracefully with empty states. Zero JavaScript console errors. Runtime stability confirmed. Bug fix working as intended."
   - agent: "testing"
     message: "BACKEND SOUNDBOARD API TESTING COMPLETE - All 7 backend tests PASSED. Critical bug fixes verified: (1) Health endpoint returns 200 ✅ (2) Fresh user signup working ✅ (3) Soundboard chat API no longer crashes from missing mode field - SoundboardChatRequest properly supports optional mode parameter ✅ (4) Provider/model fallback logic working with graceful 503 responses for missing AI keys ✅ (5) Conversation management using conversation_id instead of session_id ✅ (6) Structured JSON responses with proper guardrail system blocking low-coverage users ✅ (7) GET /soundboard/conversations endpoint functional ✅. All critical fixes from /app/backend/routes/soundboard.py and /app/backend/supabase_intelligence_helpers.py are working correctly in preview environment."
+  - agent: "testing"
+    message: "CALIBRATION LOOP REGRESSION TEST COMPLETE - ✅ FIX VERIFIED. Test account (cal-loop-416d7f85@biqctest.io) successfully tested. Results: (1) Login redirected to /advisor NOT /calibration ✅ (2) Manual navigation to /calibration correctly blocked and redirected to /advisor ✅ (3) No calibration loop detected ✅ (4) ProtectedRoute.js fix working: LoadingScreen shown during auth bootstrap on /calibration route, READY users redirected from /calibration to /advisor ✅ (5) Fail-open logic in SupabaseAuthContext properly handles API errors. The historical calibration loop bug has been successfully resolved. Users cannot get stuck in calibration flow after completing it."

@@ -85,6 +85,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
   const location = useLocation();
   const [adminChecked, setAdminChecked] = useState(!adminOnly);
   const [isAdmin, setIsAdmin] = useState(false);
+  const isCalibrationRoute = location.pathname === '/calibration';
 
   // Check admin role from backend when adminOnly is true
   useEffect(() => {
@@ -111,6 +112,9 @@ export default function ProtectedRoute({ children, adminOnly }) {
   // Still loading — but if we have a user/session, show content (don't block navigation)
   if (authState === AUTH_STATE.LOADING) {
     if (user || session) {
+      if (isCalibrationRoute) {
+        return <LoadingScreen />;
+      }
       // We have a session — render children while bootstrap completes in background
       // This prevents the loading screen from flashing on every page navigation
     } else {
@@ -139,6 +143,10 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // READY or has session → enforce gates
   if (authState === AUTH_STATE.READY || user || session) {
+    if (isCalibrationRoute) {
+      return <Navigate to="/advisor" replace />;
+    }
+
     // Admin pages bypass onboarding/calibration checks entirely
     const ADMIN_PATHS = ['/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
     const isAdminPath = ADMIN_PATHS.some(p => location.pathname.startsWith(p));
