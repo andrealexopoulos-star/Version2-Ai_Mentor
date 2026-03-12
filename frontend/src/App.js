@@ -7,7 +7,7 @@ import TierGate from "./components/TierGate";
 import { MobileDrawerProvider } from "./context/MobileDrawerContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { useEffect, lazy, Suspense } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import InstallPrompt from './components/InstallPrompt';
 
 // ── Critical pages loaded eagerly (always needed on first load) ───────────────
@@ -36,7 +36,15 @@ const EnterpriseTerms           = lazy(() => import('./pages/EnterpriseTerms'));
 const LandingIntelligent        = lazy(() => import('./pages/LandingIntelligent'));
 
 // ── Trust sub-pages ───────────────────────────────────────────────────────────
-const SiteTrustSubPages         = lazy(() => import('./pages/website/TrustSubPages'));
+const SiteTrustSubPages = lazy(() =>
+  import('./pages/website/TrustSubPages').then(m => ({
+    default: ({ page }) => {
+      const components = { terms: m.TermsPage, privacy: m.PrivacyPage, dpa: m.DPAPage, security: m.SecurityPage, centre: m.TrustCentrePage };
+      const Comp = components[page] || m.TermsPage;
+      return <Comp />;
+    }
+  }))
+);
 
 // ── Core app pages — lazy (only load when user navigates there) ───────────────
 const AdvisorWatchtower         = lazy(() => import('./pages/AdvisorWatchtower'));
@@ -107,7 +115,29 @@ const GmailTest                 = lazy(() => import('./pages/GmailTest'));
 const OutlookTest               = lazy(() => import('./pages/OutlookTest'));
 const ProfileImport             = lazy(() => import('./pages/ProfileImport'));
 
-// ── Thin loading fallback shown while a lazy page loads ───────────────────────
+// ── Error boundary — catches lazy load failures, shows message instead of blank screen ──
+class AppErrorBoundary extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(err) { return { error: err }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 32 }}>
+          <div style={{ color: '#FF6A00', fontSize: 32 }}>B</div>
+          <p style={{ color: '#F4F7FA', fontFamily: 'sans-serif', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
+          <p style={{ color: '#64748B', fontFamily: 'sans-serif', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
+            BIQc encountered an error loading this page. Please refresh to try again.
+          </p>
+          <button onClick={() => window.location.reload()}
+            style={{ background: '#FF6A00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'sans-serif', fontSize: 14 }}>
+            Refresh Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 const PageFallback = () => (
   <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
     <div style={{ width: 32, height: 32, border: '2px solid #FF6A0040', borderTopColor: '#FF6A00', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
@@ -177,6 +207,7 @@ function AppRoutes() {
   }, []);
 
   return (
+    <AppErrorBoundary>
     <Suspense fallback={<PageFallback />}>
     <Routes>
       {/* Public Routes — Liquid Steel Theme (PRIMARY) */}
@@ -306,6 +337,7 @@ function AppRoutes() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </Suspense>
+    </AppErrorBoundary>
   );
 }
 
