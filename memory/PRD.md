@@ -6,6 +6,12 @@
 - **Frontend error UX** — `SoundboardPanel.js`, `FloatingSoundboard.js`, and `MySoundBoard.js` now surface backend `detail` / `reply` messages instead of generic connection failures
 - **Verification completed** — Python + JS lint passed on changed files; frontend smoke testing passed; backend deep testing passed for health/auth/chat guardrail and graceful provider-failure behavior
 
+### Sprint 10 — Calibration Regression Recovery (Complete — Mar 2026)
+- **Auth/session isolation fix** — `backend/auth_supabase.py` now uses a dedicated auth/anon Supabase client for `sign_up`, `sign_in_with_password`, and `get_user` so the global service-role client is not mutated during login flows
+- **Supabase env loading hardening** — `backend/supabase_client.py` now force-loads backend `.env` for consistent service-role initialization in this runtime
+- **Calibration route recovery** — `frontend/src/components/ProtectedRoute.js` now prevents completed users from re-entering `/calibration`, including during auth bootstrap loading, using cached auth-state recovery logic
+- **Calibration verification** — QA user seeded as fully calibrated/onboarded; `/api/calibration/status` returned `COMPLETE`, `/api/onboarding/status` returned `completed=true`, login landed on `/advisor`, and manual `/calibration` access redirected back to `/advisor`
+
 ### Sprint 8 — Priority Inbox Full Build (Complete — Mar 2026)
 - **`email_priority` edge function** — Full v2: Gmail (REST API) + Outlook (Graph API), AI classification via GPT-4o-mini (high/medium/low + reason + suggested_action + action_item + due_date), writes to `priority_inbox` + `email_tasks` Supabase tables, idempotent upsert
 - **`gmail_prod` edge function** — Built: returns `{ok, connected, email}` for single provider; supports `?provider=all` for multi-provider status check simultaneously
