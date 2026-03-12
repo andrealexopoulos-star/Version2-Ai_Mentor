@@ -149,11 +149,11 @@ async def get_soundboard_conversation_supabase(supabase_client, session_id: str)
         return None
 
 
-async def update_soundboard_conversation_supabase(supabase_client, session_id: str, updates: Dict[str, Any]) -> bool:
+async def update_soundboard_conversation_supabase(supabase_client, conversation_id: str, updates: Dict[str, Any]) -> bool:
     """Update soundboard conversation"""
     try:
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-        result = supabase_client.table("soundboard_conversations").update(updates).eq("session_id", session_id).execute()
+        result = supabase_client.table("soundboard_conversations").update(updates).eq("id", conversation_id).execute()
         return bool(result.data)
     except Exception as e:
         logger.error(f"Error updating soundboard conversation: {e}")
@@ -240,8 +240,10 @@ async def get_user_analyses_supabase(supabase_client, user_id: str, limit: int =
 async def get_business_profile_supabase(supabase_client, user_id: str) -> Optional[Dict[str, Any]]:
     """Get business profile for user"""
     try:
-        result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).single().execute()
-        return result.data if result.data else None
+        result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).limit(1).execute()
+        if result and result.data:
+            return result.data[0]
+        return None
     except Exception as e:
         if "PGRST116" in str(e):
             return None

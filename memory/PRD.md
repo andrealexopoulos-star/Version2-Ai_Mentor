@@ -1,4 +1,17 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 9 — Soundboard Stability Pass (In Progress — Mar 2026)
+- **Soundboard direct-provider hardening** — Fixed backend request schema to accept `mode`, added missing `os` import for env-key access, and implemented OpenAI/Gemini fallback routing in `backend/routes/soundboard.py`
+- **Graceful provider failure handling** — Soundboard now returns clear `503` configuration/auth messages when provider keys are missing/invalid instead of opaque crashes/toasts
+- **Conversation persistence fix** — `update_soundboard_conversation_supabase()` now updates by `conversation_id` / `id` instead of incorrect `session_id`
+- **Frontend error UX** — `SoundboardPanel.js`, `FloatingSoundboard.js`, and `MySoundBoard.js` now surface backend `detail` / `reply` messages instead of generic connection failures
+- **Verification completed** — Python + JS lint passed on changed files; frontend smoke testing passed; backend deep testing passed for health/auth/chat guardrail and graceful provider-failure behavior
+
+### Sprint 10 — Calibration Regression Recovery (Complete — Mar 2026)
+- **Auth/session isolation fix** — `backend/auth_supabase.py` now uses a dedicated auth/anon Supabase client for `sign_up`, `sign_in_with_password`, and `get_user` so the global service-role client is not mutated during login flows
+- **Supabase env loading hardening** — `backend/supabase_client.py` now force-loads backend `.env` for consistent service-role initialization in this runtime
+- **Calibration route recovery** — `frontend/src/components/ProtectedRoute.js` now prevents completed users from re-entering `/calibration`, including during auth bootstrap loading, using cached auth-state recovery logic
+- **Calibration verification** — QA user seeded as fully calibrated/onboarded; `/api/calibration/status` returned `COMPLETE`, `/api/onboarding/status` returned `completed=true`, login landed on `/advisor`, and manual `/calibration` access redirected back to `/advisor`
+
 ### Sprint 8 — Priority Inbox Full Build (Complete — Mar 2026)
 - **`email_priority` edge function** — Full v2: Gmail (REST API) + Outlook (Graph API), AI classification via GPT-4o-mini (high/medium/low + reason + suggested_action + action_item + due_date), writes to `priority_inbox` + `email_tasks` Supabase tables, idempotent upsert
 - **`gmail_prod` edge function** — Built: returns `{ok, connected, email}` for single provider; supports `?provider=all` for multi-provider status check simultaneously
@@ -159,18 +172,19 @@ Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL edi
 
 ### P0
 1. **Run SQL migration** `create_integration_status.sql` in Supabase (vwwandhoydemcybltoxz) to enable `records_count` caching for integration status
-2. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
-3. CDN cache purge for `beta.thestrategysquad.com`
-4. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
-5. Create `push_devices` table in Supabase for device token storage
+2. **Run SQL migration** `supabase/migrations/055_ai_rate_limiting.sql` in Supabase SQL editor to activate AI usage/rate limiting
+3. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
+4. **Provide real AI provider keys in environment** — preview currently has `OPENAI_API_KEY=CONFIGURED_IN_AZURE` placeholder and no `GOOGLE_API_KEY`, so graceful errors are expected until real keys are present
+5. CDN cache purge for `beta.thestrategysquad.com`
+6. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
+7. Create `push_devices` table in Supabase for device token storage
 
 ### P1
-6. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
-7. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
-8. API performance optimization
-9. Admin panel billing adjustments
-10. Mobile App Store deployment (TestFlight/Play Store)
-11. **Deploy updated backend to production** — `/api/soundboard/scan-usage` and `/api/cognition/overview` return 404 in production (endpoint exists locally)
+8. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
+9. API performance optimization
+10. Admin panel billing adjustments
+11. Mobile App Store deployment (TestFlight/Play Store)
+12. **Deploy updated backend to production** — `/api/soundboard/scan-usage` and `/api/cognition/overview` return 404 in production (endpoint exists locally)
 
 ### P2
 12. Decision outcome visualization (trend charts at checkpoints)

@@ -29,6 +29,14 @@ function isDataQuery(msg) {
 const SCAN_USAGE_CACHE_KEY = 'biqc_scan_usage_cache';
 const SCAN_USAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+const getSoundboardErrorMessage = (error) => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  const reply = error?.response?.data?.reply;
+  if (typeof reply === 'string' && reply.trim()) return reply;
+  return 'Connection issue. Try again.';
+};
+
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -164,8 +172,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           }
         }
       }
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Connection issue. Try again.' }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'assistant', text: getSoundboardErrorMessage(error) }]);
     }
     setLoading(false);
   };

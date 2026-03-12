@@ -707,19 +707,19 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
     // Gemini 2.5 Pro: Market context, competitive intelligence, external factors
 
     // Step 1: Gemini 2.5 Pro for market intelligence layer (run in parallel)
-    const EMERGENT_KEY = Deno.env.get("EMERGENT_LLM_KEY") || OPENAI_API_KEY;
-    const marketIntelPromise = fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${EMERGENT_KEY}`, "Content-Type": "application/json", "X-Provider": "gemini" },
-      body: JSON.stringify({
-        model: "gemini-3.1-pro-preview",
-        messages: [
-          { role: "system", content: "You are a market intelligence analyst. Given this business context, provide 3 specific market insights: (1) competitive positioning, (2) industry benchmark comparison, (3) market opportunity or threat. Be specific to this exact business. Return JSON: {market_position: str, benchmark: str, opportunity_or_threat: str}" },
-          { role: "user", content: buildPrioritizedContext(ctx).slice(0, 3000) },
-        ],
-        temperature: 0.5, max_tokens: 800, response_format: { type: "json_object" },
-      }),
-    }).then(r => r.json()).catch(() => null);
+    const GOOGLE_API_KEY_DIRECT = Deno.env.get("GOOGLE_API_KEY") || "";
+    const geminiModelName = "gemini-3.1-pro-preview".replace("-preview", "");
+    const marketIntelPromise = fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModelName}:generateContent?key=${GOOGLE_API_KEY_DIRECT}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `You are a market intelligence analyst.\n\n${buildPrioritizedContext(ctx).slice(0, 3000)}\n\nReturn JSON: {"market_position": str, "benchmark": str, "opportunity_or_threat": str}` }] }],
+          generationConfig: { maxOutputTokens: 800, temperature: 0.5 },
+        }),
+      }
+    ).then(r => r.json()).catch(() => null);
 
     // Step 2: GPT-5.2 for main cognitive analysis
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -775,9 +775,9 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
     }
 
     // Merge Gemini market intelligence into cognitive output
-    if (marketData?.choices?.[0]?.message?.content) {
+    if (marketData?.candidates?.[0]?.content?.parts?.[0]?.text) {
       try {
-        const mkt = JSON.parse(marketData.choices[0].message.content);
+        const mkt = JSON.parse(marketData.candidates[0].content.parts[0].text);
         if (!cognitive.market_position) cognitive.market_position = mkt.market_position || "";
         if (!cognitive.benchmark_vs_industry) cognitive.benchmark_vs_industry = mkt.benchmark || "";
         if (mkt.opportunity_or_threat && cognitive.priority) {
@@ -788,9 +788,9 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
     }
 
     // Merge blind spots from data gathering into AI output
-    if (marketData?.choices?.[0]?.message?.content) {
+    if (marketData?.candidates?.[0]?.content?.parts?.[0]?.text) {
       try {
-        const mkt = JSON.parse(marketData.choices[0].message.content);
+        const mkt = JSON.parse(marketData.candidates[0].content.parts[0].text);
         if (!cognitive.market_position) cognitive.market_position = mkt.market_position || "";
         if (!cognitive.benchmark_vs_industry) cognitive.benchmark_vs_industry = mkt.benchmark || "";
         if (mkt.opportunity_or_threat && cognitive.priority) {
