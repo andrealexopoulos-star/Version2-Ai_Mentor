@@ -148,7 +148,7 @@ const SubscribePage = () => {
         })}
       </div>
 
-      <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Back to dashboard</Link>
+      <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Back to Intelligence Platform</Link>
     </div>
   );
 };

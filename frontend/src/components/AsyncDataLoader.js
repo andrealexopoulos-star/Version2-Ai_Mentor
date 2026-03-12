@@ -302,7 +302,7 @@ const AsyncDataLoader = ({
               style={{ background: '#FF6A00' }}
               data-testid="timeout-continue-btn"
             >
-              Continue to Dashboard <ArrowRight className="w-4 h-4" />
+              Continue to Intelligence Platform <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         )}

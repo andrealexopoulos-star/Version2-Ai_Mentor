@@ -49,7 +49,7 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
         </div>
 
         <p className="text-xs text-[#64748B] mt-4" style={{ fontFamily: fontFamily.mono }}>
-          Redirecting to your intelligence dashboard...
+          Connecting to your Intelligence Platform...
         </p>
       </div>
     ) : (

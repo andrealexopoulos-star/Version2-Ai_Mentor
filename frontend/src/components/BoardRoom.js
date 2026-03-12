@@ -70,7 +70,7 @@ const BoardRoom = () => {
         <div className="flex items-center gap-5">
           <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-white/5"
             style={{ color: '#64748B', textDecoration: 'none', fontFamily: fontFamily.display }} data-testid="boardroom-home">
-            ← Dashboard
+            ← Intelligence Platform
           </a>
           <div className="h-4 w-px" style={{ background: '#1E2D3D' }} />
           <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Board Room</span>

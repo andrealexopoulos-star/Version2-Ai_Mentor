@@ -128,7 +128,7 @@ const Dashboard = () => {
     return (
       <DashboardLayout>
         <div className="max-w-3xl">
-          <PageLoadingState message="Loading your dashboard…" />
+          <PageLoadingState message="Loading your Intelligence Platform…" />
         </div>
       </DashboardLayout>
     );

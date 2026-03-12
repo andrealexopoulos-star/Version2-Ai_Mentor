@@ -66,7 +66,7 @@ const WarRoomConsole = () => {
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
         style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
         <div className="flex items-center gap-5">
-          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/5" style={{ color: '#64748B', textDecoration: 'none' }} data-testid="console-home-btn">← Dashboard</a>
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/5" style={{ color: '#64748B', textDecoration: 'none' }} data-testid="console-home-btn">← Intelligence Platform</a>
           <div className="h-4 w-px" style={{ background: '#1E2D3D' }} />
           <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Strategic Console</span>
           {!loading && cognitive && (
