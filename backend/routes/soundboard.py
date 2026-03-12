@@ -723,21 +723,21 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             logger.warning(f"File generation in SoundBoard failed: {e}")
             # Fall through to normal chat response
 
-    # ═══ HYBRID MODEL ROUTING (OpenAI GPT-5 + Google Gemini) ═══
-    # Routes to the best model for the query type
+    # ═══ HYBRID MODEL ROUTING — Thinking Pro (o3-pro) + Instant (gpt-5.2) + Gemini 2.5 ═══
     from emergentintegrations.llm.chat import LlmChat, UserMessage
 
     EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 
-    # Step 1: Fast intent classification with gpt-5-nano
+    # Step 1: Intent classification with o4-mini (fast thinking model)
     intent_domain = "general"
     intent_action = "recommend"
+    complexity = "medium"
     try:
         clf_chat = LlmChat(
             api_key=EMERGENT_KEY,
             session_id=f"clf-{user_id}-{uuid.uuid4()}",
             system_message='Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}'
-        ).with_model("openai", "gpt-5-nano")
+        ).with_model("openai", "o4-mini")
         clf_resp = await clf_chat.send_message(UserMessage(text=req.message[:400]))
         import json as _json
         clf_str = clf_resp.strip()
@@ -749,40 +749,37 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
     except Exception as e:
         logger.warning(f"Intent classification failed: {e}")
-        complexity = "medium"
 
-    # Step 2: Route to the best model based on intent
-    # OpenAI GPT-5.1: Financial, risk, strategic decisions — deep structured reasoning
-    # Gemini 2.5 Pro: Market research, competitive intel, long-context analysis
-    # Gemini 2.5 Flash: Quick queries, summaries, general conversations
-    if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose"):
-        provider, model_name = "openai", "gpt-5.1"
-        routing_reason = "Deep financial/risk reasoning"
-    elif intent_domain in ("marketing", "operations") and complexity == "high":
-        provider, model_name = "gemini", "gemini-2.5-pro"
-        routing_reason = "Market intelligence and long-form analysis"
-    elif intent_domain == "sales" and intent_action in ("recommend", "diagnose"):
-        provider, model_name = "openai", "gpt-5.1"
-        routing_reason = "Sales pipeline analysis"
+    # Step 2: Route to best model
+    # ┌──────────────────────────────────────────────────────────────────────────┐
+    # │ THINKING PRO  → o3-pro     Deep reasoning: finance, risk, strategy       │
+    # │ INSTANT       → gpt-5.2    Sales, operations, fast structured responses  │
+    # │ GEMINI PRO    → gemini-2.5-pro  Market intel, competitive research       │
+    # │ GEMINI FLASH  → gemini-2.5-flash  Quick queries, greetings               │
+    # └──────────────────────────────────────────────────────────────────────────┘
+    if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
+        provider, model_name, mode_label = "openai", "o3-pro", "Thinking Pro"
+        routing_reason = "Deep reasoning — financial/risk/strategic analysis"
+    elif intent_domain == "marketing" and complexity != "low":
+        provider, model_name, mode_label = "gemini", "gemini-2.5-pro", "Gemini Pro"
+        routing_reason = "Market intelligence — Gemini excels at competitive research"
+    elif intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
+        provider, model_name, mode_label = "openai", "gpt-5.2", "Instant"
+        routing_reason = "Fast structured response for operational query"
     elif complexity == "low" or intent_domain == "general":
-        provider, model_name = "gemini", "gemini-2.5-flash"
-        routing_reason = "Quick query — fast model"
+        provider, model_name, mode_label = "gemini", "gemini-2.5-flash", "Instant Flash"
+        routing_reason = "Quick query — fastest model"
     else:
-        provider, model_name = "gemini", "gemini-2.5-pro"
-        routing_reason = "General intelligence"
+        provider, model_name, mode_label = "openai", "gpt-5.2", "Instant"
+        routing_reason = "Default intelligent response"
 
-    logger.info(f"[MODEL_ROUTE] {provider}/{model_name} — {routing_reason}")
+    logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_name} — {routing_reason}")
+    contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_name})\n"
 
-    # Add intent to context
-    contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Action: {intent_action.upper()} | Model: {provider}/{model_name}\n"
-
-    # Step 3: Generate response with selected model
+    # Step 3: Generate response
     try:
         import time as _time
         _start = _time.time()
-
-        # Build message history for LlmChat
-        chat_messages = messages_history[-12:] if messages_history else []  # last 12 turns
 
         response_chat = LlmChat(
             api_key=EMERGENT_KEY,
@@ -794,17 +791,16 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         response = ai_response if isinstance(ai_response, str) else str(ai_response)
 
         _elapsed = int((_time.time() - _start) * 1000)
-        logger.info(f"[SOUNDBOARD] {provider}/{model_name} responded in {_elapsed}ms ({len(response)} chars)")
+        logger.info(f"[SOUNDBOARD] {mode_label} {provider}/{model_name} responded in {_elapsed}ms ({len(response)} chars)")
 
-        # Post-process
         if isinstance(response, str):
             response = _polish_response(response)
             response = sanitise_output(response)
+        else:
+            response = sanitise_output(_polish_response(str(response)))
 
-        # Estimate tokens (rough)
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
 
-        # Log to observability
         log_llm_call_to_db(
             tenant_id=user_id, model_name=f"{provider}/{model_name}", endpoint='soundboard/chat',
             total_tokens=_actual_tokens, latency_ms=_elapsed, feature_flag='soundboard',
