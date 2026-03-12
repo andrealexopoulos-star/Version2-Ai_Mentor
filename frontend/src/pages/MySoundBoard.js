@@ -136,9 +136,9 @@ const MySoundBoard = () => {
         intelligence_context: {}
       });
 
-      const { reply, conversation_id, conversation_title, file: generatedFile } = response.data;
+      const { reply, conversation_id, conversation_title, file: generatedFile, suggested_actions, intent, model_used } = response.data;
 
-      const assistantMsg = { role: 'assistant', content: reply };
+      const assistantMsg = { role: 'assistant', content: reply, suggested_actions: suggested_actions || [], intent, model_used };
       if (generatedFile) assistantMsg.file = generatedFile;
       setMessages(prev => [...prev, assistantMsg]);
       
@@ -519,6 +519,28 @@ const MySoundBoard = () => {
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">
                           {message.content}
                         </p>
+                        {/* Proactive next-action suggestions */}
+                        {message.role === 'assistant' && message.suggested_actions?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {message.suggested_actions.map((action, i) => (
+                              <button key={i}
+                                onClick={() => setInput(action.label)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 flex items-center gap-1.5"
+                                style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                                <span>→</span> {action.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {/* Intent badge */}
+                        {message.role === 'assistant' && message.intent?.domain && message.intent.domain !== 'general' && (
+                          <div className="mt-2">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded"
+                              style={{ background: 'rgba(255,255,255,0.05)', color: '#4A5568', fontFamily: fontFamily.mono }}>
+                              {message.intent.domain.toUpperCase()} · {message.model_used || 'AI'}
+                            </span>
+                          </div>
+                        )}
                         {/* File download card when backend generates a file */}
                         {message.file && (
                           <a href={message.file.download_url} target="_blank" rel="noopener noreferrer"
