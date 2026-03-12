@@ -37,9 +37,9 @@ const MySoundBoard = () => {
   // BIQc AI Modes — branded like Gemini's Fast/Thinking/Pro
   const BIQC_MODES = [
     { id: 'auto',     label: 'BIQc Auto',     desc: 'Automatically selects the best AI for your query', icon: '⚡', backend_mode: 'auto' },
-    { id: 'fast',     label: 'Fast',           desc: 'Answers quickly using Gemini 2.5 Flash',           icon: '🚀', backend_mode: 'fast' },
+    { id: 'fast',     label: 'Fast',           desc: 'Quick answers using Gemini 3 Flash',               icon: '🚀', backend_mode: 'fast' },
     { id: 'thinking', label: 'Pro Thinking',   desc: 'Deep reasoning with o3-pro — solves complex problems', icon: '🧠', backend_mode: 'thinking' },
-    { id: 'pro',      label: 'Pro',            desc: 'Advanced analysis with Gemini 2.5 Pro',            icon: '✦', backend_mode: 'pro' },
+    { id: 'pro',      label: 'Pro',            desc: 'Advanced analysis with Gemini 3.1 Pro (1M context)', icon: '✦', backend_mode: 'pro' },
     { id: 'trinity',  label: 'Trinity',        desc: 'ChatGPT + Claude + Gemini in parallel — most powerful', icon: '◈', backend_mode: 'trinity' },
   ];
   const messagesEndRef = useRef(null);

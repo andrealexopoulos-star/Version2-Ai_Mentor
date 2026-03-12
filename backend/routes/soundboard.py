@@ -761,17 +761,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         provider, model_name, mode_label = "openai", "o3-pro", "Thinking Pro"
         routing_reason = "Deep reasoning — financial/risk/strategic analysis"
     elif intent_domain == "marketing" and complexity != "low":
-        provider, model_name, mode_label = "gemini", "gemini-2.5-pro", "Gemini Pro"
-        routing_reason = "Market intelligence — Gemini excels at competitive research"
+        provider, model_name, mode_label = "gemini", "gemini-3.1-pro-preview", "Gemini 3.1 Pro"
+        routing_reason = "Gemini 3.1 — market intelligence & competitive research (1M context)"
     elif intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
         provider, model_name, mode_label = "openai", "gpt-5.2", "Instant"
         routing_reason = "Fast structured response for operational query"
     elif complexity == "low" or intent_domain == "general":
-        provider, model_name, mode_label = "gemini", "gemini-2.5-flash", "Instant Flash"
-        routing_reason = "Quick query — fastest model"
+        provider, model_name, mode_label = "gemini", "gemini-3-flash-preview", "Instant Flash"
+        routing_reason = "Quick query — Gemini 3 Flash"
     else:
-        provider, model_name, mode_label = "openai", "gpt-5.2", "Instant"
-        routing_reason = "Default intelligent response"
+        provider, model_name, mode_label = "gemini", "gemini-3.1-pro-preview", "Gemini 3.1 Pro"
+        routing_reason = "Advanced reasoning and intelligence"
 
     logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_name} — {routing_reason}")
     contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_name})\n"

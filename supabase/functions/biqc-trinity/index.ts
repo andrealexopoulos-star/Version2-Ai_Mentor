@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     const [gptResult, claudeResult, geminiResult] = await Promise.allSettled([
       callModel("openai", "gpt-5.2", GPT_SYSTEM(business_context), message, 0.3),
       callModel("anthropic", "claude-opus-4-6", CLAUDE_SYSTEM(business_context), message, 0.6),
-      callModel("gemini", "gemini-2.5-pro", GEMINI_SYSTEM(business_context), message, 0.7),
+      callModel("gemini", "gemini-3.1-pro-preview", GEMINI_SYSTEM(business_context), message, 0.7),
     ]);
 
     const gptAnalysis   = gptResult.status   === "fulfilled" ? gptResult.value   : `[GPT unavailable: ${(gptResult as any).reason?.message?.slice(0,100)}]`;

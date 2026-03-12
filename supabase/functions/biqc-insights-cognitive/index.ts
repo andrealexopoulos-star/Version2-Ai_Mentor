@@ -712,7 +712,7 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
       method: "POST",
       headers: { "Authorization": `Bearer ${EMERGENT_KEY}`, "Content-Type": "application/json", "X-Provider": "gemini" },
       body: JSON.stringify({
-        model: "gemini-2.5-pro",
+        model: "gemini-3.1-pro-preview",
         messages: [
           { role: "system", content: "You are a market intelligence analyst. Given this business context, provide 3 specific market insights: (1) competitive positioning, (2) industry benchmark comparison, (3) market opportunity or threat. Be specific to this exact business. Return JSON: {market_position: str, benchmark: str, opportunity_or_threat: str}" },
           { role: "user", content: buildPrioritizedContext(ctx).slice(0, 3000) },
