@@ -359,7 +359,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
               className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 inline-flex items-center gap-2"
               style={{ background: '#FF6A00', fontFamily: fontFamily.display }}
               data-testid="cmo-continue-btn">
-              Continue to Dashboard <ArrowRight className="w-4 h-4" />
+              Continue to Intelligence Platform <ArrowRight className="w-4 h-4" />
             </button>
             <p className="text-[10px] text-[#64748B] mt-3" style={{ fontFamily: fontFamily.mono }}>
               {isReady ? 'Your intelligence will sharpen as more data connects' : 'Analysis continues in the background — you\'ll be notified when ready'}
@@ -378,7 +378,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           </div>
         ) : isReady ? (
           <div className="text-center">
-            <p className="text-xs text-[#64748B] animate-pulse" style={{ fontFamily: fontFamily.mono }}>Preparing your dashboard...</p>
+            <p className="text-xs text-[#64748B] animate-pulse" style={{ fontFamily: fontFamily.mono }}>Preparing your Intelligence Platform...</p>
           </div>
         ) : null}
       </div>

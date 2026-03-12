@@ -223,7 +223,7 @@ Rules:
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gemini-3-flash-preview",
         messages: [{ role: "user", content: answerPrompt }],
         temperature: 0.3,
         max_tokens: 500,

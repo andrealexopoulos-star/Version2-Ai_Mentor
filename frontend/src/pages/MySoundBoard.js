@@ -2,6 +2,7 @@ import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
+import { supabase } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
@@ -22,7 +23,12 @@ const MySoundBoard = () => {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(() => {
+    // Check if user arrived from a proactive insight bubble
+    const prefill = sessionStorage.getItem('biqc_soundboard_prefill');
+    if (prefill) { sessionStorage.removeItem('biqc_soundboard_prefill'); return prefill; }
+    return '';
+  });
   const [loading, setLoading] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -30,6 +36,17 @@ const MySoundBoard = () => {
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [scanUsage, setScanUsage] = useState(null);
   const [recordingScans, setRecordingScans] = useState({});
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const [selectedMode, setSelectedMode] = useState('auto');
+
+  // BIQc AI Modes — branded like Gemini's Fast/Thinking/Pro
+  const BIQC_MODES = [
+    { id: 'auto',     label: 'BIQc Auto',     desc: 'Automatically selects the best AI for your query', icon: '⚡', backend_mode: 'auto' },
+    { id: 'fast',     label: 'Fast',           desc: 'Quick answers using Gemini 3 Flash',               icon: '🚀', backend_mode: 'fast' },
+    { id: 'thinking', label: 'Pro Thinking',   desc: 'Deep reasoning with o3-pro — solves complex problems', icon: '🧠', backend_mode: 'thinking' },
+    { id: 'pro',      label: 'Pro',            desc: 'Advanced analysis with Gemini 3.1 Pro (1M context)', icon: '✦', backend_mode: 'pro' },
+    { id: 'trinity',  label: 'Trinity',        desc: 'ChatGPT + Claude + Gemini in parallel — most powerful', icon: '◈', backend_mode: 'trinity' },
+  ];
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
@@ -130,15 +147,38 @@ const MySoundBoard = () => {
     setLoading(true);
 
     try {
-      const response = await apiClient.post('/soundboard/chat', {
-        message: fullMessage,
-        conversation_id: activeConversation,
-        intelligence_context: {}
-      });
+      const currentMode = BIQC_MODES.find(m => m.id === selectedMode);
 
-      const { reply, conversation_id, conversation_title, file: generatedFile } = response.data;
+      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used;
 
-      const assistantMsg = { role: 'assistant', content: reply };
+      if (selectedMode === 'trinity') {
+        // Trinity mode: call Supabase edge function (GPT + Claude + Gemini parallel)
+        const { data: { session } } = await supabase.auth.getSession();
+        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+        const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+        const triRes = await fetch(`${supabaseUrl}/functions/v1/biqc-trinity`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session?.access_token}`, 'apikey': anonKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: fullMessage }),
+        });
+        const triData = await triRes.json();
+        reply = triData.reply || triData.error || 'Trinity mode unavailable';
+        model_used = 'trinity';
+        suggested_actions = [];
+        conversation_id = activeConversation;
+        conversation_title = null;
+      } else {
+        // Standard mode — pass mode to backend for routing
+        const response = await apiClient.post('/soundboard/chat', {
+          message: fullMessage,
+          conversation_id: activeConversation,
+          intelligence_context: {},
+          mode: currentMode?.backend_mode || 'auto',
+        });
+        ({ reply, conversation_id, conversation_title, file: generatedFile, suggested_actions, intent, model_used } = response.data);
+      }
+
+      const assistantMsg = { role: 'assistant', content: reply, suggested_actions: suggested_actions || [], intent, model_used };
       if (generatedFile) assistantMsg.file = generatedFile;
       setMessages(prev => [...prev, assistantMsg]);
       
@@ -519,6 +559,28 @@ const MySoundBoard = () => {
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">
                           {message.content}
                         </p>
+                        {/* Proactive next-action suggestions */}
+                        {message.role === 'assistant' && message.suggested_actions?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {message.suggested_actions.map((action, i) => (
+                              <button key={i}
+                                onClick={() => setInput(action.label)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 flex items-center gap-1.5"
+                                style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                                <span>→</span> {action.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {/* Intent badge */}
+                        {message.role === 'assistant' && message.intent?.domain && message.intent.domain !== 'general' && (
+                          <div className="mt-2">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded"
+                              style={{ background: 'rgba(255,255,255,0.05)', color: '#4A5568', fontFamily: fontFamily.mono }}>
+                              {message.intent.domain.toUpperCase()} · {message.model_used || 'AI'}
+                            </span>
+                          </div>
+                        )}
                         {/* File download card when backend generates a file */}
                         {message.file && (
                           <a href={message.file.download_url} target="_blank" rel="noopener noreferrer"
@@ -579,6 +641,38 @@ const MySoundBoard = () => {
                   </button>
                 </div>
               )}
+              {/* BIQc Mode Selector — like Gemini's Fast/Thinking/Pro */}
+              <div className="flex items-center gap-2 px-1 mb-2 relative">
+                <button onClick={() => setShowModeMenu(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                  data-testid="soundboard-mode-selector">
+                  <span>{BIQC_MODES.find(m => m.id === selectedMode)?.icon}</span>
+                  <span>{BIQC_MODES.find(m => m.id === selectedMode)?.label}</span>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {showModeMenu && (
+                  <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
+                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                    {BIQC_MODES.map(mode => (
+                      <button key={mode.id}
+                        onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
+                        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
+                        style={{ borderBottom: mode.id !== 'trinity' ? '1px solid #1E2D3D' : 'none' }}>
+                        <span className="text-lg shrink-0">{mode.icon}</span>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                            {mode.label}
+                            {selectedMode === mode.id && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>Active</span>}
+                          </p>
+                          <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div 
                 className="flex items-end gap-3 p-3 rounded-xl"
                 style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}

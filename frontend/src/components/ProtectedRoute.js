@@ -62,7 +62,7 @@ const AccessDenied = () => (
         href="/advisor"
         className="inline-block mt-2 px-5 py-2 border border-white/15 text-white/60 text-xs tracking-wider hover:bg-white/5 transition-colors"
       >
-        Return to Dashboard
+        Return to Intelligence Platform
       </a>
     </div>
   </div>

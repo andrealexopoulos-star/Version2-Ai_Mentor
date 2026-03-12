@@ -309,7 +309,7 @@ serve(async (req) => {
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.3",
         messages: [
           { role: "system", content: EXTRACTION_PROMPT },
           { role: "user", content: `Extract the complete Business DNA from this content:\n\n${contextBlock}` },

@@ -186,7 +186,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         raw_response = await llm_chat(
             system_message=system_prompt,
             user_message=f"{context_block}OPERATOR INPUT: {message}",
-            model="gpt-4o",
+            model="gpt-5.3",
             api_key=api_key,
         )
 

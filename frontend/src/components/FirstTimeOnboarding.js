@@ -400,6 +400,72 @@ const AllDoneStep = ({ connectedList, onFinish }) => (
   </div>
 );
 
+// ── Welcome Back step (for returning users with integrations) ─────────────────
+const WelcomeBackStep = ({ firstName, connectedCount, connectedNames, onConnectMore, onContinue }) => (
+  <div className="space-y-5">
+    <div className="text-center">
+      <div className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 32px rgba(255,106,0,0.25)' }}>
+        <Zap className="w-7 h-7 text-white" />
+      </div>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        Welcome back{firstName ? `, ${firstName}` : ''}.
+      </h2>
+      <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        {connectedCount > 0
+          ? `Your intelligence engine is running with ${connectedCount} connected system${connectedCount !== 1 ? 's' : ''}${connectedNames ? ` (${connectedNames})` : ''}.`
+          : 'Your BIQc Intelligence Platform is ready.'}
+      </p>
+    </div>
+
+    <div className="rounded-xl p-4" style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>How BIQc works</p>
+      {[
+        'Connects to your business systems and reads signals continuously',
+        'Detects risks before they compound across your operations',
+        'Delivers personalised executive briefings — without you having to ask',
+      ].map((item, i) => (
+        <div key={i} className="flex items-start gap-2.5 mb-1.5">
+          <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: '#FF7A18' }} />
+          <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item}</p>
+        </div>
+      ))}
+    </div>
+
+    <div className="rounded-xl p-4" style={{ background: '#0A1018', border: '1px solid #1E2D3D' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Your data security</p>
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { icon: Lock, text: 'AES-256 encryption, at rest and in transit' },
+          { icon: Shield, text: 'Australian hosted — zero offshore' },
+          { icon: Database, text: 'Read-only — BIQc never modifies your data' },
+          { icon: RefreshCw, text: 'Revoke access instantly at any time' },
+        ].map((pt, i) => (
+          <div key={i} className="flex items-start gap-1.5">
+            <pt.icon className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#10B981' }} />
+            <p className="text-[10px] leading-snug" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{pt.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="space-y-2.5">
+      <button onClick={onContinue}
+        className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
+        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 20px rgba(255,106,0,0.25)' }}
+        data-testid="welcome-back-continue">
+        Continue to Intelligence Platform <ArrowRight className="w-4 h-4" />
+      </button>
+      <button onClick={onConnectMore}
+        className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
+        style={{ background: 'transparent', border: '1px solid #243140', color: '#9FB0C3', fontFamily: fontFamily.body }}
+        data-testid="welcome-back-connect-more">
+        <Plug className="w-3.5 h-3.5 inline mr-2" />Connect More Integrations
+      </button>
+    </div>
+  </div>
+);
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 // sessionStorage key — resets on every new browser session (every login)
@@ -414,20 +480,16 @@ export const useFirstTimeOnboarding = () => {
     : null;
 
   const [show, setShow] = useState(() => {
-    // Always show on OAuth return
     if (isOAuthReturn) return true;
-    // Show on every login (session-scoped, not permanent)
-    return true; // Always show — dismissed state tracked per-session below
+    return true;
   });
   const [emailConnectedProvider, setEmailConnectedProvider] = useState(returnProvider);
   const [dismissed, setDismissed] = useState(() => {
-    // Check if already dismissed this session
     return sessionStorage.getItem(SESSION_KEY) === '1';
   });
 
   React.useEffect(() => {
     if (isOAuthReturn) {
-      // Clean URL params
       window.history.replaceState({}, '', '/advisor');
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -441,8 +503,12 @@ export const useFirstTimeOnboarding = () => {
   return { show: show && !dismissed, dismiss, emailConnectedProvider };
 };
 
-const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null }) => {
-  const [step, setStep] = useState(initialEmailProvider ? 2 : 0);
+const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null, hasConnections = false, connectedCount = 0, connectedNames = '', firstName = '' }) => {
+  // Returning users with integrations start at 'welcome_back' step
+  const [step, setStep] = useState(() => {
+    if (hasConnections) return 'welcome_back';
+    return initialEmailProvider ? 2 : 0;
+  });
   const [connectedList, setConnectedList] = useState(initialEmailProvider ? [initialEmailProvider] : []);
   const [mergeLinkToken, setMergeLinkToken] = useState('');
 
@@ -491,10 +557,10 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null }) => {
               <span className="text-white font-bold text-[10px]">B</span>
             </div>
             <span className="text-xs font-semibold" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
-              {step === 0 ? 'Getting Started' : step === 1 ? 'Connect Email' : step === 2 ? 'Build Intelligence' : step === 3 ? 'Connect Tools' : 'Ready'}
+              {step === 'welcome_back' ? 'Welcome Back' : step === 0 ? 'Getting Started' : step === 1 ? 'Connect Email' : step === 2 ? 'Build Intelligence' : step === 3 ? 'Connect Tools' : 'Ready'}
             </span>
           </div>
-          {step !== 0 && (
+          {(step !== 0) && (
             <button onClick={handleFinish} className="p-1 rounded-lg hover:bg-white/5"
               style={{ color: '#4A5568' }} data-testid="onboarding-close">
               <X className="w-4 h-4" />
@@ -504,6 +570,15 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null }) => {
 
         {/* Step content */}
         <div className="p-5">
+          {step === 'welcome_back' && (
+            <WelcomeBackStep
+              firstName={firstName}
+              connectedCount={connectedCount}
+              connectedNames={connectedNames}
+              onContinue={handleFinish}
+              onConnectMore={() => setStep(3)}
+            />
+          )}
           {step === 0 && (
             <WelcomeStep
               onConnect={() => setStep(1)}

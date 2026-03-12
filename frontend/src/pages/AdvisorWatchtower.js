@@ -19,6 +19,7 @@ import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
 import FirstTimeOnboarding, { useFirstTimeOnboarding } from '../components/FirstTimeOnboarding';
+import { ProactiveInsightBubble } from '../components/ProactiveInsightBubble';
 
 
 /* ═══ ACTION BUTTONS ═══ */
@@ -460,13 +461,20 @@ const AdvisorWatchtower = () => {
 
   return (
     <DashboardLayout>
-      {/* First-time onboarding modal — shows once after calibration */}
+      {/* First-time onboarding modal */}
       {showOnboarding && (
         <FirstTimeOnboarding
           onClose={dismissOnboarding}
           initialEmailProvider={emailConnectedProvider}
+          hasConnections={connectedCount > 0}
+          connectedCount={connectedCount}
+          connectedNames={connectedIntegrations.slice(0, 3).join(', ')}
+          firstName={displayName !== 'there' ? displayName : ''}
         />
       )}
+
+      {/* Proactive insight bubble — polls every 3 mins, surfaces live signals */}
+      <ProactiveInsightBubble />
 
       <div className="min-h-[calc(100vh-56px)]" style={{ background: 'var(--biqc-bg)', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
 

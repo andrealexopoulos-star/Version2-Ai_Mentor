@@ -843,25 +843,25 @@ input[type="password"]::placeholder {
 /* Tailwind Base */
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 10%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 10%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 10%;
-        --primary: 217 100% 50%;
+        --background: 222 47% 6%;
+        --foreground: 210 40% 96%;
+        --card: 222 47% 10%;
+        --card-foreground: 210 40% 96%;
+        --popover: 222 47% 8%;
+        --popover-foreground: 210 40% 96%;
+        --primary: 24 100% 50%;
         --primary-foreground: 0 0% 100%;
-        --secondary: 0 0% 96%;
-        --secondary-foreground: 0 0% 10%;
-        --muted: 0 0% 96%;
-        --muted-foreground: 0 0% 45%;
-        --accent: 0 0% 96%;
-        --accent-foreground: 0 0% 10%;
+        --secondary: 222 47% 13%;
+        --secondary-foreground: 210 40% 80%;
+        --muted: 222 47% 13%;
+        --muted-foreground: 215 20% 55%;
+        --accent: 222 47% 15%;
+        --accent-foreground: 210 40% 96%;
         --destructive: 0 84% 60%;
         --destructive-foreground: 0 0% 100%;
-        --border: 0 0% 90%;
-        --input: 0 0% 90%;
-        --ring: 217 100% 50%;
+        --border: 222 47% 18%;
+        --input: 222 47% 13%;
+        --ring: 24 100% 50%;
         --radius: 0.625rem;
     }
 }

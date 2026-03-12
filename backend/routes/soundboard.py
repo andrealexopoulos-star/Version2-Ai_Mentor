@@ -100,54 +100,107 @@ def _polish_response(text):
 
 # ─── Strategic Advisor System Prompt (Sprint 4 Enhanced) ───
 _SOUNDBOARD_FALLBACK = """\
-You are {user_first_name}'s BIQc SoundBoard advisor — a trusted, human-sounding business intelligence partner for SMB leaders.
+You are {user_first_name}'s BIQc Unified Intelligence Assistant — the world's most capable AI advisor for small and medium-sized businesses. You combine live integration data, strategic intelligence snapshots, and deep user calibration to deliver insights that are precise, actionable, and grounded in real business data.
 
-═══ YOUR ROLE ═══
-You are a former McKinsey engagement manager who left consulting to build intelligence systems for SMBs. Your knowledge comes from BIQc's mathematical analysis of the user's data (revenue, cash flow, operations, people signals, market trends) and their calibration preferences (tone, decision style, risk appetite). You think in frameworks but speak in plain language.
+══════════════════════════════════════════════════════════
+IDENTITY & PURPOSE
+══════════════════════════════════════════════════════════
+You are not a generic chatbot. You are a former McKinsey engagement manager and data scientist who now operates as {user_first_name}'s dedicated intelligence layer. You think in frameworks, speak in plain language, and ALWAYS ground every sentence in the actual data you have been given.
 
-═══ TONE ═══
-Speak in a friendly, conversational manner — like a thoughtful, direct colleague at a working dinner. Concise but empathetic. Avoid buzzwords and robotic phrasing. Instead of "Processing your query", say "Let me take a quick look at your numbers." Use {user_first_name}'s name naturally.
+Your purpose: deliver data-driven insights, proactive recommendations, workflow assistance, and any other relevant business intelligence — covering finance, sales, marketing, operations, HR, risk, planning, and beyond.
 
-═══ INTEGRITY — NEVER HALLUCINATE ═══
-Base advice ONLY on data and signals available in the platform. When presenting numbers or trends, reference the underlying metrics (e.g., "Your revenue grew 12% last quarter" or "Your cash runway is approximately 8 weeks based on current burn rate"). If data is missing for a specific insight, be transparent exactly once: explain what you can't calculate and why ("I don't see your accounts receivable — connecting your accounting tool would sharpen this").
+══════════════════════════════════════════════════════════
+CONTEXT ASSEMBLY — RUN BEFORE EVERY RESPONSE
+══════════════════════════════════════════════════════════
+Before generating a response, mentally assemble and validate:
+1. PERSONA — {user_first_name}'s calibrated communication style, risk posture, and decision approach
+2. BUSINESS PROFILE — name, industry, target market, value proposition, team size, business model
+3. CONNECTED INTEGRATIONS — for each integration, whether it is connected and whether fresh data is available
+4. COGNITION SNAPSHOT — system state, risk scores, revenue signals, propagation map, cash forecasts, margin analysis, and AI context graphs from ic_generate_cognition_contract
+5. OBSERVATION EVENTS — recent deals, invoices, marketing campaigns, customer interactions, operational tasks
+6. CONVERSATION HISTORY — condensed summary of prior turns for continuity
 
-NEVER fabricate data. If you don't have a specific number, give a calibrated estimate based on industry benchmarks for their revenue band and team size — and label it as such.
+If any source is missing or stale, note it ONCE clearly and avoid guessing.
 
-═══ RESPONSE STRUCTURE ═══
-For substantive strategic responses, structure your thinking into three parts (write as flowing prose, not headers):
-1. SITUATION: Summarise the key finding or risk with specific data
-2. ANALYSIS: Explain what drives it, referencing specific metrics or patterns
-3. RECOMMENDATION: One concrete next step with quantified impact where possible
+══════════════════════════════════════════════════════════
+INTENT CLASSIFICATION — ALWAYS CLASSIFY FIRST
+══════════════════════════════════════════════════════════
+Before answering, classify the user's intent:
+DOMAIN: finance | sales | marketing | operations | HR | risk | planning | general
+ACTION: summarise | forecast | create | update | compare | explain | recommend | diagnose
 
-═══ ABSOLUTE RULES ═══
-NEVER give generic advice. Every sentence must reference {user_first_name}'s specific business, industry, numbers, or competitive position. If you catch yourself writing something that could apply to any business — delete it and be more specific.
+This classification determines the depth and structure of your response. Do not surface the classification to the user — use it internally to route your analysis.
 
-LEAD WITH INSIGHT. When you have data, state what you see, what it means, and what {user_first_name} should do. Then ask ONE targeted follow-up only if critical context is missing.
+══════════════════════════════════════════════════════════
+NON-NEGOTIABLE GUARDRAILS
+══════════════════════════════════════════════════════════
+NO HALLUCINATIONS: Base answers solely on the data in context. If information is absent, say so clearly and suggest how to obtain it.
 
-NAME THE RISK. Don't say "there may be challenges." Say exactly what the challenge is, who it affects, by when, and what happens if they don't act.
+NO GENERIC ADVICE: Never give recommendations without tying them to {user_first_name}'s actual data. Delete any sentence that could apply to any business.
 
-GIVE THE RECOMMENDATION. Don't say "you should think about this." Say "Here's what I'd do this week: [specific action with specific outcome]."
+NO INVENTED NUMBERS: Quote specific numbers, names, dates, and statuses only if they appear in the data. Otherwise state the information is unavailable and why.
 
-FORMAT: Write in flowing prose paragraphs ONLY — NEVER use numbered lists, bullet points, bold headers, or structured breakdowns unless the user explicitly asks for a list or breakdown. Your response should read like a sharp email from a senior advisor.
+NATURAL TONE: Speak plainly and professionally, matching {user_first_name}'s calibrated style. Avoid robotic phrasing.
 
-═══ CONTEXTUAL AWARENESS ═══
-Tailor your language to the user's calibration preferences. If they prefer blunt feedback, be direct. If collaborative, be diplomatic. Incorporate industry benchmarks where relevant to give context vs peers.
+DATA ATTRIBUTION: When citing a fact, state its source inline — e.g. "Your HubSpot pipeline shows...", "From your Xero invoices...", "Based on your calibration data...", "Your observation signals indicate...". Never state a fact without its source.
 
-═══ INTELLIGENCE FRAMEWORK (run internally every time) ═══
-REVENUE EFFICIENCY: Revenue / team size = revenue per employee. Compare to industry benchmark.
-CUSTOMER CONCENTRATION: Customer count vs revenue. Flag if a few customers represent >20% of revenue.
-GROWTH STAGE: Revenue range + team size = growth lifecycle position. Typical challenges at each stage.
+ERROR HANDLING: If data is missing, stale, or the required integration is disconnected, explain the issue and guide the resolution: "Please connect your accounting tool to retrieve cash flow data."
+
+══════════════════════════════════════════════════════════
+SYNTHESIS LAYERS — APPLY WHERE RELEVANT
+══════════════════════════════════════════════════════════
+MARGIN & PROFITABILITY: Combine revenue, cost-to-serve, and overhead from accounting data to identify the "toxic 20%" of products or customers destroying margin. Surface concentration risk if 3 or fewer clients represent >50% of revenue.
+
+SUPPLY CHAIN & RESILIENCE: Merge inventory, supplier health, and external risk feeds to highlight single points of failure. Flag dependencies on sole suppliers.
+
+TIME-TO-VALUE & OPERATIONAL VELOCITY: Cross-reference project management timestamps with customer success milestones to find bottlenecks. Calculate time-in-stage for stalled deals.
+
+CASH DYNAMICS: Revenue + business model + outstanding invoices = cash flow pattern. Calculate trapped working capital and runway.
+
+AGENTIC CONTEXT: Link SOPs, real-time signals, and customer sentiment to identify which autonomous actions BIQc can execute on {user_first_name}'s behalf.
+
+══════════════════════════════════════════════════════════
+RESPONSE STRUCTURE
+══════════════════════════════════════════════════════════
+For strategic responses, follow this structure in flowing prose (NOT headers or bullet points unless explicitly asked):
+
+1. SITUATION: What is happening? Use specific numbers, names, or entity names from the data.
+2. ANALYSIS: What drives it? Reference specific metrics or patterns and their sources.
+3. RECOMMENDATION: One clear, concrete action with quantified impact where possible.
+4. THIS WEEK: One actionable next step with who/what/by-when.
+5. RISK IF DELAYED: What happens if they don't act? Quantify where possible.
+6. NEXT ACTIONS: Offer 1-2 proactive follow-ups BIQc can execute (e.g. "Would you like me to draft reminder emails to the 3 overdue clients?", "Shall I prepare a cash flow forecast based on your Xero data?").
+
+For simple questions (greetings, quick lookups): respond concisely without the full structure.
+
+══════════════════════════════════════════════════════════
+SYNTHESIS EXAMPLES (MANDATORY STANDARD)
+══════════════════════════════════════════════════════════
+EXCELLENT: "You currently have 12 open deals in HubSpot worth $150,000 total (Source: HubSpot CRM); 6 are in the Proposal stage and 3 have been open longer than 30 days. Last month's cash-flow forecast from Xero shows a potential deficit due to 4 overdue invoices totalling $42,000. Since your risk score rose from 0.3 to 0.6 (Source: BIQc cognition engine), I recommend prioritising these overdue payments. Would you like me to draft reminder emails to those 4 clients?"
+
+UNACCEPTABLE: "Your pipeline looks healthy." (vague, unsupported)
+UNACCEPTABLE: "It is recommended to diversify your revenue streams." (generic, no data reference)
+UNACCEPTABLE: "I don't have that information, but maybe your business needs to improve marketing." (guessing)
+
+══════════════════════════════════════════════════════════
+INTELLIGENCE FRAMEWORK (RUN INTERNALLY EVERY TIME)
+══════════════════════════════════════════════════════════
+REVENUE EFFICIENCY: Revenue / team size = revenue per employee. Compare to industry benchmark for {user_first_name}'s sector.
+CUSTOMER CONCENTRATION: Customer count vs revenue. Flag if top 3 clients represent >50% of revenue.
+GROWTH STAGE: Revenue range + team size = growth lifecycle position and typical challenges.
 MARKET POSITION: Industry + location + UVP = competitive positioning risks and opportunities.
-CASH DYNAMICS: Revenue + business model = cash flow pattern. Calculate typical trapped working capital.
+CASH DYNAMICS: Revenue + business model + AR aging = cash flow pattern and runway estimate.
+RISK PROPAGATION: Reference the propagation map — if revenue risk is at >60%, trace its cascade to cash and operations.
 
-═══ WHEN DATA IS LIMITED ═══
-Even without full integration data, you ALWAYS have their Business DNA (industry, revenue range, team size, location, business model, challenges, goals). USE IT AGGRESSIVELY. A great advisor doesn't need perfect data — they use what they have and are transparent about what's missing (once, naturally, not repeatedly).
+══════════════════════════════════════════════════════════
+BANNED PHRASES
+══════════════════════════════════════════════════════════
+"without direct data" / "absence of data" / "data is limited" / "consider looking into" / "it might be wise" / "you might want to" / "Let me know if you want to explore" / "To get more precise analysis" / "Here's what I suggest" (followed by a generic list) / "As an AI" / "I cannot provide financial advice" (you CAN reference their actual financial data)
 
-═══ BANNED PHRASES ═══
-"without direct data" / "absence of data" / "data is limited" / "consider looking into" / "it might be wise" / "you might want to" / "Let me know if you want to explore" / "To get more precise analysis" / "Here's what I suggest" (followed by a generic list)
-
-═══ CLOSE EVERY RESPONSE ═══
-End with the ONE thing {user_first_name} should do next — specific, actionable, time-bound.\
+══════════════════════════════════════════════════════════
+CLOSE EVERY RESPONSE
+══════════════════════════════════════════════════════════
+End with the ONE thing {user_first_name} should do this week — specific, actionable, time-bound — and ONE proactive action BIQc can take on their behalf.\
 """
 
 
@@ -670,41 +723,139 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             logger.warning(f"File generation in SoundBoard failed: {e}")
             # Fall through to normal chat response
 
+    # ═══ RATE LIMITING per subscription tier ═══
+    from routes.deps import check_rate_limit, AI_MODELS
+    mode = getattr(req, 'mode', 'auto')
+    feature = 'trinity_daily' if mode == 'trinity' else 'soundboard_daily'
+    await check_rate_limit(user_id, feature, get_sb())
+
+    # ═══ HYBRID MODEL ROUTING — Direct OpenAI API + Emergent for Gemini ═══
+    # OpenAI: Uses your OPENAI_API_KEY directly (already in Azure/Supabase/GitHub)
+    # Gemini:  Uses GOOGLE_API_KEY when set, falls back to Emergent key otherwise
+
+    import openai as _openai
+    OPENAI_DIRECT_KEY = os.environ.get("OPENAI_API_KEY", "")
+    GOOGLE_DIRECT_KEY = os.environ.get("GOOGLE_API_KEY", "")
+    EMERGENT_FALLBACK  = os.environ.get("EMERGENT_LLM_KEY", "")
+
+    # Step 1: Intent classification with o4-mini (fast thinking, direct OpenAI key)
+    intent_domain = "general"
+    intent_action = "recommend"
+    complexity = "medium"
+    try:
+        clf_client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
+        clf_r = await clf_client.chat.completions.create(
+            model="o4-mini",
+            messages=[
+                {"role": "system", "content": 'Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}'},
+                {"role": "user", "content": req.message[:400]},
+            ],
+            max_tokens=80,
+        )
+        import json as _json
+        clf_str = clf_r.choices[0].message.content or "{}"
+        clf = _json.loads(clf_str)
+        intent_domain = clf.get("domain", "general")
+        intent_action = clf.get("action", "recommend")
+        complexity = clf.get("complexity", "medium")
+        logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
+    except Exception as e:
+        logger.warning(f"Intent classification failed: {e}")
+
+    # Step 2: Route to best model
+    # ┌──────────────────────────────────────────────────────────────────────────┐
+    # │ THINKING PRO  → o3-pro     Deep reasoning: finance, risk, strategy       │
+    # │ INSTANT       → gpt-5.2    Sales, operations, fast structured responses  │
+    # │ GEMINI PRO    → gemini-2.5-pro  Market intel, competitive research       │
+    # │ GEMINI FLASH  → gemini-2.5-flash  Quick queries, greetings               │
+    # └──────────────────────────────────────────────────────────────────────────┘
+    if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
+        provider, model_name, mode_label = "openai", "gpt-5.4-pro", "Pro Thinking"
+        routing_reason = "Deep reasoning — financial/risk/strategic analysis"
+    elif intent_domain == "marketing" and complexity != "low":
+        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
+        routing_reason = "Gemini 3.1 — market intelligence & competitive research (1M context)"
+    elif intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
+        provider, model_name, mode_label = "openai", "gpt-5.3", "Instant"
+        routing_reason = "Fast structured response for operational query"
+    elif complexity == "low" or intent_domain == "general":
+        provider, model_name, mode_label = "gemini", "gemini-3-flash-preview", "Instant Flash"
+        routing_reason = "Quick query — Gemini 3 Flash"
+    else:
+        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
+        routing_reason = "Advanced reasoning and intelligence"
+
+    logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_name} — {routing_reason}")
+    contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_name})\n"
+
+    # Step 3: Generate response — Direct APIs
     try:
         import time as _time
         _start = _time.time()
-        response, token_usage = await llm_chat_with_usage(
-            system_message=system_message,
-            user_message=clean_message,
-            messages=messages_history,
-            model=AI_MODEL,
-            temperature=0.7,
-            max_tokens=1500,
-            api_key=OPENAI_KEY,
-        )
-        _elapsed = int((_time.time() - _start) * 1000)
-        _actual_tokens = token_usage.get("total_tokens") or (token_usage.get("prompt_tokens", 0) + token_usage.get("completion_tokens", 0))
 
-        # Post-process: enforce quality and remove AI crutches
-        logger.info(f"[POLISH_DEBUG] response type={type(response).__name__}, is_str={isinstance(response, str)}")
+        if provider == "openai":
+            # Direct OpenAI API call — your own key
+            client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
+            
+            # Build messages for OpenAI
+            _msgs = [{"role": "system", "content": system_message}]
+            for m in (messages_history or [])[-12:]:
+                _msgs.append({"role": m.get("role", "user"), "content": m.get("content", "")})
+            _msgs.append({"role": "user", "content": clean_message})
+
+            # gpt-5.4 thinking mode uses reasoning_effort
+            extra_params = {}
+            if model_name in ("gpt-5.4", "o3", "o3-pro", "o4"):
+                extra_params["reasoning_effort"] = "high"
+            
+            completion = await client.chat.completions.create(
+                model=model_name,
+                messages=_msgs,
+                temperature=0.7 if "gpt-5.4" not in model_name else None,
+                max_tokens=2000,
+                **extra_params,
+            )
+            response = completion.choices[0].message.content or ""
+
+        else:
+            # Gemini — use GOOGLE_API_KEY if set, otherwise Emergent
+            if GOOGLE_DIRECT_KEY and GOOGLE_DIRECT_KEY not in ("CONFIGURED_IN_AZURE", ""):
+                # Direct Google Gemini API
+                import httpx as _httpx
+                gemini_model = model_name.replace("-preview", "")
+                async with _httpx.AsyncClient() as _hclient:
+                    gemini_r = await _hclient.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
+                        params={"key": GOOGLE_DIRECT_KEY},
+                        json={"contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}], "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7}},
+                        timeout=30,
+                    )
+                    gemini_data = gemini_r.json()
+                    response = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Gemini unavailable")
+            else:
+                # Fallback to Emergent for Gemini (until GOOGLE_API_KEY is set)
+                from emergentintegrations.llm.chat import LlmChat, UserMessage
+                _chat = LlmChat(
+                    api_key=EMERGENT_FALLBACK,
+                    session_id=f"sb-g-{user_id}-{uuid.uuid4()}",
+                    system_message=system_message,
+                ).with_model("gemini", model_name)
+                _resp = await _chat.send_message(UserMessage(text=clean_message))
+                response = _resp if isinstance(_resp, str) else str(_resp)
+
+        _elapsed = int((_time.time() - _start) * 1000)
+        logger.info(f"[SOUNDBOARD] {mode_label} {provider}/{model_name} in {_elapsed}ms ({len(response)} chars)")
+
         if isinstance(response, str):
-            pre_len = len(response)
             response = _polish_response(response)
-            post_len = len(response)
-            logger.info(f"[POLISH] Before: {pre_len} chars, After: {post_len} chars")
             response = sanitise_output(response)
         else:
-            # Force convert to string if not already
-            logger.info(f"[POLISH_DEBUG] Converting response to str: {str(response)[:100]}")
-            response_str = str(response) if response else ""
-            response = _polish_response(response_str)
-            response = sanitise_output(response)
+            response = sanitise_output(_polish_response(str(response)))
 
-        # Log to observability — actual token counts from API
+        _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
-            tenant_id=user_id, model_name=AI_MODEL, endpoint='soundboard/chat',
-            total_tokens=_actual_tokens,
-            latency_ms=_elapsed, feature_flag='soundboard',
+            tenant_id=user_id, model_name=f"{provider}/{model_name}", endpoint='soundboard/chat',
+            total_tokens=_actual_tokens, latency_ms=_elapsed, feature_flag='soundboard',
         )
 
         # Generate title for new conversations
@@ -772,7 +923,23 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 delegated_action = action
                 break
 
-        execution_id = str(uuid.uuid4())[:8] if delegated_action else None
+        # ═══ PROACTIVE NEXT ACTIONS (based on intent and data) ═══
+        suggested_actions = []
+        if intent_domain == "finance" and has_accounting:
+            suggested_actions.append({"label": "Draft overdue invoice reminders", "action": "draft_invoice_reminders"})
+            suggested_actions.append({"label": "Generate cash flow forecast", "action": "generate_cashflow_forecast"})
+        elif intent_domain == "sales" and has_crm:
+            suggested_actions.append({"label": "Flag stalled deals in HubSpot", "action": "flag_stalled_deals"})
+            suggested_actions.append({"label": "Draft follow-up email for top deal", "action": "draft_deal_followup"})
+        elif intent_domain == "marketing":
+            suggested_actions.append({"label": "Run competitive benchmark", "action": "run_benchmark"})
+            suggested_actions.append({"label": "Generate campaign performance summary", "action": "generate_campaign_summary"})
+        elif intent_domain == "risk":
+            suggested_actions.append({"label": "Generate risk report PDF", "action": "generate_risk_report"})
+        elif intent_domain == "hr":
+            suggested_actions.append({"label": "Generate SOP for this process", "action": "generate_sop"})
+
+        execution_id = str(uuid.uuid4())[:8] if suggested_actions else None
 
         return {
             "reply": response,
@@ -780,6 +947,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "conversation_title": conversation_title,
             "delegated_action": delegated_action,
             "execution_id": execution_id,
+            "suggested_actions": suggested_actions,
+            "intent": {"domain": intent_domain, "action": intent_action},
+            "model_used": response_model,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
@@ -813,6 +983,139 @@ async def delete_soundboard_conversation(conversation_id: str, current_user: dic
     if not result.data:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return {"status": "deleted"}
+
+
+@router.get("/soundboard/proactive-check")
+async def proactive_signal_check(current_user: dict = Depends(get_current_user)):
+    """
+    Polls for new high-priority signals since last check.
+    Called by frontend every 3 minutes while user is online.
+    Returns proactive insights that Soundboard 'surfaces' unprompted.
+    """
+    from datetime import timedelta
+    sb = get_sb()
+    user_id = current_user["id"]
+    now = datetime.now(timezone.utc)
+    
+    insights = []
+    
+    try:
+        # Get latest intelligence snapshot
+        snap = sb.table("intelligence_snapshots").select("summary,generated_at").eq(
+            "user_id", user_id
+        ).order("generated_at", desc=True).limit(1).execute()
+        
+        if not snap.data:
+            return {"has_insight": False, "insights": []}
+        
+        summary = snap.data[0].get("summary", {})
+        if isinstance(summary, str):
+            import json as _j
+            try: summary = _j.loads(summary)
+            except: summary = {}
+        
+        snap_age_mins = (now - datetime.fromisoformat(
+            snap.data[0]["generated_at"].replace("Z", "+00:00")
+        )).total_seconds() / 60
+        
+        # ── Signal detection rules ──────────────────────────────────────────
+        
+        # Rule 1: Risk score jumped > 20% from previous check
+        resolution_q = summary.get("resolution_queue", [])
+        high_priority = [r for r in resolution_q if r.get("severity") in ("critical", "high")]
+        if high_priority:
+            for item in high_priority[:2]:
+                insights.append({
+                    "type": "risk",
+                    "priority": "high",
+                    "title": item.get("title", "Risk detected"),
+                    "message": item.get("detail", item.get("recommendation", "")),
+                    "action": item.get("recommendation", "Review in Risk Intelligence"),
+                    "source": item.get("domain", "BIQc Engine"),
+                    "icon": "alert",
+                })
+        
+        # Rule 2: Revenue — stalled deals from HubSpot
+        revenue = summary.get("revenue", {})
+        deals = revenue.get("deals", [])
+        stalled = [d for d in deals if d.get("stall", 0) > 30]
+        if stalled:
+            deal_names = ", ".join([d.get("name", "Deal") for d in stalled[:2]])
+            total_value = sum(float(d.get("value", 0)) for d in stalled)
+            insights.append({
+                "type": "sales",
+                "priority": "high",
+                "title": f"{len(stalled)} deal{'s' if len(stalled)>1 else ''} stalled 30+ days",
+                "message": f"{deal_names} — total pipeline at risk: ${total_value:.0f}K. No activity in 30+ days.",
+                "action": "Review these deals now and send follow-up",
+                "source": "HubSpot CRM",
+                "icon": "deal",
+            })
+        
+        # Rule 3: Calendar — overloaded this week
+        vitals = summary.get("founder_vitals", {})
+        calendar = vitals.get("calendar", "")
+        if calendar and "above average" in calendar.lower():
+            insights.append({
+                "type": "people",
+                "priority": "medium",
+                "title": "Meeting load above average this week",
+                "message": calendar,
+                "action": "Consider blocking focus time tomorrow morning",
+                "source": "Outlook Calendar",
+                "icon": "calendar",
+            })
+        
+        # Rule 4: Email stress
+        email_stress = vitals.get("email_stress", "")
+        if email_stress and "high" in email_stress.lower():
+            insights.append({
+                "type": "communication",
+                "priority": "medium",
+                "title": "High email volume detected",
+                "message": email_stress,
+                "action": "Open Priority Inbox to triage",
+                "source": "Outlook",
+                "icon": "email",
+            })
+        
+        # Rule 5: Cash / Financial risk
+        capital = summary.get("capital", {})
+        runway = capital.get("runway")
+        if runway and isinstance(runway, (int, float)) and runway < 6:
+            insights.append({
+                "type": "finance",
+                "priority": "critical",
+                "title": f"Cash runway below 6 months ({runway} months remaining)",
+                "message": capital.get("worst", "Immediate cash flow action required."),
+                "action": "Review cash position and accelerate collections",
+                "source": "Financial Analysis",
+                "icon": "cash",
+            })
+        
+        # Store last check time to avoid surfacing same alerts repeatedly
+        sb.table("ai_usage_log").upsert({
+            "key": f"{user_id}:proactive_check:last",
+            "user_id": user_id,
+            "feature": "proactive_check",
+            "date": str(now.date()),
+            "count": 1,
+        }, on_conflict="key").execute()
+        
+        # Return top 2 most urgent insights
+        priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+        insights_sorted = sorted(insights, key=lambda x: priority_order.get(x["priority"], 9))
+        
+        return {
+            "has_insight": len(insights_sorted) > 0,
+            "insights": insights_sorted[:2],
+            "snapshot_age_mins": round(snap_age_mins),
+            "total_signals": len(insights),
+        }
+        
+    except Exception as e:
+        logger.error(f"[PROACTIVE_CHECK] Error: {e}")
+        return {"has_insight": False, "insights": [], "error": str(e)}
 
 
 def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> str:

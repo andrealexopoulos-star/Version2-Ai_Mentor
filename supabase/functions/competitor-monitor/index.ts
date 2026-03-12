@@ -88,7 +88,7 @@ async function analyseChanges(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5.3",
         messages: [
           {
             role: "system",
@@ -118,7 +118,7 @@ Be factual. No fabrication.`,
       await sb.from("usage_tracking").insert({
         function_name: "competitor-monitor",
         api_provider: "openai",
-        model: "gpt-4o-mini",
+        model: "gpt-5.3",
         tokens_in: usage.prompt_tokens || 0,
         tokens_out: usage.completion_tokens || 0,
         cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,

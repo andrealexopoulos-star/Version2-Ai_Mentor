@@ -171,7 +171,7 @@ For each email return EXACTLY this JSON structure:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Analyze these ${emails.length} emails and return a JSON array:\n\n${emailSummary}` },
@@ -231,7 +231,7 @@ async function persistResults(sb: any, userId: string, provider: string, classif
     priority_level: e.priority_level,
     reason: e.reason,
     suggested_action: e.suggested_action,
-    ai_model: "gpt-4o-mini",
+    ai_model: "gemini-3-flash-preview",
     analyzed_at: new Date().toISOString(),
   }));
 
