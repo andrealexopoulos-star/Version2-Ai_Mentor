@@ -12,6 +12,7 @@ env:
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
@@ -21,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -31,7 +32,7 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build & push frontend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.frontend
@@ -55,7 +56,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -79,7 +80,7 @@ jobs:
           EOF
 
       - name: Build & push backend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.backend
@@ -99,7 +100,7 @@ jobs:
 
     steps:
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -151,8 +152,32 @@ jobs:
 
       - name: Smoke test backend health
         run: |
-          curl --fail --silent --show-error https://biqc.thestrategysquad.com/api/health > /tmp/backend_health.json
-          cat /tmp/backend_health.json
+          for i in $(seq 1 12); do
+            if curl --fail --silent --show-error https://biqc.thestrategysquad.com/api/health > /tmp/backend_health.json; then
+              echo "Backend health check passed on attempt ${i}"
+              cat /tmp/backend_health.json
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Backend health check failed after retries"
+              exit 1
+            fi
+            echo "Backend not ready yet (attempt ${i}) — retrying in 10s"
+            sleep 10
+          done
+
+      - name: Smoke test frontend + API routing
+        run: |
+          curl --fail --silent --show-error https://biqc.thestrategysquad.com > /tmp/frontend_home.html
+          grep -qi "BIQc" /tmp/frontend_home.html
+
+          API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" https://biqc.thestrategysquad.com/api/user/integration-status)
+          echo "integration-status probe HTTP ${API_CODE}"
+          if [ "$API_CODE" -ne 401 ] && [ "$API_CODE" -ne 403 ]; then
+            echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
+            cat /tmp/api_probe.json
+            exit 1
+          fi
 
       # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
       - name: Lock Supabase site_url to production

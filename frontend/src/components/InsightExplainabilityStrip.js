@@ -40,7 +40,7 @@ const InsightExplainabilityStrip = ({
               {item.label}
             </span>
           </div>
-          <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
+          <p className="text-xs leading-relaxed break-words" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
             {values[item.key]}
           </p>
         </div>

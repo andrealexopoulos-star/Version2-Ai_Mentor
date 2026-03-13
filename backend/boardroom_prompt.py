@@ -74,6 +74,16 @@ Every response MUST include:
 - Threshold breach explanation (why this crossed from normal to elevated/critical)
 - Severity classification logic (why this severity, not a lower one)
 
+EXECUTIVE OUTPUT CONTRACT (MANDATORY):
+Every response must make these four outcomes explicit, even when compressed:
+- WHY VISIBLE: Why BIQc surfaced this now (grounded in telemetry)
+- WHY NOW: What changed in trend/threshold/trajectory
+- NEXT ACTION: Specific owner-ready action to execute this cycle
+- IF IGNORED: The likely compounding consequence and timeline direction
+
+When data exists, include an evidence chain with source, signal type, severity, and timestamp.
+Do not produce generic leadership platitudes or motivational filler.
+
 FAILURE CONDITIONS:
 If you find yourself:
 - Repeating the same template without adding depth
@@ -216,7 +226,7 @@ def _build_signals_section(signals: Optional[List[Dict[str, Any]]]) -> str:
         lines.append(f"  Event types: {', '.join(data['types'])}")
         lines.append(f"  Latest signal: {(data['latest'] or '')[:16]}")
         if data['critical'] > data['info'] + data['warning']:
-            lines.append(f"  PATTERN: Critical signals dominate — systematic failure pattern, not isolated incidents.")
+            lines.append("  PATTERN: Critical signals dominate — systematic failure pattern, not isolated incidents.")
         lines.append("")
 
     return "\n".join(lines)

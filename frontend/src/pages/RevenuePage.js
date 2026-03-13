@@ -12,6 +12,7 @@ import { PageLoadingState, PageErrorState } from '../components/PageStateCompone
 import { fontFamily } from '../design-system/tokens';
 import { Link, useNavigate } from 'react-router-dom';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 
 const Panel = ({ children, className = '' }) => (
@@ -88,6 +89,8 @@ const RevenuePage = () => {
   const crmConnected = !!crmIntegration;
   const accountingConnected = !!accountingIntegration;
   const integrationResolved = !integrationLoading && !!integrationStatus;
+  const totalConnectedSystems = integrationStatus?.canonical_truth?.total_connected || 0;
+  const hasAnyConnectedSystem = totalConnectedSystems > 0;
   const hasDeals = deals && deals.length > 0;
   const hasFinancials = financials && financials.connected;
   const totalPipeline = hasDeals ? deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) : null;
@@ -147,6 +150,19 @@ const RevenuePage = () => {
       : 'Without connected data, hidden revenue risks stay invisible until they become urgent.',
   };
 
+  const actionOwnership = {
+    owner: stalledCount > 0 ? 'Sales lead' : topClientPct > 40 ? 'Founder + sales lead' : 'Revenue operations owner',
+    deadline: stalledCount > 0 ? 'Next 48 hours' : 'By end of this week',
+    checkpoint: stalledCount > 0
+      ? `Reduce stalled deals from ${stalledCount} before next pipeline review.`
+      : topClientPct > 40
+        ? `Lower concentration from ${topClientPct}% by expanding top-of-funnel coverage.`
+        : 'Lock one best-case lever and one downside hedge in this cycle.',
+    successMetric: hasDeals
+      ? `Win rate ${winRate ?? '—'}% · active deals ${activeDeals ?? 0}`
+      : 'Connect CRM + Accounting to activate measurable revenue KPIs',
+  };
+
   const TABS = [
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'scenarios', label: 'Scenarios' },
@@ -179,7 +195,8 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=crm')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="revenue-connect-crm-button">
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
@@ -198,7 +215,8 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=financial')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="revenue-connect-accounting-button">
                   <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
                 </button>
               )}
@@ -215,12 +233,29 @@ const RevenuePage = () => {
           testIdPrefix="revenue-explainability"
         />
 
+        <ActionOwnershipCard
+          title="Revenue execution owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="revenue-action-ownership"
+        />
+
         {/* Sync progress bar */}
-        {(loading || syncProgress < 100) && (
+        {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>
-                {integrationLoading ? 'Verifying connected systems…' : syncProgress < 50 ? 'Connecting to data sources…' : syncProgress < 90 ? 'Importing pipeline data…' : 'Finalising…'}
+                {integrationLoading && !integrationResolved
+                  ? 'Verifying connected systems…'
+                  : !hasAnyConnectedSystem
+                    ? 'Waiting for connected CRM/accounting systems…'
+                    : syncProgress < 50
+                      ? 'Syncing connected revenue sources…'
+                      : syncProgress < 90
+                        ? 'Importing pipeline and financial signals…'
+                        : 'Finalising revenue intelligence…'}
               </span>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
             </div>

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -25,11 +26,69 @@ def parse_json_field(value: Any) -> Optional[Dict[str, Any]]:
     return None
 
 
+def normalize_category(raw_category: Any, provider: Any = None, integration_slug: Any = None) -> str:
+    raw = str(raw_category or "").strip().lower()
+    provider_name = str(provider or "").strip().lower()
+    slug = str(integration_slug or "").strip().lower()
+
+    alias_map = {
+        "financial": "accounting",
+        "finance": "accounting",
+        "accountancy": "accounting",
+        "mail": "email",
+        "messaging": "email",
+    }
+    raw = alias_map.get(raw, raw)
+
+    if raw:
+        return raw
+
+    combined = f"{provider_name} {slug}".strip()
+    if any(k in combined for k in ("xero", "quickbooks", "netsuite", "sage")):
+        return "accounting"
+    if any(k in combined for k in ("hubspot", "salesforce", "pipedrive", "zoho", "crm")):
+        return "crm"
+    if any(k in combined for k in ("outlook", "gmail", "mail", "email")):
+        return "email"
+    return "unknown"
+
+
+def merge_row_is_connected(row: Dict[str, Any]) -> bool:
+    status_values = {
+        str(row.get("status") or "").strip().lower(),
+        str(row.get("sync_status") or "").strip().lower(),
+        str(row.get("connection_status") or "").strip().lower(),
+        str(row.get("state") or "").strip().lower(),
+    }
+    positive_status = {"connected", "active", "synced", "complete", "ok", "healthy"}
+    negative_status = {"disconnected", "deleted", "revoked", "inactive", "failed", "error"}
+
+    has_auth_artifact = bool(
+        row.get("merge_account_id")
+        or row.get("account_token")
+        or row.get("connected_at")
+        or row.get("connected") is True
+        or row.get("is_connected") is True
+        or row.get("active") is True
+    )
+
+    if any(s in positive_status for s in status_values):
+        return True
+
+    if any(s in negative_status for s in status_values) and not has_auth_artifact:
+        return False
+
+    return has_auth_artifact
+
+
 def email_row_is_connected(row: Dict[str, Any]) -> bool:
     status = str(row.get("status") or row.get("sync_status") or "").strip().lower()
     return (
         row.get("connected") is True
         or row.get("is_connected") is True
+        or row.get("active") is True
+        or bool(row.get("access_token"))
+        or bool(row.get("refresh_token"))
         or status in {"connected", "active", "complete", "synced"}
         or bool(row.get("connected_at"))
     )
@@ -37,54 +96,105 @@ def email_row_is_connected(row: Dict[str, Any]) -> bool:
 
 def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
     integrations: List[Dict[str, Any]] = []
+    dedupe: Dict[str, Dict[str, Any]] = {}
+
+    def upsert_integration(item: Dict[str, Any]):
+        category = normalize_category(item.get("category"), item.get("provider"), item.get("integration_slug"))
+        item["category"] = category
+        provider_key = str(item.get("provider") or item.get("integration_name") or category).strip().lower()
+        key = f"{category}:{provider_key}"
+        existing = dedupe.get(key)
+        if not existing:
+            dedupe[key] = item
+            return
+
+        existing_connected_at = existing.get("connected_at") or ""
+        incoming_connected_at = item.get("connected_at") or ""
+        if incoming_connected_at >= existing_connected_at:
+            dedupe[key] = {**existing, **item}
 
     try:
-        merge_result = sb.table("integration_accounts").select(
-            "provider, category, connected_at, created_at, merge_account_id, account_token"
-        ).eq("user_id", user_id).execute()
+        merge_result = sb.table("integration_accounts").select("*").eq("user_id", user_id).execute()
         for row in (merge_result.data or []):
-            category = row.get("category") or "unknown"
-            if category == "email":
+            category = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
+            if not merge_row_is_connected(row):
                 continue
-            if not (row.get("merge_account_id") or row.get("account_token") or row.get("connected_at")):
-                continue
-            integrations.append({
+
+            provider_label = row.get("provider") or row.get("integration_slug") or category
+            upsert_integration({
                 "integration_name": row.get("provider") or category,
-                "provider": row.get("provider") or category,
+                "provider": provider_label,
                 "category": category,
                 "connected": True,
                 "connected_at": row.get("connected_at") or row.get("created_at"),
+                "updated_at": row.get("updated_at"),
                 "account_token": row.get("account_token"),
                 "merge_account_id": row.get("merge_account_id"),
+                "integration_slug": row.get("integration_slug"),
             })
     except Exception as e:
         logger.warning(f"[live-truth] merge integration lookup failed: {e}")
 
     try:
-        email_result = sb.table("email_connections").select(
-            "provider, sync_status, connected, is_connected, connected_at, updated_at, connected_email"
-        ).eq("user_id", user_id).execute()
+        email_result = sb.table("email_connections").select("*").eq("user_id", user_id).execute()
         for row in (email_result.data or []):
             if not email_row_is_connected(row):
                 continue
             provider_raw = (row.get("provider") or "email").lower()
-            integrations.append({
+            upsert_integration({
                 "integration_name": provider_raw,
                 "provider": {"outlook": "Microsoft Outlook", "gmail": "Gmail"}.get(provider_raw, provider_raw.title()),
                 "category": "email",
                 "connected": True,
                 "connected_at": row.get("connected_at") or row.get("updated_at"),
                 "connected_email": row.get("connected_email"),
+                "updated_at": row.get("updated_at"),
                 "records_count": 0,
             })
     except Exception as e:
         logger.warning(f"[live-truth] email integration lookup failed: {e}")
 
+    try:
+        token_result = sb.table("outlook_oauth_tokens").select("*").eq("user_id", user_id).execute()
+        now_utc = datetime.now(timezone.utc)
+        for row in (token_result.data or []):
+            if not email_row_is_connected(row):
+                continue
+
+            provider_raw = str(row.get("provider") or "outlook").lower()
+            expires_at = row.get("expires_at")
+            expired = False
+            if expires_at:
+                try:
+                    expires_dt = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+                    expired = expires_dt <= now_utc and not row.get("refresh_token")
+                except Exception:
+                    expired = False
+
+            if expired:
+                continue
+
+            upsert_integration({
+                "integration_name": provider_raw,
+                "provider": {"outlook": "Microsoft Outlook", "gmail": "Gmail"}.get(provider_raw, provider_raw.title()),
+                "category": "email",
+                "connected": True,
+                "connected_at": row.get("updated_at") or row.get("created_at"),
+                "connected_email": row.get("microsoft_email") or row.get("email"),
+                "updated_at": row.get("updated_at"),
+                "records_count": 0,
+            })
+    except Exception:
+        # Optional table in some environments
+        pass
+
+    integrations = list(dedupe.values())
+
     canonical_truth = {
-        "crm_connected": any(i.get("category") == "crm" and i.get("connected") for i in integrations),
-        "accounting_connected": any(i.get("category") == "accounting" and i.get("connected") for i in integrations),
-        "email_connected": any(i.get("category") == "email" and i.get("connected") for i in integrations),
-        "hris_connected": any(i.get("category") == "hris" and i.get("connected") for i in integrations),
+        "crm_connected": any(normalize_category(i.get("category")) == "crm" and i.get("connected") for i in integrations),
+        "accounting_connected": any(normalize_category(i.get("category")) == "accounting" and i.get("connected") for i in integrations),
+        "email_connected": any(normalize_category(i.get("category")) == "email" and i.get("connected") for i in integrations),
+        "hris_connected": any(normalize_category(i.get("category")) == "hris" and i.get("connected") for i in integrations),
         "total_connected": len([i for i in integrations if i.get("connected")]),
     }
 

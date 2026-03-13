@@ -49,6 +49,32 @@ const mergeCanonicalStatus = (primary, fallback) => {
   return merged;
 };
 
+const deriveFromSnapshot = (snapshotPayload) => {
+  const integrations = snapshotPayload?.cognitive?.integrations || {};
+  const crm = Boolean(integrations.crm);
+  const accounting = Boolean(integrations.accounting);
+  const email = Boolean(integrations.email);
+  const connected = [
+    crm && { integration_name: 'crm', category: 'crm', connected: true, provider: 'CRM' },
+    accounting && { integration_name: 'accounting', category: 'accounting', connected: true, provider: 'Accounting' },
+    email && { integration_name: 'email', category: 'email', connected: true, provider: 'Email' },
+  ].filter(Boolean);
+
+  return {
+    integrations: connected,
+    canonical_truth: {
+      crm_connected: crm,
+      accounting_connected: accounting,
+      email_connected: email,
+      hris_connected: false,
+      total_connected: connected.length,
+      live_signal_count: snapshotPayload?.cognitive?.live_signal_count || 0,
+      last_signal_at: null,
+    },
+    total_connected: connected.length,
+  };
+};
+
 export const useIntegrationStatus = () => {
   const { session, authState } = useSupabaseAuth();
   const [status, setStatus] = useState(null);
@@ -58,14 +84,23 @@ export const useIntegrationStatus = () => {
 
   const fetch = useCallback(async () => {
     try {
-      const [primary, fallback] = await Promise.allSettled([
+      const [primary, fallback, snapshot] = await Promise.allSettled([
         apiClient.get('/user/integration-status'),
         apiClient.get('/integrations/merge/connected'),
+        apiClient.get('/snapshot/latest'),
       ]);
 
       const primaryData = primary.status === 'fulfilled' ? primary.value.data : null;
       const fallbackData = fallback.status === 'fulfilled' ? fallback.value.data : null;
-      const resolved = mergeCanonicalStatus(primaryData, fallbackData);
+      const snapshotData = snapshot.status === 'fulfilled' ? snapshot.value.data : null;
+
+      let resolved = mergeCanonicalStatus(primaryData, fallbackData);
+      if (!resolved) {
+        resolved = deriveFromSnapshot(snapshotData);
+      } else if (snapshotData) {
+        resolved = mergeCanonicalStatus(resolved, deriveFromSnapshot(snapshotData));
+      }
+
       setStatus(resolved);
       setError(null);
     } catch (e) {

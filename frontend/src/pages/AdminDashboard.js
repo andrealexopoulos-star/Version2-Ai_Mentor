@@ -151,6 +151,17 @@ const AdminDashboard = () => {
       toast.error('Failed to reset usage');
     } finally { setRateLimitSaving(false); }
   };
+  const resetRateOverrides = async () => {
+    if (!selectedUser || !window.confirm('Reset this user to tier default rate limits?')) return;
+    setRateLimitSaving(true);
+    try {
+      const res = await apiClient.delete(`/admin/users/${selectedUser}/rate-limits`);
+      setRateLimitDetail(res.data);
+      toast.success('Rate limit overrides cleared');
+    } catch {
+      toast.error('Failed to reset rate limits');
+    } finally { setRateLimitSaving(false); }
+  };
 
   const filteredUsers = users.filter(u => !search || [u.email, u.full_name, u.company_name].some(v => (v || '').toLowerCase().includes(search.toLowerCase())));
   const su = users.find(u => u.id === selectedUser);
@@ -313,9 +324,12 @@ const AdminDashboard = () => {
                             </div>
                           );
                         })}
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           <button onClick={saveRateLimits} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: B }} data-testid="admin-save-rate-limits-btn">
                             {rateLimitSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gauge className="w-3.5 h-3.5" />} Save Limits
+                          </button>
+                          <button onClick={resetRateOverrides} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30', fontFamily: B }} data-testid="admin-reset-rate-overrides-btn">
+                            <RefreshCw className="w-3.5 h-3.5" /> Reset to Tier
                           </button>
                           <button onClick={resetMonthlyUsage} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F620', fontFamily: B }} data-testid="admin-reset-usage-btn">
                             <RefreshCw className="w-3.5 h-3.5" /> Reset Month Usage

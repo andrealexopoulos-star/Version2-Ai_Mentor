@@ -10,6 +10,7 @@ import { fontFamily } from '../design-system/tokens';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -57,6 +58,8 @@ const OperationsPage = () => {
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
+  const totalConnectedSystems = integrationStatus?.canonical_truth?.total_connected || 0;
+  const hasAnyConnectedSystem = totalConnectedSystems > 0;
   const integrationResolved = !integrationLoading && !!integrationStatus;
   const crmIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'crm');
   const acctIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'accounting');
@@ -99,6 +102,15 @@ const OperationsPage = () => {
       : 'Without connected workflow data, operational risks remain undetected until outcomes deteriorate.',
   };
 
+  const actionOwnership = {
+    owner: exec.bottleneck ? 'Operations manager' : 'Delivery lead',
+    deadline: exec.sla_breaches > 0 ? 'Within 24 hours' : 'By end of this week',
+    checkpoint: exec.bottleneck
+      ? `Unblock bottleneck: ${String(exec.bottleneck).slice(0, 80)}${String(exec.bottleneck).length > 80 ? '…' : ''}`
+      : 'Run overdue-task cleanup and confirm clear queue ownership.',
+    successMetric: `SLA breaches ${exec.sla_breaches ?? '—'} · task aging ${exec.task_aging != null ? `${exec.task_aging}%` : '—'}`,
+  };
+
   return (
     <DashboardLayout>
       <EnterpriseContactGate featureName="Delivery & Operations">
@@ -126,7 +138,8 @@ const OperationsPage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=crm')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="operations-connect-crm-button">
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
@@ -143,7 +156,8 @@ const OperationsPage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=financial')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="operations-connect-accounting-button">
                   <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
                 </button>
               )}
@@ -160,12 +174,27 @@ const OperationsPage = () => {
           testIdPrefix="operations-explainability"
         />
 
+        <ActionOwnershipCard
+          title="Operations execution owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="operations-action-ownership"
+        />
+
         {/* Sync progress bar */}
-        {(loading || syncProgress < 100) && (
+        {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[#3B82F6]" style={{ fontFamily: fontFamily.mono }}>
-                {integrationLoading ? 'Verifying connected systems…' : syncProgress < 50 ? 'Loading operational data…' : 'Analysing workflows and SLA status…'}
+                {integrationLoading && !integrationResolved
+                  ? 'Verifying connected systems…'
+                  : !hasAnyConnectedSystem
+                    ? 'Waiting for connected operations systems…'
+                    : syncProgress < 50
+                      ? 'Syncing operational data…'
+                      : 'Analysing workflows and SLA status…'}
               </span>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
             </div>

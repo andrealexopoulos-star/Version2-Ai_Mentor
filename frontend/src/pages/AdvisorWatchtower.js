@@ -20,6 +20,7 @@ import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
 import FirstTimeOnboarding, { useFirstTimeOnboarding } from '../components/FirstTimeOnboarding';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 
 /* ═══ ACTION BUTTONS ═══ */
@@ -488,6 +489,15 @@ const AdvisorWatchtower = () => {
       : `If ${group.label.toLowerCase()} drift is ignored, hidden pressure can spread into revenue, cash, and execution outcomes.`,
   };
 
+  const actionOwnership = {
+    owner: gd?.severity === 'high' ? 'Founder + domain owner' : `${group.label} owner`,
+    deadline: gd?.alerts > 0 ? 'Next 48 hours' : 'By end of this week',
+    checkpoint: gd?.resolutions?.[0]?.title
+      ? gd.resolutions[0].title
+      : `Set one accountable ${group.label.toLowerCase()} action and review in the next operating cadence.`,
+    successMetric: `Alerts ${gd?.alerts || 0} · ${group.label} score ${gd?.score || 0}`,
+  };
+
   return (
     <DashboardLayout>
       {/* First-time onboarding modal */}
@@ -643,6 +653,15 @@ const AdvisorWatchtower = () => {
                   nextAction={explainability.nextAction}
                   ifIgnored={explainability.ifIgnored}
                   testIdPrefix={`advisor-${activeId}-explainability`}
+                />
+
+                <ActionOwnershipCard
+                  title={`${group.label} owner action plan`}
+                  owner={actionOwnership.owner}
+                  deadline={actionOwnership.deadline}
+                  checkpoint={actionOwnership.checkpoint}
+                  successMetric={actionOwnership.successMetric}
+                  testIdPrefix={`advisor-${activeId}-action-ownership`}
                 />
 
                 {/* Show integration-required state if tab needs unconnected integration */}

@@ -7,6 +7,7 @@ import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, Chec
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 
 const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
@@ -35,7 +36,7 @@ const AlertItem = ({ alert, onAction }) => {
 
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors" data-testid={`alert-toggle-${alert.id}`}>
         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' || alert.severity === 'high' ? `0 0 10px ${s.color}40` : 'none' }} />
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: fontFamily.display }}>{alert.title}</span>
@@ -48,16 +49,16 @@ const AlertItem = ({ alert, onAction }) => {
         <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Business Impact</span>
-            <p className="text-sm text-[#9FB0C3]">{alert.impact}</p>
+            <p className="text-sm text-[#9FB0C3] break-words whitespace-pre-wrap">{alert.impact}</p>
           </div>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Recommended Action</span>
-            <p className="text-sm text-[#9FB0C3]">{alert.action}</p>
+            <p className="text-sm text-[#9FB0C3] break-words whitespace-pre-wrap">{alert.action}</p>
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
-            {alert.actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-            {alert.actions?.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-            {alert.actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+            {alert.actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+            {alert.actions?.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+            {alert.actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
             <button onClick={() => handleAction('complete')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
             <button onClick={() => handleAction('ignore')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Ignore</button>
           </div>
@@ -172,6 +173,16 @@ const AlertsPageAuth = () => {
       ? 'Unresolved alerts can quickly compound into client, delivery, or cashflow consequences.'
       : 'Without connected data, true issues can remain invisible until they become severe.',
   };
+  const actionOwnership = {
+    owner: (critCount || 0) > 0 ? 'Duty manager' : alerts.length > 0 ? 'Operations lead' : 'Monitoring owner',
+    deadline: (critCount || 0) > 0 ? 'Within 4 hours' : alerts.length > 0 ? 'By next business day' : 'Continuous',
+    checkpoint: (critCount || 0) > 0
+      ? `Close ${critCount} critical alert${critCount === 1 ? '' : 's'} with owner + rationale.`
+      : alerts.length > 0
+        ? 'Review all open alerts and classify complete vs ignore with notes.'
+        : 'Maintain daily watch cycle and keep integrations healthy.',
+    successMetric: `Open alerts ${alerts.length} · critical ${critCount || 0} · moderate ${modCount || 0}`,
+  };
 
   return (
     <DashboardLayout>
@@ -202,6 +213,15 @@ const AlertsPageAuth = () => {
           testIdPrefix="alerts-explainability"
         />
 
+        <ActionOwnershipCard
+          title="Alert closure owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="alerts-action-ownership"
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
             <div key={l} className="rounded-lg p-4 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
@@ -220,7 +240,8 @@ const AlertsPageAuth = () => {
             {[['all','All'],['critical','Critical'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
               <button key={val} onClick={() => setFilter(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}>
+                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}
+                data-testid={`alerts-filter-${val}`}>
                 {label}
               </button>
             ))}
@@ -230,7 +251,8 @@ const AlertsPageAuth = () => {
             {[['all','All time'],['today','Today'],['week','This week'],['month','This month']].map(([val,label]) => (
               <button key={val} onClick={() => setDateRange(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: dateRange === val ? '#243140' : 'transparent', color: dateRange === val ? '#F4F7FA' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                style={{ background: dateRange === val ? '#243140' : 'transparent', color: dateRange === val ? '#F4F7FA' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}
+                data-testid={`alerts-date-range-${val}`}>
                 {label}
               </button>
             ))}
@@ -240,11 +262,12 @@ const AlertsPageAuth = () => {
             {[['severity','Severity'],['date','Date']].map(([val,label]) => (
               <button key={val} onClick={() => setSortBy(val)}
                 className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-all"
-                style={{ background: sortBy === val ? '#FF6A0015' : 'transparent', color: sortBy === val ? '#FF6A00' : '#64748B', border: `1px solid ${sortBy === val ? '#FF6A0030' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                style={{ background: sortBy === val ? '#FF6A0015' : 'transparent', color: sortBy === val ? '#FF6A00' : '#64748B', border: `1px solid ${sortBy === val ? '#FF6A0030' : 'transparent'}`, fontFamily: fontFamily.mono }}
+                data-testid={`alerts-sort-${val}`}>
                 {label}
               </button>
             ))}
-            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#FF6A00' : '#64748B' }}>
+            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#FF6A00' : '#64748B' }} data-testid="alerts-refresh-button">
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
             </button>
           </div>

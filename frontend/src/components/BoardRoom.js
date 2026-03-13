@@ -238,6 +238,15 @@ const BoardRoom = () => {
 
               {diagnosisResult && (
                 <div className="space-y-5">
+                  {diagnosisResult.degraded && (
+                    <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }} data-testid="boardroom-diagnosis-degraded-banner">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Resilience mode</span>
+                      <p className="text-xs leading-relaxed" style={{ color: '#243140' }}>
+                        Upstream diagnosis service is unstable. BIQc is returning telemetry-grounded fallback guidance so decision execution can continue.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Headline */}
                   <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div className="flex items-center gap-3 mb-5">
@@ -249,13 +258,13 @@ const BoardRoom = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-lg leading-relaxed" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
+                    <p className="text-lg leading-relaxed break-words" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
                   </div>
 
                   {/* Narrative */}
                   {diagnosisResult.narrative && (
                     <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.05)' }}>
-                      <p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
+                      <p className="text-[15px] leading-loose whitespace-pre-wrap break-words" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
                     </div>
                   )}
 
@@ -263,14 +272,37 @@ const BoardRoom = () => {
                   {diagnosisResult.what_to_watch && (
                     <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
                       <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>What to Watch</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
                     </div>
                   )}
 
                   {diagnosisResult.if_ignored && (
                     <div className="p-6 rounded-2xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
                       <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>If Ignored</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
+                    </div>
+                  )}
+
+                  {(diagnosisResult.why_visible || diagnosisResult.why_now || diagnosisResult.next_action || diagnosisResult.if_ignored) && (
+                    <InsightExplainabilityStrip
+                      whyVisible={diagnosisResult.why_visible || explainability.whyVisible}
+                      whyNow={diagnosisResult.why_now || explainability.whyNow}
+                      nextAction={diagnosisResult.next_action || explainability.nextAction}
+                      ifIgnored={diagnosisResult.if_ignored || explainability.ifIgnored}
+                      testIdPrefix="boardroom-diagnosis-explainability"
+                    />
+                  )}
+
+                  {diagnosisResult.evidence_chain?.length > 0 && (
+                    <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }} data-testid="boardroom-diagnosis-evidence-chain">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence Chain</span>
+                      <div className="space-y-2">
+                        {diagnosisResult.evidence_chain.slice(0, 5).map((signal, idx) => (
+                          <div key={idx} className="text-[11px]" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                            {(signal.domain || 'domain').toUpperCase()} · {(signal.event_type || 'event')} · {(signal.severity || 'info')} · {(signal.source || 'source')}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
