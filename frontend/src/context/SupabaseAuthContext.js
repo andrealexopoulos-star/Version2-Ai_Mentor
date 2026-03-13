@@ -87,7 +87,7 @@ export const SupabaseAuthProvider = ({ children }) => {
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       setSession(session);
       if (session?.user) {
@@ -103,6 +103,18 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
         fetchUserProfile(session.user.id, session);
       } else {
+        // Guard against transient null sessions during refresh/navigation races.
+        if (event !== 'SIGNED_OUT' && event !== 'USER_DELETED') {
+          try {
+            const { data } = await supabase.auth.getSession();
+            if (data?.session?.user) {
+              setSession(data.session);
+              fetchUserProfile(data.session.user.id, data.session);
+              return;
+            }
+          } catch {}
+        }
+
         setUser(null);
         setOnboardingStatus(null);
         lastBootstrapUserId.current = null;
@@ -168,29 +180,8 @@ export const SupabaseAuthProvider = ({ children }) => {
       email, password, options: { data: metadata }
     });
     if (error) throw error;
-    if (data.user) {
-      // upsert so a retry after a failed insert doesn't throw duplicate key
-      const { error: dbError } = await supabase.from('users').upsert([{
-        id: data.user.id, email: data.user.email,
-        full_name: metadata.full_name || null,
-        company_name: metadata.company_name || null,
-        industry: metadata.industry || null,
-        role: metadata.role || null,
-        subscription_tier: 'free',
-        is_master_account: email === 'andre@thestrategysquad.com.au',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }], { onConflict: 'id' });
-      if (dbError) console.error('[signUp] users upsert failed:', dbError.message);
-
-      const { error: cpError } = await supabase.from('cognitive_profiles').upsert([{
-        user_id: data.user.id,
-        immutable_reality: {}, behavioural_truth: {},
-        delivery_preference: {}, consequence_memory: {},
-        last_updated: new Date().toISOString()
-      }], { onConflict: 'user_id' });
-      if (cpError) console.error('[signUp] cognitive_profiles upsert failed:', cpError.message);
-    }
+    // IMPORTANT: Do not write to protected profile tables from client-side signup.
+    // Server-side auth verification/bootstrap handles users + cognitive profile creation.
     return data;
   };
 

@@ -2,7 +2,6 @@ import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
-import { supabase } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
@@ -45,35 +44,28 @@ const MySoundBoard = () => {
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [scanUsage, setScanUsage] = useState(null);
   const [recordingScans, setRecordingScans] = useState({});
-  const [showModeMenu, setShowModeMenu] = useState(false);
-  const [selectedMode, setSelectedMode] = useState('auto');
+  const [selectedMode, setSelectedMode] = useState('normal');
 
-  // BIQc AI Modes — branded like Gemini's Fast/Thinking/Pro
   const BIQC_MODES = [
-    { id: 'auto',     label: 'BIQc Auto',     desc: 'Automatically selects the best AI for your query', icon: '⚡', backend_mode: 'auto',     minTier: 'free' },
-    { id: 'fast',     label: 'Fast',           desc: 'Quick answers using Gemini 3 Flash',               icon: '🚀', backend_mode: 'fast',     minTier: 'free' },
-    { id: 'thinking', label: 'Pro Thinking',   desc: 'Deep reasoning with gpt-5.4 — solves complex problems', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
-    { id: 'pro',      label: 'Pro',            desc: 'Advanced analysis with Gemini 3.1 Pro (1M context)', icon: '✦', backend_mode: 'pro',      minTier: 'foundation' },
-    { id: 'trinity',  label: 'Trinity',        desc: 'ChatGPT 5.4 + Claude + Gemini in parallel — most powerful', icon: '◈', backend_mode: 'trinity',  minTier: 'foundation' },
+    { id: 'normal', label: 'Normal', desc: 'GPT-5.3 (default paid mode)', icon: '◉', backend_mode: 'normal' },
+    { id: 'trinity', label: 'BIQc Trinity', desc: 'GPT-5.4 + Codex-5.3 + Gemini Pro orchestration', icon: '◈', backend_mode: 'trinity' },
   ];
 
-  // Filter modes by user's subscription tier
   const userTier = (user?.subscription_tier || 'free');
-  const tierOrder = ['free', 'foundation', 'growth', 'custom'];
-  const userTierIdx = tierOrder.indexOf(userTier);
   const isAndre = user?.email === 'andre@thestrategysquad.com.au';
-  const availableModes = BIQC_MODES.filter(m => {
-    if (isAndre) return true; // Andre has all modes
-    const minIdx = tierOrder.indexOf(m.minTier);
-    return userTierIdx >= minIdx;
-  });
+  const isProOrEnterprise = ['growth', 'custom', 'pro', 'enterprise'].includes(String(userTier).toLowerCase());
+  const canUseTrinity = isAndre || isProOrEnterprise;
+
+  useEffect(() => {
+    if (!canUseTrinity && selectedMode !== 'normal') setSelectedMode('normal');
+  }, [canUseTrinity, selectedMode]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
-  const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode);
+  const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
   const soundboardExplainability = {
     whyVisible: `Soundboard is in ${activeMode?.label || 'BIQc Auto'} mode and is grounded in your live BIQc context for this workspace.`,
     whyNow: latestAssistantMessage?.intent?.domain
@@ -180,36 +172,17 @@ const MySoundBoard = () => {
     setLoading(true);
 
     try {
-      const currentMode = BIQC_MODES.find(m => m.id === selectedMode);
+      const currentMode = BIQC_MODES.find(m => m.id === selectedMode) || BIQC_MODES[0];
 
       let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used;
 
-      if (selectedMode === 'trinity') {
-        // Trinity mode: call Supabase edge function (GPT + Claude + Gemini parallel)
-        const { data: { session } } = await supabase.auth.getSession();
-        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-        const triRes = await fetch(`${supabaseUrl}/functions/v1/biqc-trinity`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session?.access_token}`, 'apikey': anonKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: fullMessage }),
-        });
-        const triData = await triRes.json();
-        reply = triData.reply || triData.error || 'Trinity mode unavailable';
-        model_used = 'trinity';
-        suggested_actions = [];
-        conversation_id = activeConversation;
-        conversation_title = null;
-      } else {
-        // Standard mode — pass mode to backend for routing
-        const response = await apiClient.post('/soundboard/chat', {
-          message: fullMessage,
-          conversation_id: activeConversation,
-          intelligence_context: {},
-          mode: currentMode?.backend_mode || 'auto',
-        });
-        ({ reply, conversation_id, conversation_title, file: generatedFile, suggested_actions, intent, model_used } = response.data);
-      }
+      const response = await apiClient.post('/soundboard/chat', {
+        message: fullMessage,
+        conversation_id: activeConversation,
+        intelligence_context: {},
+        mode: currentMode.backend_mode,
+      });
+      ({ reply, conversation_id, conversation_title, file: generatedFile, suggested_actions, intent, model_used } = response.data);
 
       const assistantMsg = { role: 'assistant', content: reply, suggested_actions: suggested_actions || [], intent, model_used };
       if (generatedFile) assistantMsg.file = generatedFile;
@@ -683,51 +656,41 @@ const MySoundBoard = () => {
                   </button>
                 </div>
               )}
-              {/* BIQc Mode Selector — like Gemini's Fast/Thinking/Pro */}
-              <div className="flex items-center gap-2 px-1 mb-2 relative">
-                <button onClick={() => setShowModeMenu(v => !v)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
-                  data-testid="soundboard-mode-selector">
-                  <span>{BIQC_MODES.find(m => m.id === selectedMode)?.icon}</span>
-                  <span>{BIQC_MODES.find(m => m.id === selectedMode)?.label}</span>
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                </button>
-                {showModeMenu && (
-                  <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
-                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                {availableModes.map(mode => (
-                      <button key={mode.id}
-                        onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
-                        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
-                        style={{ borderBottom: mode.id !== 'trinity' ? '1px solid #1E2D3D' : 'none' }}>
-                        <span className="text-lg shrink-0">{mode.icon}</span>
-                        <div>
-                          <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
-                            {mode.label}
-                            {selectedMode === mode.id && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>Active</span>}
-                            {mode.minTier !== 'free' && !isAndre && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(59,130,246,0.15)', color: '#3B82F6' }}>{mode.minTier}</span>}
-                          </p>
-                          <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
-                        </div>
-                      </button>
-                    ))}
-                    {/* Show locked Trinity for free users */}
-                    {!isAndre && userTierIdx < 1 && (
-                      <a href="/upgrade"
-                        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
-                        style={{ textDecoration: 'none' }}>
-                        <span className="text-lg shrink-0 opacity-40">◈</span>
-                        <div>
-                          <p className="text-sm font-semibold flex items-center gap-2" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>
-                            Trinity
-                            <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00' }}>Foundation+</span>
-                          </p>
-                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Upgrade to unlock ChatGPT 5.4 + Claude + Gemini</p>
-                        </div>
-                      </a>
-                    )}
-                  </div>
+              {/* BIQc Trinity Toggle (Pro + Enterprise + Andre) */}
+              <div className="flex items-center gap-2 px-1 mb-2" data-testid="soundboard-mode-toggle-wrapper">
+                <div className="inline-flex rounded-full p-1" style={{ background: 'rgba(255,106,0,0.08)', border: '1px solid rgba(255,106,0,0.2)' }} data-testid="soundboard-mode-selector">
+                  <button
+                    onClick={() => setSelectedMode('normal')}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    style={{
+                      background: selectedMode === 'normal' ? '#FF6A00' : 'transparent',
+                      color: selectedMode === 'normal' ? '#fff' : '#FF6A00',
+                      fontFamily: fontFamily.mono,
+                    }}
+                    data-testid="soundboard-mode-normal-button"
+                  >
+                    ◉ Normal (GPT-5.3)
+                  </button>
+                  <button
+                    onClick={() => canUseTrinity && setSelectedMode('trinity')}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    style={{
+                      background: selectedMode === 'trinity' ? '#FF6A00' : 'transparent',
+                      color: canUseTrinity ? (selectedMode === 'trinity' ? '#fff' : '#FF6A00') : '#64748B',
+                      cursor: canUseTrinity ? 'pointer' : 'not-allowed',
+                      fontFamily: fontFamily.mono,
+                    }}
+                    data-testid="soundboard-mode-trinity-button"
+                  >
+                    ◈ BIQc Trinity
+                  </button>
+                </div>
+                {!canUseTrinity && (
+                  <a href="/upgrade" className="text-[10px] px-2 py-1 rounded-full no-underline"
+                    style={{ color: '#3B82F6', background: 'rgba(59,130,246,0.14)', border: '1px solid rgba(59,130,246,0.24)', fontFamily: fontFamily.mono }}
+                    data-testid="soundboard-trinity-upgrade-link">
+                    Pro/Enterprise only
+                  </a>
                 )}
               </div>
 
@@ -744,6 +707,7 @@ const MySoundBoard = () => {
                   className="flex-1 resize-none bg-transparent outline-none text-sm"
                   style={{ color: 'var(--text-primary)', minHeight: '24px', maxHeight: '120px' }}
                   rows={1}
+                  data-testid="soundboard-input"
                 />
                 {/* File attachment button */}
                 <input ref={fileRef} type="file" className="hidden" onChange={handleFileSelect}
@@ -758,6 +722,7 @@ const MySoundBoard = () => {
                   onClick={sendMessage}
                   disabled={(!input.trim() && !attachedFile) || loading}
                   className="btn-primary p-2"
+                  data-testid="send-message-btn"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
