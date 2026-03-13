@@ -99,6 +99,52 @@ def _polish_response(text):
     return text
 
 
+def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_email: bool, obs_events: List[Dict[str, Any]], rev: Dict[str, Any], risk: Dict[str, Any], people: Dict[str, Any]) -> str:
+    connected = []
+    if has_crm:
+        connected.append("CRM")
+    if has_accounting:
+        connected.append("Accounting")
+    if has_email:
+        connected.append("Email")
+
+    top_signals = []
+    for event in (obs_events or [])[:3]:
+        if not isinstance(event, dict):
+            continue
+        sig = event.get("signal_name", "signal")
+        sev = str(event.get("severity", "medium")).upper()
+        dom = event.get("domain", "business")
+        top_signals.append(f"- {sig} ({sev}) in {dom}")
+
+    pipeline_total = float((rev or {}).get("pipeline_total") or 0)
+    stalled_deals = int((rev or {}).get("stalled_deals") or 0)
+    overdue = (rev or {}).get("overdue_invoices") or []
+    overdue_total = sum(float(i.get("amount") or 0) for i in overdue if isinstance(i, dict))
+    risk_level = str((risk or {}).get("overall_risk") or "moderate").upper()
+    capacity = (people or {}).get("capacity")
+    fatigue = (people or {}).get("fatigue")
+
+    lines = [
+        "Situation: I am using your connected BIQc telemetry to provide this summary.",
+        f"Connected systems: {', '.join(connected) if connected else 'integration visibility limited in this turn'}.",
+        f"Live signals observed: {len(obs_events or [])}.",
+    ]
+    if top_signals:
+        lines.append("Top signals:\n" + "\n".join(top_signals))
+
+    lines.append("Decision: Prioritise one cross-functional containment action across revenue, execution cadence, and client response latency this week.")
+    lines.append(
+        "This week:\n"
+        f"- Revenue checkpoint: pipeline ${pipeline_total:,.0f}, stalled deals {stalled_deals}.\n"
+        f"- Cash checkpoint: overdue invoices ${overdue_total:,.0f}.\n"
+        f"- Risk checkpoint: overall risk {risk_level}."
+        + (f"\n- Workforce checkpoint: capacity {capacity if capacity is not None else 'unknown'} / fatigue {fatigue if fatigue is not None else 'unknown'}." if (capacity is not None or fatigue is not None) else "")
+    )
+    lines.append("Risk if delayed: unresolved signal clusters can compound into forecast misses, slower cash conversion, and lower client confidence.")
+    return "\n\n".join(lines)
+
+
 # ─── Strategic Advisor System Prompt (Sprint 4 Enhanced) ───
 _SOUNDBOARD_FALLBACK = """\
 You are {user_first_name}'s BIQc Unified Intelligence Assistant — the world's most capable AI advisor for small and medium-sized businesses. You combine live integration data, strategic intelligence snapshots, and deep user calibration to deliver insights that are precise, actionable, and grounded in real business data.
@@ -716,6 +762,10 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
     integration_context = ""
+    obs_events: List[Dict[str, Any]] = []
+    rev: Dict[str, Any] = {}
+    risk: Dict[str, Any] = {}
+    people: Dict[str, Any] = {}
 
     # FIRST: Inject observation_events (cached signals from emission layer)
     try:
@@ -1125,6 +1175,27 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             response = sanitise_output(response)
         else:
             response = sanitise_output(_polish_response(str(response)))
+
+        lowered = response.lower()
+        disclaimer_markers = [
+            "i do not have access",
+            "i don't have access",
+            "cannot access",
+            "can't access",
+            "no data available",
+        ]
+        has_live_business_context = bool(obs_events) or has_crm or has_accounting or has_email
+        if has_live_business_context and any(marker in lowered for marker in disclaimer_markers):
+            response = _build_grounded_exec_fallback(
+                has_crm=has_crm,
+                has_accounting=has_accounting,
+                has_email=has_email,
+                obs_events=obs_events,
+                rev=rev,
+                risk=risk,
+                people=people,
+            )
+            response = sanitise_output(response)
 
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
