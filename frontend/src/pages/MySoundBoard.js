@@ -9,6 +9,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
@@ -70,6 +71,19 @@ const MySoundBoard = () => {
   const inputRef = useRef(null);
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
+
+  const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
+  const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode);
+  const soundboardExplainability = {
+    whyVisible: `Soundboard is in ${activeMode?.label || 'BIQc Auto'} mode and is grounded in your live BIQc context for this workspace.`,
+    whyNow: latestAssistantMessage?.intent?.domain
+      ? `Current thread focus: ${latestAssistantMessage.intent.domain}. BIQc has detected this as the dominant decision context.`
+      : 'Use this workspace to interrogate the highest-priority issue before it compounds.',
+    nextAction: latestAssistantMessage?.suggested_actions?.[0]?.label
+      ? `Start with: ${latestAssistantMessage.suggested_actions[0].label}`
+      : 'Ask one concrete question with a time horizon (today / this week / this month) for sharper decisions.',
+    ifIgnored: 'Unresolved uncertainty can delay execution and widen the gap between signal detection and action.',
+  };
 
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
@@ -528,6 +542,15 @@ const MySoundBoard = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="max-w-3xl mx-auto px-6 py-6">
+              <InsightExplainabilityStrip
+                whyVisible={soundboardExplainability.whyVisible}
+                whyNow={soundboardExplainability.whyNow}
+                nextAction={soundboardExplainability.nextAction}
+                ifIgnored={soundboardExplainability.ifIgnored}
+                testIdPrefix="soundboard-explainability"
+                className="mb-5"
+              />
+
               {messages.length === 0 ? (
                 <div className="text-center py-12 px-4">
                   <div 

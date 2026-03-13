@@ -9,6 +9,7 @@ import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { fontFamily } from '../design-system/tokens';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -81,6 +82,23 @@ const OperationsPage = () => {
     exec.bottleneck && { label: 'Active Bottleneck', value: '1', unit: 'detected', color: '#F59E0B', icon: Zap, desc: exec.bottleneck.slice(0, 60) },
   ].filter(Boolean);
 
+  const explainability = {
+    whyVisible: hasRealOpsData
+      ? `BIQc is reading live workflow signals from ${hasCRM ? (crmIntegration?.provider || 'CRM') : 'connected systems'}${hasAccounting ? ` and ${acctIntegration?.provider || 'accounting'}` : ''}.`
+      : 'Operations intelligence appears when CRM/accounting systems are connected.',
+    whyNow: exec.sla_breaches > 0
+      ? `${exec.sla_breaches} SLA breach${exec.sla_breaches === 1 ? '' : 'es'} detected — service slippage is now measurable.`
+      : exec.bottleneck
+        ? `Active bottleneck detected: ${exec.bottleneck}`
+        : 'This module surfaces delivery friction before it cascades into customer or cashflow issues.',
+    nextAction: exec.bottleneck
+      ? 'Assign a bottleneck owner, define one unblock action, and re-check task aging within 48 hours.'
+      : 'Prioritise overdue tasks and tighten weekly execution cadence with clear owners per queue.',
+    ifIgnored: hasRealOpsData
+      ? 'Unresolved delivery drift typically compounds into missed commitments, rework, and client trust erosion.'
+      : 'Without connected workflow data, operational risks remain undetected until outcomes deteriorate.',
+  };
+
   return (
     <DashboardLayout>
       <EnterpriseContactGate featureName="Delivery & Operations">
@@ -133,6 +151,14 @@ const OperationsPage = () => {
           </div>
           <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
+
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="operations-explainability"
+        />
 
         {/* Sync progress bar */}
         {(loading || syncProgress < 100) && (

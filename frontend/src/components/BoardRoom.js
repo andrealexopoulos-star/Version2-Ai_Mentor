@@ -4,6 +4,7 @@ import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { apiClient } from '../lib/api';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 
 const STATE_CONFIG = {
   STABLE:      { label: 'Stable',      color: '#10B981', bg: '#10B98110', border: '#10B98130', dot: '#10B981' },
@@ -59,6 +60,14 @@ const BoardRoom = () => {
       value: topAlerts[0]?.action || narrative?.strategic_direction || 'Use Board Room diagnosis to identify the best next move before this spreads.',
     },
   ];
+  const explainability = {
+    whyVisible: integrationLabels.length
+      ? `Board Room is escalating this based on ${integrationLabels.length} connected system${integrationLabels.length === 1 ? '' : 's'} (${integrationLabels.join(', ')}).`
+      : 'Board Room is active, but richer diagnosis needs connected systems and live signals.',
+    whyNow: topAlerts[0]?.detail || narrative?.force_summary || 'Signal pressure is rising across your monitored domains.',
+    nextAction: topAlerts[0]?.action || narrative?.strategic_direction || 'Run a diagnosis area and commit to one decision in this session.',
+    ifIgnored: diagnosisResult?.if_ignored || 'Decision delay narrows options and increases second-order impact across delivery, cash, and customers.',
+  };
 
   const runDiagnosis = async (area) => {
     setActiveDiagnosis(area.id);
@@ -162,6 +171,14 @@ const BoardRoom = () => {
                         </div>
                       ))}
                     </div>
+
+                    <InsightExplainabilityStrip
+                      whyVisible={explainability.whyVisible}
+                      whyNow={explainability.whyNow}
+                      nextAction={explainability.nextAction}
+                      ifIgnored={explainability.ifIgnored}
+                      testIdPrefix="boardroom-explainability"
+                    />
                   </div>
                 )}
               </section>

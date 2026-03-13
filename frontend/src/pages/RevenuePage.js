@@ -11,6 +11,7 @@ import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
 import { Link, useNavigate } from 'react-router-dom';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 
 
 const Panel = ({ children, className = '' }) => (
@@ -127,6 +128,25 @@ const RevenuePage = () => {
   const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#FF6A00';
   const healthPct = winRate != null ? Math.min(Math.round(winRate * 2), 100) : 0;
 
+  const explainability = {
+    whyVisible: hasDeals
+      ? `BIQc is reading ${deals.length} CRM deal${deals.length === 1 ? '' : 's'}${crmIntegration?.provider ? ` from ${crmIntegration.provider}` : ''}${accountingConnected ? ' and your accounting feed' : ''}.`
+      : 'Revenue Engine is waiting for connected CRM/accounting data to compute pipeline health.',
+    whyNow: stalledCount > 0
+      ? `${stalledCount} deal${stalledCount === 1 ? '' : 's'} have stalled for more than 7 days, increasing close-delay risk.`
+      : topClientPct > 40
+        ? `${topClientPct}% of your pipeline is concentrated in one client, increasing downside risk if timing slips.`
+        : 'Pipeline is active; this view helps catch early slippage before revenue misses hit cash.',
+    nextAction: stalledCount > 0
+      ? 'Prioritise stalled deals: assign owner, set a 48-hour follow-up deadline, and unblock approval bottlenecks.'
+      : hasDeals
+        ? 'Review scenario tab, then lock one best-case lever and one downside hedge this week.'
+        : 'Connect CRM first, then accounting, so BIQc can compute velocity, concentration, and cash-linked revenue risk.',
+    ifIgnored: hasDeals
+      ? 'Stalled pipeline and concentration risk can compound into forecast misses, margin pressure, and late cash inflows.'
+      : 'Without connected data, hidden revenue risks stay invisible until they become urgent.',
+  };
+
   const TABS = [
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'scenarios', label: 'Scenarios' },
@@ -186,6 +206,14 @@ const RevenuePage = () => {
           </div>
           <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
+
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="revenue-explainability"
+        />
 
         {/* Sync progress bar */}
         {(loading || syncProgress < 100) && (

@@ -5,6 +5,7 @@ import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { apiClient } from '../lib/api';
 import { Send, RefreshCw } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 
 const STATE_CFG = {
   STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
@@ -61,6 +62,16 @@ const WarRoomConsole = () => {
     accounting: integrationStatus?.canonical_truth?.accounting_connected,
     email: integrationStatus?.canonical_truth?.email_connected,
   }).filter(([, connected]) => connected).map(([key]) => key);
+  const explainability = {
+    whyVisible: connectedSystems.length
+      ? `War Room is grounded in ${connectedSystems.join(', ')} live systems and your latest strategic snapshot.`
+      : 'War Room is ready, but stronger answers require connected CRM/accounting/email evidence.',
+    whyNow: topAlerts.length
+      ? topAlerts[0].detail
+      : 'Strategic state can shift quickly; this console helps interrogate emerging pressure early.',
+    nextAction: topAlerts[0]?.action || 'Ask one high-stakes question and commit to a decision owner + deadline.',
+    ifIgnored: 'Unchallenged strategic drift can compress decision windows and increase execution cost over time.',
+  };
 
   return (
     <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
@@ -147,6 +158,15 @@ const WarRoomConsole = () => {
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{c.market_position}</p>
                 </div>
               )}
+
+              <InsightExplainabilityStrip
+                whyVisible={explainability.whyVisible}
+                whyNow={explainability.whyNow}
+                nextAction={explainability.nextAction}
+                ifIgnored={explainability.ifIgnored}
+                testIdPrefix="war-room-explainability"
+              />
+
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
