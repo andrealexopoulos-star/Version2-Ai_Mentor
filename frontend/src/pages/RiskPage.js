@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -164,6 +165,7 @@ const ACRONYMS = [
 // ── Main component ────────────────────────────────────────────────────────────
 const RiskPage = () => {
   const { cognitive, loading, error, refresh } = useSnapshot();
+  const { session, authState } = useSupabaseAuth();
   const c = cognitive || {};
   const risk = c.risk || {};
   const cap = c.capital || {};
@@ -180,6 +182,8 @@ const RiskPage = () => {
   const [showAcronymLegend, setShowAcronymLegend] = useState(false);
 
   useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) return;
     apiClient.get('/intelligence/workforce').then(res => {
       if (res.data?.has_data) setSqlWorkforce(res.data);
     }).catch(() => {});
@@ -194,7 +198,7 @@ const RiskPage = () => {
         setUnifiedRisk(prev => ({ ...prev, ...res.data }));
       }
     }).catch(() => {});
-  }, []);
+  }, [session?.access_token, authState]);
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;

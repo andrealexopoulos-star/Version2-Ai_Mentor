@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../lib/api';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 
 const mergeCanonicalStatus = (primary, fallback) => {
   if (!fallback) return primary;
@@ -49,6 +50,7 @@ const mergeCanonicalStatus = (primary, fallback) => {
 };
 
 export const useIntegrationStatus = () => {
+  const { session, authState } = useSupabaseAuth();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -73,7 +75,14 @@ export const useIntegrationStatus = () => {
     }
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) {
+      setLoading(false);
+      return;
+    }
+    fetch();
+  }, [fetch, authState, session?.access_token]);
 
   const refresh = useCallback(async () => {
     setSyncing(true);
