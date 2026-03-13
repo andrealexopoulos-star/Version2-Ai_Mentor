@@ -113,7 +113,7 @@ const OperationsPage = () => {
               )}
             </div>
           </div>
-          <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} />
+          <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} channelsData={integrationStatus} />
         </div>
 
         {/* Sync progress bar */}

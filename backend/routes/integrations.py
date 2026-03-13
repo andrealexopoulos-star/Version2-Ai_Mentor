@@ -21,6 +21,8 @@ from routes.deps import (
 from supabase_client import safe_query_single
 from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import get_business_profile_supabase
+from intelligence_live_truth import email_row_is_connected
+from intelligence_live_truth import get_recent_observation_events, build_watchtower_events
 from supabase_drive_helpers import (
     store_merge_integration, get_user_merge_integrations,
     get_merge_integration_by_token, update_merge_integration_sync,
@@ -1178,6 +1180,10 @@ async def get_watchtower_events(
         # Fetch watchtower events
         watchtower = get_watchtower_store()
         events = await watchtower.get_events(account_id, status=status)
+
+        if not events:
+            observation_state = get_recent_observation_events(get_sb(), user_id, limit=15)
+            events = build_watchtower_events(observation_state.get("events") or [], limit=10)
         
         logger.info(f"✅ Watchtower events fetched for workspace {account_id}: {len(events)} events")
         
@@ -1786,11 +1792,11 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     # ── 2. Email connections ──
     try:
         email_result = get_sb().table("email_connections").select(
-            "provider, connected_at, emails_synced"
+            "provider, sync_status, connected, is_connected, connected_at, updated_at"
         ).eq("user_id", user_id).execute()
 
         for row in (email_result.data or []):
-            if row.get("status") in ("connected", "active", "COMPLETE"):
+            if email_row_is_connected(row):
                 provider_raw = row.get("provider", "email")
                 display = {"outlook": "Microsoft Outlook", "gmail": "Gmail"}.get(
                     provider_raw.lower(), provider_raw.title()
@@ -1800,9 +1806,9 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
                     "category": "email",
                     "connected": True,
                     "provider": display,
-                    "records_count": row.get("emails_synced") or 0,
+                    "records_count": 0,
                     "record_type": "emails",
-                    "last_sync_at": row.get("connected_at"),
+                    "last_sync_at": row.get("connected_at") or row.get("updated_at"),
                     "error_message": None,
                 })
     except Exception as e:
@@ -1832,7 +1838,7 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
                 "error_message": None,
             })
 
-    return {"integrations": integrations, "canonical_truth": canonical_truth}
+    return {"integrations": integrations, "canonical_truth": canonical_truth, "total_connected": canonical_truth["total_connected"]}
 
 
 @router.post("/user/integration-status/sync")

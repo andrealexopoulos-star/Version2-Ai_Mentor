@@ -166,7 +166,7 @@ const RevenuePage = () => {
               )}
             </div>
           </div>
-          <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} />
+          <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} />
         </div>
 
         {/* Sync progress bar */}

@@ -14,10 +14,50 @@ logger = logging.getLogger(__name__)
 
 async def get_onboarding_supabase(supabase_client, user_id: str) -> Optional[Dict[str, Any]]:
     try:
-        result = supabase_client.table("onboarding").select("*").eq("user_id", user_id).single().execute()
-        return result.data if result.data else None
-    except:
-        return None
+        result = supabase_client.table("onboarding").select("*").eq("user_id", user_id).limit(1).execute()
+        if result.data:
+            return result.data[0]
+    except Exception:
+        pass
+
+    try:
+        op_result = supabase_client.table("user_operator_profile").select(
+            "operator_profile"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if op_result.data:
+            operator_profile = op_result.data.get("operator_profile") or {}
+            onboarding_state = operator_profile.get("onboarding_state")
+            if isinstance(onboarding_state, dict):
+                return {
+                    "user_id": user_id,
+                    "completed": bool(onboarding_state.get("completed")),
+                    "current_step": onboarding_state.get("current_step", 0),
+                    "business_stage": onboarding_state.get("business_stage"),
+                    "onboarding_data": onboarding_state.get("data") or {},
+                    "source": "user_operator_profile",
+                }
+    except Exception:
+        pass
+
+    try:
+        console_result = supabase_client.table("strategic_console_state").select(
+            "status, current_step, is_complete"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if console_result.data and (
+            console_result.data.get("is_complete") or str(console_result.data.get("status") or "").upper() == "COMPLETED"
+        ):
+            return {
+                "user_id": user_id,
+                "completed": True,
+                "current_step": console_result.data.get("current_step", 0),
+                "business_stage": None,
+                "onboarding_data": {},
+                "source": "strategic_console_state",
+            }
+    except Exception:
+        pass
+
+    return None
 
 async def update_onboarding_supabase(supabase_client, user_id: str, data: Dict[str, Any]) -> bool:
     try:

@@ -83,8 +83,27 @@ const AlertsPageAuth = () => {
     setLoading(true);
     try {
       const res = await apiClient.get('/intelligence/watchtower', { timeout: 10000 });
-      if (res.data?.events?.length > 0) {
-        const mapped = res.data.events.map((e, i) => ({
+      let events = res.data?.events || [];
+
+      if (!events.length) {
+        try {
+          const fallback = await apiClient.get('/notifications/alerts', { timeout: 10000 });
+          events = (fallback.data?.notifications || []).map((n, i) => ({
+            id: n.id || i + 1,
+            severity: n.severity || 'moderate',
+            title: n.title || n.type,
+            impact: n.message || '',
+            action: n.action || 'Review and take appropriate action.',
+            created_at: n.timestamp || new Date().toISOString(),
+            source: n.source || 'notifications',
+          }));
+        } catch {
+          events = [];
+        }
+      }
+
+      if (events.length > 0) {
+        const mapped = events.map((e, i) => ({
           id: e.id || i + 1,
           severity: e.severity || 'moderate',
           title: e.title || e.signal || e.event,

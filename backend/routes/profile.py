@@ -12,6 +12,7 @@ import uuid
 import json
 import re
 import logging
+from intelligence_live_truth import get_recent_observation_events, build_watchtower_events
 
 from core.llm_router import llm_chat
 from routes.deps import (
@@ -1906,6 +1907,25 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
     
     # Limit to top 10 notifications
     unique_notifications = unique_notifications[:10]
+
+    if not unique_notifications:
+        try:
+            observation_state = get_recent_observation_events(get_sb(), user_id, limit=15)
+            fallback_events = build_watchtower_events(observation_state.get("events") or [], limit=10)
+            for event in fallback_events:
+                unique_notifications.append({
+                    "id": f"obs_{event.get('id')}",
+                    "type": event.get("domain") or "signal",
+                    "severity": event.get("severity") or "medium",
+                    "title": event.get("title") or "Live signal detected",
+                    "message": event.get("detail") or event.get("impact") or "A live business signal needs review.",
+                    "action": event.get("action") or event.get("recommendation") or "Review the signal and take corrective action.",
+                    "source": event.get("source") or "Live Signals",
+                    "timestamp": event.get("created_at") or datetime.now(timezone.utc).isoformat()
+                })
+            unique_notifications = unique_notifications[:10]
+        except Exception:
+            pass
     
     # Calculate summary counts
     high_count = sum(1 for n in unique_notifications if n["severity"] == "high")
