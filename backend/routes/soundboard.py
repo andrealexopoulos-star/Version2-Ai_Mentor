@@ -461,6 +461,49 @@ async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_me
     raise RuntimeError(f"Gemini chat failed across fallback models: {last_error}")
 
 
+async def _call_anthropic_with_fallback(api_key: str, system_message: str, clean_message: str, model_candidates: List[str]) -> tuple[str, str]:
+    import httpx as _httpx
+
+    if not _has_configured_key(api_key):
+        raise RuntimeError("ANTHROPIC_API_KEY is not configured. Add a valid Anthropic key to enable Trinity reasoning.")
+
+    payload_base = {
+        "temperature": 0.45,
+        "max_tokens": 1800,
+        "system": system_message,
+        "messages": [{"role": "user", "content": clean_message}],
+    }
+
+    last_error = ""
+    for model in model_candidates:
+        try:
+            async with _httpx.AsyncClient(timeout=70.0) as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={**payload_base, "model": model},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                content = data.get("content") or []
+                text = content[0].get("text", "") if content and isinstance(content[0], dict) else ""
+                if text and text.strip():
+                    return text.strip(), model
+        except Exception as e:
+            msg = str(e)
+            last_error = msg
+            logger.warning(f"Anthropic model '{model}' failed: {msg}")
+            if _is_auth_error(msg):
+                break
+            continue
+
+    raise RuntimeError(f"Anthropic chat failed across fallback models: {last_error}")
+
+
 def _truncate_for_synthesis(text: str, max_chars: int = 2400) -> str:
     t = (text or "").strip()
     if len(t) <= max_chars:
@@ -472,14 +515,16 @@ async def _call_trinity_orchestration(
     *,
     openai_key: str,
     google_key: str,
+    anthropic_key: str,
     system_message: str,
     clean_message: str,
     messages_history: List[Dict[str, Any]],
 ) -> tuple[str, str]:
     has_openai = _has_configured_key(openai_key)
     has_google = _has_configured_key(google_key)
-    if not has_openai and not has_google:
-        raise RuntimeError("Trinity mode requires at least one configured provider key (OPENAI_API_KEY or GOOGLE_API_KEY).")
+    has_anthropic = _has_configured_key(anthropic_key)
+    if not has_openai and not has_google and not has_anthropic:
+        raise RuntimeError("Trinity mode requires at least one configured provider key (OPENAI_API_KEY, GOOGLE_API_KEY, or ANTHROPIC_API_KEY).")
 
     parallel_tasks = []
 
@@ -507,6 +552,14 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+        ))
+
+    if has_anthropic:
+        parallel_tasks.append(_call_anthropic_with_fallback(
+            api_key=anthropic_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
         ))
 
     results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
@@ -1091,6 +1144,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     OPENAI_DIRECT_KEY = os.environ.get("OPENAI_API_KEY", "")
     GOOGLE_DIRECT_KEY = os.environ.get("GOOGLE_API_KEY", "")
+    ANTHROPIC_DIRECT_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
     has_openai_key = _has_configured_key(OPENAI_DIRECT_KEY)
     has_google_key = _has_configured_key(GOOGLE_DIRECT_KEY)
 
@@ -1126,6 +1180,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             response, resolved_model = await _call_trinity_orchestration(
                 openai_key=OPENAI_DIRECT_KEY,
                 google_key=GOOGLE_DIRECT_KEY,
+                anthropic_key=ANTHROPIC_DIRECT_KEY,
                 system_message=system_message,
                 clean_message=clean_message,
                 messages_history=messages_history,
