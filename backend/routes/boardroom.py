@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 from core.llm_router import llm_chat
-from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit
+from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit, AI_MODELS
 import os
 import httpx
 from guardrails import sanitise_input, sanitise_output
@@ -27,6 +27,90 @@ class BoardRoomDiagnosisRequest(BaseModel):
 
 class WarRoomAskRequest(BaseModel):
     question: str
+
+
+DIAGNOSIS_FOCUS_AREAS = {
+    "cash_flow_financial_risk",
+    "revenue_momentum",
+    "strategy_effectiveness",
+    "operations_delivery",
+    "people_retention_capacity",
+    "customer_relationships",
+    "risk_compliance",
+    "systems_technology",
+    "market_position",
+}
+
+
+def _domain_action_hint(domain: str) -> str:
+    domain_value = (domain or "").lower()
+    if "revenue" in domain_value or "sales" in domain_value:
+        return "Assign a commercial owner, prioritise the top at-risk deal, and set a 48-hour recovery check."
+    if "cash" in domain_value or "financial" in domain_value or "capital" in domain_value:
+        return "Protect cash first: tighten collections, defer non-critical spend, and re-forecast this week."
+    if "operations" in domain_value or "delivery" in domain_value:
+        return "Name one bottleneck owner and clear one delivery blocker before the next operating cycle."
+    if "people" in domain_value or "team" in domain_value:
+        return "Stabilise capacity: rebalance workload and protect priority response windows today."
+    if "risk" in domain_value or "compliance" in domain_value:
+        return "Document immediate mitigation, assign accountable owner, and confirm control checks this week."
+    return "Select one accountable owner and commit to an immediate next step before the decision window narrows."
+
+
+def _build_fallback_explainability(primary_domain: str = "business", primary_detail: str = "") -> Dict[str, object]:
+    detail = (primary_detail or "Live pressure is emerging across connected signals.").strip()
+    return {
+        "why_visible": f"BIQc is surfacing {primary_domain or 'business'} risk from live connected telemetry.",
+        "why_now": detail,
+        "next_action": _domain_action_hint(primary_domain),
+        "if_ignored": "Delayed response can compress options and increase second-order impact across execution, cash, and trust.",
+        "evidence_chain": [],
+    }
+
+
+def _build_event_chain(events: List[Dict[str, object]]) -> List[Dict[str, object]]:
+    chain = []
+    for event in events:
+        chain.append({
+            "domain": event.get("domain"),
+            "event_type": event.get("event_type"),
+            "severity": event.get("severity"),
+            "source": event.get("source"),
+            "created_at": event.get("created_at"),
+        })
+    return chain
+
+
+def _derive_explainability(sb, user_id: str, primary_domain: str = "business", primary_detail: str = "") -> Dict[str, object]:
+    payload = _build_fallback_explainability(primary_domain, primary_detail)
+    try:
+        integrations = sb.table("integration_accounts").select("id", count="exact").eq("user_id", user_id).eq("is_active", True).execute()
+        connected_count = integrations.count or 0
+
+        events_result = sb.table("observation_events").select(
+            "domain, event_type, severity, source, created_at, detail"
+        ).eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
+        events = events_result.data or []
+
+        if events:
+            top_event = events[0]
+            domain = top_event.get("domain") or primary_domain or "business"
+            detail = top_event.get("detail") or primary_detail or "Signal severity increased from observed telemetry."
+            payload["why_visible"] = (
+                f"BIQc is surfacing {domain} pressure from {connected_count} connected system"
+                f"{'s' if connected_count != 1 else ''}."
+            )
+            payload["why_now"] = detail
+            payload["next_action"] = _domain_action_hint(domain)
+            payload["evidence_chain"] = _build_event_chain(events)
+        else:
+            payload["why_visible"] = (
+                f"BIQc is operating with {connected_count} connected system"
+                f"{'s' if connected_count != 1 else ''}; no recent observation events were returned."
+            )
+    except Exception:
+        pass
+    return payload
 
 
 # ─── Priority Compression: domain ranking by urgency (pure function) ───
@@ -203,7 +287,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         raw_response = await llm_chat(
             system_message=system_prompt,
             user_message=f"{context_block}OPERATOR INPUT: {message}",
-            model="gpt-5.3",
+            model=AI_MODELS.get("boardroom", "gpt-5.3"),
             api_key=api_key,
         )
 
@@ -230,6 +314,12 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         primary = ranked[0] if ranked else None
         secondary = ranked[1:4] if len(ranked) > 1 else []
         collapsed = ranked[4:] if len(ranked) > 4 else []
+        explainability = _derive_explainability(
+            sb,
+            user_id,
+            primary_domain=(primary or {}).get("domain") or "business",
+            primary_detail=(primary or {}).get("finding") or "",
+        )
 
         return {
             "response": sanitise_output(raw_response.strip()),
@@ -239,6 +329,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
                 "secondary": secondary,
                 "collapsed": collapsed,
             },
+            "explainability": explainability,
         }
 
     except Exception as e:
@@ -254,7 +345,12 @@ async def boardroom_diagnosis_proxy(request: Request, payload: BoardRoomDiagnosi
     except Exception:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    await check_rate_limit(user_id, "boardroom_diagnosis", get_sb())
+    focus_area = (payload.focus_area or "").strip()
+    if focus_area not in DIAGNOSIS_FOCUS_AREAS:
+        raise HTTPException(status_code=400, detail="Invalid diagnosis focus area")
+
+    sb = get_sb()
+    await check_rate_limit(user_id, "boardroom_diagnosis", sb)
 
     auth_header = request.headers.get("authorization")
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -275,7 +371,21 @@ async def boardroom_diagnosis_proxy(request: Request, payload: BoardRoomDiagnosi
 
     if response.status_code >= 400:
         raise HTTPException(status_code=response.status_code, detail=response.text[:500])
-    return response.json()
+
+    data = response.json()
+    if isinstance(data, dict):
+        for field in ("headline", "narrative", "what_to_watch", "if_ignored"):
+            if isinstance(data.get(field), str):
+                data[field] = sanitise_output(data[field])
+
+        explainability = _derive_explainability(sb, user_id, primary_domain=focus_area, primary_detail=data.get("headline") or "")
+        data.setdefault("why_visible", explainability["why_visible"])
+        data.setdefault("why_now", explainability["why_now"])
+        data.setdefault("next_action", explainability["next_action"])
+        data.setdefault("if_ignored", explainability["if_ignored"])
+        if not data.get("evidence_chain"):
+            data["evidence_chain"] = explainability["evidence_chain"]
+    return data
 
 
 @router.post("/war-room/respond")
@@ -290,7 +400,8 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
     if sanitised.get("blocked"):
         raise HTTPException(status_code=400, detail="Question rejected by safety filter")
 
-    await check_rate_limit(user_id, "war_room_ask", get_sb())
+    sb = get_sb()
+    await check_rate_limit(user_id, "war_room_ask", sb)
 
     auth_header = request.headers.get("authorization")
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -314,6 +425,18 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
     data = response.json()
     if isinstance(data, dict) and data.get("answer"):
         data["answer"] = sanitise_output(data["answer"])
+    if isinstance(data, dict):
+        explainability = _derive_explainability(
+            sb,
+            user_id,
+            primary_domain="war-room",
+            primary_detail=(data.get("answer") or data.get("response") or "")[:200],
+        )
+        data.setdefault("why_visible", explainability["why_visible"])
+        data.setdefault("why_now", explainability["why_now"])
+        data.setdefault("next_action", explainability["next_action"])
+        data.setdefault("if_ignored", explainability["if_ignored"])
+        data.setdefault("evidence_chain", explainability["evidence_chain"])
     return data
 
 
