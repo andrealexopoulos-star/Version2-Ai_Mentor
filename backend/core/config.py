@@ -4,11 +4,16 @@ Middleware classes, CORS setup, and service initialization helpers.
 """
 import os
 import logging
+import time
+import hashlib
+from collections import defaultdict, deque
+from threading import Lock
 from pathlib import Path
 from dotenv import load_dotenv
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
 
@@ -33,6 +38,15 @@ AI_MODEL = "gpt-5.3"
 AI_MODEL_ADVANCED = "gpt-5.4-pro"
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
+RATE_LIMIT_RULES = {
+    "/api/soundboard/chat": {"window": 300, "limit": 24},
+    "/api/boardroom/respond": {"window": 300, "limit": 20},
+    "/api/voice/war-room/start": {"window": 300, "limit": 10},
+    "/api/voice/war-room/respond": {"window": 300, "limit": 24},
+}
+RATE_LIMIT_BUCKETS = defaultdict(deque)
+RATE_LIMIT_LOCK = Lock()
+
 
 # ==================== MIDDLEWARE ====================
 
@@ -48,13 +62,62 @@ class NoCacheAPIMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class RateLimitAPIMiddleware(BaseHTTPMiddleware):
+    """Simple in-memory throttle for high-cost AI endpoints."""
+
+    @staticmethod
+    def _identifier(request):
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            return f"token:{hashlib.sha256(token.encode()).hexdigest()[:24]}"
+        client_host = getattr(request.client, "host", None) or "anonymous"
+        return f"ip:{client_host}"
+
+    async def dispatch(self, request, call_next):
+        rule = RATE_LIMIT_RULES.get(request.url.path)
+        if not rule:
+            return await call_next(request)
+
+        now = time.time()
+        bucket_key = f"{request.url.path}:{self._identifier(request)}"
+        with RATE_LIMIT_LOCK:
+            bucket = RATE_LIMIT_BUCKETS[bucket_key]
+            while bucket and bucket[0] <= now - rule["window"]:
+                bucket.popleft()
+            if len(bucket) >= rule["limit"]:
+                retry_after = max(1, int(rule["window"] - (now - bucket[0])))
+                return JSONResponse(
+                    {
+                        "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again.",
+                        "retry_after_seconds": retry_after,
+                    },
+                    status_code=429,
+                    headers={
+                        "Retry-After": str(retry_after),
+                        "X-RateLimit-Limit": str(rule["limit"]),
+                        "X-RateLimit-Window": str(rule["window"]),
+                    },
+                )
+            bucket.append(now)
+
+        return await call_next(request)
+
+
+def _allowed_origins():
+    configured = [origin.strip() for origin in (os.environ.get("CORS_ALLOW_ORIGINS") or "").split(",") if origin.strip()]
+    return configured
+
+
 def configure_middleware(app):
     """Register all middleware on the FastAPI app instance."""
     app.add_middleware(NoCacheAPIMiddleware)
+    app.add_middleware(RateLimitAPIMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_credentials=True,
-        allow_origins=["*"],
+        allow_origins=_allowed_origins(),
+        allow_origin_regex=r"https://([a-z0-9-]+\.)?(thestrategysquad\.com|preview\.emergentagent\.com)$|http://(localhost|127\.0\.0\.1):3000$",
         allow_methods=["*"],
         allow_headers=["*"],
         expose_headers=["X-API-Server"],

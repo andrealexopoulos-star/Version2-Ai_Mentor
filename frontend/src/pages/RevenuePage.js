@@ -42,11 +42,11 @@ const RevenuePage = () => {
       try {
         setSyncProgress(30);
         const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
-          apiClient.get('/integrations/crm/deals', { timeout: 8000 }),
-          apiClient.get('/integrations/accounting/summary', { timeout: 8000 }),
-          apiClient.get('/intelligence/scenarios', { timeout: 8000 }),
-          apiClient.get('/unified/revenue', { timeout: 8000 }),
-          apiClient.get('/cognition/revenue', { timeout: 8000 }),
+          apiClient.get('/integrations/crm/deals', { timeout: 20000 }),
+          apiClient.get('/integrations/accounting/summary', { timeout: 20000 }),
+          apiClient.get('/intelligence/scenarios', { timeout: 20000 }),
+          apiClient.get('/unified/revenue', { timeout: 20000 }),
+          apiClient.get('/cognition/revenue', { timeout: 20000 }),
         ]);
         setSyncProgress(80);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
@@ -86,6 +86,7 @@ const RevenuePage = () => {
 
   const crmConnected = !!crmIntegration;
   const accountingConnected = !!accountingIntegration;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
   const hasDeals = deals && deals.length > 0;
   const hasFinancials = financials && financials.connected;
   const totalPipeline = hasDeals ? deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) : null;
@@ -143,7 +144,12 @@ const RevenuePage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
             <div className="flex flex-wrap items-center gap-2">
-              {crmConnected ? (
+              {!integrationResolved ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
+                </span>
+              ) : crmConnected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
                   style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                   <CheckCircle2 className="w-3 h-3" />
@@ -157,7 +163,12 @@ const RevenuePage = () => {
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
-              {accountingConnected ? (
+              {!integrationResolved ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
+                </span>
+              ) : accountingConnected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
                   style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                   <CheckCircle2 className="w-3 h-3" />
@@ -173,7 +184,7 @@ const RevenuePage = () => {
               )}
             </div>
           </div>
-          <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} />
+          <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
 
         {/* Sync progress bar */}
@@ -181,7 +192,7 @@ const RevenuePage = () => {
           <div className="rounded-xl p-4" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>
-                {syncProgress < 50 ? 'Connecting to data sources…' : syncProgress < 90 ? 'Importing pipeline data…' : 'Finalising…'}
+                {integrationLoading ? 'Verifying connected systems…' : syncProgress < 50 ? 'Connecting to data sources…' : syncProgress < 90 ? 'Importing pipeline data…' : 'Finalising…'}
               </span>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
             </div>
@@ -197,7 +208,19 @@ const RevenuePage = () => {
           </div>
         )}
 
-        {!loading && !hasDeals && !hasFinancials && (
+        {!loading && integrationLoading && (
+          <Panel>
+            <div className="flex items-start gap-3">
+              <Loader2 className="w-5 h-5 text-[#3B82F6] animate-spin flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying your connected systems</p>
+                <p className="text-xs text-[#64748B]">BIQc is checking CRM, accounting, and live pipeline signals before rendering revenue analysis.</p>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {!loading && !integrationLoading && !hasDeals && !hasFinancials && (
           <Panel className="py-10">
             {crmConnected || accountingConnected ? (
               <div className="text-center py-4">

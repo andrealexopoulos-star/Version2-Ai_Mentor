@@ -56,6 +56,7 @@ const OperationsPage = () => {
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
   const crmIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'crm');
   const acctIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'accounting');
   const exec = snapshot?.execution || {};
@@ -93,7 +94,12 @@ const OperationsPage = () => {
               Track fulfilment timelines, task throughput, SOP compliance and resource utilisation — updated from your connected systems.
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              {hasCRM ? (
+              {!integrationResolved ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
+                </span>
+              ) : hasCRM ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
                   style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                   <CheckCircle2 className="w-3 h-3" /> {crmIntegration?.provider || 'CRM'} Connected
@@ -106,7 +112,12 @@ const OperationsPage = () => {
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
-              {hasAccounting ? (
+              {!integrationResolved ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
+                </span>
+              ) : hasAccounting ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
                   style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                   <CheckCircle2 className="w-3 h-3" /> {acctIntegration?.provider || 'Accounting'} Connected
@@ -120,7 +131,7 @@ const OperationsPage = () => {
               )}
             </div>
           </div>
-          <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} channelsData={integrationStatus} />
+          <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
 
         {/* Sync progress bar */}
@@ -128,7 +139,7 @@ const OperationsPage = () => {
           <div className="rounded-xl p-4" style={{ background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[#3B82F6]" style={{ fontFamily: fontFamily.mono }}>
-                {syncProgress < 50 ? 'Loading operational data…' : 'Analysing workflows and SLA status…'}
+                {integrationLoading ? 'Verifying connected systems…' : syncProgress < 50 ? 'Loading operational data…' : 'Analysing workflows and SLA status…'}
               </span>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
             </div>
@@ -139,7 +150,19 @@ const OperationsPage = () => {
           </div>
         )}
 
-        {!loading && !hasRealOpsData && (
+        {!loading && integrationLoading && (
+          <Panel>
+            <div className="flex items-start gap-3">
+              <Loader2 className="w-5 h-5 text-[#3B82F6] animate-spin flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying operations data sources</p>
+                <p className="text-xs text-[#64748B]">BIQc is confirming CRM and accounting connections before scoring execution risk and bottlenecks.</p>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {!loading && !integrationLoading && !hasRealOpsData && (
           <Panel className="py-10">
             <div className="text-center mb-5">
               <Settings className="w-10 h-10 text-[#FF6A00] mx-auto mb-3 opacity-60" />

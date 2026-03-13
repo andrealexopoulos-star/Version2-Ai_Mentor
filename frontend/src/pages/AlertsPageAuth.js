@@ -77,6 +77,7 @@ const AlertsPageAuth = () => {
 
   const connectedIntegrations = (integrationStatus?.integrations || []).filter(i => i.connected);
   const totalConnected = integrationStatus?.total_connected || connectedIntegrations.length;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
   const hasCRM = connectedIntegrations.some(i => (i.category || '').toLowerCase().includes('crm'));
   const hasEmail = connectedIntegrations.some(i => ['email', 'gmail', 'outlook'].some(k => (i.category || '').toLowerCase().includes(k) || (i.provider || '').toLowerCase().includes(k)));
   const hasAnyData = totalConnected > 0;
@@ -170,6 +171,8 @@ const AlertsPageAuth = () => {
                   ? `${alerts.length} active alert${alerts.length !== 1 ? 's' : ''} requiring your attention.`
                   : hasAnyData
                     ? `All ${totalConnected} connected system${totalConnected !== 1 ? 's' : ''} are healthy — no issues detected.`
+                    : !integrationResolved
+                      ? 'Verifying connected systems before checking for alerts.'
                     : 'No data sources connected — connect your tools to activate monitoring.'}
               {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>syncing...</span>}
             </p>

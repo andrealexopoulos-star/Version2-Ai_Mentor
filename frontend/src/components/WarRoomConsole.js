@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { Send, RefreshCw } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
@@ -16,6 +17,7 @@ const STATE_CFG = {
 
 const WarRoomConsole = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
+  const { status: integrationStatus } = useIntegrationStatus();
   const { user } = useSupabaseAuth();
   const [question, setQuestion] = useState('');
   const [asking, setAsking] = useState(false);
@@ -60,6 +62,12 @@ const WarRoomConsole = () => {
 
   var c = cognitive || {};
   var st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
+  const topAlerts = (c.top_alerts || []).slice(0, 3);
+  const connectedSystems = Object.entries(c.integrations || {
+    crm: integrationStatus?.canonical_truth?.crm_connected,
+    accounting: integrationStatus?.canonical_truth?.accounting_connected,
+    email: integrationStatus?.canonical_truth?.email_connected,
+  }).filter(([, connected]) => connected).map(([key]) => key);
 
   return (
     <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
@@ -94,6 +102,16 @@ const WarRoomConsole = () => {
               <p className="text-sm" style={{ color: '#F59E0B' }}>{error}</p>
             </div>
           )}
+          {!cognitive && !loading && !error && (
+            <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+              <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
+              <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                {connectedSystems.length
+                  ? `BIQc can see ${connectedSystems.join(', ')} systems, but the strategic synthesis has not resolved yet. Refresh or ask a direct question to force a live read.`
+                  : 'Connect core systems to generate a live strategic brief.'}
+              </p>
+            </div>
+          )}
           {cognitive && !loading && (
             <>
               <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Good {displayTimeOfDay}, {displayName}.</h1>
@@ -102,6 +120,32 @@ const WarRoomConsole = () => {
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                   <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
                   <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{c.executive_memo}</p>
+                </div>
+              )}
+              {!c.executive_memo && (
+                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
+                  <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                    {connectedSystems.length
+                      ? `BIQc can see ${connectedSystems.join(', ')} signals, but the live strategic synthesis is still being prepared. Use this console to interrogate the highest-priority issue now.`
+                      : 'Connect core systems to generate a live strategic brief.'}
+                  </p>
+                </div>
+              )}
+              {topAlerts.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Why this matters now</span>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{topAlerts[0].detail}</p>
+                  </div>
+                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>What to do next</span>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{topAlerts[0].action || 'Use this console to test the next action before risk spreads.'}</p>
+                  </div>
+                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence footprint</span>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{`${c.live_signal_count || topAlerts.length} live signals across ${connectedSystems.length} connected systems${connectedSystems.length ? ` (${connectedSystems.join(', ')})` : ''}.`}</p>
+                  </div>
                 </div>
               )}
               {c.market_position && (

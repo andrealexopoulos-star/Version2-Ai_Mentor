@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 from core.llm_router import llm_chat
 from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger
 import os
+from guardrails import sanitise_input, sanitise_output
 
 router = APIRouter()
 
@@ -92,6 +93,11 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
     history = payload.history or []
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
+
+    sanitised = sanitise_input(message)
+    if sanitised.get("blocked"):
+        raise HTTPException(status_code=400, detail="Message rejected by safety filter")
+    message = sanitised.get("text") or message
 
     sb = get_sb()
     try:
@@ -215,7 +221,7 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         collapsed = ranked[4:] if len(ranked) > 4 else []
 
         return {
-            "response": raw_response.strip(),
+            "response": sanitise_output(raw_response.strip()),
             "escalations": active_escalations,
             "priority_compression": {
                 "primary": primary,

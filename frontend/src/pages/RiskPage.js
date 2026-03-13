@@ -174,7 +174,7 @@ const RiskPage = () => {
   const fv = c.founder_vitals || {};
   const rev = c.revenue || {};
 
-  const { status: integrationStatus } = useIntegrationStatus();
+  const { status: integrationStatus, loading: integrationLoading } = useIntegrationStatus();
   const [activeTab, setActiveTab] = useState('governance');
   const [sqlWorkforce, setSqlWorkforce] = useState(null);
   const [sqlScores, setSqlScores] = useState(null);
@@ -205,6 +205,7 @@ const RiskPage = () => {
   const hasEmail = integrationStatus?.canonical_truth?.email_connected ||
     (integrationStatus?.integrations || []).some(i => i.connected && ['email','outlook','gmail'].some(k => (i.category||'').toLowerCase().includes(k) || (i.provider||'').toLowerCase().includes(k)));
   const hasAnyIntegration = (integrationStatus?.canonical_truth?.total_connected || 0) > 0 || hasEmail;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
 
   const spofs = risk.spof || [];
   const regulatory = risk.regulatory || [];
@@ -259,10 +260,10 @@ const RiskPage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Risk & Workforce Intelligence</h1>
             <p className="text-sm text-[#9FB0C3]">
-              {hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
+              {integrationLoading && !integrationResolved ? 'Verifying connected systems and live risk signals…' : hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
             </p>
           </div>
-          <DataConfidence cognitive={cognitive} channelsData={integrationStatus} />
+          <DataConfidence cognitive={cognitive} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
 
         {/* Tab Navigation */}
