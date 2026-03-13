@@ -6,6 +6,7 @@ from core.llm_router import llm_chat
 from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit, AI_MODELS
 import os
 import httpx
+import asyncio
 from guardrails import sanitise_input, sanitise_output
 
 router = APIRouter()
@@ -111,6 +112,27 @@ def _derive_explainability(sb, user_id: str, primary_domain: str = "business", p
     except Exception:
         pass
     return payload
+
+
+async def _post_with_retries(url: str, headers: Dict[str, str], payload: Dict[str, object], timeout_seconds: int = 45, retries: int = 2):
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+                response = await client.post(url, headers=headers, json=payload)
+            if response.status_code >= 500 and attempt < retries:
+                await asyncio.sleep(0.4 * attempt)
+                continue
+            return response
+        except httpx.HTTPError as error:
+            last_error = error
+            if attempt < retries:
+                await asyncio.sleep(0.4 * attempt)
+                continue
+            raise
+    if last_error:
+        raise last_error
+    raise HTTPException(status_code=502, detail="Edge function unavailable")
 
 
 # ─── Priority Compression: domain ranking by urgency (pure function) ───
@@ -358,18 +380,50 @@ async def boardroom_diagnosis_proxy(request: Request, payload: BoardRoomDiagnosi
     if not auth_header or not supabase_url or not supabase_anon_key:
         raise HTTPException(status_code=500, detail="Board Room diagnosis not configured")
 
-    async with httpx.AsyncClient(timeout=45) as client:
-        response = await client.post(
-            f"{supabase_url}/functions/v1/boardroom-diagnosis",
-            headers={
-                "Authorization": auth_header,
-                "apikey": supabase_anon_key,
-                "Content-Type": "application/json",
-            },
-            json={"focus_area": payload.focus_area},
+    edge_url = f"{supabase_url}/functions/v1/boardroom-diagnosis"
+    headers = {
+        "Authorization": auth_header,
+        "apikey": supabase_anon_key,
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = await _post_with_retries(
+            edge_url,
+            headers=headers,
+            payload={"focus_area": payload.focus_area},
+            timeout_seconds=45,
+            retries=2,
         )
+    except httpx.HTTPError as error:
+        logger.error(f"[boardroom/diagnosis] Edge function request failed: {error}")
+        explainability = _derive_explainability(sb, user_id, primary_domain=focus_area, primary_detail="Diagnosis service unavailable")
+        return {
+            "headline": "Diagnosis service is temporarily unavailable",
+            "narrative": "BIQc is running in resilience mode using your latest stored telemetry while the diagnosis engine recovers.",
+            "what_to_watch": "Event volume in the selected domain and escalation persistence over the next 24 hours.",
+            "next_action": explainability["next_action"],
+            "if_ignored": explainability["if_ignored"],
+            "why_visible": explainability["why_visible"],
+            "why_now": explainability["why_now"],
+            "evidence_chain": explainability["evidence_chain"],
+            "degraded": True,
+        }
 
     if response.status_code >= 400:
+        if response.status_code >= 500:
+            explainability = _derive_explainability(sb, user_id, primary_domain=focus_area, primary_detail="Diagnosis service degraded")
+            return {
+                "headline": "Diagnosis service degraded",
+                "narrative": "BIQc received an upstream failure and returned a fallback using current telemetry context.",
+                "what_to_watch": "Domain signal severity trend and execution impact indicators.",
+                "next_action": explainability["next_action"],
+                "if_ignored": explainability["if_ignored"],
+                "why_visible": explainability["why_visible"],
+                "why_now": explainability["why_now"],
+                "evidence_chain": explainability["evidence_chain"],
+                "degraded": True,
+            }
         raise HTTPException(status_code=response.status_code, detail=response.text[:500])
 
     data = response.json()
@@ -409,18 +463,56 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
     if not auth_header or not supabase_url or not supabase_anon_key:
         raise HTTPException(status_code=500, detail="War Room AI not configured")
 
-    async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(
-            f"{supabase_url}/functions/v1/strategic-console-ai",
-            headers={
-                "Authorization": auth_header,
-                "apikey": supabase_anon_key,
-                "Content-Type": "application/json",
-            },
-            json={"question": sanitised.get("text") or payload.question, "mode": "ask"},
+    edge_url = f"{supabase_url}/functions/v1/strategic-console-ai"
+    headers = {
+        "Authorization": auth_header,
+        "apikey": supabase_anon_key,
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = await _post_with_retries(
+            edge_url,
+            headers=headers,
+            payload={"question": sanitised.get("text") or payload.question, "mode": "ask"},
+            timeout_seconds=60,
+            retries=2,
         )
+    except httpx.HTTPError as error:
+        logger.error(f"[war-room/respond] Edge function request failed: {error}")
+        explainability = _derive_explainability(
+            sb,
+            user_id,
+            primary_domain="war-room",
+            primary_detail="War Room response service unavailable",
+        )
+        return {
+            "answer": "War Room is temporarily operating in resilience mode. Focus on your highest-impact risk, assign one owner, and execute a 48-hour containment action.",
+            "why_visible": explainability["why_visible"],
+            "why_now": explainability["why_now"],
+            "next_action": explainability["next_action"],
+            "if_ignored": explainability["if_ignored"],
+            "evidence_chain": explainability["evidence_chain"],
+            "degraded": True,
+        }
 
     if response.status_code >= 400:
+        if response.status_code >= 500:
+            explainability = _derive_explainability(
+                sb,
+                user_id,
+                primary_domain="war-room",
+                primary_detail="War Room service degraded",
+            )
+            return {
+                "answer": "War Room is in degraded mode due to an upstream service issue. Use a focused owner/action checkpoint until normal response quality is restored.",
+                "why_visible": explainability["why_visible"],
+                "why_now": explainability["why_now"],
+                "next_action": explainability["next_action"],
+                "if_ignored": explainability["if_ignored"],
+                "evidence_chain": explainability["evidence_chain"],
+                "degraded": True,
+            }
         raise HTTPException(status_code=response.status_code, detail=response.text[:500])
     data = response.json()
     if isinstance(data, dict) and data.get("answer"):

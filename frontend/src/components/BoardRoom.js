@@ -238,6 +238,15 @@ const BoardRoom = () => {
 
               {diagnosisResult && (
                 <div className="space-y-5">
+                  {diagnosisResult.degraded && (
+                    <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }} data-testid="boardroom-diagnosis-degraded-banner">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Resilience mode</span>
+                      <p className="text-xs leading-relaxed" style={{ color: '#243140' }}>
+                        Upstream diagnosis service is unstable. BIQc is returning telemetry-grounded fallback guidance so decision execution can continue.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Headline */}
                   <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div className="flex items-center gap-3 mb-5">

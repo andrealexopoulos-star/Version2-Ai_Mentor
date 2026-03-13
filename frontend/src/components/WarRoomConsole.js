@@ -50,6 +50,7 @@ const WarRoomConsole = () => {
           role: 'advisor',
           text: data.answer || data.error || 'Unable to process.',
           sources: data.data_sources,
+          degraded: Boolean(data.degraded),
           explainability: {
             whyVisible: data.why_visible,
             whyNow: data.why_now,
@@ -197,6 +198,14 @@ const WarRoomConsole = () => {
                       ? { background: 'rgba(255,106,0,0.12)', color: '#F4F7FA', border: '1px solid rgba(255,106,0,0.2)' }
                       : { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)', color: 'var(--biqc-text,#F4F7FA)' }}>
                     <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
+                    {msg.role === 'advisor' && msg.degraded && (
+                      <div className="mt-3 inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
+                        style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.25)', fontFamily: fontFamily.mono }}
+                        data-testid={`war-room-degraded-badge-${i}`}
+                      >
+                        Resilience mode
+                      </div>
+                    )}
                     {msg.role === 'advisor' && msg.explainability?.whyVisible && (
                       <InsightExplainabilityStrip
                         whyVisible={msg.explainability.whyVisible}
