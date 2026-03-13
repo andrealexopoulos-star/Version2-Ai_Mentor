@@ -271,6 +271,7 @@ export const useCalibrationState = () => {
 
       const token = session?.access_token;
       let auditData = null;
+      let deepEnrichment = null;
 
       // FAST PRE-FILL: scrape-business-profile runs instantly (no LLM, pure HTML)
       // Gives users immediate feedback while AI analysis runs
@@ -308,12 +309,40 @@ export const useCalibrationState = () => {
         }
       }
 
+      // Deep backend enrichment (Trinity + web search + ABN + competitor scan)
+      try {
+        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' });
+        if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
+          deepEnrichment = deepRes.data.enrichment;
+        }
+      } catch {
+        // non-fatal; continue with edge extraction
+      }
+
       if (auditData?.extracted_data) {
-        const ex = auditData.extracted_data;
+        const exRaw = auditData.extracted_data;
+        const ex = {
+          ...exRaw,
+          ...(deepEnrichment ? {
+            business_name: deepEnrichment.business_name || exRaw.business_name,
+            description: deepEnrichment.description || exRaw.description,
+            industry: deepEnrichment.industry || exRaw.industry,
+            main_products_services: deepEnrichment.main_products_services || exRaw.main_products_services,
+            target_market: deepEnrichment.target_market || exRaw.target_market,
+            unique_value_proposition: deepEnrichment.unique_value_proposition || exRaw.unique_value_proposition,
+            competitive_advantages: deepEnrichment.competitive_advantages || exRaw.competitive_advantages,
+            market_position: deepEnrichment.market_position || exRaw.market_position,
+            competitor_scan_result: deepEnrichment.competitor_analysis || exRaw.competitor_scan_result,
+            abn: deepEnrichment.abn || exRaw.abn,
+            competitors: Array.isArray(deepEnrichment.competitors) ? deepEnrichment.competitors : (exRaw.competitors || []),
+            deep_scan_sources: deepEnrichment.sources || null,
+          } : {}),
+        };
 
         const fullExtraction = {
           ...ex,
           _sources: auditData.data_sources || [],
+          _deep_sources: deepEnrichment?.sources || null,
           _website: url,
           _generated_at: auditData.generated_at || new Date().toISOString(),
         };
@@ -325,6 +354,8 @@ export const useCalibrationState = () => {
           what_sets_you_apart: ex.competitive_advantages || ex.unique_value_proposition || ex.differentiators || '',
           biggest_challenges: ex.main_challenges || ex.key_challenges || ex.challenges || '',
           growth_opportunity: ex.growth_strategy || ex.industry_position || ex.market_position || '',
+          competitors: Array.isArray(ex.competitors) ? ex.competitors.join(', ') : '',
+          abn: ex.abn || '',
           _full: fullExtraction,
         };
 
@@ -342,6 +373,12 @@ export const useCalibrationState = () => {
         const edgeSignals = auditData.identity_signals || ex._identity_signals || {};
         if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
           signals.abn = edgeSignals.abn_candidates[0];
+        }
+        if (deepEnrichment?.abn && !signals.abn) {
+          signals.abn = deepEnrichment.abn;
+        }
+        if (!signals.abn && Array.isArray(deepEnrichment?.abn_candidates) && deepEnrichment.abn_candidates.length > 0) {
+          signals.abn = deepEnrichment.abn_candidates[0];
         }
         if (edgeSignals.phone_numbers?.length > 0 && signals.phones?.length === 0) {
           signals.phones = edgeSignals.phone_numbers;

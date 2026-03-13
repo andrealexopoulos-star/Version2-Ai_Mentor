@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, List, Optional
-from core.llm_router import llm_chat
+from core.llm_router import llm_chat, llm_trinity_chat
 from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit, AI_MODELS
 import os
 import httpx
@@ -306,12 +306,21 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
                 context_block += f"[{label}]: {h.get('content', '')}\n"
             context_block += "\n---\n"
 
-        raw_response = await llm_chat(
-            system_message=system_prompt,
-            user_message=f"{context_block}OPERATOR INPUT: {message}",
-            model=AI_MODELS.get("boardroom", "gpt-5.3"),
-            api_key=api_key,
-        )
+        tier = str(current_user.get("subscription_tier") or "free").lower()
+        use_trinity = tier in {"pro", "enterprise", "growth", "custom"}
+        if use_trinity:
+            raw_response = await llm_trinity_chat(
+                system_message=system_prompt,
+                user_message=f"{context_block}OPERATOR INPUT: {message}",
+                messages=[],
+            )
+        else:
+            raw_response = await llm_chat(
+                system_message=system_prompt,
+                user_message=f"{context_block}OPERATOR INPUT: {message}",
+                model=AI_MODELS.get("boardroom", "gpt-5.3"),
+                api_key=api_key,
+            )
 
         active_escalations = []
         try:
