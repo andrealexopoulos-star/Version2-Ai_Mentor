@@ -10,6 +10,7 @@ import { fontFamily } from '../design-system/tokens';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -99,6 +100,15 @@ const OperationsPage = () => {
       : 'Without connected workflow data, operational risks remain undetected until outcomes deteriorate.',
   };
 
+  const actionOwnership = {
+    owner: exec.bottleneck ? 'Operations manager' : 'Delivery lead',
+    deadline: exec.sla_breaches > 0 ? 'Within 24 hours' : 'By end of this week',
+    checkpoint: exec.bottleneck
+      ? `Unblock bottleneck: ${String(exec.bottleneck).slice(0, 80)}${String(exec.bottleneck).length > 80 ? '…' : ''}`
+      : 'Run overdue-task cleanup and confirm clear queue ownership.',
+    successMetric: `SLA breaches ${exec.sla_breaches ?? '—'} · task aging ${exec.task_aging != null ? `${exec.task_aging}%` : '—'}`,
+  };
+
   return (
     <DashboardLayout>
       <EnterpriseContactGate featureName="Delivery & Operations">
@@ -126,7 +136,8 @@ const OperationsPage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=crm')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="operations-connect-crm-button">
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
@@ -143,7 +154,8 @@ const OperationsPage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=financial')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="operations-connect-accounting-button">
                   <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
                 </button>
               )}
@@ -158,6 +170,15 @@ const OperationsPage = () => {
           nextAction={explainability.nextAction}
           ifIgnored={explainability.ifIgnored}
           testIdPrefix="operations-explainability"
+        />
+
+        <ActionOwnershipCard
+          title="Operations execution owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="operations-action-ownership"
         />
 
         {/* Sync progress bar */}

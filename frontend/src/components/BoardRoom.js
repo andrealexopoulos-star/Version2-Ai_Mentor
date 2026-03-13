@@ -258,13 +258,13 @@ const BoardRoom = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-lg leading-relaxed" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
+                    <p className="text-lg leading-relaxed break-words" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
                   </div>
 
                   {/* Narrative */}
                   {diagnosisResult.narrative && (
                     <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.05)' }}>
-                      <p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
+                      <p className="text-[15px] leading-loose whitespace-pre-wrap break-words" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
                     </div>
                   )}
 
@@ -272,14 +272,14 @@ const BoardRoom = () => {
                   {diagnosisResult.what_to_watch && (
                     <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
                       <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>What to Watch</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
                     </div>
                   )}
 
                   {diagnosisResult.if_ignored && (
                     <div className="p-6 rounded-2xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
                       <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>If Ignored</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
                     </div>
                   )}
 

@@ -16,6 +16,7 @@ import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -268,6 +269,17 @@ const RiskPage = () => {
       : 'Low visibility can delay detection, turning manageable issues into urgent incidents.',
   };
 
+  const actionOwnership = {
+    owner: contradictions.length > 0 ? 'Founder + risk owner' : hasRiskData ? 'Risk owner' : 'Founder',
+    deadline: compositeScore != null && compositeScore > 0.6 ? 'Next 24 hours' : 'By end of this week',
+    checkpoint: contradictions[0]
+      ? `Resolve contradiction in ${contradictions[0].domain || 'priority domain'} and confirm mitigation ownership.`
+      : monitoredCount > 0
+        ? `Close highest-risk category first (${RISK_CATEGORIES.find((c) => c.has)?.title || 'Risk category'}).`
+        : 'Connect integrations to activate governance monitoring.',
+    successMetric: `Composite risk ${compositeDisplay} · monitored categories ${monitoredCount}/${RISK_CATEGORIES.length}`,
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="risk-page">
@@ -289,6 +301,15 @@ const RiskPage = () => {
           nextAction={explainability.nextAction}
           ifIgnored={explainability.ifIgnored}
           testIdPrefix="risk-explainability"
+        />
+
+        <ActionOwnershipCard
+          title="Risk response owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="risk-action-ownership"
         />
 
         {/* Tab Navigation */}
