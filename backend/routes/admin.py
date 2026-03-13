@@ -1,6 +1,6 @@
 """Admin routes — super_admin restricted. Prompt management + user management."""
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 from routes.deps import get_super_admin, get_admin_user, get_current_user_from_request, get_sb, logger, get_user_rate_limit_state, RATE_LIMIT_FEATURE_LABELS
@@ -51,6 +51,12 @@ class FeatureRateLimitUpdate(BaseModel):
             raise ValueError("burst_window_seconds must be between 10 and 3600")
         return int(value)
 
+    @model_validator(mode="after")
+    def validate_combination(self):
+        if self.monthly_limit is not None and self.monthly_limit != -1 and self.burst_limit == -1:
+            raise ValueError("burst_limit cannot be unlimited when monthly_limit is finite")
+        return self
+
 
 class UserRateLimitUpdate(BaseModel):
     overrides: Dict[str, FeatureRateLimitUpdate]
@@ -69,6 +75,19 @@ class UserRateLimitUpdate(BaseModel):
 def _assert_user_exists(state: Dict[str, Any], user_id: str):
     if not state.get("user") or not state["user"].get("id"):
         raise HTTPException(status_code=404, detail=f"User not found: {user_id}")
+
+
+def _load_operator_profile(sb, user_id: str) -> Dict[str, Any]:
+    op_result = sb.table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+    return (op_result.data or {}).get("operator_profile") or {}
+
+
+def _save_operator_profile(sb, user_id: str, operator_profile: Dict[str, Any]):
+    sb.table("user_operator_profile").upsert({
+        "user_id": user_id,
+        "operator_profile": operator_profile,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }, on_conflict="user_id").execute()
 
 
 @router.post("/admin/backfill-calibration")
@@ -174,8 +193,7 @@ async def admin_update_user_rate_limits(user_id: str, payload: UserRateLimitUpda
     state = get_user_rate_limit_state(sb, user_id)
     _assert_user_exists(state, user_id)
 
-    op_result = sb.table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
-    operator_profile = (op_result.data or {}).get("operator_profile") or {}
+    operator_profile = _load_operator_profile(sb, user_id)
     current_limits = operator_profile.get("rate_limits") or {}
 
     sanitized: Dict[str, Any] = {}
@@ -211,11 +229,21 @@ async def admin_update_user_rate_limits(user_id: str, payload: UserRateLimitUpda
     current_limits.update(sanitized)
     operator_profile["rate_limits"] = current_limits
 
-    sb.table("user_operator_profile").upsert({
-        "user_id": user_id,
-        "operator_profile": operator_profile,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }, on_conflict="user_id").execute()
+    _save_operator_profile(sb, user_id, operator_profile)
+
+    return await admin_get_user_rate_limits(user_id, admin)
+
+
+@router.delete("/admin/users/{user_id}/rate-limits")
+async def admin_clear_user_rate_limits(user_id: str, admin: dict = Depends(get_super_admin)):
+    sb = get_sb()
+    state = get_user_rate_limit_state(sb, user_id)
+    _assert_user_exists(state, user_id)
+
+    operator_profile = _load_operator_profile(sb, user_id)
+    if operator_profile.get("rate_limits"):
+        operator_profile.pop("rate_limits", None)
+        _save_operator_profile(sb, user_id, operator_profile)
 
     return await admin_get_user_rate_limits(user_id, admin)
 
@@ -229,6 +257,26 @@ async def admin_reset_user_rate_limit_usage(user_id: str, admin: dict = Depends(
     month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0).date().isoformat()
     sb.table("ai_usage_log").delete().eq("user_id", user_id).gte("date", month_start).execute()
     return {"status": "reset", "user_id": user_id, "month_start": month_start}
+
+
+@router.get("/admin/rate-limits/users/{user_id}")
+async def admin_get_user_rate_limits_alias(user_id: str, admin: dict = Depends(get_super_admin)):
+    return await admin_get_user_rate_limits(user_id, admin)
+
+
+@router.post("/admin/rate-limits/users/{user_id}")
+async def admin_update_user_rate_limits_alias(user_id: str, payload: UserRateLimitUpdate, admin: dict = Depends(get_super_admin)):
+    return await admin_update_user_rate_limits(user_id, payload, admin)
+
+
+@router.delete("/admin/rate-limits/users/{user_id}")
+async def admin_clear_user_rate_limits_alias(user_id: str, admin: dict = Depends(get_super_admin)):
+    return await admin_clear_user_rate_limits(user_id, admin)
+
+
+@router.post("/admin/rate-limits/users/{user_id}/reset-month")
+async def admin_reset_user_rate_limit_usage_alias(user_id: str, admin: dict = Depends(get_super_admin)):
+    return await admin_reset_user_rate_limit_usage(user_id, admin)
 
 
 @router.put("/admin/users/{user_id}")

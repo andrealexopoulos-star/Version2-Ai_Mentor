@@ -274,6 +274,29 @@ const BoardRoom = () => {
                     </div>
                   )}
 
+                  {(diagnosisResult.why_visible || diagnosisResult.why_now || diagnosisResult.next_action || diagnosisResult.if_ignored) && (
+                    <InsightExplainabilityStrip
+                      whyVisible={diagnosisResult.why_visible || explainability.whyVisible}
+                      whyNow={diagnosisResult.why_now || explainability.whyNow}
+                      nextAction={diagnosisResult.next_action || explainability.nextAction}
+                      ifIgnored={diagnosisResult.if_ignored || explainability.ifIgnored}
+                      testIdPrefix="boardroom-diagnosis-explainability"
+                    />
+                  )}
+
+                  {diagnosisResult.evidence_chain?.length > 0 && (
+                    <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }} data-testid="boardroom-diagnosis-evidence-chain">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence Chain</span>
+                      <div className="space-y-2">
+                        {diagnosisResult.evidence_chain.slice(0, 5).map((signal, idx) => (
+                          <div key={idx} className="text-[11px]" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                            {(signal.domain || 'domain').toUpperCase()} · {(signal.event_type || 'event')} · {(signal.severity || 'info')} · {(signal.source || 'source')}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {diagnosisResult.data_sources_used?.length > 0 && (
                     <div className="flex items-center gap-3 pt-2">
                       <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>

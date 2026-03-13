@@ -45,7 +45,20 @@ const WarRoomConsole = () => {
     try {
       var res = await apiClient.post('/war-room/respond', { question: q });
       var data = res.data;
-      setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: data.answer || data.error || 'Unable to process.', sources: data.data_sources }]); });
+      setConversation(function(prev) {
+        return prev.concat([{
+          role: 'advisor',
+          text: data.answer || data.error || 'Unable to process.',
+          sources: data.data_sources,
+          explainability: {
+            whyVisible: data.why_visible,
+            whyNow: data.why_now,
+            nextAction: data.next_action,
+            ifIgnored: data.if_ignored,
+          },
+          evidenceChain: data.evidence_chain,
+        }]);
+      });
     } catch (e) {
       var detail = e?.response?.data?.detail || 'Connection issue. Please try again.';
       setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: detail }]); });
@@ -184,6 +197,30 @@ const WarRoomConsole = () => {
                       ? { background: 'rgba(255,106,0,0.12)', color: '#F4F7FA', border: '1px solid rgba(255,106,0,0.2)' }
                       : { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)', color: 'var(--biqc-text,#F4F7FA)' }}>
                     <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
+                    {msg.role === 'advisor' && msg.explainability?.whyVisible && (
+                      <InsightExplainabilityStrip
+                        whyVisible={msg.explainability.whyVisible}
+                        whyNow={msg.explainability.whyNow || 'Signal pressure elevated from monitored telemetry.'}
+                        nextAction={msg.explainability.nextAction || 'Assign one owner and execute the next action this cycle.'}
+                        ifIgnored={msg.explainability.ifIgnored || 'Delays can compound strategic and execution risk.'}
+                        testIdPrefix={`war-room-reply-explainability-${i}`}
+                        className="mt-3"
+                      />
+                    )}
+                    {msg.role === 'advisor' && msg.evidenceChain?.length > 0 && (
+                      <div className="mt-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border,#1E2D3D)' }} data-testid={`war-room-evidence-chain-${i}`}>
+                        <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence chain</span>
+                        <div className="space-y-1">
+                          {msg.evidenceChain.slice(0, 4).map(function(ev, idx) {
+                            return (
+                              <div key={idx} className="text-[11px]" style={{ color: 'var(--biqc-text-2,#9FB0C3)' }}>
+                                {(ev.domain || 'domain').toUpperCase()} · {(ev.event_type || 'event')} · {(ev.severity || 'info')} · {(ev.source || 'source')}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ); })}
