@@ -9,7 +9,7 @@ backend:
     status_history:
       - working: true
         agent: "testing"
-        comment: "Health endpoint returns 200 status correctly. API is accessible at https://biqc-api-refactor.preview.emergentagent.com/api/health"
+        comment: "Health endpoint returns 200 status correctly. API is accessible at https://biqc-hardened.preview.emergentagent.com/api/health"
 
   - task: "Soundboard User Authentication"
     implemented: true
