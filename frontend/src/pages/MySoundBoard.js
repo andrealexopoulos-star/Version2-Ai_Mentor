@@ -44,21 +44,39 @@ const MySoundBoard = () => {
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [scanUsage, setScanUsage] = useState(null);
   const [recordingScans, setRecordingScans] = useState({});
-  const [selectedMode, setSelectedMode] = useState('normal');
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const [selectedMode, setSelectedMode] = useState('auto');
 
   const BIQC_MODES = [
-    { id: 'normal', label: 'Normal', desc: 'GPT-5.3 (default paid mode)', icon: '◉', backend_mode: 'normal' },
-    { id: 'trinity', label: 'BIQc Trinity', desc: 'GPT-5.4 + Codex-5.3 + Gemini Pro orchestration', icon: '◈', backend_mode: 'trinity' },
+    { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
+    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'foundation' },
+    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
+    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'foundation' },
+    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'pro' },
   ];
 
   const userTier = (user?.subscription_tier || 'free');
   const isAndre = user?.email === 'andre@thestrategysquad.com.au';
-  const isProOrEnterprise = ['growth', 'custom', 'pro', 'enterprise'].includes(String(userTier).toLowerCase());
-  const canUseTrinity = isAndre || isProOrEnterprise;
+  const tierRank = { free: 0, starter: 0, foundation: 1, growth: 2, custom: 3, pro: 2, enterprise: 3 };
+  const normalizedTier = String(userTier).toLowerCase();
+  const isPaidUser = (tierRank[normalizedTier] ?? 0) >= 1;
+  const canUseTrinity = isAndre || ['pro', 'enterprise', 'growth', 'custom'].includes(normalizedTier);
+
+  const availableModes = BIQC_MODES.filter((mode) => {
+    if (isAndre) return true;
+    if (mode.id === 'trinity') return canUseTrinity;
+    return (tierRank[normalizedTier] ?? 0) >= (tierRank[mode.minTier] ?? 0);
+  });
 
   useEffect(() => {
-    if (!canUseTrinity && selectedMode !== 'normal') setSelectedMode('normal');
-  }, [canUseTrinity, selectedMode]);
+    if (isPaidUser && selectedMode === 'auto') {
+      setSelectedMode('normal');
+      return;
+    }
+    if (!availableModes.some((mode) => mode.id === selectedMode)) {
+      setSelectedMode(isPaidUser ? 'normal' : 'auto');
+    }
+  }, [isPaidUser, selectedMode, availableModes]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
@@ -656,41 +674,56 @@ const MySoundBoard = () => {
                   </button>
                 </div>
               )}
-              {/* BIQc Trinity Toggle (Pro + Enterprise + Andre) */}
-              <div className="flex items-center gap-2 px-1 mb-2" data-testid="soundboard-mode-toggle-wrapper">
-                <div className="inline-flex rounded-full p-1" style={{ background: 'rgba(255,106,0,0.08)', border: '1px solid rgba(255,106,0,0.2)' }} data-testid="soundboard-mode-selector">
-                  <button
-                    onClick={() => setSelectedMode('normal')}
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                    style={{
-                      background: selectedMode === 'normal' ? '#FF6A00' : 'transparent',
-                      color: selectedMode === 'normal' ? '#fff' : '#FF6A00',
-                      fontFamily: fontFamily.mono,
-                    }}
-                    data-testid="soundboard-mode-normal-button"
-                  >
-                    ◉ Normal (GPT-5.3)
-                  </button>
-                  <button
-                    onClick={() => canUseTrinity && setSelectedMode('trinity')}
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                    style={{
-                      background: selectedMode === 'trinity' ? '#FF6A00' : 'transparent',
-                      color: canUseTrinity ? (selectedMode === 'trinity' ? '#fff' : '#FF6A00') : '#64748B',
-                      cursor: canUseTrinity ? 'pointer' : 'not-allowed',
-                      fontFamily: fontFamily.mono,
-                    }}
-                    data-testid="soundboard-mode-trinity-button"
-                  >
-                    ◈ BIQc Trinity
-                  </button>
-                </div>
-                {!canUseTrinity && (
-                  <a href="/upgrade" className="text-[10px] px-2 py-1 rounded-full no-underline"
-                    style={{ color: '#3B82F6', background: 'rgba(59,130,246,0.14)', border: '1px solid rgba(59,130,246,0.24)', fontFamily: fontFamily.mono }}
-                    data-testid="soundboard-trinity-upgrade-link">
-                    Pro/Enterprise only
-                  </a>
+              {/* Model selector (restored dropdown style, proprietary BIQc labels) */}
+              <div className="flex items-center gap-2 px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
+                <button
+                  onClick={() => setShowModeMenu((v) => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                  data-testid="soundboard-mode-selector"
+                >
+                  <span>{activeMode?.icon}</span>
+                  <span>{activeMode?.label}</span>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+
+                {showModeMenu && (
+                  <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-xl z-50"
+                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                    {availableModes.map((mode, idx) => (
+                      <button
+                        key={mode.id}
+                        onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
+                        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
+                        style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
+                        data-testid={`soundboard-mode-option-${mode.id}`}
+                      >
+                        <span className="text-lg shrink-0">{mode.icon}</span>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                            {mode.label}
+                            {selectedMode === mode.id && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>
+                                Active
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+
+                    {!canUseTrinity && (
+                      <a href="/upgrade" className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
+                        style={{ textDecoration: 'none' }} data-testid="soundboard-trinity-upgrade-link">
+                        <span className="text-lg shrink-0 opacity-40">◈</span>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>BIQc Trinity</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Available on Pro and Enterprise plans</p>
+                        </div>
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
 
