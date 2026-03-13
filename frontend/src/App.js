@@ -273,7 +273,8 @@ function AppRoutes() {
         <Route path="/intelligence-baseline" element={<ProtectedRoute><TierGate><IntelligenceBaseline /></TierGate></ProtectedRoute>} />
         <Route path="/operator" element={<ProtectedRoute><TierGate><OperatorDashboard /></TierGate></ProtectedRoute>} />
         <Route path="/market-analysis" element={<ProtectedRoute><TierGate><MarketAnalysis /></TierGate></ProtectedRoute>} />
-        <Route path="/oac" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
+        <Route path="/ops-advisory" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
+        <Route path="/oac" element={<Navigate to="/ops-advisory" replace />} />
         <Route path="/marketing-automation" element={<ProtectedRoute><TierGate><MarketingAutomationPage /></TierGate></ProtectedRoute>} />
         <Route path="/ab-testing" element={<ProtectedRoute><TierGate><ABTestingPage /></TierGate></ProtectedRoute>} />
 
