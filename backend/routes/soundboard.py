@@ -270,6 +270,11 @@ def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, comp
     gemini_pro = ["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"]
     gemini_fast = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
 
+    if mode == "normal":
+        if has_openai:
+            return "openai", openai_fast, "Normal", "User-selected normal mode (GPT-5.3 fast path)"
+        return "gemini", gemini_fast, "Normal", "User-selected normal mode routed to Gemini fallback"
+
     if mode == "thinking":
         return "openai", openai_thinking if has_openai else gemini_pro, "Pro Thinking", "User-selected deep reasoning mode"
     if mode == "pro":
@@ -408,6 +413,102 @@ async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_me
                 continue
 
     raise RuntimeError(f"Gemini chat failed across fallback models: {last_error}")
+
+
+def _truncate_for_synthesis(text: str, max_chars: int = 2400) -> str:
+    t = (text or "").strip()
+    if len(t) <= max_chars:
+        return t
+    return t[:max_chars] + "\n\n[...truncated for synthesis]"
+
+
+async def _call_trinity_orchestration(
+    *,
+    openai_key: str,
+    google_key: str,
+    system_message: str,
+    clean_message: str,
+    messages_history: List[Dict[str, Any]],
+) -> tuple[str, str]:
+    has_openai = _has_configured_key(openai_key)
+    has_google = _has_configured_key(google_key)
+    if not has_openai and not has_google:
+        raise RuntimeError("Trinity mode requires at least one configured provider key (OPENAI_API_KEY or GOOGLE_API_KEY).")
+
+    parallel_tasks = []
+
+    if has_openai:
+        parallel_tasks.append(_call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            messages_history=messages_history,
+            model_candidates=["gpt-5.4", "gpt-5.3", "gpt-5.2"],
+            reasoning=True,
+        ))
+        parallel_tasks.append(_call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            messages_history=messages_history,
+            model_candidates=["codex-5.3", "gpt-5.3", "gpt-5.2"],
+            reasoning=False,
+        ))
+
+    if has_google:
+        parallel_tasks.append(_call_gemini_with_fallback(
+            api_key=google_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+        ))
+
+    results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
+
+    model_outputs = []
+    for result in results:
+        if isinstance(result, Exception):
+            continue
+        text, model = result
+        if text:
+            model_outputs.append({"model": model, "text": text})
+
+    if not model_outputs:
+        raise RuntimeError("Trinity mode failed across GPT-5.4, Codex-5.3, and Gemini Pro candidates.")
+
+    if len(model_outputs) == 1:
+        only = model_outputs[0]
+        return only["text"], f"trinity-degraded/{only['model']}"
+
+    fusion_prompt = "\n\n".join(
+        [f"[{m['model']}]\n{_truncate_for_synthesis(m['text'])}" for m in model_outputs]
+    )
+    synthesis_system = (
+        "You are BIQc Trinity Fusion. Merge multi-model analyses into one operator-grade answer. "
+        "Output must be concise, factual, and action-first. Include:\n"
+        "1) Core diagnosis\n2) Why now\n3) Immediate action (48h)\n4) If ignored\n"
+        "Do NOT mention model names or that multiple models were used."
+    )
+    synthesis_user = f"User query:\n{clean_message}\n\nCandidate analyses:\n{fusion_prompt}"
+
+    if has_openai:
+        fused, fused_model = await _call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=synthesis_system,
+            clean_message=synthesis_user,
+            messages_history=[],
+            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+            reasoning=False,
+        )
+        return fused, f"trinity/{fused_model}"
+
+    fused, fused_model = await _call_gemini_with_fallback(
+        api_key=google_key,
+        system_message=synthesis_system,
+        clean_message=synthesis_user,
+        model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+    )
+    return fused, f"trinity/{fused_model}"
 
 
 class ConversationRename(BaseModel):
@@ -964,46 +1065,57 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             logger.warning(f"Intent classification failed, using heuristic fallback: {e}")
     logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
 
-    # Step 2: Route to best model
-    try:
-        provider, model_candidates, mode_label, routing_reason = _resolve_model_route(
-            mode=mode,
-            intent_domain=intent_domain,
-            intent_action=intent_action,
-            complexity=complexity,
-            has_openai=has_openai_key,
-            has_google=has_google_key,
-        )
-    except RuntimeError as e:
-        logger.error(f"Soundboard route selection error: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
-
-    logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_candidates[0]} — {routing_reason}")
-    contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_candidates[0]})\n"
-
-    # Step 3: Generate response — Direct APIs
+    # Step 2/3: Route + Generate response
     try:
         import time as _time
         _start = _time.time()
 
-        reasoning_mode = mode == "thinking" or intent_action in ("forecast", "diagnose") or complexity == "high"
-        if provider == "openai":
-            response, resolved_model = await _call_openai_with_fallback(
-                api_key=OPENAI_DIRECT_KEY,
+        if mode == "trinity":
+            mode_label = "BIQc Trinity"
+            routing_reason = "User-selected Trinity mode (GPT-5.4 + Codex-5.3 + Gemini Pro orchestration)"
+            response, resolved_model = await _call_trinity_orchestration(
+                openai_key=OPENAI_DIRECT_KEY,
+                google_key=GOOGLE_DIRECT_KEY,
                 system_message=system_message,
                 clean_message=clean_message,
                 messages_history=messages_history,
-                model_candidates=model_candidates,
-                reasoning=reasoning_mode,
             )
+            response_model = resolved_model
         else:
-            response, resolved_model = await _call_gemini_with_fallback(
-                api_key=GOOGLE_DIRECT_KEY,
-                system_message=system_message,
-                clean_message=clean_message,
-                model_candidates=model_candidates,
-            )
-        response_model = f"{provider}/{resolved_model}"
+            try:
+                provider, model_candidates, mode_label, routing_reason = _resolve_model_route(
+                    mode=mode,
+                    intent_domain=intent_domain,
+                    intent_action=intent_action,
+                    complexity=complexity,
+                    has_openai=has_openai_key,
+                    has_google=has_google_key,
+                )
+            except RuntimeError as e:
+                logger.error(f"Soundboard route selection error: {e}")
+                raise HTTPException(status_code=503, detail=str(e))
+
+            logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_candidates[0]} — {routing_reason}")
+            contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_candidates[0]})\n"
+
+            reasoning_mode = mode == "thinking" or intent_action in ("forecast", "diagnose") or complexity == "high"
+            if provider == "openai":
+                response, resolved_model = await _call_openai_with_fallback(
+                    api_key=OPENAI_DIRECT_KEY,
+                    system_message=system_message,
+                    clean_message=clean_message,
+                    messages_history=messages_history,
+                    model_candidates=model_candidates,
+                    reasoning=reasoning_mode,
+                )
+            else:
+                response, resolved_model = await _call_gemini_with_fallback(
+                    api_key=GOOGLE_DIRECT_KEY,
+                    system_message=system_message,
+                    clean_message=clean_message,
+                    model_candidates=model_candidates,
+                )
+            response_model = f"{provider}/{resolved_model}"
 
         _elapsed = int((_time.time() - _start) * 1000)
         logger.info(f"[SOUNDBOARD] {mode_label} {response_model} in {_elapsed}ms ({len(response)} chars)")

@@ -359,11 +359,16 @@ export const ManualSummaryFallback = ({ firstName, onSubmit, isSubmitting }) => 
 };
 
 /** Analyzing animation */
-export const AuditProgress = () => {
+export const AuditProgress = ({ onManualFallback = null }) => {
   const [phase, setPhase] = useState(0);
+  const [showFallback, setShowFallback] = useState(false);
   useEffect(() => {
     const interval = setInterval(() => setPhase(p => (p + 1) % ANALYZE_PHASES.length), 3000);
-    return () => clearInterval(interval);
+    const fallbackTimer = setTimeout(() => setShowFallback(true), 18000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   return (
@@ -398,6 +403,17 @@ export const AuditProgress = () => {
             style={{ background: i === phase ? GOLD : CARD_BORDER }} />
         ))}
       </div>
+
+      {showFallback && onManualFallback && (
+        <button
+          onClick={onManualFallback}
+          className="mt-6 px-5 py-2 rounded-full text-xs font-semibold"
+          style={{ color: '#3B82F6', border: '1px solid #3B82F640', background: '#3B82F610' }}
+          data-testid="analyzing-manual-fallback-btn"
+        >
+          Continue manually
+        </button>
+      )}
     </div>
   );
 };

@@ -120,7 +120,7 @@ const CalibrationAdvisor = () => {
         <ManualSummaryFallback firstName={cal.firstName} onSubmit={cal.handleManualSummary} isSubmitting={cal.isSubmitting} />
       )}
 
-      {cal.entry === "analyzing" && <AuditProgress />}
+      {cal.entry === "analyzing" && <AuditProgress onManualFallback={() => cal.setEntry('manual_summary')} />}
 
       {/* ═══ PHASE 3: Forensic Identity Verification (BEFORE footprint report) ═══ */}
       {cal.entry === "identity_verification" && cal.identitySignals && (

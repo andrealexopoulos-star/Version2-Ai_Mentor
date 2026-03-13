@@ -17,6 +17,16 @@ const extractFirstName = (raw) => {
   return raw.split(' ')[0];
 };
 
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 25000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 export const useCalibrationState = () => {
   const navigate = useNavigate();
   const { user, session, loading, signOut, clearBootstrapCache } = useSupabaseAuth();
@@ -107,11 +117,11 @@ export const useCalibrationState = () => {
   const callEdge = async (payload) => {
     const token = session?.access_token;
     if (!token) throw new Error("No session");
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-psych`, {
+    const res = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calibration-psych`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json", "apikey": ANON_KEY },
       body: JSON.stringify(payload),
-    });
+    }, 30000);
     if (!res.ok) {
       let errText = '';
       try { errText = await res.text(); } catch { /* */ }
@@ -266,11 +276,11 @@ export const useCalibrationState = () => {
       // Gives users immediate feedback while AI analysis runs
       if (token) {
         try {
-          const scrapeRes = await fetch(`${SUPABASE_URL}/functions/v1/scrape-business-profile`, {
+          const scrapeRes = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/scrape-business-profile`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
             body: JSON.stringify({ url }),
-          });
+          }, 15000);
           if (scrapeRes.ok) {
             const scrapeData = await scrapeRes.json();
             if (scrapeData?.business_name || scrapeData?.description) {
@@ -287,13 +297,15 @@ export const useCalibrationState = () => {
 
       if (token) {
         try {
-          const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
+          const res = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
             body: JSON.stringify({ website_url: url }),
-          });
+          }, 30000);
           if (res.ok) { auditData = await res.json(); }
-        } catch {}
+        } catch {
+          setError('Website scan timed out. Continue with manual summary to complete calibration.');
+        }
       }
 
       if (auditData?.extracted_data) {
@@ -427,7 +439,7 @@ export const useCalibrationState = () => {
     try {
       const token = session?.access_token;
       if (token) {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
+        const res = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
           body: JSON.stringify({
@@ -436,7 +448,7 @@ export const useCalibrationState = () => {
             location_hint: hints?.address || hints?.suburb || '',
             abn_hint: hints?.abn || '',
           }),
-        });
+        }, 30000);
         if (res.ok) {
           const auditData = await res.json();
           if (auditData?.extracted_data) {
