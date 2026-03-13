@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { supabase } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { apiClient } from '../lib/api';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 
 const STATE_CONFIG = {
   STABLE:      { label: 'Stable',      color: '#10B981', bg: '#10B98110', border: '#10B98130', dot: '#10B981' },
@@ -68,17 +66,11 @@ const BoardRoom = () => {
     setDiagError(null);
     setDiagnosing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/boardroom-diagnosis`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': process.env.REACT_APP_SUPABASE_ANON_KEY },
-        body: JSON.stringify({ focus_area: area.id }),
-      });
-      if (!res.ok) throw new Error(`${res.status}`);
-      setDiagnosisResult(await res.json());
+      const res = await apiClient.post('/boardroom/diagnosis', { focus_area: area.id });
+      setDiagnosisResult(res.data);
     } catch (e) {
-      setDiagError(`Diagnosis unavailable. ${e.message === '404' ? 'Edge Function not deployed yet.' : 'Please try again.'}`);
+      const detail = e?.response?.data?.detail;
+      setDiagError(detail || 'Diagnosis unavailable. Please try again.');
     } finally { setDiagnosing(false); }
   };
 

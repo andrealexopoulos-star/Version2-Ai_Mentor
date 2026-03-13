@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { apiClient } from '../lib/api';
 import { Send, RefreshCw } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const STATE_CFG = {
   STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
@@ -44,17 +42,12 @@ const WarRoomConsole = () => {
     setConversation(function(prev) { return prev.concat([{ role: 'user', text: q }]); });
     setAsking(true);
     try {
-      var sess = await supabase.auth.getSession();
-      var token = sess.data.session.access_token;
-      var res = await fetch(SUPABASE_URL + '/functions/v1/strategic-console-ai', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: JSON.stringify({ mode: 'ask', question: q }),
-      });
-      var data = await res.json();
+      var res = await apiClient.post('/war-room/respond', { question: q });
+      var data = res.data;
       setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: data.answer || data.error || 'Unable to process.', sources: data.data_sources }]); });
     } catch (e) {
-      setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: 'Connection issue. Please try again.' }]); });
+      var detail = e?.response?.data?.detail || 'Connection issue. Please try again.';
+      setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: detail }]); });
     } finally { setAsking(false); setTimeout(function() { if (inputRef.current) inputRef.current.focus(); }, 100); }
   };
 

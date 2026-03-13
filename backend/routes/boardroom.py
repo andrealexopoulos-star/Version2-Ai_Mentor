@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 from core.llm_router import llm_chat
-from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger
+from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit
 import os
+import httpx
 from guardrails import sanitise_input, sanitise_output
 
 router = APIRouter()
@@ -18,6 +19,14 @@ class BoardRoomRequest(BaseModel):
 class EscalationActionRequest(BaseModel):
     domain: str
     action: str  # acknowledged | deferred
+
+
+class BoardRoomDiagnosisRequest(BaseModel):
+    focus_area: str
+
+
+class WarRoomAskRequest(BaseModel):
+    question: str
 
 
 # ─── Priority Compression: domain ranking by urgency (pure function) ───
@@ -88,6 +97,8 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         user_id = current_user.get("id")
     except Exception:
         raise HTTPException(status_code=401, detail="Not authenticated")
+
+    await check_rate_limit(user_id, "boardroom_diagnosis", get_sb())
 
     message = payload.message.strip()
     history = payload.history or []
@@ -233,6 +244,77 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
     except Exception as e:
         logger.error(f"[boardroom] Error: {e}")
         return {"response": "Intelligence link disrupted. Retry.", "escalations": []}
+
+
+@router.post("/boardroom/diagnosis")
+async def boardroom_diagnosis_proxy(request: Request, payload: BoardRoomDiagnosisRequest):
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    await check_rate_limit(user_id, "boardroom_diagnosis", get_sb())
+
+    auth_header = request.headers.get("authorization")
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
+    if not auth_header or not supabase_url or not supabase_anon_key:
+        raise HTTPException(status_code=500, detail="Board Room diagnosis not configured")
+
+    async with httpx.AsyncClient(timeout=45) as client:
+        response = await client.post(
+            f"{supabase_url}/functions/v1/boardroom-diagnosis",
+            headers={
+                "Authorization": auth_header,
+                "apikey": supabase_anon_key,
+                "Content-Type": "application/json",
+            },
+            json={"focus_area": payload.focus_area},
+        )
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=response.text[:500])
+    return response.json()
+
+
+@router.post("/war-room/respond")
+async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
+    try:
+        current_user = await get_current_user_from_request(request)
+        user_id = current_user.get("id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    sanitised = sanitise_input(payload.question.strip())
+    if sanitised.get("blocked"):
+        raise HTTPException(status_code=400, detail="Question rejected by safety filter")
+
+    await check_rate_limit(user_id, "war_room_ask", get_sb())
+
+    auth_header = request.headers.get("authorization")
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
+    if not auth_header or not supabase_url or not supabase_anon_key:
+        raise HTTPException(status_code=500, detail="War Room AI not configured")
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(
+            f"{supabase_url}/functions/v1/strategic-console-ai",
+            headers={
+                "Authorization": auth_header,
+                "apikey": supabase_anon_key,
+                "Content-Type": "application/json",
+            },
+            json={"question": sanitised.get("text") or payload.question, "mode": "ask"},
+        )
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=response.text[:500])
+    data = response.json()
+    if isinstance(data, dict) and data.get("answer"):
+        data["answer"] = sanitise_output(data["answer"])
+    return data
 
 
 @router.post("/boardroom/escalation-action")
