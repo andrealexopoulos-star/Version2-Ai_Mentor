@@ -1159,12 +1159,27 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     reasoning=reasoning_mode,
                 )
             else:
-                response, resolved_model = await _call_gemini_with_fallback(
-                    api_key=GOOGLE_DIRECT_KEY,
-                    system_message=system_message,
-                    clean_message=clean_message,
-                    model_candidates=model_candidates,
-                )
+                try:
+                    response, resolved_model = await _call_gemini_with_fallback(
+                        api_key=GOOGLE_DIRECT_KEY,
+                        system_message=system_message,
+                        clean_message=clean_message,
+                        model_candidates=model_candidates,
+                    )
+                except Exception as gemini_error:
+                    if has_openai_key:
+                        logger.warning(f"[SOUNDBOARD] Gemini route failed, falling back to OpenAI: {gemini_error}")
+                        response, resolved_model = await _call_openai_with_fallback(
+                            api_key=OPENAI_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+                            reasoning=reasoning_mode,
+                        )
+                        provider = "openai-fallback"
+                    else:
+                        raise
             response_model = f"{provider}/{resolved_model}"
 
         _elapsed = int((_time.time() - _start) * 1000)
