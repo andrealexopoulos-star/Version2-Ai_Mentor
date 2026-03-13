@@ -1,0 +1,197 @@
+{
+  "summary": "Forensic UX Audit of Production BIQc (biqc.thestrategysquad.com) - Soundboard & Onboarding Flows. CRITICAL BUG FOUND: Session persistence issues cause repeated logouts during page navigation. Unable to fully test Soundboard due to session drops.",
+  "test_date": "2026-03-13",
+  "production_url": "https://biqc.thestrategysquad.com",
+  "tests_performed": {
+    "test1_soundboard_via_magic_link": "BLOCKED - Magic link token expired/one-time use",
+    "test2_signup_and_onboarding": "PARTIAL - Signup successful but session lost during calibration flow",
+    "soundboard_testing": "BLOCKED - Session persistence bug prevents sustained testing"
+  },
+  "backend_issues": {
+    "critical": [
+      {
+        "issue": "Session persistence failure on production",
+        "description": "After successful login, navigating to any page (e.g., /soundboard, /calibration) results in session being dropped and redirect to /login-supabase within 2-5 seconds",
+        "priority": "CRITICAL",
+        "reproduction_steps": [
+          "1. Login with valid credentials (e.g., cal-loop-416d7f85@biqctest.io)",
+          "2. Successfully redirected to /advisor",
+          "3. Wait 3-5 seconds OR attempt to navigate to /soundboard",
+          "4. Session is lost, redirected to /login-supabase"
+        ],
+        "suspected_cause": "Supabase auth token refresh race condition OR localStorage session not being persisted/read correctly"
+      },
+      {
+        "endpoint": "signup flow",
+        "issue": "cognitive_profiles RLS policy violation during signup",
+        "console_error": "[signUp] cognitive_profiles upsert failed: new row violates row-level security policy for table 'cognitive_profiles'",
+        "priority": "HIGH",
+        "impact": "Error logged but signup completes - may cause incomplete user profile setup"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Login → Dashboard → Soundboard Navigation",
+        "issue": "Session token not maintained across page navigation",
+        "affected_routes": ["/advisor", "/soundboard", "/calibration"],
+        "priority": "CRITICAL"
+      }
+    ],
+    "design_issues": []
+  },
+  "ux_audit_signup_page": {
+    "overall_score": "7/10",
+    "findings": {
+      "positive": [
+        "Clean, modern design with dark theme",
+        "OAuth options (Google, Microsoft) prominently displayed",
+        "Clear form fields with helpful placeholders",
+        "Industry field allows free text entry (good flexibility)",
+        "Password visibility toggle included",
+        "Sovereign Intelligence value props displayed on right panel",
+        "Australian data hosting prominently highlighted",
+        "Link to sign up from login page"
+      ],
+      "issues": [
+        {
+          "severity": "LOW",
+          "issue": "Password minimum is 6 characters (industry standard is 8+)",
+          "recommendation": "Increase minimum password length to 8 characters for security"
+        },
+        {
+          "severity": "LOW", 
+          "issue": "No password strength indicator",
+          "recommendation": "Add visual password strength meter"
+        },
+        {
+          "severity": "MEDIUM",
+          "issue": "Industry field is free-text - could benefit from autocomplete/suggestions",
+          "recommendation": "Add ANZSIC industry dropdown with search"
+        }
+      ]
+    }
+  },
+  "ux_audit_calibration_page": {
+    "overall_score": "UNABLE TO FULLY AUDIT",
+    "findings": {
+      "observed_before_session_drop": [
+        "Welcome screen with personalized greeting (user's first name)",
+        "Progress bar visible at bottom",
+        "4 numbered items showing intelligence categories",
+        "Clean intro explaining the system is 'not a dashboard'",
+        "Good typography and spacing"
+      ],
+      "blocking_issue": "Session drops before calibration flow can be completed"
+    }
+  },
+  "ux_audit_soundboard_page": {
+    "overall_score": "PARTIAL - Session drops prevent full testing",
+    "findings": {
+      "observed_elements": [
+        "PASS: No API key prompts displayed (confirmed)",
+        "MySoundBoard header with 'Your thinking partner for clarity' subtitle",
+        "Mode selector: 'BIQc Auto' dropdown visible",
+        "'Forensic Market Exposure' button",
+        "'Start Voice Call' green CTA button",
+        "Message input: 'Share what's on your mind...'",
+        "Explainability strip with 4 sections: WHY YOU ARE SEEING THIS, WHY THIS MATTERS NOW, WHAT TO DO NEXT, IF IGNORED",
+        "Welcome AI message: 'Cal, I'm your Strategic Intelligence Advisor...'",
+        "Side panel with 'SoundBoard' header",
+        "Conversation history area ('No conversations yet')"
+      ],
+      "blocked_tests": [
+        "Prompt handling & response latency",
+        "Mode selector functionality (Auto/Fast/Pro/Trinity)",
+        "Session continuity across messages",
+        "Voice call functionality",
+        "Conversation persistence"
+      ]
+    }
+  },
+  "getting_started_modal_audit": {
+    "overall_score": "8/10",
+    "findings": {
+      "positive": [
+        "Clear 'Welcome to BIQc' headline",
+        "Concise 4-bullet explanation of how BIQc works",
+        "Security features highlighted (AES-256, Australian hosted)",
+        "'Data hosted exclusively in Sydney & Melbourne' trust badge",
+        "Clear CTA: 'Connect Email to Get Started'",
+        "Skip option available: 'Skip for now - I'll connect later'"
+      ],
+      "issues": [
+        {
+          "severity": "LOW",
+          "issue": "Modal covers important content behind it",
+          "recommendation": "Consider a non-modal onboarding or step-by-step tour"
+        }
+      ]
+    }
+  },
+  "test_credentials_created": {
+    "email": "ux-test-1773394640@biqctest.io",
+    "password": "BIQcTest!2026UX",
+    "status": "Account created successfully, requires email verification"
+  },
+  "existing_qa_credentials_used": {
+    "email": "cal-loop-416d7f85@biqctest.io",
+    "password": "BIQcTest!2026Z",
+    "status": "Login successful but session drops after navigation"
+  },
+  "action_items": [
+    {
+      "priority": "P0-CRITICAL",
+      "item": "Fix session persistence bug on production - users cannot maintain authenticated sessions",
+      "suspected_root_cause": "Supabase auth state not being maintained across React Router navigation OR localStorage session corruption"
+    },
+    {
+      "priority": "P1-HIGH",
+      "item": "Fix cognitive_profiles RLS policy to allow new user inserts during signup"
+    },
+    {
+      "priority": "P2-MEDIUM",
+      "item": "Investigate Andre magic link - provide fresh one-time link for testing paid user flows"
+    }
+  ],
+  "test_report_links": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - frontend-only testing",
+    "frontend": "20% - session persistence blocks most flows"
+  },
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "CRITICAL: Production has session persistence bug. After login, session drops within seconds when navigating pages. Unable to test Soundboard prompt handling, calibration flow, or any authenticated features. The bug appears to be related to Supabase auth token not persisting across React Router navigation. Recommend debugging SupabaseAuthContext.js and checking localStorage/sessionStorage token handling. Test credentials: cal-loop-416d7f85@biqctest.io / BIQcTest!2026Z",
+  "rca_of_issue": {
+    "problem": "Session persistence failure on production biqc.thestrategysquad.com",
+    "symptoms": [
+      "User logs in successfully, redirected to /advisor",
+      "Within 2-5 seconds of any navigation or page interaction, session is lost",
+      "User is redirected to /login-supabase",
+      "Pattern repeats consistently across multiple test runs"
+    ],
+    "potential_causes": [
+      "1. Supabase auth token refresh timing issue - token expires before refresh",
+      "2. React Router unmounting auth context during navigation",
+      "3. localStorage/sessionStorage race condition - token not being persisted",
+      "4. CORS or cookie issues on production domain",
+      "5. Auth state change listener firing SIGNED_OUT incorrectly"
+    ],
+    "files_to_investigate": [
+      "frontend/src/context/SupabaseAuthContext.js",
+      "frontend/src/pages/AuthCallbackSupabase.js",
+      "frontend/src/App.js (routing logic)",
+      "Backend auth middleware for token validation"
+    ],
+    "recommended_debugging_steps": [
+      "1. Add console logs to onAuthStateChange listener in SupabaseAuthContext",
+      "2. Check browser DevTools > Application > Local Storage for token persistence",
+      "3. Monitor Network tab for auth refresh requests during navigation",
+      "4. Verify detectSessionInUrl and persistSession settings in Supabase client config"
+    ]
+  }
+}
