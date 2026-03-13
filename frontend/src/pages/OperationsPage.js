@@ -58,6 +58,8 @@ const OperationsPage = () => {
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
+  const totalConnectedSystems = integrationStatus?.canonical_truth?.total_connected || 0;
+  const hasAnyConnectedSystem = totalConnectedSystems > 0;
   const integrationResolved = !integrationLoading && !!integrationStatus;
   const crmIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'crm');
   const acctIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'accounting');
@@ -182,11 +184,17 @@ const OperationsPage = () => {
         />
 
         {/* Sync progress bar */}
-        {(loading || syncProgress < 100) && (
+        {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[#3B82F6]" style={{ fontFamily: fontFamily.mono }}>
-                {integrationLoading ? 'Verifying connected systems…' : syncProgress < 50 ? 'Loading operational data…' : 'Analysing workflows and SLA status…'}
+                {integrationLoading && !integrationResolved
+                  ? 'Verifying connected systems…'
+                  : !hasAnyConnectedSystem
+                    ? 'Waiting for connected operations systems…'
+                    : syncProgress < 50
+                      ? 'Syncing operational data…'
+                      : 'Analysing workflows and SLA status…'}
               </span>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
             </div>

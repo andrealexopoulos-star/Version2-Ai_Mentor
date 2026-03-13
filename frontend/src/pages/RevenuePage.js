@@ -89,6 +89,8 @@ const RevenuePage = () => {
   const crmConnected = !!crmIntegration;
   const accountingConnected = !!accountingIntegration;
   const integrationResolved = !integrationLoading && !!integrationStatus;
+  const totalConnectedSystems = integrationStatus?.canonical_truth?.total_connected || 0;
+  const hasAnyConnectedSystem = totalConnectedSystems > 0;
   const hasDeals = deals && deals.length > 0;
   const hasFinancials = financials && financials.connected;
   const totalPipeline = hasDeals ? deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) : null;
@@ -241,11 +243,19 @@ const RevenuePage = () => {
         />
 
         {/* Sync progress bar */}
-        {(loading || syncProgress < 100) && (
+        {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>
-                {integrationLoading ? 'Verifying connected systems…' : syncProgress < 50 ? 'Connecting to data sources…' : syncProgress < 90 ? 'Importing pipeline data…' : 'Finalising…'}
+                {integrationLoading && !integrationResolved
+                  ? 'Verifying connected systems…'
+                  : !hasAnyConnectedSystem
+                    ? 'Waiting for connected CRM/accounting systems…'
+                    : syncProgress < 50
+                      ? 'Syncing connected revenue sources…'
+                      : syncProgress < 90
+                        ? 'Importing pipeline and financial signals…'
+                        : 'Finalising revenue intelligence…'}
               </span>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
             </div>

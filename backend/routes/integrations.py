@@ -21,8 +21,13 @@ from routes.deps import (
 from supabase_client import safe_query_single
 from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import get_business_profile_supabase
-from intelligence_live_truth import email_row_is_connected
-from intelligence_live_truth import get_recent_observation_events, build_watchtower_events
+from intelligence_live_truth import (
+    email_row_is_connected,
+    get_live_integration_truth,
+    get_recent_observation_events,
+    build_watchtower_events,
+    normalize_category,
+)
 from supabase_drive_helpers import (
     store_merge_integration, get_user_merge_integrations,
     get_merge_integration_by_token, update_merge_integration_sync,
@@ -385,81 +390,35 @@ async def refresh_merge_token(request: Request, payload: dict = None):
 
 @router.get("/integrations/merge/connected")
 async def get_connected_merge_integrations(current_user: dict = Depends(get_current_user)):
-    """Get all connected Merge.dev integrations — checks BOTH workspace and direct user_id."""
+    """Get connected integrations from canonical live-truth resolver."""
     try:
         user_id = current_user["id"]
+        live_truth = get_live_integration_truth(get_sb(), user_id)
         integrations = {}
-        
-        # PATH 1: Check integration_accounts directly by user_id (most reliable)
-        direct_result = get_sb().table("integration_accounts").select("*").eq("user_id", user_id).execute()
-        for record in (direct_result.data or []):
-            provider = record.get("provider", "unknown")
-            category = record.get("category", "unknown")
-            if category == "email":
-                continue
-            integrations[provider] = {
+
+        for item in (live_truth.get("integrations") or []):
+            provider = item.get("provider") or item.get("integration_name") or "unknown"
+            category = normalize_category(item.get("category"), provider)
+            key = f"{category}:{str(provider).lower()}"
+            integrations[key] = {
                 "provider": provider,
                 "category": category,
-                "connected": True,
-                "connected_at": record.get("connected_at") or record.get("created_at"),
-                "merge_account_id": record.get("merge_account_id"),
-                "account_token": record.get("account_token"),
+                "connected": bool(item.get("connected")),
+                "connected_at": item.get("connected_at"),
+                "merge_account_id": item.get("merge_account_id"),
+                "account_token": item.get("account_token"),
+                "connected_email": item.get("connected_email"),
             }
-        
-        # PATH 2: Also check via workspace if available
-        if not integrations:
-            from workspace_helpers import get_user_account, get_account_integrations
-            account = await get_user_account(get_sb(), user_id)
-            if account:
-                account_id = account["id"]
-                integration_records = await get_account_integrations(get_sb(), account_id)
-                for record in integration_records:
-                    provider = record.get("provider", "unknown")
-                    category = record.get("category", "unknown")
-                    if category == "email" or not record.get("merge_account_id"):
-                        continue
-                    integrations[provider] = {
-                        "provider": provider,
-                        "category": category,
-                        "connected": True,
-                        "connected_at": record.get("connected_at") or record.get("created_at"),
-                        "merge_account_id": record.get("merge_account_id"),
-                    }
-        
-        # PATH 3: Check email connections using 'connected' boolean column
-        try:
-            email_result = get_sb().table("email_connections").select("provider, connected, connected_email").eq("user_id", user_id).execute()
-            for record in (email_result.data or []):
-                if record.get("connected") is not False:  # connected=True or connected=None (legacy rows)
-                    provider = record.get("provider", "email")
-                    integrations[f"email_{provider}"] = {
-                        "provider": provider,
-                        "category": "email",
-                        "connected": True,
-                        "connected_email": record.get("connected_email"),
-                    }
-        except Exception:
-            pass
-        
-        # P3: Add live signal freshness
-        signal_count = 0
-        last_signal = None
-        try:
-            obs = get_sb().table('observation_events').select('observed_at', count='exact').eq('user_id', user_id).order('observed_at', desc=True).limit(1).execute()
-            signal_count = obs.count or 0
-            if obs.data:
-                last_signal = obs.data[0].get('observed_at')
-        except Exception:
-            pass
+
+        observation_state = get_recent_observation_events(get_sb(), user_id, limit=1)
+        signal_count = observation_state.get("count", 0)
+        last_signal = observation_state.get("last_signal_at")
 
         logger.info(f"Found {len(integrations)} integrations for user {user_id}")
         return {
             "integrations": integrations,
             "canonical_truth": {
-                "crm_connected": any(v.get("category") == "crm" for v in integrations.values()),
-                "accounting_connected": any(v.get("category") == "accounting" for v in integrations.values()),
-                "email_connected": any(v.get("category") == "email" for v in integrations.values()),
-                "total_connected": len(integrations),
+                **(live_truth.get("canonical_truth") or {}),
                 "live_signal_count": signal_count,
                 "last_signal_at": last_signal,
             }
@@ -1171,21 +1130,20 @@ async def get_watchtower_events(
     
     try:
         account = await get_user_account(get_sb(), user_id)
-        if not account:
-            logger.error(f"No workspace found for user {user_id}")
-            raise HTTPException(status_code=400, detail="Workspace not initialized. Contact support.")
-        
-        account_id = account["id"]
-        
-        # Fetch watchtower events
-        watchtower = get_watchtower_store()
-        events = await watchtower.get_events(account_id, status=status)
+        events = []
+
+        if account:
+            account_id = account["id"]
+            watchtower = get_watchtower_store()
+            events = await watchtower.get_events(account_id, status=status)
+        else:
+            logger.warning(f"No workspace found for user {user_id}; falling back to observation_events")
 
         if not events:
-            observation_state = get_recent_observation_events(get_sb(), user_id, limit=15)
+            observation_state = get_recent_observation_events(get_sb(), user_id, limit=20)
             events = build_watchtower_events(observation_state.get("events") or [], limit=10)
         
-        logger.info(f"✅ Watchtower events fetched for workspace {account_id}: {len(events)} events")
+        logger.info(f"✅ Watchtower events fetched for user {user_id}: {len(events)} events")
         
         return {
             "events": events,
@@ -1730,115 +1688,75 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     Returns connected status, record counts, last sync time, and error messages.
     """
     user_id = current_user["id"]
+    sb = get_sb()
+    live_truth = get_live_integration_truth(sb, user_id)
     integrations = []
 
-    # ── 1. Merge.dev integrations (CRM, Accounting, HRIS, ATS) ──
-    try:
-        merge_result = get_sb().table("integration_accounts").select(
-            "provider, category, connected_at, merge_account_id"
-        ).eq("user_id", user_id).execute()
-
-        record_type_map = {
-            "crm": "deals", "accounting": "invoices",
-            "hris": "employees", "ats": "candidates", "file_storage": "files",
-        }
-
-        # Also fetch workspace_integrations for last_sync_at
-        workspace_sync_map = {}
-        try:
-            ws_result = get_sb().table("workspace_integrations").select(
-                "integration_type, last_sync_at, status"
-            ).eq("workspace_id", user_id).execute()
-            for ws_row in (ws_result.data or []):
-                workspace_sync_map[ws_row.get("integration_type", "")] = ws_row.get("last_sync_at")
-        except Exception:
-            pass
-
-        for row in (merge_result.data or []):
-            provider = row.get("provider", "Unknown")
-            category = row.get("category", "unknown")
-            if category == "email":
-                continue
-
-            cached = None
-            try:
-                cached_res = get_sb().table("integration_status").select(
-                    "records_count, record_type, last_sync_at, error_message"
-                ).eq("user_id", user_id).eq("integration_name", provider).maybe_single().execute()
-                cached = cached_res.data if cached_res else None
-            except Exception:
-                pass
-
-            # Use workspace_sync_map for last_sync_at when cached not available
-            last_sync = (
-                (cached.get("last_sync_at") if cached else None) or
-                workspace_sync_map.get(category) or
-                row.get("connected_at")
-            )
-
-            integrations.append({
-                "integration_name": provider,
-                "category": category,
-                "connected": True,
-                "provider": provider,
-                "records_count": cached.get("records_count", 0) if cached else 0,
-                "record_type": record_type_map.get(category, "records"),
-                "last_sync_at": last_sync,
-                "error_message": cached.get("error_message") if cached else None,
-            })
-    except Exception as e:
-        logger.warning(f"[integration-status] merge lookup failed: {e}")
-
-    # ── 2. Email connections ──
-    try:
-        email_result = get_sb().table("email_connections").select(
-            "provider, sync_status, connected, is_connected, connected_at, updated_at"
-        ).eq("user_id", user_id).execute()
-
-        for row in (email_result.data or []):
-            if email_row_is_connected(row):
-                provider_raw = row.get("provider", "email")
-                display = {"outlook": "Microsoft Outlook", "gmail": "Gmail"}.get(
-                    provider_raw.lower(), provider_raw.title()
-                )
-                integrations.append({
-                    "integration_name": provider_raw,
-                    "category": "email",
-                    "connected": True,
-                    "provider": display,
-                    "records_count": 0,
-                    "record_type": "emails",
-                    "last_sync_at": row.get("connected_at") or row.get("updated_at"),
-                    "error_message": None,
-                })
-    except Exception as e:
-        logger.warning(f"[integration-status] email lookup failed: {e}")
-
-    # ── 3. Canonical truth ──
-    canonical_truth = {
-        "crm_connected": any(i["category"] == "crm" for i in integrations),
-        "accounting_connected": any(i["category"] == "accounting" for i in integrations),
-        "email_connected": any(i["category"] == "email" for i in integrations),
-        "hris_connected": any(i["category"] == "hris" for i in integrations),
-        "total_connected": len(integrations),
+    record_type_map = {
+        "crm": "deals",
+        "accounting": "invoices",
+        "hris": "employees",
+        "ats": "candidates",
+        "file_storage": "files",
+        "email": "emails",
     }
 
-    # ── 4. Add placeholder entries for unconnected core categories ──
-    connected_cats = {i["category"] for i in integrations}
-    for cat in ["crm", "accounting", "email"]:
-        if cat not in connected_cats:
+    status_map = {}
+    try:
+        status_rows = sb.table("integration_status").select(
+            "integration_name, provider, category, records_count, record_type, last_sync_at, error_message"
+        ).eq("user_id", user_id).execute()
+        for row in (status_rows.data or []):
+            for key in (row.get("integration_name"), row.get("provider")):
+                if key:
+                    status_map[str(key).strip().lower()] = row
+    except Exception as e:
+        logger.warning(f"[integration-status] cached status lookup failed: {e}")
+
+    for item in (live_truth.get("integrations") or []):
+        category = normalize_category(item.get("category"), item.get("provider"), item.get("integration_slug"))
+        provider = item.get("provider") or item.get("integration_name") or category
+        status_row = status_map.get(str(item.get("integration_name") or "").lower()) or status_map.get(str(provider).lower())
+
+        integrations.append({
+            "integration_name": item.get("integration_name") or provider,
+            "category": category,
+            "connected": True,
+            "provider": provider,
+            "connected_at": item.get("connected_at"),
+            "records_count": (status_row or {}).get("records_count", 0),
+            "record_type": (status_row or {}).get("record_type") or record_type_map.get(category, "records"),
+            "last_sync_at": (status_row or {}).get("last_sync_at") or item.get("connected_at"),
+            "error_message": (status_row or {}).get("error_message"),
+        })
+
+    connected_categories = {normalize_category(i.get("category")) for i in integrations if i.get("connected")}
+    for category in ("crm", "accounting", "email", "hris"):
+        if category not in connected_categories:
             integrations.append({
-                "integration_name": cat,
-                "category": cat,
+                "integration_name": category,
+                "category": category,
                 "connected": False,
                 "provider": None,
+                "connected_at": None,
                 "records_count": 0,
-                "record_type": None,
+                "record_type": record_type_map.get(category),
                 "last_sync_at": None,
                 "error_message": None,
             })
 
-    return {"integrations": integrations, "canonical_truth": canonical_truth, "total_connected": canonical_truth["total_connected"]}
+    observation_state = get_recent_observation_events(sb, user_id, limit=1)
+    canonical_truth = {
+        **(live_truth.get("canonical_truth") or {}),
+        "live_signal_count": observation_state.get("count", 0),
+        "last_signal_at": observation_state.get("last_signal_at"),
+    }
+
+    return {
+        "integrations": integrations,
+        "canonical_truth": canonical_truth,
+        "total_connected": canonical_truth.get("total_connected", 0),
+    }
 
 
 @router.post("/user/integration-status/sync")
@@ -1950,8 +1868,10 @@ async def get_user_data_coverage(current_user: dict = Depends(get_current_user))
         int_result = get_sb().table("integration_accounts").select("category").eq("user_id", user_id).execute()
         for row in (int_result.data or []):
             cat = row.get("category", "")
-            if cat == "crm": has_crm = True
-            elif cat == "accounting": has_accounting = True
+            if cat == "crm":
+                has_crm = True
+            elif cat == "accounting":
+                has_accounting = True
     except Exception:
         pass
     try:
