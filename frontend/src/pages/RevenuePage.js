@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, 
 import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
@@ -18,6 +19,7 @@ const Panel = ({ children, className = '' }) => (
 
 const RevenuePage = () => {
   const { cognitive } = useSnapshot();
+  const { session, authState } = useSupabaseAuth();
   const c = cognitive || {};
   const navigate = useNavigate();
   const [deals, setDeals] = useState(null);
@@ -30,6 +32,11 @@ const RevenuePage = () => {
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
 
   useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) {
+      setLoading(false);
+      return;
+    }
     const fetchData = async () => {
       setSyncProgress(10);
       try {
@@ -61,7 +68,7 @@ const RevenuePage = () => {
       } catch {} finally { setLoading(false); setSyncProgress(100); }
     };
     fetchData();
-  }, []);
+  }, [session?.access_token, authState]);
 
   // Get integration timestamps
   const crmIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'crm');

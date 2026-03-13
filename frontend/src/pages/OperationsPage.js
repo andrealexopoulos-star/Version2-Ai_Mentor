@@ -8,6 +8,7 @@ import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { fontFamily } from '../design-system/tokens';
 import { useNavigate } from 'react-router-dom';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -19,9 +20,15 @@ const OperationsPage = () => {
   const [syncProgress, setSyncProgress] = useState(0);
   const [unifiedOps, setUnifiedOps] = useState(null);
   const navigate = useNavigate();
+  const { session, authState } = useSupabaseAuth();
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
 
   useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) {
+      setLoading(false);
+      return;
+    }
     const load = async () => {
       setSyncProgress(20);
       try {
@@ -45,7 +52,7 @@ const OperationsPage = () => {
       } catch {} finally { setLoading(false); setSyncProgress(100); }
     };
     load();
-  }, []);
+  }, [session?.access_token, authState]);
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;

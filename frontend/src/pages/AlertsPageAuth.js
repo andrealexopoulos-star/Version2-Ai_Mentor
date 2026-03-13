@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
@@ -71,6 +72,7 @@ const AlertsPageAuth = () => {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('severity'); // severity | date
   const [dateRange, setDateRange] = useState('all'); // all | today | week | month
+  const { session, authState } = useSupabaseAuth();
   const { status: integrationStatus, loading: integrationLoading } = useIntegrationStatus();
 
   const connectedIntegrations = (integrationStatus?.integrations || []).filter(i => i.connected);
@@ -118,7 +120,14 @@ const AlertsPageAuth = () => {
     } catch {} finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchAlerts(); }, []);
+  useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) {
+      setLoading(false);
+      return;
+    }
+    fetchAlerts();
+  }, [session?.access_token, authState]);
 
 
   // Date range filter helper
