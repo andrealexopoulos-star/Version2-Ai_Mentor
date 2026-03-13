@@ -13,10 +13,14 @@ logger = logging.getLogger(__name__)
 # =============================================
 
 async def get_onboarding_supabase(supabase_client, user_id: str) -> Optional[Dict[str, Any]]:
+    onboarding_row = None
+    operator_onboarding = None
+    console_onboarding = None
+
     try:
         result = supabase_client.table("onboarding").select("*").eq("user_id", user_id).limit(1).execute()
         if result.data:
-            return result.data[0]
+            onboarding_row = result.data[0]
     except Exception:
         pass
 
@@ -28,7 +32,7 @@ async def get_onboarding_supabase(supabase_client, user_id: str) -> Optional[Dic
             operator_profile = op_result.data.get("operator_profile") or {}
             onboarding_state = operator_profile.get("onboarding_state")
             if isinstance(onboarding_state, dict):
-                return {
+                operator_onboarding = {
                     "user_id": user_id,
                     "completed": bool(onboarding_state.get("completed")),
                     "current_step": onboarding_state.get("current_step", 0),
@@ -46,7 +50,7 @@ async def get_onboarding_supabase(supabase_client, user_id: str) -> Optional[Dic
         if console_result.data and (
             console_result.data.get("is_complete") or str(console_result.data.get("status") or "").upper() == "COMPLETED"
         ):
-            return {
+            console_onboarding = {
                 "user_id": user_id,
                 "completed": True,
                 "current_step": console_result.data.get("current_step", 0),
@@ -56,6 +60,28 @@ async def get_onboarding_supabase(supabase_client, user_id: str) -> Optional[Dic
             }
     except Exception:
         pass
+
+    if onboarding_row or operator_onboarding or console_onboarding:
+        onboarding_completed = any([
+            bool((onboarding_row or {}).get("completed")),
+            bool((operator_onboarding or {}).get("completed")),
+            bool((console_onboarding or {}).get("completed")),
+        ])
+
+        return {
+            "user_id": user_id,
+            "completed": onboarding_completed,
+            "current_step": (onboarding_row or {}).get("current_step")
+            or (operator_onboarding or {}).get("current_step")
+            or (console_onboarding or {}).get("current_step")
+            or 0,
+            "business_stage": (onboarding_row or {}).get("business_stage")
+            or (operator_onboarding or {}).get("business_stage"),
+            "onboarding_data": (onboarding_row or {}).get("onboarding_data")
+            or (operator_onboarding or {}).get("onboarding_data")
+            or {},
+            "source": "reconciled",
+        }
 
     return None
 
