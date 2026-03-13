@@ -102,7 +102,7 @@ async def api_health():
     return {"status": "healthy"}
 
 
-# ═══ VOICE CHAT (REALTIME) — Direct OpenAI, no emergentintegrations ═══
+# ═══ VOICE CHAT (REALTIME) — Direct OpenAI routing ═══
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 voice_router = APIRouter()
 if OPENAI_API_KEY:
@@ -162,7 +162,7 @@ Rules:
             sdp_answer = await llm_realtime_negotiate(sdp_offer.decode(), api_key=OPENAI_API_KEY)
             return JSONResponse(content={"sdp": sdp_answer})
 
-        logger.info("Voice chat initialized (direct OpenAI — no emergentintegrations)")
+        logger.info("Voice chat initialized (direct OpenAI routing)")
     except Exception as e:
         logger.error(f"Failed to initialize voice chat: {e}")
 

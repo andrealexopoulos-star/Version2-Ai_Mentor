@@ -46,8 +46,8 @@ router = APIRouter()
 
 def _get_oauth_base_url() -> str:
     """Get the custom domain base URL for OAuth redirects.
-    On Emergent deployments, env vars resolve to *.emergent.host which OAuth providers reject.
-    This function strips the internal domain and returns the public custom domain."""
+    In some internal preview environments, env vars resolve to *.emergent.host which OAuth providers reject.
+    This function strips internal preview domains and returns the public custom domain."""
     url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
     if '.emergent.host' in url:
         url = url.replace('.emergent.host', '.com')
@@ -221,10 +221,10 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     user_id = current_user['id']
     
     # CRITICAL: Force custom domain for OAuth redirect URI
-    # On Emergent deployments, all domains resolve to *.emergent.host internally
+    # In some preview environments, domains resolve to *.emergent.host internally
     # But Azure/Google only accept the custom domain
     base_url = _get_oauth_base_url()
-    # Strip emergent.host — always use the custom domain
+    # Strip internal preview host — always use the custom domain
     if '.emergent.host' in base_url:
         base_url = base_url.replace('.emergent.host', '.com')
     if 'preview.emergentagent.com' in base_url:

@@ -1,6 +1,6 @@
 """
 BIQc LLM Router — Single provider routing layer for ALL AI calls.
-Direct OpenAI by default. No emergentintegrations dependency.
+Direct provider routing (OpenAI-first) with explicit fallback policy.
 
 Route table:
   soundboard_strategy → openai/gpt-4o (primary), timeout 60s

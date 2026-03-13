@@ -1085,9 +1085,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     feature = 'trinity_daily' if mode == 'trinity' else 'soundboard_daily'
     await check_rate_limit(user_id, feature, get_sb())
 
-    # ═══ HYBRID MODEL ROUTING — Direct OpenAI API + Emergent for Gemini ═══
+    # ═══ HYBRID MODEL ROUTING — Direct provider keys only ═══
     # OpenAI: Uses your OPENAI_API_KEY directly (already in Azure/Supabase/GitHub)
-    # Gemini:  Uses GOOGLE_API_KEY when set, falls back to Emergent key otherwise
+    # Gemini:  Uses GOOGLE_API_KEY directly
 
     OPENAI_DIRECT_KEY = os.environ.get("OPENAI_API_KEY", "")
     GOOGLE_DIRECT_KEY = os.environ.get("GOOGLE_API_KEY", "")

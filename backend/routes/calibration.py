@@ -1084,12 +1084,12 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             pass
           return {"status": "complete", "calibration_complete": True}
 
-    # Generate Emergent Advisor calibration voice response
+    # Generate BIQc Advisor calibration voice response
     advisor_response = None
     try:
         # Fetch from DB or use inline fallback
         _voice_fallback = (
-            'You are the "Emergent Advisor" (System Name: BIQc). '
+            'You are the "BIQc Advisor" (System Name: BIQc). '
             'Your status is: FAIL-SAFE | MASTER CONNECTED. '
             'You are a strategic, executive-level AI designed to "Calibrate" the user before granting them access to the "Watchtower."\n\n'
             'TONE & STYLE:\n'
@@ -1153,7 +1153,7 @@ async def get_calibration_activation(request: Request):
 
     try:
         _activation_fallback = (
-            'You are the "Emergent Advisor" (System Name: BIQc). Status: FAIL-SAFE | MASTER CONNECTED. '
+            'You are the "BIQc Advisor" (System Name: BIQc). Status: FAIL-SAFE | MASTER CONNECTED. '
             'Calibration just completed. Generate a post-calibration activation briefing.\n\n'
             'Tone: Concise, cryptic but helpful, high-tech, executive. Use terminology like "Vectors locked", "Signal monitoring active."\n\n'
             'Generate a JSON object with exactly these keys. All values are strings:\n\n'

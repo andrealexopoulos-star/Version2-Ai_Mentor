@@ -33,7 +33,7 @@ def get_frontend_url() -> str:
 def get_oauth_redirect_uri(endpoint: str = '/api/auth/outlook/callback') -> str:
     """
     Construct OAuth redirect URI using FRONTEND_URL (custom domain).
-    BACKEND_URL on Emergent resolves to *.emergent.host which OAuth providers reject.
+    BACKEND_URL in internal preview environments can resolve to *.emergent.host, which OAuth providers reject.
     """
     frontend = get_frontend_url()
     return f"{frontend}{endpoint}"
