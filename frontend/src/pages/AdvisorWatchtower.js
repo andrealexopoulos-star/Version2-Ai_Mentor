@@ -19,6 +19,7 @@ import { trackEvent, EVENTS } from '../lib/analytics';
 import { trackPageRender } from '../lib/telemetry';
 import { fontFamily } from '../design-system/tokens';
 import FirstTimeOnboarding, { useFirstTimeOnboarding } from '../components/FirstTimeOnboarding';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 
 
 /* ═══ ACTION BUTTONS ═══ */
@@ -399,6 +400,15 @@ const AdvisorWatchtower = () => {
       .map(i => i.category.toLowerCase());
   }, [integrationStatus]);
 
+  const hasEmail = useMemo(() => {
+    const fromStatus = connectedIntegrations.some((integration) => integration.includes('email') || integration.includes('gmail') || integration.includes('outlook'));
+    const fromSnapshot = Boolean(
+      (c?.founder_vitals?.calendar && !String(c.founder_vitals.calendar).toLowerCase().includes('no calendar')) ||
+      (c?.founder_vitals?.email_stress && !String(c.founder_vitals.email_stress).toLowerCase().includes('no email'))
+    );
+    return fromStatus || fromSnapshot;
+  }, [connectedIntegrations, c]);
+
   const shouldShowOnboarding = !integrationLoading
     && connectedIntegrations.length === 0
     && !(cognitionData?.integrations_connected > 0)
@@ -462,6 +472,21 @@ const AdvisorWatchtower = () => {
   const instabilityIndices = cognitionData?.instability_indices || null;
   const propagationMap = cognitionData?.propagation_map || null;
   const cognitionConfidence = cognitionData?.confidence_score ?? null;
+
+  const explainability = {
+    whyVisible: gd?.hasData
+      ? `BIQc is showing ${group.label} because live signals were detected from your connected ${group.requires || 'systems'} inputs.`
+      : `No strong ${group.label.toLowerCase()} signal yet — this view is ready to surface early change as new data lands.`,
+    whyNow: gd?.alerts > 0
+      ? `${gd.alerts} active ${group.label.toLowerCase()} alert${gd.alerts === 1 ? '' : 's'} are currently affecting your business stability score.`
+      : 'Current pressure is low, but BIQc keeps tracking this domain for drift.',
+    nextAction: gd?.resolutions?.[0]?.title
+      ? `Start with: ${gd.resolutions[0].title}`
+      : `Review ${group.label.toLowerCase()} metrics and set one owner-accountable action this week.`,
+    ifIgnored: gd?.resolutions?.[0]?.detail
+      ? gd.resolutions[0].detail
+      : `If ${group.label.toLowerCase()} drift is ignored, hidden pressure can spread into revenue, cash, and execution outcomes.`,
+  };
 
   return (
     <DashboardLayout>
@@ -611,6 +636,14 @@ const AdvisorWatchtower = () => {
                     </span>
                   )}
                 </div>
+
+                <InsightExplainabilityStrip
+                  whyVisible={explainability.whyVisible}
+                  whyNow={explainability.whyNow}
+                  nextAction={explainability.nextAction}
+                  ifIgnored={explainability.ifIgnored}
+                  testIdPrefix={`advisor-${activeId}-explainability`}
+                />
 
                 {/* Show integration-required state if tab needs unconnected integration */}
                 {!isTabConnected && !gd.hasData ? (

@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone
 
 # Backend URL from environment
-BASE_URL = "https://biqc-api-refactor.preview.emergentagent.com/api"
+BASE_URL = "https://biqc-hardened.preview.emergentagent.com/api"
 
 class BIQcBackendTester:
     def __init__(self):

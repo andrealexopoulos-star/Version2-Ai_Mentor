@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { apiClient } from '../lib/api';
 import { Send, RefreshCw } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 
 const STATE_CFG = {
   STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
@@ -16,6 +16,7 @@ const STATE_CFG = {
 
 const WarRoomConsole = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
+  const { status: integrationStatus } = useIntegrationStatus();
   const { user } = useSupabaseAuth();
   const [question, setQuestion] = useState('');
   const [asking, setAsking] = useState(false);
@@ -42,17 +43,12 @@ const WarRoomConsole = () => {
     setConversation(function(prev) { return prev.concat([{ role: 'user', text: q }]); });
     setAsking(true);
     try {
-      var sess = await supabase.auth.getSession();
-      var token = sess.data.session.access_token;
-      var res = await fetch(SUPABASE_URL + '/functions/v1/strategic-console-ai', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: JSON.stringify({ mode: 'ask', question: q }),
-      });
-      var data = await res.json();
+      var res = await apiClient.post('/war-room/respond', { question: q });
+      var data = res.data;
       setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: data.answer || data.error || 'Unable to process.', sources: data.data_sources }]); });
     } catch (e) {
-      setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: 'Connection issue. Please try again.' }]); });
+      var detail = e?.response?.data?.detail || 'Connection issue. Please try again.';
+      setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: detail }]); });
     } finally { setAsking(false); setTimeout(function() { if (inputRef.current) inputRef.current.focus(); }, 100); }
   };
 
@@ -60,6 +56,22 @@ const WarRoomConsole = () => {
 
   var c = cognitive || {};
   var st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
+  const topAlerts = (c.top_alerts || []).slice(0, 3);
+  const connectedSystems = Object.entries(c.integrations || {
+    crm: integrationStatus?.canonical_truth?.crm_connected,
+    accounting: integrationStatus?.canonical_truth?.accounting_connected,
+    email: integrationStatus?.canonical_truth?.email_connected,
+  }).filter(([, connected]) => connected).map(([key]) => key);
+  const explainability = {
+    whyVisible: connectedSystems.length
+      ? `War Room is grounded in ${connectedSystems.join(', ')} live systems and your latest strategic snapshot.`
+      : 'War Room is ready, but stronger answers require connected CRM/accounting/email evidence.',
+    whyNow: topAlerts.length
+      ? topAlerts[0].detail
+      : 'Strategic state can shift quickly; this console helps interrogate emerging pressure early.',
+    nextAction: topAlerts[0]?.action || 'Ask one high-stakes question and commit to a decision owner + deadline.',
+    ifIgnored: 'Unchallenged strategic drift can compress decision windows and increase execution cost over time.',
+  };
 
   return (
     <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
@@ -94,6 +106,16 @@ const WarRoomConsole = () => {
               <p className="text-sm" style={{ color: '#F59E0B' }}>{error}</p>
             </div>
           )}
+          {!cognitive && !loading && !error && (
+            <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+              <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
+              <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                {connectedSystems.length
+                  ? `BIQc can see ${connectedSystems.join(', ')} systems, but the strategic synthesis has not resolved yet. Refresh or ask a direct question to force a live read.`
+                  : 'Connect core systems to generate a live strategic brief.'}
+              </p>
+            </div>
+          )}
           {cognitive && !loading && (
             <>
               <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Good {displayTimeOfDay}, {displayName}.</h1>
@@ -104,12 +126,47 @@ const WarRoomConsole = () => {
                   <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{c.executive_memo}</p>
                 </div>
               )}
+              {!c.executive_memo && (
+                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
+                  <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                    {connectedSystems.length
+                      ? `BIQc can see ${connectedSystems.join(', ')} signals, but the live strategic synthesis is still being prepared. Use this console to interrogate the highest-priority issue now.`
+                      : 'Connect core systems to generate a live strategic brief.'}
+                  </p>
+                </div>
+              )}
+              {topAlerts.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Why this matters now</span>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{topAlerts[0].detail}</p>
+                  </div>
+                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>What to do next</span>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{topAlerts[0].action || 'Use this console to test the next action before risk spreads.'}</p>
+                  </div>
+                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence footprint</span>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{`${c.live_signal_count || topAlerts.length} live signals across ${connectedSystems.length} connected systems${connectedSystems.length ? ` (${connectedSystems.join(', ')})` : ''}.`}</p>
+                  </div>
+                </div>
+              )}
               {c.market_position && (
                 <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                   <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Context</span>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{c.market_position}</p>
                 </div>
               )}
+
+              <InsightExplainabilityStrip
+                whyVisible={explainability.whyVisible}
+                whyNow={explainability.whyNow}
+                nextAction={explainability.nextAction}
+                ifIgnored={explainability.ifIgnored}
+                testIdPrefix="war-room-explainability"
+              />
+
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>

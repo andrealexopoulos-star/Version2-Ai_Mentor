@@ -15,6 +15,7 @@ import {
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -174,7 +175,7 @@ const RiskPage = () => {
   const fv = c.founder_vitals || {};
   const rev = c.revenue || {};
 
-  const { status: integrationStatus } = useIntegrationStatus();
+  const { status: integrationStatus, loading: integrationLoading } = useIntegrationStatus();
   const [activeTab, setActiveTab] = useState('governance');
   const [sqlWorkforce, setSqlWorkforce] = useState(null);
   const [sqlScores, setSqlScores] = useState(null);
@@ -205,6 +206,7 @@ const RiskPage = () => {
   const hasEmail = integrationStatus?.canonical_truth?.email_connected ||
     (integrationStatus?.integrations || []).some(i => i.connected && ['email','outlook','gmail'].some(k => (i.category||'').toLowerCase().includes(k) || (i.provider||'').toLowerCase().includes(k)));
   const hasAnyIntegration = (integrationStatus?.canonical_truth?.total_connected || 0) > 0 || hasEmail;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
 
   const spofs = risk.spof || [];
   const regulatory = risk.regulatory || [];
@@ -250,6 +252,22 @@ const RiskPage = () => {
     { id: 'people', icon: Users, color: '#10B981', title: 'Workforce & Key-Person', has: spofs.length > 0 || hasPeopleData },
   ];
 
+  const monitoredCount = RISK_CATEGORIES.filter((category) => category.has).length;
+  const explainability = {
+    whyVisible: hasAnyIntegration
+      ? `BIQc is monitoring ${monitoredCount} of ${RISK_CATEGORIES.length} risk categories using your connected systems.`
+      : 'Risk monitoring needs connected CRM, accounting, or email systems to score exposure reliably.',
+    whyNow: compositeScore != null
+      ? `Composite risk is ${Math.round(compositeScore * 100)}%, indicating current cross-domain pressure.`
+      : 'Composite risk is unavailable because current evidence is incomplete.',
+    nextAction: contradictions.length > 0
+      ? 'Resolve the top alignment contradiction first, then review the linked operational and financial chain.'
+      : 'Review the highest-risk category, assign owner + deadline, and document mitigation this week.',
+    ifIgnored: hasRiskData
+      ? 'Financial, operational, and workforce risks can cascade across domains and shorten your decision window.'
+      : 'Low visibility can delay detection, turning manageable issues into urgent incidents.',
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="risk-page">
@@ -259,11 +277,19 @@ const RiskPage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Risk & Workforce Intelligence</h1>
             <p className="text-sm text-[#9FB0C3]">
-              {hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
+              {integrationLoading && !integrationResolved ? 'Verifying connected systems and live risk signals…' : hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
             </p>
           </div>
-          <DataConfidence cognitive={cognitive} channelsData={integrationStatus} />
+          <DataConfidence cognitive={cognitive} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
+
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="risk-explainability"
+        />
 
         {/* Tab Navigation */}
         <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="risk-tabs">

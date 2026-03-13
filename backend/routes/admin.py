@@ -1,9 +1,9 @@
 """Admin routes — super_admin restricted. Prompt management + user management."""
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 from datetime import datetime, timezone
-from routes.deps import get_super_admin, get_admin_user, get_current_user_from_request, get_sb, logger
+from routes.deps import get_super_admin, get_admin_user, get_current_user_from_request, get_sb, logger, get_user_rate_limit_state, RATE_LIMIT_FEATURE_LABELS
 
 router = APIRouter()
 
@@ -13,6 +13,16 @@ class AdminUserUpdate(BaseModel):
     role: Optional[str] = None
     subscription_tier: Optional[str] = None
     is_master_account: Optional[bool] = None
+
+
+class FeatureRateLimitUpdate(BaseModel):
+    monthly_limit: Optional[int] = None
+    burst_limit: Optional[int] = None
+    burst_window_seconds: Optional[int] = None
+
+
+class UserRateLimitUpdate(BaseModel):
+    overrides: Dict[str, FeatureRateLimitUpdate]
 
 
 @router.post("/admin/backfill-calibration")
@@ -87,6 +97,62 @@ async def admin_get_stats(admin: dict = Depends(get_super_admin)):
         "total_documents": (sb.table("documents").select("id", count="exact").execute()).count or 0,
         "total_snapshots": (sb.table("intelligence_snapshots").select("id", count="exact").execute()).count or 0,
     }
+
+
+@router.get("/admin/rate-limits/defaults")
+async def admin_rate_limit_defaults(admin: dict = Depends(get_super_admin)):
+    from routes.deps import TIER_RATE_LIMIT_DEFAULTS
+    return {"tiers": TIER_RATE_LIMIT_DEFAULTS, "feature_labels": RATE_LIMIT_FEATURE_LABELS}
+
+
+@router.get("/admin/users/{user_id}/rate-limits")
+async def admin_get_user_rate_limits(user_id: str, admin: dict = Depends(get_super_admin)):
+    sb = get_sb()
+    state = get_user_rate_limit_state(sb, user_id)
+    return {
+        "user": state["user"],
+        "tier": state["tier"],
+        "admin_bypass": state["admin_bypass"],
+        "feature_labels": RATE_LIMIT_FEATURE_LABELS,
+        "defaults": state["defaults"],
+        "overrides": state["overrides"],
+        "effective": state["effective"],
+        "monthly_usage": state["monthly_usage"],
+    }
+
+
+@router.put("/admin/users/{user_id}/rate-limits")
+async def admin_update_user_rate_limits(user_id: str, payload: UserRateLimitUpdate, admin: dict = Depends(get_super_admin)):
+    sb = get_sb()
+    op_result = sb.table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+    operator_profile = (op_result.data or {}).get("operator_profile") or {}
+    current_limits = operator_profile.get("rate_limits") or {}
+
+    sanitized: Dict[str, Any] = {}
+    for feature, config in payload.overrides.items():
+        values = {k: v for k, v in config.model_dump().items() if v is not None}
+        if not values:
+            continue
+        sanitized[feature] = values
+
+    current_limits.update(sanitized)
+    operator_profile["rate_limits"] = current_limits
+
+    sb.table("user_operator_profile").upsert({
+        "user_id": user_id,
+        "operator_profile": operator_profile,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }, on_conflict="user_id").execute()
+
+    return await admin_get_user_rate_limits(user_id, admin)
+
+
+@router.post("/admin/users/{user_id}/rate-limits/reset-month")
+async def admin_reset_user_rate_limit_usage(user_id: str, admin: dict = Depends(get_super_admin)):
+    sb = get_sb()
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0).date().isoformat()
+    sb.table("ai_usage_log").delete().eq("user_id", user_id).gte("date", month_start).execute()
+    return {"status": "reset", "user_id": user_id, "month_start": month_start}
 
 
 @router.put("/admin/users/{user_id}")

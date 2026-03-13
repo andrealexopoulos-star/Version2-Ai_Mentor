@@ -6,6 +6,7 @@ import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 
 
 const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
@@ -77,6 +78,7 @@ const AlertsPageAuth = () => {
 
   const connectedIntegrations = (integrationStatus?.integrations || []).filter(i => i.connected);
   const totalConnected = integrationStatus?.total_connected || connectedIntegrations.length;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
   const hasCRM = connectedIntegrations.some(i => (i.category || '').toLowerCase().includes('crm'));
   const hasEmail = connectedIntegrations.some(i => ['email', 'gmail', 'outlook'].some(k => (i.category || '').toLowerCase().includes(k) || (i.provider || '').toLowerCase().includes(k)));
   const hasAnyData = totalConnected > 0;
@@ -156,6 +158,20 @@ const AlertsPageAuth = () => {
   const critCount = loading ? null : alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
   const modCount = loading ? null : alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
   const infoCount = loading ? null : alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
+  const explainability = {
+    whyVisible: hasAnyData
+      ? `BIQc is reading ${totalConnected} connected system${totalConnected === 1 ? '' : 's'} and ranking active operational risk signals.`
+      : 'Alert Centre activates when integrations are connected and producing live events.',
+    whyNow: alerts.length > 0
+      ? `${alerts.length} active alert${alerts.length === 1 ? '' : 's'} detected, including ${critCount || 0} critical priority item${critCount === 1 ? '' : 's'}.`
+      : 'No active alerts at this moment, but monitoring remains active for new anomalies.',
+    nextAction: alerts.length > 0
+      ? 'Open each critical alert, assign action owner, and mark complete/ignore with rationale.'
+      : 'Keep integrations connected and review this page daily for newly emerging issues.',
+    ifIgnored: hasAnyData
+      ? 'Unresolved alerts can quickly compound into client, delivery, or cashflow consequences.'
+      : 'Without connected data, true issues can remain invisible until they become severe.',
+  };
 
   return (
     <DashboardLayout>
@@ -170,11 +186,21 @@ const AlertsPageAuth = () => {
                   ? `${alerts.length} active alert${alerts.length !== 1 ? 's' : ''} requiring your attention.`
                   : hasAnyData
                     ? `All ${totalConnected} connected system${totalConnected !== 1 ? 's' : ''} are healthy — no issues detected.`
+                    : !integrationResolved
+                      ? 'Verifying connected systems before checking for alerts.'
                     : 'No data sources connected — connect your tools to activate monitoring.'}
               {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>syncing...</span>}
             </p>
           </div>
         </div>
+
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="alerts-explainability"
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (

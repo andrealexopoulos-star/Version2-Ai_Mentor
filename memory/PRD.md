@@ -12,6 +12,14 @@
 - **Calibration route recovery** — `frontend/src/components/ProtectedRoute.js` now prevents completed users from re-entering `/calibration`, including during auth bootstrap loading, using cached auth-state recovery logic
 - **Calibration verification** — QA user seeded as fully calibrated/onboarded; `/api/calibration/status` returned `COMPLETE`, `/api/onboarding/status` returned `completed=true`, login landed on `/advisor`, and manual `/calibration` access redirected back to `/advisor`
 
+### Sprint 11 — Live Truth Recovery + Deployment Determinism (In Progress — Mar 2026)
+- **Live integration truth layer** — Added `backend/intelligence_live_truth.py` to derive canonical CRM/accounting/email connection state, latest snapshot context, and live observation-event alerts directly from Supabase tables without LLM speculation
+- **P0 backend truth fixes** — Revenue/operations/risk/advisor/alerts APIs now overlay live connected-state truth; watchtower and notifications fall back to `observation_events`; business-profile scoring now correctly marks onboarding complete from `user_operator_profile` / `strategic_console_state` fallback when `onboarding` row is absent
+- **Frontend auth-bootstrap fixes** — `useIntegrationStatus`, `useSnapshot`, Revenue, Operations, Risk, and Alerts pages now wait for authenticated session bootstrap before firing API loads, reducing false disconnected/zero-data renders
+- **Returning-user onboarding guard** — Advisor welcome/onboarding modal only auto-shows when there are genuinely no integrations or live signals, preventing repeated “get started” states for Andre
+- **Live production verification** — Post-restart authenticated route checks now show: `/revenue` with HubSpot/Xero connected and pipeline data, `/operations` with active bottleneck + live signals, `/risk` monitoring 4 of 6 categories, `/alerts` showing active alert count, `/soundboard` answering grounded prompts, `/advisor` surfacing real priorities, `/board-room` and `/war-room` loading instead of empty placeholders
+- **Deployment hardening** — `.github/workflows/deploy.yml` now tags frontend/backend images with immutable `github.sha`, deploys Azure Web Apps using those exact SHA tags (not `latest`), removes the `emergentintegrations` install from backend image build, and adds post-deploy image-pin + health verification steps
+
 ### Sprint 8 — Priority Inbox Full Build (Complete — Mar 2026)
 - **`email_priority` edge function** — Full v2: Gmail (REST API) + Outlook (Graph API), AI classification via GPT-4o-mini (high/medium/low + reason + suggested_action + action_item + due_date), writes to `priority_inbox` + `email_tasks` Supabase tables, idempotent upsert
 - **`gmail_prod` edge function** — Built: returns `{ok, connected, email}` for single provider; supports `?provider=all` for multi-provider status check simultaneously
@@ -175,16 +183,17 @@ Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL edi
 2. **Run SQL migration** `supabase/migrations/055_ai_rate_limiting.sql` in Supabase SQL editor to activate AI usage/rate limiting
 3. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
 4. **Provide real AI provider keys in environment** — preview currently has `OPENAI_API_KEY=CONFIGURED_IN_AZURE` placeholder and no `GOOGLE_API_KEY`, so graceful errors are expected until real keys are present
-5. CDN cache purge for `beta.thestrategysquad.com`
+5. **Let latest frontend deploy finish and re-verify production pages after image-pin workflow change merges**
 6. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
 7. Create `push_devices` table in Supabase for device token storage
 
 ### P1
-8. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
-9. API performance optimization
-10. Admin panel billing adjustments
-11. Mobile App Store deployment (TestFlight/Play Store)
-12. **Deploy updated backend to production** — `/api/soundboard/scan-usage` and `/api/cognition/overview` return 404 in production (endpoint exists locally)
+8. Tighten Data Confidence scoring so connected live-signal routes do not still under-score healthy pages
+9. Improve War Room / Board Room specificity so executive summaries go beyond a single live-signal sentence
+10. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
+11. API performance optimization
+12. Admin panel billing adjustments
+13. Mobile App Store deployment (TestFlight/Play Store)
 
 ### P2
 12. Decision outcome visualization (trend charts at checkpoints)

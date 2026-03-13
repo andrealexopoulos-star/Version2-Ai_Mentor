@@ -8,6 +8,7 @@ env:
   REGISTRY: biqcregistry.azurecr.io
   FRONTEND_IMAGE: biqcregistry.azurecr.io/biqc-frontend
   BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend
+  IMAGE_TAG: ${{ github.sha }}
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
@@ -36,12 +37,16 @@ jobs:
           file: Dockerfile.frontend
           push: true
           tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.FRONTEND_IMAGE }}:latest
           build-args: |
             REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
             REACT_APP_SUPABASE_URL=${{ secrets.REACT_APP_SUPABASE_URL }}
             REACT_APP_SUPABASE_ANON_KEY=${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
             REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
+
+      - name: Record frontend image tag
+        run: echo "Frontend image = ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
 
   # ─── BUILD & PUSH BACKEND ────────────────────────────────────────────────
   build-backend:
@@ -66,7 +71,6 @@ jobs:
           WORKDIR /app
           RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
           COPY backend/requirements.txt .
-          RUN pip install --no-cache-dir emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ || echo "emergentintegrations skipped"
           RUN pip install --no-cache-dir -r requirements.txt
           COPY backend/ .
           EXPOSE 8001
@@ -81,7 +85,11 @@ jobs:
           file: Dockerfile.backend
           push: true
           tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Record backend image tag
+        run: echo "Backend image = ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
 
   # ─── DEPLOY TO AZURE ─────────────────────────────────────────────────────
   deploy:
@@ -100,7 +108,7 @@ jobs:
           az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:latest \
+            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }} \
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
@@ -110,7 +118,7 @@ jobs:
           az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:latest \
+            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }} \
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
@@ -122,6 +130,29 @@ jobs:
       - name: Restart backend
         run: |
           az webapp restart --name ${{ env.AZURE_WEBAPP_BACKEND }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
+
+      - name: Verify frontend image pin
+        run: |
+          LIVE_FRONTEND_IMAGE=$(az webapp config container show \
+            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+          echo "Live frontend image: ${LIVE_FRONTEND_IMAGE}"
+          test "${LIVE_FRONTEND_IMAGE}" = "DOCKER|${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+
+      - name: Verify backend image pin
+        run: |
+          LIVE_BACKEND_IMAGE=$(az webapp config container show \
+            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+          echo "Live backend image: ${LIVE_BACKEND_IMAGE}"
+          test "${LIVE_BACKEND_IMAGE}" = "DOCKER|${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+
+      - name: Smoke test backend health
+        run: |
+          curl --fail --silent --show-error https://biqc.thestrategysquad.com/api/health > /tmp/backend_health.json
+          cat /tmp/backend_health.json
 
       # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
       - name: Lock Supabase site_url to production
