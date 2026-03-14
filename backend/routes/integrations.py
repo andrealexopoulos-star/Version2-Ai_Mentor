@@ -1194,6 +1194,29 @@ async def alert_action(request: Request, current_user: dict = Depends(get_curren
     return {"success": True, "action": action, "alert_id": alert_id}
 
 
+@router.get("/intelligence/alerts/actions")
+async def list_alert_actions(limit: int = 100, current_user: dict = Depends(get_current_user)):
+    """List recorded alert actions for current user (latest first)."""
+    user_id = current_user["id"]
+    safe_limit = max(1, min(limit, 500))
+
+    try:
+        result = get_sb().table("alert_actions").select(
+            "alert_id, action, created_at"
+        ).eq("user_id", user_id).order("created_at", desc=True).limit(safe_limit).execute()
+
+        return {
+            "actions": result.data or [],
+            "count": len(result.data or []),
+        }
+    except Exception as e:
+        logger.warning(f"[alert-actions/list] Failed (table may not exist): {e}")
+        return {
+            "actions": [],
+            "count": 0,
+        }
+
+
 
 @router.patch("/intelligence/watchtower/{event_id}/handle")
 async def handle_watchtower_event(
