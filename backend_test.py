@@ -10,7 +10,7 @@ Tests the complete advisor workflow APIs:
 6. JSON response stability
 
 Credentials: andre@thestrategysquad.com.au / MasterMind2025*
-Target: https://cognition-ui-refresh.preview.emergentagent.com
+Target: https://cognition-overhaul.preview.emergentagent.com
 """
 
 import asyncio
@@ -20,7 +20,7 @@ import sys
 from typing import Dict, Any, Optional
 
 # Test Configuration
-BASE_URL = "https://cognition-ui-refresh.preview.emergentagent.com"
+BASE_URL = "https://cognition-overhaul.preview.emergentagent.com"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"
 
